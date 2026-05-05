@@ -1,0 +1,31 @@
+# Binaries
+fbrcm
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage
+*.test
+*.out
+coverage.out
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Vendor
+vendor/
+
+# IDE/editor
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+
+# Local config and tokens
+client_secret.json
+projects-config.json
+token.json
