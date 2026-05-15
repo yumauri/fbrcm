@@ -12,21 +12,32 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// File holds file state used by the config package.
 type File struct {
+	// Projects stores projects for File.
 	Projects []Project `json:"projects"`
-	SyncedAt string    `json:"synced_at,omitempty"`
+	// SyncedAt stores synced at for File.
+	SyncedAt string `json:"synced_at,omitempty"`
 }
 
 var ErrEmptyProjectsFile = errors.New("projects config is empty")
 
+// Project holds project state used by the config package.
 type Project struct {
-	Name          string `json:"name"`
-	ProjectID     string `json:"project_id"`
+	// Name stores name for Project.
+	Name string `json:"name"`
+	// ProjectID stores project id for Project.
+	ProjectID string `json:"project_id"`
+	// ProjectNumber stores project number for Project.
 	ProjectNumber string `json:"project_number,omitempty"`
-	State         string `json:"state,omitempty"`
-	ETag          string `json:"etag,omitempty"`
-	UpdatedAt     string `json:"updated_at,omitempty"`
-	SyncedAt      string `json:"synced_at,omitempty"`
+	// State stores state for Project.
+	State string `json:"state,omitempty"`
+	// ETag stores etag for Project.
+	ETag string `json:"etag,omitempty"`
+	// UpdatedAt stores updated at for Project.
+	UpdatedAt string `json:"updated_at,omitempty"`
+	// SyncedAt stores synced at for Project.
+	SyncedAt string `json:"synced_at,omitempty"`
 }
 
 // Load list of projects from the projects file

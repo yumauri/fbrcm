@@ -16,6 +16,7 @@ import (
 
 const doubleClickWindow = 400 * time.Millisecond
 
+// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.ProjectsLoadedMsg:
@@ -38,6 +39,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if !m.active {
 			break
+		}
+		if m.collapsed {
+			return m, nil
 		}
 
 		if mode, ok := filterbox.ModeForKey(msg.String()); ok {
@@ -167,6 +171,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+// updateFilterInput updates update filter input for Model and returns the resulting state or error.
 func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {
 	before := m.filter.Value()
 	var cmd tea.Cmd
@@ -178,6 +183,7 @@ func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
+// keyboardCaptureCmd handles keyboard capture cmd and returns the resulting value or error.
 func keyboardCaptureCmd(enabled bool) tea.Cmd {
 	return func() tea.Msg {
 		return messages.KeyboardCaptureMsg{
@@ -186,21 +192,25 @@ func keyboardCaptureCmd(enabled bool) tea.Cmd {
 	}
 }
 
+// setActivePanelCmd sets set active panel cmd and returns the resulting value or error.
 func setActivePanelCmd(panel panels.ID) tea.Cmd {
 	return func() tea.Msg {
 		return messages.SetActivePanelMsg{Panel: panel}
 	}
 }
 
+// isDoubleClick reports is double click for Model and returns the resulting state or error.
 func (m Model) isDoubleClick(index int) bool {
 	return m.lastClick.project == index && time.Since(m.lastClick.at) <= doubleClickWindow
 }
 
+// rememberClick handles remember click for Model and returns the resulting state or error.
 func (m *Model) rememberClick(index int) {
 	m.lastClick.project = index
 	m.lastClick.at = time.Now()
 }
 
+// openCurrentProjectCmd opens open current project cmd for Model and returns the resulting state or error.
 func (m Model) openCurrentProjectCmd() tea.Cmd {
 	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
 		return nil

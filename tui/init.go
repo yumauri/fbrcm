@@ -11,6 +11,7 @@ import (
 	"fbrcm/tui/app"
 )
 
+// Init initializes init and returns the resulting value or error.
 func Init(s *core.Core) {
 	corelog.For("tui").Debug("start tui")
 	m := app.New(s)

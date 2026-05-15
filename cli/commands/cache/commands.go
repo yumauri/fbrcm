@@ -14,21 +14,32 @@ import (
 	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
+	"fbrcm/cli/shared"
 	clistyles "fbrcm/cli/styles"
 	"fbrcm/core/config"
 	"fbrcm/core/firebase"
 	corelog "fbrcm/core/log"
 )
 
+// cacheEntry holds cache entry state used by the cache package.
 type cacheEntry struct {
-	ProjectID string    `json:"project_id"`
-	Project   string    `json:"project"`
-	Version   string    `json:"version"`
-	Size      int64     `json:"size"`
-	CachedAt  time.Time `json:"cached_at"`
-	Path      string    `json:"path"`
+	// ProjectID stores project id for cacheEntry.
+	ProjectID string `json:"project_id"`
+	// Project stores project for cacheEntry.
+	Project string `json:"project"`
+	// Version stores version for cacheEntry.
+	Version string `json:"version"`
+	// Size stores size for cacheEntry.
+	Size int64 `json:"size"`
+	// CachedAt stores cached at for cacheEntry.
+	CachedAt *time.Time `json:"cached_at"`
+	// Draft stores draft for cacheEntry.
+	Draft bool `json:"draft"`
+	// Path stores path for cacheEntry.
+	Path string `json:"path"`
 }
 
+// New constructs new and returns the resulting value or error.
 func New() *cobra.Command {
 	cacheCmd := &cobra.Command{
 		Use:   "cache",
@@ -44,7 +55,7 @@ func New() *cobra.Command {
 				return err
 			}
 
-			path := config.GetParametersCacheDirPath()
+			path := config.GetCacheDirPath()
 			if jsonOut {
 				encoder := json.NewEncoder(cmd.OutOrStdout())
 				encoder.SetIndent("", "  ")
@@ -65,25 +76,53 @@ func New() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			deleteCaches := true
 			if !yes {
-				confirm := confirmation.New(
+				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete cached parameters files in %s?", config.GetParametersCacheDirPath()),
 					confirmation.Yes,
+					shared.ConfirmationOptions{Destructive: true},
 				)
 				ok, err := confirm.RunPrompt()
 				if err != nil {
 					return err
 				}
-				if !ok {
-					return nil
+				deleteCaches = ok
+			}
+			if deleteCaches {
+				if err := config.PurgeParametersCache(); err != nil {
+					return err
+				}
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged caches: %s\n", config.GetParametersCacheDirPath())
+			}
+
+			draftIDs, err := config.ListDraftProjectIDs()
+			if err != nil {
+				return err
+			}
+			if len(draftIDs) > 0 {
+				deleteDrafts := true
+				if !yes {
+					confirm := shared.NewConfirmation(
+						fmt.Sprintf("Delete draft files in %s?", config.GetDraftsDirPath()),
+						confirmation.No,
+						shared.ConfirmationOptions{Destructive: true},
+					)
+					ok, err := confirm.RunPrompt()
+					if err != nil {
+						return err
+					}
+					deleteDrafts = ok
+				}
+				if deleteDrafts {
+					if err := config.PurgeDrafts(); err != nil {
+						return err
+					}
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged drafts: %s\n", config.GetDraftsDirPath())
 				}
 			}
 
-			if err := config.PurgeParametersCache(); err != nil {
-				return err
-			}
-
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "purged: %s\n", config.GetParametersCacheDirPath())
 			return nil
 		},
 	}
@@ -124,10 +163,37 @@ func New() *cobra.Command {
 	return cacheCmd
 }
 
+// loadCacheEntries loads load cache entries and returns the resulting value or error.
 func loadCacheEntries() ([]cacheEntry, error) {
-	dir := config.GetParametersCacheDirPath()
 	projectNames := loadProjectNames()
+	entries, err := loadParametersCacheEntries(projectNames)
+	if err != nil {
+		return nil, err
+	}
+	draftEntries, err := loadDraftEntries(projectNames)
+	if err != nil {
+		return nil, err
+	}
+	entries = append(entries, draftEntries...)
 
+	sort.Slice(entries, func(i, j int) bool {
+		left := strings.ToLower(entries[i].ProjectID)
+		right := strings.ToLower(entries[j].ProjectID)
+		if left == right {
+			if entries[i].Draft != entries[j].Draft {
+				return !entries[i].Draft
+			}
+			return entries[i].ProjectID < entries[j].ProjectID
+		}
+		return left < right
+	})
+
+	return entries, nil
+}
+
+// loadParametersCacheEntries loads load parameters cache entries and returns the resulting value or error.
+func loadParametersCacheEntries(projectNames map[string]string) ([]cacheEntry, error) {
+	dir := config.GetParametersCacheDirPath()
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -158,31 +224,66 @@ func loadCacheEntries() ([]cacheEntry, error) {
 		if remoteConfig, err := firebase.ParseRemoteConfig(cache.RemoteConfig); err == nil {
 			version = remoteConfig.Version.VersionNumber
 		}
-
-		project := projectNames[projectID]
-
+		cachedAt := cache.CachedAt
 		entries = append(entries, cacheEntry{
 			ProjectID: projectID,
-			Project:   project,
+			Project:   projectNames[projectID],
 			Version:   version,
-			CachedAt:  cache.CachedAt,
+			CachedAt:  &cachedAt,
 			Size:      info.Size(),
 			Path:      path,
 		})
 	}
-
-	sort.Slice(entries, func(i, j int) bool {
-		left := strings.ToLower(entries[i].ProjectID)
-		right := strings.ToLower(entries[j].ProjectID)
-		if left == right {
-			return entries[i].ProjectID < entries[j].ProjectID
-		}
-		return left < right
-	})
-
 	return entries, nil
 }
 
+// loadDraftEntries loads load draft entries and returns the resulting value or error.
+func loadDraftEntries(projectNames map[string]string) ([]cacheEntry, error) {
+	dir := config.GetDraftsDirPath()
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []cacheEntry{}, nil
+		}
+		return nil, fmt.Errorf("read drafts dir: %w", err)
+	}
+
+	entries := make([]cacheEntry, 0, len(files))
+	for _, file := range files {
+		if file.IsDir() || filepath.Ext(file.Name()) != ".json" {
+			continue
+		}
+
+		projectID := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		path := filepath.Join(dir, file.Name())
+		info, err := file.Info()
+		if err != nil {
+			return nil, fmt.Errorf("stat draft file %s: %w", path, err)
+		}
+
+		raw, err := config.LoadDraft(projectID)
+		if err != nil {
+			return nil, err
+		}
+
+		version := ""
+		if remoteConfig, err := firebase.ParseRemoteConfig(raw); err == nil {
+			version = remoteConfig.Version.VersionNumber
+		}
+
+		entries = append(entries, cacheEntry{
+			ProjectID: projectID,
+			Project:   projectNames[projectID],
+			Version:   version,
+			Size:      info.Size(),
+			Draft:     true,
+			Path:      path,
+		})
+	}
+	return entries, nil
+}
+
+// loadProjectNames loads load project names and returns the resulting value or error.
 func loadProjectNames() map[string]string {
 	projects, err := config.LoadProjects()
 	if err != nil {
@@ -196,6 +297,7 @@ func loadProjectNames() map[string]string {
 	return names
 }
 
+// renderCacheTable renders render cache table and returns the resulting value or error.
 func renderCacheTable(entries []cacheEntry) string {
 	noColor := clistyles.NoColorEnabled()
 	rows := make([][]string, 0, len(entries))
@@ -207,7 +309,9 @@ func renderCacheTable(entries []cacheEntry) string {
 
 	for _, entry := range entries {
 		cachedAt := ""
-		if !entry.CachedAt.IsZero() {
+		if entry.Draft {
+			cachedAt = "draft"
+		} else if entry.CachedAt != nil && !entry.CachedAt.IsZero() {
 			cachedAt = entry.CachedAt.Local().Format("2006-01-02 15:04:05")
 		}
 		size := humanSize(entry.Size)
@@ -243,6 +347,9 @@ func renderCacheTable(entries []cacheEntry) string {
 		if row >= 0 && row%2 == 1 {
 			style = style.Background(clistyles.ColorRowStripe)
 		}
+		if row >= 0 && col == 4 && entries[row].Draft {
+			return style.Foreground(clistyles.PaletteError)
+		}
 		if col == 1 {
 			return style.Foreground(clistyles.PaletteSlateBright)
 		}
@@ -263,6 +370,7 @@ func renderCacheTable(entries []cacheEntry) string {
 	return tbl.String()
 }
 
+// humanSize handles human size and returns the resulting value or error.
 func humanSize(size int64) string {
 	if size < 1024 {
 		return fmt.Sprintf("%d B ", size)
@@ -285,11 +393,13 @@ func humanSize(size int64) string {
 	return fmt.Sprintf("%.0f MB", value)
 }
 
+// logCacheTotal handles log cache total and returns the resulting value or error.
 func logCacheTotal(entries []cacheEntry) {
 	size := totalCacheSize(entries)
 	corelog.For("cache").Info("total", "projects", len(entries), "size", size, "hsize", strings.TrimSpace(humanSize(size)))
 }
 
+// totalCacheSize handles total cache size and returns the resulting value or error.
 func totalCacheSize(entries []cacheEntry) int64 {
 	var total int64
 	for _, entry := range entries {

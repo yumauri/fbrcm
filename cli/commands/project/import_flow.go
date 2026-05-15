@@ -22,15 +22,24 @@ import (
 	"fbrcm/core/firebase"
 )
 
+// importOptions holds import options state used by the project package.
 type importOptions struct {
-	groups                          []string
-	paramFilter                     string
-	expr                            string
-	removeAllConditions             bool
+	// groups stores groups for importOptions.
+	groups []string
+	// paramFilter stores param filter for importOptions.
+	paramFilter string
+	// expr stores expr for importOptions.
+	expr string
+	// removeAllConditions stores remove all conditions for importOptions.
+	removeAllConditions bool
+	// removeProjectSpecificConditions stores remove project specific conditions for importOptions.
 	removeProjectSpecificConditions bool
-	merge                           bool
-	override                        bool
-	mergeResolve                    string
+	// merge stores merge for importOptions.
+	merge bool
+	// override stores override for importOptions.
+	override bool
+	// mergeResolve stores merge resolve for importOptions.
+	mergeResolve string
 }
 
 type importStrategy string
@@ -47,25 +56,36 @@ const (
 	conflictResolutionImport  conflictResolution = "import"
 )
 
+// mergeChoice holds merge choice state used by the project package.
 type mergeChoice struct {
+	// label stores label for mergeChoice.
 	label string
+	// value stores value for mergeChoice.
 	value string
 }
 
+// String handles string for mergeChoice and returns the resulting state or error.
 func (c mergeChoice) String() string {
 	return c.label
 }
 
+// paramSlot holds param slot state used by the project package.
 type paramSlot struct {
+	// group stores group for paramSlot.
 	group string
+	// param stores param for paramSlot.
 	param firebase.RemoteConfigParam
 }
 
+// missingImportGroupsError holds missing import groups error state used by the project package.
 type missingImportGroupsError struct {
-	missing   []string
+	// missing stores missing for missingImportGroupsError.
+	missing []string
+	// available stores available for missingImportGroupsError.
 	available []groupSummary
 }
 
+// Error handles error for missingImportGroupsError and returns the resulting state or error.
 func (e *missingImportGroupsError) Error() string {
 	if len(e.available) > 0 {
 		available := make([]string, 0, len(e.available))
@@ -77,6 +97,7 @@ func (e *missingImportGroupsError) Error() string {
 	return fmt.Sprintf("requested groups not found in import: %s", strings.Join(e.missing, ", "))
 }
 
+// runImportCommand runs run import command and returns the resulting value or error.
 func runImportCommand(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	opts, err := readImportOptions(cmd)
 	if err != nil {
@@ -144,7 +165,7 @@ func runImportCommand(cmd *cobra.Command, svc *core.Core, project core.Project) 
 
 	diffText, hasChanges := shared.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	if !hasChanges {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "NO CHANGES")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
 		return nil
 	}
 
@@ -154,9 +175,10 @@ func runImportCommand(cmd *cobra.Command, svc *core.Core, project core.Project) 
 
 	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 
-	confirm := confirmation.New(
+	confirm := shared.NewConfirmation(
 		fmt.Sprintf("Publish Remote Config changes to %s?", project.ProjectID),
 		confirmation.Yes,
+		shared.ConfirmationOptions{},
 	)
 	ok, err := confirm.RunPrompt()
 	if err != nil {
@@ -169,10 +191,11 @@ func runImportCommand(cmd *cobra.Command, svc *core.Core, project core.Project) 
 	if _, _, err := svc.PublishRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "published: %s\n", project.ProjectID)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📥 imported: %s\n", project.ProjectID)
 	return nil
 }
 
+// readImportOptions reads read import options and returns the resulting value or error.
 func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	var opts importOptions
 	var err error
@@ -223,6 +246,7 @@ func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	return opts, nil
 }
 
+// normalizeGroups handles normalize groups and returns the resulting value or error.
 func normalizeGroups(groups []string) []string {
 	seen := make(map[string]struct{}, len(groups))
 	out := make([]string, 0, len(groups))
@@ -240,6 +264,7 @@ func normalizeGroups(groups []string) []string {
 	return out
 }
 
+// transformImportConfig handles transform import config and returns the resulting value or error.
 func transformImportConfig(project core.Project, cfg *firebase.RemoteConfig, opts importOptions) error {
 	if len(opts.groups) > 0 {
 		if err := filterImportGroups(cfg, opts.groups); err != nil {
@@ -276,6 +301,7 @@ func transformImportConfig(project core.Project, cfg *firebase.RemoteConfig, opt
 	return nil
 }
 
+// filterImportGroups filters filter import groups and returns the resulting value or error.
 func filterImportGroups(cfg *firebase.RemoteConfig, groups []string) error {
 	selected := make(map[string]firebase.RemoteConfigGroup, len(groups))
 	missing := make([]string, 0)
@@ -298,6 +324,7 @@ func filterImportGroups(cfg *firebase.RemoteConfig, groups []string) error {
 	return nil
 }
 
+// filterImportParameters filters filter import parameters and returns the resulting value or error.
 func filterImportParameters(cfg *firebase.RemoteConfig, raw string) {
 	mode, query := parseImportFilter(raw)
 	if query == "" {
@@ -315,12 +342,13 @@ func filterImportParameters(cfg *firebase.RemoteConfig, raw string) {
 	}
 }
 
+// filterImportParametersByExpr filters filter import parameters by expr and returns the resulting value or error.
 func filterImportParametersByExpr(project core.Project, cfg *firebase.RemoteConfig, compiledExpr *filter.Expression) {
 	if compiledExpr == nil {
 		return
 	}
 
-	cfg.Parameters = filterImportParamMapByExpr(project, cfg, cfg.Parameters, "(default)", compiledExpr)
+	cfg.Parameters = filterImportParamMapByExpr(project, cfg, cfg.Parameters, "(root)", compiledExpr)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = filterImportParamMapByExpr(project, cfg, group.Parameters, groupName, compiledExpr)
 		if len(group.Parameters) == 0 {
@@ -331,6 +359,7 @@ func filterImportParametersByExpr(project core.Project, cfg *firebase.RemoteConf
 	}
 }
 
+// filterImportParamMap filters filter import param map and returns the resulting value or error.
 func filterImportParamMap(params map[string]firebase.RemoteConfigParam, mode filter.Mode, query string) map[string]firebase.RemoteConfigParam {
 	if len(params) == 0 {
 		return nil
@@ -349,6 +378,7 @@ func filterImportParamMap(params map[string]firebase.RemoteConfigParam, mode fil
 	return filtered
 }
 
+// filterImportParamMapByExpr filters filter import param map by expr and returns the resulting value or error.
 func filterImportParamMapByExpr(project core.Project, cfg *firebase.RemoteConfig, params map[string]firebase.RemoteConfigParam, groupName string, compiledExpr *filter.Expression) map[string]firebase.RemoteConfigParam {
 	if len(params) == 0 {
 		return nil
@@ -367,6 +397,7 @@ func filterImportParamMapByExpr(project core.Project, cfg *firebase.RemoteConfig
 	return filtered
 }
 
+// parseImportFilter parses parse import filter and returns the resulting value or error.
 func parseImportFilter(raw string) (filter.Mode, string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -380,6 +411,7 @@ func parseImportFilter(raw string) (filter.Mode, string) {
 	return mode, string([]rune(raw)[1:])
 }
 
+// removeAllConditions removes remove all conditions and returns the resulting value or error.
 func removeAllConditions(cfg *firebase.RemoteConfig) {
 	cfg.Conditions = nil
 	cfg.Parameters = stripAllConditionalValues(cfg.Parameters, nil)
@@ -393,6 +425,7 @@ func removeAllConditions(cfg *firebase.RemoteConfig) {
 	}
 }
 
+// removeProjectSpecificConditions removes remove project specific conditions and returns the resulting value or error.
 func removeProjectSpecificConditions(cfg *firebase.RemoteConfig) {
 	deleted := make(map[string]struct{})
 	kept := make([]firebase.RemoteConfigCondition, 0, len(cfg.Conditions))
@@ -415,6 +448,7 @@ func removeProjectSpecificConditions(cfg *firebase.RemoteConfig) {
 	}
 }
 
+// stripAllConditionalValues handles strip all conditional values and returns the resulting value or error.
 func stripAllConditionalValues(params map[string]firebase.RemoteConfigParam, deleted map[string]struct{}) map[string]firebase.RemoteConfigParam {
 	if len(params) == 0 {
 		return nil
@@ -449,6 +483,7 @@ func stripAllConditionalValues(params map[string]firebase.RemoteConfigParam, del
 	return out
 }
 
+// isProjectSpecificCondition reports is project specific condition and returns the resulting value or error.
 func isProjectSpecificCondition(expr string) bool {
 	for _, needle := range []string{
 		"inExperiment",
@@ -466,6 +501,7 @@ func isProjectSpecificCondition(expr string) bool {
 	return false
 }
 
+// buildFinalImportConfig handles build final import config and returns the resulting value or error.
 func buildFinalImportConfig(cmd *cobra.Command, currentCfg, importCfg *firebase.RemoteConfig, opts importOptions) (*firebase.RemoteConfig, error) {
 	if !configHasContent(currentCfg) {
 		return cloneRemoteConfig(importCfg), nil
@@ -482,6 +518,7 @@ func buildFinalImportConfig(cmd *cobra.Command, currentCfg, importCfg *firebase.
 	return mergeRemoteConfigs(cmd, currentCfg, importCfg, opts)
 }
 
+// chooseImportStrategy handles choose import strategy and returns the resulting value or error.
 func chooseImportStrategy(cmd *cobra.Command, opts importOptions) (importStrategy, error) {
 	switch {
 	case opts.override:
@@ -493,6 +530,30 @@ func chooseImportStrategy(cmd *cobra.Command, opts importOptions) (importStrateg
 			{label: "Merge imported config into current config", value: string(importStrategyMerge)},
 			{label: "Override current config with imported config", value: string(importStrategyOverride)},
 		})
+		prompt.Template = `
+{{- if .Prompt -}}
+  {{ Bold .Prompt }}
+{{ end -}}
+
+{{- range  $i, $choice := .Choices }}
+  {{- if IsScrollUpHintPosition $i }}
+    {{- "⇡ " -}}
+  {{- else if IsScrollDownHintPosition $i -}}
+    {{- "⇣ " -}}
+  {{- else -}}
+    {{- "  " -}}
+  {{- end -}}
+
+  {{- if eq $.SelectedIndex $i }}
+   {{- print (SelectedMarker $choice) (Selected $choice) "\n" }}
+  {{- else }}
+    {{- print "  " (Unselected $choice) "\n" }}
+  {{- end }}
+{{- end}}`
+		prompt.SelectedChoiceStyle = styleImportStrategySelectedChoice
+		prompt.UnselectedChoiceStyle = styleImportStrategyUnselectedChoice
+		prompt.FinalChoiceStyle = styleImportStrategyFinalChoice
+		prompt.ExtendedTemplateFuncs["SelectedMarker"] = styleImportStrategySelectedMarker
 		choice, err := prompt.RunPrompt()
 		if err != nil {
 			return "", err
@@ -501,6 +562,46 @@ func chooseImportStrategy(cmd *cobra.Command, opts importOptions) (importStrateg
 	}
 }
 
+// styleImportStrategySelectedChoice handles style import strategy selected choice and returns the resulting value or error.
+func styleImportStrategySelectedChoice(choice *selection.Choice[mergeChoice]) string {
+	if clistyles.NoColorEnabled() {
+		return selection.DefaultSelectedChoiceStyle(choice)
+	}
+	if choice.Value.value == string(importStrategyOverride) {
+		return lipgloss.NewStyle().Foreground(clistyles.PaletteError).Bold(true).Render(choice.String)
+	}
+	return selection.DefaultSelectedChoiceStyle(choice)
+}
+
+// styleImportStrategyUnselectedChoice handles style import strategy unselected choice and returns the resulting value or error.
+func styleImportStrategyUnselectedChoice(choice *selection.Choice[mergeChoice]) string {
+	if clistyles.NoColorEnabled() || choice.Value.value != string(importStrategyOverride) {
+		return choice.String
+	}
+	return lipgloss.NewStyle().Foreground(clistyles.PaletteError).Render(choice.String)
+}
+
+// styleImportStrategyFinalChoice handles style import strategy final choice and returns the resulting value or error.
+func styleImportStrategyFinalChoice(choice *selection.Choice[mergeChoice]) string {
+	base := selection.DefaultFinalChoiceStyle(choice)
+	if clistyles.NoColorEnabled() || choice.Value.value != string(importStrategyOverride) {
+		return base
+	}
+	return lipgloss.NewStyle().Foreground(clistyles.PaletteError).Render(base)
+}
+
+// styleImportStrategySelectedMarker handles style import strategy selected marker and returns the resulting value or error.
+func styleImportStrategySelectedMarker(choice *selection.Choice[mergeChoice]) string {
+	if clistyles.NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true).Render("▸ ")
+	}
+	if choice.Value.value == string(importStrategyOverride) {
+		return lipgloss.NewStyle().Foreground(clistyles.PaletteError).Bold(true).Render("▸ ")
+	}
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("32")).Bold(true).Render("▸ ")
+}
+
+// mergeRemoteConfigs handles merge remote configs and returns the resulting value or error.
 func mergeRemoteConfigs(cmd *cobra.Command, currentCfg, importCfg *firebase.RemoteConfig, opts importOptions) (*firebase.RemoteConfig, error) {
 	finalCfg := cloneRemoteConfig(currentCfg)
 	if finalCfg.Parameters == nil {
@@ -583,6 +684,7 @@ func mergeRemoteConfigs(cmd *cobra.Command, currentCfg, importCfg *firebase.Remo
 	return finalCfg, nil
 }
 
+// resolveConflict handles resolve conflict and returns the resulting value or error.
 func resolveConflict(cmd *cobra.Command, opts importOptions, label string, currentValue, importValue any) (conflictResolution, error) {
 	if opts.mergeResolve != "" {
 		return conflictResolution(opts.mergeResolve), nil
@@ -593,9 +695,32 @@ func resolveConflict(cmd *cobra.Command, opts importOptions, label string, curre
 	_, _ = fmt.Fprintln(cmd.ErrOrStderr())
 
 	prompt := selection.New("Choose value", []mergeChoice{
-		{label: "Use import value", value: string(conflictResolutionImport)},
-		{label: "Keep current value", value: string(conflictResolutionCurrent)},
+		{label: fmt.Sprintf("Use import value (%s)", shared.RenderConflictChoiceValue(toSharedConflictValue(importValue))), value: string(conflictResolutionImport)},
+		{label: fmt.Sprintf("Keep current value (%s)", shared.RenderConflictChoiceValue(toSharedConflictValue(currentValue))), value: string(conflictResolutionCurrent)},
 	})
+	prompt.Template = `
+{{- if .Prompt -}}
+  {{ Bold .Prompt }}
+{{ end -}}
+
+{{- range  $i, $choice := .Choices }}
+  {{- if IsScrollUpHintPosition $i }}
+    {{- "⇡ " -}}
+  {{- else if IsScrollDownHintPosition $i -}}
+    {{- "⇣ " -}}
+  {{- else -}}
+    {{- "  " -}}
+  {{- end -}}
+
+  {{- if eq $.SelectedIndex $i }}
+   {{- print (Foreground "32" (Bold "▸ ")) (Selected $choice) "\n" }}
+  {{- else }}
+    {{- print "  " (Unselected $choice) "\n" }}
+  {{- end }}
+{{- end}}`
+	prompt.SelectedChoiceStyle = styleConflictSelectedChoice
+	prompt.UnselectedChoiceStyle = styleConflictUnselectedChoice
+	prompt.FinalChoiceStyle = styleConflictFinalChoice
 	choice, err := prompt.RunPrompt()
 	if err != nil {
 		return "", err
@@ -603,6 +728,60 @@ func resolveConflict(cmd *cobra.Command, opts importOptions, label string, curre
 	return conflictResolution(choice.value), nil
 }
 
+// styleConflictSelectedChoice handles style conflict selected choice and returns the resulting value or error.
+func styleConflictSelectedChoice(choice *selection.Choice[mergeChoice]) string {
+	return renderConflictChoiceLabel(choice.Value.value, choice.String, true)
+}
+
+// styleConflictUnselectedChoice handles style conflict unselected choice and returns the resulting value or error.
+func styleConflictUnselectedChoice(choice *selection.Choice[mergeChoice]) string {
+	return renderConflictChoiceLabel(choice.Value.value, choice.String, false)
+}
+
+// styleConflictFinalChoice handles style conflict final choice and returns the resulting value or error.
+func styleConflictFinalChoice(choice *selection.Choice[mergeChoice]) string {
+	return renderConflictChoiceLabel(choice.Value.value, choice.String, false)
+}
+
+// renderConflictChoiceLabel renders render conflict choice label and returns the resulting value or error.
+func renderConflictChoiceLabel(choiceValue, label string, selected bool) string {
+	if clistyles.NoColorEnabled() {
+		if selected {
+			return lipgloss.NewStyle().Bold(true).Render(label)
+		}
+		return label
+	}
+
+	start := strings.LastIndex(label, " (")
+	end := strings.LastIndex(label, ")")
+	if start < 0 || end <= start {
+		if selected {
+			return lipgloss.NewStyle().Bold(true).Render(label)
+		}
+		return label
+	}
+
+	prefix := label[:start+2]
+	value := label[start+2 : end]
+	suffix := label[end:]
+
+	valueStyle := lipgloss.NewStyle().Foreground(clistyles.ColorAdded)
+	if choiceValue == string(conflictResolutionCurrent) {
+		valueStyle = valueStyle.Foreground(clistyles.PaletteError)
+	}
+	if selected {
+		valueStyle = valueStyle.Bold(true)
+	}
+
+	textStyle := lipgloss.NewStyle()
+	if selected {
+		textStyle = textStyle.Bold(true)
+	}
+
+	return textStyle.Render(prefix) + valueStyle.Render(value) + textStyle.Render(suffix)
+}
+
+// toSharedConflictValue handles to shared conflict value and returns the resulting value or error.
 func toSharedConflictValue(value any) any {
 	slot, ok := value.(paramSlot)
 	if !ok {
@@ -614,6 +793,7 @@ func toSharedConflictValue(value any) any {
 	}
 }
 
+// collectParamSlots handles collect param slots and returns the resulting value or error.
 func collectParamSlots(cfg *firebase.RemoteConfig) map[string]paramSlot {
 	out := make(map[string]paramSlot)
 	for key, param := range cfg.Parameters {
@@ -627,6 +807,7 @@ func collectParamSlots(cfg *firebase.RemoteConfig) map[string]paramSlot {
 	return out
 }
 
+// sortedParamKeys handles sorted param keys and returns the resulting value or error.
 func sortedParamKeys(slots map[string]paramSlot) []string {
 	keys := make([]string, 0, len(slots))
 	for key := range slots {
@@ -636,6 +817,7 @@ func sortedParamKeys(slots map[string]paramSlot) []string {
 	return keys
 }
 
+// sortedGroupNames handles sorted group names and returns the resulting value or error.
 func sortedGroupNames(groups map[string]firebase.RemoteConfigGroup) []string {
 	names := make([]string, 0, len(groups))
 	for name := range groups {
@@ -645,6 +827,7 @@ func sortedGroupNames(groups map[string]firebase.RemoteConfigGroup) []string {
 	return names
 }
 
+// setParamSlot sets set param slot and returns the resulting value or error.
 func setParamSlot(cfg *firebase.RemoteConfig, key string, slot paramSlot) {
 	if slot.group == "" {
 		if cfg.Parameters == nil {
@@ -662,6 +845,7 @@ func setParamSlot(cfg *firebase.RemoteConfig, key string, slot paramSlot) {
 	cfg.ParameterGroups[slot.group] = group
 }
 
+// removeParamSlot removes remove param slot and returns the resulting value or error.
 func removeParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	if groupName == "" {
 		delete(cfg.Parameters, key)
@@ -679,10 +863,12 @@ func removeParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	cfg.ParameterGroups[groupName] = group
 }
 
+// configHasContent handles config has content and returns the resulting value or error.
 func configHasContent(cfg *firebase.RemoteConfig) bool {
 	return cfg != nil && (len(cfg.Conditions) > 0 || len(cfg.Parameters) > 0 || len(cfg.ParameterGroups) > 0)
 }
 
+// pruneUnusedConditions handles prune unused conditions and returns the resulting value or error.
 func pruneUnusedConditions(cfg *firebase.RemoteConfig) {
 	if cfg == nil || len(cfg.Conditions) == 0 {
 		return
@@ -703,6 +889,7 @@ func pruneUnusedConditions(cfg *firebase.RemoteConfig) {
 	cfg.Conditions = kept
 }
 
+// collectUsedConditions handles collect used conditions and returns the resulting value or error.
 func collectUsedConditions(used map[string]struct{}, params map[string]firebase.RemoteConfigParam) {
 	for _, param := range params {
 		for condition := range param.ConditionalValues {
@@ -711,6 +898,7 @@ func collectUsedConditions(used map[string]struct{}, params map[string]firebase.
 	}
 }
 
+// dropUnknownConditionReferences handles drop unknown condition references and returns the resulting value or error.
 func dropUnknownConditionReferences(cfg *firebase.RemoteConfig) {
 	allowed := make(map[string]struct{}, len(cfg.Conditions))
 	for _, condition := range cfg.Conditions {
@@ -727,6 +915,7 @@ func dropUnknownConditionReferences(cfg *firebase.RemoteConfig) {
 	}
 }
 
+// stripUnknownConditionRefs handles strip unknown condition refs and returns the resulting value or error.
 func stripUnknownConditionRefs(params map[string]firebase.RemoteConfigParam, allowed map[string]struct{}) map[string]firebase.RemoteConfigParam {
 	if len(params) == 0 {
 		return nil
@@ -758,11 +947,15 @@ func stripUnknownConditionRefs(params map[string]firebase.RemoteConfigParam, all
 	return out
 }
 
+// groupSummary holds group summary state used by the project package.
 type groupSummary struct {
-	Name       string
+	// Name stores name for groupSummary.
+	Name string
+	// Parameters stores parameters for groupSummary.
 	Parameters int
 }
 
+// summarizeGroups handles summarize groups and returns the resulting value or error.
 func summarizeGroups(groups map[string]firebase.RemoteConfigGroup) []groupSummary {
 	names := sortedGroupNames(groups)
 	out := make([]groupSummary, 0, len(names))
@@ -775,6 +968,7 @@ func summarizeGroups(groups map[string]firebase.RemoteConfigGroup) []groupSummar
 	return out
 }
 
+// renderGroupsTable renders render groups table and returns the resulting value or error.
 func renderGroupsTable(groups []groupSummary) string {
 	rows := make([][]string, 0, len(groups))
 	groupWidth := lipgloss.Width("Group")
@@ -812,6 +1006,7 @@ func renderGroupsTable(groups []groupSummary) string {
 	return tbl.String()
 }
 
+// removeEmptyGroups removes remove empty groups and returns the resulting value or error.
 func removeEmptyGroups(cfg *firebase.RemoteConfig) {
 	for groupName, group := range cfg.ParameterGroups {
 		if len(group.Parameters) == 0 {
@@ -826,6 +1021,7 @@ func removeEmptyGroups(cfg *firebase.RemoteConfig) {
 	}
 }
 
+// cloneRemoteConfig handles clone remote config and returns the resulting value or error.
 func cloneRemoteConfig(cfg *firebase.RemoteConfig) *firebase.RemoteConfig {
 	if cfg == nil {
 		return &firebase.RemoteConfig{}
@@ -841,6 +1037,7 @@ func cloneRemoteConfig(cfg *firebase.RemoteConfig) *firebase.RemoteConfig {
 	return &out
 }
 
+// marshalRemoteConfigForUpload handles marshal remote config for upload and returns the resulting value or error.
 func marshalRemoteConfigForUpload(cfg *firebase.RemoteConfig) ([]byte, error) {
 	data, err := json.Marshal(cfg)
 	if err != nil {

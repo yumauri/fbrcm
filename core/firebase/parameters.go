@@ -13,51 +13,81 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// RemoteConfig holds remote config state used by the firebase package.
 type RemoteConfig struct {
-	Conditions      []RemoteConfigCondition      `json:"conditions,omitempty"`
-	Parameters      map[string]RemoteConfigParam `json:"parameters,omitempty"`
+	// Conditions stores conditions for RemoteConfig.
+	Conditions []RemoteConfigCondition `json:"conditions,omitempty"`
+	// Parameters stores parameters for RemoteConfig.
+	Parameters map[string]RemoteConfigParam `json:"parameters,omitempty"`
+	// ParameterGroups stores parameter groups for RemoteConfig.
 	ParameterGroups map[string]RemoteConfigGroup `json:"parameterGroups,omitempty"`
-	Version         RemoteConfigVersion          `json:"version,omitzero"`
+	// Version stores version for RemoteConfig.
+	Version RemoteConfigVersion `json:"version,omitzero"`
 }
 
+// RemoteConfigCondition holds remote config condition state used by the firebase package.
 type RemoteConfigCondition struct {
-	Name        string `json:"name,omitempty"`
-	Expression  string `json:"expression,omitempty"`
+	// Name stores name for RemoteConfigCondition.
+	Name string `json:"name,omitempty"`
+	// Expression stores expression for RemoteConfigCondition.
+	Expression string `json:"expression,omitempty"`
+	// Description stores description for RemoteConfigCondition.
 	Description string `json:"description,omitempty"`
-	TagColor    string `json:"tagColor,omitempty"`
+	// TagColor stores tag color for RemoteConfigCondition.
+	TagColor string `json:"tagColor,omitempty"`
 }
 
+// RemoteConfigGroup holds remote config group state used by the firebase package.
 type RemoteConfigGroup struct {
-	Description string                       `json:"description,omitempty"`
-	Parameters  map[string]RemoteConfigParam `json:"parameters,omitempty"`
+	// Description stores description for RemoteConfigGroup.
+	Description string `json:"description,omitempty"`
+	// Parameters stores parameters for RemoteConfigGroup.
+	Parameters map[string]RemoteConfigParam `json:"parameters,omitempty"`
 }
 
+// RemoteConfigParam holds remote config param state used by the firebase package.
 type RemoteConfigParam struct {
-	DefaultValue      *RemoteConfigValue           `json:"defaultValue,omitempty"`
+	// DefaultValue stores default value for RemoteConfigParam.
+	DefaultValue *RemoteConfigValue `json:"defaultValue,omitempty"`
+	// ConditionalValues stores conditional values for RemoteConfigParam.
 	ConditionalValues map[string]RemoteConfigValue `json:"conditionalValues,omitempty"`
-	Description       string                       `json:"description,omitempty"`
-	ValueType         string                       `json:"valueType,omitempty"`
+	// Description stores description for RemoteConfigParam.
+	Description string `json:"description,omitempty"`
+	// ValueType stores value type for RemoteConfigParam.
+	ValueType string `json:"valueType,omitempty"`
 }
 
+// RemoteConfigValue holds remote config value state used by the firebase package.
 type RemoteConfigValue struct {
-	Value                string          `json:"value,omitempty"`
-	UseInAppDefault      bool            `json:"useInAppDefault,omitempty"`
+	// Value stores value for RemoteConfigValue.
+	Value string `json:"value,omitempty"`
+	// UseInAppDefault stores use in app default for RemoteConfigValue.
+	UseInAppDefault bool `json:"useInAppDefault,omitempty"`
+	// PersonalizationValue stores personalization value for RemoteConfigValue.
 	PersonalizationValue json.RawMessage `json:"personalizationValue,omitempty"`
-	RolloutValue         json.RawMessage `json:"rolloutValue,omitempty"`
+	// RolloutValue stores rollout value for RemoteConfigValue.
+	RolloutValue json.RawMessage `json:"rolloutValue,omitempty"`
 }
 
+// RemoteConfigVersion holds remote config version state used by the firebase package.
 type RemoteConfigVersion struct {
+	// VersionNumber stores version number for RemoteConfigVersion.
 	VersionNumber string `json:"versionNumber,omitempty"`
-	UpdateTime    string `json:"updateTime,omitempty"`
-	Description   string `json:"description,omitempty"`
+	// UpdateTime stores update time for RemoteConfigVersion.
+	UpdateTime string `json:"updateTime,omitempty"`
+	// Description stores description for RemoteConfigVersion.
+	Description string `json:"description,omitempty"`
 }
 
+// listVersionsResponse holds list versions response state used by the firebase package.
 type listVersionsResponse struct {
+	// Versions stores versions for listVersionsResponse.
 	Versions []RemoteConfigVersion `json:"versions"`
 }
 
 const notAvailableVersion = "NA"
 
+// ParseRemoteConfig parses remote config and returns the resulting value or error.
 func ParseRemoteConfig(raw json.RawMessage) (*RemoteConfig, error) {
 	raw = normalizeRemoteConfigRaw(raw)
 	var cfg RemoteConfig
@@ -70,6 +100,7 @@ func ParseRemoteConfig(raw json.RawMessage) (*RemoteConfig, error) {
 	return &cfg, nil
 }
 
+// GetRemoteConfig gets remote config for Service and returns the resulting state or error.
 func (s *Service) GetRemoteConfig(ctx context.Context, projectID string) (json.RawMessage, string, error) {
 	logger := corelog.For("firebase")
 	logger.Info("get remote config", "project_id", projectID)
@@ -115,15 +146,18 @@ func (s *Service) GetRemoteConfig(ctx context.Context, projectID string) (json.R
 	return bytes.TrimSpace(body), etag, nil
 }
 
+// ValidateRemoteConfig handles validate remote config for Service and returns the resulting state or error.
 func (s *Service) ValidateRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage, etag string) error {
 	_, _, err := s.updateRemoteConfig(ctx, projectID, raw, etag, true)
 	return err
 }
 
+// UpdateRemoteConfig updates remote config for Service and returns the resulting state or error.
 func (s *Service) UpdateRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage, etag string) (json.RawMessage, string, error) {
 	return s.updateRemoteConfig(ctx, projectID, raw, etag, false)
 }
 
+// updateRemoteConfig updates update remote config for Service and returns the resulting state or error.
 func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage, etag string, validateOnly bool) (json.RawMessage, string, error) {
 	logger := corelog.For("firebase")
 	logger.Info("update remote config", "project_id", projectID, "validate_only", validateOnly)
@@ -189,6 +223,7 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 	return bytes.TrimSpace(respBody), nextETag, nil
 }
 
+// GetLatestRemoteConfigVersion gets latest remote config version for Service and returns the resulting state or error.
 func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID string) (RemoteConfigVersion, error) {
 	logger := corelog.For("firebase")
 	logger.Info("get latest remote config version", "project_id", projectID)
@@ -240,6 +275,7 @@ func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID st
 	return payload.Versions[0], nil
 }
 
+// normalizeRemoteConfigRaw handles normalize remote config raw and returns the resulting value or error.
 func normalizeRemoteConfigRaw(raw json.RawMessage) json.RawMessage {
 	trimmed := bytes.TrimSpace(raw)
 	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("{}")) {

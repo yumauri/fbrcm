@@ -6,12 +6,17 @@ import (
 	"fbrcm/core/config"
 )
 
+// WhoAmI holds who am i state used by the firebase package.
 type WhoAmI struct {
-	SecretPath  string `json:"secret_path"`
-	TokenPath   string `json:"token_path"`
+	// SecretPath stores secret path for WhoAmI.
+	SecretPath string `json:"secret_path"`
+	// TokenPath stores token path for WhoAmI.
+	TokenPath string `json:"token_path"`
+	// TokenExpiry stores token expiry for WhoAmI.
 	TokenExpiry string `json:"token_expiry"`
 }
 
+// ReadWhoAmI reads who am i and returns the resulting value or error.
 func ReadWhoAmI(ctx context.Context) (*WhoAmI, error) {
 	_ = ctx
 

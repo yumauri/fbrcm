@@ -13,6 +13,7 @@ const (
 	XDGConfigHome = "XDG_CONFIG_HOME"
 )
 
+// LookupTrimmed handles lookup trimmed and returns the resulting value or error.
 func LookupTrimmed(name string) (string, bool) {
 	value, ok := os.LookupEnv(name)
 	if !ok {
@@ -27,6 +28,7 @@ func LookupTrimmed(name string) (string, bool) {
 	return value, true
 }
 
+// NoColorEnabled handles no color enabled and returns the resulting value or error.
 func NoColorEnabled() bool {
 	_, ok := LookupTrimmed(NoColor)
 	return ok

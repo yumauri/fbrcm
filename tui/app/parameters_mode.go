@@ -1,0 +1,19 @@
+package app
+
+import "fbrcm/tui/panels"
+
+// toggleParametersMaximize toggles toggle parameters maximize for Model and returns the resulting state or error.
+func (m *Model) toggleParametersMaximize() {
+	if m.active != panels.Parameters {
+		return
+	}
+
+	if m.projectsMode == projectsPanelModeCollapsed && m.logsMode == logsPanelModeCollapsed {
+		m.setProjectsMode(projectsPanelModeExpanded)
+		m.setLogsMode(logsPanelModeExpanded)
+		return
+	}
+
+	m.setProjectsMode(projectsPanelModeCollapsed)
+	m.setLogsMode(logsPanelModeCollapsed)
+}

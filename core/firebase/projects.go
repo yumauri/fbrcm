@@ -13,31 +13,47 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// Project holds project state used by the firebase package.
 type Project struct {
-	Name          string
-	ProjectID     string
+	// Name stores name for Project.
+	Name string
+	// ProjectID stores project id for Project.
+	ProjectID string
+	// ProjectNumber stores project number for Project.
 	ProjectNumber string
-	State         string
-	ETag          string
-	UpdateTime    string
+	// State stores state for Project.
+	State string
+	// ETag stores etag for Project.
+	ETag string
+	// UpdateTime stores update time for Project.
+	UpdateTime string
 }
 
+// listProjectsResponse holds list projects response state used by the firebase package.
 type listProjectsResponse struct {
+	// Projects stores projects for listProjectsResponse.
 	Projects []struct {
 		ProjectID      string `json:"projectId"`
 		ProjectNumber  string `json:"projectNumber"`
 		Name           string `json:"name"`
 		LifecycleState string `json:"lifecycleState"`
 	} `json:"projects"`
+	// NextPageToken stores next page token for listProjectsResponse.
 	NextPageToken string `json:"nextPageToken"`
 }
 
+// getProjectV3Response holds get project v3 response state used by the firebase package.
 type getProjectV3Response struct {
-	ProjectID   string `json:"projectId"`
+	// ProjectID stores project id for getProjectV3Response.
+	ProjectID string `json:"projectId"`
+	// DisplayName stores display name for getProjectV3Response.
 	DisplayName string `json:"displayName"`
-	State       string `json:"state"`
-	Etag        string `json:"etag"`
-	UpdateTime  string `json:"updateTime"`
+	// State stores state for getProjectV3Response.
+	State string `json:"state"`
+	// Etag stores etag for getProjectV3Response.
+	Etag string `json:"etag"`
+	// UpdateTime stores update time for getProjectV3Response.
+	UpdateTime string `json:"updateTime"`
 }
 
 // Fetch all Firebase projects accessible to the authenticated user
@@ -132,18 +148,25 @@ func (s *Service) ListProjects(ctx context.Context) ([]Project, error) {
 	return projects, nil
 }
 
+// enrichProjects handles enrich projects for Service and returns the resulting state or error.
 func (s *Service) enrichProjects(ctx context.Context, projects []Project) ([]Project, error) {
 	logger := corelog.For("firebase")
 	if len(projects) == 0 {
 		return nil, nil
 	}
 
+	// job holds job state used by the firebase package.
 	type job struct {
-		index   int
+		// index stores index for job.
+		index int
+		// project stores project for job.
 		project Project
 	}
+	// result holds result state used by the firebase package.
 	type result struct {
-		index   int
+		// index stores index for result.
+		index int
+		// project stores project for result.
 		project Project
 	}
 
@@ -197,6 +220,7 @@ func (s *Service) enrichProjects(ctx context.Context, projects []Project) ([]Pro
 	return enriched, nil
 }
 
+// GetProject gets project for Service and returns the resulting state or error.
 func (s *Service) GetProject(ctx context.Context, projectID string) (Project, error) {
 	logger := corelog.For("firebase")
 	logger.Info("get project details", "project_id", projectID)
@@ -246,6 +270,7 @@ func (s *Service) GetProject(ctx context.Context, projectID string) (Project, er
 	}, nil
 }
 
+// mergeInto handles merge into for Project and returns the resulting state or error.
 func (p Project) mergeInto(base Project) Project {
 	if p.Name != "" {
 		base.Name = p.Name

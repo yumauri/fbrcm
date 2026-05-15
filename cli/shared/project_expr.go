@@ -11,6 +11,7 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// FilterProjectsByExpr filters projects by expr and returns the resulting value or error.
 func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.Project, rawExpr string) ([]core.Project, error) {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -39,6 +40,7 @@ func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.P
 	return filtered, nil
 }
 
+// MatchProjectByExpr matches project by expr and returns the resulting value or error.
 func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExpr string) bool {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -54,6 +56,7 @@ func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExp
 	return ok && match
 }
 
+// CompileExpr handles compile expr and returns the resulting value or error.
 func CompileExpr(rawExpr, projectID string) (*filter.Expression, bool) {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -74,6 +77,7 @@ func CompileExpr(rawExpr, projectID string) (*filter.Expression, bool) {
 	return compiled, true
 }
 
+// MatchProjectByCompiledExpr matches project by compiled expr and returns the resulting value or error.
 func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig) (bool, bool) {
 	if compiled == nil {
 		return true, true
@@ -88,6 +92,7 @@ func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Projec
 	return match, true
 }
 
+// MatchParameterByCompiledExpr matches parameter by compiled expr and returns the resulting value or error.
 func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig, name, group string) (bool, bool) {
 	if compiled == nil {
 		return true, true
@@ -102,6 +107,7 @@ func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Proj
 	return match, true
 }
 
+// loadProjectExprConfig loads load project expr config and returns the resulting value or error.
 func loadProjectExprConfig(ctx context.Context, svc *core.Core, project core.Project) (*firebase.RemoteConfig, error) {
 	cache, _, err := svc.GetParameters(ctx, project.ProjectID, false)
 	if err != nil {

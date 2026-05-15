@@ -30,6 +30,7 @@ const (
 	lineKindMeta
 )
 
+// contentLines handles content lines for Model and returns the resulting state or error.
 func (m *Model) contentLines() []string {
 	var lines []string
 	var lineKinds []lineKind
@@ -88,7 +89,11 @@ func (m *Model) contentLines() []string {
 	return m.lines
 }
 
+// View handles view for Model and returns the resulting state or error.
 func (m Model) View(active bool) string {
+	if m.collapsed {
+		return renderCollapsedPanel(m.height, active)
+	}
 	return renderPanel(
 		m.viewport.View(),
 		m.width,
@@ -100,17 +105,143 @@ func (m Model) View(active bool) string {
 	)
 }
 
-type scrollbarState struct {
-	visible    bool
-	thumbStart int
-	thumbEnd   int
+// renderCollapsedPanel renders render collapsed panel and returns the resulting value or error.
+func renderCollapsedPanel(height int, active bool) string {
+	if height <= 0 {
+		return ""
+	}
+
+	borderStyle := styles.BorderStyle(active)
+	titleStyle := collapsedTitleStyle(active)
+	railStyle := collapsedRailStyle(active)
+	capStyle := collapsedCapStyle(active)
+
+	lines := make([]string, 0, height)
+	lines = append(lines, borderStyle.Render("─╮"))
+
+	bodyHeight := max(height-2, 0)
+	if bodyHeight == 0 {
+		return strings.Join(lines, "\n")
+	}
+
+	content := collapsedTitleBody(bodyHeight)
+	for _, row := range content {
+		switch row {
+		case "top":
+			if active {
+				lines = append(lines, capStyle.Render("▗▄▖"))
+			} else {
+				lines = append(lines, " "+borderStyle.Render("╵")+" ")
+			}
+		case "fill":
+			lines = append(lines, borderStyle.Render(" │"))
+		case "bottom":
+			if active {
+				lines = append(lines, capStyle.Render("▝▀▘"))
+			} else {
+				lines = append(lines, " "+borderStyle.Render("╷")+" ")
+			}
+		default:
+			if active {
+				lines = append(lines, railStyle.Render("▐")+titleStyle.Render(row)+railStyle.Render("▌"))
+			} else {
+				lines = append(lines, " "+row+" ")
+			}
+		}
+	}
+
+	if height > 1 {
+		lines = append(lines, borderStyle.Render("─╯"))
+	}
+
+	return strings.Join(lines, "\n")
 }
 
+// collapsedTitleStyle handles collapsed title style and returns the resulting value or error.
+func collapsedTitleStyle(active bool) lipgloss.Style {
+	if !active {
+		return lipgloss.NewStyle()
+	}
+	return styles.TitleStyle(true)
+}
+
+// collapsedRailStyle handles collapsed rail style and returns the resulting value or error.
+func collapsedRailStyle(active bool) lipgloss.Style {
+	if !active {
+		return lipgloss.NewStyle()
+	}
+	if styles.NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true)
+	}
+	return lipgloss.NewStyle().Foreground(styles.PaletteBlueDeep)
+}
+
+// collapsedCapStyle handles collapsed cap style and returns the resulting value or error.
+func collapsedCapStyle(active bool) lipgloss.Style {
+	if !active {
+		return lipgloss.NewStyle()
+	}
+	if styles.NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true)
+	}
+	return lipgloss.NewStyle().Foreground(styles.PaletteBlueDeep)
+}
+
+// collapsedTitleBody handles collapsed title body and returns the resulting value or error.
+func collapsedTitleBody(bodyHeight int) []string {
+	if bodyHeight <= 0 {
+		return nil
+	}
+
+	letters := []string{"P", "r", "o", "j", "e", "c", "t", "s"}
+	rows := []string{"top"}
+	if bodyHeight == 1 {
+		return rows
+	}
+
+	contentSlots := bodyHeight - 2
+	if contentSlots <= 0 {
+		return append(rows, "bottom")
+	}
+
+	if contentSlots >= len(letters) {
+		rows = append(rows, letters...)
+		rows = append(rows, "bottom")
+		for len(rows) < bodyHeight {
+			rows = append(rows, "fill")
+		}
+		return rows
+	}
+
+	visibleLetters := max(contentSlots-1, 0)
+	rows = append(rows, letters[:visibleLetters]...)
+	rows = append(rows, "⋮")
+	rows = append(rows, "bottom")
+	for len(rows) < bodyHeight {
+		rows = append(rows, "fill")
+	}
+	return rows
+}
+
+// scrollbarState holds scrollbar state state used by the projects package.
+type scrollbarState struct {
+	// visible stores visible for scrollbarState.
+	visible bool
+	// thumbStart stores thumb start for scrollbarState.
+	thumbStart int
+	// thumbEnd stores thumb end for scrollbarState.
+	thumbEnd int
+}
+
+// secondaryTitleState holds secondary title state state used by the projects package.
 type secondaryTitleState struct {
-	text  string
+	// text stores text for secondaryTitleState.
+	text string
+	// style stores style for secondaryTitleState.
 	style lipgloss.Style
 }
 
+// renderPanel renders render panel and returns the resulting value or error.
 func renderPanel(body string, width, height int, active bool, scrollbar scrollbarState, secondary secondaryTitleState, footer []string) string {
 	if width <= 0 || height <= 0 {
 		return ""
@@ -171,6 +302,7 @@ func renderPanel(body string, width, height int, active bool, scrollbar scrollba
 	return strings.Join(lines, "\n")
 }
 
+// truncatePlain handles truncate plain and returns the resulting value or error.
 func truncatePlain(value string, width int) string {
 	if width <= 0 {
 		return ""
@@ -184,6 +316,7 @@ func truncatePlain(value string, width int) string {
 	return string(runes[:width])
 }
 
+// renderContentLines renders render content lines for Model and returns the resulting state or error.
 func (m Model) renderContentLines() []string {
 	width := m.viewportWidth()
 	if width <= 0 {
@@ -197,6 +330,7 @@ func (m Model) renderContentLines() []string {
 	return lines
 }
 
+// renderContentLine renders render content line for Model and returns the resulting state or error.
 func (m Model) renderContentLine(index int, line string, width int) string {
 	line = truncatePlain(line, max(width-1, 0))
 
@@ -228,6 +362,7 @@ func (m Model) renderContentLine(index int, line string, width int) string {
 	return base.Render(line)
 }
 
+// renderProjectLine renders render project line for Model and returns the resulting state or error.
 func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int, base lipgloss.Style) string {
 	state := m.projectStateStyle(projectIndex)
 	normal := base.Inherit(state)
@@ -255,6 +390,7 @@ func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int
 	return builder.String()
 }
 
+// scrollbar handles scrollbar for Model and returns the resulting state or error.
 func (m Model) scrollbar() scrollbarState {
 	contentHeight := m.viewportHeight()
 	totalLines := len(m.lines)
@@ -276,6 +412,7 @@ func (m Model) scrollbar() scrollbarState {
 	}
 }
 
+// secondaryTitle handles secondary title for Model and returns the resulting state or error.
 func (m Model) secondaryTitle() secondaryTitleState {
 	switch {
 	case m.loading:
@@ -296,6 +433,7 @@ func (m Model) secondaryTitle() secondaryTitleState {
 	}
 }
 
+// applyFilter handles apply filter for Model and returns the resulting state or error.
 func (m *Model) applyFilter() {
 	currentID := ""
 	if m.cursor >= 0 && m.cursor < len(m.projects) {
@@ -328,6 +466,7 @@ func (m *Model) applyFilter() {
 	m.cursor = max(0, min(m.cursor, len(m.projects)-1))
 }
 
+// offsetIndices handles offset indices and returns the resulting value or error.
 func offsetIndices(indices []int, offset int) []int {
 	if len(indices) == 0 {
 		return nil
@@ -339,6 +478,7 @@ func offsetIndices(indices []int, offset int) []int {
 	return shifted
 }
 
+// indicesSet handles indices set and returns the resulting value or error.
 func indicesSet(indices []int) map[int]bool {
 	set := make(map[int]bool, len(indices))
 	for _, index := range indices {
@@ -347,6 +487,7 @@ func indicesSet(indices []int) map[int]bool {
 	return set
 }
 
+// secondaryTitleText handles secondary title text for Model and returns the resulting state or error.
 func (m Model) secondaryTitleText() string {
 	switch {
 	case m.loading:
@@ -361,11 +502,13 @@ func (m Model) secondaryTitleText() string {
 	}
 }
 
+// projectStateStyle handles project state style for Model and returns the resulting state or error.
 func (m Model) projectStateStyle(index int) lipgloss.Style {
 	_, selected := m.selected[m.projects[index].ProjectID]
 	return styles.ProjectStateStyle(index == m.cursor, selected)
 }
 
+// moveCursor moves move cursor for Model and returns the resulting state or error.
 func (m *Model) moveCursor(delta int) {
 	if len(m.projects) == 0 {
 		return
@@ -375,6 +518,7 @@ func (m *Model) moveCursor(delta int) {
 	m.syncViewport()
 }
 
+// toggleCurrentSelection toggles toggle current selection for Model and returns the resulting state or error.
 func (m *Model) toggleCurrentSelection() {
 	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
 		return
@@ -391,6 +535,7 @@ func (m *Model) toggleCurrentSelection() {
 	m.syncViewport()
 }
 
+// selectOnlyCurrent selects select only current for Model and returns the resulting state or error.
 func (m *Model) selectOnlyCurrent() {
 	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
 		return
@@ -404,6 +549,7 @@ func (m *Model) selectOnlyCurrent() {
 	m.syncViewport()
 }
 
+// selectionChangedCmd selects selection changed cmd for Model and returns the resulting state or error.
 func (m *Model) selectionChangedCmd() tea.Cmd {
 	projects := m.selectedProjects()
 	return func() tea.Msg {
@@ -413,6 +559,7 @@ func (m *Model) selectionChangedCmd() tea.Cmd {
 	}
 }
 
+// selectedProjects selects selected projects for Model and returns the resulting state or error.
 func (m Model) selectedProjects() []core.Project {
 	if len(m.selected) == 0 {
 		return nil
@@ -428,6 +575,7 @@ func (m Model) selectedProjects() []core.Project {
 	return projects
 }
 
+// ensureCursorVisible handles ensure cursor visible for Model and returns the resulting state or error.
 func (m *Model) ensureCursorVisible() {
 	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projectStarts) {
 		return
@@ -446,6 +594,7 @@ func (m *Model) ensureCursorVisible() {
 	}
 }
 
+// jumpToFirst handles jump to first for Model and returns the resulting state or error.
 func (m *Model) jumpToFirst() {
 	if len(m.projects) == 0 {
 		return
@@ -455,6 +604,7 @@ func (m *Model) jumpToFirst() {
 	m.syncViewport()
 }
 
+// jumpToLast handles jump to last for Model and returns the resulting state or error.
 func (m *Model) jumpToLast() {
 	if len(m.projects) == 0 {
 		return
@@ -464,6 +614,7 @@ func (m *Model) jumpToLast() {
 	m.syncViewport()
 }
 
+// pageDown handles page down for Model and returns the resulting state or error.
 func (m *Model) pageDown() {
 	if len(m.projects) == 0 {
 		return
@@ -480,6 +631,7 @@ func (m *Model) pageDown() {
 	m.refreshViewport()
 }
 
+// pageUp handles page up for Model and returns the resulting state or error.
 func (m *Model) pageUp() {
 	if len(m.projects) == 0 {
 		return
@@ -505,6 +657,7 @@ func (m *Model) pageUp() {
 	m.refreshViewport()
 }
 
+// visibleProjectRange handles visible project range for Model and returns the resulting state or error.
 func (m Model) visibleProjectRange() (int, int, bool) {
 	if len(m.projects) == 0 {
 		return 0, 0, false
@@ -536,6 +689,7 @@ func (m Model) visibleProjectRange() (int, int, bool) {
 	return topProject, bottomProject, true
 }
 
+// isMouseInside reports is mouse inside for Model and returns the resulting state or error.
 func (m Model) isMouseInside(mouse tea.Mouse) bool {
 	if m.width <= 0 || m.height <= 0 {
 		return false
@@ -545,6 +699,7 @@ func (m Model) isMouseInside(mouse tea.Mouse) bool {
 		mouse.Y >= m.y && mouse.Y < m.y+m.height
 }
 
+// isMouseOnFilter reports is mouse on filter for Model and returns the resulting state or error.
 func (m Model) isMouseOnFilter(mouse tea.Mouse) bool {
 	if !m.isMouseInside(mouse) || !m.filter.Visible() {
 		return false
@@ -556,6 +711,7 @@ func (m Model) isMouseOnFilter(mouse tea.Mouse) bool {
 		mouse.X >= m.x && mouse.X < m.x+m.width-1
 }
 
+// projectIndexAtMouse handles project index at mouse for Model and returns the resulting state or error.
 func (m Model) projectIndexAtMouse(mouse tea.Mouse) (int, bool) {
 	if !m.isMouseInside(mouse) {
 		return 0, false

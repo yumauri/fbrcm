@@ -7,18 +7,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image/color"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"charm.land/bubbles/v2/filepicker"
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
+	"fbrcm/cli/shared"
 	clistyles "fbrcm/cli/styles"
 	"fbrcm/core"
 	"fbrcm/core/browser"
@@ -27,6 +25,7 @@ import (
 
 const googleAuthClientsURL = "https://console.cloud.google.com/auth/clients"
 
+// New constructs new and returns the resulting value or error.
 func New(svc *core.Core) *cobra.Command {
 	loginCmd := &cobra.Command{
 		Use:   "login",
@@ -42,7 +41,7 @@ func New(svc *core.Core) *cobra.Command {
 			if err := svc.EnsureLogin(context.Background(), noOpen); err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "authenticated: %s\n", config.GetTokenFilePath())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔑 authenticated: %s\n", config.GetTokenFilePath())
 			return nil
 		},
 	}
@@ -84,12 +83,15 @@ func New(svc *core.Core) *cobra.Command {
 			deleteSecret := yes
 			if !yes {
 				if tokenExists {
-					tokenConfirm := newLoginConfirmation(
+					tokenConfirm := shared.NewConfirmation(
 						fmt.Sprintf("Delete token file %s?", config.GetTokenFilePath()),
 						confirmation.Yes,
-						confirmationNote{
-							text:  "After deleting token file you will have to reauthenticate the app.",
-							color: clistyles.ColorNote,
+						shared.ConfirmationOptions{
+							Destructive: true,
+							Notes: []shared.ConfirmationNote{{
+								Text:  "After deleting token file you will have to reauthenticate the app.",
+								Color: clistyles.ColorNote,
+							}},
 						},
 					)
 					deleteToken, err = tokenConfirm.RunPrompt()
@@ -98,27 +100,30 @@ func New(svc *core.Core) *cobra.Command {
 					}
 				}
 
-				secretNotes := []confirmationNote{
+				secretNotes := []shared.ConfirmationNote{
 					{
-						text:  "After deleting client secret file you will have to add a different client secret.",
-						color: clistyles.ColorNote,
+						Text:  "After deleting client secret file you will have to add a different client secret.",
+						Color: clistyles.ColorNote,
 					},
 				}
 				if tokenExists && !deleteToken {
-					secretNotes = append(secretNotes, confirmationNote{
-						text:  "If you delete client secret file, token file will also be deleted because it cannot be used without the secret.",
-						color: clistyles.ColorNote,
+					secretNotes = append(secretNotes, shared.ConfirmationNote{
+						Text:  "If you delete client secret file, token file will also be deleted because it cannot be used without the secret.",
+						Color: clistyles.ColorNote,
 					})
 				}
-				secretNotes = append(secretNotes, confirmationNote{
-					text:  "There is no way to download it from Google Cloud Console for the same app for the second time.",
-					color: clistyles.PaletteError,
+				secretNotes = append(secretNotes, shared.ConfirmationNote{
+					Text:  "There is no way to download it from Google Cloud Console for the same app for the second time.",
+					Color: clistyles.PaletteError,
 				})
 
-				secretConfirm := newLoginConfirmation(
+				secretConfirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete client secret file %s?", config.GetSecretFilePath()),
 					confirmation.Yes,
-					secretNotes...,
+					shared.ConfirmationOptions{
+						Destructive: true,
+						Notes:       secretNotes,
+					},
 				)
 				deleteSecret, err = secretConfirm.RunPrompt()
 				if err != nil {
@@ -138,13 +143,13 @@ func New(svc *core.Core) *cobra.Command {
 				if err := removeLoginFile(config.GetTokenFilePath()); err != nil {
 					return err
 				}
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "purged: %s\n", config.GetTokenFilePath())
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged: %s\n", config.GetTokenFilePath())
 			}
 			if deleteSecret {
 				if err := removeLoginFile(config.GetSecretFilePath()); err != nil {
 					return err
 				}
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "purged: %s\n", config.GetSecretFilePath())
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged: %s\n", config.GetSecretFilePath())
 			}
 			return nil
 		},
@@ -190,7 +195,7 @@ func New(svc *core.Core) *cobra.Command {
 				return err
 			}
 
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "imported: %s\n", config.GetSecretFilePath())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔐 imported: %s\n", config.GetSecretFilePath())
 			return nil
 		},
 	}
@@ -283,6 +288,7 @@ func New(svc *core.Core) *cobra.Command {
 	return loginCmd
 }
 
+// removeLoginFile removes remove login file and returns the resulting value or error.
 func removeLoginFile(path string) error {
 	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("remove %s: %w", path, err)
@@ -290,6 +296,7 @@ func removeLoginFile(path string) error {
 	return nil
 }
 
+// writeSecretFile writes write secret file and returns the resulting value or error.
 func writeSecretFile(data []byte) (bool, error) {
 	path := config.GetSecretFilePath()
 	previous, err := os.ReadFile(path)
@@ -317,11 +324,13 @@ func writeSecretFile(data []byte) (bool, error) {
 	return secretChanged, nil
 }
 
+// fileExists handles file exists and returns the resulting value or error.
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
+// stdinAvailable handles stdin available and returns the resulting value or error.
 func stdinAvailable() bool {
 	info, err := os.Stdin.Stat()
 	if err != nil {
@@ -330,6 +339,7 @@ func stdinAvailable() bool {
 	return (info.Mode() & os.ModeCharDevice) == 0
 }
 
+// waitForEnter handles wait for enter and returns the resulting value or error.
 func waitForEnter(in io.Reader) error {
 	_, err := bufio.NewReader(in).ReadString('\n')
 	if err != nil && !errors.Is(err, io.EOF) {
@@ -338,12 +348,17 @@ func waitForEnter(in io.Reader) error {
 	return nil
 }
 
+// pickerModel holds picker model state used by the login package.
 type pickerModel struct {
-	picker   filepicker.Model
+	// picker stores picker for pickerModel.
+	picker filepicker.Model
+	// selected stores selected for pickerModel.
 	selected string
-	cancel   bool
+	// cancel stores cancel for pickerModel.
+	cancel bool
 }
 
+// pickSecretFile handles pick secret file and returns the resulting value or error.
 func pickSecretFile() (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
@@ -370,10 +385,12 @@ func pickSecretFile() (string, error) {
 	return model.selected, nil
 }
 
+// Init initializes init for pickerModel and returns the resulting state or error.
 func (m pickerModel) Init() tea.Cmd {
 	return m.picker.Init()
 }
 
+// Update updates update for pickerModel and returns the resulting state or error.
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -395,47 +412,7 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+// View handles view for pickerModel and returns the resulting state or error.
 func (m pickerModel) View() tea.View {
 	return tea.NewView(m.picker.View() + "\n\nenter/l to open or select, h/backspace/left/esc to go up, q to cancel")
-}
-
-type confirmationNote struct {
-	text  string
-	color color.Color
-}
-
-func newLoginConfirmation(prompt string, defaultValue confirmation.Value, notes ...confirmationNote) *confirmation.Confirmation {
-	confirm := confirmation.New(prompt, defaultValue)
-	confirm.Template = `
-{{- Bold .Prompt -}}
-{{- "\n" -}}
-{{- Hint -}}
-{{- "\n" -}}
-{{ if .YesSelected -}}
-	{{- print (Bold " ▸Yes ") " No" -}}
-{{- else if .NoSelected -}}
-	{{- print "  Yes " (Bold "▸No") -}}
-{{- else -}}
-	{{- "  Yes  No" -}}
-{{- end -}}
-`
-	confirm.ExtendedTemplateFuncs["Hint"] = func() string {
-		return renderConfirmationNotes(notes)
-	}
-	return confirm
-}
-
-func renderConfirmationNotes(notes []confirmationNote) string {
-	lines := make([]string, 0, len(notes))
-	for _, note := range notes {
-		if note.text == "" {
-			continue
-		}
-		if clistyles.NoColorEnabled() {
-			lines = append(lines, note.text)
-			continue
-		}
-		lines = append(lines, lipgloss.NewStyle().Foreground(note.color).Render(note.text))
-	}
-	return strings.Join(lines, "\n")
 }

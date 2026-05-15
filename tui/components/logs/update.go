@@ -1,19 +1,41 @@
 package logs
 
 import (
+	"strings"
+
 	tea "charm.land/bubbletea/v2"
 
 	"fbrcm/tui/messages"
 )
 
+// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.LogLineMsg:
 		if msg.Line != "" {
 			m.lines = append(m.lines, msg.Line)
 			m.refreshViewport()
+			if isErrorLogLine(msg.Line) && m.statusFlashLeft == 0 && !m.statusFlashOn {
+				m.statusFlashOn = true
+				m.statusFlashLeft = statusFlashToggles - 1
+				return m, tea.Batch(waitForLogCmd(m.sub), statusFlashTickCmd())
+			}
 		}
 		return m, waitForLogCmd(m.sub)
+
+	case statusFlashTickMsg:
+		if m.statusFlashLeft <= 0 {
+			m.statusFlashOn = false
+			m.statusFlashLeft = 0
+			return m, nil
+		}
+		m.statusFlashOn = !m.statusFlashOn
+		m.statusFlashLeft--
+		if m.statusFlashLeft > 0 {
+			return m, statusFlashTickCmd()
+		}
+		m.statusFlashOn = false
+		return m, nil
 
 	case tea.KeyMsg:
 		if !m.active {
@@ -62,4 +84,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+// isErrorLogLine reports is error log line and returns the resulting value or error.
+func isErrorLogLine(line string) bool {
+	plain := ansiOSCRe.ReplaceAllString(line, "")
+	plain = ansiCSIRe.ReplaceAllString(plain, "")
+	upper := strings.ToUpper(plain)
+	return strings.Contains(upper, " ERROR ") || strings.Contains(upper, " ERRO ")
 }

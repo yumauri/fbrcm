@@ -8,21 +8,22 @@ import (
 	"fbrcm/tui/messages"
 )
 
+// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.ProjectsSelectionChangedMsg:
 		cmd := m.setProjects(msg.Projects)
 		if m.anyLoading() {
-			return m, tea.Batch(cmd, m.spin.Tick)
+			return m, tea.Batch(cmd, m.spin.Tick, m.selectionChangedCmd(false))
 		}
-		return m, cmd
+		return m, tea.Batch(cmd, m.selectionChangedCmd(false))
 
 	case messages.ParametersLoadedMsg:
 		cmd := m.updateProject(msg)
 		if m.anyLoading() {
-			return m, tea.Batch(cmd, m.spin.Tick)
+			return m, tea.Batch(cmd, m.spin.Tick, m.selectionChangedCmd(false))
 		}
-		return m, cmd
+		return m, tea.Batch(cmd, m.selectionChangedCmd(false))
 
 	case spinner.TickMsg:
 		if !m.anyLoading() {
@@ -40,7 +41,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if mode, ok := filterbox.ModeForKey(msg.String()); ok {
 			cmd := m.filter.Activate(mode)
 			m.applyFilter()
-			return m, tea.Batch(cmd, keyboardCaptureCmd(true))
+			return m, tea.Batch(cmd, keyboardCaptureCmd(true), m.selectionChangedCmd(false))
 		}
 
 		if m.filter.Focused() {
@@ -68,34 +69,51 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if m.filter.Value() != before {
 				m.applyFilter()
 			}
-			return m, cmd
+			return m, tea.Batch(cmd, m.selectionChangedCmd(false))
 		}
 
 		switch msg.String() {
 		case "up", "k":
 			m.moveCursor(-1)
+			return m, m.selectionChangedCmd(false)
 		case "down", "j":
 			m.moveCursor(1)
+			return m, m.selectionChangedCmd(false)
 		case "pgdown":
 			m.moveToNextGroup()
+			return m, m.selectionChangedCmd(false)
 		case "pgup":
 			m.moveToPrevGroup()
+			return m, m.selectionChangedCmd(false)
 		case "left", "h":
 			m.collapseCurrent()
+			return m, m.selectionChangedCmd(false)
 		case "right", "l":
 			m.expandCurrent()
+			return m, m.selectionChangedCmd(false)
+		case " ", "space":
+			m.toggleCurrentParameter()
+			return m, m.selectionChangedCmd(false)
 		case "home":
 			m.moveToCurrentProjectHeader()
+			return m, m.selectionChangedCmd(false)
 		case "end":
 			m.moveToLastParameterInCurrentProject()
+			return m, m.selectionChangedCmd(false)
 		case ">":
 			m.setAllParametersExpanded(true)
+			return m, m.selectionChangedCmd(false)
 		case "<":
 			m.setAllParametersExpanded(false)
+			return m, m.selectionChangedCmd(false)
 		case ")":
 			m.setAllGroupsExpanded(true)
+			return m, m.selectionChangedCmd(false)
 		case "(":
 			m.setAllGroupsExpanded(false)
+			return m, m.selectionChangedCmd(false)
+		case "enter":
+			return m, m.selectionChangedCmd(true)
 		case "r":
 			return m, m.revalidateCurrentProjectCmd()
 		case "R":
@@ -124,11 +142,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.cursor = index
 				m.ensureCursorVisible()
 			}
-			return m, keyboardCaptureCmd(false)
+			return m, tea.Batch(keyboardCaptureCmd(false), m.selectionChangedCmd(false))
 		}
 		if index, ok := m.nodeIndexAtMouse(msg.Mouse()); ok {
 			m.cursor = index
 			m.ensureCursorVisible()
+			return m, m.selectionChangedCmd(false)
 		}
 
 	case tea.MouseWheelMsg:
@@ -138,8 +157,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch msg.Mouse().Button {
 		case tea.MouseWheelUp:
 			m.moveCursor(-1)
+			return m, m.selectionChangedCmd(false)
 		case tea.MouseWheelDown:
 			m.moveCursor(1)
+			return m, m.selectionChangedCmd(false)
 		}
 
 	default:
@@ -151,6 +172,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+// keyboardCaptureCmd handles keyboard capture cmd and returns the resulting value or error.
 func keyboardCaptureCmd(enabled bool) tea.Cmd {
 	return func() tea.Msg {
 		return messages.KeyboardCaptureMsg{
@@ -159,6 +181,7 @@ func keyboardCaptureCmd(enabled bool) tea.Cmd {
 	}
 }
 
+// updateFilterInput updates update filter input for Model and returns the resulting state or error.
 func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {
 	before := m.filter.Value()
 	var cmd tea.Cmd
@@ -166,5 +189,5 @@ func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {
 	if m.filter.Value() != before {
 		m.applyFilter()
 	}
-	return m, cmd
+	return m, tea.Batch(cmd, m.selectionChangedCmd(false))
 }

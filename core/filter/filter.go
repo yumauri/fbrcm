@@ -11,6 +11,7 @@ const (
 	ModeExact      Mode = "exact"
 )
 
+// Label handles label for Mode and returns the resulting state or error.
 func (m Mode) Label() string {
 	switch m {
 	case ModeStartsWith:
@@ -24,6 +25,7 @@ func (m Mode) Label() string {
 	}
 }
 
+// ModeFromLabel handles mode from label and returns the resulting value or error.
 func ModeFromLabel(label string) (Mode, bool) {
 	switch label {
 	case "~":
@@ -39,6 +41,7 @@ func ModeFromLabel(label string) (Mode, bool) {
 	}
 }
 
+// Match matches match and returns the resulting value or error.
 func Match(value, query string, mode Mode) (bool, []int) {
 	if query == "" {
 		return true, nil
@@ -56,6 +59,7 @@ func Match(value, query string, mode Mode) (bool, []int) {
 	}
 }
 
+// fuzzy handles fuzzy and returns the resulting value or error.
 func fuzzy(value, query string) (bool, []int) {
 	valueLower := []rune(strings.ToLower(value))
 	queryLower := strings.ToLower(query)
@@ -81,6 +85,7 @@ func fuzzy(value, query string) (bool, []int) {
 	return true, indices
 }
 
+// startsWith handles starts with and returns the resulting value or error.
 func startsWith(value, query string) (bool, []int) {
 	valueLower := strings.ToLower(value)
 	queryLower := strings.ToLower(query)
@@ -90,6 +95,7 @@ func startsWith(value, query string) (bool, []int) {
 	return true, span(0, len([]rune(query)))
 }
 
+// includes handles includes and returns the resulting value or error.
 func includes(value, query string) (bool, []int) {
 	valueLower := []rune(strings.ToLower(value))
 	queryLower := []rune(strings.ToLower(query))
@@ -112,6 +118,7 @@ func includes(value, query string) (bool, []int) {
 	return false, nil
 }
 
+// exact handles exact and returns the resulting value or error.
 func exact(value, query string) (bool, []int) {
 	if !strings.EqualFold(value, query) {
 		return false, nil
@@ -119,6 +126,7 @@ func exact(value, query string) (bool, []int) {
 	return true, span(0, len([]rune(value)))
 }
 
+// span handles span and returns the resulting value or error.
 func span(start, length int) []int {
 	indices := make([]int, length)
 	for i := range length {

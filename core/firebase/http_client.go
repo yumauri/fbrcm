@@ -23,16 +23,20 @@ const (
 	maxRetryDelay         = 10 * time.Second
 )
 
+// MaxConcurrentRequests handles max concurrent requests and returns the resulting value or error.
 func MaxConcurrentRequests() int {
 	return maxConcurrentRequests
 }
 
 var requestLimiter = make(chan struct{}, maxConcurrentRequests)
 
+// resilientTransport holds resilient transport state used by the firebase package.
 type resilientTransport struct {
+	// base stores base for resilientTransport.
 	base http.RoundTripper
 }
 
+// newResilientTransport constructs new resilient transport and returns the resulting value or error.
 func newResilientTransport(base http.RoundTripper) http.RoundTripper {
 	if base == nil {
 		base = http.DefaultTransport
@@ -40,6 +44,7 @@ func newResilientTransport(base http.RoundTripper) http.RoundTripper {
 	return &resilientTransport{base: base}
 }
 
+// RoundTrip handles round trip for resilientTransport and returns the resulting state or error.
 func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	logger := corelog.For("firebase.http")
 	if shouldDryRun(req) {
@@ -79,6 +84,7 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return nil, fmt.Errorf("request retries exhausted")
 }
 
+// shouldDryRun handles should dry run and returns the resulting value or error.
 func shouldDryRun(req *http.Request) bool {
 	if req == nil {
 		return false
@@ -95,6 +101,7 @@ func shouldDryRun(req *http.Request) bool {
 	}
 }
 
+// dryRunResponse handles dry run response and returns the resulting value or error.
 func dryRunResponse(req *http.Request) (*http.Response, error) {
 	if req == nil {
 		return nil, fmt.Errorf("dry run request is nil")
@@ -133,6 +140,7 @@ func dryRunResponse(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
+// acquireRequestSlot handles acquire request slot and returns the resulting value or error.
 func acquireRequestSlot(ctx context.Context) error {
 	select {
 	case requestLimiter <- struct{}{}:
@@ -142,6 +150,7 @@ func acquireRequestSlot(ctx context.Context) error {
 	}
 }
 
+// releaseRequestSlot handles release request slot and returns the resulting value or error.
 func releaseRequestSlot() {
 	select {
 	case <-requestLimiter:
@@ -149,10 +158,12 @@ func releaseRequestSlot() {
 	}
 }
 
+// requestCanRetry handles request can retry and returns the resulting value or error.
 func requestCanRetry(req *http.Request) bool {
 	return req == nil || req.Body == nil || req.GetBody != nil
 }
 
+// cloneRequest clones an HTTP request for retry and avoids leaking sensitive query values in errors.
 func cloneRequest(req *http.Request, attempt int) (*http.Request, error) {
 	cloned := req.Clone(req.Context())
 	if req.Body == nil {
@@ -162,7 +173,7 @@ func cloneRequest(req *http.Request, attempt int) (*http.Request, error) {
 		if attempt == 1 {
 			return cloned, nil
 		}
-		return nil, fmt.Errorf("request body is not replayable for %s %s", req.Method, req.URL.String())
+		return nil, fmt.Errorf("request body is not replayable for %s %s", req.Method, redactedURLString(req.URL))
 	}
 
 	body, err := req.GetBody()
@@ -173,6 +184,7 @@ func cloneRequest(req *http.Request, attempt int) (*http.Request, error) {
 	return cloned, nil
 }
 
+// shouldRetry handles should retry and returns the resulting value or error.
 func shouldRetry(resp *http.Response, err error) bool {
 	if err != nil {
 		return true
@@ -189,6 +201,7 @@ func shouldRetry(resp *http.Response, err error) bool {
 	}
 }
 
+// retryDelay handles retry delay and returns the resulting value or error.
 func retryDelay(resp *http.Response, attempt int) time.Duration {
 	if delay, ok := retryAfterDelay(resp); ok {
 		return delay
@@ -200,6 +213,7 @@ func retryDelay(resp *http.Response, attempt int) time.Duration {
 	return backoff + jitter
 }
 
+// retryAfterDelay handles retry after delay and returns the resulting value or error.
 func retryAfterDelay(resp *http.Response) (time.Duration, bool) {
 	if resp == nil {
 		return 0, false
@@ -225,6 +239,7 @@ func retryAfterDelay(resp *http.Response) (time.Duration, bool) {
 	return delay, true
 }
 
+// closeRetryResponse closes close retry response and returns the resulting value or error.
 func closeRetryResponse(resp *http.Response) {
 	if resp == nil || resp.Body == nil {
 		return
@@ -233,6 +248,7 @@ func closeRetryResponse(resp *http.Response) {
 	_ = resp.Body.Close()
 }
 
+// sleepContext handles sleep context and returns the resulting value or error.
 func sleepContext(ctx context.Context, delay time.Duration) error {
 	if delay <= 0 {
 		return nil
@@ -249,6 +265,7 @@ func sleepContext(ctx context.Context, delay time.Duration) error {
 	}
 }
 
+// logRetry logs retry metadata without exposing sensitive query values.
 func logRetry(logger *charmlog.Logger, req *http.Request, resp *http.Response, err error, attempt int, delay time.Duration) {
 	if req == nil || req.URL == nil {
 		return
@@ -262,7 +279,7 @@ func logRetry(logger *charmlog.Logger, req *http.Request, resp *http.Response, e
 	logger.Warn(
 		"retry http request",
 		"method", req.Method,
-		"url", req.URL.String(),
+		"url", redactedURLString(req.URL),
 		"attempt", attempt,
 		"next_delay", delay.String(),
 		"status", status,
@@ -270,6 +287,7 @@ func logRetry(logger *charmlog.Logger, req *http.Request, resp *http.Response, e
 	)
 }
 
+// logDryRun logs skipped write requests without exposing sensitive query values.
 func logDryRun(logger *charmlog.Logger, req *http.Request) {
 	if req == nil || req.URL == nil {
 		return
@@ -278,6 +296,6 @@ func logDryRun(logger *charmlog.Logger, req *http.Request) {
 	logger.Warn(
 		"dry run, skip actual request",
 		"method", req.Method,
-		"url", req.URL.String(),
+		"url", redactedURLString(req.URL),
 	)
 }
