@@ -8,8 +8,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/core/filter"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 // Model holds model state used by the filterbox package.

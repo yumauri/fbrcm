@@ -6,13 +6,13 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/cli/shared"
-	"fbrcm/core"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
-	dialogcmp "fbrcm/tui/components/dialog"
-	"fbrcm/tui/messages"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 // openBoolPicker opens open bool picker for Model and returns the resulting state or error.

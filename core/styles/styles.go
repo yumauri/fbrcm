@@ -7,7 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	charmlog "github.com/charmbracelet/log"
 
-	"fbrcm/core/env"
+	"github.com/yumauri/fbrcm/core/env"
 )
 
 const (

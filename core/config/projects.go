@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // File holds file state used by the config package.

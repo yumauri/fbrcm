@@ -6,7 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 	charmlog "github.com/charmbracelet/log"
 
-	corestyles "fbrcm/core/styles"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 var (

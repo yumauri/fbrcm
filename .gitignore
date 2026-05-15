@@ -1,4 +1,5 @@
 # Binaries
+dist/
 fbrcm
 *.exe
 *.exe~

@@ -1,8 +1,8 @@
 package messages
 
 import (
-	"fbrcm/core"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 // ProjectsLoadedMsg holds projects loaded msg state used by the messages package.

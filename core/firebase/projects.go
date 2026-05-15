@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // Project holds project state used by the firebase package.

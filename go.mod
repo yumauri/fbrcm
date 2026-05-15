@@ -1,4 +1,4 @@
-module fbrcm
+module github.com/yumauri/fbrcm
 
 go 1.26.3
 

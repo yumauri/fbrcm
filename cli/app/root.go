@@ -7,18 +7,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	addcmd "fbrcm/cli/commands/add"
-	cachecmd "fbrcm/cli/commands/cache"
-	deletecmd "fbrcm/cli/commands/delete"
-	getcmd "fbrcm/cli/commands/get"
-	logincmd "fbrcm/cli/commands/login"
-	profilecmd "fbrcm/cli/commands/profile"
-	projectcmd "fbrcm/cli/commands/project"
-	projectscmd "fbrcm/cli/commands/projects"
-	updatecmd "fbrcm/cli/commands/update"
-	"fbrcm/core"
-	"fbrcm/core/config"
-	corelog "fbrcm/core/log"
+	addcmd "github.com/yumauri/fbrcm/cli/commands/add"
+	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
+	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
+	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
+	logincmd "github.com/yumauri/fbrcm/cli/commands/login"
+	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
+	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
+	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
+	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 var rootCmd = &cobra.Command{
@@ -35,14 +35,19 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+const versionTemplate = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`
+
 // isProfileCommand reports is profile command and returns the resulting value or error.
 func isProfileCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "profile" || strings.HasPrefix(cmd.CommandPath(), "fbrcm profile")
 }
 
 // Execute handles execute and returns the resulting value or error.
-func Execute(s *core.Core) {
+func Execute(s *core.Core, version, commit, date string) {
 	corelog.For("cli").Debug("register cli commands")
+	rootCmd.Version = fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
+	rootCmd.SetVersionTemplate(versionTemplate)
+
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(cachecmd.New())
 	rootCmd.AddCommand(deletecmd.New(s))

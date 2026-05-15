@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // OpenURL opens url in the system browser and logs only a redacted copy of the URL.

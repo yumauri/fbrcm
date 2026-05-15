@@ -15,11 +15,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"fbrcm/cli/shared"
-	"fbrcm/core"
-	"fbrcm/core/filter"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // addValueSpec holds add value spec state used by the addcmd package.

@@ -6,11 +6,11 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/core"
-	"fbrcm/core/filter"
-	corestyles "fbrcm/core/styles"
-	"fbrcm/tui/components/jsoninput"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/tui/components/jsoninput"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 var (

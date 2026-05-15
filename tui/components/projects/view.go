@@ -7,10 +7,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/core"
-	"fbrcm/core/filter"
-	"fbrcm/tui/messages"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 var (

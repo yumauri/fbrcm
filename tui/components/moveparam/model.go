@@ -10,7 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 // Option holds option state used by the moveparam package.

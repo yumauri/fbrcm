@@ -10,8 +10,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	clistyles "fbrcm/cli/styles"
-	"fbrcm/core/firebase"
+	clistyles "github.com/yumauri/fbrcm/cli/styles"
+	"github.com/yumauri/fbrcm/core/firebase"
 )
 
 // ParamSlotPreview holds param slot preview state used by the shared package.

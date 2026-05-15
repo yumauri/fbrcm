@@ -15,11 +15,11 @@ import (
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/spf13/cobra"
 
-	"fbrcm/cli/shared"
-	clistyles "fbrcm/cli/styles"
-	"fbrcm/core"
-	"fbrcm/core/filter"
-	"fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/cli/shared"
+	clistyles "github.com/yumauri/fbrcm/cli/styles"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/core/firebase"
 )
 
 // importOptions holds import options state used by the project package.

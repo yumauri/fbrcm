@@ -15,12 +15,12 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/atotto/clipboard"
 
-	"fbrcm/core"
-	"fbrcm/core/filter"
-	"fbrcm/core/firebase"
-	"fbrcm/tui/components/filterbox"
-	"fbrcm/tui/messages"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 const panelTitle = "[2] Parameters"

@@ -5,8 +5,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	corestyles "fbrcm/core/styles"
-	"fbrcm/tui/styles"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 // Model holds model state used by the boolpicker package.

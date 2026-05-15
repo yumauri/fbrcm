@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // RemoteConfig holds remote config state used by the firebase package.

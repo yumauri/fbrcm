@@ -5,7 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 // View handles view for Model and returns the resulting state or error.

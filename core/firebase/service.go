@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // Service holds service state used by the firebase package.

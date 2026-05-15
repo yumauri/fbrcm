@@ -2,7 +2,7 @@ package app
 
 import (
 	tea "charm.land/bubbletea/v2"
-	moveparam "fbrcm/tui/components/moveparam"
+	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
 )
 
 // openMoveParam opens open move param for Model and returns the resulting state or error.

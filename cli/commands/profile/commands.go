@@ -8,8 +8,8 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 
-	clistyles "fbrcm/cli/styles"
-	"fbrcm/core/config"
+	clistyles "github.com/yumauri/fbrcm/cli/styles"
+	"github.com/yumauri/fbrcm/core/config"
 )
 
 // New constructs new and returns the resulting value or error.

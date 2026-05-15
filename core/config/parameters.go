@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 const ParametersCacheTTL = 10 * time.Minute

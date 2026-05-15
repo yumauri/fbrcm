@@ -5,7 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/tui/components/parameters"
+	"github.com/yumauri/fbrcm/tui/components/parameters"
 )
 
 // openRenameInput opens open rename input for Model and returns the resulting state or error.

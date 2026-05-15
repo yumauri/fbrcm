@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 
 	charmlog "github.com/charmbracelet/log"
 )

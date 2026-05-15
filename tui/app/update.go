@@ -5,8 +5,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/tui/messages"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 // Update updates update for Model and returns the resulting state or error.

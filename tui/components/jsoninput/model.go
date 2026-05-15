@@ -14,7 +14,7 @@ import (
 	rw "github.com/mattn/go-runewidth"
 	"github.com/rivo/uniseg"
 
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 // Model holds model state used by the jsoninput package.

@@ -10,7 +10,7 @@ import (
 	charmlog "github.com/charmbracelet/log"
 	"github.com/muesli/termenv"
 
-	"fbrcm/core/env"
+	"github.com/yumauri/fbrcm/core/env"
 )
 
 type Mode string

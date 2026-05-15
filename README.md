@@ -18,6 +18,44 @@ Run `fbrcm` without arguments to open the interactive TUI. Run `fbrcm <command>`
 
 ## Install or Run
 
+Install latest release with the shell installer on macOS or Linux:
+
+```sh
+curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | sh
+```
+
+Install to a custom directory:
+
+```sh
+curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | INSTALL_DIR="$HOME/.local/bin" sh
+```
+
+Install with Homebrew:
+
+```sh
+brew tap yumauri/homebrew-tap
+brew install --cask fbrcm
+```
+
+Install with Scoop on Windows:
+
+```powershell
+scoop bucket add yumauri https://github.com/yumauri/scoop-bucket
+scoop install fbrcm
+```
+
+Install with Go:
+
+```sh
+go install github.com/yumauri/fbrcm@latest
+```
+
+Download a release archive manually from:
+
+```text
+https://github.com/yumauri/fbrcm/releases
+```
+
 From the repository root:
 
 ```sh

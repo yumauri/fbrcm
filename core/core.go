@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"fbrcm/core/config"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 type Project = config.Project

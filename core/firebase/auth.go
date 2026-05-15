@@ -15,9 +15,9 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
-	"fbrcm/core/browser"
-	"fbrcm/core/config"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/browser"
+	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"

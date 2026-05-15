@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"fbrcm/core"
-	"fbrcm/core/filter"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // FilterProjectsByExpr filters projects by expr and returns the resulting value or error.

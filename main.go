@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"os"
 
-	"fbrcm/cli"
-	"fbrcm/core"
-	"fbrcm/core/config"
-	corelog "fbrcm/core/log"
-	"fbrcm/tui"
+	"github.com/yumauri/fbrcm/cli"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui"
+)
+
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 // main handles main and returns the resulting value or error.
@@ -36,6 +42,6 @@ func main() {
 		}
 		tui.Init(svc)
 	} else {
-		cli.Init(svc)
+		cli.Init(svc, version, commit, date)
 	}
 }

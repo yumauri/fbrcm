@@ -3,8 +3,8 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/tui/components/parameters"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/components/parameters"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 // currentBoolValueAnchor handles current bool value anchor for Model and returns the resulting state or error.
