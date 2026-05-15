@@ -5,8 +5,8 @@ import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/tui/panels"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 const helpLineHeight = 1

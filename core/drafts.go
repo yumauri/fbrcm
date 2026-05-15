@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"fbrcm/core/config"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // paramSlot holds param slot state used by the core package.

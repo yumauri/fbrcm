@@ -9,9 +9,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	charmlog "github.com/charmbracelet/log"
 
-	"fbrcm/core"
-	corelog "fbrcm/core/log"
-	"fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/core"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui/messages"
 )
 
 // Model holds model state used by the logs package.

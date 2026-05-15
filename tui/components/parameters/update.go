@@ -4,8 +4,8 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/tui/components/filterbox"
-	"fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/messages"
 )
 
 // Update updates update for Model and returns the resulting state or error.

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"fbrcm/core/env"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/env"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // paths holds paths state used by the config package.

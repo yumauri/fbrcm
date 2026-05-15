@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"fbrcm/cli"
-	"fbrcm/core"
-	"fbrcm/core/config"
-	corelog "fbrcm/core/log"
-	"fbrcm/tui"
+	"github.com/yumauri/fbrcm/cli"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui"
 )
 
 var (

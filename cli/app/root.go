@@ -7,18 +7,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	addcmd "fbrcm/cli/commands/add"
-	cachecmd "fbrcm/cli/commands/cache"
-	deletecmd "fbrcm/cli/commands/delete"
-	getcmd "fbrcm/cli/commands/get"
-	logincmd "fbrcm/cli/commands/login"
-	profilecmd "fbrcm/cli/commands/profile"
-	projectcmd "fbrcm/cli/commands/project"
-	projectscmd "fbrcm/cli/commands/projects"
-	updatecmd "fbrcm/cli/commands/update"
-	"fbrcm/core"
-	"fbrcm/core/config"
-	corelog "fbrcm/core/log"
+	addcmd "github.com/yumauri/fbrcm/cli/commands/add"
+	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
+	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
+	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
+	logincmd "github.com/yumauri/fbrcm/cli/commands/login"
+	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
+	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
+	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
+	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 var rootCmd = &cobra.Command{

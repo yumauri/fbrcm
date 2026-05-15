@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // GetDraftsDirPath gets drafts dir path and returns the resulting value or error.

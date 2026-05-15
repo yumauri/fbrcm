@@ -14,12 +14,12 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 
-	"fbrcm/core"
-	corestyles "fbrcm/core/styles"
-	jsoninput "fbrcm/tui/components/jsoninput"
-	"fbrcm/tui/components/parameters"
-	"fbrcm/tui/messages"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/core"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
+	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
+	"github.com/yumauri/fbrcm/tui/components/parameters"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 const panelTitle = "[3] Details"

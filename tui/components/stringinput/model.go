@@ -11,7 +11,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 // Model holds model state used by the stringinput package.

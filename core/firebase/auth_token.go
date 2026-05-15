@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"fbrcm/core/config"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // oauth2.TokenSource implementation with persistent caching of OAuth tokens

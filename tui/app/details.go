@@ -3,8 +3,8 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/tui/messages"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 // closeDetailsPanel closes close details panel for Model and returns the resulting state or error.

@@ -6,9 +6,9 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/core"
-	corelog "fbrcm/core/log"
-	"fbrcm/tui/app"
+	"github.com/yumauri/fbrcm/core"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui/app"
 )
 
 // Init initializes init and returns the resulting value or error.

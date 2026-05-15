@@ -8,13 +8,13 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/cli/shared"
-	"fbrcm/core"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
-	dialogcmp "fbrcm/tui/components/dialog"
-	"fbrcm/tui/messages"
-	"fbrcm/tui/styles"
+	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 var (

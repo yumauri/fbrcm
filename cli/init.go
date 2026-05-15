@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"fbrcm/cli/app"
-	"fbrcm/core"
-	corelog "fbrcm/core/log"
+	"github.com/yumauri/fbrcm/cli/app"
+	"github.com/yumauri/fbrcm/core"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // Init initializes init and returns the resulting value or error.

@@ -6,8 +6,8 @@ import (
 	"charm.land/lipgloss/v2"
 	charmlog "github.com/charmbracelet/log"
 
-	corelog "fbrcm/core/log"
-	"fbrcm/tui/styles"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 const panelTitle = "[0] Logs"

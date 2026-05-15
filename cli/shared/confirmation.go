@@ -7,7 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/erikgeiser/promptkit/confirmation"
 
-	clistyles "fbrcm/cli/styles"
+	clistyles "github.com/yumauri/fbrcm/cli/styles"
 )
 
 // ConfirmationNote holds confirmation note state used by the shared package.

@@ -9,9 +9,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/core"
-	"fbrcm/tui/components/filterbox"
-	"fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/messages"
 )
 
 // Model holds model state used by the projects package.

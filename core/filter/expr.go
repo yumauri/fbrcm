@@ -9,7 +9,7 @@ import (
 	"github.com/expr-lang/expr/vm"
 	exprruntime "github.com/expr-lang/expr/vm/runtime"
 
-	"fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/firebase"
 )
 
 // Expression holds expression state used by the filter package.

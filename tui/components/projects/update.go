@@ -6,12 +6,12 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
-	"fbrcm/core/browser"
-	"fbrcm/core/firebase"
-	corelog "fbrcm/core/log"
-	"fbrcm/tui/components/filterbox"
-	"fbrcm/tui/messages"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/core/browser"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 const doubleClickWindow = 400 * time.Millisecond

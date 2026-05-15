@@ -3,7 +3,7 @@ package firebase
 import (
 	"context"
 
-	"fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/config"
 )
 
 // WhoAmI holds who am i state used by the firebase package.

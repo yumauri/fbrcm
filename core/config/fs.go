@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	corelog "fbrcm/core/log"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 const (

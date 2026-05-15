@@ -4,8 +4,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"fbrcm/tui/components/minsize"
-	"fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/components/minsize"
+	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 var rootStyle = lipgloss.NewStyle()

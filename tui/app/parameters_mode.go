@@ -1,6 +1,6 @@
 package app
 
-import "fbrcm/tui/panels"
+import "github.com/yumauri/fbrcm/tui/panels"
 
 // toggleParametersMaximize toggles toggle parameters maximize for Model and returns the resulting state or error.
 func (m *Model) toggleParametersMaximize() {

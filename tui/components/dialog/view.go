@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"fbrcm/tui/styles"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 var (

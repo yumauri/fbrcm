@@ -1,6 +1,6 @@
 package app
 
-import "fbrcm/core"
+import "github.com/yumauri/fbrcm/core"
 
 type dialogMode int
 
