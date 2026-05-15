@@ -22,6 +22,7 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// New constructs new and returns the resulting value or error.
 func New(svc *core.Core) *cobra.Command {
 	projectsCmd := &cobra.Command{
 		Use:   "projects",
@@ -109,9 +110,10 @@ func New(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if !yes {
-				confirm := confirmation.New(
+				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete cached projects config file %s?", config.GetProjectsFilePath()),
 					confirmation.Yes,
+					shared.ConfirmationOptions{Destructive: true},
 				)
 				ok, err := confirm.RunPrompt()
 				if err != nil {
@@ -126,7 +128,7 @@ func New(svc *core.Core) *cobra.Command {
 				return err
 			}
 
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "purged: %s\n", config.GetProjectsFilePath())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged: %s\n", config.GetProjectsFilePath())
 			return nil
 		},
 	}
@@ -136,6 +138,7 @@ func New(svc *core.Core) *cobra.Command {
 	return projectsCmd
 }
 
+// printProjects handles print projects and returns the resulting value or error.
 func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, source string) error {
 	_ = source
 	jsonOut, err := cmd.Flags().GetBool("json")
@@ -178,10 +181,12 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 	return nil
 }
 
+// logProjectsTotal handles log projects total and returns the resulting value or error.
 func logProjectsTotal(projects []core.Project) {
 	corelog.For("projects").Info("total", "projects", len(projects))
 }
 
+// filterProjects filters filter projects and returns the resulting value or error.
 func filterProjects(projects []core.Project, raw string) []core.Project {
 	mode, query := parseFilter(raw)
 	if query == "" {
@@ -199,6 +204,7 @@ func filterProjects(projects []core.Project, raw string) []core.Project {
 	return filtered
 }
 
+// parseFilter parses parse filter and returns the resulting value or error.
 func parseFilter(raw string) (filter.Mode, string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -213,6 +219,7 @@ func parseFilter(raw string) (filter.Mode, string) {
 	return mode, string([]rune(raw)[1:])
 }
 
+// renderProjectsTable renders render projects table and returns the resulting value or error.
 func renderProjectsTable(projects []core.Project, mode filter.Mode, query string, withURL bool) string {
 	noColor := clistyles.NoColorEnabled()
 	rows := make([][]string, 0, len(projects))
@@ -307,17 +314,27 @@ func renderProjectsTable(projects []core.Project, mode filter.Mode, query string
 	return tbl.String()
 }
 
+// projectJSON holds project json state used by the projects package.
 type projectJSON struct {
-	Project   string `json:"project"`
+	// Project stores project for projectJSON.
+	Project string `json:"project"`
+	// ProjectID stores project id for projectJSON.
 	ProjectID string `json:"project_id"`
-	Number    string `json:"number,omitempty"`
-	State     string `json:"state,omitempty"`
-	ETag      string `json:"etag,omitempty"`
+	// Number stores number for projectJSON.
+	Number string `json:"number,omitempty"`
+	// State stores state for projectJSON.
+	State string `json:"state,omitempty"`
+	// ETag stores etag for projectJSON.
+	ETag string `json:"etag,omitempty"`
+	// UpdatedAt stores updated at for projectJSON.
 	UpdatedAt string `json:"updated_at,omitempty"`
-	SyncedAt  string `json:"synced_at,omitempty"`
-	URL       string `json:"url,omitempty"`
+	// SyncedAt stores synced at for projectJSON.
+	SyncedAt string `json:"synced_at,omitempty"`
+	// URL stores url for projectJSON.
+	URL string `json:"url,omitempty"`
 }
 
+// projectsJSON handles projects json and returns the resulting value or error.
 func projectsJSON(projects []core.Project, withURL bool) []projectJSON {
 	out := make([]projectJSON, len(projects))
 	for i, project := range projects {
@@ -337,6 +354,7 @@ func projectsJSON(projects []core.Project, withURL bool) []projectJSON {
 	return out
 }
 
+// renderHighlightedText renders render highlighted text and returns the resulting value or error.
 func renderHighlightedText(value string, base lipgloss.Style, indices []int, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return value
@@ -361,6 +379,7 @@ func renderHighlightedText(value string, base lipgloss.Style, indices []int, row
 	return b.String()
 }
 
+// indicesSet handles indices set and returns the resulting value or error.
 func indicesSet(indices []int) map[int]bool {
 	set := make(map[int]bool, len(indices))
 	for _, index := range indices {
@@ -369,6 +388,7 @@ func indicesSet(indices []int) map[int]bool {
 	return set
 }
 
+// applyBackground handles apply background and returns the resulting value or error.
 func applyBackground(style lipgloss.Style, bg color.Color) lipgloss.Style {
 	if bg == nil {
 		return style
@@ -376,6 +396,7 @@ func applyBackground(style lipgloss.Style, bg color.Color) lipgloss.Style {
 	return style.Background(bg)
 }
 
+// humanDateTime handles human date time and returns the resulting value or error.
 func humanDateTime(value string) string {
 	if value == "" {
 		return ""

@@ -133,7 +133,7 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 		authCodeOpts = append(authCodeOpts, oauth2.ApprovalForce)
 	}
 	authURL := oauthCfg.AuthCodeURL(state, authCodeOpts...)
-	logger.Info("oauth authorization url ready", "url", authURL)
+	logger.Info("oauth authorization url ready", "url", redactedURLStringValue(authURL))
 
 	fmt.Fprintln(os.Stderr, "Open this URL in your browser to authorize fbrcm:")
 	fmt.Fprintln(os.Stderr, authURL)
@@ -171,7 +171,7 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	}
 }
 
-// Starts a local loopback server to handle OAuth2 callback requests
+// startLoopbackServer starts a loopback OAuth callback server and redacts callback URLs in logs.
 func startLoopbackServer(expectedState string, codeCh chan<- string, errCh chan<- error) (*http.Server, string, error) {
 	logger := corelog.For("firebase")
 	mux := http.NewServeMux()
@@ -189,7 +189,7 @@ func startLoopbackServer(expectedState string, codeCh chan<- string, errCh chan<
 	redirectURL := fmt.Sprintf("http://%s/oauth2callback", ln.Addr().String())
 	logger.Info("oauth callback listener started", "addr", ln.Addr().String())
 	mux.HandleFunc("/oauth2callback", func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("http request", "method", r.Method, "url", r.URL.String(), "headers", formatHeaders(r.Header))
+		logger.Info("http request", "method", r.Method, "url", redactedURLString(r.URL), "headers", formatHeaders(r.Header))
 
 		if errMsg := r.URL.Query().Get("error"); errMsg != "" {
 			logger.Error("oauth callback returned error", "err", errMsg)
@@ -224,8 +224,9 @@ func startLoopbackServer(expectedState string, codeCh chan<- string, errCh chan<
 
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = io.WriteString(w, "Authorization complete. Return to fbrcm.")
-		logger.Debug("http response headers", "method", r.Method, "url", r.URL.String(), "status", http.StatusText(http.StatusOK), "headers", formatHeaders(w.Header()))
-		logger.Info("http response", "method", r.Method, "url", r.URL.String(), "status", "200 OK")
+		safeURL := redactedURLString(r.URL)
+		logger.Info("http response", "method", r.Method, "url", safeURL, "status", "200 OK")
+		logger.Debug("http response headers", "method", r.Method, "url", safeURL, "status", http.StatusText(http.StatusOK), "headers", formatHeaders(w.Header()))
 		select {
 		case codeCh <- code:
 			logger.Info("oauth callback accepted")

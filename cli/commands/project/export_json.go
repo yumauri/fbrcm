@@ -6,6 +6,7 @@ import (
 	"unicode"
 )
 
+// normalizeExportJSON handles normalize export json and returns the resulting value or error.
 func normalizeExportJSON(body []byte) []byte {
 	body = bytes.ReplaceAll(body, []byte(`\u003c`), []byte("<"))
 	body = bytes.ReplaceAll(body, []byte(`\u003e`), []byte(">"))
@@ -14,15 +15,20 @@ func normalizeExportJSON(body []byte) []byte {
 	return body
 }
 
+// trimTrailingLineBreaks handles trim trailing line breaks and returns the resulting value or error.
 func trimTrailingLineBreaks(body []byte) []byte {
 	return bytes.TrimRight(body, "\r\n")
 }
 
+// jsonObjectMember holds json object member state used by the project package.
 type jsonObjectMember struct {
+	// key stores key for jsonObjectMember.
 	key string
+	// raw stores raw for jsonObjectMember.
 	raw []byte
 }
 
+// reorderConditionalValuesKeysNumericFirst handles reorder conditional values keys numeric first and returns the resulting value or error.
 func reorderConditionalValuesKeysNumericFirst(body []byte) []byte {
 	const needle = `"conditionalValues"`
 
@@ -65,10 +71,14 @@ func reorderConditionalValuesKeysNumericFirst(body []byte) []byte {
 	}
 }
 
+// reorderJSONObjectMembers handles reorder jsonobject members and returns the resulting value or error.
 func reorderJSONObjectMembers(body []byte) []byte {
+	// segment holds segment state used by the project package.
 	type segment struct {
+		// member stores member for segment.
 		member jsonObjectMember
-		sep    []byte
+		// sep stores sep for segment.
+		sep []byte
 	}
 
 	prefixEnd := skipJSONWhitespace(body, 0)
@@ -175,6 +185,7 @@ func reorderJSONObjectMembers(body []byte) []byte {
 	return out.Bytes()
 }
 
+// skipJSONWhitespace handles skip jsonwhitespace and returns the resulting value or error.
 func skipJSONWhitespace(body []byte, pos int) int {
 	for pos < len(body) && unicode.IsSpace(rune(body[pos])) {
 		pos++
@@ -182,6 +193,7 @@ func skipJSONWhitespace(body []byte, pos int) int {
 	return pos
 }
 
+// scanJSONStringEnd handles scan jsonstring end and returns the resulting value or error.
 func scanJSONStringEnd(body []byte, start int) (int, bool) {
 	if start >= len(body) || body[start] != '"' {
 		return 0, false
@@ -200,6 +212,7 @@ func scanJSONStringEnd(body []byte, start int) (int, bool) {
 	return 0, false
 }
 
+// scanJSONObjectEnd handles scan jsonobject end and returns the resulting value or error.
 func scanJSONObjectEnd(body []byte, start int) (int, bool) {
 	if start >= len(body) || body[start] != '{' {
 		return 0, false
@@ -235,6 +248,7 @@ func scanJSONObjectEnd(body []byte, start int) (int, bool) {
 	return 0, false
 }
 
+// scanJSONValueEnd handles scan jsonvalue end and returns the resulting value or error.
 func scanJSONValueEnd(body []byte, start int) (int, bool) {
 	if start >= len(body) {
 		return 0, false
@@ -293,6 +307,7 @@ func scanJSONValueEnd(body []byte, start int) (int, bool) {
 	}
 }
 
+// isDigitsOnly reports is digits only and returns the resulting value or error.
 func isDigitsOnly(s string) bool {
 	if s == "" {
 		return false

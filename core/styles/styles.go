@@ -79,10 +79,12 @@ var (
 	ColorNote    = lipgloss.Color(PaletteNote)
 )
 
+// NoColorEnabled handles no color enabled and returns the resulting value or error.
 func NoColorEnabled() bool {
 	return env.NoColorEnabled()
 }
 
+// LogLevelColor handles log level color and returns the resulting value or error.
 func LogLevelColor(level charmlog.Level) string {
 	switch level {
 	case charmlog.DebugLevel:
@@ -100,6 +102,7 @@ func LogLevelColor(level charmlog.Level) string {
 	}
 }
 
+// ConditionColor handles condition color and returns the resulting value or error.
 func ConditionColor(name string) string {
 	switch strings.ToUpper(strings.TrimSpace(name)) {
 	case "BLUE":
@@ -127,10 +130,12 @@ func ConditionColor(name string) string {
 	}
 }
 
+// LogLevelLipglossColor handles log level lipgloss color and returns the resulting value or error.
 func LogLevelLipglossColor(level charmlog.Level) color.Color {
 	return lipgloss.Color(LogLevelColor(level))
 }
 
+// ConditionLipglossColor handles condition lipgloss color and returns the resulting value or error.
 func ConditionLipglossColor(name string) color.Color {
 	switch strings.ToUpper(strings.TrimSpace(name)) {
 	case "BLUE":
@@ -156,4 +161,27 @@ func ConditionLipglossColor(name string) color.Color {
 	default:
 		return ColorBlueBright
 	}
+}
+
+// EmptyValueStyle handles empty value style and returns the resulting value or error.
+func EmptyValueStyle() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(ColorSlateDim).Italic(true)
+}
+
+// ValueTextStyle handles value text style and returns the resulting value or error.
+func ValueTextStyle(value, valueType string) lipgloss.Style {
+	switch strings.TrimSpace(strings.ToLower(valueType)) {
+	case "boolean":
+		if strings.EqualFold(value, "true") {
+			return lipgloss.NewStyle().Foreground(ConditionLipglossColor("GREEN"))
+		}
+		if strings.EqualFold(value, "false") {
+			return lipgloss.NewStyle().Foreground(ColorError)
+		}
+	case "number":
+		return lipgloss.NewStyle().Foreground(ColorBlueBright)
+	case "json":
+		return lipgloss.NewStyle().Foreground(ConditionLipglossColor("CYAN"))
+	}
+	return lipgloss.NewStyle().Foreground(ColorSlateBright)
 }

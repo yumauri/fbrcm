@@ -22,34 +22,53 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// projectConfig holds project config state used by the deletecmd package.
 type projectConfig struct {
+	// project stores project for projectConfig.
 	project core.Project
-	cache   *core.ParametersCache
-	cfg     *firebase.RemoteConfig
+	// cache stores cache for projectConfig.
+	cache *core.ParametersCache
+	// cfg stores cfg for projectConfig.
+	cfg *firebase.RemoteConfig
 }
 
+// paramTarget holds param target state used by the deletecmd package.
 type paramTarget struct {
-	key   string
+	// key stores key for paramTarget.
+	key string
+	// group stores group for paramTarget.
 	group string
+	// param stores param for paramTarget.
 	param firebase.RemoteConfigParam
 }
 
+// deleteTotals holds delete totals state used by the deletecmd package.
 type deleteTotals struct {
+	// modifiedProjects stores modified projects for deleteTotals.
 	modifiedProjects int
-	deletedParams    int
+	// deletedParams stores deleted params for deleteTotals.
+	deletedParams int
 }
 
+// remoteConfigOrder holds remote config order state used by the deletecmd package.
 type remoteConfigOrder struct {
-	topLevel          []string
-	parameters        []string
-	groups            []string
-	groupParameters   map[string][]string
+	// topLevel stores top level for remoteConfigOrder.
+	topLevel []string
+	// parameters stores parameters for remoteConfigOrder.
+	parameters []string
+	// groups stores groups for remoteConfigOrder.
+	groups []string
+	// groupParameters stores group parameters for remoteConfigOrder.
+	groupParameters map[string][]string
+	// conditionalValues stores conditional values for remoteConfigOrder.
 	conditionalValues map[string][]string
-	versionRaw        []byte
+	// versionRaw stores version raw for remoteConfigOrder.
+	versionRaw []byte
 }
 
-const defaultDeleteGroupLabel = "(default)"
+const defaultDeleteGroupLabel = "(root)"
 
+// New constructs new and returns the resulting value or error.
 func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete [parameter]",
@@ -99,6 +118,7 @@ func New(svc *core.Core) *cobra.Command {
 	return cmd
 }
 
+// runDeleteRemote runs run delete remote and returns the resulting value or error.
 func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectExpr, paramFilter string, yes bool, dryRun bool) error {
 	ctx := context.Background()
 	if dryRun {
@@ -158,7 +178,7 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectE
 
 			totals.modifiedProjects++
 			totals.deletedParams += len(deleted)
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "published: %s\n", project.ProjectID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🗑️ published: %s\n", project.ProjectID)
 			break
 		}
 	}
@@ -167,6 +187,7 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectE
 	return nil
 }
 
+// runDeleteStdin runs run delete stdin and returns the resulting value or error.
 func runDeleteStdin(cmd *cobra.Command, paramFilter, projectExpr string) error {
 	raw, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
@@ -217,6 +238,7 @@ func runDeleteStdin(cmd *cobra.Command, paramFilter, projectExpr string) error {
 	return nil
 }
 
+// revalidateProjectConfig handles revalidate project config and returns the resulting value or error.
 func revalidateProjectConfig(ctx context.Context, svc *core.Core, project core.Project) (*projectConfig, error) {
 	cache, _, err := svc.RevalidateParameters(ctx, project.ProjectID)
 	if err != nil {
@@ -233,6 +255,7 @@ func revalidateProjectConfig(ctx context.Context, svc *core.Core, project core.P
 	}, nil
 }
 
+// confirmAndDeleteProject handles confirm and delete project and returns the resulting value or error.
 func confirmAndDeleteProject(cmd *cobra.Command, label string, cfg *firebase.RemoteConfig, matched []paramTarget, yes bool, diffOut io.Writer) ([]paramTarget, *firebase.RemoteConfig, error) {
 	finalCfg := cloneRemoteConfig(cfg)
 	deleted := make([]paramTarget, 0, len(matched))
@@ -265,14 +288,18 @@ func confirmAndDeleteProject(cmd *cobra.Command, label string, cfg *firebase.Rem
 	return deleted, finalCfg, nil
 }
 
+// runConfirmationPrompt runs run confirmation prompt and returns the resulting value or error.
 func runConfirmationPrompt(prompt string, fallbackOut io.Writer) (bool, error) {
-	confirm := confirmation.New(prompt, confirmation.Yes)
+	confirm := shared.NewConfirmation(prompt, confirmation.Yes, shared.ConfirmationOptions{
+		Destructive: true,
+	})
 	if fallbackOut != nil {
 		confirm.Output = fallbackOut
 	}
 	return confirm.RunPrompt()
 }
 
+// collectMatchingParams handles collect matching params and returns the resulting value or error.
 func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, rawFilter string, compiledExpr *filter.Expression) []paramTarget {
 	all := collectParamTargets(cfg)
 	mode, query := parseFilter(rawFilter)
@@ -294,6 +321,7 @@ func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, raw
 	return filtered
 }
 
+// collectParamTargets handles collect param targets and returns the resulting value or error.
 func collectParamTargets(cfg *firebase.RemoteConfig) []paramTarget {
 	if cfg == nil {
 		return nil
@@ -318,6 +346,7 @@ func collectParamTargets(cfg *firebase.RemoteConfig) []paramTarget {
 	return out
 }
 
+// groupOrDefault handles group or default for paramTarget and returns the resulting state or error.
 func (t paramTarget) groupOrDefault() string {
 	if strings.TrimSpace(t.group) == "" {
 		return defaultDeleteGroupLabel
@@ -325,6 +354,7 @@ func (t paramTarget) groupOrDefault() string {
 	return t.group
 }
 
+// filterProjects filters filter projects and returns the resulting value or error.
 func filterProjects(projects []core.Project, raw string) []core.Project {
 	mode, query := parseFilter(raw)
 	if query == "" {
@@ -342,6 +372,7 @@ func filterProjects(projects []core.Project, raw string) []core.Project {
 	return filtered
 }
 
+// parseFilter parses parse filter and returns the resulting value or error.
 func parseFilter(raw string) (filter.Mode, string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -355,6 +386,7 @@ func parseFilter(raw string) (filter.Mode, string) {
 	return mode, string([]rune(raw)[1:])
 }
 
+// sortProjects handles sort projects and returns the resulting value or error.
 func sortProjects(projects []core.Project) {
 	sort.Slice(projects, func(i, j int) bool {
 		leftName := strings.ToLower(strings.TrimSpace(projects[i].Name))
@@ -372,6 +404,7 @@ func sortProjects(projects []core.Project) {
 	})
 }
 
+// removeParamSlot removes remove param slot and returns the resulting value or error.
 func removeParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	if groupName == "" {
 		delete(cfg.Parameters, key)
@@ -390,6 +423,7 @@ func removeParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	cfg.ParameterGroups[groupName] = group
 }
 
+// cloneRemoteConfig handles clone remote config and returns the resulting value or error.
 func cloneRemoteConfig(cfg *firebase.RemoteConfig) *firebase.RemoteConfig {
 	if cfg == nil {
 		return &firebase.RemoteConfig{}
@@ -405,6 +439,7 @@ func cloneRemoteConfig(cfg *firebase.RemoteConfig) *firebase.RemoteConfig {
 	return &out
 }
 
+// marshalRemoteConfig handles marshal remote config and returns the resulting value or error.
 func marshalRemoteConfig(cfg *firebase.RemoteConfig) ([]byte, error) {
 	data, err := json.Marshal(cfg)
 	if err != nil {
@@ -413,6 +448,7 @@ func marshalRemoteConfig(cfg *firebase.RemoteConfig) ([]byte, error) {
 	return data, nil
 }
 
+// marshalPrettyRemoteConfigWithOrder handles marshal pretty remote config with order and returns the resulting value or error.
 func marshalPrettyRemoteConfigWithOrder(cfg *firebase.RemoteConfig, order remoteConfigOrder) ([]byte, error) {
 	if cfg == nil {
 		return []byte("{}\n"), nil
@@ -424,6 +460,7 @@ func marshalPrettyRemoteConfigWithOrder(cfg *firebase.RemoteConfig, order remote
 	return buf.Bytes(), nil
 }
 
+// renderDeletedParameter renders render deleted parameter and returns the resulting value or error.
 func renderDeletedParameter(target paramTarget) string {
 	lines := []string{fmt.Sprintf("  - %s", colorRemoved(formatParameterHeader(target.key, target.group)))}
 	if strings.TrimSpace(target.param.ValueType) != "" {
@@ -438,9 +475,10 @@ func renderDeletedParameter(target paramTarget) string {
 	for _, condition := range sortedConditionalNames(target.param.ConditionalValues) {
 		lines = append(lines, fmt.Sprintf("      - cond %-15s %s", condition+":", colorRemoved(formatRemoteValue(target.param.ConditionalValues[condition]))))
 	}
-	return strings.Join(lines, "\n")
+	return "\n" + strings.Join(lines, "\n")
 }
 
+// sortedConditionalNames handles sorted conditional names and returns the resulting value or error.
 func sortedConditionalNames(values map[string]firebase.RemoteConfigValue) []string {
 	keys := make([]string, 0, len(values))
 	for key := range values {
@@ -450,6 +488,7 @@ func sortedConditionalNames(values map[string]firebase.RemoteConfigValue) []stri
 	return keys
 }
 
+// sortedStringKeys handles sorted string keys and returns the resulting value or error.
 func sortedStringKeys[T any](items map[string]T) []string {
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -459,6 +498,7 @@ func sortedStringKeys[T any](items map[string]T) []string {
 	return keys
 }
 
+// formatParameterHeader formats format parameter header and returns the resulting value or error.
 func formatParameterHeader(key, group string) string {
 	if group == "" {
 		return key
@@ -466,6 +506,7 @@ func formatParameterHeader(key, group string) string {
 	return fmt.Sprintf("%s [%s]", key, group)
 }
 
+// formatRemoteValue formats format remote value and returns the resulting value or error.
 func formatRemoteValue(value firebase.RemoteConfigValue) string {
 	switch {
 	case len(value.PersonalizationValue) > 0:
@@ -479,6 +520,7 @@ func formatRemoteValue(value firebase.RemoteConfigValue) string {
 	}
 }
 
+// formatPlainValue formats format plain value and returns the resulting value or error.
 func formatPlainValue(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -494,6 +536,7 @@ func formatPlainValue(value string) string {
 	return string(quoted)
 }
 
+// isSimpleToken reports is simple token and returns the resulting value or error.
 func isSimpleToken(value string) bool {
 	for _, r := range value {
 		if r == ' ' || r == '\t' || r == '\n' || r == '"' {
@@ -503,6 +546,7 @@ func isSimpleToken(value string) bool {
 	return true
 }
 
+// colorRemoved handles color removed and returns the resulting value or error.
 func colorRemoved(value string) string {
 	if value == "" {
 		return value
@@ -510,6 +554,7 @@ func colorRemoved(value string) string {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render(value)
 }
 
+// stdinAvailable handles stdin available and returns the resulting value or error.
 func stdinAvailable(in io.Reader) bool {
 	info, ok := stdinFileInfo(in)
 	if !ok {
@@ -518,6 +563,7 @@ func stdinAvailable(in io.Reader) bool {
 	return (info.Mode() & os.ModeCharDevice) == 0
 }
 
+// stdinFileInfo handles stdin file info and returns the resulting value or error.
 func stdinFileInfo(in io.Reader) (os.FileInfo, bool) {
 	file, ok := in.(*os.File)
 	if !ok {
@@ -530,6 +576,7 @@ func stdinFileInfo(in io.Reader) (os.FileInfo, bool) {
 	return info, true
 }
 
+// normalizeExportJSON handles normalize export json and returns the resulting value or error.
 func normalizeExportJSON(body []byte) []byte {
 	body = bytes.ReplaceAll(body, []byte(`\u003c`), []byte("<"))
 	body = bytes.ReplaceAll(body, []byte(`\u003e`), []byte(">"))
@@ -537,10 +584,12 @@ func normalizeExportJSON(body []byte) []byte {
 	return body
 }
 
+// logDeleteTotals handles log delete totals and returns the resulting value or error.
 func logDeleteTotals(mode string, totals deleteTotals) {
 	corelog.For("delete").Info("total", "mode", mode, "projects", totals.modifiedProjects, "parameters", totals.deletedParams)
 }
 
+// isRemoteConfigConflict reports is remote config conflict and returns the resulting value or error.
 func isRemoteConfigConflict(err error) bool {
 	if err == nil {
 		return false
@@ -561,23 +610,35 @@ func isRemoteConfigConflict(err error) bool {
 	return false
 }
 
+// objectEntry holds object entry state used by the deletecmd package.
 type objectEntry struct {
-	key        string
+	// key stores key for objectEntry.
+	key string
+	// writeValue stores write value for objectEntry.
 	writeValue func()
 }
 
+// orderedJSONNode holds ordered jsonnode state used by the deletecmd package.
 type orderedJSONNode struct {
-	kind    byte
+	// kind stores kind for orderedJSONNode.
+	kind byte
+	// members stores members for orderedJSONNode.
 	members []orderedJSONMember
-	items   []*orderedJSONNode
-	raw     []byte
+	// items stores items for orderedJSONNode.
+	items []*orderedJSONNode
+	// raw stores raw for orderedJSONNode.
+	raw []byte
 }
 
+// orderedJSONMember holds ordered jsonmember state used by the deletecmd package.
 type orderedJSONMember struct {
-	key   string
+	// key stores key for orderedJSONMember.
+	key string
+	// value stores value for orderedJSONMember.
 	value *orderedJSONNode
 }
 
+// writeRemoteConfigObject writes write remote config object and returns the resulting value or error.
 func writeRemoteConfigObject(buf *bytes.Buffer, cfg *firebase.RemoteConfig, order remoteConfigOrder, indent int) {
 	fields := map[string]objectEntry{
 		"conditions": {
@@ -632,6 +693,7 @@ func writeRemoteConfigObject(buf *bytes.Buffer, cfg *firebase.RemoteConfig, orde
 	writeObject(buf, indent, entries)
 }
 
+// remoteConfigFieldPresent handles remote config field present and returns the resulting value or error.
 func remoteConfigFieldPresent(cfg *firebase.RemoteConfig, key string) bool {
 	switch key {
 	case "conditions":
@@ -649,6 +711,7 @@ func remoteConfigFieldPresent(cfg *firebase.RemoteConfig, key string) bool {
 	}
 }
 
+// writeObject writes write object and returns the resulting value or error.
 func writeObject(buf *bytes.Buffer, indent int, entries []objectEntry) {
 	buf.WriteByte('{')
 	if len(entries) == 0 {
@@ -670,6 +733,7 @@ func writeObject(buf *bytes.Buffer, indent int, entries []objectEntry) {
 	buf.WriteByte('}')
 }
 
+// writeConditions writes write conditions and returns the resulting value or error.
 func writeConditions(buf *bytes.Buffer, conditions []firebase.RemoteConfigCondition, indent int) {
 	buf.WriteByte('[')
 	if len(conditions) == 0 {
@@ -689,6 +753,7 @@ func writeConditions(buf *bytes.Buffer, conditions []firebase.RemoteConfigCondit
 	buf.WriteByte(']')
 }
 
+// writeCondition writes write condition and returns the resulting value or error.
 func writeCondition(buf *bytes.Buffer, condition firebase.RemoteConfigCondition, indent int) {
 	entries := make([]objectEntry, 0, 4)
 	if condition.Name != "" {
@@ -710,6 +775,7 @@ func writeCondition(buf *bytes.Buffer, condition firebase.RemoteConfigCondition,
 	writeObject(buf, indent, entries)
 }
 
+// writeGroups writes write groups and returns the resulting value or error.
 func writeGroups(buf *bytes.Buffer, groups map[string]firebase.RemoteConfigGroup, order remoteConfigOrder, indent int) {
 	keys := orderedKeys(groups, order.groups)
 	entries := make([]objectEntry, 0, len(keys))
@@ -726,6 +792,7 @@ func writeGroups(buf *bytes.Buffer, groups map[string]firebase.RemoteConfigGroup
 	writeObject(buf, indent, entries)
 }
 
+// writeGroup writes write group and returns the resulting value or error.
 func writeGroup(buf *bytes.Buffer, groupName string, group firebase.RemoteConfigGroup, order remoteConfigOrder, indent int) {
 	entries := make([]objectEntry, 0, 2)
 	if group.Description != "" {
@@ -745,6 +812,7 @@ func writeGroup(buf *bytes.Buffer, groupName string, group firebase.RemoteConfig
 	writeObject(buf, indent, entries)
 }
 
+// writeParametersMap writes write parameters map and returns the resulting value or error.
 func writeParametersMap(buf *bytes.Buffer, params map[string]firebase.RemoteConfigParam, order []string, conditionalOrders map[string][]string, groupName string, indent int) {
 	keys := orderedKeys(params, order)
 	entries := make([]objectEntry, 0, len(keys))
@@ -762,6 +830,7 @@ func writeParametersMap(buf *bytes.Buffer, params map[string]firebase.RemoteConf
 	writeObject(buf, indent, entries)
 }
 
+// writeParam writes write param and returns the resulting value or error.
 func writeParam(buf *bytes.Buffer, param firebase.RemoteConfigParam, conditionalOrder []string, indent int) {
 	entries := make([]objectEntry, 0, 4)
 	if param.DefaultValue != nil {
@@ -793,6 +862,7 @@ func writeParam(buf *bytes.Buffer, param firebase.RemoteConfigParam, conditional
 	writeObject(buf, indent, entries)
 }
 
+// writeConditionalValues writes write conditional values and returns the resulting value or error.
 func writeConditionalValues(buf *bytes.Buffer, values map[string]firebase.RemoteConfigValue, order []string, indent int) {
 	keys := orderedKeys(values, order)
 	entries := make([]objectEntry, 0, len(keys))
@@ -809,6 +879,7 @@ func writeConditionalValues(buf *bytes.Buffer, values map[string]firebase.Remote
 	writeObject(buf, indent, entries)
 }
 
+// writeRemoteConfigValue writes write remote config value and returns the resulting value or error.
 func writeRemoteConfigValue(buf *bytes.Buffer, value firebase.RemoteConfigValue, indent int) {
 	entries := make([]objectEntry, 0, 4)
 	if value.Value != "" || (!value.UseInAppDefault && len(value.PersonalizationValue) == 0 && len(value.RolloutValue) == 0) {
@@ -829,6 +900,7 @@ func writeRemoteConfigValue(buf *bytes.Buffer, value firebase.RemoteConfigValue,
 	writeObject(buf, indent, entries)
 }
 
+// writeVersion writes write version and returns the resulting value or error.
 func writeVersion(buf *bytes.Buffer, version firebase.RemoteConfigVersion, indent int) {
 	entries := make([]objectEntry, 0, 3)
 	if version.VersionNumber != "" {
@@ -846,17 +918,20 @@ func writeVersion(buf *bytes.Buffer, version firebase.RemoteConfigVersion, inden
 	writeObject(buf, indent, entries)
 }
 
+// writeIndent writes write indent and returns the resulting value or error.
 func writeIndent(buf *bytes.Buffer, indent int) {
 	for range indent {
 		buf.WriteString("  ")
 	}
 }
 
+// writeJSONString writes write jsonstring and returns the resulting value or error.
 func writeJSONString(buf *bytes.Buffer, value string) {
 	encoded, _ := json.Marshal(value)
 	buf.Write(normalizeExportJSON(encoded))
 }
 
+// orderedKeys handles ordered keys and returns the resulting value or error.
 func orderedKeys[T any](items map[string]T, preferred []string) []string {
 	keys := make([]string, 0, len(items))
 	seen := make(map[string]struct{}, len(items))
@@ -878,6 +953,7 @@ func orderedKeys[T any](items map[string]T, preferred []string) []string {
 	return append(keys, rest...)
 }
 
+// parseRemoteConfigOrder parses parse remote config order and returns the resulting value or error.
 func parseRemoteConfigOrder(raw []byte) (remoteConfigOrder, error) {
 	body := bytes.TrimSpace(raw)
 	root, next, ok := parseOrderedJSONValue(body, 0)
@@ -916,6 +992,7 @@ func parseRemoteConfigOrder(raw []byte) (remoteConfigOrder, error) {
 	return order, nil
 }
 
+// objectMemberOrder handles object member order and returns the resulting value or error.
 func objectMemberOrder(node *orderedJSONNode) []string {
 	if node == nil || node.kind != '{' {
 		return nil
@@ -927,6 +1004,7 @@ func objectMemberOrder(node *orderedJSONNode) []string {
 	return keys
 }
 
+// collectConditionalValueOrders handles collect conditional value orders and returns the resulting value or error.
 func collectConditionalValueOrders(node *orderedJSONNode, groupName string, out map[string][]string) {
 	if node == nil || node.kind != '{' {
 		return
@@ -941,6 +1019,7 @@ func collectConditionalValueOrders(node *orderedJSONNode, groupName string, out 
 	}
 }
 
+// orderPath handles order path and returns the resulting value or error.
 func orderPath(groupName, paramKey string) string {
 	if groupName == "" {
 		return paramKey
@@ -948,6 +1027,7 @@ func orderPath(groupName, paramKey string) string {
 	return groupName + "\x00" + paramKey
 }
 
+// parseOrderedJSONValue parses parse ordered jsonvalue and returns the resulting value or error.
 func parseOrderedJSONValue(body []byte, start int) (*orderedJSONNode, int, bool) {
 	start = skipJSONWhitespace(body, start)
 	if start >= len(body) {
@@ -973,6 +1053,7 @@ func parseOrderedJSONValue(body []byte, start int) (*orderedJSONNode, int, bool)
 	}
 }
 
+// parseOrderedJSONObject parses parse ordered jsonobject and returns the resulting value or error.
 func parseOrderedJSONObject(body []byte, start int) (*orderedJSONNode, int, bool) {
 	if start >= len(body) || body[start] != '{' {
 		return nil, 0, false
@@ -1017,6 +1098,7 @@ func parseOrderedJSONObject(body []byte, start int) (*orderedJSONNode, int, bool
 	}
 }
 
+// parseOrderedJSONArray parses parse ordered jsonarray and returns the resulting value or error.
 func parseOrderedJSONArray(body []byte, start int) (*orderedJSONNode, int, bool) {
 	if start >= len(body) || body[start] != '[' {
 		return nil, 0, false
@@ -1048,6 +1130,7 @@ func parseOrderedJSONArray(body []byte, start int) (*orderedJSONNode, int, bool)
 	}
 }
 
+// skipJSONWhitespace handles skip jsonwhitespace and returns the resulting value or error.
 func skipJSONWhitespace(body []byte, pos int) int {
 	for pos < len(body) {
 		switch body[pos] {
@@ -1060,6 +1143,7 @@ func skipJSONWhitespace(body []byte, pos int) int {
 	return pos
 }
 
+// scanJSONStringEnd handles scan jsonstring end and returns the resulting value or error.
 func scanJSONStringEnd(body []byte, start int) (int, bool) {
 	if start >= len(body) || body[start] != '"' {
 		return 0, false
@@ -1078,6 +1162,7 @@ func scanJSONStringEnd(body []byte, start int) (int, bool) {
 	return 0, false
 }
 
+// scanPrimitiveEnd handles scan primitive end and returns the resulting value or error.
 func scanPrimitiveEnd(body []byte, start int) (int, bool) {
 	for i := start; i < len(body); i++ {
 		switch body[i] {
@@ -1088,6 +1173,7 @@ func scanPrimitiveEnd(body []byte, start int) (int, bool) {
 	return len(body), true
 }
 
+// unquoteJSONString handles unquote jsonstring and returns the resulting value or error.
 func unquoteJSONString(raw []byte) (string, error) {
 	var out string
 	if err := json.Unmarshal(raw, &out); err != nil {

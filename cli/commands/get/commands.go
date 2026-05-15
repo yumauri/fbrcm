@@ -24,57 +24,95 @@ import (
 	"fbrcm/core/filter"
 	"fbrcm/core/firebase"
 	corelog "fbrcm/core/log"
+	corestyles "fbrcm/core/styles"
 )
 
-const defaultGroupLabel = "(default)"
+const defaultGroupLabel = "(root)"
 
+// parameterConditionJSON holds parameter condition json state used by the get package.
 type parameterConditionJSON struct {
-	Name  string  `json:"name"`
+	// Name stores name for parameterConditionJSON.
+	Name string `json:"name"`
+	// Value stores value for parameterConditionJSON.
 	Value *string `json:"value"`
 }
 
+// parameterRowJSON holds parameter row json state used by the get package.
 type parameterRowJSON struct {
-	Project      string                   `json:"project"`
-	ProjectID    string                   `json:"project_id"`
-	Group        string                   `json:"group"`
-	Key          string                   `json:"key"`
-	DefaultValue *string                  `json:"default_value"`
-	Conditional  bool                     `json:"conditional"`
-	Conditions   []parameterConditionJSON `json:"conditions"`
-	Type         string                   `json:"type"`
-	Version      *string                  `json:"version"`
-	CachedAt     *time.Time               `json:"cached_at"`
-	Status       *string                  `json:"status"`
+	// Project stores project for parameterRowJSON.
+	Project string `json:"project"`
+	// ProjectID stores project id for parameterRowJSON.
+	ProjectID string `json:"project_id"`
+	// Group stores group for parameterRowJSON.
+	Group string `json:"group"`
+	// Key stores key for parameterRowJSON.
+	Key string `json:"key"`
+	// DefaultValue stores default value for parameterRowJSON.
+	DefaultValue *string `json:"default_value"`
+	// Conditional stores conditional for parameterRowJSON.
+	Conditional bool `json:"conditional"`
+	// Conditions stores conditions for parameterRowJSON.
+	Conditions []parameterConditionJSON `json:"conditions"`
+	// Type stores type for parameterRowJSON.
+	Type string `json:"type"`
+	// Version stores version for parameterRowJSON.
+	Version *string `json:"version"`
+	// CachedAt stores cached at for parameterRowJSON.
+	CachedAt *time.Time `json:"cached_at"`
+	// Status stores status for parameterRowJSON.
+	Status *string `json:"status"`
 }
 
+// parameterRow holds parameter row state used by the get package.
 type parameterRow struct {
-	Project      string
-	ProjectID    string
-	Group        string
-	Key          string
+	// Project stores project for parameterRow.
+	Project string
+	// ProjectID stores project id for parameterRow.
+	ProjectID string
+	// Group stores group for parameterRow.
+	Group string
+	// Key stores key for parameterRow.
+	Key string
+	// DefaultValue stores default value for parameterRow.
 	DefaultValue *string
-	Conditional  bool
-	Conditions   []parameterConditionJSON
-	Type         string
-	Version      string
-	CachedAt     time.Time
-	Status       string
-	ValueLines   []valueLine
+	// Conditional stores conditional for parameterRow.
+	Conditional bool
+	// Conditions stores conditions for parameterRow.
+	Conditions []parameterConditionJSON
+	// Type stores type for parameterRow.
+	Type string
+	// Version stores version for parameterRow.
+	Version string
+	// CachedAt stores cached at for parameterRow.
+	CachedAt time.Time
+	// Status stores status for parameterRow.
+	Status string
+	// ValueLines stores value lines for parameterRow.
+	ValueLines []valueLine
 }
 
+// tableLayout holds table layout state used by the get package.
 type tableLayout struct {
+	// includeProject stores include project for tableLayout.
 	includeProject bool
-	includeGroup   bool
-	includeKey     bool
-	includeType    bool
-	showNames      bool
-	valueWidth     int
+	// includeGroup stores include group for tableLayout.
+	includeGroup bool
+	// includeKey stores include key for tableLayout.
+	includeKey bool
+	// includeType stores include type for tableLayout.
+	includeType bool
+	// showNames stores show names for tableLayout.
+	showNames bool
+	// valueWidth stores value width for tableLayout.
+	valueWidth int
 }
 
+// New constructs new and returns the resulting value or error.
 func New(svc *core.Core) *cobra.Command {
 	getCmd := &cobra.Command{
-		Use:   "get",
+		Use:   "get [parameter]",
 		Short: "Get parameters from all projects",
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			projectFilter, err := cmd.Flags().GetString("project")
 			if err != nil {
@@ -95,6 +133,12 @@ func New(svc *core.Core) *cobra.Command {
 			update, err := cmd.Flags().GetBool("update")
 			if err != nil {
 				return err
+			}
+			if len(args) > 0 {
+				if strings.TrimSpace(paramFilter) != "" {
+					return fmt.Errorf("parameter argument cannot be used together with --filter")
+				}
+				paramFilter = "=" + args[0]
 			}
 
 			if stdinAvailable(cmd.InOrStdin()) {
@@ -173,6 +217,7 @@ func New(svc *core.Core) *cobra.Command {
 	return getCmd
 }
 
+// writeRowsJSON writes write rows json and returns the resulting value or error.
 func writeRowsJSON(cmd *cobra.Command, rows []parameterRow) error {
 	out := make([]parameterRowJSON, 0, len(rows))
 	for _, row := range rows {
@@ -200,6 +245,7 @@ func writeRowsJSON(cmd *cobra.Command, rows []parameterRow) error {
 	return nil
 }
 
+// loadStdinParameterRows loads load stdin parameter rows and returns the resulting value or error.
 func loadStdinParameterRows(cmd *cobra.Command) (*firebase.RemoteConfig, []parameterRow, error) {
 	raw, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
@@ -225,6 +271,7 @@ func loadStdinParameterRows(cmd *cobra.Command) (*firebase.RemoteConfig, []param
 	return cfg, rows, nil
 }
 
+// stdinVersion handles stdin version and returns the resulting value or error.
 func stdinVersion(raw []byte) string {
 	var payload struct {
 		Version *struct {
@@ -240,6 +287,7 @@ func stdinVersion(raw []byte) string {
 	return strings.TrimSpace(payload.Version.VersionNumber)
 }
 
+// loadProjectParameters loads load project parameters and returns the resulting value or error.
 func loadProjectParameters(ctx context.Context, svc *core.Core, projectID string, update bool) (*core.ParametersCache, string, error) {
 	if update {
 		return svc.RevalidateParameters(ctx, projectID)
@@ -247,27 +295,41 @@ func loadProjectParameters(ctx context.Context, svc *core.Core, projectID string
 	return svc.GetParameters(ctx, projectID, false)
 }
 
+// loadedProjectParameters holds loaded project parameters state used by the get package.
 type loadedProjectParameters struct {
+	// project stores project for loadedProjectParameters.
 	project core.Project
-	cache   *core.ParametersCache
-	cfg     *firebase.RemoteConfig
-	source  string
-	status  string
+	// cache stores cache for loadedProjectParameters.
+	cache *core.ParametersCache
+	// cfg stores cfg for loadedProjectParameters.
+	cfg *firebase.RemoteConfig
+	// source stores source for loadedProjectParameters.
+	source string
+	// status stores status for loadedProjectParameters.
+	status string
 }
 
+// loadProjectsParameters loads load projects parameters and returns the resulting value or error.
 func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core.Project, update bool) ([]loadedProjectParameters, error) {
 	if len(projects) == 0 {
 		return nil, nil
 	}
 
+	// job holds job state used by the get package.
 	type job struct {
-		index   int
+		// index stores index for job.
+		index int
+		// project stores project for job.
 		project core.Project
 	}
+	// result holds result state used by the get package.
 	type result struct {
-		index  int
+		// index stores index for result.
+		index int
+		// loaded stores loaded for result.
 		loaded loadedProjectParameters
-		err    error
+		// err stores err for result.
+		err error
 	}
 
 	jobs := make(chan job)
@@ -318,6 +380,7 @@ func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core
 	return loaded, nil
 }
 
+// loadProjectParametersWithFallback loads load project parameters with fallback and returns the resulting value or error.
 func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedProjectParameters, error) {
 	cache, source, err := loadProjectParameters(ctx, svc, project.ProjectID, update)
 	if err == nil {
@@ -358,6 +421,7 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 	}, nil
 }
 
+// flattenParameters handles flatten parameters and returns the resulting value or error.
 func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedAt time.Time, status, version string, compiledExpr *filter.Expression) []parameterRow {
 	if cfg == nil {
 		return nil
@@ -408,6 +472,7 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 	return rows
 }
 
+// buildParameterRow handles build parameter row and returns the resulting value or error.
 func buildParameterRow(project core.Project, group, key string, param firebase.RemoteConfigParam, version string, cachedAt time.Time, status string, conditionOrder map[string]int, conditionColors map[string]string) parameterRow {
 	conditions := make([]parameterConditionJSON, 0, len(param.ConditionalValues))
 	valueLines := make([]valueLine, 0, len(param.ConditionalValues)+1)
@@ -460,6 +525,7 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 	}
 }
 
+// filterProjects filters filter projects and returns the resulting value or error.
 func filterProjects(projects []core.Project, raw string) []core.Project {
 	mode, query := parseFilter(raw)
 	if query == "" {
@@ -477,6 +543,7 @@ func filterProjects(projects []core.Project, raw string) []core.Project {
 	return filtered
 }
 
+// filterParameterRows filters filter parameter rows and returns the resulting value or error.
 func filterParameterRows(rows []parameterRow, raw string) []parameterRow {
 	mode, query := parseFilter(raw)
 	if query == "" {
@@ -493,6 +560,7 @@ func filterParameterRows(rows []parameterRow, raw string) []parameterRow {
 	return filtered
 }
 
+// filterParameterRowsByExpr filters filter parameter rows by expr and returns the resulting value or error.
 func filterParameterRowsByExpr(rows []parameterRow, project core.Project, cfg *firebase.RemoteConfig, compiledExpr *filter.Expression) []parameterRow {
 	if compiledExpr == nil {
 		return rows
@@ -508,6 +576,7 @@ func filterParameterRowsByExpr(rows []parameterRow, project core.Project, cfg *f
 	return filtered
 }
 
+// parseFilter parses parse filter and returns the resulting value or error.
 func parseFilter(raw string) (filter.Mode, string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -522,6 +591,7 @@ func parseFilter(raw string) (filter.Mode, string) {
 	return mode, string([]rune(raw)[1:])
 }
 
+// sortProjects handles sort projects and returns the resulting value or error.
 func sortProjects(projects []core.Project) {
 	sort.Slice(projects, func(i, j int) bool {
 		leftName := strings.ToLower(strings.TrimSpace(projects[i].Name))
@@ -539,6 +609,7 @@ func sortProjects(projects []core.Project) {
 	})
 }
 
+// sortParameterRows handles sort parameter rows and returns the resulting value or error.
 func sortParameterRows(rows []parameterRow) {
 	sort.Slice(rows, func(i, j int) bool {
 		leftProject := strings.ToLower(strings.TrimSpace(rows[i].Project))
@@ -562,6 +633,7 @@ func sortParameterRows(rows []parameterRow) {
 	})
 }
 
+// buildTableRows handles build table rows and returns the resulting value or error.
 func buildTableRows(projects []loadedProjectParameters, rows []parameterRow) []parameterRow {
 	rowsByProject := make(map[string][]parameterRow, len(projects))
 	for _, row := range rows {
@@ -586,6 +658,7 @@ func buildTableRows(projects []loadedProjectParameters, rows []parameterRow) []p
 	return out
 }
 
+// renderParametersTable renders render parameters table and returns the resulting value or error.
 func renderParametersTable(rows []parameterRow, mode filter.Mode, query string, includeProject bool) string {
 	noColor := clistyles.NoColorEnabled()
 	projectWidth := lipgloss.Width("Project")
@@ -723,10 +796,12 @@ func renderParametersTable(rows []parameterRow, mode filter.Mode, query string, 
 	return tbl.String()
 }
 
+// isStripedDataRow reports is striped data row and returns the resulting value or error.
 func isStripedDataRow(row int) bool {
 	return row >= 0 && row%2 == 1
 }
 
+// rowStatus handles row status and returns the resulting value or error.
 func rowStatus(rows []parameterRow, row int) string {
 	if row <= 0 {
 		return ""
@@ -738,6 +813,7 @@ func rowStatus(rows []parameterRow, row int) string {
 	return rows[index].Status
 }
 
+// chooseTableLayout handles choose table layout and returns the resulting value or error.
 func chooseTableLayout(rows []parameterRow, labelWidth int, includeProject bool, allowHideKey bool) tableLayout {
 	terminalWidth := detectTerminalWidth()
 	layout := tableLayout{
@@ -826,6 +902,7 @@ func chooseTableLayout(rows []parameterRow, labelWidth int, includeProject bool,
 	return layout
 }
 
+// detectTerminalWidth handles detect terminal width and returns the resulting value or error.
 func detectTerminalWidth() int {
 	if columns := strings.TrimSpace(os.Getenv("COLUMNS")); columns != "" {
 		if width, err := strconv.Atoi(columns); err == nil && width > 0 {
@@ -844,10 +921,12 @@ func detectTerminalWidth() int {
 	return 80
 }
 
+// tableOverhead handles table overhead and returns the resulting value or error.
 func tableOverhead(cols int) int {
 	return cols*3 + 1
 }
 
+// renderHighlightedText renders render highlighted text and returns the resulting value or error.
 func renderHighlightedText(value string, base lipgloss.Style, highlights []int, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() || len(highlights) == 0 {
 		return value
@@ -872,6 +951,7 @@ func renderHighlightedText(value string, base lipgloss.Style, highlights []int, 
 	return strings.Join(parts, "")
 }
 
+// renderConditionLabel renders render condition label and returns the resulting value or error.
 func renderConditionLabel(label string, conditionColor, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return label
@@ -879,15 +959,23 @@ func renderConditionLabel(label string, conditionColor, rowBG color.Color) strin
 	return applyBackground(lipgloss.NewStyle().Foreground(conditionColor), rowBG).Render(label)
 }
 
+// valueLine holds value line state used by the get package.
 type valueLine struct {
-	Label     string
-	Value     string
-	Color     color.Color
+	// Label stores label for valueLine.
+	Label string
+	// Value stores value for valueLine.
+	Value string
+	// Color stores color for valueLine.
+	Color color.Color
+	// IsDefault stores is default for valueLine.
 	IsDefault bool
-	Missing   bool
+	// Missing stores missing for valueLine.
+	Missing bool
+	// ValueType stores value type for valueLine.
 	ValueType string
 }
 
+// renderValueTree renders render value tree and returns the resulting value or error.
 func renderValueTree(lines []valueLine, status string, labelWidth int, showNames bool, maxWidth int, rowBG color.Color) string {
 	if len(lines) == 0 {
 		return ""
@@ -923,6 +1011,7 @@ func renderValueTree(lines []valueLine, status string, labelWidth int, showNames
 	return strings.Join(rendered, "\n")
 }
 
+// longestConditionWidth handles longest condition width and returns the resulting value or error.
 func longestConditionWidth(rows []parameterRow) int {
 	width := lipgloss.Width("Default value")
 	for _, row := range rows {
@@ -933,6 +1022,7 @@ func longestConditionWidth(rows []parameterRow) int {
 	return width
 }
 
+// maxValueWidth handles max value width and returns the resulting value or error.
 func maxValueWidth(rows []parameterRow, labelWidth int, showNames bool) int {
 	width := lipgloss.Width("Values")
 	for _, row := range rows {
@@ -941,6 +1031,7 @@ func maxValueWidth(rows []parameterRow, labelWidth int, showNames bool) int {
 	return width
 }
 
+// minValueRoom handles min value room and returns the resulting value or error.
 func minValueRoom(rows []parameterRow, labelWidth int, showNames bool, cellWidth int) int {
 	room := 1 << 30
 	found := false
@@ -963,6 +1054,7 @@ func minValueRoom(rows []parameterRow, labelWidth int, showNames bool, cellWidth
 	return room
 }
 
+// valueTreePrefix handles value tree prefix and returns the resulting value or error.
 func valueTreePrefix(index, total int) string {
 	if total <= 1 {
 		return "╌╌╌"
@@ -977,6 +1069,7 @@ func valueTreePrefix(index, total int) string {
 	}
 }
 
+// renderTreeChrome renders render tree chrome and returns the resulting value or error.
 func renderTreeChrome(value string, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return value
@@ -984,6 +1077,7 @@ func renderTreeChrome(value string, rowBG color.Color) string {
 	return applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDim), rowBG).Render(value)
 }
 
+// renderDefaultLabel renders render default label and returns the resulting value or error.
 func renderDefaultLabel(label string, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return label
@@ -991,6 +1085,7 @@ func renderDefaultLabel(label string, rowBG color.Color) string {
 	return applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDim).Italic(true), rowBG).Render(label)
 }
 
+// renderMissingLabel renders render missing label and returns the resulting value or error.
 func renderMissingLabel(status string, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return "Missing values"
@@ -1004,15 +1099,18 @@ func renderMissingLabel(status string, rowBG color.Color) string {
 	return applyBackground(style, rowBG).Render("Missing values")
 }
 
+// isErrorStatus reports is error status and returns the resulting value or error.
 func isErrorStatus(status string) bool {
 	return status == "staled" || status == "missing"
 }
 
+// logGetTotals handles log get totals and returns the resulting value or error.
 func logGetTotals(output string, rows []parameterRow) {
 	logger := corelog.For("get")
 	logger.Info("total", "output", output, "projects", countOutputProjects(rows), "values", countOutputValues(rows))
 }
 
+// countOutputProjects handles count output projects and returns the resulting value or error.
 func countOutputProjects(rows []parameterRow) int {
 	seen := make(map[string]struct{}, len(rows))
 	for _, row := range rows {
@@ -1024,6 +1122,7 @@ func countOutputProjects(rows []parameterRow) int {
 	return len(seen)
 }
 
+// countOutputValues handles count output values and returns the resulting value or error.
 func countOutputValues(rows []parameterRow) int {
 	total := 0
 	for _, row := range rows {
@@ -1035,6 +1134,7 @@ func countOutputValues(rows []parameterRow) int {
 	return total
 }
 
+// stdinAvailable handles stdin available and returns the resulting value or error.
 func stdinAvailable(in io.Reader) bool {
 	file, ok := in.(*os.File)
 	if !ok {
@@ -1047,6 +1147,7 @@ func stdinAvailable(in io.Reader) bool {
 	return (info.Mode() & os.ModeCharDevice) == 0
 }
 
+// stringPtrOrNil handles string ptr or nil and returns the resulting value or error.
 func stringPtrOrNil(value string) *string {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -1055,6 +1156,7 @@ func stringPtrOrNil(value string) *string {
 	return &v
 }
 
+// timePtrOrNil handles time ptr or nil and returns the resulting value or error.
 func timePtrOrNil(value time.Time) *time.Time {
 	if value.IsZero() {
 		return nil
@@ -1063,34 +1165,24 @@ func timePtrOrNil(value time.Time) *time.Time {
 	return &v
 }
 
+// renderValueText renders render value text and returns the resulting value or error.
 func renderValueText(value, valueType string, rowBG color.Color) string {
 	if value == "" || clistyles.NoColorEnabled() {
 		return value
 	}
 	if strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")") {
-		return applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDim).Italic(true), rowBG).Render(value)
+		return applyBackground(corestyles.EmptyValueStyle(), rowBG).Render(value)
 	}
 	style := valueTextStyle(value, valueType)
 	return applyBackground(style, rowBG).Render(value)
 }
 
+// valueTextStyle handles value text style and returns the resulting value or error.
 func valueTextStyle(value, valueType string) lipgloss.Style {
-	switch valueType {
-	case "boolean":
-		if strings.EqualFold(value, "true") {
-			return lipgloss.NewStyle().Foreground(clistyles.ConditionLipglossColor("GREEN"))
-		}
-		if strings.EqualFold(value, "false") {
-			return lipgloss.NewStyle().Foreground(clistyles.PaletteError)
-		}
-	case "number":
-		return lipgloss.NewStyle().Foreground(clistyles.PaletteBlueBright)
-	case "json":
-		return lipgloss.NewStyle().Foreground(clistyles.ConditionLipglossColor("CYAN"))
-	}
-	return lipgloss.NewStyle().Foreground(clistyles.PaletteSlateBright)
+	return corestyles.ValueTextStyle(value, valueType)
 }
 
+// valueTypeKey handles value type key and returns the resulting value or error.
 func valueTypeKey(valueType string) string {
 	valueType = strings.TrimSpace(strings.ToLower(valueType))
 	if valueType == "" {
@@ -1099,6 +1191,7 @@ func valueTypeKey(valueType string) string {
 	return valueType
 }
 
+// clipStyledLine handles clip styled line and returns the resulting value or error.
 func clipStyledLine(value string, maxWidth int) string {
 	if maxWidth <= 0 {
 		return ""
@@ -1109,6 +1202,7 @@ func clipStyledLine(value string, maxWidth int) string {
 	return clipPlainText(value, maxWidth)
 }
 
+// clipPlainText handles clip plain text and returns the resulting value or error.
 func clipPlainText(value string, maxWidth int) string {
 	if maxWidth <= 0 {
 		return ""
@@ -1123,6 +1217,7 @@ func clipPlainText(value string, maxWidth int) string {
 	return string(runes[:maxWidth-1]) + "…"
 }
 
+// valueLineHeadWidth handles value line head width and returns the resulting value or error.
 func valueLineHeadWidth(line valueLine, index, total, labelWidth int, showNames bool) int {
 	prefixWidth := lipgloss.Width(valueTreePrefix(index, total)) + 1
 	if line.Missing {
@@ -1134,6 +1229,7 @@ func valueLineHeadWidth(line valueLine, index, total, labelWidth int, showNames 
 	return prefixWidth + lipgloss.Width(line.Label) + 1 + max(labelWidth-lipgloss.Width(line.Label)+1, 1) + 1
 }
 
+// applyBackground handles apply background and returns the resulting value or error.
 func applyBackground(style lipgloss.Style, bg color.Color) lipgloss.Style {
 	if bg == nil {
 		return style
@@ -1141,6 +1237,7 @@ func applyBackground(style lipgloss.Style, bg color.Color) lipgloss.Style {
 	return style.Background(bg)
 }
 
+// sortedStringKeys handles sorted string keys and returns the resulting value or error.
 func sortedStringKeys[V any](items map[string]V) []string {
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -1157,6 +1254,7 @@ func sortedStringKeys[V any](items map[string]V) []string {
 	return keys
 }
 
+// sortedConditionalKeys handles sorted conditional keys and returns the resulting value or error.
 func sortedConditionalKeys(items map[string]firebase.RemoteConfigValue, order map[string]int) []string {
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -1184,6 +1282,7 @@ func sortedConditionalKeys(items map[string]firebase.RemoteConfigValue, order ma
 	return keys
 }
 
+// formatRemoteConfigValue formats format remote config value and returns the resulting value or error.
 func formatRemoteConfigValue(value firebase.RemoteConfigValue, valueType string) string {
 	switch {
 	case value.UseInAppDefault:
@@ -1199,6 +1298,7 @@ func formatRemoteConfigValue(value firebase.RemoteConfigValue, valueType string)
 	}
 }
 
+// valueForJSON handles value for json and returns the resulting value or error.
 func valueForJSON(value string) *string {
 	if strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")") {
 		return nil
@@ -1207,6 +1307,7 @@ func valueForJSON(value string) *string {
 	return &v
 }
 
+// emptyValueType handles empty value type and returns the resulting value or error.
 func emptyValueType(valueType string) string {
 	valueType = strings.TrimSpace(strings.ToLower(valueType))
 	if valueType == "" {

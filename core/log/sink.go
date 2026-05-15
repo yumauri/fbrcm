@@ -24,20 +24,28 @@ func linkify(line string) string {
 	})
 }
 
+// lineSink holds line sink state used by the log package.
 type lineSink struct {
-	mu      sync.Mutex
-	buf     bytes.Buffer
-	lines   []string
-	subs    map[int]chan string
+	// mu stores mu for lineSink.
+	mu sync.Mutex
+	// buf stores buf for lineSink.
+	buf bytes.Buffer
+	// lines stores lines for lineSink.
+	lines []string
+	// subs stores subs for lineSink.
+	subs map[int]chan string
+	// nextSub stores next sub for lineSink.
 	nextSub int
 }
 
+// newLineSink constructs new line sink and returns the resulting value or error.
 func newLineSink() *lineSink {
 	return &lineSink{
 		subs: make(map[int]chan string),
 	}
 }
 
+// Write writes write for lineSink and returns the resulting state or error.
 func (s *lineSink) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -54,6 +62,7 @@ func (s *lineSink) Write(p []byte) (int, error) {
 	return n, nil
 }
 
+// snapshot handles snapshot for lineSink and returns the resulting state or error.
 func (s *lineSink) snapshot() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -63,6 +72,7 @@ func (s *lineSink) snapshot() []string {
 	return out
 }
 
+// subscribe handles subscribe for lineSink and returns the resulting state or error.
 func (s *lineSink) subscribe() (<-chan string, func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -83,6 +93,7 @@ func (s *lineSink) subscribe() (<-chan string, func()) {
 	}
 }
 
+// publishLocked handles publish locked for lineSink and returns the resulting state or error.
 func (s *lineSink) publishLocked(line string) {
 	if line == "" {
 		return

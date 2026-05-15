@@ -9,12 +9,24 @@ import (
 	corelog "fbrcm/core/log"
 )
 
+// paths holds paths state used by the config package.
 type paths struct {
-	configDir    string
-	cacheDir     string
+	// configRootDir stores config root dir for paths.
+	configRootDir string
+	// cacheRootDir stores cache root dir for paths.
+	cacheRootDir string
+	// profile stores profile for paths.
+	profile string
+	// configDir stores config dir for paths.
+	configDir string
+	// cacheDir stores cache dir for paths.
+	cacheDir string
+	// projectsFile stores projects file for paths.
 	projectsFile string
-	secretFile   string
-	tokenFile    string
+	// secretFile stores secret file for paths.
+	secretFile string
+	// tokenFile stores token file for paths.
+	tokenFile string
 }
 
 var (
@@ -25,25 +37,47 @@ var (
 // Get application used paths, resolving them once per process
 func getPaths() *paths {
 	pathsOnce.Do(func() {
-		configDir := resolveConfigDir()
-		cacheDir := resolveCacheDir()
+		configRootDir := resolveConfigDir()
+		cacheRootDir := resolveCacheDir()
+		profile := activeProfileOrDefault()
+		configDir := filepath.Join(configRootDir, profile)
+		cacheDir := filepath.Join(cacheRootDir, profile)
 
 		projectsFile := filepath.Join(configDir, "projects-config.json")
 		secretFile := filepath.Join(configDir, "client_secret.json")
 		tokenFile := filepath.Join(cacheDir, "token.json")
 
 		pathsInstance = &paths{
-			configDir:    configDir,
-			cacheDir:     cacheDir,
-			projectsFile: projectsFile,
-			secretFile:   secretFile,
-			tokenFile:    tokenFile,
+			configRootDir: configRootDir,
+			cacheRootDir:  cacheRootDir,
+			profile:       profile,
+			configDir:     configDir,
+			cacheDir:      cacheDir,
+			projectsFile:  projectsFile,
+			secretFile:    secretFile,
+			tokenFile:     tokenFile,
 		}
 
-		corelog.For("config").Debug("resolved application paths", "config_dir", configDir, "cache_dir", cacheDir, "projects_file", projectsFile, "secret_file", secretFile, "token_file", tokenFile)
+		corelog.For("config").Debug("resolved application paths", "config_root_dir", configRootDir, "cache_root_dir", cacheRootDir, "profile", profile, "config_dir", configDir, "cache_dir", cacheDir, "projects_file", projectsFile, "secret_file", secretFile, "token_file", tokenFile)
 	})
 
 	return pathsInstance
+}
+
+// Reset cached path resolution after profile changes.
+func resetPaths() {
+	pathsInstance = nil
+	pathsOnce = sync.Once{}
+}
+
+// Get the path to the config root directory
+func GetConfigRootDirPath() string {
+	return resolveConfigDir()
+}
+
+// Get the path to the cache root directory
+func GetCacheRootDirPath() string {
+	return resolveCacheDir()
 }
 
 // Get the path to the config directory

@@ -14,23 +14,35 @@ import (
 	"fbrcm/core/firebase"
 )
 
+// ParamSlotPreview holds param slot preview state used by the shared package.
 type ParamSlotPreview struct {
+	// Group stores group for ParamSlotPreview.
 	Group string
+	// Param stores param for ParamSlotPreview.
 	Param firebase.RemoteConfigParam
 }
 
+// diffCounts holds diff counts state used by the shared package.
 type diffCounts struct {
-	added     int
-	removed   int
-	changed   int
+	// added stores added for diffCounts.
+	added int
+	// removed stores removed for diffCounts.
+	removed int
+	// changed stores changed for diffCounts.
+	changed int
+	// unchanged stores unchanged for diffCounts.
 	unchanged int
 }
 
+// paramView holds param view state used by the shared package.
 type paramView struct {
+	// Group stores group for paramView.
 	Group string
+	// Param stores param for paramView.
 	Param firebase.RemoteConfigParam
 }
 
+// RenderRemoteConfigDiff renders remote config diff and returns the resulting value or error.
 func RenderRemoteConfigDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, bool) {
 	var sections []string
 
@@ -51,7 +63,7 @@ func RenderRemoteConfigDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string
 	}
 
 	summary := fmt.Sprintf(
-		"SUMMARY\n  %s condition added, %s removed, %s changed, %s unchanged\n  %s parameter added, %s removed, %s changed, %s unchanged",
+		"Summary:\n  %s condition added, %s removed, %s changed, %s unchanged\n  %s parameter added, %s removed, %s changed, %s unchanged",
 		formatCount(conditionCounts.added),
 		formatCount(conditionCounts.removed),
 		formatCount(conditionCounts.changed),
@@ -62,9 +74,10 @@ func RenderRemoteConfigDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string
 		formatCount(parameterCounts.unchanged),
 	)
 	sections = append(sections, summary)
-	return strings.Join(sections, "\n\n"), true
+	return "\n" + strings.Join(sections, "\n\n") + "\n", true
 }
 
+// RenderConflictPreview renders conflict preview and returns the resulting value or error.
 func RenderConflictPreview(label string, currentValue, importValue any) string {
 	switch current := currentValue.(type) {
 	case firebase.RemoteConfigCondition:
@@ -115,6 +128,25 @@ func RenderConflictPreview(label string, currentValue, importValue any) string {
 	return fmt.Sprintf("current:\n%s\nimport:\n%s", string(NormalizeExportJSON(currentJSON)), string(NormalizeExportJSON(importJSON)))
 }
 
+// RenderConflictChoiceValue renders conflict choice value and returns the resulting value or error.
+func RenderConflictChoiceValue(value any) string {
+	switch v := value.(type) {
+	case ParamSlotPreview:
+		return summarizeParamSlotChoice(v)
+	case firebase.RemoteConfigCondition:
+		return trimPreview(formatConditionSummary(v))
+	case string:
+		return trimPreview(formatPlainValue(v))
+	default:
+		body, err := json.Marshal(value)
+		if err != nil {
+			return trimPreview(fmt.Sprintf("%v", value))
+		}
+		return trimPreview(string(NormalizeExportJSON(body)))
+	}
+}
+
+// renderConditionsDiff renders render conditions diff and returns the resulting value or error.
 func renderConditionsDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, diffCounts) {
 	current := make(map[string]firebase.RemoteConfigCondition, len(currentCfg.Conditions))
 	final := make(map[string]firebase.RemoteConfigCondition, len(finalCfg.Conditions))
@@ -160,9 +192,10 @@ func renderConditionsDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, 
 	if len(lines) == 0 {
 		return "", counts
 	}
-	return "CONDITIONS\n" + strings.Join(lines, "\n"), counts
+	return "Conditions:\n" + strings.Join(lines, "\n"), counts
 }
 
+// renderParametersDiff renders render parameters diff and returns the resulting value or error.
 func renderParametersDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, diffCounts) {
 	current := collectParamViews(currentCfg)
 	final := collectParamViews(finalCfg)
@@ -202,9 +235,10 @@ func renderParametersDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, 
 	if len(lines) == 0 {
 		return "", counts
 	}
-	return "PARAMETERS\n" + strings.Join(lines, "\n"), counts
+	return "Parameters:\n" + strings.Join(lines, "\n"), counts
 }
 
+// collectParamViews handles collect param views and returns the resulting value or error.
 func collectParamViews(cfg *firebase.RemoteConfig) map[string]paramView {
 	out := make(map[string]paramView)
 	for key, param := range cfg.Parameters {
@@ -218,16 +252,19 @@ func collectParamViews(cfg *firebase.RemoteConfig) map[string]paramView {
 	return out
 }
 
+// renderAddedParameter renders render added parameter and returns the resulting value or error.
 func renderAddedParameter(key string, value paramView) []string {
 	lines := []string{fmt.Sprintf("  + %s", colorAdded(formatParameterHeader(key, value.Group)))}
 	lines = append(lines, renderAddedParameterDetails(value.Param)...)
 	return lines
 }
 
+// renderRemovedParameter renders render removed parameter and returns the resulting value or error.
 func renderRemovedParameter(key string, value paramView) []string {
 	return []string{fmt.Sprintf("  - %s", colorRemoved(formatParameterHeader(key, value.Group)))}
 }
 
+// renderChangedParameter renders render changed parameter and returns the resulting value or error.
 func renderChangedParameter(key string, left, right paramView) []string {
 	lines := []string{fmt.Sprintf("  ~ %s", colorChanged(formatParameterHeader(key, right.Group)))}
 	if left.Group != right.Group {
@@ -243,6 +280,7 @@ func renderChangedParameter(key string, left, right paramView) []string {
 	return lines
 }
 
+// renderAddedParameterDetails renders render added parameter details and returns the resulting value or error.
 func renderAddedParameterDetails(param firebase.RemoteConfigParam) []string {
 	var lines []string
 	if param.DefaultValue != nil {
@@ -254,6 +292,7 @@ func renderAddedParameterDetails(param firebase.RemoteConfigParam) []string {
 	return lines
 }
 
+// renderParameterValueChanges renders render parameter value changes and returns the resulting value or error.
 func renderParameterValueChanges(left, right firebase.RemoteConfigParam) []string {
 	var lines []string
 	switch {
@@ -281,6 +320,7 @@ func renderParameterValueChanges(left, right firebase.RemoteConfigParam) []strin
 	return lines
 }
 
+// unionConditionalNames handles union conditional names and returns the resulting value or error.
 func unionConditionalNames(left, right map[string]firebase.RemoteConfigValue) []string {
 	keys := make([]string, 0, len(left)+len(right))
 	seen := make(map[string]struct{})
@@ -298,6 +338,7 @@ func unionConditionalNames(left, right map[string]firebase.RemoteConfigValue) []
 	return keys
 }
 
+// sortedConditionalNames handles sorted conditional names and returns the resulting value or error.
 func sortedConditionalNames(values map[string]firebase.RemoteConfigValue) []string {
 	keys := make([]string, 0, len(values))
 	for key := range values {
@@ -307,6 +348,7 @@ func sortedConditionalNames(values map[string]firebase.RemoteConfigValue) []stri
 	return keys
 }
 
+// formatConditionSummary formats format condition summary and returns the resulting value or error.
 func formatConditionSummary(condition firebase.RemoteConfigCondition) string {
 	parts := make([]string, 0, 3)
 	if strings.TrimSpace(condition.Expression) != "" {
@@ -324,6 +366,7 @@ func formatConditionSummary(condition firebase.RemoteConfigCondition) string {
 	return strings.Join(parts, " | ")
 }
 
+// formatParameterHeader formats format parameter header and returns the resulting value or error.
 func formatParameterHeader(key, group string) string {
 	if group == "" {
 		return key
@@ -331,6 +374,44 @@ func formatParameterHeader(key, group string) string {
 	return fmt.Sprintf("%s [%s]", key, group)
 }
 
+// summarizeParamSlotChoice handles summarize param slot choice and returns the resulting value or error.
+func summarizeParamSlotChoice(slot ParamSlotPreview) string {
+	parts := make([]string, 0, 4)
+	if slot.Group != "" {
+		parts = append(parts, "group="+formatGroupValue(slot.Group))
+	}
+	if slot.Param.DefaultValue != nil {
+		parts = append(parts, "default="+formatRemoteValue(*slot.Param.DefaultValue))
+	}
+	for _, condition := range sortedConditionalNames(slot.Param.ConditionalValues) {
+		parts = append(parts, condition+"="+formatRemoteValue(slot.Param.ConditionalValues[condition]))
+	}
+	if strings.TrimSpace(slot.Param.ValueType) != "" {
+		parts = append(parts, "type="+slot.Param.ValueType)
+	}
+	if strings.TrimSpace(slot.Param.Description) != "" {
+		parts = append(parts, "desc="+formatPlainValue(slot.Param.Description))
+	}
+	if len(parts) == 0 {
+		return "(empty)"
+	}
+	return trimPreview(strings.Join(parts, " | "))
+}
+
+// trimPreview handles trim preview and returns the resulting value or error.
+func trimPreview(value string) string {
+	const maxLen = 72
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "(empty)"
+	}
+	if len(value) <= maxLen {
+		return value
+	}
+	return strings.TrimSpace(value[:maxLen-1]) + "…"
+}
+
+// formatRemoteValue formats format remote value and returns the resulting value or error.
 func formatRemoteValue(value firebase.RemoteConfigValue) string {
 	switch {
 	case len(value.PersonalizationValue) > 0:
@@ -344,6 +425,7 @@ func formatRemoteValue(value firebase.RemoteConfigValue) string {
 	}
 }
 
+// formatPlainValue formats format plain value and returns the resulting value or error.
 func formatPlainValue(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -359,6 +441,7 @@ func formatPlainValue(value string) string {
 	return string(quoted)
 }
 
+// isSimpleToken reports is simple token and returns the resulting value or error.
 func isSimpleToken(value string) bool {
 	for _, r := range value {
 		if r == ' ' || r == '\t' || r == '\n' || r == '"' {
@@ -368,6 +451,7 @@ func isSimpleToken(value string) bool {
 	return true
 }
 
+// formatGroupValue formats format group value and returns the resulting value or error.
 func formatGroupValue(group string) string {
 	if group == "" {
 		return "(root)"
@@ -375,6 +459,7 @@ func formatGroupValue(group string) string {
 	return "[" + group + "]"
 }
 
+// emptyAsDash handles empty as dash and returns the resulting value or error.
 func emptyAsDash(value string) string {
 	if strings.TrimSpace(value) == "" {
 		return "(empty)"
@@ -382,10 +467,12 @@ func emptyAsDash(value string) string {
 	return value
 }
 
+// formatCount formats format count and returns the resulting value or error.
 func formatCount(count int) string {
 	return fmt.Sprintf("%d", count)
 }
 
+// colorAdded handles color added and returns the resulting value or error.
 func colorAdded(value string) string {
 	if clistyles.NoColorEnabled() || value == "" {
 		return value
@@ -393,6 +480,7 @@ func colorAdded(value string) string {
 	return lipgloss.NewStyle().Foreground(clistyles.ColorAdded).Render(value)
 }
 
+// colorRemoved handles color removed and returns the resulting value or error.
 func colorRemoved(value string) string {
 	if clistyles.NoColorEnabled() || value == "" {
 		return value
@@ -400,6 +488,7 @@ func colorRemoved(value string) string {
 	return lipgloss.NewStyle().Foreground(clistyles.ColorRemoved).Render(value)
 }
 
+// colorChanged handles color changed and returns the resulting value or error.
 func colorChanged(value string) string {
 	if clistyles.NoColorEnabled() || value == "" {
 		return value

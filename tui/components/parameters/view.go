@@ -8,6 +8,8 @@ import (
 
 	"fbrcm/core"
 	"fbrcm/core/filter"
+	corestyles "fbrcm/core/styles"
+	"fbrcm/tui/components/jsoninput"
 	"fbrcm/tui/styles"
 )
 
@@ -24,8 +26,10 @@ var (
 	groupSelectedLineStyle     = lipgloss.NewStyle().Background(styles.PaletteGold).Foreground(styles.PaletteSlateBright)
 	parameterSelectedLineStyle = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
 	valueSelectedStyle         = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
+	draftBadgeStyle            = lipgloss.NewStyle().Background(styles.PaletteError).Foreground(styles.PaletteSlateBright).Padding(0, 1)
 )
 
+// projectSelectionStyle handles project selection style and returns the resulting value or error.
 func projectSelectionStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Bold(true).Reverse(true)
@@ -33,6 +37,7 @@ func projectSelectionStyle() lipgloss.Style {
 	return projectSelectedLineStyle
 }
 
+// groupSelectionStyle handles group selection style and returns the resulting value or error.
 func groupSelectionStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Bold(true).Reverse(true)
@@ -40,6 +45,7 @@ func groupSelectionStyle() lipgloss.Style {
 	return groupSelectedLineStyle
 }
 
+// parameterSelectionStyle handles parameter selection style and returns the resulting value or error.
 func parameterSelectionStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Reverse(true)
@@ -47,6 +53,7 @@ func parameterSelectionStyle() lipgloss.Style {
 	return parameterSelectedLineStyle
 }
 
+// valueSelectionStyle handles value selection style and returns the resulting value or error.
 func valueSelectionStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Reverse(true)
@@ -54,6 +61,7 @@ func valueSelectionStyle() lipgloss.Style {
 	return valueSelectedStyle
 }
 
+// fillSelectedLine handles fill selected line and returns the resulting value or error.
 func fillSelectedLine(line string, width int, fillStyle lipgloss.Style) string {
 	clipped := lipgloss.NewStyle().MaxWidth(width).Render(line)
 	padding := max(width-lipgloss.Width(clipped), 0)
@@ -63,6 +71,7 @@ func fillSelectedLine(line string, width int, fillStyle lipgloss.Style) string {
 	return clipped + fillStyle.Render(strings.Repeat(" ", padding))
 }
 
+// View handles view for Model and returns the resulting state or error.
 func (m Model) View(active bool) string {
 	projectLine, groupLine, bodyStart := m.stickyHeaderLines(m.offset)
 	bodyLines := m.visibleBodyLines(bodyStart)
@@ -77,6 +86,7 @@ func (m Model) View(active bool) string {
 	return renderPanel(lines, m.width, m.height, active, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()))
 }
 
+// renderBody renders render body for Model and returns the resulting state or error.
 func (m Model) renderBody() []string {
 	if len(m.visible) == 0 {
 		return []string{
@@ -98,6 +108,7 @@ func (m Model) renderBody() []string {
 	return lines
 }
 
+// visibleBodyLines handles visible body lines for Model and returns the resulting state or error.
 func (m Model) visibleBodyLines(startLine int) []string {
 	height := m.bodyVisibleLinesForOffset(m.offset)
 	if height <= 0 {
@@ -148,6 +159,7 @@ func (m Model) visibleBodyLines(startLine int) []string {
 	return lines
 }
 
+// stickyHeaderLines handles sticky header lines for Model and returns the resulting state or error.
 func (m Model) stickyHeaderLines(offset int) (string, string, int) {
 	projectIndex, groupIndex, bodyStart, _ := m.stickyHeaderContext(offset)
 	if projectIndex < 0 || projectIndex >= len(m.visible) {
@@ -170,6 +182,7 @@ func (m Model) stickyHeaderLines(offset int) (string, string, int) {
 	return projectLine, groupLine, bodyStart
 }
 
+// stickyHeaderContext handles sticky header context for Model and returns the resulting state or error.
 func (m Model) stickyHeaderContext(offset int) (projectIndex, groupIndex, bodyStart, headerLines int) {
 	bodyStart = m.bodyStartForOffset(offset)
 	projectIndex = m.projectNodeIndexForLine(bodyStart)
@@ -184,6 +197,7 @@ func (m Model) stickyHeaderContext(offset int) (projectIndex, groupIndex, bodySt
 	return
 }
 
+// nodeIndexAtLine handles node index at line for Model and returns the resulting state or error.
 func (m Model) nodeIndexAtLine(line int) int {
 	if len(m.visible) == 0 {
 		return -1
@@ -205,6 +219,7 @@ func (m Model) nodeIndexAtLine(line int) int {
 	return len(m.visible) - 1
 }
 
+// projectNodeIndexFor handles project node index for for Model and returns the resulting state or error.
 func (m Model) projectNodeIndexFor(nodeIndex int) int {
 	if nodeIndex < 0 || nodeIndex >= len(m.visible) {
 		return -1
@@ -217,6 +232,7 @@ func (m Model) projectNodeIndexFor(nodeIndex int) int {
 	return -1
 }
 
+// groupNodeIndexFor handles group node index for for Model and returns the resulting state or error.
 func (m Model) groupNodeIndexFor(nodeIndex int) int {
 	if nodeIndex < 0 || nodeIndex >= len(m.visible) {
 		return -1
@@ -235,10 +251,12 @@ func (m Model) groupNodeIndexFor(nodeIndex int) int {
 	return -1
 }
 
+// projectNodeIndexForLine handles project node index for line for Model and returns the resulting state or error.
 func (m Model) projectNodeIndexForLine(line int) int {
 	return m.projectNodeIndexFor(m.nodeIndexAtLine(line))
 }
 
+// groupNodeIndexForLine handles group node index for line for Model and returns the resulting state or error.
 func (m Model) groupNodeIndexForLine(line int) int {
 	nodeIndex := m.nodeIndexAtLine(line)
 	if nodeIndex < 0 || nodeIndex >= len(m.visible) {
@@ -261,6 +279,7 @@ func (m Model) groupNodeIndexForLine(line int) int {
 	return m.groupNodeIndexFor(nodeIndex)
 }
 
+// stickyHeaderLineCount handles sticky header line count for Model and returns the resulting state or error.
 func (m Model) stickyHeaderLineCount(offset int) int {
 	if len(m.visible) == 0 {
 		return 0
@@ -269,6 +288,7 @@ func (m Model) stickyHeaderLineCount(offset int) int {
 	return headerLines
 }
 
+// bodyStartForOffset handles body start for offset for Model and returns the resulting state or error.
 func (m Model) bodyStartForOffset(offset int) int {
 	if len(m.visible) == 0 {
 		return offset
@@ -289,6 +309,7 @@ func (m Model) bodyStartForOffset(offset int) int {
 	return bodyStart
 }
 
+// offsetForBodyStart handles offset for body start for Model and returns the resulting state or error.
 func (m Model) offsetForBodyStart(target int) int {
 	if m.totalLines <= 0 {
 		return 0
@@ -311,6 +332,7 @@ func (m Model) offsetForBodyStart(target int) int {
 	return best
 }
 
+// bodyVisibleLinesForOffset handles body visible lines for offset for Model and returns the resulting state or error.
 func (m Model) bodyVisibleLinesForOffset(offset int) int {
 	lines := m.viewportHeight() - m.stickyHeaderLineCount(offset)
 	if lines < 1 {
@@ -319,6 +341,7 @@ func (m Model) bodyVisibleLinesForOffset(offset int) int {
 	return lines
 }
 
+// projectHasHiddenContentAbove handles project has hidden content above for Model and returns the resulting state or error.
 func (m Model) projectHasHiddenContentAbove(projectID, excludedGroupKey string, bodyStart int) bool {
 	for i, node := range m.visible {
 		if node.projectID != projectID {
@@ -337,6 +360,7 @@ func (m Model) projectHasHiddenContentAbove(projectID, excludedGroupKey string, 
 	return false
 }
 
+// groupHasHiddenContentAbove handles group has hidden content above for Model and returns the resulting state or error.
 func (m Model) groupHasHiddenContentAbove(projectID, groupKey string, bodyStart int) bool {
 	for i, node := range m.visible {
 		if node.projectID != projectID || node.groupKey != groupKey {
@@ -352,6 +376,7 @@ func (m Model) groupHasHiddenContentAbove(projectID, groupKey string, bodyStart 
 	return false
 }
 
+// screenLineForOffset handles screen line for offset for Model and returns the resulting state or error.
 func (m Model) screenLineForOffset(cursor, offset int) int {
 	if len(m.visible) == 0 || cursor < 0 || cursor >= len(m.visible) {
 		return -1
@@ -368,6 +393,7 @@ func (m Model) screenLineForOffset(cursor, offset int) int {
 	return headerLines + (m.lineIndexByNode[cursor] - bodyStart)
 }
 
+// renderNodeBlock renders render node block for Model and returns the resulting state or error.
 func (m Model) renderNodeBlock(index int, selected bool) []string {
 	if index < 0 || index >= len(m.visible) {
 		return nil
@@ -394,6 +420,7 @@ func (m Model) renderNodeBlock(index int, selected bool) []string {
 	return lines
 }
 
+// nodeBlockLineCount handles node block line count for Model and returns the resulting state or error.
 func (m Model) nodeBlockLineCount(index int) int {
 	if index < 0 || index >= len(m.visible) {
 		return 0
@@ -418,6 +445,7 @@ func (m Model) nodeBlockLineCount(index int) int {
 	return count
 }
 
+// isHeaderOnlyProject reports is header only project for Model and returns the resulting state or error.
 func (m Model) isHeaderOnlyProject(index int) bool {
 	if index < 0 || index >= len(m.visible) {
 		return false
@@ -433,6 +461,7 @@ func (m Model) isHeaderOnlyProject(index int) bool {
 	return next.projectID != node.projectID
 }
 
+// isMouseInside reports is mouse inside for Model and returns the resulting state or error.
 func (m Model) isMouseInside(mouse tea.Mouse) bool {
 	if m.width <= 0 || m.height <= 0 {
 		return false
@@ -442,6 +471,7 @@ func (m Model) isMouseInside(mouse tea.Mouse) bool {
 		mouse.Y >= m.y && mouse.Y < m.y+m.height
 }
 
+// isMouseOnFilter reports is mouse on filter for Model and returns the resulting state or error.
 func (m Model) isMouseOnFilter(mouse tea.Mouse) bool {
 	if !m.isMouseInside(mouse) || !m.filter.Visible() {
 		return false
@@ -453,6 +483,7 @@ func (m Model) isMouseOnFilter(mouse tea.Mouse) bool {
 		mouse.X >= m.x && mouse.X < m.x+m.width-1
 }
 
+// nodeIndexAtMouse handles node index at mouse for Model and returns the resulting state or error.
 func (m Model) nodeIndexAtMouse(mouse tea.Mouse) (int, bool) {
 	if !m.isMouseInside(mouse) {
 		return 0, false
@@ -497,6 +528,7 @@ func (m Model) nodeIndexAtMouse(mouse tea.Mouse) (int, bool) {
 	return nodeIndex, true
 }
 
+// renderNode renders render node for Model and returns the resulting state or error.
 func (m Model) renderNode(node visibleNode, selected bool) string {
 	switch node.kind {
 	case nodeProject:
@@ -512,6 +544,7 @@ func (m Model) renderNode(node visibleNode, selected bool) string {
 	}
 }
 
+// renderProjectNode renders render project node for Model and returns the resulting state or error.
 func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) string {
 	project := m.projectByID(node.projectID)
 	if project == nil {
@@ -520,7 +553,7 @@ func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) st
 
 	width := max(m.width-2, 0)
 	layout := m.layoutForProject(node.projectID)
-	meta, metaStyle := m.projectMeta(project), projectMetaStyle
+	meta, metaStyle := m.projectMeta(project, selected), projectMetaStyle
 	if project.err != nil && project.tree != nil && !project.loading && !project.verifying {
 		metaStyle = styles.SecondaryTitleError
 	}
@@ -562,13 +595,26 @@ func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) st
 			metaLineStyle = metaLineStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
 		}
 	}
-	line := left + metaLineStyle.Render(strings.Repeat(" ", gap)+meta)
+	line := left
+	if selected && project.hasDraft {
+		badge, rest := m.projectMetaSegments(project, true)
+		line += metaLineStyle.Render(strings.Repeat(" ", gap))
+		line += " "
+		line += badge
+		line += " "
+		if rest != "" {
+			line += metaLineStyle.Render(" " + rest)
+		}
+	} else {
+		line += metaLineStyle.Render(strings.Repeat(" ", gap) + meta)
+	}
 	if selected {
 		return fillSelectedLine(line, width, projectSelectionStyle())
 	}
 	return padANSI(line, width)
 }
 
+// renderGroupNode renders render group node for Model and returns the resulting state or error.
 func (m Model) renderGroupNode(node visibleNode, selected, underlined bool) string {
 	width := max(m.width-2, 0)
 	arrow := "▾"
@@ -598,9 +644,10 @@ func (m Model) renderGroupNode(node visibleNode, selected, underlined bool) stri
 	return padANSI(line, width)
 }
 
+// renderParameterNode renders render parameter node for Model and returns the resulting state or error.
 func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	width := max(m.width-2, 0)
-	layout := m.layoutForProject(node.projectID)
+	layout := m.parameterRenderLayout()
 	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
 	if param == nil {
 		return strings.Repeat(" ", width)
@@ -621,7 +668,7 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 
 	if node.expanded {
 		left := lipgloss.NewStyle().Render("  ") + m.renderHighlightedParameterKey(param.Key, style, selected)
-		if param.Description != "" {
+		if layout.mode == parameterRenderModeRegular && param.Description != "" {
 			descStyle := descriptionStyle
 			if selected {
 				if styles.NoColorEnabled() {
@@ -636,7 +683,7 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 		if selected {
 			prefix := parameterSelectionStyle().Render("  ")
 			left = prefix + m.renderHighlightedParameterKey(param.Key, style, selected)
-			if param.Description != "" {
+			if layout.mode == parameterRenderModeRegular && param.Description != "" {
 				var descStyle lipgloss.Style
 				if styles.NoColorEnabled() {
 					descStyle = lipgloss.NewStyle().Reverse(true).Italic(true)
@@ -649,6 +696,16 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 			return fillSelectedLine(left, width, parameterSelectionStyle())
 		}
 		return padANSI(left, width)
+	}
+
+	if layout.mode == parameterRenderModeNarrow {
+		line := lipgloss.NewStyle().Render("  ") + m.renderHighlightedParameterKey(param.Key, style, selected)
+		if selected {
+			prefix := parameterSelectionStyle().Render("  ")
+			line = prefix + m.renderHighlightedParameterKey(param.Key, style, selected)
+			return fillSelectedLine(line, width, parameterSelectionStyle())
+		}
+		return padANSI(line, width)
 	}
 
 	icon := "╌"
@@ -682,13 +739,15 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	return padANSI(line, width)
 }
 
+// isDeprecatedDescription reports is deprecated description and returns the resulting value or error.
 func isDeprecatedDescription(description string) bool {
 	return deprecatedDescriptionPattern.MatchString(description)
 }
 
+// renderValueNode renders render value node for Model and returns the resulting state or error.
 func (m Model) renderValueNode(node visibleNode, selected bool) string {
 	width := max(m.width-2, 0)
-	layout := m.layoutForProject(node.projectID)
+	layout := m.parameterRenderLayout()
 	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
 	if param == nil || node.valueIdx < 0 || node.valueIdx >= len(param.Values) {
 		if node.label != "" {
@@ -705,23 +764,31 @@ func (m Model) renderValueNode(node visibleNode, selected bool) string {
 
 	conditionLabel := displayConditionLabel(value.Label)
 	conditionWidth := parameterConditionWidth(param)
-	leafOffset := 1
-	if len(param.Values) == 1 {
-		leafOffset = 2
-	}
-	leafOffset++
-	leafValueStart := layout.valueStart + leafOffset
-	labelStart := max(leafValueStart-conditionWidth-4, layout.paramStart+2)
 	connector := m.valueConnector(node, param)
-	tree := leafLineStyle.Render(branchGlyph(layout.paramStart, labelStart, connector))
 	label := conditionLabel
-	fillerWidth := max(leafValueStart-labelStart-lipgloss.Width(label)-3, 1)
+	var tree string
+	var fillerWidth int
+	if layout.mode == parameterRenderModeNarrow {
+		tree = leafLineStyle.Render(compactBranchGlyph(layout.paramStart, connector))
+		fillerWidth = max(conditionWidth-lipgloss.Width(label)+1, 1)
+	} else {
+		leafOffset := 1
+		if len(param.Values) == 1 {
+			leafOffset = 2
+		}
+		leafOffset++
+		leafValueStart := layout.valueStart + leafOffset
+		labelStart := max(leafValueStart-conditionWidth-4, layout.paramStart+2)
+		tree = leafLineStyle.Render(branchGlyph(layout.paramStart, labelStart, connector))
+		fillerWidth = max(leafValueStart-labelStart-lipgloss.Width(label)-3, 1)
+	}
 	filler := strings.Repeat("╌", fillerWidth)
 	valueRendered := m.renderParameterValue(value, selected)
 	line := tree + " " + labelStyle.Render(label) + leafLineStyle.Render(" "+filler+" ") + valueRendered
 	return padANSI(line, width)
 }
 
+// renderCollapsedParameterValues renders render collapsed parameter values for Model and returns the resulting state or error.
 func (m Model) renderCollapsedParameterValues(values []core.ParametersValue, valueStyle, separatorStyle lipgloss.Style, selected bool) string {
 	parts := make([]string, 0, max(0, len(values)*2-1))
 	for i, value := range values {
@@ -733,13 +800,15 @@ func (m Model) renderCollapsedParameterValues(values []core.ParametersValue, val
 	return strings.Join(parts, "")
 }
 
+// renderParameterValue renders render parameter value for Model and returns the resulting state or error.
 func (m Model) renderParameterValue(value core.ParametersValue, selected bool) string {
 	return m.renderParameterValueWithBase(value, valueStyle, selected)
 }
 
+// renderParameterValueWithBase renders render parameter value with base for Model and returns the resulting state or error.
 func (m Model) renderParameterValueWithBase(value core.ParametersValue, baseStyle lipgloss.Style, selected bool) string {
 	if value.Empty {
-		style := parameterEmptyValue
+		style := corestyles.EmptyValueStyle()
 		if selected {
 			if styles.NoColorEnabled() {
 				style = lipgloss.NewStyle().Reverse(true).Italic(true)
@@ -752,9 +821,13 @@ func (m Model) renderParameterValueWithBase(value core.ParametersValue, baseStyl
 	if selected {
 		return valueSelectionStyle().Render(value.Value)
 	}
-	return baseStyle.Render(value.Value)
+	if strings.EqualFold(strings.TrimSpace(value.ValueType), "json") {
+		return jsoninput.HighlightJSONVisible(value.Value)
+	}
+	return corestyles.ValueTextStyle(value.Value, value.ValueType).Render(value.Value)
 }
 
+// renderHighlightedParameterKey renders render highlighted parameter key for Model and returns the resulting state or error.
 func (m Model) renderHighlightedParameterKey(text string, baseStyle lipgloss.Style, selected bool) string {
 	query := m.filter.Value()
 	if query == "" {
@@ -783,6 +856,7 @@ func (m Model) renderHighlightedParameterKey(text string, baseStyle lipgloss.Sty
 	return builder.String()
 }
 
+// valueConnector handles value connector for Model and returns the resulting state or error.
 func (m Model) valueConnector(node visibleNode, param *core.ParametersEntry) string {
 	if param == nil {
 		return "last"
@@ -799,6 +873,7 @@ func (m Model) valueConnector(node visibleNode, param *core.ParametersEntry) str
 	return "mid"
 }
 
+// branchGlyph handles branch glyph and returns the resulting value or error.
 func branchGlyph(paramStart, labelStart int, connector string) string {
 	totalWidth := max(labelStart-1, 1)
 	if totalWidth <= paramStart {
@@ -821,6 +896,18 @@ func branchGlyph(paramStart, labelStart int, connector string) string {
 	}
 }
 
+// compactBranchGlyph handles compact branch glyph and returns the resulting value or error.
+func compactBranchGlyph(paramStart int, connector string) string {
+	prefixWidth := max(paramStart, 0)
+	switch connector {
+	case "last", "single":
+		return strings.Repeat(" ", prefixWidth) + "╰╌"
+	default:
+		return strings.Repeat(" ", prefixWidth) + "├╌"
+	}
+}
+
+// parameterConditionWidth handles parameter condition width and returns the resulting value or error.
 func parameterConditionWidth(param *core.ParametersEntry) int {
 	width := lipgloss.Width("Default value")
 	if param == nil {
@@ -832,6 +919,7 @@ func parameterConditionWidth(param *core.ParametersEntry) int {
 	return width
 }
 
+// isLastValueNode reports is last value node for Model and returns the resulting state or error.
 func (m Model) isLastValueNode(index int) bool {
 	if index < 0 || index >= len(m.visible) {
 		return false
@@ -847,6 +935,7 @@ func (m Model) isLastValueNode(index int) bool {
 	return next.kind != nodeValue || next.paramKey != node.paramKey || next.groupKey != node.groupKey || next.projectID != node.projectID
 }
 
+// isLastInGroup reports is last in group for Model and returns the resulting state or error.
 func (m Model) isLastInGroup(index int) bool {
 	if index < 0 || index >= len(m.visible) {
 		return false
@@ -865,6 +954,7 @@ func (m Model) isLastInGroup(index int) bool {
 	return next.kind == nodeGroup || next.kind == nodeProject
 }
 
+// isEmptyExpandedGroup reports is empty expanded group for Model and returns the resulting state or error.
 func (m Model) isEmptyExpandedGroup(index int) bool {
 	if index < 0 || index >= len(m.visible) {
 		return false
@@ -883,10 +973,12 @@ func (m Model) isEmptyExpandedGroup(index int) bool {
 	return next.kind == nodeGroup || next.kind == nodeProject
 }
 
+// conditionStyle handles condition style for Model and returns the resulting state or error.
 func (m Model) conditionStyle(color string) lipgloss.Style {
 	return styles.PanelText.Foreground(styles.ConditionLipglossColor(color))
 }
 
+// renderPanel renders render panel and returns the resulting value or error.
 func renderPanel(body []string, width, height int, active bool, scrollbar scrollbarState, footer []string) string {
 	if width <= 0 || height <= 0 {
 		return ""
@@ -939,12 +1031,17 @@ func renderPanel(body []string, width, height int, active bool, scrollbar scroll
 	return strings.Join(lines, "\n")
 }
 
+// scrollbarState holds scrollbar state state used by the parameters package.
 type scrollbarState struct {
-	visible    bool
+	// visible stores visible for scrollbarState.
+	visible bool
+	// thumbStart stores thumb start for scrollbarState.
 	thumbStart int
-	thumbEnd   int
+	// thumbEnd stores thumb end for scrollbarState.
+	thumbEnd int
 }
 
+// scrollbar handles scrollbar for Model and returns the resulting state or error.
 func (m Model) scrollbar() scrollbarState {
 	contentHeight := m.viewportHeight()
 	totalLines := m.totalLines
@@ -966,11 +1063,13 @@ func (m Model) scrollbar() scrollbarState {
 	}
 }
 
+// padANSI handles pad ansi and returns the resulting value or error.
 func padANSI(value string, width int) string {
 	plainWidth := lipgloss.Width(value)
 	return value + strings.Repeat(" ", max(width-plainWidth, 0))
 }
 
+// indicesSet handles indices set and returns the resulting value or error.
 func indicesSet(indices []int) map[int]bool {
 	set := make(map[int]bool, len(indices))
 	for _, index := range indices {
