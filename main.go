@@ -12,6 +12,12 @@ import (
 	"fbrcm/tui"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 // main handles main and returns the resulting value or error.
 func main() {
 	mode := corelog.ModeCLI
@@ -36,6 +42,6 @@ func main() {
 		}
 		tui.Init(svc)
 	} else {
-		cli.Init(svc)
+		cli.Init(svc, version, commit, date)
 	}
 }

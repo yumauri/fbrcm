@@ -35,14 +35,19 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+const versionTemplate = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`
+
 // isProfileCommand reports is profile command and returns the resulting value or error.
 func isProfileCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "profile" || strings.HasPrefix(cmd.CommandPath(), "fbrcm profile")
 }
 
 // Execute handles execute and returns the resulting value or error.
-func Execute(s *core.Core) {
+func Execute(s *core.Core, version, commit, date string) {
 	corelog.For("cli").Debug("register cli commands")
+	rootCmd.Version = fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
+	rootCmd.SetVersionTemplate(versionTemplate)
+
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(cachecmd.New())
 	rootCmd.AddCommand(deletecmd.New(s))
