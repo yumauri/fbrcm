@@ -10,7 +10,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.dialog.IsOpen() {
 		switch msg := msg.(type) {
@@ -630,7 +629,6 @@ func (m *Model) closeDetailsIfOrphaned() {
 	m.closeDetailsPanel()
 }
 
-// applyLayout handles apply layout for Model and returns the resulting state or error.
 func (m *Model) applyLayout() {
 	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
 
@@ -643,7 +641,6 @@ func (m *Model) applyLayout() {
 	m.logs = m.logs.SetBounds(0, layout.topHeight, layout.bottomWidth, layout.bottomHeight)
 }
 
-// nextTabPanel handles next tab panel for Model and returns the resulting state or error.
 func (m Model) nextTabPanel() panels.ID {
 	if m.active == panels.Logs {
 		if m.detailsVisible {
@@ -688,12 +685,10 @@ func (m *Model) setActive(panel panels.ID) {
 	m.logs = m.logs.SetActive(panel == panels.Logs)
 }
 
-// keyboardCaptured handles keyboard captured for Model and returns the resulting state or error.
 func (m Model) keyboardCaptured() bool {
 	return m.capture != panels.None
 }
 
-// panelAt handles panel at for Model and returns the resulting state or error.
 func (m Model) panelAt(x, y int) (panels.ID, bool) {
 	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
 	if x < 0 || y < 0 || x >= layout.bottomWidth || y >= layout.topHeight+layout.bottomHeight {
@@ -714,7 +709,6 @@ func (m Model) panelAt(x, y int) (panels.ID, bool) {
 	return panels.None, false
 }
 
-// resizeLogsHeight handles resize logs height for Model and returns the resulting state or error.
 func (m *Model) resizeLogsHeight(delta int) {
 	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
 	m.logsHeight = nextLogsPanelHeight(layout.bottomHeight, delta)
@@ -724,7 +718,6 @@ func (m *Model) resizeLogsHeight(delta int) {
 	}
 }
 
-// nextLogsPanelHeight handles next logs panel height and returns the resulting value or error.
 func nextLogsPanelHeight(current, delta int) int {
 	if delta == 0 {
 		return current
@@ -755,7 +748,6 @@ func initialLogsPanelHeight(terminalHeight int) int {
 	return terminalHeight - 33
 }
 
-// detailsWidthForLayout handles details width for layout for Model and returns the resulting state or error.
 func (m Model) detailsWidthForLayout(layout panelLayout) int {
 	minWidth := max(layout.rightWidth/2, 1)
 	maxWidth := max(layout.rightWidth-11, 1)

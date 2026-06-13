@@ -10,23 +10,15 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-// Model holds model state used by the renameinput package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// maxWidth stores max width for Model.
+	x        int
+	y        int
 	maxWidth int
-	// minWidth stores min width for Model.
 	minWidth int
-	// input stores input for Model.
-	input textinput.Model
-	// open stores open for Model.
-	open bool
+	input    textinput.Model
+	open     bool
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{input: newInput()}
 }
@@ -58,17 +50,14 @@ func (m Model) IsOpen() bool {
 	return m.open
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	return m.x, m.y
 }
 
-// Value handles value for Model and returns the resulting state or error.
 func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.open {
 		return m, nil
@@ -79,7 +68,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if !m.open {
 		return ""
@@ -98,7 +86,6 @@ var inputBorderStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
 	BorderForeground(styles.PaletteBlueBright)
 
-// textinputStyles handles textinput styles and returns the resulting value or error.
 func textinputStyles() textinput.Styles {
 	inputStyles := textinput.DefaultDarkStyles()
 	filterStyle := styles.FilterText
@@ -114,7 +101,6 @@ func textinputStyles() textinput.Styles {
 	return inputStyles
 }
 
-// newInput constructs new input and returns the resulting value or error.
 func newInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""

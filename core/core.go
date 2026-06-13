@@ -29,9 +29,7 @@ type AuthPaths struct {
 	ServiceAccountPath string
 }
 
-// Core holds core state used by the core package.
 type Core struct {
-	// ctx stores ctx for Core.
 	ctx context.Context
 	// firebase stores firebase clients by auth id.
 	firebase map[string]*firebase.Service
@@ -39,7 +37,6 @@ type Core struct {
 	firebaseMu sync.Mutex
 }
 
-// NewService constructs service and returns the resulting value or error.
 func NewService(ctx context.Context) (*Core, error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -50,7 +47,6 @@ func NewService(ctx context.Context) (*Core, error) {
 	return &Core{ctx: ctx, firebase: make(map[string]*firebase.Service)}, nil
 }
 
-// ListProjects lists projects for Core and returns the resulting state or error.
 func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
 	logger := corelog.For("core")
 	logger.Debug("list projects requested")
@@ -274,7 +270,6 @@ func (s *Core) ProjectByID(projectID string) (Project, error) {
 	return Project{}, fmt.Errorf("project %q is not in projects config", projectID)
 }
 
-// SyncProjects handles sync projects for Core and returns the resulting state or error.
 func (s *Core) SyncProjects(ctx context.Context) ([]Project, string, error) {
 	corelog.For("core").Info("projects sync requested")
 	projects, err := s.syncProjects(ctx, "")
@@ -294,7 +289,6 @@ func (s *Core) SyncProjectsForAuth(ctx context.Context, authID string) ([]Projec
 	return projects, "firebase", nil
 }
 
-// EnsureAuthLogin handles ensure login for Core and returns the resulting state or error.
 func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) error {
 	logger := corelog.For("core")
 	logger.Info("login requested", "auth_id", authID, "no_open", noOpen)
@@ -314,7 +308,6 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	return nil
 }
 
-// ExportRemoteConfig handles export remote config for Core and returns the resulting state or error.
 func (s *Core) ExportRemoteConfig(ctx context.Context, projectID string) (json.RawMessage, string, error) {
 	logger := corelog.For("core")
 	logger.Info("export remote config requested", "project_id", projectID)
@@ -333,7 +326,6 @@ func (s *Core) ExportRemoteConfig(ctx context.Context, projectID string) (json.R
 	return raw, etag, nil
 }
 
-// ValidateRemoteConfig handles validate remote config for Core and returns the resulting state or error.
 func (s *Core) ValidateRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage) error {
 	logger := corelog.For("core")
 	logger.Info("validate remote config requested", "project_id", projectID)
@@ -357,7 +349,6 @@ func (s *Core) ValidateRemoteConfig(ctx context.Context, projectID string, raw j
 	return s.ValidateRemoteConfigWithETag(ctx, projectID, raw, etag)
 }
 
-// ValidateRemoteConfigWithETag handles validate remote config with etag for Core and returns the resulting state or error.
 func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID string, raw json.RawMessage, etag string) error {
 	logger := corelog.For("core")
 	logger.Info("validate remote config with etag requested", "project_id", projectID, "etag", etag)
@@ -380,7 +371,6 @@ func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID strin
 	return nil
 }
 
-// PublishRemoteConfig handles publish remote config for Core and returns the resulting state or error.
 func (s *Core) PublishRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage) (json.RawMessage, string, error) {
 	logger := corelog.For("core")
 	logger.Info("publish remote config requested", "project_id", projectID)
@@ -404,7 +394,6 @@ func (s *Core) PublishRemoteConfig(ctx context.Context, projectID string, raw js
 	return s.PublishRemoteConfigWithETag(ctx, projectID, raw, etag)
 }
 
-// PublishRemoteConfigWithETag handles publish remote config with etag for Core and returns the resulting state or error.
 func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string, raw json.RawMessage, etag string) (json.RawMessage, string, error) {
 	logger := corelog.For("core")
 	logger.Info("publish remote config with etag requested", "project_id", projectID, "etag", etag)
@@ -442,7 +431,6 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 	return updatedRaw, nextETag, nil
 }
 
-// ImportRemoteConfig handles import remote config for Core and returns the resulting state or error.
 func (s *Core) ImportRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage) (json.RawMessage, string, error) {
 	if err := s.ValidateRemoteConfig(ctx, projectID, raw); err != nil {
 		return nil, "", err
@@ -450,7 +438,6 @@ func (s *Core) ImportRemoteConfig(ctx context.Context, projectID string, raw jso
 	return s.PublishRemoteConfig(ctx, projectID, raw)
 }
 
-// PurgeProjects handles purge projects for Core and returns the resulting state or error.
 func (s *Core) PurgeProjects() error {
 	logger := corelog.For("core")
 	logger.Info("purge projects cache requested")
@@ -463,7 +450,6 @@ func (s *Core) PurgeProjects() error {
 	return nil
 }
 
-// syncProjects handles sync projects for Core and returns the resulting state or error.
 func (s *Core) syncProjects(ctx context.Context, onlyAuthID string) ([]Project, error) {
 	logger := corelog.For("core")
 	logger.Info("syncing projects from firebase")
@@ -527,7 +513,6 @@ func (s *Core) syncProjects(ctx context.Context, onlyAuthID string) ([]Project, 
 	return cfgProjects, nil
 }
 
-// firebaseServiceForProject handles firebase service lookup for project.
 func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) (*firebase.Service, error) {
 	project, err := s.ProjectByID(projectID)
 	if err != nil {
@@ -536,7 +521,6 @@ func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) 
 	return s.firebaseServiceForAuth(ctx, project.AuthID)
 }
 
-// firebaseServiceForAuth handles firebase service lookup for auth id.
 func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*firebase.Service, error) {
 	auth, err := s.authEntry(authID)
 	if err != nil {
@@ -622,7 +606,6 @@ func removeFileIfPresent(path string) error {
 	return nil
 }
 
-// toConfigProjects handles to config projects and returns the resulting value or error.
 func toConfigProjects(projects []firebase.Project) []config.Project {
 	out := make([]config.Project, len(projects))
 	for i, p := range projects {
@@ -638,7 +621,6 @@ func toConfigProjects(projects []firebase.Project) []config.Project {
 	return out
 }
 
-// mergeProjects handles merge projects and returns the resulting value or error.
 func mergeProjects(existing, incoming []config.Project, defaultAuthID string, authIDs []string, onlyAuthID string, now time.Time) []config.Project {
 	byID := make(map[string]config.Project, len(existing))
 	for _, project := range existing {
@@ -674,7 +656,6 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 	return merged
 }
 
-// sameProject handles same project and returns the resulting value or error.
 func sameProject(left, right config.Project) bool {
 	authSame := left.AuthID == right.AuthID &&
 		strings.Join(left.DiscoveredBy, "\x00") == strings.Join(right.DiscoveredBy, "\x00")

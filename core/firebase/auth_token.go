@@ -14,14 +14,10 @@ import (
 
 // oauth2.TokenSource implementation with persistent caching of OAuth tokens
 type persistingTokenSource struct {
-	// base stores base for persistingTokenSource.
-	base oauth2.TokenSource
-	// lastToken stores last token for persistingTokenSource.
+	base      oauth2.TokenSource
 	lastToken *oauth2.Token
-	// persist stores persist for persistingTokenSource.
-	persist bool
-	// path stores token cache path for persistingTokenSource.
-	path string
+	persist   bool
+	path      string
 }
 
 // Returns an OAuth token, caching it to disk if it has changed
@@ -107,7 +103,6 @@ func writeCachedToken(path string, tok *oauth2.Token) error {
 	return nil
 }
 
-// ReadCachedToken reads cached token and returns the resulting value or error.
 func ReadCachedToken() (*oauth2.Token, error) {
 	return nil, fmt.Errorf("auth id is required")
 }

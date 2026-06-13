@@ -27,61 +27,37 @@ const (
 	ParametersCacheStale
 )
 
-// ParametersTree holds parameters tree state used by the core package.
 type ParametersTree struct {
-	// Version stores version for ParametersTree.
-	Version string
-	// CachedAt stores cached at for ParametersTree.
+	Version  string
 	CachedAt time.Time
-	// ETag stores etag for ParametersTree.
-	ETag string
-	// Groups stores groups for ParametersTree.
-	Groups []ParametersGroup
+	ETag     string
+	Groups   []ParametersGroup
 }
 
-// ParametersGroup holds parameters group state used by the core package.
 type ParametersGroup struct {
-	// Key stores key for ParametersGroup.
-	Key string
-	// Label stores label for ParametersGroup.
-	Label string
-	// Parameters stores parameters for ParametersGroup.
+	Key        string
+	Label      string
 	Parameters []ParametersEntry
 }
 
-// ParametersEntry holds parameters entry state used by the core package.
 type ParametersEntry struct {
-	// Key stores key for ParametersEntry.
-	Key string
-	// Description stores description for ParametersEntry.
+	Key         string
 	Description string
-	// Summary stores summary for ParametersEntry.
-	Summary string
-	// Values stores values for ParametersEntry.
-	Values []ParametersValue
+	Summary     string
+	Values      []ParametersValue
 }
 
-// ParametersValue holds parameters value state used by the core package.
 type ParametersValue struct {
-	// Label stores label for ParametersValue.
-	Label string
-	// Value stores value for ParametersValue.
-	Value string
-	// RawValue stores raw value for ParametersValue.
-	RawValue string
-	// ValueType stores value type for ParametersValue.
+	Label     string
+	Value     string
+	RawValue  string
 	ValueType string
-	// Color stores color for ParametersValue.
-	Color string
-	// Empty stores empty for ParametersValue.
-	Empty bool
-	// EmptyType stores empty type for ParametersValue.
+	Color     string
+	Empty     bool
 	EmptyType string
-	// Plain stores plain for ParametersValue.
-	Plain bool
+	Plain     bool
 }
 
-// InspectParametersCache handles inspect parameters cache for Core and returns the resulting state or error.
 func (s *Core) InspectParametersCache(projectID string) (*ParametersCache, ParametersCacheState, error) {
 	logger := corelog.For("core")
 	logger.Debug("inspect parameters cache", "project_id", projectID)
@@ -110,7 +86,6 @@ func (s *Core) InspectParametersCache(projectID string) (*ParametersCache, Param
 	return cache, ParametersCacheStale, nil
 }
 
-// GetParameters gets parameters for Core and returns the resulting state or error.
 func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Debug("get parameters requested", "project_id", projectID, "force", force)
@@ -137,7 +112,6 @@ func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) 
 	}
 }
 
-// RevalidateParameters handles revalidate parameters for Core and returns the resulting state or error.
 func (s *Core) RevalidateParameters(ctx context.Context, projectID string) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Debug("revalidate parameters requested", "project_id", projectID)
@@ -155,7 +129,6 @@ func (s *Core) RevalidateParameters(ctx context.Context, projectID string) (*Par
 	return s.verifyParameters(ctx, projectID, cache)
 }
 
-// BuildParametersTree handles build parameters tree for Core and returns the resulting state or error.
 func (s *Core) BuildParametersTree(cache *ParametersCache) (*ParametersTree, error) {
 	if cache == nil {
 		return nil, fmt.Errorf("parameters cache is nil")
@@ -177,7 +150,6 @@ func (s *Core) BuildParametersTree(cache *ParametersCache) (*ParametersTree, err
 	return tree, nil
 }
 
-// fetchParameters handles fetch parameters for Core and returns the resulting state or error.
 func (s *Core) fetchParameters(ctx context.Context, projectID string) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Info("fetch parameters from firebase", "project_id", projectID)
@@ -216,7 +188,6 @@ func (s *Core) fetchParameters(ctx context.Context, projectID string) (*Paramete
 	return cache, "firebase", nil
 }
 
-// verifyParameters handles verify parameters for Core and returns the resulting state or error.
 func (s *Core) verifyParameters(ctx context.Context, projectID string, cache *ParametersCache) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Info("verify parameters cache against firebase", "project_id", projectID, "etag", cache.ETag)
@@ -257,7 +228,6 @@ func (s *Core) verifyParameters(ctx context.Context, projectID string, cache *Pa
 	return s.fetchParameters(ctx, projectID)
 }
 
-// buildParametersGroups handles build parameters groups and returns the resulting value or error.
 func buildParametersGroups(remoteConfig *firebase.RemoteConfig) []ParametersGroup {
 	if remoteConfig == nil {
 		return nil
@@ -305,7 +275,6 @@ func buildParametersGroups(remoteConfig *firebase.RemoteConfig) []ParametersGrou
 	return groups
 }
 
-// buildParametersEntries handles build parameters entries and returns the resulting value or error.
 func buildParametersEntries(params map[string]firebase.RemoteConfigParam, conditionColors map[string]string, conditionOrder map[string]int) []ParametersEntry {
 	keys := sortedKeys(params)
 	out := make([]ParametersEntry, 0, len(keys))
@@ -349,7 +318,6 @@ func buildParametersEntries(params map[string]firebase.RemoteConfigParam, condit
 	return out
 }
 
-// summarizeParameterValues handles summarize parameter values and returns the resulting value or error.
 func summarizeParameterValues(values []ParametersValue) string {
 	if len(values) == 0 {
 		return "no values"
@@ -360,7 +328,6 @@ func summarizeParameterValues(values []ParametersValue) string {
 	return fmt.Sprintf("%d values", len(values))
 }
 
-// formatRemoteConfigValue formats format remote config value and returns the resulting value or error.
 func formatRemoteConfigValue(value firebase.RemoteConfigValue, valueType string) string {
 	switch {
 	case value.UseInAppDefault:
@@ -381,7 +348,6 @@ func isEmptyRemoteConfigValue(value firebase.RemoteConfigValue) bool {
 	return !value.UseInAppDefault && len(value.PersonalizationValue) == 0 && len(value.RolloutValue) == 0 && value.Value == ""
 }
 
-// emptyValueType handles empty value type and returns the resulting value or error.
 func emptyValueType(valueType string) string {
 	valueType = strings.TrimSpace(strings.ToLower(valueType))
 	if valueType == "" {
@@ -390,7 +356,6 @@ func emptyValueType(valueType string) string {
 	return valueType
 }
 
-// sortedKeys handles sorted keys and returns the resulting value or error.
 func sortedKeys[V any](items map[string]V) []string {
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -407,7 +372,6 @@ func sortedKeys[V any](items map[string]V) []string {
 	return keys
 }
 
-// sortedConditionalKeys handles sorted conditional keys and returns the resulting value or error.
 func sortedConditionalKeys(items map[string]firebase.RemoteConfigValue, order map[string]int) []string {
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -435,12 +399,10 @@ func sortedConditionalKeys(items map[string]firebase.RemoteConfigValue, order ma
 	return keys
 }
 
-// MarshalParametersTree handles marshal parameters tree for Core and returns the resulting state or error.
 func (s *Core) MarshalParametersTree(tree *ParametersTree) ([]byte, error) {
 	return json.Marshal(tree)
 }
 
-// ParametersStatusLabel handles parameters status label and returns the resulting value or error.
 func ParametersStatusLabel(source string, cachedAt time.Time, hasTree bool, err error) string {
 	if err != nil && hasTree {
 		return "error"

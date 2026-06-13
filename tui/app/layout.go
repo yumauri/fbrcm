@@ -2,18 +2,12 @@ package app
 
 import "cmp"
 
-// panelLayout holds panel layout state used by the app package.
 type panelLayout struct {
-	// topHeight stores top height for panelLayout.
-	topHeight int
-	// bottomHeight stores bottom height for panelLayout.
+	topHeight    int
 	bottomHeight int
-	// leftWidth stores left width for panelLayout.
-	leftWidth int
-	// rightWidth stores right width for panelLayout.
-	rightWidth int
-	// bottomWidth stores bottom width for panelLayout.
-	bottomWidth int
+	leftWidth    int
+	rightWidth   int
+	bottomWidth  int
 }
 
 const (
@@ -24,7 +18,6 @@ const (
 	minTopPanelsHeight       = 7
 )
 
-// newPanelLayout constructs new panel layout and returns the resulting value or error.
 func newPanelLayout(width, height, preferredLeftWidth, preferredLogsHeight int, projectsMode projectsPanelMode) panelLayout {
 	availableWidth := cmp.Or(width, 80)
 	availableHeight := max(cmp.Or(height, 24)-helpLineHeight, 1)

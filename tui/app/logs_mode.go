@@ -22,7 +22,6 @@ func (m *Model) toggleLogsMode() {
 	}
 }
 
-// expandLogsFromCollapsed handles expand logs from collapsed for Model and returns the resulting state or error.
 func (m *Model) expandLogsFromCollapsed() {
 	m.logsMode = logsPanelModeExpanded
 	if m.logsSaved > 0 {
@@ -36,7 +35,6 @@ func (m *Model) expandLogsFromCollapsed() {
 	}
 }
 
-// growLogsFromCollapsed handles grow logs from collapsed for Model and returns the resulting state or error.
 func (m *Model) growLogsFromCollapsed() {
 	m.logsMode = logsPanelModeExpanded
 	m.logsSaved = 0

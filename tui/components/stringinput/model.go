@@ -17,33 +17,20 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-// Model holds model state used by the stringinput package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// minWidth stores min width for Model.
-	minWidth int
-	// maxWidth stores max width for Model.
-	maxWidth int
-	// screenW stores screen w for Model.
-	screenW int
-	// screenH stores screen h for Model.
-	screenH int
-	// fullWidth stores full width for Model.
+	x         int
+	y         int
+	minWidth  int
+	maxWidth  int
+	screenW   int
+	screenH   int
 	fullWidth bool
-	// expanded stores expanded for Model.
-	expanded bool
-	// text stores text for Model.
-	text textinput.Model
-	// area stores area for Model.
-	area textarea.Model
-	// open stores open for Model.
-	open bool
+	expanded  bool
+	text      textinput.Model
+	area      textarea.Model
+	open      bool
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{text: newTextInput(), area: newTextarea()}
 }
@@ -92,7 +79,6 @@ func (m Model) IsExpanded() bool {
 	return m.expanded
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	if m.expanded {
 		return 2, 2
@@ -103,7 +89,6 @@ func (m Model) Position() (int, int) {
 	return m.x, m.y
 }
 
-// Value handles value for Model and returns the resulting state or error.
 func (m Model) Value() string {
 	if m.expanded {
 		return m.area.Value()
@@ -144,7 +129,6 @@ func (m Model) ToggleExpanded() (Model, tea.Cmd) {
 	return m, m.area.Focus()
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.open {
 		return m, nil
@@ -160,7 +144,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if !m.open {
 		return ""
@@ -171,7 +154,6 @@ func (m Model) View() string {
 	return singleBorderStyle.Render(" " + m.text.View())
 }
 
-// resize handles resize for Model and returns the resulting state or error.
 func (m *Model) resize() {
 	if m.expanded {
 		innerWidth := max(m.screenW-6, 4)
@@ -192,7 +174,6 @@ func (m *Model) resize() {
 	m.text.SetCursor(pos)
 }
 
-// renderExpandedArea renders render expanded area for Model and returns the resulting state or error.
 func (m Model) renderExpandedArea() string {
 	width := max(m.screenW-6, 4)
 	height := stringContentHeight(m.screenH)
@@ -202,14 +183,10 @@ func (m Model) renderExpandedArea() string {
 	cursorColumn := lineInfo.CharOffset
 	scrollY := m.area.ScrollYOffset()
 
-	// visualLine holds visual line state used by the stringinput package.
 	type visualLine struct {
-		// text stores text for visualLine.
-		text string
-		// lineIndex stores line index for visualLine.
+		text      string
 		lineIndex int
-		// segment stores segment for visualLine.
-		segment int
+		segment   int
 	}
 
 	lines := strings.Split(m.area.Value(), "\n")
@@ -258,7 +235,6 @@ var (
 	singleBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteBlueBright)
 )
 
-// textinputStyles handles textinput styles and returns the resulting value or error.
 func textinputStyles() textinput.Styles {
 	inputStyles := textinput.DefaultDarkStyles()
 	valueStyle := styles.FilterText
@@ -274,7 +250,6 @@ func textinputStyles() textinput.Styles {
 	return inputStyles
 }
 
-// textareaStyles handles textarea styles and returns the resulting value or error.
 func textareaStyles() textarea.Styles {
 	s := textarea.DefaultStyles(true)
 	textStyle := styles.FilterText
@@ -296,7 +271,6 @@ func textareaStyles() textarea.Styles {
 	return s
 }
 
-// newTextInput constructs new text input and returns the resulting value or error.
 func newTextInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""
@@ -305,7 +279,6 @@ func newTextInput() textinput.Model {
 	return input
 }
 
-// newTextarea constructs new textarea and returns the resulting value or error.
 func newTextarea() textarea.Model {
 	input := textarea.New()
 	input.Prompt = ""
@@ -316,7 +289,6 @@ func newTextarea() textarea.Model {
 	return input
 }
 
-// wrapLine handles wrap line and returns the resulting value or error.
 func wrapLine(value string, width int) []string {
 	if width <= 0 {
 		return []string{""}
@@ -332,7 +304,6 @@ func wrapLine(value string, width int) []string {
 	return parts
 }
 
-// renderPlainWithCursor renders render plain with cursor and returns the resulting value or error.
 func renderPlainWithCursor(value string, cursorCol, width int) string {
 	runes := []rune(value)
 	if cursorCol < 0 {
@@ -352,7 +323,6 @@ func renderPlainWithCursor(value string, cursorCol, width int) string {
 	return padRendered(rendered, width)
 }
 
-// renderLineNumber renders render line number and returns the resulting value or error.
 func renderLineNumber(n, total int, active bool) string {
 	digits := max(len(strconv.Itoa(max(total, 1))), 1)
 	style := styles.PanelMuted
@@ -362,17 +332,14 @@ func renderLineNumber(n, total int, active bool) string {
 	return style.Render(fmt.Sprintf("%*d ", digits, n))
 }
 
-// lineNumberGutter handles line number gutter and returns the resulting value or error.
 func lineNumberGutter(total int) int {
 	return max(len(strconv.Itoa(max(total, 1))), 1) + 1
 }
 
-// padRendered handles pad rendered and returns the resulting value or error.
 func padRendered(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }
 
-// cursorStyle handles cursor style and returns the resulting value or error.
 func cursorStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Reverse(true).Bold(true)
@@ -380,7 +347,6 @@ func cursorStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Background(styles.PaletteYellow).Foreground(styles.PaletteBlueDeep).Bold(true)
 }
 
-// renderExpandedBox renders render expanded box for Model and returns the resulting state or error.
 func (m Model) renderExpandedBox() string {
 	borderStyle := styles.BorderStyle(true)
 	body := strings.Split(m.renderExpandedArea(), "\n")
@@ -408,7 +374,6 @@ func (m Model) renderExpandedBox() string {
 	return strings.Join(lines, "\n")
 }
 
-// visualLineCount handles visual line count and returns the resulting value or error.
 func (m Model) visualLineCount() int {
 	lines := strings.Split(m.area.Value(), "\n")
 	if len(lines) == 0 {
@@ -423,12 +388,10 @@ func (m Model) visualLineCount() int {
 	return max(count, 1)
 }
 
-// stringContentHeight handles string content height and returns the resulting value or error.
 func stringContentHeight(screenH int) int {
 	return max(screenH-7, 3)
 }
 
-// stringHelpText handles string help text and returns the resulting value or error.
 func stringHelpText(width int) string {
 	m := help.New()
 	m.ShortSeparator = " • "
@@ -445,7 +408,6 @@ func stringHelpText(width int) string {
 	})
 }
 
-// renderHelpFooter renders help footer and returns the resulting value or error.
 func renderHelpFooter(text string, width int) string {
 	if width <= 0 {
 		return ""
@@ -453,17 +415,12 @@ func renderHelpFooter(text string, width int) string {
 	return text + strings.Repeat(" ", max(width-lipgloss.Width(text), 0))
 }
 
-// expandedScrollbar holds expanded scrollbar state used by the stringinput package.
 type expandedScrollbar struct {
-	// visible stores visible for expandedScrollbar.
-	visible bool
-	// thumbStart stores thumb start for expandedScrollbar.
+	visible    bool
 	thumbStart int
-	// thumbEnd stores thumb end for expandedScrollbar.
-	thumbEnd int
+	thumbEnd   int
 }
 
-// expandedScrollbarState handles expanded scrollbar state and returns the resulting value or error.
 func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
 	if visible <= 0 {
 		return expandedScrollbar{}
@@ -482,7 +439,6 @@ func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
 	}
 }
 
-// resetAreaCursor handles reset area cursor for Model and returns the resulting state or error.
 func (m *Model) resetAreaCursor() {
 	for m.area.Line() > 0 {
 		m.area.CursorUp()

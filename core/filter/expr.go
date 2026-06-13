@@ -19,51 +19,31 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
-// Expression holds expression state used by the filter package.
 type Expression struct {
-	// raw stores raw for Expression.
-	raw string
-	// program stores program for Expression.
+	raw     string
 	program *vm.Program
 }
 
-// expressionEnv holds expression env state used by the filter package.
 type expressionEnv struct {
-	// ProjectID stores project id for expressionEnv.
-	ProjectID string `expr:"project_id"`
-	// Project stores project for expressionEnv.
-	Project string `expr:"project"`
-	// Conditions stores conditions for expressionEnv.
-	Conditions []string `expr:"conditions"`
-	// Groups stores groups for expressionEnv.
-	Groups []string `expr:"groups"`
-	// Parameters stores parameters for expressionEnv.
-	Parameters map[string]parameterEnv `expr:"parameters"`
-	// Name stores name for expressionEnv.
-	Name string `expr:"name"`
-	// Group stores group for expressionEnv.
-	Group any `expr:"group"`
-	// Default stores default for expressionEnv.
-	Default any `expr:"default"`
-	// Value stores value for expressionEnv.
-	Value anyValue `expr:"value"`
-	// Conditionals stores conditionals for expressionEnv.
-	Conditionals map[string]any `expr:"conditionals"`
+	ProjectID    string                  `expr:"project_id"`
+	Project      string                  `expr:"project"`
+	Conditions   []string                `expr:"conditions"`
+	Groups       []string                `expr:"groups"`
+	Parameters   map[string]parameterEnv `expr:"parameters"`
+	Name         string                  `expr:"name"`
+	Group        any                     `expr:"group"`
+	Default      any                     `expr:"default"`
+	Value        anyValue                `expr:"value"`
+	Conditionals map[string]any          `expr:"conditionals"`
 }
 
-// parameterEnv holds parameter env state used by the filter package.
 type parameterEnv struct {
-	// Group stores group for parameterEnv.
-	Group any `expr:"group"`
-	// Default stores default for parameterEnv.
-	Default any `expr:"default"`
-	// Value stores value for parameterEnv.
-	Value anyValue `expr:"value"`
-	// Conditionals stores conditionals for parameterEnv.
+	Group        any            `expr:"group"`
+	Default      any            `expr:"default"`
+	Value        anyValue       `expr:"value"`
 	Conditionals map[string]any `expr:"conditionals"`
 }
 
-// rootGroup holds root group state used by the filter package.
 type rootGroup struct{}
 
 // anyValue holds default and conditional values for expression matching.
@@ -76,7 +56,6 @@ const rootGroupLabel = "(root)"
 
 var jqCodeCache sync.Map
 
-// CompileExpression handles compile expression and returns the resulting value or error.
 func CompileExpression(raw string) (*Expression, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -125,7 +104,6 @@ func CompileExpression(raw string) (*Expression, error) {
 	}, nil
 }
 
-// CompileProjectExpression handles compile project expression and returns the resulting value or error.
 func CompileProjectExpression(raw string) (*Expression, error) {
 	return CompileExpression(raw)
 }
@@ -170,12 +148,10 @@ func (e *Expression) match(env expressionEnv) (bool, error) {
 	return matched, nil
 }
 
-// ProjectExpressionEnv handles project expression env and returns the resulting value or error.
 func ProjectExpressionEnv(projectID, projectName string, cfg *firebase.RemoteConfig) expressionEnv {
 	return buildExpressionEnv(projectID, projectName, cfg, "", "")
 }
 
-// buildExpressionEnv handles build expression env and returns the resulting value or error.
 func buildExpressionEnv(projectID, projectName string, cfg *firebase.RemoteConfig, name, group string) expressionEnv {
 	env := expressionEnv{
 		ProjectID:    projectID,
@@ -227,7 +203,6 @@ func buildExpressionEnv(projectID, projectName string, cfg *firebase.RemoteConfi
 	return env
 }
 
-// expressionEnvTemplate handles expression env template and returns the resulting value or error.
 func expressionEnvTemplate() expressionEnv {
 	return expressionEnv{
 		Conditions:   []string{},
@@ -237,7 +212,6 @@ func expressionEnvTemplate() expressionEnv {
 	}
 }
 
-// parameterExpressionEnv handles parameter expression env and returns the resulting value or error.
 func parameterExpressionEnv(groupName string, param firebase.RemoteConfigParam) parameterEnv {
 	conditionals := make(map[string]any, len(param.ConditionalValues))
 	for name, value := range param.ConditionalValues {
@@ -252,7 +226,6 @@ func parameterExpressionEnv(groupName string, param firebase.RemoteConfigParam) 
 	}
 }
 
-// groupValueForExpr handles group value for expr and returns the resulting value or error.
 func groupValueForExpr(groupName string) any {
 	groupName = strings.TrimSpace(groupName)
 	if groupName == "" || groupName == rootGroupLabel {
@@ -261,7 +234,6 @@ func groupValueForExpr(groupName string) any {
 	return groupName
 }
 
-// remoteConfigGroupName handles remote config group name and returns the resulting value or error.
 func remoteConfigGroupName(groupName string) string {
 	if strings.TrimSpace(groupName) == rootGroupLabel {
 		return ""
@@ -269,32 +241,26 @@ func remoteConfigGroupName(groupName string) string {
 	return groupName
 }
 
-// exprEqual handles expr equal and returns the resulting value or error.
 func exprEqual(params ...any) (any, error) {
 	return exprValuesEqual(params[0], params[1]), nil
 }
 
-// exprNotEqual handles expr not equal and returns the resulting value or error.
 func exprNotEqual(params ...any) (any, error) {
 	return !exprValuesEqual(params[0], params[1]), nil
 }
 
-// exprLess handles expr less and returns the resulting value or error.
 func exprLess(params ...any) (any, error) {
 	return exprValuesCompare(params[0], params[1], exprruntime.Less)
 }
 
-// exprLessOrEqual handles expr less or equal and returns the resulting value or error.
 func exprLessOrEqual(params ...any) (any, error) {
 	return exprValuesCompare(params[0], params[1], exprruntime.LessOrEqual)
 }
 
-// exprGreater handles expr greater and returns the resulting value or error.
 func exprGreater(params ...any) (any, error) {
 	return exprValuesCompare(params[0], params[1], exprruntime.More)
 }
 
-// exprGreaterOrEqual handles expr greater or equal and returns the resulting value or error.
 func exprGreaterOrEqual(params ...any) (any, error) {
 	return exprValuesCompare(params[0], params[1], exprruntime.MoreOrEqual)
 }
@@ -375,7 +341,6 @@ func exprJQ(params ...any) (any, error) {
 	return anyValue{values: results}, nil
 }
 
-// exprValuesEqual handles expr values equal and returns the resulting value or error.
 func exprValuesEqual(left, right any) bool {
 	if _, ok := left.(rootGroup); ok {
 		return right == nil || isRootGroupLabel(right) || exprruntime.Equal(left, right)
@@ -401,7 +366,6 @@ func isRootGroupLabel(value any) bool {
 	return ok && text == rootGroupLabel
 }
 
-// applyParameterScope handles apply parameter scope and returns the resulting value or error.
 func applyParameterScope(env expressionEnv, param firebase.RemoteConfigParam) expressionEnv {
 	env.Default = defaultRemoteConfigValueForExpr(param.DefaultValue, param.ValueType)
 	env.Value = anyRemoteConfigValuesForExpr(param)
@@ -412,7 +376,6 @@ func applyParameterScope(env expressionEnv, param firebase.RemoteConfigParam) ex
 	return env
 }
 
-// anyRemoteConfigValuesForExpr handles any remote config values for expr and returns the resulting value.
 func anyRemoteConfigValuesForExpr(param firebase.RemoteConfigParam) anyValue {
 	out := anyValue{
 		values:    make([]any, 0, len(param.ConditionalValues)+1),
@@ -427,7 +390,6 @@ func anyRemoteConfigValuesForExpr(param firebase.RemoteConfigParam) anyValue {
 	return out
 }
 
-// sortedConditionalValueKeys handles sorted conditional value keys and returns the resulting value.
 func sortedConditionalValueKeys(items map[string]firebase.RemoteConfigValue) []string {
 	keys := make([]string, 0, len(items))
 	for key := range items {
@@ -437,7 +399,6 @@ func sortedConditionalValueKeys(items map[string]firebase.RemoteConfigValue) []s
 	return keys
 }
 
-// defaultRemoteConfigValueForExpr handles default remote config value for expr and returns the resulting value or error.
 func defaultRemoteConfigValueForExpr(value *firebase.RemoteConfigValue, valueType string) any {
 	if value == nil {
 		return nil
@@ -445,7 +406,6 @@ func defaultRemoteConfigValueForExpr(value *firebase.RemoteConfigValue, valueTyp
 	return remoteConfigValueForExpr(*value, valueType)
 }
 
-// remoteConfigValueForExpr handles remote config value for expr and returns the resulting value or error.
 func remoteConfigValueForExpr(value firebase.RemoteConfigValue, valueType string) any {
 	switch {
 	case value.UseInAppDefault:
@@ -634,7 +594,6 @@ func exprValueIsEmpty(value any) bool {
 	}
 }
 
-// exprValuesCompare handles expr comparison and returns the resulting value or error.
 func exprValuesCompare(left, right any, compare func(any, any) bool) (bool, error) {
 	if leftValues, ok := left.(anyValue); ok {
 		return leftValues.compare(right, compare)

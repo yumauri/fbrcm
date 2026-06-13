@@ -1,35 +1,25 @@
 package numberinput
 
 import (
-	"regexp"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-var jsonNumberPattern = regexp.MustCompile(`^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$`)
-
-// Model holds model state used by the numberinput package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// maxWidth stores max width for Model.
+	x        int
+	y        int
 	maxWidth int
-	// minWidth stores min width for Model.
 	minWidth int
-	// input stores input for Model.
-	input textinput.Model
-	// open stores open for Model.
-	open bool
+	input    textinput.Model
+	open     bool
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{input: newInput()}
 }
@@ -61,26 +51,22 @@ func (m Model) IsOpen() bool {
 	return m.open
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	return m.x, m.y
 }
 
-// Value handles value for Model and returns the resulting state or error.
 func (m Model) Value() string {
 	return strings.TrimSpace(m.input.Value())
 }
 
-// Valid handles valid for Model and returns the resulting state or error.
 func (m Model) Valid() bool {
 	value := m.Value()
 	if value == "" {
 		return false
 	}
-	return jsonNumberPattern.MatchString(value)
+	return core.IsJSONNumber(value)
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.open {
 		return m, nil
@@ -91,7 +77,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if !m.open {
 		return ""
@@ -106,7 +91,6 @@ func (m *Model) setInputWidth() {
 	m.input.SetWidth(innerWidth)
 }
 
-// inputBorderStyle handles input border style and returns the resulting value or error.
 func inputBorderStyle(valid bool) lipgloss.Style {
 	color := styles.PaletteBlueBright
 	if !valid {
@@ -117,7 +101,6 @@ func inputBorderStyle(valid bool) lipgloss.Style {
 		BorderForeground(color)
 }
 
-// textinputStyles handles textinput styles and returns the resulting value or error.
 func textinputStyles() textinput.Styles {
 	inputStyles := textinput.DefaultDarkStyles()
 	valueStyle := styles.FilterText
@@ -133,7 +116,6 @@ func textinputStyles() textinput.Styles {
 	return inputStyles
 }
 
-// newInput constructs new input and returns the resulting value or error.
 func newInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""

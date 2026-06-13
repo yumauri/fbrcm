@@ -7,7 +7,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-// currentBoolValueAnchor handles current bool value anchor for Model and returns the resulting state or error.
 func (m *Model) currentBoolValueAnchor() (parameters.BoolValueAnchor, bool) {
 	if m.valueEditSource == panels.Details || (m.valueEditSource == panels.None && m.active == panels.Details) {
 		return m.details.CurrentBoolValueAnchor()
@@ -15,7 +14,6 @@ func (m *Model) currentBoolValueAnchor() (parameters.BoolValueAnchor, bool) {
 	return m.parameters.CurrentBoolValueAnchor()
 }
 
-// currentNumberValueAnchor handles current number value anchor for Model and returns the resulting state or error.
 func (m *Model) currentNumberValueAnchor() (parameters.NumberValueAnchor, bool) {
 	if m.valueEditSource == panels.Details || (m.valueEditSource == panels.None && m.active == panels.Details) {
 		return m.details.CurrentNumberValueAnchor()
@@ -23,7 +21,6 @@ func (m *Model) currentNumberValueAnchor() (parameters.NumberValueAnchor, bool) 
 	return m.parameters.CurrentNumberValueAnchor()
 }
 
-// currentStringValueAnchor handles current string value anchor for Model and returns the resulting state or error.
 func (m *Model) currentStringValueAnchor() (parameters.StringValueAnchor, bool) {
 	if m.valueEditSource == panels.Details || (m.valueEditSource == panels.None && m.active == panels.Details) {
 		return m.details.CurrentStringValueAnchor(m.width)
@@ -31,7 +28,6 @@ func (m *Model) currentStringValueAnchor() (parameters.StringValueAnchor, bool) 
 	return m.parameters.CurrentStringValueAnchor()
 }
 
-// currentJSONValueAnchor handles current jsonvalue anchor for Model and returns the resulting state or error.
 func (m *Model) currentJSONValueAnchor() (parameters.JSONValueAnchor, bool) {
 	if m.valueEditSource == panels.Details || (m.valueEditSource == panels.None && m.active == panels.Details) {
 		return m.details.CurrentJSONValueAnchor()

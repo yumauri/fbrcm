@@ -60,51 +60,29 @@ const (
 
 var typeOptions = []string{"STRING", "BOOLEAN", "NUMBER", "JSON"}
 
-// Model holds model state used by the details package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// width stores width for Model.
-	width int
-	// height stores height for Model.
-	height int
-	// active stores active for Model.
-	active bool
-	// bridgeActive stores bridge active for Model.
-	bridgeActive bool
-	// viewport stores viewport for Model.
-	viewport viewport.Model
-	// data stores data for Model.
-	data *messages.ParameterViewData
-	// activeField stores active field for Model.
-	activeField fieldID
-	// dropdownOpen stores dropdown open for Model.
-	dropdownOpen bool
-	// dropdownIndex stores dropdown index for Model.
+	x             int
+	y             int
+	width         int
+	height        int
+	active        bool
+	bridgeActive  bool
+	viewport      viewport.Model
+	data          *messages.ParameterViewData
+	activeField   fieldID
+	dropdownOpen  bool
 	dropdownIndex int
-	// groupKey stores group key for Model.
-	groupKey string
-	// groupLabel stores group label for Model.
-	groupLabel string
-	// typeValue stores type value for Model.
-	typeValue string
-	// nameInput stores name input for Model.
-	nameInput textinput.Model
-	// descInput stores desc input for Model.
-	descInput textarea.Model
-	// groupInput stores group input for Model.
-	groupInput textinput.Model
-	// selectedValue stores selected value for Model.
+	groupKey      string
+	groupLabel    string
+	typeValue     string
+	nameInput     textinput.Model
+	descInput     textarea.Model
+	groupInput    textinput.Model
 	selectedValue int
-	// valuesInvalid stores values invalid for Model.
 	valuesInvalid bool
-	// originalParam stores original param for Model.
 	originalParam core.ParametersEntry
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	vp := viewport.New(
 		viewport.WithWidth(1),
@@ -200,12 +178,10 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 	return m
 }
 
-// Data handles data for Model and returns the resulting state or error.
 func (m Model) Data() *messages.ParameterViewData {
 	return m.data
 }
 
-// FieldActive handles field active for Model and returns the resulting state or error.
 func (m Model) FieldActive() bool {
 	return m.activeField != fieldNone
 }
@@ -215,7 +191,6 @@ func (m Model) TextInputActive() bool {
 	return m.activeField == fieldName || m.activeField == fieldDescription
 }
 
-// ValueSelected handles value selected for Model and returns the resulting state or error.
 func (m Model) ValueSelected() bool {
 	return m.activeField == fieldNone && m.selectedValue >= 0 && m.data != nil && m.selectedValue < len(m.data.Parameter.Values)
 }
@@ -244,17 +219,14 @@ func (m Model) SetSelectedValue(nextRaw string) Model {
 	return m
 }
 
-// Dirty handles dirty for Model and returns the resulting state or error.
 func (m Model) Dirty() bool {
 	return m.data != nil && m.hasChanges()
 }
 
-// Invalid handles invalid for Model and returns the resulting state or error.
 func (m Model) Invalid() bool {
 	return m.invalidName() || m.invalidValues()
 }
 
-// InvalidReasons handles invalid reasons for Model and returns the resulting state or error.
 func (m Model) InvalidReasons() []string {
 	if m.data == nil {
 		return nil
@@ -274,7 +246,6 @@ func (m Model) InvalidReasons() []string {
 	return reasons
 }
 
-// Edit handles edit for Model and returns the resulting state or error.
 func (m Model) Edit() (core.ParameterDetailsEdit, bool) {
 	if m.data == nil || !m.hasChanges() {
 		return core.ParameterDetailsEdit{}, false
@@ -291,7 +262,6 @@ func (m Model) Edit() (core.ParameterDetailsEdit, bool) {
 	}, true
 }
 
-// MarkSaved handles mark saved for Model and returns the resulting state or error.
 func (m Model) MarkSaved() Model {
 	if m.data == nil {
 		return m
@@ -313,7 +283,6 @@ func (m Model) MarkSaved() Model {
 	return m
 }
 
-// DeactivateField handles deactivate field for Model and returns the resulting state or error.
 func (m Model) DeactivateField() Model {
 	m.activeField = fieldNone
 	m.dropdownOpen = false
@@ -325,7 +294,6 @@ func (m Model) DeactivateField() Model {
 	return m
 }
 
-// ActivateName handles activate name for Model and returns the resulting state or error.
 func (m Model) ActivateName() (Model, tea.Cmd) {
 	m.activateField(fieldName)
 	m.refreshViewport()
@@ -365,29 +333,24 @@ func (m Model) CurrentConditionalValueAnchor() (parameters.ConditionalValueAncho
 	}, true
 }
 
-// DropdownOpen handles dropdown open for Model and returns the resulting state or error.
 func (m Model) DropdownOpen() bool {
 	return m.dropdownOpen && (m.activeField == fieldGroup || m.activeField == fieldType)
 }
 
-// DropdownPosition handles dropdown position for Model and returns the resulting state or error.
 func (m Model) DropdownPosition() (int, int) {
 	return m.DropdownListPosition()
 }
 
-// DropdownCurrentPosition handles dropdown current position for Model and returns the resulting state or error.
 func (m Model) DropdownCurrentPosition() (int, int) {
 	fieldLine := m.fieldValueLine(m.activeField)
 	return m.x + 1, m.y + fieldLine - m.viewport.YOffset()
 }
 
-// DropdownListPosition handles dropdown list position for Model and returns the resulting state or error.
 func (m Model) DropdownListPosition() (int, int) {
 	x, y := m.DropdownCurrentPosition()
 	return x + lipgloss.Width(m.dropdownCurrentLabel()) + 3, y - m.dropdownIndex
 }
 
-// DropdownCurrentView handles dropdown current view for Model and returns the resulting state or error.
 func (m Model) DropdownCurrentView() string {
 	if !m.DropdownOpen() {
 		return ""
@@ -401,7 +364,6 @@ func (m Model) DropdownCurrentView() string {
 	}, "\n")
 }
 
-// DropdownListView handles dropdown list view for Model and returns the resulting state or error.
 func (m Model) DropdownListView() string {
 	if !m.DropdownOpen() {
 		return ""
@@ -458,12 +420,10 @@ func (m Model) DropdownListView() string {
 	return strings.Join(lines, "\n")
 }
 
-// Bounds handles bounds for Model and returns the resulting state or error.
 func (m Model) Bounds() (int, int, int, int) {
 	return m.x, m.y, m.width, m.height
 }
 
-// Contains handles contains for Model and returns the resulting state or error.
 func (m Model) Contains(x, y int) bool {
 	if m.width <= 0 || m.height <= 0 {
 		return false
@@ -471,7 +431,6 @@ func (m Model) Contains(x, y int) bool {
 	return x >= m.x && x < m.x+m.width && y >= m.y && y < m.y+m.height
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.active {
 		return m, nil
@@ -624,7 +583,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleMouseClick handles handle mouse click for Model and returns the resulting state or error.
 func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	mouse := msg.Mouse()
 	if m.dropdownOpen {
@@ -672,7 +630,6 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// refreshViewport handles refresh viewport for Model and returns the resulting state or error.
 func (m *Model) refreshViewport() {
 	width := max(m.width-5, 1)
 	m.nameInput.SetWidth(max(width-2, 1))
@@ -683,7 +640,6 @@ func (m *Model) refreshViewport() {
 	m.ensureSelectedBlockVisible()
 }
 
-// renderContentLines renders render content lines for Model and returns the resulting state or error.
 func (m Model) renderContentLines() []string {
 	width := max(m.width-5, 1)
 	if m.data == nil {
@@ -735,7 +691,6 @@ func (m Model) renderContentLines() []string {
 	return padLines(lines, width)
 }
 
-// appendStyledField handles append styled field and returns the resulting value or error.
 func appendStyledField(lines []string, width int, label, value string, style lipgloss.Style) []string {
 	lines = append(lines, labelStyle.Render(label))
 	for _, line := range wrappedLines(value, width) {
@@ -745,7 +700,6 @@ func appendStyledField(lines []string, width int, label, value string, style lip
 	return lines
 }
 
-// appendEditableField handles append editable field and returns the resulting value or error.
 func appendEditableField(lines []string, width int, label, value string, dirty, invalid bool) []string {
 	labelText := fieldTitle(label, dirty, invalid)
 	lines = append(lines, labelText)
@@ -756,7 +710,6 @@ func appendEditableField(lines []string, width int, label, value string, dirty, 
 	return lines
 }
 
-// fieldTitle handles field title and returns the resulting value or error.
 func fieldTitle(label string, dirty, invalid bool) string {
 	switch {
 	case invalid && dirty:
@@ -770,7 +723,6 @@ func fieldTitle(label string, dirty, invalid bool) string {
 	}
 }
 
-// wrappedLines handles wrapped lines and returns the resulting value or error.
 func wrappedLines(value string, width int) []string {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -780,7 +732,6 @@ func wrappedLines(value string, width int) []string {
 	return strings.Split(rendered, "\n")
 }
 
-// wrapLine handles wrap line and returns the resulting value or error.
 func wrapLine(value string, width int) []string {
 	if width <= 0 {
 		return []string{""}
@@ -796,7 +747,6 @@ func wrapLine(value string, width int) []string {
 	return parts
 }
 
-// padLines handles pad lines and returns the resulting value or error.
 func padLines(lines []string, width int) []string {
 	out := make([]string, 0, len(lines))
 	for _, line := range lines {
@@ -805,12 +755,10 @@ func padLines(lines []string, width int) []string {
 	return out
 }
 
-// padRight handles pad right and returns the resulting value or error.
 func padRight(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }
 
-// displayProject handles display project and returns the resulting value or error.
 func displayProject(project core.Project) string {
 	if strings.TrimSpace(project.Name) == "" {
 		return project.ProjectID
@@ -818,7 +766,6 @@ func displayProject(project core.Project) string {
 	return project.Name + " (" + project.ProjectID + ")"
 }
 
-// displayConditionLabel handles display condition label and returns the resulting value or error.
 func displayConditionLabel(label string) string {
 	if label == "default" {
 		return "Default value"
@@ -826,7 +773,6 @@ func displayConditionLabel(label string) string {
 	return label
 }
 
-// displayRawValue handles display raw value and returns the resulting value or error.
 func displayRawValue(value, valueType string) string {
 	if value == "" {
 		valueType = strings.ToLower(strings.TrimSpace(valueType))
@@ -838,13 +784,11 @@ func displayRawValue(value, valueType string) string {
 	return strings.ReplaceAll(value, "\n", "\\n")
 }
 
-// cloneParameterEntry handles clone parameter entry and returns the resulting value or error.
 func cloneParameterEntry(param core.ParametersEntry) core.ParametersEntry {
 	param.Values = append([]core.ParametersValue(nil), param.Values...)
 	return param
 }
 
-// cloneViewData handles clone view data and returns the resulting value or error.
 func cloneViewData(data *messages.ParameterViewData) *messages.ParameterViewData {
 	if data == nil {
 		return nil
@@ -856,7 +800,6 @@ func cloneViewData(data *messages.ParameterViewData) *messages.ParameterViewData
 	return &next
 }
 
-// parameterType handles parameter type and returns the resulting value or error.
 func parameterType(param core.ParametersEntry) string {
 	for _, value := range param.Values {
 		if strings.TrimSpace(value.ValueType) != "" {
@@ -913,7 +856,6 @@ func (m *Model) focusNextItem(delta int) {
 	m.ensureSelectionVisible()
 }
 
-// activateField handles activate field for Model and returns the resulting state or error.
 func (m *Model) activateField(field fieldID) {
 	m.activeField = field
 	m.selectedValue = -1
@@ -930,7 +872,6 @@ func (m *Model) activateField(field fieldID) {
 	}
 }
 
-// fieldAt handles field at for Model and returns the resulting state or error.
 func (m Model) fieldAt(x, y int) (fieldID, bool) {
 	if !m.Contains(x, y) {
 		return fieldNone, false
@@ -944,7 +885,6 @@ func (m Model) fieldAt(x, y int) (fieldID, bool) {
 	return fieldNone, false
 }
 
-// fieldVisualHeight handles field visual height for Model and returns the resulting state or error.
 func (m Model) fieldVisualHeight(field fieldID) int {
 	if field == fieldDescription {
 		return m.descriptionVisualHeight()
@@ -952,12 +892,10 @@ func (m Model) fieldVisualHeight(field fieldID) int {
 	return 1
 }
 
-// fieldScreenY handles field screen y for Model and returns the resulting state or error.
 func (m Model) fieldScreenY(field fieldID) int {
 	return m.y + 1 + m.fieldValueLine(field) - m.viewport.YOffset()
 }
 
-// valueAt handles value at for Model and returns the resulting state or error.
 func (m Model) valueAt(_, y int) (int, bool) {
 	if m.data == nil {
 		return 0, false
@@ -970,7 +908,6 @@ func (m Model) valueAt(_, y int) (int, bool) {
 	return 0, false
 }
 
-// positionCursorForClick handles position cursor for click for Model and returns the resulting state or error.
 func (m *Model) positionCursorForClick(field fieldID, x, y int) {
 	contentX := m.x + 2
 	col := max(x-contentX, 0)
@@ -985,7 +922,6 @@ func (m *Model) positionCursorForClick(field fieldID, x, y int) {
 	}
 }
 
-// ensureSelectionVisible handles ensure selection visible for Model and returns the resulting state or error.
 func (m *Model) ensureSelectionVisible() {
 	line := -1
 	if m.activeField != fieldNone {
@@ -1048,14 +984,12 @@ func (m *Model) ensureValueVisible(index int) {
 	}
 }
 
-// dropdownCurrentContains handles dropdown current contains for Model and returns the resulting state or error.
 func (m Model) dropdownCurrentContains(x, y int) bool {
 	currentX, currentY := m.DropdownCurrentPosition()
 	width := lipgloss.Width(m.dropdownCurrentLabel()) + 4
 	return x >= currentX && x < currentX+width && y >= currentY && y < currentY+3
 }
 
-// dropdownRowAt handles dropdown row at for Model and returns the resulting state or error.
 func (m Model) dropdownRowAt(x, y int) (int, bool) {
 	if !m.DropdownOpen() {
 		return 0, false
@@ -1083,7 +1017,6 @@ func (m Model) dropdownRowAt(x, y int) (int, bool) {
 	return idx, true
 }
 
-// CurrentBoolValueAnchor handles current bool value anchor for Model and returns the resulting state or error.
 func (m Model) CurrentBoolValueAnchor() (parameters.BoolValueAnchor, bool) {
 	value, ok := m.currentSelectedPlainValue("boolean")
 	if !ok {
@@ -1102,7 +1035,6 @@ func (m Model) CurrentBoolValueAnchor() (parameters.BoolValueAnchor, bool) {
 	}, true
 }
 
-// CurrentNumberValueAnchor handles current number value anchor for Model and returns the resulting state or error.
 func (m Model) CurrentNumberValueAnchor() (parameters.NumberValueAnchor, bool) {
 	value, ok := m.currentSelectedPlainValue("number")
 	if !ok {
@@ -1123,7 +1055,6 @@ func (m Model) CurrentNumberValueAnchor() (parameters.NumberValueAnchor, bool) {
 	}, true
 }
 
-// CurrentStringValueAnchor handles current string value anchor for Model and returns the resulting state or error.
 func (m Model) CurrentStringValueAnchor(_ int) (parameters.StringValueAnchor, bool) {
 	value, ok := m.currentSelectedPlainValue("string")
 	if !ok {
@@ -1148,7 +1079,6 @@ func (m Model) CurrentStringValueAnchor(_ int) (parameters.StringValueAnchor, bo
 	}, true
 }
 
-// CurrentJSONValueAnchor handles current jsonvalue anchor for Model and returns the resulting state or error.
 func (m Model) CurrentJSONValueAnchor() (parameters.JSONValueAnchor, bool) {
 	value, ok := m.currentSelectedPlainValue("json")
 	if !ok {
@@ -1163,7 +1093,6 @@ func (m Model) CurrentJSONValueAnchor() (parameters.JSONValueAnchor, bool) {
 	}, true
 }
 
-// currentSelectedPlainValue handles current selected plain value for Model and returns the resulting state or error.
 func (m Model) currentSelectedPlainValue(valueType string) (core.ParametersValue, bool) {
 	if !m.ValueSelected() {
 		return core.ParametersValue{}, false
@@ -1182,13 +1111,11 @@ func (m Model) currentSelectedPlainValue(valueType string) (core.ParametersValue
 	return value, true
 }
 
-// valueEditorPosition handles value editor position for Model and returns the resulting state or error.
 func (m Model) valueEditorPosition() (int, int) {
 	line := m.valueConditionLine(m.selectedValue) + 1
 	return m.x + 3, m.y + 1 + line - m.viewport.YOffset()
 }
 
-// renderGroupField renders render group field for Model and returns the resulting state or error.
 func (m Model) renderGroupField() string {
 	value := m.groupLabel
 	if m.activeField == fieldGroup {
@@ -1197,7 +1124,6 @@ func (m Model) renderGroupField() string {
 	return groupValueStyle.Render(value)
 }
 
-// renderNameField renders render name field for Model and returns the resulting state or error.
 func (m Model) renderNameField() string {
 	if m.activeField == fieldName {
 		return styles.FilterText.Render(m.nameInput.View())
@@ -1205,7 +1131,6 @@ func (m Model) renderNameField() string {
 	return parameterKeyStyle.Render(strings.TrimSpace(m.nameInput.Value()))
 }
 
-// renderTypeField renders render type field for Model and returns the resulting state or error.
 func (m Model) renderTypeField() string {
 	value := m.typeValue
 	if m.activeField == fieldType {
@@ -1214,7 +1139,6 @@ func (m Model) renderTypeField() string {
 	return styles.PanelText.Render(value)
 }
 
-// renderDescriptionField renders render description field for Model and returns the resulting state or error.
 func (m Model) renderDescriptionField() string {
 	width := m.descriptionTextWidth()
 	if m.activeField == fieldDescription {
@@ -1237,14 +1161,12 @@ func (m Model) renderDescriptionField() string {
 	return strings.Join(lines, "\n")
 }
 
-// resizeDescriptionInput handles resize description input for Model and returns the resulting state or error.
 func (m *Model) resizeDescriptionInput(width int) {
 	inputWidth := m.descriptionTextWidth()
 	m.descInput.SetWidth(inputWidth)
 	m.descInput.SetHeight(m.descriptionVisualHeightForWidth(inputWidth))
 }
 
-// normalizeDescriptionInput handles normalize description input for Model and returns the resulting state or error.
 func (m *Model) normalizeDescriptionInput() {
 	value := singleLineValue(m.descInput.Value())
 	pos := m.descInput.Column()
@@ -1257,18 +1179,15 @@ func (m *Model) normalizeDescriptionInput() {
 	}
 }
 
-// descriptionVisualHeight handles description visual height for Model and returns the resulting state or error.
 func (m Model) descriptionVisualHeight() int {
 	width := m.descriptionTextWidth()
 	return m.descriptionVisualHeightForWidth(width)
 }
 
-// descriptionTextWidth handles description text width for Model and returns the resulting state or error.
 func (m Model) descriptionTextWidth() int {
 	return max(m.width-6, 1)
 }
 
-// descriptionVisualHeightForWidth handles description visual height for width for Model and returns the resulting state or error.
 func (m Model) descriptionVisualHeightForWidth(width int) int {
 	value := m.descInput.Value()
 	if value == "" {
@@ -1277,7 +1196,6 @@ func (m Model) descriptionVisualHeightForWidth(width int) int {
 	return max(len(descriptionWrapSegments(value, width)), 1)
 }
 
-// renderActiveDescription renders render active description for Model and returns the resulting state or error.
 func (m Model) renderActiveDescription(width int) string {
 	value := m.descInput.Value()
 	segments := descriptionWrapSegments(value, width)
@@ -1294,15 +1212,12 @@ func (m Model) renderActiveDescription(width int) string {
 	return strings.Join(lines, "\n")
 }
 
-// descriptionSegment holds description segment state used by the details package.
 type descriptionSegment struct {
-	// text stores text for descriptionSegment.
 	text string
 	// start, end store start end values for descriptionSegment.
 	start, end int
 }
 
-// descriptionWrapSegments handles description wrap segments and returns the resulting value or error.
 func descriptionWrapSegments(value string, width int) []descriptionSegment {
 	if width <= 0 {
 		return []descriptionSegment{{text: ""}}
@@ -1346,7 +1261,6 @@ func descriptionWrapSegments(value string, width int) []descriptionSegment {
 	return segments
 }
 
-// wrappedOffsetForClick handles wrapped offset for click and returns the resulting value or error.
 func wrappedOffsetForClick(segments []descriptionSegment, line, col int) int {
 	if len(segments) == 0 {
 		return 0
@@ -1356,7 +1270,6 @@ func wrappedOffsetForClick(segments []descriptionSegment, line, col int) int {
 	return segment.start + min(max(col, 0), len([]rune(segment.text)))
 }
 
-// wrappedCursorPosition handles wrapped cursor position and returns the resulting value or error.
 func wrappedCursorPosition(segments []descriptionSegment, cursor int) (int, int) {
 	if len(segments) == 0 {
 		return 0, 0
@@ -1373,7 +1286,6 @@ func wrappedCursorPosition(segments []descriptionSegment, cursor int) (int, int)
 	return last, len([]rune(segments[last].text))
 }
 
-// renderWithCursor renders render with cursor and returns the resulting value or error.
 func renderWithCursor(value string, cursorCol, width int) string {
 	runes := []rune(value)
 	cursorCol = min(max(cursorCol, 0), len(runes))
@@ -1388,7 +1300,6 @@ func renderWithCursor(value string, cursorCol, width int) string {
 	return padRight(rendered, width)
 }
 
-// descriptionCursorStyle handles description cursor style and returns the resulting value or error.
 func descriptionCursorStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Reverse(true).Bold(true)
@@ -1396,7 +1307,6 @@ func descriptionCursorStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Background(styles.PaletteYellow).Foreground(styles.PaletteBlueDeep).Bold(true)
 }
 
-// singleLineValue handles single line value and returns the resulting value or error.
 func singleLineValue(value string) string {
 	return strings.Join(strings.FieldsFunc(value, func(r rune) bool {
 		return r == '\n' || r == '\r'
@@ -1413,7 +1323,6 @@ func (m Model) selectedType() string {
 	return m.typeValue
 }
 
-// fieldChanged handles field changed for Model and returns the resulting state or error.
 func (m Model) fieldChanged(field fieldID) bool {
 	if m.data == nil {
 		return false
@@ -1432,12 +1341,10 @@ func (m Model) fieldChanged(field fieldID) bool {
 	}
 }
 
-// valueChanged handles value changed for Model and returns the resulting state or error.
 func (m Model) valueChanged() bool {
 	return len(m.valueEdits()) > 0
 }
 
-// valueEdits handles value edits for Model and returns the resulting state or error.
 func (m Model) valueEdits() []core.ParameterValueEdit {
 	if m.data == nil {
 		return nil
@@ -1459,7 +1366,6 @@ func (m Model) valueEdits() []core.ParameterValueEdit {
 	return edits
 }
 
-// invalidName handles invalid name for Model and returns the resulting state or error.
 func (m Model) invalidName() bool {
 	if m.data == nil {
 		return false
@@ -1479,7 +1385,6 @@ func (m Model) invalidName() bool {
 	return false
 }
 
-// invalidValues handles invalid values for Model and returns the resulting state or error.
 func (m Model) invalidValues() bool {
 	if m.valuesInvalid {
 		return true
@@ -1499,7 +1404,6 @@ func (m Model) invalidValues() bool {
 	return false
 }
 
-// validRawValueForType handles valid raw value for type and returns the resulting value or error.
 func validRawValueForType(value, valueType string) bool {
 	value = strings.TrimSpace(value)
 	switch strings.ToUpper(strings.TrimSpace(valueType)) {
@@ -1525,17 +1429,12 @@ func (m Model) hasChanges() bool {
 	return m.fieldChanged(fieldGroup) || m.fieldChanged(fieldName) || m.fieldChanged(fieldType) || m.fieldChanged(fieldDescription) || m.valueChanged()
 }
 
-// dropdownRow holds dropdown row state used by the details package.
 type dropdownRow struct {
-	// Key stores key for dropdownRow.
-	Key string
-	// Label stores label for dropdownRow.
+	Key   string
 	Label string
-	// Input stores input for dropdownRow.
 	Input bool
 }
 
-// dropdownRows handles dropdown rows for Model and returns the resulting state or error.
 func (m Model) dropdownRows() []dropdownRow {
 	switch m.activeField {
 	case fieldGroup:
@@ -1575,7 +1474,6 @@ func (m Model) dropdownRows() []dropdownRow {
 	}
 }
 
-// fieldValueLine handles field value line for Model and returns the resulting state or error.
 func (m Model) fieldValueLine(field fieldID) int {
 	if m.data == nil {
 		return 0
@@ -1601,12 +1499,10 @@ func (m Model) fieldValueLine(field fieldID) int {
 	return 0
 }
 
-// valuesTitleLine handles values title line for Model and returns the resulting state or error.
 func (m Model) valuesTitleLine() int {
 	return m.fieldValueLine(fieldDescription) + m.descriptionVisualHeight() + 1
 }
 
-// valueConditionLine handles value condition line for Model and returns the resulting state or error.
 func (m Model) valueConditionLine(index int) int {
 	if m.data == nil {
 		return 0
@@ -1638,7 +1534,6 @@ func (m Model) valueVisualHeight(value core.ParametersValue, width int) int {
 	return 1 + len(m.renderValueLines(value, max(width-4, 1))) + 1
 }
 
-// dropdownCurrentLabel handles dropdown current label for Model and returns the resulting state or error.
 func (m Model) dropdownCurrentLabel() string {
 	switch m.activeField {
 	case fieldGroup:
@@ -1650,7 +1545,6 @@ func (m Model) dropdownCurrentLabel() string {
 	}
 }
 
-// dropdownCurrentStyle handles dropdown current style for Model and returns the resulting state or error.
 func (m Model) dropdownCurrentStyle() lipgloss.Style {
 	switch m.activeField {
 	case fieldGroup:
@@ -1699,7 +1593,6 @@ func (m *Model) moveDropdown(delta int) {
 	}
 }
 
-// commitDropdown handles commit dropdown for Model and returns the resulting state or error.
 func (m *Model) commitDropdown() {
 	rows := m.dropdownRows()
 	if len(rows) == 0 || m.dropdownIndex < 0 || m.dropdownIndex >= len(rows) {
@@ -1725,7 +1618,6 @@ func (m *Model) commitDropdown() {
 	m.closeDropdown()
 }
 
-// dropdownInputSelected handles dropdown input selected for Model and returns the resulting state or error.
 func (m Model) dropdownInputSelected() bool {
 	rows := m.dropdownRows()
 	return m.dropdownIndex >= 0 && m.dropdownIndex < len(rows) && rows[m.dropdownIndex].Input
@@ -1733,7 +1625,6 @@ func (m Model) dropdownInputSelected() bool {
 
 var dropdownBorderStyle = lipgloss.NewStyle().Foreground(styles.PaletteBlueBright)
 
-// dropdownOptionStyle handles dropdown option style and returns the resulting value or error.
 func dropdownOptionStyle(selected bool) lipgloss.Style {
 	if !selected {
 		return styles.PanelText
@@ -1744,7 +1635,6 @@ func dropdownOptionStyle(selected bool) lipgloss.Style {
 	return styles.PanelText.Bold(true).Foreground(styles.PaletteGold)
 }
 
-// textinputStyles handles textinput styles and returns the resulting value or error.
 func textinputStyles() textinput.Styles {
 	inputStyles := textinput.DefaultDarkStyles()
 	valueStyle := styles.FilterText
@@ -1760,7 +1650,6 @@ func textinputStyles() textinput.Styles {
 	return inputStyles
 }
 
-// textareaStyles handles textarea styles and returns the resulting value or error.
 func textareaStyles() textarea.Styles {
 	s := textarea.DefaultStyles(true)
 	textStyle := styles.FilterText
@@ -1782,7 +1671,6 @@ func textareaStyles() textarea.Styles {
 	return s
 }
 
-// newTextInput constructs new text input and returns the resulting value or error.
 func newTextInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""
@@ -1791,7 +1679,6 @@ func newTextInput() textinput.Model {
 	return input
 }
 
-// newDescriptionInput constructs new description input and returns the resulting value or error.
 func newDescriptionInput() textarea.Model {
 	input := textarea.New()
 	input.Prompt = ""
@@ -1803,19 +1690,16 @@ func newDescriptionInput() textarea.Model {
 	return input
 }
 
-// newGroupInput constructs new group input and returns the resulting value or error.
 func newGroupInput() textinput.Model {
 	input := newTextInput()
 	input.Placeholder = "New group"
 	return input
 }
 
-// conditionStyle handles condition style for Model and returns the resulting state or error.
 func (m Model) conditionStyle(color string) lipgloss.Style {
 	return styles.PanelText.Foreground(styles.ConditionLipglossColor(color))
 }
 
-// valueTextStyle handles value text style for Model and returns the resulting state or error.
 func (m Model) valueTextStyle(value core.ParametersValue) lipgloss.Style {
 	if value.Empty {
 		return corestyles.EmptyValueStyle()
@@ -1823,7 +1707,6 @@ func (m Model) valueTextStyle(value core.ParametersValue) lipgloss.Style {
 	return corestyles.ValueTextStyle(value.Value, value.ValueType)
 }
 
-// renderValueLines renders render value lines for Model and returns the resulting state or error.
 func (m Model) renderValueLines(value core.ParametersValue, width int) []string {
 	if value.Empty {
 		return []string{corestyles.EmptyValueStyle().Render(value.Value)}
@@ -1839,7 +1722,6 @@ func (m Model) renderValueLines(value core.ParametersValue, width int) []string 
 	return renderPlainValueLines(value.Value, width, m.valueTextStyle(value))
 }
 
-// renderPlainValueLines renders render plain value lines and returns the resulting value or error.
 func renderPlainValueLines(value string, width int, style lipgloss.Style) []string {
 	lines := make([]string, 0)
 	for part := range strings.SplitSeq(value, "\n") {
@@ -1853,7 +1735,6 @@ func renderPlainValueLines(value string, width int, style lipgloss.Style) []stri
 	return lines
 }
 
-// renderJSONValueLines renders render jsonvalue lines and returns the resulting value or error.
 func renderJSONValueLines(value string, width int) []string {
 	var out bytes.Buffer
 	if err := json.Indent(&out, []byte(value), "", "  "); err != nil {
@@ -1877,7 +1758,6 @@ func renderJSONValueLines(value string, width int) []string {
 	return rendered
 }
 
-// wrapRenderedLine handles wrap rendered line and returns the resulting value or error.
 func wrapRenderedLine(value string, width int) []string {
 	if width <= 0 {
 		return []string{""}
@@ -1901,7 +1781,6 @@ func wrapRenderedLine(value string, width int) []string {
 	return lines
 }
 
-// leadingSpaceWidth handles leading space width and returns the resulting value or error.
 func leadingSpaceWidth(value string) int {
 	width := 0
 	for _, r := range value {

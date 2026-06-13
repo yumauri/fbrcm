@@ -33,23 +33,16 @@ const (
 	defaultLevelColor = "255"
 )
 
-// manager holds manager state used by the log package.
 type manager struct {
-	// mu stores mu for manager.
-	mu sync.RWMutex
-	// mode stores mode for manager.
-	mode Mode
-	// level stores level for manager.
-	level charmlog.Level
-	// logger stores logger for manager.
+	mu     sync.RWMutex
+	mode   Mode
+	level  charmlog.Level
 	logger *charmlog.Logger
-	// sink stores sink for manager.
-	sink *lineSink
+	sink   *lineSink
 }
 
 var global = newManager()
 
-// newManager constructs new manager and returns the resulting value or error.
 func newManager() *manager {
 	sink := newLineSink()
 	logger := charmlog.NewWithOptions(io.Discard, charmlog.Options{
@@ -70,27 +63,22 @@ func Init(mode Mode) {
 	global.init(mode)
 }
 
-// Default handles default and returns the resulting value or error.
 func Default() *charmlog.Logger {
 	return global.defaultLogger()
 }
 
-// For handles for and returns the resulting value or error.
 func For(component string) *charmlog.Logger {
 	return Default().With("component", component)
 }
 
-// Snapshot handles snapshot and returns the resulting value or error.
 func Snapshot() []string {
 	return global.sink.snapshot()
 }
 
-// Subscribe handles subscribe and returns the resulting value or error.
 func Subscribe() (<-chan string, func()) {
 	return global.sink.subscribe()
 }
 
-// CurrentLevel handles current level and returns the resulting value or error.
 func CurrentLevel() charmlog.Level {
 	return global.currentLevel()
 }
@@ -100,7 +88,6 @@ func SetLevel(level charmlog.Level) {
 	global.setLevel(level)
 }
 
-// AvailableLevels handles available levels and returns the resulting value or error.
 func AvailableLevels() []charmlog.Level {
 	return []charmlog.Level{
 		charmlog.DebugLevel,
@@ -112,7 +99,6 @@ func AvailableLevels() []charmlog.Level {
 	}
 }
 
-// LevelColor handles level color and returns the resulting value or error.
 func LevelColor(level charmlog.Level) string {
 	if level == SilentLevel {
 		return silentLevelColor
@@ -162,14 +148,12 @@ func (m *manager) init(mode Mode) {
 	m.logger.Debug("logger initialized", "mode", mode, "log_level", levelLabel(m.level))
 }
 
-// defaultLogger handles default logger for manager and returns the resulting state or error.
 func (m *manager) defaultLogger() *charmlog.Logger {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.logger
 }
 
-// currentLevel handles current level for manager and returns the resulting state or error.
 func (m *manager) currentLevel() charmlog.Level {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -200,14 +184,12 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 	m.logger.SetOutput(io.Writer(m.sink))
 }
 
-// loggerStyles handles logger styles and returns the resulting value or error.
 func loggerStyles() *charmlog.Styles {
 	styles := charmlog.DefaultStyles()
 	styles.Values["url"] = lipgloss.NewStyle().Foreground(lipgloss.Color(urlColor))
 	return styles
 }
 
-// parseLevel parses parse level and returns the resulting value or error.
 func parseLevel(raw string) (charmlog.Level, error) {
 	if strings.EqualFold(strings.TrimSpace(raw), "silent") {
 		return SilentLevel, nil
@@ -215,7 +197,6 @@ func parseLevel(raw string) (charmlog.Level, error) {
 	return charmlog.ParseLevel(raw)
 }
 
-// levelLabel handles level label and returns the resulting value or error.
 func levelLabel(level charmlog.Level) string {
 	if level == SilentLevel {
 		return "SLNT"

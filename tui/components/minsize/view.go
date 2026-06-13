@@ -12,7 +12,6 @@ const (
 	MinHeight = 20
 )
 
-// View handles view and returns the resulting value or error.
 func View(width, height int) string {
 	if width <= 0 || height <= 0 {
 		return ""

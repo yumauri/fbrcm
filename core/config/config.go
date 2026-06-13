@@ -10,20 +10,15 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-// AppConfig holds app config state used by the config package.
 type AppConfig struct {
-	// Profile stores profile for AppConfig.
-	Profile string `toml:"profile"`
-	// Keys stores TUI keybindings by action name for AppConfig.
-	Keys map[string]map[string][]string `toml:"keys"`
+	Profile string                         `toml:"profile"`
+	Keys    map[string]map[string][]string `toml:"keys"`
 }
 
-// GetGlobalConfigFilePath gets global config file path and returns the resulting value or error.
 func GetGlobalConfigFilePath() string {
 	return filepath.Join(GetConfigRootDirPath(), "config.toml")
 }
 
-// LoadAppConfig loads app config and returns the resulting value or error.
 func LoadAppConfig() (*AppConfig, error) {
 	path := GetGlobalConfigFilePath()
 	logger := corelog.For("config")
@@ -44,7 +39,6 @@ func LoadAppConfig() (*AppConfig, error) {
 	return cfg, nil
 }
 
-// SaveAppConfig saves app config and returns the resulting value or error.
 func SaveAppConfig(cfg *AppConfig) error {
 	if cfg == nil {
 		cfg = &AppConfig{}

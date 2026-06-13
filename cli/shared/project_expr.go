@@ -14,9 +14,7 @@ import (
 
 // QueryFilter holds a parsed mode-prefixed query.
 type QueryFilter struct {
-	// Mode stores match mode for QueryFilter.
-	Mode filter.Mode
-	// Query stores query for QueryFilter.
+	Mode  filter.Mode
 	Query string
 }
 
@@ -151,7 +149,6 @@ func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExp
 	return ok && match
 }
 
-// CompileExpr handles compile expr and returns the resulting value or error.
 func CompileExpr(rawExpr, projectID string) (*filter.Expression, bool) {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -202,7 +199,6 @@ func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Proj
 	return match, true
 }
 
-// loadProjectExprConfig loads load project expr config and returns the resulting value or error.
 func loadProjectExprConfig(ctx context.Context, svc *core.Core, project core.Project) (*firebase.RemoteConfig, error) {
 	cache, _, err := svc.GetParameters(ctx, project.ProjectID, false)
 	if err != nil {

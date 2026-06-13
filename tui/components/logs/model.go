@@ -14,34 +14,20 @@ import (
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
-// Model holds model state used by the logs package.
 type Model struct {
-	// svc stores svc for Model.
 	svc *core.Core
 
-	// viewport stores viewport for Model.
-	viewport viewport.Model
-	// lines stores lines for Model.
-	lines []string
-	// active stores active for Model.
-	active bool
-	// follow stores follow for Model.
-	follow bool
-	// level stores level for Model.
-	level charmlog.Level
-	// sub stores sub for Model.
-	sub <-chan string
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// width stores width for Model.
-	width int
-	// height stores height for Model.
-	height int
-	// statusFlashOn stores status flash on for Model.
-	statusFlashOn bool
-	// statusFlashLeft stores status flash left for Model.
+	viewport        viewport.Model
+	lines           []string
+	active          bool
+	follow          bool
+	level           charmlog.Level
+	sub             <-chan string
+	x               int
+	y               int
+	width           int
+	height          int
+	statusFlashOn   bool
 	statusFlashLeft int
 }
 
@@ -53,7 +39,6 @@ const (
 var ansiCSIRe = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
 var ansiOSCRe = regexp.MustCompile(`\x1b]8;;.*?\x1b\\`)
 
-// New constructs new and returns the resulting value or error.
 func New(svc *core.Core) Model {
 	vp := viewport.New(
 		viewport.WithWidth(1),
@@ -131,7 +116,6 @@ func (m *Model) moveLevel(delta int) {
 	corelog.SetLevel(m.level)
 }
 
-// refreshViewport handles refresh viewport for Model and returns the resulting state or error.
 func (m *Model) refreshViewport() {
 	m.viewport.SetWidth(max(m.width, 1))
 	m.viewport.SetHeight(max(m.height-2, 1))
@@ -157,7 +141,6 @@ func (m Model) isMouseInside(mouse tea.Mouse) bool {
 	return mouse.X >= m.x && mouse.X < m.x+m.width && mouse.Y >= m.y && mouse.Y < m.y+m.height
 }
 
-// waitForLogCmd handles wait for log cmd and returns the resulting value or error.
 func waitForLogCmd(ch <-chan string) tea.Cmd {
 	if ch == nil {
 		return nil
@@ -172,10 +155,8 @@ func waitForLogCmd(ch <-chan string) tea.Cmd {
 	}
 }
 
-// statusFlashTickMsg holds status flash tick msg state used by the logs package.
 type statusFlashTickMsg struct{}
 
-// statusFlashTickCmd handles status flash tick cmd and returns the resulting value or error.
 func statusFlashTickCmd() tea.Cmd {
 	return tea.Tick(statusFlashStep, func(time.Time) tea.Msg {
 		return statusFlashTickMsg{}

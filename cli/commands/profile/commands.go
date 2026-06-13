@@ -14,7 +14,6 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 )
 
-// New constructs new and returns the resulting value or error.
 func New() *cobra.Command {
 	profileCmd := &cobra.Command{
 		Use:   "profile",
@@ -191,7 +190,6 @@ func newProfileListItems(profiles []string, activeProfile string) []profileListI
 	return items
 }
 
-// renderProfilesTable renders render profiles table and returns the resulting value or error.
 func renderProfilesTable(profiles []string, activeProfile string) string {
 	noColor := clistyles.NoColorEnabled()
 	rows := make([][]string, 0, len(profiles))

@@ -26,29 +26,19 @@ type jsonContainer struct {
 	expectingValue bool
 }
 
-// JSONRange holds JSON highlight range state used by the jsoninput package.
 type JSONRange struct {
-	// Start stores start for JSONRange.
-	Start int
-	// End stores end for JSONRange.
-	End int
-	// CursorCol stores cursor col for JSONRange.
+	Start     int
+	End       int
 	CursorCol int
 }
 
-// Model holds model state used by the jsoninput package.
 type Model struct {
-	// screenW stores screen w for Model.
 	screenW int
-	// screenH stores screen h for Model.
 	screenH int
-	// area stores area for Model.
-	area textarea.Model
-	// open stores open for Model.
-	open bool
+	area    textarea.Model
+	open    bool
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{area: newTextarea()}
 }
@@ -78,22 +68,18 @@ func (m Model) IsOpen() bool {
 	return m.open
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	return 2, 2
 }
 
-// Value handles value for Model and returns the resulting state or error.
 func (m Model) Value() string {
 	return m.area.Value()
 }
 
-// Valid handles valid for Model and returns the resulting state or error.
 func (m Model) Valid() bool {
 	return json.Valid([]byte(m.area.Value()))
 }
 
-// CompactedValue handles compacted value for Model and returns the resulting state or error.
 func (m Model) CompactedValue() (string, bool) {
 	if !m.Valid() {
 		return "", false
@@ -105,12 +91,10 @@ func (m Model) CompactedValue() (string, bool) {
 	return buf.String(), true
 }
 
-// PrettyValue handles pretty value for Model and returns the resulting state or error.
 func (m Model) PrettyValue() string {
 	return prettyJSON(m.area.Value())
 }
 
-// Reformat handles reformat for Model and returns the resulting state or error.
 func (m Model) Reformat() Model {
 	if !m.Valid() {
 		return m
@@ -123,7 +107,6 @@ func (m Model) Reformat() Model {
 	return m
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.open {
 		return m, nil
@@ -133,7 +116,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if !m.open {
 		return ""
@@ -141,7 +123,6 @@ func (m Model) View() string {
 	return m.renderBox()
 }
 
-// resize handles resize for Model and returns the resulting state or error.
 func (m *Model) resize() {
 	innerWidth := max(m.screenW-6, 4)
 	innerHeight := jsonContentHeight(m.screenH)
@@ -150,7 +131,6 @@ func (m *Model) resize() {
 	m.area.SetHeight(innerHeight)
 }
 
-// borderStyle handles border style and returns the resulting value or error.
 func borderStyle(valid bool) lipgloss.Style {
 	color := styles.PaletteBlueBright
 	if !valid {
@@ -159,7 +139,6 @@ func borderStyle(valid bool) lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(color)
 }
 
-// textareaStyles handles textarea styles and returns the resulting value or error.
 func textareaStyles() textarea.Styles {
 	s := textarea.DefaultStyles(true)
 	textStyle := styles.FilterText
@@ -181,7 +160,6 @@ func textareaStyles() textarea.Styles {
 	return s
 }
 
-// newTextarea constructs new textarea and returns the resulting value or error.
 func newTextarea() textarea.Model {
 	input := textarea.New()
 	input.Prompt = ""
@@ -192,7 +170,6 @@ func newTextarea() textarea.Model {
 	return input
 }
 
-// prettyJSON handles pretty json and returns the resulting value or error.
 func prettyJSON(value string) string {
 	if !json.Valid([]byte(value)) {
 		return value
@@ -204,22 +181,16 @@ func prettyJSON(value string) string {
 	return out.String()
 }
 
-// renderArea renders render area for Model and returns the resulting state or error.
 func (m Model) renderArea() string {
 	height := max(m.area.Height(), 1)
 	cursorLine := m.area.Line()
 	lineInfo := m.area.LineInfo()
 	scrollY := m.area.ScrollYOffset()
 
-	// visualLine holds visual line state used by the jsoninput package.
 	type visualLine struct {
-		// lineIndex stores line index for visualLine.
 		lineIndex int
-		// start stores start for visualLine.
-		start int
-		// end stores end for visualLine.
-		end int
-		// cursorCol stores cursor col for visualLine.
+		start     int
+		end       int
 		cursorCol int
 	}
 
@@ -294,15 +265,11 @@ func (m Model) renderArea() string {
 	return strings.Join(rows, "\n")
 }
 
-// plainWrappedLine holds plain wrapped line state used by the jsoninput package.
 type plainWrappedLine struct {
-	// text stores text for plainWrappedLine.
-	text string
-	// start stores start for plainWrappedLine.
+	text  string
 	start int
 }
 
-// wrapPlainLine handles wrap plain line and returns the resulting value or error.
 func wrapPlainLine(value string, width int) []plainWrappedLine {
 	if width <= 0 {
 		return []plainWrappedLine{{}}
@@ -324,7 +291,6 @@ func wrapPlainLine(value string, width int) []plainWrappedLine {
 	return out
 }
 
-// textareaWrap handles textarea wrap and returns the resulting value or error.
 func textareaWrap(runes []rune, width int) [][]rune {
 	lines := [][]rune{{}}
 	word := []rune{}
@@ -375,12 +341,10 @@ func textareaWrap(runes []rune, width int) [][]rune {
 	return lines
 }
 
-// repeatSpaces handles repeat spaces and returns the resulting value or error.
 func repeatSpaces(n int) []rune {
 	return []rune(strings.Repeat(" ", n))
 }
 
-// highlightJSONRange handles highlight jsonrange and returns the resulting value or error.
 func highlightJSONRange(value string, start, end, cursorCol int) string {
 	ranges := highlightJSONRanges(value, []JSONRange{{Start: start, End: end, CursorCol: cursorCol}})
 	if len(ranges) == 0 {
@@ -389,7 +353,6 @@ func highlightJSONRange(value string, start, end, cursorCol int) string {
 	return ranges[0]
 }
 
-// highlightJSONRanges handles highlight jsonranges and returns the resulting value or error.
 func highlightJSONRanges(value string, ranges []JSONRange) []string {
 	if len(ranges) == 0 {
 		return nil
@@ -558,7 +521,6 @@ func highlightJSONRanges(value string, ranges []JSONRange) []string {
 	return out
 }
 
-// renderLineNumber renders render line number and returns the resulting value or error.
 func renderLineNumber(n, total int, active bool) string {
 	digits := max(len(strconv.Itoa(max(total, 1))), 1)
 	style := styles.PanelMuted
@@ -568,17 +530,14 @@ func renderLineNumber(n, total int, active bool) string {
 	return style.Render(fmt.Sprintf("%*d ", digits, n))
 }
 
-// lineNumberGutter handles line number gutter and returns the resulting value or error.
 func lineNumberGutter(total int) int {
 	return max(len(strconv.Itoa(max(total, 1))), 1) + 1
 }
 
-// padHighlighted handles pad highlighted and returns the resulting value or error.
 func padHighlighted(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }
 
-// cursorStyle handles cursor style and returns the resulting value or error.
 func cursorStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return lipgloss.NewStyle().Reverse(true).Bold(true)
@@ -586,7 +545,6 @@ func cursorStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Background(styles.PaletteYellow).Foreground(styles.PaletteBlueDeep).Bold(true)
 }
 
-// highlightJSONVisible handles highlight jsonvisible and returns the resulting value or error.
 func highlightJSONVisible(value string) string {
 	var out strings.Builder
 	inString := false
@@ -686,22 +644,18 @@ func highlightJSONVisible(value string) string {
 	return out.String()
 }
 
-// HighlightJSONVisible handles highlight jsonvisible and returns the resulting value or error.
 func HighlightJSONVisible(value string) string {
 	return highlightJSONVisible(value)
 }
 
-// HighlightJSONRange handles highlight jsonrange and returns the resulting value or error.
 func HighlightJSONRange(value string, start, end, cursorCol int) string {
 	return highlightJSONRange(value, start, end, cursorCol)
 }
 
-// HighlightJSONRanges handles highlight jsonranges and returns the resulting value or error.
 func HighlightJSONRanges(value string, ranges []JSONRange) []string {
 	return highlightJSONRanges(value, ranges)
 }
 
-// highlightJSONRune handles highlight jsonrune and returns the resulting value or error.
 func highlightJSONRune(r rune, inString, stringIsKey bool) string {
 	switch {
 	case inString && stringIsKey:
@@ -717,27 +671,22 @@ func highlightJSONRune(r rune, inString, stringIsKey bool) string {
 	}
 }
 
-// jsonDefaultStyle handles json default style and returns the resulting value or error.
 func jsonDefaultStyle() lipgloss.Style {
 	return styles.PanelText
 }
 
-// jsonPunctuationStyle handles json punctuation style and returns the resulting value or error.
 func jsonPunctuationStyle() lipgloss.Style {
 	return styles.PanelText
 }
 
-// jsonKeyStyle handles json key style and returns the resulting value or error.
 func jsonKeyStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(styles.ConditionLipglossColor("CYAN"))
 }
 
-// jsonStringStyle handles json string style and returns the resulting value or error.
 func jsonStringStyle() lipgloss.Style {
 	return styles.PanelText
 }
 
-// jsonStringContextStyle handles json string context style and returns the resulting value or error.
 func jsonStringContextStyle(key bool) lipgloss.Style {
 	if key {
 		return jsonKeyStyle()
@@ -745,27 +694,22 @@ func jsonStringContextStyle(key bool) lipgloss.Style {
 	return jsonStringStyle()
 }
 
-// jsonNumberStyle handles json number style and returns the resulting value or error.
 func jsonNumberStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(styles.PaletteBlueBright)
 }
 
-// jsonTrueStyle handles json true style and returns the resulting value or error.
 func jsonTrueStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(styles.ConditionLipglossColor("GREEN"))
 }
 
-// jsonFalseStyle handles json false style and returns the resulting value or error.
 func jsonFalseStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(styles.PaletteError)
 }
 
-// jsonNullStyle handles json null style and returns the resulting value or error.
 func jsonNullStyle() lipgloss.Style {
 	return styles.PanelMuted
 }
 
-// jsonTokenStyle handles json token style and returns the resulting value or error.
 func jsonTokenStyle(token string) lipgloss.Style {
 	switch token {
 	case "true":
@@ -782,7 +726,6 @@ func jsonTokenStyle(token string) lipgloss.Style {
 	}
 }
 
-// renderBox renders render box for Model and returns the resulting state or error.
 func (m Model) renderBox() string {
 	border := borderStyle(m.Valid())
 	body := strings.Split(m.renderArea(), "\n")
@@ -810,7 +753,6 @@ func (m Model) renderBox() string {
 	return strings.Join(lines, "\n")
 }
 
-// visualLineCount handles visual line count and returns the resulting value or error.
 func (m Model) visualLineCount() int {
 	lines := strings.Split(m.area.Value(), "\n")
 	if len(lines) == 0 {
@@ -825,12 +767,10 @@ func (m Model) visualLineCount() int {
 	return max(count, 1)
 }
 
-// jsonContentHeight handles json content height and returns the resulting value or error.
 func jsonContentHeight(screenH int) int {
 	return max(screenH-7, 3)
 }
 
-// jsonHelpText handles json help text and returns the resulting value or error.
 func jsonHelpText(width int) string {
 	m := help.New()
 	m.ShortSeparator = " • "
@@ -847,7 +787,6 @@ func jsonHelpText(width int) string {
 	})
 }
 
-// renderHelpFooter renders help footer and returns the resulting value or error.
 func renderHelpFooter(text string, width int) string {
 	if width <= 0 {
 		return ""
@@ -855,17 +794,12 @@ func renderHelpFooter(text string, width int) string {
 	return text + strings.Repeat(" ", max(width-lipgloss.Width(text), 0))
 }
 
-// expandedScrollbar holds expanded scrollbar state used by the jsoninput package.
 type expandedScrollbar struct {
-	// visible stores visible for expandedScrollbar.
-	visible bool
-	// thumbStart stores thumb start for expandedScrollbar.
+	visible    bool
 	thumbStart int
-	// thumbEnd stores thumb end for expandedScrollbar.
-	thumbEnd int
+	thumbEnd   int
 }
 
-// expandedScrollbarState handles expanded scrollbar state and returns the resulting value or error.
 func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
 	if visible <= 0 {
 		return expandedScrollbar{}
@@ -884,7 +818,6 @@ func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
 	}
 }
 
-// resetAreaCursor handles reset area cursor for Model and returns the resulting state or error.
 func (m *Model) resetAreaCursor() {
 	for m.area.Line() > 0 {
 		m.area.CursorUp()

@@ -227,12 +227,21 @@ func validateAuthFile(file *AuthFile) error {
 			if strings.TrimSpace(entry.ClientSecretPath) == "" {
 				return fmt.Errorf("auth %s client secret path is empty", entry.ID)
 			}
+			if err := validateAuthStoragePath(entry.ClientSecretPath, entry.ID, "client-secret.json"); err != nil {
+				return fmt.Errorf("auth %s client secret path: %w", entry.ID, err)
+			}
 			if strings.TrimSpace(entry.TokenPath) == "" {
 				return fmt.Errorf("auth %s token path is empty", entry.ID)
+			}
+			if err := validateAuthStoragePath(entry.TokenPath, entry.ID, "token.json"); err != nil {
+				return fmt.Errorf("auth %s token path: %w", entry.ID, err)
 			}
 		case AuthTypeServiceAccount:
 			if strings.TrimSpace(entry.ServiceAccountPath) == "" {
 				return fmt.Errorf("auth %s service account path is empty", entry.ID)
+			}
+			if err := validateAuthStoragePath(entry.ServiceAccountPath, entry.ID, "service-account.json"); err != nil {
+				return fmt.Errorf("auth %s service account path: %w", entry.ID, err)
 			}
 		case AuthTypeGCloud:
 		default:
@@ -244,6 +253,26 @@ func validateAuthFile(file *AuthFile) error {
 	}
 	if !defaultSeen {
 		return fmt.Errorf("default auth %q is not configured", file.DefaultAuthID)
+	}
+	return nil
+}
+
+func validateAuthStoragePath(path, authID, filename string) error {
+	if filepath.IsAbs(path) {
+		return fmt.Errorf("must be relative")
+	}
+	if strings.Contains(path, `\`) {
+		return fmt.Errorf("cannot contain path separators other than slash")
+	}
+
+	clean := filepath.ToSlash(filepath.Clean(filepath.FromSlash(path)))
+	if clean != path {
+		return fmt.Errorf("must be clean")
+	}
+
+	expected := filepath.ToSlash(filepath.Join("auth", authID, filename))
+	if clean != expected {
+		return fmt.Errorf("must be %q", expected)
 	}
 	return nil
 }

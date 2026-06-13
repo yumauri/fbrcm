@@ -14,21 +14,14 @@ import (
 
 const helpLineHeight = 1
 
-// helpKeyMap holds help key map state used by the app package.
 type helpKeyMap struct {
-	// active stores active for helpKeyMap.
-	active panels.ID
-	// keyboardCapture stores keyboard capture for helpKeyMap.
+	active          panels.ID
 	keyboardCapture bool
-	// projectsMode stores projects mode for helpKeyMap.
-	projectsMode projectsPanelMode
-	// logsMode stores logs mode for helpKeyMap.
-	logsMode logsPanelMode
-	// detailsVisible stores details visible for helpKeyMap.
-	detailsVisible bool
+	projectsMode    projectsPanelMode
+	logsMode        logsPanelMode
+	detailsVisible  bool
 }
 
-// newHelpModel constructs new help model and returns the resulting value or error.
 func newHelpModel() help.Model {
 	m := help.New()
 	m.ShortSeparator = " • "
@@ -39,7 +32,6 @@ func newHelpModel() help.Model {
 	return m
 }
 
-// ShortHelp handles short help for helpKeyMap and returns the resulting state or error.
 func (k helpKeyMap) ShortHelp() []key.Binding {
 	common := []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, "quit"),
@@ -147,12 +139,10 @@ func multiBinding(desc string, refs ...helpRef) key.Binding {
 	return binding
 }
 
-// FullHelp handles full help for helpKeyMap and returns the resulting state or error.
 func (k helpKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{k.ShortHelp()}
 }
 
-// helpView handles help view for Model and returns the resulting state or error.
 func (m Model) helpView() string {
 	if m.width <= 0 {
 		return ""

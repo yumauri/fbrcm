@@ -37,22 +37,18 @@ var (
 			Foreground(PaletteSlateDim)
 )
 
-// NoColorEnabled handles no color enabled and returns the resulting value or error.
 func NoColorEnabled() bool {
 	return corestyles.NoColorEnabled()
 }
 
-// BorderStyle handles border style and returns the resulting value or error.
 func BorderStyle(_ bool) lipgloss.Style {
 	return BorderInactive
 }
 
-// ConditionLipglossColor handles condition lipgloss color and returns the resulting value or error.
 func ConditionLipglossColor(name string) color.Color {
 	return corestyles.ConditionLipglossColor(name)
 }
 
-// LogLevelLipglossColor handles log level lipgloss color and returns the resulting value or error.
 func LogLevelLipglossColor(level charmlog.Level) color.Color {
 	return corestyles.LogLevelLipglossColor(level)
 }

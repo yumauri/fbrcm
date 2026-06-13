@@ -8,18 +8,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"charm.land/bubbles/v2/filepicker"
-	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
-// New constructs new and returns the resulting value or error.
+// New constructs the project command.
 func New(svc *core.Core) *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:   "project",
@@ -46,7 +45,7 @@ func New(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if toPath == "" {
-				body := trimTrailingLineBreaks(normalizeExportJSON(raw))
+				body := shared.TrimTrailingLineBreaks(shared.NormalizeExportJSON(raw))
 				_, err = cmd.OutOrStdout().Write(body)
 				return err
 			}
@@ -99,7 +98,6 @@ func New(svc *core.Core) *cobra.Command {
 	return projectCmd
 }
 
-// resolveProjectArg handles resolve project arg and returns the resulting value or error.
 func resolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
 	projects, _, err := svc.ListProjects(ctx)
 	if err != nil {
@@ -133,7 +131,6 @@ func resolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 	}
 }
 
-// renderAmbiguousProjectsTable renders render ambiguous projects table and returns the resulting value or error.
 func renderAmbiguousProjectsTable(projects []core.Project) string {
 	rows := make([][]string, 0, len(projects))
 	projectWidth := lipgloss.Width("Project")
@@ -172,7 +169,6 @@ func renderAmbiguousProjectsTable(projects []core.Project) string {
 	return tbl.String()
 }
 
-// readImportRemoteConfig reads read import remote config and returns the resulting value or error.
 func readImportRemoteConfig(cmd *cobra.Command) ([]byte, error) {
 	fromPath, err := cmd.Flags().GetString("from")
 	if err != nil {
@@ -208,9 +204,8 @@ func readImportRemoteConfig(cmd *cobra.Command) ([]byte, error) {
 	}
 }
 
-// writeRemoteConfigFile writes write remote config file and returns the resulting value or error.
 func writeRemoteConfigFile(path string, raw []byte) error {
-	raw = trimTrailingLineBreaks(normalizeExportJSON(raw))
+	raw = shared.TrimTrailingLineBreaks(shared.NormalizeExportJSON(raw))
 	dir := filepath.Dir(path)
 	if dir != "." {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -223,79 +218,10 @@ func writeRemoteConfigFile(path string, raw []byte) error {
 	return nil
 }
 
-// stdinAvailable handles stdin available and returns the resulting value or error.
 func stdinAvailable() bool {
 	info, err := os.Stdin.Stat()
 	if err != nil {
 		return false
 	}
 	return (info.Mode() & os.ModeCharDevice) == 0
-}
-
-// pickerModel holds picker model state used by the project package.
-type pickerModel struct {
-	// picker stores picker for pickerModel.
-	picker filepicker.Model
-	// selected stores selected for pickerModel.
-	selected string
-	// cancel stores cancel for pickerModel.
-	cancel bool
-}
-
-// pickJSONFile handles pick jsonfile and returns the resulting value or error.
-func pickJSONFile() (string, error) {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		currentDir = "."
-	}
-
-	picker := filepicker.New()
-	picker.CurrentDirectory = currentDir
-	picker.AllowedTypes = []string{".json"}
-	picker.FileAllowed = true
-	picker.DirAllowed = false
-	picker.ShowHidden = true
-	picker.AutoHeight = true
-
-	finalModel, err := tea.NewProgram(pickerModel{picker: picker}).Run()
-	if err != nil {
-		return "", err
-	}
-
-	model, ok := finalModel.(pickerModel)
-	if !ok || model.cancel {
-		return "", nil
-	}
-	return model.selected, nil
-}
-
-// Init initializes init for pickerModel and returns the resulting state or error.
-func (m pickerModel) Init() tea.Cmd {
-	return m.picker.Init()
-}
-
-// Update updates update for pickerModel and returns the resulting state or error.
-func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			m.cancel = true
-			return m, tea.Quit
-		}
-	}
-
-	var cmd tea.Cmd
-	m.picker, cmd = m.picker.Update(msg)
-	if didSelect, path := m.picker.DidSelectFile(msg); didSelect {
-		m.selected = path
-		return m, tea.Quit
-	}
-
-	return m, cmd
-}
-
-// View handles view for pickerModel and returns the resulting state or error.
-func (m pickerModel) View() tea.View {
-	return tea.NewView(m.picker.View() + "\n\nenter/l to open or select, h/backspace/left/esc to go up, q to cancel")
 }

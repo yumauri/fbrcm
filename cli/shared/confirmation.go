@@ -10,23 +10,16 @@ import (
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 )
 
-// ConfirmationNote holds confirmation note state used by the shared package.
 type ConfirmationNote struct {
-	// Text stores text for ConfirmationNote.
-	Text string
-	// Color stores color for ConfirmationNote.
+	Text  string
 	Color color.Color
 }
 
-// ConfirmationOptions holds confirmation options state used by the shared package.
 type ConfirmationOptions struct {
-	// Destructive stores destructive for ConfirmationOptions.
 	Destructive bool
-	// Notes stores notes for ConfirmationOptions.
-	Notes []ConfirmationNote
+	Notes       []ConfirmationNote
 }
 
-// NewConfirmation constructs confirmation and returns the resulting value or error.
 func NewConfirmation(prompt string, defaultValue confirmation.Value, options ConfirmationOptions) *confirmation.Confirmation {
 	confirm := confirmation.New(prompt, defaultValue)
 	hint := renderConfirmationNotes(options.Notes)
@@ -61,7 +54,6 @@ func NewConfirmation(prompt string, defaultValue confirmation.Value, options Con
 	return confirm
 }
 
-// renderConfirmationNotes renders render confirmation notes and returns the resulting value or error.
 func renderConfirmationNotes(notes []ConfirmationNote) string {
 	lines := make([]string, 0, len(notes))
 	for _, note := range notes {
@@ -77,7 +69,6 @@ func renderConfirmationNotes(notes []ConfirmationNote) string {
 	return strings.Join(lines, "\n")
 }
 
-// renderYesLabel renders render yes label and returns the resulting value or error.
 func renderYesLabel(label string, destructive, selected bool) string {
 	if clistyles.NoColorEnabled() {
 		if selected {

@@ -20,7 +20,6 @@ var (
 				Padding(0, 1)
 )
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() tea.View {
 	if m.width < minsize.MinWidth || m.height < minsize.MinHeight {
 		v := tea.NewView(rootStyle.Render(minsize.View(m.width, m.height)))
@@ -101,12 +100,10 @@ func (m Model) View() tea.View {
 	return v
 }
 
-// detailsX handles details x for Model and returns the resulting state or error.
 func (m Model) detailsX() int {
 	return max(m.width-m.detailsWidth(), 0)
 }
 
-// detailsWidth handles details width for Model and returns the resulting state or error.
 func (m Model) detailsWidth() int {
 	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
 	return m.detailsWidthForLayout(layout)

@@ -12,17 +12,14 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-// GetDraftsDirPath gets drafts dir path and returns the resulting value or error.
 func GetDraftsDirPath() string {
 	return filepath.Join(GetCacheDirPath(), "drafts")
 }
 
-// GetDraftPath gets draft path and returns the resulting value or error.
 func GetDraftPath(projectID string) string {
 	return filepath.Join(GetDraftsDirPath(), projectID+".json")
 }
 
-// LoadDraft loads draft and returns the resulting value or error.
 func LoadDraft(projectID string) (json.RawMessage, error) {
 	path := GetDraftPath(projectID)
 	logger := corelog.For("config")
@@ -48,7 +45,6 @@ func LoadDraft(projectID string) (json.RawMessage, error) {
 	return data, nil
 }
 
-// SaveDraft saves draft and returns the resulting value or error.
 func SaveDraft(projectID string, raw json.RawMessage) error {
 	logger := corelog.For("config")
 	raw = json.RawMessage(strings.TrimSpace(string(raw)))
@@ -74,7 +70,6 @@ func SaveDraft(projectID string, raw json.RawMessage) error {
 	return nil
 }
 
-// DeleteDraft removes draft and returns the resulting value or error.
 func DeleteDraft(projectID string) error {
 	path := GetDraftPath(projectID)
 	logger := corelog.For("config")
@@ -87,7 +82,6 @@ func DeleteDraft(projectID string) error {
 	return nil
 }
 
-// ListDraftProjectIDs lists draft project ids and returns the resulting value or error.
 func ListDraftProjectIDs() ([]string, error) {
 	path := GetDraftsDirPath()
 	logger := corelog.For("config")
@@ -116,7 +110,6 @@ func ListDraftProjectIDs() ([]string, error) {
 	return ids, nil
 }
 
-// PurgeDrafts handles purge drafts and returns the resulting value or error.
 func PurgeDrafts() error {
 	path := GetDraftsDirPath()
 	logger := corelog.For("config")

@@ -13,35 +13,26 @@ import (
 
 const ParametersCacheTTL = 10 * time.Minute
 
-// ParametersCache holds parameters cache state used by the config package.
 type ParametersCache struct {
-	// ETag stores etag for ParametersCache.
-	ETag string `json:"etag"`
-	// CachedAt stores cached at for ParametersCache.
-	CachedAt time.Time `json:"cached_at"`
-	// RemoteConfig stores remote config for ParametersCache.
+	ETag         string          `json:"etag"`
+	CachedAt     time.Time       `json:"cached_at"`
 	RemoteConfig json.RawMessage `json:"remote_config"`
 }
 
-// parametersCacheVersionEnvelope holds parameters cache version envelope state used by the config package.
 type parametersCacheVersionEnvelope struct {
-	// Version stores version for parametersCacheVersionEnvelope.
 	Version struct {
 		VersionNumber string `json:"versionNumber"`
 	} `json:"version"`
 }
 
-// GetParametersCacheDirPath gets parameters cache dir path and returns the resulting value or error.
 func GetParametersCacheDirPath() string {
 	return filepath.Join(GetCacheDirPath(), "remote-config")
 }
 
-// GetParametersCachePath gets parameters cache path and returns the resulting value or error.
 func GetParametersCachePath(projectID string) string {
 	return filepath.Join(GetParametersCacheDirPath(), projectID+".json")
 }
 
-// LoadParametersCache loads parameters cache and returns the resulting value or error.
 func LoadParametersCache(projectID string) (*ParametersCache, error) {
 	path := GetParametersCachePath(projectID)
 	logger := corelog.For("config")
@@ -67,7 +58,6 @@ func LoadParametersCache(projectID string) (*ParametersCache, error) {
 	return &cache, nil
 }
 
-// SaveParametersCache saves parameters cache and returns the resulting value or error.
 func SaveParametersCache(projectID string, cache *ParametersCache) error {
 	path := GetParametersCachePath(projectID)
 	logger := corelog.For("config")
@@ -103,7 +93,6 @@ func (c *ParametersCache) IsFresh(now time.Time) bool {
 	return now.Sub(c.CachedAt) < ParametersCacheTTL
 }
 
-// PurgeParametersCache handles purge parameters cache and returns the resulting value or error.
 func PurgeParametersCache() error {
 	path := GetParametersCacheDirPath()
 	logger := corelog.For("config")
@@ -117,7 +106,6 @@ func PurgeParametersCache() error {
 	return nil
 }
 
-// parametersCacheVersion handles parameters cache version and returns the resulting value or error.
 func parametersCacheVersion(raw json.RawMessage) string {
 	if len(raw) == 0 {
 		return "NA"

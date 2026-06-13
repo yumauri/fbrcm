@@ -9,7 +9,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.LogLineMsg:

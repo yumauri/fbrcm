@@ -51,7 +51,6 @@ func (m *Model) closeRenameInput() {
 	m.renameInput = m.renameInput.Close()
 }
 
-// submitRenameInput handles submit rename input for Model and returns the resulting state or error.
 func (m *Model) submitRenameInput() tea.Cmd {
 	anchor, ok := m.parameters.CurrentRenameAnchor()
 	if !ok {
@@ -147,7 +146,6 @@ func (m *Model) cancelRenameInput() tea.Cmd {
 	return nil
 }
 
-// activeDuplicate handles active duplicate for Model and returns the resulting state or error.
 func (m Model) activeDuplicate(anchor parameters.RenameAnchor) bool {
 	return m.duplicate != nil &&
 		!anchor.IsGroup &&
@@ -156,7 +154,6 @@ func (m Model) activeDuplicate(anchor parameters.RenameAnchor) bool {
 		m.duplicate.visibleName == anchor.Label
 }
 
-// unchangedRenameAnchor handles unchanged rename anchor and returns the resulting value or error.
 func unchangedRenameAnchor(anchor parameters.RenameAnchor) bool {
 	if anchor.IsGroup {
 		return anchor.GroupKey == anchor.Label

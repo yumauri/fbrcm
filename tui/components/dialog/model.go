@@ -17,63 +17,37 @@ const (
 	ButtonVariantAccent
 )
 
-// Button holds button state used by the dialog package.
 type Button struct {
-	// Label stores label for Button.
-	Label string
-	// Variant stores variant for Button.
+	Label   string
 	Variant ButtonVariant
-	// OnPress stores on press for Button.
 	OnPress tea.Cmd
 }
 
-// Config holds config state used by the dialog package.
 type Config struct {
-	// Title stores title for Config.
-	Title string
-	// Body stores body for Config.
-	Body []string
-	// Buttons stores buttons for Config.
+	Title   string
+	Body    []string
 	Buttons []Button
 }
 
-// Model holds model state used by the dialog package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// width stores width for Model.
-	width int
-	// height stores height for Model.
-	height int
-	// manualX stores manual x for Model.
-	manualX int
-	// manualY stores manual y for Model.
-	manualY int
-	// title stores title for Model.
-	title string
-	// body stores body for Model.
-	body []string
-	// buttons stores buttons for Model.
-	buttons []Button
-	// selected stores selected for Model.
-	selected int
-	// scroll stores scroll for Model.
-	scroll int
-	// open stores open for Model.
-	open bool
-	// positioned stores positioned for Model.
+	x          int
+	y          int
+	width      int
+	height     int
+	manualX    int
+	manualY    int
+	title      string
+	body       []string
+	buttons    []Button
+	selected   int
+	scroll     int
+	open       bool
 	positioned bool
-	// dragging stores dragging for Model.
-	dragging bool
-	// dragOffX stores drag off x for Model.
-	dragOffX int
-	// dragOffY stores drag off y for Model.
-	dragOffY int
+	dragging   bool
+	dragOffX   int
+	dragOffY   int
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{}
 }
@@ -87,7 +61,6 @@ func (m Model) SetBounds(x, y, width, height int) Model {
 	return m
 }
 
-// CenterWithin handles center within for Model and returns the resulting state or error.
 func (m Model) CenterWithin(x, y, width, height int) Model {
 	_, _, boxWidth, boxHeight := m.boxGeometry()
 	m.manualX = max(x+(width-boxWidth)/2, x)
@@ -131,7 +104,6 @@ func (m Model) IsOpen() bool {
 	return m.open
 }
 
-// Contains handles contains for Model and returns the resulting state or error.
 func (m Model) Contains(x, y int) bool {
 	if !m.open {
 		return false
@@ -140,7 +112,6 @@ func (m Model) Contains(x, y int) bool {
 	return x >= boxX && x < boxX+boxWidth && y >= boxY && y < boxY+boxHeight
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.open {
 		return m, nil
@@ -217,17 +188,14 @@ func (m *Model) move(delta int) {
 	m.selected = (m.selected + delta + len(m.buttons)) % len(m.buttons)
 }
 
-// scrollBy handles scroll by for Model and returns the resulting state or error.
 func (m *Model) scrollBy(delta int) {
 	m.scroll = max(0, min(m.scroll+delta, m.maxScroll()))
 }
 
-// maxScroll handles max scroll for Model and returns the resulting state or error.
 func (m Model) maxScroll() int {
 	return max(len(m.body)-m.bodyHeight(), 0)
 }
 
-// scrollbar handles scrollbar for Model and returns the resulting state or error.
 func (m Model) scrollbar() scrollbarState {
 	contentHeight := m.bodyHeight()
 	totalLines := len(m.body)
@@ -249,12 +217,10 @@ func (m Model) scrollbar() scrollbarState {
 	}
 }
 
-// bodyHeight handles body height for Model and returns the resulting state or error.
 func (m Model) bodyHeight() int {
 	return max(min(max(m.height-10, 3), len(m.body)), 1)
 }
 
-// contentWidth handles content width for Model and returns the resulting state or error.
 func (m Model) contentWidth() int {
 	width := len([]rune(m.title))
 	for _, line := range m.body {
@@ -266,7 +232,6 @@ func (m Model) contentWidth() int {
 	return min(max(width, 38), min(max(m.width-12, 38), 88))
 }
 
-// boxGeometry handles box geometry for Model and returns the resulting state or error.
 func (m Model) boxGeometry() (x, y, width, height int) {
 	contentWidth := m.contentWidth()
 	bodyHeight := m.bodyHeight()
@@ -290,18 +255,15 @@ func (m *Model) setManualPosition(x, y int) {
 	m.positioned = true
 }
 
-// titleHit handles title hit for Model and returns the resulting state or error.
 func (m Model) titleHit(x, y int) bool {
 	boxX, boxY, boxWidth, _ := m.boxGeometry()
 	return y == boxY && x >= boxX && x < boxX+boxWidth
 }
 
-// buttonHeight handles button height for Model and returns the resulting state or error.
 func (m Model) buttonHeight() int {
 	return max(lipgloss.Height(m.renderButtons()), 1)
 }
 
-// clamp handles clamp and returns the resulting value or error.
 func clamp(value, low, high int) int {
 	if value < low {
 		return low
@@ -312,7 +274,6 @@ func clamp(value, low, high int) int {
 	return value
 }
 
-// buttonIndexAt handles button index at for Model and returns the resulting state or error.
 func (m Model) buttonIndexAt(x, y int) (int, bool) {
 	if !m.open || len(m.buttons) == 0 {
 		return -1, false

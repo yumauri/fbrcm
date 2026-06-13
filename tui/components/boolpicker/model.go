@@ -9,21 +9,14 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-// Model holds model state used by the boolpicker package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// values stores values for Model.
-	values []string
-	// selected stores selected for Model.
+	x        int
+	y        int
+	values   []string
 	selected int
-	// open stores open for Model.
-	open bool
+	open     bool
 }
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{}
 }
@@ -55,7 +48,6 @@ func (m Model) IsOpen() bool {
 	return m.open
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	return m.x, m.y - m.selected - 1
 }
@@ -68,7 +60,6 @@ func (m *Model) Move(delta int) {
 	m.selected = (m.selected + delta + len(m.values)) % len(m.values)
 }
 
-// Current handles current for Model and returns the resulting state or error.
 func (m Model) Current() (bool, bool) {
 	if !m.open || m.selected < 0 || m.selected >= len(m.values) {
 		return false, false
@@ -76,7 +67,6 @@ func (m Model) Current() (bool, bool) {
 	return strings.EqualFold(m.values[m.selected], "true"), true
 }
 
-// CurrentString handles current string for Model and returns the resulting state or error.
 func (m Model) CurrentString() (string, bool) {
 	if !m.open || m.selected < 0 || m.selected >= len(m.values) {
 		return "", false
@@ -84,12 +74,10 @@ func (m Model) CurrentString() (string, bool) {
 	return m.values[m.selected], true
 }
 
-// Changed handles changed for Model and returns the resulting state or error.
 func (m Model) Changed() bool {
 	return m.open && m.selected > 0
 }
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if !m.open || len(m.values) == 0 {
 		return ""
@@ -104,7 +92,6 @@ func (m Model) View() string {
 	return strings.Join(lines, "\n")
 }
 
-// renderRow renders render row for Model and returns the resulting state or error.
 func (m Model) renderRow(index, width int) string {
 	left := borderStyle.Render("│ ")
 	if index == m.selected {
@@ -115,7 +102,6 @@ func (m Model) renderRow(index, width int) string {
 
 var borderStyle = lipgloss.NewStyle().Foreground(styles.PaletteBlueBright)
 
-// valueStyle handles value style and returns the resulting value or error.
 func valueStyle(value string) lipgloss.Style {
 	style := corestyles.ValueTextStyle(value, "boolean")
 	if styles.NoColorEnabled() {
@@ -127,7 +113,6 @@ func valueStyle(value string) lipgloss.Style {
 	return style
 }
 
-// padRight handles pad right and returns the resulting value or error.
 func padRight(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }

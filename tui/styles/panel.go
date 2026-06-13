@@ -71,7 +71,6 @@ var (
 				Foreground(PaletteError)
 )
 
-// BorderStyle handles border style and returns the resulting value or error.
 func BorderStyle(active bool) lipgloss.Style {
 	if active {
 		return PanelBorderActive
@@ -80,7 +79,6 @@ func BorderStyle(active bool) lipgloss.Style {
 	return PanelBorderInactive
 }
 
-// TitleStyle handles title style and returns the resulting value or error.
 func TitleStyle(active bool) lipgloss.Style {
 	if !active {
 		return PanelTitle
@@ -95,7 +93,6 @@ func TitleStyle(active bool) lipgloss.Style {
 	return PanelTitleActive
 }
 
-// ProjectStateStyle handles project state style and returns the resulting value or error.
 func ProjectStateStyle(cursor, selected bool) lipgloss.Style {
 	switch {
 	case NoColorEnabled() && cursor && selected:
@@ -115,17 +112,14 @@ func ProjectStateStyle(cursor, selected bool) lipgloss.Style {
 	}
 }
 
-// NoColorEnabled handles no color enabled and returns the resulting value or error.
 func NoColorEnabled() bool {
 	return corestyles.NoColorEnabled()
 }
 
-// ConditionLipglossColor handles condition lipgloss color and returns the resulting value or error.
 func ConditionLipglossColor(name string) color.Color {
 	return corestyles.ConditionLipglossColor(name)
 }
 
-// LogLevelLipglossColor handles log level lipgloss color and returns the resulting value or error.
 func LogLevelLipglossColor(level charmlog.Level) color.Color {
 	return corestyles.LogLevelLipglossColor(level)
 }

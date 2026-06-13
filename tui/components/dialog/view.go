@@ -17,7 +17,6 @@ var (
 	blueFocusStyle    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteBlueBright).Foreground(styles.PaletteBlueBright).Bold(true).Padding(0, 1)
 )
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if !m.open || m.width <= 0 || m.height <= 0 {
 		return ""
@@ -41,18 +40,15 @@ func (m Model) View() string {
 	return renderFrame(m.title, lines, contentWidth, m.scrollbar(), bodyHeight)
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	x, y, _, _ := m.boxGeometry()
 	return x, y
 }
 
-// renderButtons renders render buttons for Model and returns the resulting state or error.
 func (m Model) renderButtons() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, appendInterleavedSpaces(m.renderedButtons())...)
 }
 
-// renderedButtons renders rendered buttons for Model and returns the resulting state or error.
 func (m Model) renderedButtons() []string {
 	out := make([]string, 0, len(m.buttons))
 	for i, button := range m.buttons {
@@ -72,7 +68,6 @@ func (m Model) renderedButtons() []string {
 	return out
 }
 
-// appendInterleavedSpaces handles append interleaved spaces and returns the resulting value or error.
 func appendInterleavedSpaces(items []string) []string {
 	if len(items) <= 1 {
 		return items
@@ -87,17 +82,12 @@ func appendInterleavedSpaces(items []string) []string {
 	return out
 }
 
-// scrollbarState holds scrollbar state state used by the dialog package.
 type scrollbarState struct {
-	// visible stores visible for scrollbarState.
-	visible bool
-	// thumbStart stores thumb start for scrollbarState.
+	visible    bool
 	thumbStart int
-	// thumbEnd stores thumb end for scrollbarState.
-	thumbEnd int
+	thumbEnd   int
 }
 
-// renderFrame renders render frame and returns the resulting value or error.
 func renderFrame(title string, body []string, contentWidth int, scrollbar scrollbarState, bodyHeight int) string {
 	frameWidth := contentWidth + 5
 	top := renderTopBorder(title, frameWidth)
@@ -113,7 +103,6 @@ func renderFrame(title string, body []string, contentWidth int, scrollbar scroll
 	return strings.Join(lines, "\n")
 }
 
-// renderTopBorder renders render top border and returns the resulting value or error.
 func renderTopBorder(title string, frameWidth int) string {
 	titleText := truncatePlain(" "+title+" ", max(frameWidth-6, 0))
 	left := borderStyle.Render("╭─")
@@ -122,13 +111,11 @@ func renderTopBorder(title string, frameWidth int) string {
 	return left + titleStyle.Render(titleText) + borderStyle.Render(strings.Repeat("─", fillWidth)) + right
 }
 
-// fitBodyLine handles fit body line and returns the resulting value or error.
 func fitBodyLine(line string, width int) string {
 	line = ansi.Truncate(line, width, "")
 	return padToWidth(bodyStyle.Render(line), width)
 }
 
-// alignRight handles align right and returns the resulting value or error.
 func alignRight(line string, width int) string {
 	if printableWidth(line) >= width {
 		return padToWidth(line, width)
@@ -136,7 +123,6 @@ func alignRight(line string, width int) string {
 	return strings.Repeat(" ", width-printableWidth(line)) + line
 }
 
-// renderBlockAlignedRight renders render block aligned right and returns the resulting value or error.
 func renderBlockAlignedRight(block string, width int) []string {
 	rawLines := strings.Split(block, "\n")
 	out := make([]string, 0, len(rawLines))
@@ -146,12 +132,10 @@ func renderBlockAlignedRight(block string, width int) []string {
 	return out
 }
 
-// padToWidth handles pad to width and returns the resulting value or error.
 func padToWidth(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-printableWidth(value), 0))
 }
 
-// truncatePlain handles truncate plain and returns the resulting value or error.
 func truncatePlain(value string, width int) string {
 	if width <= 0 {
 		return ""
@@ -163,7 +147,6 @@ func truncatePlain(value string, width int) string {
 	return string(runes[:width])
 }
 
-// printableWidth handles printable width and returns the resulting value or error.
 func printableWidth(value string) int {
 	return lipgloss.Width(value)
 }

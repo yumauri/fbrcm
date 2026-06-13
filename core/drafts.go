@@ -9,7 +9,6 @@ import (
 	"maps"
 	"os"
 	"reflect"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -19,45 +18,27 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-// paramSlot holds param slot state used by the core package.
 type paramSlot struct {
-	// group stores group for paramSlot.
 	group string
-	// param stores param for paramSlot.
 	param firebase.RemoteConfigParam
 }
 
-// ParameterDetailsEdit holds parameter details edit state used by the core package.
 type ParameterDetailsEdit struct {
-	// Create stores create for ParameterDetailsEdit.
-	Create bool
-	// GroupKey stores group key for ParameterDetailsEdit.
-	GroupKey string
-	// ParamKey stores param key for ParameterDetailsEdit.
-	ParamKey string
-	// NextGroupKey stores next group key for ParameterDetailsEdit.
-	NextGroupKey string
-	// NextParamKey stores next param key for ParameterDetailsEdit.
-	NextParamKey string
-	// NextValueType stores next value type for ParameterDetailsEdit.
-	NextValueType string
-	// NextDescription stores next description for ParameterDetailsEdit.
+	Create          bool
+	GroupKey        string
+	ParamKey        string
+	NextGroupKey    string
+	NextParamKey    string
+	NextValueType   string
 	NextDescription string
-	// ValueEdits stores value edits for ParameterDetailsEdit.
-	ValueEdits []ParameterValueEdit
+	ValueEdits      []ParameterValueEdit
 }
 
-// ParameterValueEdit holds parameter value edit state used by the core package.
 type ParameterValueEdit struct {
-	// Label stores label for ParameterValueEdit.
-	Label string
-	// NextValue stores next value for ParameterValueEdit.
+	Label     string
 	NextValue string
 }
 
-var jsonNumberPattern = regexp.MustCompile(`^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$`)
-
-// NormalizeRemoteConfigGroupKey handles normalize remote config group key and returns the resulting value or error.
 func NormalizeRemoteConfigGroupKey(groupKey string) string {
 	if groupKey == defaultParametersGroupKey {
 		return ""
@@ -65,12 +46,10 @@ func NormalizeRemoteConfigGroupKey(groupKey string) string {
 	return groupKey
 }
 
-// ListDraftProjectIDs lists draft project ids for Core and returns the resulting state or error.
 func (s *Core) ListDraftProjectIDs() ([]string, error) {
 	return config.ListDraftProjectIDs()
 }
 
-// LoadDraft loads draft for Core and returns the resulting state or error.
 func (s *Core) LoadDraft(projectID string) (json.RawMessage, bool, error) {
 	raw, err := config.LoadDraft(projectID)
 	if err != nil {
@@ -86,7 +65,6 @@ func (s *Core) LoadDraft(projectID string) (json.RawMessage, bool, error) {
 	return raw, true, nil
 }
 
-// SaveDraft saves draft for Core and returns the resulting state or error.
 func (s *Core) SaveDraft(projectID string, raw json.RawMessage) error {
 	if _, err := firebase.ParseRemoteConfig(raw); err != nil {
 		return fmt.Errorf("decode draft: %w", err)
@@ -94,12 +72,10 @@ func (s *Core) SaveDraft(projectID string, raw json.RawMessage) error {
 	return config.SaveDraft(projectID, raw)
 }
 
-// DeleteDraft removes draft for Core and returns the resulting state or error.
 func (s *Core) DeleteDraft(projectID string) error {
 	return config.DeleteDraft(projectID)
 }
 
-// BuildParametersTreeFromRaw handles build parameters tree from raw for Core and returns the resulting state or error.
 func (s *Core) BuildParametersTreeFromRaw(raw json.RawMessage, cachedAt time.Time, etag string) (*ParametersTree, error) {
 	return s.BuildParametersTree(&config.ParametersCache{
 		ETag:         etag,
@@ -108,7 +84,6 @@ func (s *Core) BuildParametersTreeFromRaw(raw json.RawMessage, cachedAt time.Tim
 	})
 }
 
-// BuildDraftAwareParametersTree handles build draft aware parameters tree for Core and returns the resulting state or error.
 func (s *Core) BuildDraftAwareParametersTree(projectID string, cache *ParametersCache) (*ParametersTree, bool, error) {
 	draftRaw, hasDraft, err := s.LoadDraft(projectID)
 	if err != nil {
@@ -122,7 +97,6 @@ func (s *Core) BuildDraftAwareParametersTree(projectID string, cache *Parameters
 	return tree, false, err
 }
 
-// DeleteParameter removes parameter for Core and returns the resulting state or error.
 func (s *Core) DeleteParameter(ctx context.Context, projectID, groupKey, paramKey string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -181,7 +155,6 @@ func (s *Core) DeleteParameter(ctx context.Context, projectID, groupKey, paramKe
 	return cache, tree, true, err
 }
 
-// DeleteGroup removes group for Core and returns the resulting state or error.
 func (s *Core) DeleteGroup(ctx context.Context, projectID, groupKey string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -243,7 +216,6 @@ func (s *Core) DeleteGroup(ctx context.Context, projectID, groupKey string, publ
 	return cache, tree, true, err
 }
 
-// DeleteConditionalValue removes one conditional value for Core.
 func (s *Core) DeleteConditionalValue(ctx context.Context, projectID, groupKey, paramKey, valueLabel string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -305,7 +277,6 @@ func (s *Core) DeleteConditionalValue(ctx context.Context, projectID, groupKey, 
 	return cache, tree, true, err
 }
 
-// RenameParameter handles rename parameter for Core and returns the resulting state or error.
 func (s *Core) RenameParameter(ctx context.Context, projectID, groupKey, paramKey, nextParamKey string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -367,7 +338,6 @@ func (s *Core) RenameParameter(ctx context.Context, projectID, groupKey, paramKe
 	return cache, tree, true, err
 }
 
-// RenameGroup handles rename group for Core and returns the resulting state or error.
 func (s *Core) RenameGroup(ctx context.Context, projectID, groupKey, nextGroupKey string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -491,7 +461,6 @@ func (s *Core) MoveParameter(ctx context.Context, projectID, groupKey, paramKey,
 	return cache, tree, true, err
 }
 
-// EditParameterDetails handles edit parameter details for Core and returns the resulting state or error.
 func (s *Core) EditParameterDetails(ctx context.Context, projectID string, edit ParameterDetailsEdit, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -863,7 +832,6 @@ func (s *Core) SetJSONParameterValue(ctx context.Context, projectID, groupKey, p
 	return cache, tree, true, err
 }
 
-// DuplicateParameter handles duplicate parameter for Core and returns the resulting state or error.
 func (s *Core) DuplicateParameter(ctx context.Context, projectID, groupKey, paramKey string) (*ParametersCache, *ParametersTree, bool, string, error) {
 	cache, source, err := s.GetParameters(ctx, projectID, false)
 	_ = source
@@ -902,7 +870,6 @@ func (s *Core) DuplicateParameter(ctx context.Context, projectID, groupKey, para
 	return cache, tree, true, nextParamKey, err
 }
 
-// DuplicateParameterNamed handles duplicate parameter named for Core and returns the resulting state or error.
 func (s *Core) DuplicateParameterNamed(ctx context.Context, projectID, groupKey, paramKey, nextParamKey string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	logger := corelog.For("core")
 	cache, source, err := s.GetParameters(ctx, projectID, false)
@@ -958,7 +925,6 @@ func (s *Core) DuplicateParameterNamed(ctx context.Context, projectID, groupKey,
 	return cache, tree, true, err
 }
 
-// PreviewDeleteParameter handles preview delete parameter for Core and returns the resulting state or error.
 func (s *Core) PreviewDeleteParameter(projectID, groupKey, paramKey string) (*ParametersCache, json.RawMessage, error) {
 	cache, _, err := s.InspectParametersCache(projectID)
 	if err != nil {
@@ -998,7 +964,6 @@ func (s *Core) PreviewDeleteParameter(projectID, groupKey, paramKey string) (*Pa
 	return cache, finalRaw, nil
 }
 
-// PreviewDeleteGroup handles preview delete group for Core and returns the resulting state or error.
 func (s *Core) PreviewDeleteGroup(projectID, groupKey string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1086,7 +1051,6 @@ func (s *Core) PreviewDeleteConditionalValue(projectID, groupKey, paramKey, valu
 	return cache, finalRaw, nil
 }
 
-// PreviewRenameParameter handles preview rename parameter for Core and returns the resulting state or error.
 func (s *Core) PreviewRenameParameter(projectID, groupKey, paramKey, nextParamKey string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1130,7 +1094,6 @@ func (s *Core) PreviewRenameParameter(projectID, groupKey, paramKey, nextParamKe
 	return cache, finalRaw, nil
 }
 
-// PreviewRenameGroup handles preview rename group for Core and returns the resulting state or error.
 func (s *Core) PreviewRenameGroup(projectID, groupKey, nextGroupKey string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1174,7 +1137,6 @@ func (s *Core) PreviewRenameGroup(projectID, groupKey, nextGroupKey string) (*Pa
 	return cache, finalRaw, nil
 }
 
-// PreviewMoveParameter handles preview move parameter for Core and returns the resulting state or error.
 func (s *Core) PreviewMoveParameter(projectID, groupKey, paramKey, nextGroupKey string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1218,7 +1180,6 @@ func (s *Core) PreviewMoveParameter(projectID, groupKey, paramKey, nextGroupKey 
 	return cache, finalRaw, nil
 }
 
-// PreviewEditParameterDetails handles preview edit parameter details for Core and returns the resulting state or error.
 func (s *Core) PreviewEditParameterDetails(projectID string, edit ParameterDetailsEdit) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1255,7 +1216,6 @@ func (s *Core) PreviewEditParameterDetails(projectID string, edit ParameterDetai
 	return cache, finalRaw, nil
 }
 
-// PreviewMoveGroup handles preview move group for Core and returns the resulting state or error.
 func (s *Core) PreviewMoveGroup(projectID, groupKey, nextGroupKey string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1299,7 +1259,6 @@ func (s *Core) PreviewMoveGroup(projectID, groupKey, nextGroupKey string) (*Para
 	return cache, finalRaw, nil
 }
 
-// PreviewSetBooleanParameterValue handles preview set boolean parameter value for Core and returns the resulting state or error.
 func (s *Core) PreviewSetBooleanParameterValue(projectID, groupKey, paramKey, valueLabel string, nextValue bool) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1343,7 +1302,6 @@ func (s *Core) PreviewSetBooleanParameterValue(projectID, groupKey, paramKey, va
 	return cache, finalRaw, nil
 }
 
-// PreviewSetNumberParameterValue handles preview set number parameter value for Core and returns the resulting state or error.
 func (s *Core) PreviewSetNumberParameterValue(projectID, groupKey, paramKey, valueLabel, nextValue string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1387,7 +1345,6 @@ func (s *Core) PreviewSetNumberParameterValue(projectID, groupKey, paramKey, val
 	return cache, finalRaw, nil
 }
 
-// PreviewSetStringParameterValue handles preview set string parameter value for Core and returns the resulting state or error.
 func (s *Core) PreviewSetStringParameterValue(projectID, groupKey, paramKey, valueLabel, nextValue string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1431,7 +1388,6 @@ func (s *Core) PreviewSetStringParameterValue(projectID, groupKey, paramKey, val
 	return cache, finalRaw, nil
 }
 
-// PreviewSetJSONParameterValue handles preview set jsonparameter value for Core and returns the resulting state or error.
 func (s *Core) PreviewSetJSONParameterValue(projectID, groupKey, paramKey, valueLabel, nextValue string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1475,7 +1431,6 @@ func (s *Core) PreviewSetJSONParameterValue(projectID, groupKey, paramKey, value
 	return cache, finalRaw, nil
 }
 
-// PreviewDuplicateParameter handles preview duplicate parameter for Core and returns the resulting state or error.
 func (s *Core) PreviewDuplicateParameter(projectID, groupKey, paramKey, nextParamKey string) (*ParametersCache, json.RawMessage, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.InspectParametersCache(projectID)
@@ -1519,7 +1474,6 @@ func (s *Core) PreviewDuplicateParameter(projectID, groupKey, paramKey, nextPara
 	return cache, finalRaw, nil
 }
 
-// PublishDraft handles publish draft for Core and returns the resulting state or error.
 func (s *Core) PublishDraft(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, error) {
 	logger := corelog.For("core")
 	cache, _, err := s.GetParameters(ctx, projectID, false)
@@ -1551,7 +1505,6 @@ func (s *Core) PublishDraft(ctx context.Context, projectID string) (*ParametersC
 	return updatedCache, tree, err
 }
 
-// DiscardDraft handles discard draft for Core and returns the resulting state or error.
 func (s *Core) DiscardDraft(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, error) {
 	cache, _, err := s.GetParameters(ctx, projectID, false)
 	if err != nil {
@@ -1564,7 +1517,6 @@ func (s *Core) DiscardDraft(ctx context.Context, projectID string) (*ParametersC
 	return cache, tree, err
 }
 
-// RefreshDraftAwareParameters handles refresh draft aware parameters for Core and returns the resulting state or error.
 func (s *Core) RefreshDraftAwareParameters(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, string, bool, bool, error) {
 	logger := corelog.For("core")
 	previousCache, _, err := s.InspectParametersCache(projectID)
@@ -1611,7 +1563,6 @@ func (s *Core) RefreshDraftAwareParameters(ctx context.Context, projectID string
 	return cache, tree, "draft", true, false, err
 }
 
-// mergeDraftWithLatest handles merge draft with latest and returns the resulting value or error.
 func mergeDraftWithLatest(baseRaw, draftRaw, latestRaw json.RawMessage) (json.RawMessage, bool, error) {
 	baseCfg, err := firebase.ParseRemoteConfig(baseRaw)
 	if err != nil {
@@ -1663,7 +1614,6 @@ func mergeDraftWithLatest(baseRaw, draftRaw, latestRaw json.RawMessage) (json.Ra
 	return raw, true, nil
 }
 
-// collectParamSlots handles collect param slots and returns the resulting value or error.
 func collectParamSlots(cfg *firebase.RemoteConfig) map[string]paramSlot {
 	out := make(map[string]paramSlot)
 	if cfg == nil {
@@ -1680,12 +1630,10 @@ func collectParamSlots(cfg *firebase.RemoteConfig) map[string]paramSlot {
 	return out
 }
 
-// slotKey handles slot key and returns the resulting value or error.
 func slotKey(group, key string) string {
 	return group + "\x00" + key
 }
 
-// slotKeyParam handles slot key param and returns the resulting value or error.
 func slotKeyParam(key string) string {
 	for i := 0; i < len(key); i++ {
 		if key[i] == 0 {
@@ -1695,7 +1643,6 @@ func slotKeyParam(key string) string {
 	return key
 }
 
-// slotKeyGroup handles slot key group and returns the resulting value or error.
 func slotKeyGroup(key string) string {
 	for i := 0; i < len(key); i++ {
 		if key[i] == 0 {
@@ -1705,7 +1652,6 @@ func slotKeyGroup(key string) string {
 	return ""
 }
 
-// slotDisplayKey handles slot display key and returns the resulting value or error.
 func slotDisplayKey(key string) string {
 	group := slotKeyGroup(key)
 	param := slotKeyParam(key)
@@ -1715,7 +1661,6 @@ func slotDisplayKey(key string) string {
 	return group + "/" + param
 }
 
-// sortedSlotKeys handles sorted slot keys and returns the resulting value or error.
 func sortedSlotKeys(maps ...map[string]paramSlot) []string {
 	seen := make(map[string]struct{})
 	out := make([]string, 0)
@@ -1732,7 +1677,6 @@ func sortedSlotKeys(maps ...map[string]paramSlot) []string {
 	return out
 }
 
-// equalParamState handles equal param state and returns the resulting value or error.
 func equalParamState(left paramSlot, leftOK bool, right paramSlot, rightOK bool) bool {
 	if leftOK != rightOK {
 		return false
@@ -1743,7 +1687,6 @@ func equalParamState(left paramSlot, leftOK bool, right paramSlot, rightOK bool)
 	return reflect.DeepEqual(left, right)
 }
 
-// applyMergedSlot handles apply merged slot and returns the resulting value or error.
 func applyMergedSlot(cfg *firebase.RemoteConfig, key string, baseSlot paramSlot, inBase bool, draftSlot paramSlot, inDraft bool) {
 	paramKey := slotKeyParam(key)
 	if !inDraft {
@@ -1760,7 +1703,6 @@ func applyMergedSlot(cfg *firebase.RemoteConfig, key string, baseSlot paramSlot,
 	setParamSlot(cfg, paramKey, draftSlot)
 }
 
-// cloneRemoteConfig handles clone remote config and returns the resulting value or error.
 func cloneRemoteConfig(cfg *firebase.RemoteConfig) *firebase.RemoteConfig {
 	if cfg == nil {
 		return &firebase.RemoteConfig{}
@@ -1776,7 +1718,6 @@ func cloneRemoteConfig(cfg *firebase.RemoteConfig) *firebase.RemoteConfig {
 	return &out
 }
 
-// marshalRemoteConfig handles marshal remote config and returns the resulting value or error.
 func marshalRemoteConfig(cfg *firebase.RemoteConfig) ([]byte, error) {
 	data, err := json.Marshal(cfg)
 	if err != nil {
@@ -1785,7 +1726,6 @@ func marshalRemoteConfig(cfg *firebase.RemoteConfig) ([]byte, error) {
 	return data, nil
 }
 
-// removeParamSlot removes remove param slot and returns the resulting value or error.
 func removeParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	if groupName == "" {
 		delete(cfg.Parameters, key)
@@ -1803,7 +1743,6 @@ func removeParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	cfg.ParameterGroups[groupName] = group
 }
 
-// removeGroupSlot removes remove group slot and returns the resulting value or error.
 func removeGroupSlot(cfg *firebase.RemoteConfig, groupName string) error {
 	if groupName == "" {
 		return fmt.Errorf("default group cannot be removed")
@@ -1815,7 +1754,6 @@ func removeGroupSlot(cfg *firebase.RemoteConfig, groupName string) error {
 	return nil
 }
 
-// renameParamSlot handles rename param slot and returns the resulting value or error.
 func renameParamSlot(cfg *firebase.RemoteConfig, key, nextKey, groupName string) error {
 	nextKey = strings.TrimSpace(nextKey)
 	if nextKey == "" {
@@ -1836,7 +1774,6 @@ func renameParamSlot(cfg *firebase.RemoteConfig, key, nextKey, groupName string)
 	return nil
 }
 
-// renameGroupSlot handles rename group slot and returns the resulting value or error.
 func renameGroupSlot(cfg *firebase.RemoteConfig, key, nextKey string) error {
 	nextKey = strings.TrimSpace(nextKey)
 	if key == "" {
@@ -1876,7 +1813,6 @@ func moveParamSlot(cfg *firebase.RemoteConfig, key, currentGroup, nextGroup stri
 	return nil
 }
 
-// applyParameterDetailsEdit handles apply parameter details edit and returns the resulting value or error.
 func applyParameterDetailsEdit(cfg *firebase.RemoteConfig, edit ParameterDetailsEdit) error {
 	if edit.Create {
 		return createParameterDetailsSlot(cfg, edit)
@@ -1884,7 +1820,6 @@ func applyParameterDetailsEdit(cfg *firebase.RemoteConfig, edit ParameterDetails
 	return editParameterDetailsSlot(cfg, edit)
 }
 
-// createParameterDetailsSlot handles create parameter details slot and returns the resulting value or error.
 func createParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetailsEdit) error {
 	nextGroup := NormalizeRemoteConfigGroupKey(edit.NextGroupKey)
 	nextKey := strings.TrimSpace(edit.NextParamKey)
@@ -1909,7 +1844,6 @@ func createParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetail
 	return nil
 }
 
-// editParameterDetailsSlot handles edit parameter details slot and returns the resulting value or error.
 func editParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetailsEdit) error {
 	currentGroup := NormalizeRemoteConfigGroupKey(edit.GroupKey)
 	nextGroup := NormalizeRemoteConfigGroupKey(edit.NextGroupKey)
@@ -1978,7 +1912,6 @@ func setRawParamValue(param *firebase.RemoteConfigParam, valueLabel, nextValue, 
 	return nil
 }
 
-// validateRawValueForType handles validate raw value for type and returns the resulting value or error.
 func validateRawValueForType(value, valueType string) error {
 	switch strings.ToUpper(strings.TrimSpace(valueType)) {
 	case "", "STRING":
@@ -1991,7 +1924,7 @@ func validateRawValueForType(value, valueType string) error {
 			return fmt.Errorf("invalid boolean")
 		}
 	case "NUMBER":
-		if !jsonNumberPattern.MatchString(strings.TrimSpace(value)) {
+		if !IsJSONNumber(value) {
 			return fmt.Errorf("invalid number")
 		}
 		return nil
@@ -2005,7 +1938,6 @@ func validateRawValueForType(value, valueType string) error {
 	}
 }
 
-// normalizeParameterValueType handles normalize parameter value type and returns the resulting value or error.
 func normalizeParameterValueType(value string) string {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "string":
@@ -2126,7 +2058,7 @@ func setBooleanParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueL
 // setNumberParamValueSlot sets set number param value slot and returns the resulting value or error.
 func setNumberParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueLabel, nextValue string) error {
 	nextValue = strings.TrimSpace(nextValue)
-	if nextValue == "" || !jsonNumberPattern.MatchString(nextValue) {
+	if !IsJSONNumber(nextValue) {
 		return fmt.Errorf("invalid number")
 	}
 	slot, ok := lookupParamSlot(cfg, key, groupName)
@@ -2296,7 +2228,6 @@ func deleteConditionalValueSlot(cfg *firebase.RemoteConfig, key, groupName, valu
 	return nil
 }
 
-// duplicateParamSlot handles duplicate param slot and returns the resulting value or error.
 func duplicateParamSlot(cfg *firebase.RemoteConfig, key, groupName string) (string, error) {
 	slot, ok := lookupParamSlot(cfg, key, groupName)
 	if !ok {
@@ -2307,7 +2238,6 @@ func duplicateParamSlot(cfg *firebase.RemoteConfig, key, groupName string) (stri
 	return nextKey, nil
 }
 
-// duplicateParamSlotAs handles duplicate param slot as and returns the resulting value or error.
 func duplicateParamSlotAs(cfg *firebase.RemoteConfig, key, nextKey, groupName string) error {
 	nextKey = strings.TrimSpace(nextKey)
 	if nextKey == "" {
@@ -2324,7 +2254,6 @@ func duplicateParamSlotAs(cfg *firebase.RemoteConfig, key, nextKey, groupName st
 	return nil
 }
 
-// nextDuplicateParamKey handles next duplicate param key and returns the resulting value or error.
 func nextDuplicateParamKey(cfg *firebase.RemoteConfig, base string) string {
 	if _, exists := lookupAnyParamSlot(cfg, base); !exists {
 		return base
@@ -2358,7 +2287,6 @@ func setParamSlot(cfg *firebase.RemoteConfig, key string, slot paramSlot) {
 	cfg.ParameterGroups[slot.group] = group
 }
 
-// lookupParamSlot handles lookup param slot and returns the resulting value or error.
 func lookupParamSlot(cfg *firebase.RemoteConfig, key, groupName string) (paramSlot, bool) {
 	if groupName == "" {
 		param, ok := cfg.Parameters[key]
@@ -2372,7 +2300,6 @@ func lookupParamSlot(cfg *firebase.RemoteConfig, key, groupName string) (paramSl
 	return paramSlot{group: groupName, param: param}, ok
 }
 
-// lookupAnyParamSlot handles lookup any param slot and returns the resulting value or error.
 func lookupAnyParamSlot(cfg *firebase.RemoteConfig, key string) (paramSlot, bool) {
 	if param, ok := cfg.Parameters[key]; ok {
 		return paramSlot{group: "", param: param}, true
@@ -2385,7 +2312,6 @@ func lookupAnyParamSlot(cfg *firebase.RemoteConfig, key string) (paramSlot, bool
 	return paramSlot{}, false
 }
 
-// dropUnknownConditionReferences handles drop unknown condition references and returns the resulting value or error.
 func dropUnknownConditionReferences(cfg *firebase.RemoteConfig) {
 	allowed := make(map[string]struct{}, len(cfg.Conditions))
 	for _, condition := range cfg.Conditions {
@@ -2402,7 +2328,6 @@ func dropUnknownConditionReferences(cfg *firebase.RemoteConfig) {
 	}
 }
 
-// stripUnknownConditionRefs handles strip unknown condition refs and returns the resulting value or error.
 func stripUnknownConditionRefs(params map[string]firebase.RemoteConfigParam, allowed map[string]struct{}) map[string]firebase.RemoteConfigParam {
 	if len(params) == 0 {
 		return nil
@@ -2434,7 +2359,6 @@ func stripUnknownConditionRefs(params map[string]firebase.RemoteConfigParam, all
 	return out
 }
 
-// removeEmptyGroups removes remove empty groups and returns the resulting value or error.
 func removeEmptyGroups(cfg *firebase.RemoteConfig) {
 	for groupName, group := range cfg.ParameterGroups {
 		if len(group.Parameters) == 0 {

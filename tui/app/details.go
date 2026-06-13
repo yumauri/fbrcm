@@ -59,7 +59,6 @@ func (m *Model) activateDetailsGroup() tea.Cmd {
 	return cmd
 }
 
-// requestCloseDetails handles request close details for Model and returns the resulting state or error.
 func (m *Model) requestCloseDetails() tea.Cmd {
 	if m.details.FieldActive() {
 		m.details = m.details.DeactivateField()
@@ -86,7 +85,6 @@ func (m *Model) requestCloseDetails() tea.Cmd {
 	return nil
 }
 
-// submitDetailsForm handles submit details form for Model and returns the resulting state or error.
 func (m *Model) submitDetailsForm() tea.Cmd {
 	edit, ok := m.details.Edit()
 	if !ok {
@@ -158,7 +156,6 @@ func (m Model) copyDetailsSelectedValueCmd() tea.Cmd {
 	return copyToClipboardCmd(value)
 }
 
-// applyParameterSelection handles apply parameter selection for Model and returns the resulting state or error.
 func (m *Model) applyParameterSelection(msg messages.ParameterSelectionChangedMsg) {
 	if msg.ResetScroll {
 		m.details = m.details.ResetScroll()
@@ -172,7 +169,6 @@ func (m *Model) applyParameterSelection(msg messages.ParameterSelectionChangedMs
 	}
 }
 
-// handleParameterSelection handles handle parameter selection for Model and returns the resulting state or error.
 func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedMsg) tea.Cmd {
 	if msg.Data == nil && msg.ResetScroll {
 		m.applyParameterSelection(msg)
@@ -206,7 +202,6 @@ func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedM
 	return nil
 }
 
-// applyPendingDetailsSelection handles apply pending details selection for Model and returns the resulting state or error.
 func (m *Model) applyPendingDetailsSelection() {
 	if m.pendingDetails == nil {
 		return

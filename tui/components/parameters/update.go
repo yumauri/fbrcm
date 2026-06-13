@@ -8,7 +8,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
-// Update updates update for Model and returns the resulting state or error.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.ProjectsSelectionChangedMsg:
@@ -173,7 +172,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// keyboardCaptureCmd handles keyboard capture cmd and returns the resulting value or error.
 func keyboardCaptureCmd(enabled bool) tea.Cmd {
 	return func() tea.Msg {
 		return messages.KeyboardCaptureMsg{
@@ -182,7 +180,6 @@ func keyboardCaptureCmd(enabled bool) tea.Cmd {
 	}
 }
 
-// updateFilterInput updates update filter input for Model and returns the resulting state or error.
 func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {
 	before := m.filter.Value()
 	var cmd tea.Cmd

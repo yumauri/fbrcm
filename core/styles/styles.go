@@ -79,12 +79,10 @@ var (
 	ColorNote    = lipgloss.Color(PaletteNote)
 )
 
-// NoColorEnabled handles no color enabled and returns the resulting value or error.
 func NoColorEnabled() bool {
 	return env.NoColorEnabled()
 }
 
-// LogLevelColor handles log level color and returns the resulting value or error.
 func LogLevelColor(level charmlog.Level) string {
 	switch level {
 	case charmlog.DebugLevel:
@@ -102,7 +100,6 @@ func LogLevelColor(level charmlog.Level) string {
 	}
 }
 
-// ConditionColor handles condition color and returns the resulting value or error.
 func ConditionColor(name string) string {
 	switch strings.ToUpper(strings.TrimSpace(name)) {
 	case "BLUE":
@@ -130,12 +127,10 @@ func ConditionColor(name string) string {
 	}
 }
 
-// LogLevelLipglossColor handles log level lipgloss color and returns the resulting value or error.
 func LogLevelLipglossColor(level charmlog.Level) color.Color {
 	return lipgloss.Color(LogLevelColor(level))
 }
 
-// ConditionLipglossColor handles condition lipgloss color and returns the resulting value or error.
 func ConditionLipglossColor(name string) color.Color {
 	switch strings.ToUpper(strings.TrimSpace(name)) {
 	case "BLUE":
@@ -163,12 +158,10 @@ func ConditionLipglossColor(name string) color.Color {
 	}
 }
 
-// EmptyValueStyle handles empty value style and returns the resulting value or error.
 func EmptyValueStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(ColorSlateDim).Italic(true)
 }
 
-// ValueTextStyle handles value text style and returns the resulting value or error.
 func ValueTextStyle(value, valueType string) lipgloss.Style {
 	switch strings.TrimSpace(strings.ToLower(valueType)) {
 	case "boolean":

@@ -12,14 +12,12 @@ import (
 
 const panelTitle = "[0] Logs"
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View(active bool) string {
 	body := strings.Split(m.viewport.View(), "\n")
 
 	return renderLogsPanel(body, m.width, m.height, active, m.level, m.follow, m.statusFlashOn)
 }
 
-// renderLogsPanel renders render logs panel and returns the resulting value or error.
 func renderLogsPanel(body []string, width, height int, active bool, currentLevel charmlog.Level, follow, flashStatus bool) string {
 	if width <= 0 || height <= 0 {
 		return ""
@@ -47,7 +45,6 @@ func renderLogsPanel(body []string, width, height int, active bool, currentLevel
 	return strings.Join(lines, "\n")
 }
 
-// renderTopBorder renders render top border and returns the resulting value or error.
 func renderTopBorder(width int, borderStyle, titleStyle lipgloss.Style, currentLevel charmlog.Level, follow, flashStatus bool) string {
 	leftPrefix := borderStyle.Render(truncatePlain("──", width))
 	title := titleStyle.Render(truncatePlain(" "+panelTitle+" ", max(width-lipgloss.Width(leftPrefix), 0)))
@@ -89,7 +86,6 @@ func renderTopBorder(width int, borderStyle, titleStyle lipgloss.Style, currentL
 		modeSep
 }
 
-// renderLevelSegment renders render level segment and returns the resulting value or error.
 func renderLevelSegment(borderStyle lipgloss.Style, currentLevel charmlog.Level) string {
 	levels := corelog.AvailableLevels()
 	var b strings.Builder
@@ -121,7 +117,6 @@ func selectedLevelStyle(base lipgloss.Style, level charmlog.Level) lipgloss.Styl
 		Foreground(styles.PaletteSlateBright)
 }
 
-// levelLabel handles level label and returns the resulting value or error.
 func levelLabel(level charmlog.Level) string {
 	if level == corelog.SilentLevel {
 		return "SLNT"
@@ -129,7 +124,6 @@ func levelLabel(level charmlog.Level) string {
 	return strings.ToUpper(level.String())
 }
 
-// truncatePlain handles truncate plain and returns the resulting value or error.
 func truncatePlain(value string, width int) string {
 	if width <= 0 {
 		return ""
@@ -143,7 +137,6 @@ func truncatePlain(value string, width int) string {
 	return string(runes[:width])
 }
 
-// truncateANSI handles truncate ansi and returns the resulting value or error.
 func truncateANSI(value string, width int) string {
 	if width <= 0 {
 		return ""

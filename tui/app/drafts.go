@@ -300,7 +300,6 @@ func (m *Model) openErrorDialog(title string, project core.Project, errText stri
 	})
 }
 
-// deleteDialogBody removes delete dialog body for Model and returns the resulting state or error.
 func (m Model) deleteDialogBody(project core.Project, groupKey, paramKey string) ([]string, bool) {
 	cache, finalRaw, err := m.svc.PreviewDeleteParameter(project.ProjectID, groupKey, paramKey)
 	if err != nil || cache == nil {
@@ -332,7 +331,6 @@ func (m Model) deleteDialogBody(project core.Project, groupKey, paramKey string)
 	return lines, true
 }
 
-// deleteGroupDialogBody removes delete group dialog body for Model and returns the resulting state or error.
 func (m Model) deleteGroupDialogBody(project core.Project, groupKey string) ([]string, bool) {
 	cache, finalRaw, err := m.svc.PreviewDeleteGroup(project.ProjectID, groupKey)
 	if err != nil || cache == nil {
@@ -362,7 +360,6 @@ func (m Model) deleteGroupDialogBody(project core.Project, groupKey string) ([]s
 	return lines, true
 }
 
-// deleteConditionalValueDialogBody handles conditional value delete dialog body.
 func (m Model) deleteConditionalValueDialogBody(project core.Project, groupKey, paramKey, valueLabel string) ([]string, error) {
 	cache, finalRaw, err := m.svc.PreviewDeleteConditionalValue(project.ProjectID, groupKey, paramKey, valueLabel)
 	if err != nil || cache == nil {
@@ -396,7 +393,6 @@ func (m Model) deleteConditionalValueDialogBody(project core.Project, groupKey, 
 	return lines, nil
 }
 
-// draftDialogBody handles draft dialog body for Model and returns the resulting state or error.
 func (m Model) draftDialogBody(project core.Project, mode dialogMode) ([]string, bool) {
 	cache, _, err := m.svc.InspectParametersCache(project.ProjectID)
 	if err != nil || cache == nil {
@@ -434,7 +430,6 @@ func (m Model) draftDialogBody(project core.Project, mode dialogMode) ([]string,
 	return lines, true
 }
 
-// renameDialogBody handles rename dialog body for Model and returns the resulting state or error.
 func (m Model) renameDialogBody(project core.Project, groupKey, paramKey, nextParamKey string) ([]string, error) {
 	cache, finalRaw, err := m.svc.PreviewRenameParameter(project.ProjectID, groupKey, paramKey, nextParamKey)
 	if err != nil || cache == nil {
@@ -468,7 +463,6 @@ func (m Model) renameDialogBody(project core.Project, groupKey, paramKey, nextPa
 	return lines, nil
 }
 
-// renameGroupDialogBody handles rename group dialog body for Model and returns the resulting state or error.
 func (m Model) renameGroupDialogBody(project core.Project, groupKey, nextGroupKey string) ([]string, error) {
 	cache, finalRaw, err := m.svc.PreviewRenameGroup(project.ProjectID, groupKey, nextGroupKey)
 	if err != nil || cache == nil {
@@ -570,7 +564,6 @@ func (m Model) moveGroupDialogBody(project core.Project, groupKey, nextGroupKey 
 	return lines, nil
 }
 
-// duplicateDialogBody handles duplicate dialog body for Model and returns the resulting state or error.
 func (m Model) duplicateDialogBody(project core.Project, groupKey, paramKey, nextParamKey string) ([]string, error) {
 	cache, finalRaw, err := m.svc.PreviewDuplicateParameter(project.ProjectID, groupKey, paramKey, nextParamKey)
 	if err != nil || cache == nil {
@@ -604,7 +597,6 @@ func (m Model) duplicateDialogBody(project core.Project, groupKey, paramKey, nex
 	return lines, nil
 }
 
-// editDetailsDialogBody handles edit details dialog body for Model and returns the resulting state or error.
 func (m Model) editDetailsDialogBody(project core.Project, edit core.ParameterDetailsEdit) ([]string, error) {
 	cache, finalRaw, err := m.svc.PreviewEditParameterDetails(project.ProjectID, edit)
 	if err != nil || cache == nil {
@@ -643,7 +635,6 @@ func (m Model) editDetailsDialogBody(project core.Project, edit core.ParameterDe
 	return lines, nil
 }
 
-// dialogDiffLines handles dialog diff lines and returns the resulting value or error.
 func dialogDiffLines(diffText string) []string {
 	diffText = strings.Trim(diffText, "\n")
 	if idx := strings.Index(diffText, "\n\nSummary:\n"); idx >= 0 {
@@ -655,7 +646,6 @@ func dialogDiffLines(diffText string) []string {
 	return strings.Split(diffText, "\n")
 }
 
-// deleteParameterCmd removes delete parameter cmd for Model and returns the resulting state or error.
 func (m Model) deleteParameterCmd(project core.Project, groupKey, paramKey string, publish bool, closeDetails bool) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
@@ -681,7 +671,6 @@ func (m Model) deleteParameterCmd(project core.Project, groupKey, paramKey strin
 	}
 }
 
-// deleteGroupCmd removes delete group cmd for Model and returns the resulting state or error.
 func (m Model) deleteGroupCmd(project core.Project, groupKey string, publish bool) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
@@ -733,7 +722,6 @@ func (m Model) deleteConditionalValueCmd(project core.Project, groupKey, paramKe
 	}
 }
 
-// publishDraftCmd handles publish draft cmd for Model and returns the resulting state or error.
 func (m Model) publishDraftCmd(project core.Project) tea.Cmd {
 	return func() tea.Msg {
 		_, tree, err := m.svc.PublishDraft(context.Background(), project.ProjectID)
@@ -745,7 +733,6 @@ func (m Model) publishDraftCmd(project core.Project) tea.Cmd {
 	}
 }
 
-// renameParameterCmd handles rename parameter cmd for Model and returns the resulting state or error.
 func (m Model) renameParameterCmd(project core.Project, groupKey, paramKey, nextParamKey string, publish bool) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
@@ -770,7 +757,6 @@ func (m Model) renameParameterCmd(project core.Project, groupKey, paramKey, next
 	}
 }
 
-// renameGroupCmd handles rename group cmd for Model and returns the resulting state or error.
 func (m Model) renameGroupCmd(project core.Project, groupKey, nextGroupKey string, publish bool) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
@@ -845,7 +831,6 @@ func (m Model) moveGroupCmd(project core.Project, groupKey, nextGroupKey string,
 	}
 }
 
-// duplicateParameterNamedCmd handles duplicate parameter named cmd for Model and returns the resulting state or error.
 func (m Model) duplicateParameterNamedCmd(project core.Project, groupKey, paramKey, nextParamKey string, publish bool) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
@@ -872,7 +857,6 @@ func (m Model) duplicateParameterNamedCmd(project core.Project, groupKey, paramK
 	}
 }
 
-// editParameterDetailsCmd handles edit parameter details cmd for Model and returns the resulting state or error.
 func (m Model) editParameterDetailsCmd(project core.Project, edit core.ParameterDetailsEdit, publish bool, closeDetails bool, selectSaved bool) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
@@ -904,7 +888,6 @@ func (m Model) editParameterDetailsCmd(project core.Project, edit core.Parameter
 	}
 }
 
-// discardDraftCmd handles discard draft cmd for Model and returns the resulting state or error.
 func (m Model) discardDraftCmd(project core.Project) tea.Cmd {
 	return func() tea.Msg {
 		_, tree, err := m.svc.DiscardDraft(context.Background(), project.ProjectID)
@@ -916,28 +899,24 @@ func (m Model) discardDraftCmd(project core.Project) tea.Cmd {
 	}
 }
 
-// dialogCanceledCmd handles dialog canceled cmd and returns the resulting value or error.
 func dialogCanceledCmd() tea.Cmd {
 	return func() tea.Msg {
 		return messages.DialogCanceledMsg{}
 	}
 }
 
-// detailsEditCanceledCmd handles details edit canceled cmd and returns the resulting value or error.
 func detailsEditCanceledCmd(closeDetails bool) tea.Cmd {
 	return func() tea.Msg {
 		return messages.DetailsEditCanceledMsg{CloseDetails: closeDetails}
 	}
 }
 
-// detailsInvalidFixCmd handles details invalid fix cmd and returns the resulting value or error.
 func detailsInvalidFixCmd() tea.Cmd {
 	return func() tea.Msg {
 		return messages.DetailsInvalidFixMsg{}
 	}
 }
 
-// detailsInvalidDiscardCmd handles details invalid discard cmd and returns the resulting value or error.
 func detailsInvalidDiscardCmd(closeDetails bool) tea.Cmd {
 	return func() tea.Msg {
 		return messages.DetailsInvalidDiscardMsg{CloseDetails: closeDetails}

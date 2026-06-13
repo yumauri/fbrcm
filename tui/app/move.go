@@ -35,7 +35,6 @@ func (m *Model) closeMoveParam() {
 	m.moveParam = m.moveParam.Close()
 }
 
-// submitMoveParam handles submit move param for Model and returns the resulting state or error.
 func (m *Model) submitMoveParam() tea.Cmd {
 	anchor, ok := m.parameters.CurrentMoveAnchor()
 	if !ok {

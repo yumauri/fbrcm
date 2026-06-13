@@ -36,35 +36,21 @@ var (
 
 var deprecatedDescriptionPattern = regexp.MustCompile(`(?i)deprecat|obsolete|sunset|retired?|no longer|use .+ instead|replaced?|superseded?|removed?`)
 
-// projectState holds project state state used by the parameters package.
 type projectState struct {
-	// project stores project for projectState.
-	project core.Project
-	// tree stores tree for projectState.
-	tree *core.ParametersTree
-	// source stores source for projectState.
-	source string
-	// cacheSource stores cache source for projectState.
-	cacheSource string
-	// err stores err for projectState.
-	err error
-	// loading stores loading for projectState.
-	loading bool
-	// verifying stores verifying for projectState.
-	verifying bool
-	// hasDraft stores has draft for projectState.
-	hasDraft bool
-	// staleDraft stores stale draft for projectState.
-	staleDraft bool
-	// cacheVersion stores cache version for projectState.
+	project      core.Project
+	tree         *core.ParametersTree
+	source       string
+	cacheSource  string
+	err          error
+	loading      bool
+	verifying    bool
+	hasDraft     bool
+	staleDraft   bool
 	cacheVersion string
-	// draftVersion stores draft version for projectState.
 	draftVersion string
 }
 
-// projectLayout holds project layout state used by the parameters package.
 type projectLayout struct {
-	// metadataWidth stores metadata width for projectLayout.
 	metadataWidth int
 }
 
@@ -75,17 +61,11 @@ const (
 	parameterRenderModeNarrow
 )
 
-// parameterRenderLayout holds parameter render layout state used by the parameters package.
 type parameterRenderLayout struct {
-	// mode stores mode for parameterRenderLayout.
-	mode parameterRenderMode
-	// paramStart stores param start for parameterRenderLayout.
+	mode       parameterRenderMode
 	paramStart int
-	// nameWidth stores name width for parameterRenderLayout.
-	nameWidth int
-	// valueStart stores value start for parameterRenderLayout.
+	nameWidth  int
 	valueStart int
-	// valueWidth stores value width for parameterRenderLayout.
 	valueWidth int
 }
 
@@ -98,257 +78,146 @@ const (
 	nodeValue
 )
 
-// visibleNode holds visible node state used by the parameters package.
 type visibleNode struct {
-	// kind stores kind for visibleNode.
-	kind visibleNodeKind
-	// projectID stores project id for visibleNode.
+	kind      visibleNodeKind
 	projectID string
-	// groupKey stores group key for visibleNode.
-	groupKey string
-	// paramKey stores param key for visibleNode.
-	paramKey string
-	// valueIdx stores value idx for visibleNode.
-	valueIdx int
-	// label stores label for visibleNode.
-	label string
-	// summary stores summary for visibleNode.
-	summary string
-	// expanded stores expanded for visibleNode.
-	expanded bool
-	// transient stores transient for visibleNode.
+	groupKey  string
+	paramKey  string
+	valueIdx  int
+	label     string
+	summary   string
+	expanded  bool
 	transient bool
 }
 
-// Model holds model state used by the parameters package.
 type Model struct {
-	// svc stores svc for Model.
 	svc *core.Core
 
-	// width stores width for Model.
-	width int
-	// height stores height for Model.
+	width  int
 	height int
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// active stores active for Model.
+	x      int
+	y      int
 	active bool
-	// spin stores spin for Model.
-	spin spinner.Model
-	// filter stores filter for Model.
+	spin   spinner.Model
 	filter filterbox.Model
 
-	// projects stores projects for Model.
-	projects []projectState
-	// projectIndex stores project index for Model.
-	projectIndex map[string]int
-	// groupExpanded stores group expanded for Model.
-	groupExpanded map[string]bool
-	// paramExpanded stores param expanded for Model.
-	paramExpanded map[string]bool
-	// visible stores visible for Model.
-	visible []visibleNode
-	// lineIndexByNode stores line index by node for Model.
+	projects        []projectState
+	projectIndex    map[string]int
+	groupExpanded   map[string]bool
+	paramExpanded   map[string]bool
+	visible         []visibleNode
 	lineIndexByNode []int
-	// totalLines stores total lines for Model.
-	totalLines int
-	// cursor stores cursor for Model.
-	cursor int
-	// offset stores offset for Model.
-	offset int
-	// transientDup stores transient dup for Model.
-	transientDup *transientDuplicate
-	// transientNew stores transient new for Model.
-	transientNew *transientNewParameter
+	totalLines      int
+	cursor          int
+	offset          int
+	transientDup    *transientDuplicate
+	transientNew    *transientNewParameter
 }
 
-// transientDuplicate holds transient duplicate state used by the parameters package.
 type transientDuplicate struct {
-	// projectID stores project id for transientDuplicate.
-	projectID string
-	// groupKey stores group key for transientDuplicate.
-	groupKey string
-	// afterParamKey stores after param key for transientDuplicate.
+	projectID     string
+	groupKey      string
 	afterParamKey string
-	// label stores label for transientDuplicate.
-	label string
+	label         string
 }
 
-// transientNewParameter holds transient new parameter state used by the parameters package.
 type transientNewParameter struct {
-	// projectID stores project id for transientNewParameter.
-	projectID string
-	// groupKey stores group key for transientNewParameter.
-	groupKey string
-	// afterParamKey stores after param key for transientNewParameter.
+	projectID     string
+	groupKey      string
 	afterParamKey string
-	// label stores label for transientNewParameter.
-	label string
+	label         string
 }
 
-// selectionSnapshot holds selection snapshot state used by the parameters package.
 type selectionSnapshot struct {
-	// projectID stores project id for selectionSnapshot.
-	projectID string
-	// groupKey stores group key for selectionSnapshot.
-	groupKey string
-	// paramKey stores param key for selectionSnapshot.
-	paramKey string
-	// valueIdx stores value idx for selectionSnapshot.
-	valueIdx int
-	// kind stores kind for selectionSnapshot.
-	kind visibleNodeKind
-	// screenLine stores screen line for selectionSnapshot.
+	projectID  string
+	groupKey   string
+	paramKey   string
+	valueIdx   int
+	kind       visibleNodeKind
 	screenLine int
 }
 
-// RenameAnchor holds rename anchor state used by the parameters package.
 type RenameAnchor struct {
-	// Project stores project for RenameAnchor.
-	Project core.Project
-	// IsGroup stores is group for RenameAnchor.
-	IsGroup bool
-	// GroupKey stores group key for RenameAnchor.
+	Project  core.Project
+	IsGroup  bool
 	GroupKey string
-	// ParamKey stores param key for RenameAnchor.
 	ParamKey string
-	// Label stores label for RenameAnchor.
-	Label string
-	// X stores x for RenameAnchor.
-	X int
-	// Y stores y for RenameAnchor.
-	Y int
-	// Width stores width for RenameAnchor.
-	Width int
-	// MaxWidth stores max width for RenameAnchor.
+	Label    string
+	X        int
+	Y        int
+	Width    int
 	MaxWidth int
 }
 
-// MoveAnchor holds move anchor state used by the parameters package.
 type MoveAnchor struct {
-	// Project stores project for MoveAnchor.
-	Project core.Project
-	// IsGroup stores is group for MoveAnchor.
-	IsGroup bool
-	// GroupKey stores group key for MoveAnchor.
+	Project  core.Project
+	IsGroup  bool
 	GroupKey string
-	// ParamKey stores param key for MoveAnchor.
 	ParamKey string
-	// Label stores label for MoveAnchor.
-	Label string
-	// X stores x for MoveAnchor.
-	X int
-	// Y stores y for MoveAnchor.
-	Y int
-	// Options stores options for MoveAnchor.
-	Options []MoveOption
+	Label    string
+	X        int
+	Y        int
+	Options  []MoveOption
 }
 
-// MoveOption holds move option state used by the parameters package.
 type MoveOption struct {
-	// Key stores key for MoveOption.
-	Key string
-	// Label stores label for MoveOption.
+	Key   string
 	Label string
 }
 
 // ConditionalValueAnchor holds selected conditional value deletion target.
 type ConditionalValueAnchor struct {
-	// Project stores project for ConditionalValueAnchor.
-	Project core.Project
-	// GroupKey stores group key for ConditionalValueAnchor.
-	GroupKey string
-	// ParamKey stores param key for ConditionalValueAnchor.
-	ParamKey string
-	// ValueLabel stores value label for ConditionalValueAnchor.
+	Project    core.Project
+	GroupKey   string
+	ParamKey   string
 	ValueLabel string
 }
 
-// BoolValueAnchor holds bool value anchor state used by the parameters package.
 type BoolValueAnchor struct {
-	// Project stores project for BoolValueAnchor.
-	Project core.Project
-	// GroupKey stores group key for BoolValueAnchor.
-	GroupKey string
-	// ParamKey stores param key for BoolValueAnchor.
-	ParamKey string
-	// ValueLabel stores value label for BoolValueAnchor.
-	ValueLabel string
-	// Value stores value for BoolValueAnchor.
-	Value bool
-	// CurrentValue stores current value for BoolValueAnchor.
+	Project      core.Project
+	GroupKey     string
+	ParamKey     string
+	ValueLabel   string
+	Value        bool
 	CurrentValue string
-	// X stores x for BoolValueAnchor.
-	X int
-	// Y stores y for BoolValueAnchor.
-	Y int
+	X            int
+	Y            int
 }
 
-// NumberValueAnchor holds number value anchor state used by the parameters package.
 type NumberValueAnchor struct {
-	// Project stores project for NumberValueAnchor.
-	Project core.Project
-	// GroupKey stores group key for NumberValueAnchor.
-	GroupKey string
-	// ParamKey stores param key for NumberValueAnchor.
-	ParamKey string
-	// ValueLabel stores value label for NumberValueAnchor.
-	ValueLabel string
-	// CurrentValue stores current value for NumberValueAnchor.
+	Project      core.Project
+	GroupKey     string
+	ParamKey     string
+	ValueLabel   string
 	CurrentValue string
-	// X stores x for NumberValueAnchor.
-	X int
-	// Y stores y for NumberValueAnchor.
-	Y int
-	// Width stores width for NumberValueAnchor.
-	Width int
-	// MaxWidth stores max width for NumberValueAnchor.
-	MaxWidth int
+	X            int
+	Y            int
+	Width        int
+	MaxWidth     int
 }
 
-// StringValueAnchor holds string value anchor state used by the parameters package.
 type StringValueAnchor struct {
-	// Project stores project for StringValueAnchor.
-	Project core.Project
-	// GroupKey stores group key for StringValueAnchor.
-	GroupKey string
-	// ParamKey stores param key for StringValueAnchor.
-	ParamKey string
-	// ValueLabel stores value label for StringValueAnchor.
-	ValueLabel string
-	// CurrentValue stores current value for StringValueAnchor.
+	Project      core.Project
+	GroupKey     string
+	ParamKey     string
+	ValueLabel   string
 	CurrentValue string
-	// X stores x for StringValueAnchor.
-	X int
-	// Y stores y for StringValueAnchor.
-	Y int
-	// Width stores width for StringValueAnchor.
-	Width int
-	// MaxWidth stores max width for StringValueAnchor.
-	MaxWidth int
-	// FullWidth stores full width for StringValueAnchor.
-	FullWidth bool
-	// Expanded stores expanded for StringValueAnchor.
-	Expanded bool
+	X            int
+	Y            int
+	Width        int
+	MaxWidth     int
+	FullWidth    bool
+	Expanded     bool
 }
 
-// JSONValueAnchor holds jsonvalue anchor state used by the parameters package.
 type JSONValueAnchor struct {
-	// Project stores project for JSONValueAnchor.
-	Project core.Project
-	// GroupKey stores group key for JSONValueAnchor.
-	GroupKey string
-	// ParamKey stores param key for JSONValueAnchor.
-	ParamKey string
-	// ValueLabel stores value label for JSONValueAnchor.
-	ValueLabel string
-	// CurrentValue stores current value for JSONValueAnchor.
+	Project      core.Project
+	GroupKey     string
+	ParamKey     string
+	ValueLabel   string
 	CurrentValue string
 }
 
-// New constructs new and returns the resulting value or error.
 func New(svc *core.Core) Model {
 	return Model{
 		svc:           svc,
@@ -400,7 +269,6 @@ func (m Model) SetActive(active bool) Model {
 	return m
 }
 
-// syncVisible handles sync visible for Model and returns the resulting state or error.
 func (m *Model) syncVisible() {
 	m.visible = m.buildVisible()
 	if len(m.visible) == 0 {
@@ -416,7 +284,6 @@ func (m *Model) syncVisible() {
 	m.ensureCursorVisible()
 }
 
-// recomputeLineLayout handles recompute line layout for Model and returns the resulting state or error.
 func (m *Model) recomputeLineLayout() {
 	m.lineIndexByNode = make([]int, len(m.visible))
 	line := 0
@@ -427,7 +294,6 @@ func (m *Model) recomputeLineLayout() {
 	m.totalLines = line
 }
 
-// buildVisible handles build visible for Model and returns the resulting state or error.
 func (m Model) buildVisible() []visibleNode {
 	nodes := make([]visibleNode, 0)
 	query := m.filter.Value()
@@ -586,7 +452,6 @@ func (m Model) buildVisible() []visibleNode {
 	return nodes
 }
 
-// appendTransientNewRootGroup handles append transient new root group and returns the resulting value or error.
 func appendTransientNewRootGroup(nodes []visibleNode, projectID string, created *transientNewParameter) []visibleNode {
 	nodes = append(nodes, visibleNode{
 		kind:      nodeGroup,
@@ -631,7 +496,6 @@ func matchedDuplicate(label, query string, mode filter.Mode) bool {
 	return ok
 }
 
-// loadParametersCmd loads load parameters cmd for Model and returns the resulting state or error.
 func (m Model) loadParametersCmd(project core.Project) tea.Cmd {
 	return func() tea.Msg {
 		cache, state, err := m.svc.InspectParametersCache(project.ProjectID)
@@ -690,7 +554,6 @@ func (m Model) loadParametersCmd(project core.Project) tea.Cmd {
 	}
 }
 
-// revalidateParametersCmd handles revalidate parameters cmd for Model and returns the resulting state or error.
 func (m Model) revalidateParametersCmd(project core.Project) tea.Cmd {
 	return func() tea.Msg {
 		cache, tree, source, hasDraft, staleDraft, err := m.svc.RefreshDraftAwareParameters(context.Background(), project.ProjectID)
@@ -712,7 +575,6 @@ func (m Model) revalidateParametersCmd(project core.Project) tea.Cmd {
 	}
 }
 
-// forceParametersCmd handles force parameters cmd for Model and returns the resulting state or error.
 func (m Model) forceParametersCmd(project core.Project) tea.Cmd {
 	return func() tea.Msg {
 		cache, tree, source, hasDraft, staleDraft, err := m.svc.RefreshDraftAwareParameters(context.Background(), project.ProjectID)
@@ -779,7 +641,6 @@ func (m *Model) setProjects(projects []core.Project) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// updateProject updates update project for Model and returns the resulting state or error.
 func (m *Model) updateProject(msg messages.ParametersLoadedMsg) tea.Cmd {
 	idx, ok := m.projectIndex[msg.Project.ProjectID]
 	if !ok {
@@ -843,7 +704,6 @@ func (m *Model) updateProject(msg messages.ParametersLoadedMsg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// ensureCursorVisible handles ensure cursor visible for Model and returns the resulting state or error.
 func (m *Model) ensureCursorVisible() {
 	if len(m.visible) == 0 {
 		m.cursor = 0
@@ -952,7 +812,6 @@ func (m *Model) moveToPrevGroup() {
 	}
 }
 
-// collapseCurrent handles collapse current for Model and returns the resulting state or error.
 func (m *Model) collapseCurrent() {
 	if len(m.visible) == 0 {
 		return
@@ -983,7 +842,6 @@ func (m *Model) collapseCurrent() {
 	m.syncVisible()
 }
 
-// expandCurrent handles expand current for Model and returns the resulting state or error.
 func (m *Model) expandCurrent() {
 	if len(m.visible) == 0 {
 		return
@@ -1084,7 +942,6 @@ func (m *Model) focusParentParameter(node visibleNode) {
 	}
 }
 
-// currentProjectID handles current project id for Model and returns the resulting state or error.
 func (m Model) currentProjectID() string {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return ""
@@ -1092,7 +949,6 @@ func (m Model) currentProjectID() string {
 	return m.visible[m.cursor].projectID
 }
 
-// currentProject handles current project for Model and returns the resulting state or error.
 func (m Model) currentProject() (core.Project, bool) {
 	project := m.projectByID(m.currentProjectID())
 	if project == nil {
@@ -1166,7 +1022,6 @@ func (m *Model) setAllGroupsExpanded(expanded bool) {
 	m.restoreSelectionSnapshot(snapshot)
 }
 
-// markProjectRefreshing handles mark project refreshing for Model and returns the resulting state or error.
 func (m *Model) markProjectRefreshing(projectID string) {
 	idx, ok := m.projectIndex[projectID]
 	if !ok {
@@ -1178,7 +1033,6 @@ func (m *Model) markProjectRefreshing(projectID string) {
 	m.projects[idx] = state
 }
 
-// revalidateCurrentProjectCmd handles revalidate current project cmd for Model and returns the resulting state or error.
 func (m *Model) revalidateCurrentProjectCmd() tea.Cmd {
 	project, ok := m.currentProject()
 	if !ok {
@@ -1189,7 +1043,6 @@ func (m *Model) revalidateCurrentProjectCmd() tea.Cmd {
 	return tea.Batch(m.forceParametersCmd(project), m.spin.Tick)
 }
 
-// revalidateAllProjectsCmd handles revalidate all projects cmd for Model and returns the resulting state or error.
 func (m *Model) revalidateAllProjectsCmd() tea.Cmd {
 	if len(m.projects) == 0 {
 		return nil
@@ -1204,7 +1057,6 @@ func (m *Model) revalidateAllProjectsCmd() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// copyCurrentParameterNameCmd handles copy current parameter name cmd for Model and returns the resulting state or error.
 func (m Model) copyCurrentParameterNameCmd() tea.Cmd {
 	_, _, paramKey, ok := m.currentParameterRef()
 	if !ok {
@@ -1213,7 +1065,6 @@ func (m Model) copyCurrentParameterNameCmd() tea.Cmd {
 	return copyToClipboardCmd(paramKey)
 }
 
-// copyCurrentParameterPathCmd handles copy current parameter path cmd for Model and returns the resulting state or error.
 func (m Model) copyCurrentParameterPathCmd() tea.Cmd {
 	projectID, groupKey, paramKey, ok := m.currentParameterRef()
 	if !ok {
@@ -1222,7 +1073,6 @@ func (m Model) copyCurrentParameterPathCmd() tea.Cmd {
 	return copyToClipboardCmd(projectID + "/" + groupKey + "/" + paramKey)
 }
 
-// currentParameterRef handles current parameter ref for Model and returns the resulting state or error.
 func (m Model) currentParameterRef() (projectID, groupKey, paramKey string, ok bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return "", "", "", false
@@ -1240,7 +1090,6 @@ func (m Model) currentParameterRef() (projectID, groupKey, paramKey string, ok b
 	}
 }
 
-// currentParameterViewData handles current parameter view data for Model and returns the resulting state or error.
 func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return nil, false
@@ -1316,7 +1165,6 @@ func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 	return data, true
 }
 
-// parameterViewOptions handles parameter view options and returns the resulting value or error.
 func parameterViewOptions(project *projectState) ([]messages.ParameterGroupOption, []string) {
 	if project == nil || project.tree == nil {
 		return nil, nil
@@ -1341,7 +1189,6 @@ func parameterViewOptions(project *projectState) ([]messages.ParameterGroupOptio
 	return groups, paramKeys
 }
 
-// CurrentParameterViewData handles current parameter view data for Model and returns the resulting state or error.
 func (m Model) CurrentParameterViewData() (*messages.ParameterViewData, bool) {
 	return m.currentParameterViewData()
 }
@@ -1365,7 +1212,6 @@ func (m Model) selectionChangedCmd(activate bool) tea.Cmd {
 	}
 }
 
-// copyToClipboardCmd handles copy to clipboard cmd and returns the resulting value or error.
 func copyToClipboardCmd(text string) tea.Cmd {
 	if text == "" {
 		return nil
@@ -1376,32 +1222,26 @@ func copyToClipboardCmd(text string) tea.Cmd {
 	}
 }
 
-// contentHeight handles content height for Model and returns the resulting state or error.
 func (m Model) contentHeight() int {
 	return max(m.height-2-m.filter.Height(), 0)
 }
 
-// viewportWidth handles viewport width for Model and returns the resulting state or error.
 func (m Model) viewportWidth() int {
 	return max(m.width-2, 1)
 }
 
-// viewportHeight handles viewport height for Model and returns the resulting state or error.
 func (m Model) viewportHeight() int {
 	return max(m.height-2-m.filter.Height(), 1)
 }
 
-// groupKey handles group key for Model and returns the resulting state or error.
 func (m Model) groupKey(projectID, groupKey string) string {
 	return projectID + "::group::" + groupKey
 }
 
-// paramKey handles param key for Model and returns the resulting state or error.
 func (m Model) paramKey(projectID, groupKey, paramKey string) string {
 	return projectID + "::param::" + groupKey + "::" + paramKey
 }
 
-// cacheStateLabel handles cache state label for projectState and returns the resulting state or error.
 func (p projectState) cacheStateLabel() string {
 	if p.tree == nil {
 		return core.ParametersStatusLabel(p.cacheSource, time.Time{}, false, p.err)
@@ -1409,7 +1249,6 @@ func (p projectState) cacheStateLabel() string {
 	return core.ParametersStatusLabel(p.cacheSource, p.tree.CachedAt, true, p.err)
 }
 
-// anyLoading handles any loading for Model and returns the resulting state or error.
 func (m Model) anyLoading() bool {
 	for _, project := range m.projects {
 		if project.loading || project.verifying {
@@ -1419,7 +1258,6 @@ func (m Model) anyLoading() bool {
 	return false
 }
 
-// projectByID handles project by id for Model and returns the resulting state or error.
 func (m Model) projectByID(projectID string) *projectState {
 	idx, ok := m.projectIndex[projectID]
 	if !ok || idx < 0 || idx >= len(m.projects) {
@@ -1428,7 +1266,6 @@ func (m Model) projectByID(projectID string) *projectState {
 	return &m.projects[idx]
 }
 
-// groupByKey handles group by key for Model and returns the resulting state or error.
 func (m Model) groupByKey(projectID, groupKey string) *core.ParametersGroup {
 	project := m.projectByID(projectID)
 	if project == nil || project.tree == nil {
@@ -1442,7 +1279,6 @@ func (m Model) groupByKey(projectID, groupKey string) *core.ParametersGroup {
 	return nil
 }
 
-// parameterByKey handles parameter by key for Model and returns the resulting state or error.
 func (m Model) parameterByKey(projectID, groupKey, paramKey string) *core.ParametersEntry {
 	group := m.groupByKey(projectID, groupKey)
 	if group == nil {
@@ -1456,7 +1292,6 @@ func (m Model) parameterByKey(projectID, groupKey, paramKey string) *core.Parame
 	return nil
 }
 
-// layoutForProject handles layout for project for Model and returns the resulting state or error.
 func (m Model) layoutForProject(projectID string) projectLayout {
 	layout := projectLayout{}
 
@@ -1470,7 +1305,6 @@ func (m Model) layoutForProject(projectID string) projectLayout {
 	return layout
 }
 
-// parameterRenderLayout handles parameter render layout for Model and returns the resulting state or error.
 func (m Model) parameterRenderLayout() parameterRenderLayout {
 	layout := parameterRenderLayout{
 		mode:       parameterRenderModeRegular,
@@ -1485,7 +1319,6 @@ func (m Model) parameterRenderLayout() parameterRenderLayout {
 	return layout
 }
 
-// maxParameterNameWidth handles max parameter name width for Model and returns the resulting state or error.
 func (m Model) maxParameterNameWidth() int {
 	width := 0
 	for _, project := range m.projects {
@@ -1501,12 +1334,10 @@ func (m Model) maxParameterNameWidth() int {
 	return width
 }
 
-// LongestParameterNameWidth handles longest parameter name width for Model and returns the resulting state or error.
 func (m Model) LongestParameterNameWidth() int {
 	return m.maxParameterNameWidth()
 }
 
-// projectMeta handles project meta for Model and returns the resulting state or error.
 func (m Model) projectMeta(project *projectState, selected bool) string {
 	if project == nil {
 		return ""
@@ -1523,7 +1354,6 @@ func (m Model) projectMeta(project *projectState, selected bool) string {
 	}
 }
 
-// projectMetaSegments handles project meta segments for Model and returns the resulting state or error.
 func (m Model) projectMetaSegments(project *projectState, selected bool) (badge string, rest string) {
 	if project == nil {
 		return "", ""
@@ -1562,7 +1392,6 @@ func (m Model) projectMetaSegments(project *projectState, selected bool) (badge 
 	return badge, strings.Join(parts, " ")
 }
 
-// displayVersion handles display version for projectState and returns the resulting state or error.
 func (p projectState) displayVersion() string {
 	if p.staleDraft && p.cacheVersion != "" {
 		return p.cacheVersion
@@ -1584,7 +1413,6 @@ func (m Model) filteredParameterCount() int {
 	return count
 }
 
-// displayProject handles display project and returns the resulting value or error.
 func displayProject(project projectState) string {
 	if strings.TrimSpace(project.project.Name) == "" {
 		return project.project.ProjectID
@@ -1592,7 +1420,6 @@ func displayProject(project projectState) string {
 	return fmt.Sprintf("%s (%s)", project.project.Name, project.project.ProjectID)
 }
 
-// CurrentParameterRef handles current parameter ref for Model and returns the resulting state or error.
 func (m Model) CurrentParameterRef() (core.Project, string, string, bool) {
 	projectID, groupKey, paramKey, ok := m.currentParameterRef()
 	if !ok {
@@ -1610,12 +1437,10 @@ func (m *Model) FocusCurrentParameterDefaultValue() bool {
 	return m.focusCurrentParameterDefaultValue()
 }
 
-// CurrentProject handles current project for Model and returns the resulting state or error.
 func (m Model) CurrentProject() (core.Project, bool) {
 	return m.currentProject()
 }
 
-// CurrentGroupRef handles current group ref for Model and returns the resulting state or error.
 func (m Model) CurrentGroupRef() (core.Project, string, string, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return core.Project{}, "", "", false
@@ -1631,7 +1456,6 @@ func (m Model) CurrentGroupRef() (core.Project, string, string, bool) {
 	return project.project, node.groupKey, node.label, true
 }
 
-// CurrentNewParameterTarget handles current new parameter target for Model and returns the resulting state or error.
 func (m Model) CurrentNewParameterTarget() (core.Project, string, string, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return core.Project{}, "", "", false
@@ -1664,7 +1488,6 @@ func (m Model) CurrentNewParameterTarget() (core.Project, string, string, bool) 
 	return project.project, groupKey, afterParamKey, true
 }
 
-// DraftProjects handles draft projects for Model and returns the resulting state or error.
 func (m Model) DraftProjects() []core.Project {
 	out := make([]core.Project, 0)
 	for _, project := range m.projects {
@@ -1686,7 +1509,6 @@ func (m Model) HasProject(projectID string) bool {
 	return m.projectByID(projectID) != nil
 }
 
-// CurrentRenameAnchor handles current rename anchor for Model and returns the resulting state or error.
 func (m Model) CurrentRenameAnchor() (RenameAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return RenameAnchor{}, false
@@ -1761,7 +1583,6 @@ func (m Model) CurrentRenameAnchor() (RenameAnchor, bool) {
 	}
 }
 
-// CurrentTransientDuplicate handles current transient duplicate for Model and returns the resulting state or error.
 func (m Model) CurrentTransientDuplicate() (project core.Project, groupKey, sourceParamKey, label string, ok bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return core.Project{}, "", "", "", false
@@ -1777,7 +1598,6 @@ func (m Model) CurrentTransientDuplicate() (project core.Project, groupKey, sour
 	return projectState.project, node.groupKey, node.paramKey, node.label, true
 }
 
-// valueNodeValueX handles value node value x for Model and returns the resulting state or error.
 func (m Model) valueNodeValueX(node visibleNode, param *core.ParametersEntry) int {
 	layout := m.parameterRenderLayout()
 	label := displayConditionLabel(param.Values[node.valueIdx].Label)
@@ -1816,7 +1636,6 @@ func (m *Model) OpenTransientDuplicate(projectID, groupKey, sourceParamKey, labe
 	}
 }
 
-// ClearTransientDuplicate handles clear transient duplicate for Model and returns the resulting state or error.
 func (m *Model) ClearTransientDuplicate() {
 	if m.transientDup == nil {
 		return
@@ -1825,7 +1644,6 @@ func (m *Model) ClearTransientDuplicate() {
 	m.syncVisible()
 }
 
-// ClearTransientDuplicateAndFocusSource handles clear transient duplicate and focus source for Model and returns the resulting state or error.
 func (m *Model) ClearTransientDuplicateAndFocusSource() {
 	if m.transientDup == nil {
 		return
@@ -1838,7 +1656,6 @@ func (m *Model) ClearTransientDuplicateAndFocusSource() {
 	m.selectParameter(projectID, groupKey, paramKey)
 }
 
-// ClearTransientDuplicateAndFocus handles clear transient duplicate and focus for Model and returns the resulting state or error.
 func (m *Model) ClearTransientDuplicateAndFocus(projectID, groupKey, paramKey string) {
 	if m.transientDup == nil {
 		return
@@ -1867,7 +1684,6 @@ func (m *Model) OpenTransientNewParameter(projectID, groupKey, afterParamKey str
 	}
 }
 
-// ClearTransientNewParameter handles clear transient new parameter for Model and returns the resulting state or error.
 func (m *Model) ClearTransientNewParameter() {
 	if m.transientNew == nil {
 		return
@@ -1876,7 +1692,6 @@ func (m *Model) ClearTransientNewParameter() {
 	m.syncVisible()
 }
 
-// ClearTransientNewParameterAndFocus handles clear transient new parameter and focus for Model and returns the resulting state or error.
 func (m *Model) ClearTransientNewParameterAndFocus(projectID, groupKey, paramKey string) {
 	if m.transientNew == nil {
 		return
@@ -1908,7 +1723,6 @@ func (m *Model) selectParameter(projectID, groupKey, paramKey string) bool {
 	return false
 }
 
-// CurrentMoveAnchor handles current move anchor for Model and returns the resulting state or error.
 func (m Model) CurrentMoveAnchor() (MoveAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return MoveAnchor{}, false
@@ -1996,7 +1810,6 @@ func (m Model) CurrentMoveAnchor() (MoveAnchor, bool) {
 	}
 }
 
-// CurrentConditionalValueAnchor handles current conditional value anchor.
 func (m Model) CurrentConditionalValueAnchor() (ConditionalValueAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return ConditionalValueAnchor{}, false
@@ -2022,7 +1835,6 @@ func (m Model) CurrentConditionalValueAnchor() (ConditionalValueAnchor, bool) {
 	}, true
 }
 
-// CurrentBoolValueAnchor handles current bool value anchor for Model and returns the resulting state or error.
 func (m Model) CurrentBoolValueAnchor() (BoolValueAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return BoolValueAnchor{}, false
@@ -2062,7 +1874,6 @@ func (m Model) CurrentBoolValueAnchor() (BoolValueAnchor, bool) {
 	}, true
 }
 
-// CurrentNumberValueAnchor handles current number value anchor for Model and returns the resulting state or error.
 func (m Model) CurrentNumberValueAnchor() (NumberValueAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return NumberValueAnchor{}, false
@@ -2099,7 +1910,6 @@ func (m Model) CurrentNumberValueAnchor() (NumberValueAnchor, bool) {
 	}, true
 }
 
-// CurrentStringValueAnchor handles current string value anchor for Model and returns the resulting state or error.
 func (m Model) CurrentStringValueAnchor() (StringValueAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return StringValueAnchor{}, false
@@ -2145,7 +1955,6 @@ func (m Model) CurrentStringValueAnchor() (StringValueAnchor, bool) {
 	}, true
 }
 
-// CurrentJSONValueAnchor handles current jsonvalue anchor for Model and returns the resulting state or error.
 func (m Model) CurrentJSONValueAnchor() (JSONValueAnchor, bool) {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return JSONValueAnchor{}, false
@@ -2175,7 +1984,6 @@ func (m Model) CurrentJSONValueAnchor() (JSONValueAnchor, bool) {
 	}, true
 }
 
-// ProjectDraftState handles project draft state for Model and returns the resulting state or error.
 func (m Model) ProjectDraftState(projectID string) (bool, bool) {
 	project := m.projectByID(projectID)
 	if project == nil {
@@ -2184,7 +1992,6 @@ func (m Model) ProjectDraftState(projectID string) (bool, bool) {
 	return project.hasDraft, project.staleDraft
 }
 
-// currentParameterNodeIndex handles current parameter node index for Model and returns the resulting state or error.
 func (m Model) currentParameterNodeIndex() int {
 	if m.cursor < 0 || m.cursor >= len(m.visible) {
 		return -1
@@ -2207,7 +2014,6 @@ func (m Model) currentParameterNodeIndex() int {
 	return -1
 }
 
-// remoteConfigVersion handles remote config version and returns the resulting value or error.
 func remoteConfigVersion(raw []byte) string {
 	cfg, err := firebase.ParseRemoteConfig(raw)
 	if err != nil {
@@ -2216,7 +2022,6 @@ func remoteConfigVersion(raw []byte) string {
 	return cfg.Version.VersionNumber
 }
 
-// versionLess handles version less and returns the resulting value or error.
 func versionLess(left, right string) bool {
 	left = strings.TrimSpace(left)
 	right = strings.TrimSpace(right)
@@ -2233,7 +2038,6 @@ func versionLess(left, right string) bool {
 	return leftNum.Cmp(&rightNum) < 0
 }
 
-// displayConditionLabel handles display condition label and returns the resulting value or error.
 func displayConditionLabel(label string) string {
 	if label == "default" {
 		return "Default value"
@@ -2241,7 +2045,6 @@ func displayConditionLabel(label string) string {
 	return label
 }
 
-// truncatePlain handles truncate plain and returns the resulting value or error.
 func truncatePlain(value string, width int) string {
 	if width <= 0 {
 		return ""
@@ -2255,7 +2058,6 @@ func truncatePlain(value string, width int) string {
 	return string(runes[:width])
 }
 
-// captureSelectionSnapshot handles capture selection snapshot for Model and returns the resulting state or error.
 func (m Model) captureSelectionSnapshot(expanding, groups bool) selectionSnapshot {
 	snapshot := selectionSnapshot{valueIdx: -1}
 	if len(m.visible) == 0 || m.cursor < 0 || m.cursor >= len(m.visible) {
@@ -2290,7 +2092,6 @@ func (m Model) captureSelectionSnapshot(expanding, groups bool) selectionSnapsho
 	return snapshot
 }
 
-// applyFilter handles apply filter for Model and returns the resulting state or error.
 func (m *Model) applyFilter() {
 	snapshot := selectionSnapshot{valueIdx: -1}
 	if len(m.visible) > 0 && m.cursor >= 0 && m.cursor < len(m.visible) {
@@ -2302,7 +2103,6 @@ func (m *Model) applyFilter() {
 	}
 }
 
-// restoreSelectionSnapshot handles restore selection snapshot for Model and returns the resulting state or error.
 func (m *Model) restoreSelectionSnapshot(snapshot selectionSnapshot) {
 	if len(m.visible) == 0 {
 		m.cursor = 0
@@ -2336,7 +2136,6 @@ func (m *Model) restoreSelectionSnapshot(snapshot selectionSnapshot) {
 	m.ensureCursorVisible()
 }
 
-// findSelectionSnapshotNode handles find selection snapshot node for Model and returns the resulting state or error.
 func (m Model) findSelectionSnapshotNode(snapshot selectionSnapshot) int {
 	fallbackProject := -1
 	fallbackGroup := -1
@@ -2389,7 +2188,6 @@ func (m Model) findSelectionSnapshotNode(snapshot selectionSnapshot) int {
 	return fallbackProject
 }
 
-// abs handles abs and returns the resulting value or error.
 func abs(v int) int {
 	if v < 0 {
 		return -v

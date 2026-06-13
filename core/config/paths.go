@@ -9,22 +9,14 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-// paths holds paths state used by the config package.
 type paths struct {
-	// configRootDir stores config root dir for paths.
 	configRootDir string
-	// cacheRootDir stores cache root dir for paths.
-	cacheRootDir string
-	// profile stores profile for paths.
-	profile string
-	// configDir stores config dir for paths.
-	configDir string
-	// cacheDir stores cache dir for paths.
-	cacheDir string
-	// projectsFile stores projects file for paths.
-	projectsFile string
-	// authFile stores auth config file for paths.
-	authFile string
+	cacheRootDir  string
+	profile       string
+	configDir     string
+	cacheDir      string
+	projectsFile  string
+	authFile      string
 }
 
 var (

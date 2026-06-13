@@ -9,7 +9,6 @@ import (
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 )
 
-// New constructs new and returns the resulting value or error.
 func New() *cobra.Command {
 	configCmd := &cobra.Command{
 		Use:   "config",

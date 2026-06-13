@@ -13,12 +13,10 @@ import (
 
 const DefaultProfileName = "default"
 
-// GetActiveProfileName gets active profile name and returns the resulting value or error.
 func GetActiveProfileName() string {
 	return getPaths().profile
 }
 
-// EnsureActiveProfile handles ensure active profile and returns the resulting value or error.
 func EnsureActiveProfile() error {
 	profile, err := loadActiveProfile()
 	if err != nil {
@@ -45,7 +43,6 @@ func EnsureActiveProfile() error {
 	return nil
 }
 
-// ListProfiles lists profiles and returns the resulting value or error.
 func ListProfiles() ([]string, error) {
 	seen := map[string]struct{}{}
 	root := GetConfigRootDirPath()
@@ -74,7 +71,6 @@ func ListProfiles() ([]string, error) {
 	return profiles, nil
 }
 
-// GetProfileConfigDirPath gets profile config directory path and returns the resulting value or error.
 func GetProfileConfigDirPath(name string) (string, error) {
 	if err := ValidateProfileName(name); err != nil {
 		return "", err
@@ -82,7 +78,6 @@ func GetProfileConfigDirPath(name string) (string, error) {
 	return profileConfigDir(name), nil
 }
 
-// GetProfileCacheDirPath gets profile cache directory path and returns the resulting value or error.
 func GetProfileCacheDirPath(name string) (string, error) {
 	if err := ValidateProfileName(name); err != nil {
 		return "", err
@@ -90,7 +85,6 @@ func GetProfileCacheDirPath(name string) (string, error) {
 	return profileCacheDir(name), nil
 }
 
-// PurgeProfile removes profile config and cache directories and returns the resulting value or error.
 func PurgeProfile(name string) error {
 	if err := EnsureProfileCanPurge(name); err != nil {
 		return err
@@ -125,7 +119,6 @@ func EnsureProfileCanPurge(name string) error {
 	return nil
 }
 
-// SwitchProfile handles switch profile and returns the resulting value or error.
 func SwitchProfile(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
@@ -141,7 +134,6 @@ func SwitchProfile(name string) error {
 	return nil
 }
 
-// RenameProfile handles rename profile and returns the resulting value or error.
 func RenameProfile(oldName, newName string) error {
 	if err := ValidateProfileName(oldName); err != nil {
 		return fmt.Errorf("old profile: %w", err)
@@ -196,7 +188,6 @@ func RenameProfile(oldName, newName string) error {
 	return nil
 }
 
-// ValidateProfileName handles validate profile name and returns the resulting value or error.
 func ValidateProfileName(name string) error {
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {
@@ -217,7 +208,6 @@ func ValidateProfileName(name string) error {
 	return nil
 }
 
-// activeProfileOrDefault handles active profile or default and returns the resulting value or error.
 func activeProfileOrDefault() string {
 	if profile, err := loadActiveProfile(); err == nil && ValidateProfileName(profile) == nil {
 		if profileConfigDirExists(profile) {
@@ -237,7 +227,6 @@ func activeProfileOrDefault() string {
 	return DefaultProfileName
 }
 
-// ensureProfileDirs handles ensure profile dirs and returns the resulting value or error.
 func ensureProfileDirs(name string) error {
 	if err := EnsurePrivateDir(profileConfigDir(name)); err != nil {
 		return fmt.Errorf("create profile config dir: %w", err)
@@ -248,7 +237,6 @@ func ensureProfileDirs(name string) error {
 	return nil
 }
 
-// ensureExistingProfileDirs handles ensure existing profile dirs and returns the resulting value or error.
 func ensureExistingProfileDirs(name string) error {
 	if err := EnsurePrivateDir(profileConfigDir(name)); err != nil {
 		return fmt.Errorf("secure profile config dir: %w", err)
@@ -259,7 +247,6 @@ func ensureExistingProfileDirs(name string) error {
 	return nil
 }
 
-// loadActiveProfile loads load active profile and returns the resulting value or error.
 func loadActiveProfile() (string, error) {
 	cfg, err := LoadAppConfig()
 	if err != nil {
@@ -268,7 +255,6 @@ func loadActiveProfile() (string, error) {
 	return cfg.Profile, nil
 }
 
-// saveActiveProfile saves save active profile and returns the resulting value or error.
 func saveActiveProfile(name string) error {
 	cfg, err := LoadAppConfig()
 	if err != nil {
@@ -281,22 +267,18 @@ func saveActiveProfile(name string) error {
 	return SaveAppConfig(cfg)
 }
 
-// profileConfigDir handles profile config dir and returns the resulting value or error.
 func profileConfigDir(name string) string {
 	return filepath.Join(GetConfigRootDirPath(), name)
 }
 
-// profileCacheDir handles profile cache dir and returns the resulting value or error.
 func profileCacheDir(name string) string {
 	return filepath.Join(GetCacheRootDirPath(), name)
 }
 
-// profileConfigDirExists handles profile config dir exists and returns the resulting value or error.
 func profileConfigDirExists(name string) bool {
 	return dirExists(profileConfigDir(name))
 }
 
-// dirExists handles dir exists and returns the resulting value or error.
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.IsDir()

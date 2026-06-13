@@ -12,38 +12,26 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-// File holds file state used by the config package.
 type File struct {
 	// Version stores projects config version.
-	Version int `json:"version"`
-	// Projects stores projects for File.
+	Version  int       `json:"version"`
 	Projects []Project `json:"projects"`
-	// SyncedAt stores synced at for File.
-	SyncedAt string `json:"synced_at,omitempty"`
+	SyncedAt string    `json:"synced_at,omitempty"`
 }
 
 var ErrEmptyProjectsFile = errors.New("projects config is empty")
 
 const ProjectsConfigVersion = 2
 
-// Project holds project state used by the config package.
 type Project struct {
-	// Name stores name for Project.
-	Name string `json:"name"`
-	// ProjectID stores project id for Project.
-	ProjectID string `json:"project_id"`
-	// ProjectNumber stores project number for Project.
+	Name          string `json:"name"`
+	ProjectID     string `json:"project_id"`
 	ProjectNumber string `json:"project_number,omitempty"`
-	// State stores state for Project.
-	State string `json:"state,omitempty"`
-	// ETag stores etag for Project.
-	ETag string `json:"etag,omitempty"`
-	// UpdatedAt stores updated at for Project.
-	UpdatedAt string `json:"updated_at,omitempty"`
-	// SyncedAt stores synced at for Project.
-	SyncedAt string `json:"synced_at,omitempty"`
-	// AuthID stores selected auth identity for Project.
-	AuthID string `json:"auth_id"`
+	State         string `json:"state,omitempty"`
+	ETag          string `json:"etag,omitempty"`
+	UpdatedAt     string `json:"updated_at,omitempty"`
+	SyncedAt      string `json:"synced_at,omitempty"`
+	AuthID        string `json:"auth_id"`
 	// DiscoveredBy stores auth identities that discovered Project.
 	DiscoveredBy []string `json:"discovered_by,omitempty"`
 }

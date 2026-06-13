@@ -13,33 +13,20 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-// Option holds option state used by the moveparam package.
 type Option struct {
-	// Key stores key for Option.
-	Key string
-	// Label stores label for Option.
+	Key   string
 	Label string
 }
 
-// Model holds model state used by the moveparam package.
 type Model struct {
-	// x stores x for Model.
-	x int
-	// y stores y for Model.
-	y int
-	// label stores label for Model.
-	label string
-	// options stores options for Model.
-	options []Option
-	// selected stores selected for Model.
+	x        int
+	y        int
+	label    string
+	options  []Option
 	selected int
-	// input stores input for Model.
-	input textinput.Model
-	// open stores open for Model.
-	open bool
-	// search stores search for Model.
-	search string
-	// lastType stores last type for Model.
+	input    textinput.Model
+	open     bool
+	search   string
 	lastType time.Time
 }
 
@@ -48,7 +35,6 @@ const (
 	minGroupNameWidth = 9
 )
 
-// New constructs new and returns the resulting value or error.
 func New() Model {
 	return Model{input: newInput()}
 }
@@ -87,18 +73,15 @@ func (m Model) IsOpen() bool {
 	return m.open
 }
 
-// Position handles position for Model and returns the resulting state or error.
 func (m Model) Position() (int, int) {
 	return m.x, m.y
 }
 
-// ListPosition lists position for Model and returns the resulting state or error.
 func (m Model) ListPosition() (int, int) {
 	connectorWidth, _ := m.layout()
 	return m.x + connectorWidth + 2, m.y - m.selected
 }
 
-// Current handles current for Model and returns the resulting state or error.
 func (m Model) Current() (Option, bool) {
 	if !m.open {
 		return Option{}, false
@@ -117,7 +100,6 @@ func (m Model) Current() (Option, bool) {
 	return m.options[optionIndex], true
 }
 
-// InputSelected handles input selected for Model and returns the resulting state or error.
 func (m Model) InputSelected() bool {
 	return m.selectedInput()
 }
@@ -144,7 +126,6 @@ func (m *Model) Move(delta int) tea.Cmd {
 	return nil
 }
 
-// Update updates update for Model and returns the resulting state or error.
 func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	if !m.open || !m.selectedInput() {
 		return nil
@@ -154,7 +135,6 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
-// Typeahead handles typeahead for Model and returns the resulting state or error.
 func (m *Model) Typeahead(key string, now time.Time) bool {
 	if len(m.options) == 0 || utf8.RuneCountInString(key) != 1 || m.selectedInput() {
 		return false
@@ -197,7 +177,6 @@ func (m *Model) Typeahead(key string, now time.Time) bool {
 	return false
 }
 
-// HeaderView handles header view for Model and returns the resulting state or error.
 func (m Model) HeaderView() string {
 	if !m.open || m.rowsCount() == 0 {
 		return ""
@@ -212,7 +191,6 @@ func (m Model) HeaderView() string {
 	return strings.Join(lines, "\n")
 }
 
-// ListView lists view for Model and returns the resulting state or error.
 func (m Model) ListView() string {
 	if !m.open || m.rowsCount() == 0 {
 		return ""
@@ -269,7 +247,6 @@ var (
 	optionStyle    = styles.PanelText
 )
 
-// optionLineStyle handles option line style and returns the resulting value or error.
 func optionLineStyle(selected bool) lipgloss.Style {
 	if !selected {
 		return optionStyle
@@ -280,17 +257,14 @@ func optionLineStyle(selected bool) lipgloss.Style {
 	return optionStyle.Bold(true).Foreground(styles.PaletteGold)
 }
 
-// padRight handles pad right and returns the resulting value or error.
 func padRight(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }
 
-// padRenderedRight handles pad rendered right and returns the resulting value or error.
 func padRenderedRight(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }
 
-// layout handles layout for Model and returns the resulting state or error.
 func (m Model) layout() (indent, optionWidth int) {
 	optionWidth = minGroupNameWidth
 	for _, option := range m.options {
@@ -301,7 +275,6 @@ func (m Model) layout() (indent, optionWidth int) {
 	return lipgloss.Width(m.label) + 1, optionWidth
 }
 
-// rowsCount handles rows count for Model and returns the resulting state or error.
 func (m Model) rowsCount() int {
 	if len(m.options) == 0 {
 		return 0
@@ -309,7 +282,6 @@ func (m Model) rowsCount() int {
 	return len(m.options) + 1
 }
 
-// rootOptionIndex handles root option index for Model and returns the resulting state or error.
 func (m Model) rootOptionIndex() int {
 	if len(m.options) == 0 {
 		return -1
@@ -321,7 +293,6 @@ func (m Model) rootOptionIndex() int {
 	return -1
 }
 
-// inputRowIndex handles input row index for Model and returns the resulting state or error.
 func (m Model) inputRowIndex() int {
 	rootIndex := m.rootOptionIndex()
 	if rootIndex >= 0 {
@@ -330,7 +301,6 @@ func (m Model) inputRowIndex() int {
 	return len(m.options)
 }
 
-// rowIsInput handles row is input for Model and returns the resulting state or error.
 func (m Model) rowIsInput(row int) bool {
 	return row == m.inputRowIndex()
 }
@@ -340,7 +310,6 @@ func (m Model) selectedInput() bool {
 	return m.rowIsInput(m.selected)
 }
 
-// optionIndexForRow handles option index for row for Model and returns the resulting state or error.
 func (m Model) optionIndexForRow(row int) (int, bool) {
 	if row < 0 || row >= m.rowsCount() || m.rowIsInput(row) {
 		return 0, false
@@ -369,7 +338,6 @@ func moveInputStyles() textinput.Styles {
 	return inputStyles
 }
 
-// newInput constructs new input and returns the resulting value or error.
 func newInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""

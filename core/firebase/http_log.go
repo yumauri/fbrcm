@@ -70,7 +70,6 @@ func redactedURLString(raw *url.URL) string {
 	return safe.String()
 }
 
-// redactedURLStringValue parses a raw URL string and returns a log-safe version when parsing succeeds.
 func redactedURLStringValue(raw string) string {
 	parsed, err := url.Parse(raw)
 	if err != nil {

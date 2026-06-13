@@ -22,30 +22,26 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "fbrcm",
-	Short: "Firebase project viewer",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if isProfileCommand(cmd) || cmd.Name() == "help" {
-			return nil
-		}
-		if err := config.EnsureActiveProfile(); err != nil {
-			return fmt.Errorf("ensure active profile: %w", err)
-		}
-		return nil
-	},
-}
-
 const versionTemplate = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`
 
-// isProfileCommand reports is profile command and returns the resulting value or error.
 func isProfileCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "profile" || strings.HasPrefix(cmd.CommandPath(), "fbrcm profile")
 }
 
-// Execute handles execute and returns the resulting value or error.
-func Execute(s *core.Core, version, commit, date string) {
-	corelog.For("cli").Debug("register cli commands")
+func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use:   "fbrcm",
+		Short: "Firebase project viewer",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if isProfileCommand(cmd) || cmd.Name() == "help" {
+				return nil
+			}
+			if err := config.EnsureActiveProfile(); err != nil {
+				return fmt.Errorf("ensure active profile: %w", err)
+			}
+			return nil
+		},
+	}
 	rootCmd.Version = fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
 	rootCmd.SetVersionTemplate(versionTemplate)
 
@@ -60,6 +56,12 @@ func Execute(s *core.Core, version, commit, date string) {
 	rootCmd.AddCommand(projectscmd.New(s))
 	rootCmd.AddCommand(updatecmd.New(s))
 
+	return rootCmd
+}
+
+func Execute(s *core.Core, version, commit, date string) {
+	corelog.For("cli").Debug("register cli commands")
+	rootCmd := newRootCommand(s, version, commit, date)
 	if err := rootCmd.Execute(); err != nil {
 		corelog.For("cli").Error("cli command failed", "err", err)
 		os.Exit(1)

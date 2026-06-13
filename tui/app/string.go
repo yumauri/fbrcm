@@ -2,13 +2,10 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
-	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	"github.com/yumauri/fbrcm/tui/messages"
@@ -53,7 +50,6 @@ func (m *Model) toggleStringInputMode() tea.Cmd {
 	return cmd
 }
 
-// submitStringInput handles submit string input for Model and returns the resulting state or error.
 func (m *Model) submitStringInput() tea.Cmd {
 	anchor, ok := m.currentStringValueAnchor()
 	if !ok {
@@ -107,37 +103,10 @@ func (m *Model) openStringValueDialog(project core.Project, groupKey, paramKey, 
 	})
 }
 
-// stringValueDialogBody handles string value dialog body for Model and returns the resulting state or error.
 func (m Model) stringValueDialogBody(project core.Project, groupKey, paramKey, valueLabel, nextValue string) ([]string, error) {
-	cache, finalRaw, err := m.svc.PreviewSetStringParameterValue(project.ProjectID, groupKey, paramKey, valueLabel, nextValue)
-	if err != nil || cache == nil {
-		if err == nil {
-			err = fmt.Errorf("parameters cache not found")
-		}
-		return nil, err
-	}
-
-	currentCfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
-	if err != nil {
-		return nil, err
-	}
-	finalCfg, err := firebase.ParseRemoteConfig(finalRaw)
-	if err != nil {
-		return nil, err
-	}
-
-	diffText, hasChanges := shared.RenderRemoteConfigDiff(currentCfg, finalCfg)
-	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
-		"",
-		"Edit value or draft changes?",
-	}
-	if !hasChanges {
-		return nil, fmt.Errorf("parameter value not changed")
-	}
-	lines = append(lines, "")
-	lines = append(lines, dialogDiffLines(diffText)...)
-	return lines, nil
+	return m.valueEditDialogBody(project, func() (*core.ParametersCache, []byte, error) {
+		return m.svc.PreviewSetStringParameterValue(project.ProjectID, groupKey, paramKey, valueLabel, nextValue)
+	})
 }
 
 // setStringParameterValueCmd sets set string parameter value cmd for Model and returns the resulting state or error.
@@ -148,21 +117,6 @@ func (m Model) setStringParameterValueCmd(project core.Project, groupKey, paramK
 		if err != nil {
 			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
 		}
-		source := "draft"
-		if publish {
-			source = "firebase"
-		}
-		return messages.ParametersLoadedMsg{
-			Project:        project,
-			Tree:           tree,
-			Source:         source,
-			CacheSource:    "cache",
-			Err:            nil,
-			HasDraft:       hasDraft,
-			StaleDraft:     !publish && hasDraft && stale,
-			Revalidate:     false,
-			SelectGroupKey: groupKey,
-			SelectParamKey: paramKey,
-		}
+		return m.valueEditLoadedMsg(project, groupKey, paramKey, tree, hasDraft, stale, publish)
 	}
 }

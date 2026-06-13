@@ -8,17 +8,13 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-// Service holds service state used by the firebase package.
 type Service struct {
-	// httpClient stores http client for Service.
 	httpClient *http.Client
 	// quotaProjectID stores optional quota project for client-based Google APIs.
-	quotaProjectID string
-	// useTargetProjectQuota stores whether project requests may use their target project for quota.
+	quotaProjectID        string
 	useTargetProjectQuota bool
 }
 
-// NewService constructs service and returns the resulting value or error.
 func NewService(ctx context.Context) (*Service, error) {
 	return nil, errAuthRequired()
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-// View handles view for Model and returns the resulting state or error.
 func (m Model) View() string {
 	if m.width <= 0 || m.height <= 0 {
 		return ""
@@ -18,7 +17,6 @@ func (m Model) View() string {
 	return renderPanel(body, m.width, m.height, m.active, m.bridgeActive, m.Invalid(), m.scrollbar())
 }
 
-// renderPanel renders render panel and returns the resulting value or error.
 func renderPanel(body []string, width, height int, active, bridgeActive, invalid bool, scrollbar scrollbarState) string {
 	if width <= 1 || height <= 1 {
 		return ""
@@ -60,7 +58,6 @@ func renderPanel(body []string, width, height int, active, bridgeActive, invalid
 	return strings.Join(lines, "\n")
 }
 
-// truncatePlain handles truncate plain and returns the resulting value or error.
 func truncatePlain(value string, width int) string {
 	if width <= 0 {
 		return ""
@@ -74,17 +71,12 @@ func truncatePlain(value string, width int) string {
 	return string(runes[:width])
 }
 
-// scrollbarState holds scrollbar state state used by the details package.
 type scrollbarState struct {
-	// visible stores visible for scrollbarState.
-	visible bool
-	// thumbStart stores thumb start for scrollbarState.
+	visible    bool
 	thumbStart int
-	// thumbEnd stores thumb end for scrollbarState.
-	thumbEnd int
+	thumbEnd   int
 }
 
-// scrollbar handles scrollbar for Model and returns the resulting state or error.
 func (m Model) scrollbar() scrollbarState {
 	contentHeight := max(m.height-2, 1)
 	totalLines := m.viewport.TotalLineCount()
