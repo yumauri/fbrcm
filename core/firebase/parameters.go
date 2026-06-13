@@ -115,6 +115,7 @@ func (s *Service) GetRemoteConfig(ctx context.Context, projectID string) (json.R
 		logger.Error("create remote config request failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("create remote config request: %w", err)
 	}
+	s.setQuotaProject(req, projectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)
@@ -185,6 +186,7 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("If-Match", strings.TrimSpace(etag))
+	s.setQuotaProject(req, projectID)
 	req.GetBody = func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(body)), nil
 	}
@@ -238,6 +240,7 @@ func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID st
 		logger.Error("create remote config version request failed", "project_id", projectID, "err", err)
 		return RemoteConfigVersion{}, fmt.Errorf("create remote config version request: %w", err)
 	}
+	s.setQuotaProject(req, projectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)

@@ -47,6 +47,10 @@ func newResilientTransport(base http.RoundTripper) http.RoundTripper {
 // RoundTrip handles round trip for resilientTransport and returns the resulting state or error.
 func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	logger := corelog.For("firebase.http")
+	if IsOffline() {
+		logOffline(logger, req)
+		return nil, ErrOffline
+	}
 	if shouldDryRun(req) {
 		logDryRun(logger, req)
 		return dryRunResponse(req)
@@ -295,6 +299,20 @@ func logDryRun(logger *charmlog.Logger, req *http.Request) {
 
 	logger.Warn(
 		"dry run, skip actual request",
+		"method", req.Method,
+		"url", redactedURLString(req.URL),
+	)
+}
+
+// logOffline logs suppressed offline requests without exposing sensitive query values.
+func logOffline(logger *charmlog.Logger, req *http.Request) {
+	if req == nil || req.URL == nil {
+		logger.Warn("offline mode, suppress http request")
+		return
+	}
+
+	logger.Warn(
+		"offline mode, suppress http request",
 		"method", req.Method,
 		"url", redactedURLString(req.URL),
 	)

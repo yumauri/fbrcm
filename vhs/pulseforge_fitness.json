@@ -1,0 +1,357 @@
+{
+  "conditions": [
+    {
+      "name": "new_year_challenge",
+      "expression": "device.dateTime >= dateTime('2026-01-01T00:00:00Z') && device.dateTime < dateTime('2026-02-01T00:00:00Z')",
+      "description": "January challenge season",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "premium_users",
+      "expression": "app.userProperty['plan'].exactlyMatches(['premium','family'])",
+      "description": "Premium subscribers",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "wear_os_users",
+      "expression": "device.os == 'android' && app.userProperty['wearable'].exactlyMatches(['wear_os'])",
+      "description": "Wear OS connected users",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "low_activity_users",
+      "expression": "app.userProperty['weekly_workouts'] <= 1",
+      "description": "Users with low recent activity",
+      "tagColor": "ORANGE"
+    },
+    {
+      "name": "ios_rollout_50",
+      "expression": "device.os == 'ios' && percent <= 50",
+      "description": "iOS half rollout",
+      "tagColor": "CYAN"
+    }
+  ],
+  "parameters": {},
+  "parameterGroups": {
+    "workout_player": {
+      "description": "Workout playback and coaching controls",
+      "parameters": {
+        "enable_audio_coach": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Voice coach during workouts",
+          "valueType": "BOOLEAN"
+        },
+        "rest_timer_seconds": {
+          "defaultValue": {
+            "value": "45"
+          },
+          "description": "Default rest timer length",
+          "valueType": "NUMBER"
+        },
+        "player_controls_layout": {
+          "defaultValue": {
+            "value": "{\"primary\":[\"pause\",\"skip\",\"music\"],\"secondary\":[\"form_tips\",\"notes\"]}"
+          },
+          "description": "Workout player controls layout",
+          "valueType": "JSON"
+        },
+        "auto_pause_on_low_motion": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Pause workout when device motion stops",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "wear_os_users": {
+              "value": "true"
+            }
+          }
+        },
+        "video_quality_default": {
+          "defaultValue": {
+            "value": "auto"
+          },
+          "description": "Default workout video quality",
+          "valueType": "STRING"
+        },
+        "countdown_beeps_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable countdown audio beeps",
+          "valueType": "BOOLEAN"
+        },
+        "offline_workout_limit": {
+          "defaultValue": {
+            "value": "5"
+          },
+          "description": "Maximum offline workouts",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "coaching": {
+      "description": "Personalization and plan generation",
+      "parameters": {
+        "plan_engine_version": {
+          "defaultValue": {
+            "value": "coach_plan_v7"
+          },
+          "description": "Plan generation model version",
+          "valueType": "STRING"
+        },
+        "weekly_goal_default": {
+          "defaultValue": {
+            "value": "3"
+          },
+          "description": "Default weekly workout goal",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "low_activity_users": {
+              "value": "2"
+            }
+          }
+        },
+        "adaptive_difficulty_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Adjust workout difficulty from feedback",
+          "valueType": "BOOLEAN"
+        },
+        "form_tip_frequency": {
+          "defaultValue": {
+            "value": "2"
+          },
+          "description": "Show form tips every N exercises",
+          "valueType": "NUMBER"
+        },
+        "recovery_score_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Show recovery score",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "premium_users": {
+              "value": "true"
+            }
+          }
+        },
+        "suggested_workout_types": {
+          "defaultValue": {
+            "value": "[\"strength\",\"mobility\",\"cardio\"]"
+          },
+          "description": "Default suggested workout mix",
+          "valueType": "JSON"
+        },
+        "missed_workout_nudge_copy": {
+          "defaultValue": {
+            "value": "A short session still counts"
+          },
+          "description": "Copy for missed workout recovery",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "low_activity_users": {
+              "value": "Try a 12-minute reset today"
+            }
+          }
+        }
+      }
+    },
+    "nutrition": {
+      "description": "Meal logging and nutrition features",
+      "parameters": {
+        "macro_tracking_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable macro tracking",
+          "valueType": "BOOLEAN"
+        },
+        "calorie_goal_adjustment_percent": {
+          "defaultValue": {
+            "value": "5"
+          },
+          "description": "Auto adjustment percent for calorie goal",
+          "valueType": "NUMBER"
+        },
+        "meal_templates": {
+          "defaultValue": {
+            "value": "[\"balanced_breakfast\",\"high_protein_lunch\",\"light_dinner\"]"
+          },
+          "description": "Suggested meal templates",
+          "valueType": "JSON"
+        },
+        "water_goal_ml": {
+          "defaultValue": {
+            "value": "2400"
+          },
+          "description": "Default water goal in ml",
+          "valueType": "NUMBER"
+        },
+        "barcode_scanner_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable barcode scanner for foods",
+          "valueType": "BOOLEAN"
+        },
+        "premium_recipe_count": {
+          "defaultValue": {
+            "value": "120"
+          },
+          "description": "Recipe catalog count shown to premium users",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "premium_users": {
+              "value": "450"
+            }
+          }
+        },
+        "nutrition_disclaimer": {
+          "defaultValue": {
+            "value": "Nutrition targets are estimates"
+          },
+          "description": "Disclaimer copy",
+          "valueType": "STRING"
+        }
+      }
+    },
+    "challenges": {
+      "description": "Seasonal challenges and social streaks",
+      "parameters": {
+        "active_challenge_id": {
+          "defaultValue": {
+            "value": "spring_strength"
+          },
+          "description": "Current featured challenge",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "new_year_challenge": {
+              "value": "new_year_foundation"
+            }
+          }
+        },
+        "challenge_join_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow joining active challenge",
+          "valueType": "BOOLEAN"
+        },
+        "streak_freeze_monthly_limit": {
+          "defaultValue": {
+            "value": "2"
+          },
+          "description": "Monthly streak freezes",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "premium_users": {
+              "value": "5"
+            }
+          }
+        },
+        "leaderboard_scope": {
+          "defaultValue": {
+            "value": "friends"
+          },
+          "description": "Default leaderboard scope",
+          "valueType": "STRING"
+        },
+        "share_card_template": {
+          "defaultValue": {
+            "value": "{\"theme\":\"midnight\",\"showCalories\":false,\"showDuration\":true}"
+          },
+          "description": "Social share card template",
+          "valueType": "JSON"
+        },
+        "challenge_completion_reward": {
+          "defaultValue": {
+            "value": "badge_spring_strength"
+          },
+          "description": "Reward badge id",
+          "valueType": "STRING"
+        },
+        "new_year_push_copy": {
+          "defaultValue": {
+            "value": "Start the year strong"
+          },
+          "description": "Challenge push copy",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "new_year_challenge": {
+              "value": "Your 2026 reset starts today"
+            }
+          }
+        }
+      }
+    },
+    "subscriptions": {
+      "description": "Paywall and entitlement controls",
+      "parameters": {
+        "trial_length_days": {
+          "defaultValue": {
+            "value": "7"
+          },
+          "description": "Default trial length",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "ios_rollout_50": {
+              "value": "14"
+            }
+          }
+        },
+        "paywall_variant": {
+          "defaultValue": {
+            "value": "benefits_grid"
+          },
+          "description": "Paywall layout variant",
+          "valueType": "STRING"
+        },
+        "annual_discount_percent": {
+          "defaultValue": {
+            "value": "35"
+          },
+          "description": "Annual plan discount percent",
+          "valueType": "NUMBER"
+        },
+        "family_plan_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Show family plan option",
+          "valueType": "BOOLEAN"
+        },
+        "premium_badge_copy": {
+          "defaultValue": {
+            "value": "Included with Premium"
+          },
+          "description": "Premium badge copy",
+          "valueType": "STRING"
+        },
+        "winback_offer_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Enable churned user offer",
+          "valueType": "BOOLEAN"
+        },
+        "entitlement_refresh_minutes": {
+          "defaultValue": {
+            "value": "30"
+          },
+          "description": "Entitlement refresh interval",
+          "valueType": "NUMBER"
+        }
+      }
+    }
+  },
+  "version": {
+    "versionNumber": "237",
+    "updateTime": "2026-05-16T08:57:00.000Z",
+    "description": "Demo fitness coaching Remote Config for VHS recording"
+  }
+}

@@ -20,6 +20,8 @@ type persistingTokenSource struct {
 	lastToken *oauth2.Token
 	// persist stores persist for persistingTokenSource.
 	persist bool
+	// path stores token cache path for persistingTokenSource.
+	path string
 }
 
 // Returns an OAuth token, caching it to disk if it has changed
@@ -34,7 +36,7 @@ func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
 	if !tokensEqual(p.lastToken, tok) {
 		if p.persist {
 			logger.Info("oauth token changed; persist cache")
-			if err := writeCachedToken(tok); err != nil {
+			if err := writeCachedToken(p.path, tok); err != nil {
 				return nil, err
 			}
 		} else {
@@ -59,8 +61,7 @@ func tokensEqual(a, b *oauth2.Token) bool {
 }
 
 // Reads the cached OAuth token from disk
-func readCachedToken() (*oauth2.Token, error) {
-	path := config.GetTokenFilePath()
+func readCachedToken(path string) (*oauth2.Token, error) {
 	logger := corelog.For("firebase")
 	logger.Debug("read cached oauth token", "path", path)
 	data, err := os.ReadFile(path)
@@ -83,8 +84,7 @@ func readCachedToken() (*oauth2.Token, error) {
 }
 
 // Writes the OAuth token to disk for caching
-func writeCachedToken(tok *oauth2.Token) error {
-	path := config.GetTokenFilePath()
+func writeCachedToken(path string, tok *oauth2.Token) error {
 	logger := corelog.For("firebase")
 	if err := config.EnsurePrivateDir(filepath.Dir(path)); err != nil {
 		return fmt.Errorf("creating token cache directory: %w", err)
@@ -109,5 +109,5 @@ func writeCachedToken(tok *oauth2.Token) error {
 
 // ReadCachedToken reads cached token and returns the resulting value or error.
 func ReadCachedToken() (*oauth2.Token, error) {
-	return readCachedToken()
+	return nil, fmt.Errorf("auth id is required")
 }

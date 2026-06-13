@@ -1,0 +1,360 @@
+{
+  "conditions": [
+    {
+      "name": "ios_us_high_value",
+      "expression": "device.os == 'ios' && device.country in ['us'] && app.userProperty['lifetime_value'] >= 250",
+      "description": "US iOS customers with high lifetime value",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "android_eu_sale",
+      "expression": "device.os == 'android' && device.country in ['de','fr','nl','es','it']",
+      "description": "Android shoppers in core EU markets",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "holiday_rollout_25",
+      "expression": "percent <= 25",
+      "description": "Limited holiday experience rollout",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "new_customers",
+      "expression": "app.userProperty['orders_count'] == 0",
+      "description": "Customers without completed orders",
+      "tagColor": "ORANGE"
+    },
+    {
+      "name": "loyalty_members",
+      "expression": "app.userProperty['loyalty_tier'].exactlyMatches(['gold','platinum'])",
+      "description": "Gold and platinum loyalty members",
+      "tagColor": "RED"
+    }
+  ],
+  "parameters": {},
+  "parameterGroups": {
+    "app_shell": {
+      "description": "Navigation and home shell behavior",
+      "parameters": {
+        "home_tab_order": {
+          "defaultValue": {
+            "value": "[\"for_you\",\"categories\",\"deals\",\"account\"]"
+          },
+          "description": "Ordered home tabs shown in bottom navigation",
+          "valueType": "JSON",
+          "conditionalValues": {
+            "holiday_rollout_25": {
+              "value": "[\"deals\",\"for_you\",\"categories\",\"account\"]"
+            }
+          }
+        },
+        "enable_visual_search": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Enable camera based product search",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "ios_us_high_value": {
+              "value": "true"
+            }
+          }
+        },
+        "search_placeholder": {
+          "defaultValue": {
+            "value": "Search products, brands, or stores"
+          },
+          "description": "Search box placeholder copy",
+          "valueType": "STRING"
+        },
+        "max_recent_searches": {
+          "defaultValue": {
+            "value": "8"
+          },
+          "description": "Recent searches kept locally",
+          "valueType": "NUMBER"
+        },
+        "category_cache_ttl_minutes": {
+          "defaultValue": {
+            "value": "45"
+          },
+          "description": "Category tree cache TTL in minutes",
+          "valueType": "NUMBER"
+        },
+        "show_price_drop_badges": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Display price drop badge on product cards",
+          "valueType": "BOOLEAN"
+        },
+        "home_feed_page_size": {
+          "defaultValue": {
+            "value": "24"
+          },
+          "description": "Products fetched per home feed page",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "checkout": {
+      "description": "Checkout, cart, payment and shipping controls",
+      "parameters": {
+        "free_shipping_threshold": {
+          "defaultValue": {
+            "value": "49"
+          },
+          "description": "Cart subtotal needed for free shipping",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "loyalty_members": {
+              "value": "35"
+            },
+            "android_eu_sale": {
+              "value": "59"
+            }
+          }
+        },
+        "express_checkout_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Show express checkout button on cart screen",
+          "valueType": "BOOLEAN"
+        },
+        "payment_methods_order": {
+          "defaultValue": {
+            "value": "[\"card\",\"paypal\",\"apple_pay\",\"klarna\"]"
+          },
+          "description": "Payment method priority list",
+          "valueType": "JSON",
+          "conditionalValues": {
+            "android_eu_sale": {
+              "value": "[\"card\",\"paypal\",\"klarna\",\"google_pay\"]"
+            }
+          }
+        },
+        "cart_abandonment_minutes": {
+          "defaultValue": {
+            "value": "90"
+          },
+          "description": "Minutes before cart recovery prompt",
+          "valueType": "NUMBER"
+        },
+        "require_cvv_for_saved_cards": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Force CVV re-entry for saved cards",
+          "valueType": "BOOLEAN"
+        },
+        "shipping_eta_copy": {
+          "defaultValue": {
+            "value": "Arrives in 3-5 business days"
+          },
+          "description": "Default delivery estimate copy",
+          "valueType": "STRING"
+        },
+        "enable_store_pickup": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow store pickup option",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "promotions": {
+      "description": "Offers, banners and campaign content",
+      "parameters": {
+        "hero_campaign_id": {
+          "defaultValue": {
+            "value": "spring_refresh"
+          },
+          "description": "Campaign id for home hero banner",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "holiday_rollout_25": {
+              "value": "holiday_preview"
+            }
+          }
+        },
+        "welcome_coupon_percent": {
+          "defaultValue": {
+            "value": "10"
+          },
+          "description": "Welcome coupon discount for new customers",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "new_customers": {
+              "value": "15"
+            }
+          }
+        },
+        "loyalty_banner_copy": {
+          "defaultValue": {
+            "value": "Earn double points this week"
+          },
+          "description": "Banner shown to loyalty members",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "loyalty_members": {
+              "value": "Platinum preview: early access starts tonight"
+            }
+          }
+        },
+        "flash_sale_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Show flash sale entry points",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "holiday_rollout_25": {
+              "value": "true"
+            }
+          }
+        },
+        "flash_sale_ends_at": {
+          "defaultValue": {
+            "value": "2026-11-30T23:59:00Z"
+          },
+          "description": "ISO timestamp for sale countdown",
+          "valueType": "STRING"
+        },
+        "promo_tile_layout": {
+          "defaultValue": {
+            "value": "{\"columns\":2,\"imageRatio\":\"4:5\",\"showTimer\":false}"
+          },
+          "description": "Promotion grid layout",
+          "valueType": "JSON"
+        },
+        "coupon_stack_limit": {
+          "defaultValue": {
+            "value": "1"
+          },
+          "description": "Maximum coupons that can be applied together",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "recommendations": {
+      "description": "Ranking and personalization settings",
+      "parameters": {
+        "recs_model_version": {
+          "defaultValue": {
+            "value": "catalog_ranker_v18"
+          },
+          "description": "Product recommendation model version",
+          "valueType": "STRING"
+        },
+        "recs_enable_session_signals": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Use live session events for recommendations",
+          "valueType": "BOOLEAN"
+        },
+        "recs_diversity_weight": {
+          "defaultValue": {
+            "value": "0.18"
+          },
+          "description": "Diversity weight in ranking blend",
+          "valueType": "NUMBER"
+        },
+        "recs_min_inventory": {
+          "defaultValue": {
+            "value": "4"
+          },
+          "description": "Minimum inventory for recommended products",
+          "valueType": "NUMBER"
+        },
+        "similar_items_limit": {
+          "defaultValue": {
+            "value": "12"
+          },
+          "description": "Similar product count on PDP",
+          "valueType": "NUMBER"
+        },
+        "recently_viewed_limit": {
+          "defaultValue": {
+            "value": "16"
+          },
+          "description": "Recently viewed carousel size",
+          "valueType": "NUMBER"
+        },
+        "personalized_sort_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Use personalized category sort",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "ios_us_high_value": {
+              "value": "true"
+            }
+          }
+        }
+      }
+    },
+    "messaging": {
+      "description": "Push, inbox and notification settings",
+      "parameters": {
+        "push_optin_prompt_delay_days": {
+          "defaultValue": {
+            "value": "3"
+          },
+          "description": "Days before notification opt-in prompt",
+          "valueType": "NUMBER"
+        },
+        "back_in_stock_push_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Send back in stock push alerts",
+          "valueType": "BOOLEAN"
+        },
+        "price_watch_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow price watch subscriptions",
+          "valueType": "BOOLEAN"
+        },
+        "inbox_welcome_message": {
+          "defaultValue": {
+            "value": "Your picks are ready"
+          },
+          "description": "Welcome inbox message title",
+          "valueType": "STRING"
+        },
+        "campaign_suppression_hours": {
+          "defaultValue": {
+            "value": "18"
+          },
+          "description": "Minimum hours between campaign pushes",
+          "valueType": "NUMBER"
+        },
+        "enable_sms_receipts": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Offer SMS receipts after checkout",
+          "valueType": "BOOLEAN"
+        },
+        "notification_quiet_hours": {
+          "defaultValue": {
+            "value": "{\"start\":\"22:00\",\"end\":\"08:00\",\"timezone\":\"device\"}"
+          },
+          "description": "Quiet hours for non-transactional notifications",
+          "valueType": "JSON"
+        }
+      }
+    }
+  },
+  "version": {
+    "versionNumber": "184",
+    "updateTime": "2026-05-16T08:04:00.000Z",
+    "description": "Demo commerce app Remote Config for VHS recording"
+  }
+}

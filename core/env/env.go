@@ -7,6 +7,7 @@ import (
 
 const (
 	LogLevel      = "FBRCM_LOG_LEVEL"
+	Offline       = "FBRCM_OFFLINE"
 	NoColor       = "NO_COLOR"
 	ConfigDir     = "FBRCM_CONFIG_DIR"
 	CacheDir      = "FBRCM_CACHE_DIR"

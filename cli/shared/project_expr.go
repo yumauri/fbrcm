@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/yumauri/fbrcm/core"
@@ -10,6 +11,100 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
+
+// QueryFilter holds a parsed mode-prefixed query.
+type QueryFilter struct {
+	// Mode stores match mode for QueryFilter.
+	Mode filter.Mode
+	// Query stores query for QueryFilter.
+	Query string
+}
+
+// ParseFilters parses mode-prefixed queries and drops empty queries.
+func ParseFilters(rawFilters []string) []QueryFilter {
+	filters := make([]QueryFilter, 0, len(rawFilters))
+	for _, raw := range rawFilters {
+		mode, query := ParseFilter(raw)
+		if query == "" {
+			continue
+		}
+		filters = append(filters, QueryFilter{Mode: mode, Query: query})
+	}
+	return filters
+}
+
+// MatchAnyFilter reports whether value matches any filter. Empty filters match all.
+func MatchAnyFilter(value string, filters []QueryFilter) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	for _, item := range filters {
+		match, _ := filter.Match(value, item.Query, item.Mode)
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+// HighlightFilters returns merged highlight indices for every matching filter.
+func HighlightFilters(value string, filters []QueryFilter) []int {
+	highlightSet := make(map[int]struct{})
+	for _, item := range filters {
+		match, highlights := filter.Match(value, item.Query, item.Mode)
+		if !match {
+			continue
+		}
+		for _, index := range highlights {
+			highlightSet[index] = struct{}{}
+		}
+	}
+	if len(highlightSet) == 0 {
+		return nil
+	}
+
+	indices := make([]int, 0, len(highlightSet))
+	for index := range highlightSet {
+		indices = append(indices, index)
+	}
+	sort.Ints(indices)
+	return indices
+}
+
+// FilterProjects filters projects by mode-prefixed queries. Multiple queries are ORed.
+func FilterProjects(projects []core.Project, rawFilters []string) []core.Project {
+	filters := ParseFilters(rawFilters)
+	if len(filters) == 0 {
+		return projects
+	}
+
+	filtered := make([]core.Project, 0, len(projects))
+	for _, project := range projects {
+		for _, item := range filters {
+			nameMatch, _ := filter.Match(project.Name, item.Query, item.Mode)
+			idMatch, _ := filter.Match(project.ProjectID, item.Query, item.Mode)
+			if nameMatch || idMatch {
+				filtered = append(filtered, project)
+				break
+			}
+		}
+	}
+	return filtered
+}
+
+// ParseFilter parses a mode-prefixed query.
+func ParseFilter(raw string) (filter.Mode, string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return filter.ModeFuzzy, ""
+	}
+
+	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
+	if !ok {
+		return filter.ModeFuzzy, raw
+	}
+	return mode, string([]rune(raw)[1:])
+}
 
 // FilterProjectsByExpr filters projects by expr and returns the resulting value or error.
 func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.Project, rawExpr string) ([]core.Project, error) {

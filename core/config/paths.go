@@ -23,10 +23,8 @@ type paths struct {
 	cacheDir string
 	// projectsFile stores projects file for paths.
 	projectsFile string
-	// secretFile stores secret file for paths.
-	secretFile string
-	// tokenFile stores token file for paths.
-	tokenFile string
+	// authFile stores auth config file for paths.
+	authFile string
 }
 
 var (
@@ -44,8 +42,7 @@ func getPaths() *paths {
 		cacheDir := filepath.Join(cacheRootDir, profile)
 
 		projectsFile := filepath.Join(configDir, "projects-config.json")
-		secretFile := filepath.Join(configDir, "client_secret.json")
-		tokenFile := filepath.Join(cacheDir, "token.json")
+		authFile := filepath.Join(configDir, "auth-config.json")
 
 		pathsInstance = &paths{
 			configRootDir: configRootDir,
@@ -54,11 +51,10 @@ func getPaths() *paths {
 			configDir:     configDir,
 			cacheDir:      cacheDir,
 			projectsFile:  projectsFile,
-			secretFile:    secretFile,
-			tokenFile:     tokenFile,
+			authFile:      authFile,
 		}
 
-		corelog.For("config").Debug("resolved application paths", "config_root_dir", configRootDir, "cache_root_dir", cacheRootDir, "profile", profile, "config_dir", configDir, "cache_dir", cacheDir, "projects_file", projectsFile, "secret_file", secretFile, "token_file", tokenFile)
+		corelog.For("config").Debug("resolved application paths", "config_root_dir", configRootDir, "cache_root_dir", cacheRootDir, "profile", profile, "config_dir", configDir, "cache_dir", cacheDir, "projects_file", projectsFile, "auth_file", authFile)
 	})
 
 	return pathsInstance
@@ -95,14 +91,19 @@ func GetProjectsFilePath() string {
 	return getPaths().projectsFile
 }
 
-// Get the path to the Firebase OAuth secret file
-func GetSecretFilePath() string {
-	return getPaths().secretFile
+// GetAuthFilePath gets the path to the auth config file.
+func GetAuthFilePath() string {
+	return getPaths().authFile
 }
 
-// Get the path to the Firebase OAuth token file
-func GetTokenFilePath() string {
-	return getPaths().tokenFile
+// GetAuthConfigDirPath gets the path to auth config storage.
+func GetAuthConfigDirPath() string {
+	return filepath.Join(getPaths().configDir, "auth")
+}
+
+// GetAuthCacheDirPath gets the path to auth cache storage.
+func GetAuthCacheDirPath() string {
+	return filepath.Join(getPaths().cacheDir, "auth")
 }
 
 // Resolve location of the config directory, depending on the environment

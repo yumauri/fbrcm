@@ -1,0 +1,377 @@
+{
+  "conditions": [
+    {
+      "name": "enterprise_accounts",
+      "expression": "app.userProperty['account_plan'].exactlyMatches(['enterprise','strategic'])",
+      "description": "Enterprise customer accounts",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "incident_mode",
+      "expression": "app.userProperty['workspace_state'].exactlyMatches(['incident'])",
+      "description": "Workspaces in active incident",
+      "tagColor": "RED"
+    },
+    {
+      "name": "eu_region",
+      "expression": "device.country in ['de','fr','nl','se','ie']",
+      "description": "EU users",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "new_dashboard_rollout_20",
+      "expression": "percent <= 20",
+      "description": "New dashboard rollout",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "admins",
+      "expression": "app.userProperty['role'].exactlyMatches(['admin','owner'])",
+      "description": "Workspace admins and owners",
+      "tagColor": "ORANGE"
+    }
+  ],
+  "parameters": {},
+  "parameterGroups": {
+    "navigation": {
+      "description": "Workspace navigation and dashboard shell",
+      "parameters": {
+        "default_landing_page": {
+          "defaultValue": {
+            "value": "overview"
+          },
+          "description": "Default landing page",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "incident_mode": {
+              "value": "incidents"
+            }
+          }
+        },
+        "new_dashboard_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Enable redesigned dashboard",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "new_dashboard_rollout_20": {
+              "value": "true"
+            }
+          }
+        },
+        "sidebar_sections": {
+          "defaultValue": {
+            "value": "[\"overview\",\"deployments\",\"alerts\",\"logs\",\"settings\"]"
+          },
+          "description": "Sidebar section order",
+          "valueType": "JSON"
+        },
+        "command_palette_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable command palette",
+          "valueType": "BOOLEAN"
+        },
+        "global_search_limit": {
+          "defaultValue": {
+            "value": "20"
+          },
+          "description": "Global search result limit",
+          "valueType": "NUMBER"
+        },
+        "compact_mode_default": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Use compact layout by default",
+          "valueType": "BOOLEAN"
+        },
+        "workspace_switcher_recent_limit": {
+          "defaultValue": {
+            "value": "8"
+          },
+          "description": "Recent workspaces in switcher",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "incidents": {
+      "description": "Incident response and alert routing",
+      "parameters": {
+        "incident_banner_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Show incident banner",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "incident_mode": {
+              "value": "true"
+            }
+          }
+        },
+        "alert_ack_timeout_minutes": {
+          "defaultValue": {
+            "value": "15"
+          },
+          "description": "Alert acknowledgment timeout",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "enterprise_accounts": {
+              "value": "10"
+            }
+          }
+        },
+        "escalation_policy_version": {
+          "defaultValue": {
+            "value": "policy_v3"
+          },
+          "description": "Escalation policy version",
+          "valueType": "STRING"
+        },
+        "incident_severity_labels": {
+          "defaultValue": {
+            "value": "[\"sev1\",\"sev2\",\"sev3\",\"sev4\"]"
+          },
+          "description": "Incident severity labels",
+          "valueType": "JSON"
+        },
+        "postmortem_template_id": {
+          "defaultValue": {
+            "value": "standard_retro"
+          },
+          "description": "Default postmortem template",
+          "valueType": "STRING"
+        },
+        "paging_quiet_hours_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Respect quiet hours for paging",
+          "valueType": "BOOLEAN"
+        },
+        "incident_room_provider": {
+          "defaultValue": {
+            "value": "slack"
+          },
+          "description": "Incident room provider",
+          "valueType": "STRING"
+        }
+      }
+    },
+    "telemetry": {
+      "description": "Metrics, logs and trace data settings",
+      "parameters": {
+        "metrics_retention_days": {
+          "defaultValue": {
+            "value": "30"
+          },
+          "description": "Metrics retention window",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "enterprise_accounts": {
+              "value": "90"
+            }
+          }
+        },
+        "log_tail_default_lines": {
+          "defaultValue": {
+            "value": "500"
+          },
+          "description": "Default log tail length",
+          "valueType": "NUMBER"
+        },
+        "trace_sampling_rate": {
+          "defaultValue": {
+            "value": "0.15"
+          },
+          "description": "Trace sampling rate",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "incident_mode": {
+              "value": "0.5"
+            }
+          }
+        },
+        "dashboard_refresh_seconds": {
+          "defaultValue": {
+            "value": "30"
+          },
+          "description": "Dashboard auto refresh interval",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "incident_mode": {
+              "value": "10"
+            }
+          }
+        },
+        "anomaly_detection_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable anomaly detection",
+          "valueType": "BOOLEAN"
+        },
+        "metric_card_layout": {
+          "defaultValue": {
+            "value": "{\"columns\":3,\"sparkline\":true,\"comparePrevious\":true}"
+          },
+          "description": "Metric card layout",
+          "valueType": "JSON"
+        },
+        "log_redaction_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable sensitive log redaction",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "access": {
+      "description": "Roles, approvals and compliance settings",
+      "parameters": {
+        "require_sso": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Require SSO login",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "enterprise_accounts": {
+              "value": "true"
+            }
+          }
+        },
+        "audit_export_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow audit log exports",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "eu_region": {
+              "value": "true"
+            }
+          }
+        },
+        "session_timeout_minutes": {
+          "defaultValue": {
+            "value": "60"
+          },
+          "description": "Session timeout in minutes",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "admins": {
+              "value": "30"
+            }
+          }
+        },
+        "approval_required_for_prod": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Require approval for production changes",
+          "valueType": "BOOLEAN"
+        },
+        "allowed_ip_ranges": {
+          "defaultValue": {
+            "value": "[]"
+          },
+          "description": "Allowed IP ranges for workspace access",
+          "valueType": "JSON"
+        },
+        "gdpr_region_notice": {
+          "defaultValue": {
+            "value": "Data processing settings are available in workspace controls"
+          },
+          "description": "EU region notice",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "eu_region": {
+              "value": "Review EU data processing controls"
+            }
+          }
+        },
+        "api_token_max_days": {
+          "defaultValue": {
+            "value": "90"
+          },
+          "description": "Maximum API token age in days",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "experiments": {
+      "description": "Feature flags for operational workflows",
+      "parameters": {
+        "deploy_freeze_calendar_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Show deploy freeze calendar",
+          "valueType": "BOOLEAN"
+        },
+        "runbook_suggestions_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Suggest runbooks from alert context",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "incident_mode": {
+              "value": "true"
+            }
+          }
+        },
+        "ai_summary_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Enable AI incident summaries",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "enterprise_accounts": {
+              "value": "true"
+            }
+          }
+        },
+        "bulk_alert_edit_limit": {
+          "defaultValue": {
+            "value": "50"
+          },
+          "description": "Maximum alerts edited in bulk",
+          "valueType": "NUMBER"
+        },
+        "changelog_widget_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Show product changelog widget",
+          "valueType": "BOOLEAN"
+        },
+        "beta_features_copy": {
+          "defaultValue": {
+            "value": "Try workspace labs"
+          },
+          "description": "Labs entry point copy",
+          "valueType": "STRING"
+        },
+        "rollout_guardrails": {
+          "defaultValue": {
+            "value": "{\"minHealthyMinutes\":20,\"maxErrorRate\":0.02,\"autoRollback\":true}"
+          },
+          "description": "Deployment guardrail defaults",
+          "valueType": "JSON"
+        }
+      }
+    }
+  },
+  "version": {
+    "versionNumber": "58",
+    "updateTime": "2026-05-16T08:58:00.000Z",
+    "description": "Demo operations dashboard Remote Config for VHS recording"
+  }
+}

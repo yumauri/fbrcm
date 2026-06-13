@@ -7,11 +7,13 @@ import (
 	"image/color"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
@@ -47,6 +49,8 @@ type parameterRowJSON struct {
 	Group string `json:"group"`
 	// Key stores key for parameterRowJSON.
 	Key string `json:"key"`
+	// Description stores description for parameterRowJSON.
+	Description string `json:"description"`
 	// DefaultValue stores default value for parameterRowJSON.
 	DefaultValue *string `json:"default_value"`
 	// Conditional stores conditional for parameterRowJSON.
@@ -73,6 +77,8 @@ type parameterRow struct {
 	Group string
 	// Key stores key for parameterRow.
 	Key string
+	// Description stores description for parameterRow.
+	Description string
 	// DefaultValue stores default value for parameterRow.
 	DefaultValue *string
 	// Conditional stores conditional for parameterRow.
@@ -114,7 +120,7 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Get parameters from all projects",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectFilter, err := cmd.Flags().GetString("project")
+			projectFilters, err := cmd.Flags().GetStringArray("project")
 			if err != nil {
 				return err
 			}
@@ -122,10 +128,15 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			paramFilter, err := cmd.Flags().GetString("filter")
+			paramFilters, err := cmd.Flags().GetStringArray("filter")
 			if err != nil {
 				return err
 			}
+			searchValue, err := cmd.Flags().GetString("search")
+			if err != nil {
+				return err
+			}
+			search := shared.NewParameterSearch(searchValue)
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
 				return err
@@ -134,33 +145,50 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			all, err := cmd.Flags().GetBool("all")
+			if err != nil {
+				return err
+			}
 			if len(args) > 0 {
-				if strings.TrimSpace(paramFilter) != "" {
+				if hasFilters(paramFilters) {
 					return fmt.Errorf("parameter argument cannot be used together with --filter")
 				}
-				paramFilter = "=" + args[0]
+				paramFilters = []string{"=" + args[0]}
 			}
 
 			if stdinAvailable(cmd.InOrStdin()) {
+				if handled, rows, err := loadStdinDirectoryParameterRows(cmd, projectExpr, search); handled || err != nil {
+					if err != nil {
+						return err
+					}
+					rows = filterParameterRows(rows, paramFilters)
+					sortParameterRows(rows)
+
+					if jsonOut {
+						return writeRowsJSON(cmd, rows)
+					}
+
+					_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderParametersTable(rows, shared.ParseFilters(paramFilters), false, true))
+					logGetTotals("table-stdin-dir", rows)
+					return nil
+				}
 				corelog.For("get").Info("stdin mode enabled; using remote config from stdin")
 				compiledExpr, ok := shared.CompileExpr(projectExpr, "<stdin>")
 				if !ok {
 					return nil
 				}
-				cfg, rows, err := loadStdinParameterRows(cmd)
+				_, rows, err := loadStdinParameterRows(cmd, compiledExpr, search)
 				if err != nil {
 					return err
 				}
-				rows = filterParameterRows(rows, paramFilter)
-				rows = filterParameterRowsByExpr(rows, core.Project{Name: "<stdin>", ProjectID: "<stdin>"}, cfg, compiledExpr)
+				rows = filterParameterRows(rows, paramFilters)
 				sortParameterRows(rows)
 
 				if jsonOut {
 					return writeRowsJSON(cmd, rows)
 				}
 
-				mode, query := parseFilter(paramFilter)
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderParametersTable(rows, mode, query, false))
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderParametersTable(rows, shared.ParseFilters(paramFilters), false, false))
 				logGetTotals("table-stdin", rows)
 				return nil
 			}
@@ -169,7 +197,7 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			projects = filterProjects(projects, projectFilter)
+			projects = shared.FilterProjects(projects, projectFilters)
 			sortProjects(projects)
 
 			loaded, err := loadProjectsParameters(context.Background(), svc, projects, update)
@@ -186,10 +214,10 @@ func New(svc *core.Core) *cobra.Command {
 				if item.cfg == nil || item.cache == nil {
 					continue
 				}
-				rows = append(rows, flattenParameters(item.project, item.cfg, item.cache.CachedAt, item.status, "", compiledExpr)...)
+				rows = append(rows, flattenParameters(item.project, item.cfg, item.cache.CachedAt, item.status, "", compiledExpr, search)...)
 			}
 
-			rows = filterParameterRows(rows, paramFilter)
+			rows = filterParameterRows(rows, paramFilters)
 			sortParameterRows(rows)
 
 			if jsonOut {
@@ -200,19 +228,24 @@ func New(svc *core.Core) *cobra.Command {
 				return nil
 			}
 
-			mode, query := parseFilter(paramFilter)
-			projectMode, _ := parseFilter(projectFilter)
-			tableRows := buildTableRows(loaded, rows)
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderParametersTable(tableRows, mode, query, projectMode != filter.ModeExact))
+			projectExact := singleExactProjectFilter(projectFilters)
+			paramExact := singleExactParameterFilter(paramFilters)
+			tableRows := rows
+			if all {
+				tableRows = buildTableRows(loaded, rows)
+			}
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderParametersTable(tableRows, shared.ParseFilters(paramFilters), paramExact, !projectExact))
 			logGetTotals("table", tableRows)
 			return nil
 		},
 	}
 
 	getCmd.Flags().Bool("json", false, "Print parameters as JSON")
-	getCmd.Flags().StringP("project", "p", "", "Filter projects by mode-prefixed query (^, /, ~, =)")
-	getCmd.Flags().StringP("filter", "f", "", "Filter parameters by mode-prefixed query (^, /, ~, =)")
+	getCmd.Flags().StringArrayP("project", "p", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
+	getCmd.Flags().StringArrayP("filter", "f", nil, "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated")
 	getCmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
+	getCmd.Flags().String("search", "", "Search parameters by name, description, values, and conditions")
+	getCmd.Flags().Bool("all", false, "Include projects with no matching parameters")
 	getCmd.Flags().Bool("update", false, "Revalidate cached parameters before printing")
 	return getCmd
 }
@@ -226,6 +259,7 @@ func writeRowsJSON(cmd *cobra.Command, rows []parameterRow) error {
 			ProjectID:    row.ProjectID,
 			Group:        row.Group,
 			Key:          row.Key,
+			Description:  row.Description,
 			DefaultValue: row.DefaultValue,
 			Conditional:  row.Conditional,
 			Conditions:   row.Conditions,
@@ -246,7 +280,7 @@ func writeRowsJSON(cmd *cobra.Command, rows []parameterRow) error {
 }
 
 // loadStdinParameterRows loads load stdin parameter rows and returns the resulting value or error.
-func loadStdinParameterRows(cmd *cobra.Command) (*firebase.RemoteConfig, []parameterRow, error) {
+func loadStdinParameterRows(cmd *cobra.Command, compiledExpr *filter.Expression, search shared.ParameterSearch) (*firebase.RemoteConfig, []parameterRow, error) {
 	raw, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
 		return nil, nil, fmt.Errorf("read stdin: %w", err)
@@ -256,19 +290,114 @@ func loadStdinParameterRows(cmd *cobra.Command) (*firebase.RemoteConfig, []param
 		return nil, nil, fmt.Errorf("stdin remote config is not valid json")
 	}
 
-	cfg, err := firebase.ParseRemoteConfig(raw)
+	remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 	if err != nil {
 		return nil, nil, fmt.Errorf("decode stdin remote config: %w", err)
 	}
 
-	version := stdinVersion(raw)
+	version := stdinVersion(remoteConfigRaw)
 	project := core.Project{
 		Name:      "<stdin>",
 		ProjectID: "<stdin>",
 	}
-	rows := flattenParameters(project, cfg, time.Time{}, "", version, nil)
+	rows := flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)
 	corelog.For("get").Info("parsed stdin remote config", "parameters", len(rows), "version", version)
 	return cfg, rows, nil
+}
+
+// loadStdinDirectoryParameterRows loads JSON remote configs from a directory passed as stdin.
+func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectExpr string, search shared.ParameterSearch) (bool, []parameterRow, error) {
+	dir, ok := cmd.InOrStdin().(*os.File)
+	if !ok {
+		return false, nil, nil
+	}
+	info, err := dir.Stat()
+	if err != nil {
+		return false, nil, nil
+	}
+	if !info.IsDir() {
+		return false, nil, nil
+	}
+
+	names, err := dir.Readdirnames(-1)
+	if err != nil {
+		return true, nil, fmt.Errorf("read stdin directory: %w", err)
+	}
+	names = filterJSONFileNames(names)
+	sort.Strings(names)
+
+	compiledExpr, ok := shared.CompileExpr(projectExpr, "<stdin-dir>")
+	if !ok {
+		return true, nil, nil
+	}
+
+	rows := make([]parameterRow, 0)
+	for _, name := range names {
+		raw, err := readStdinDirectoryFile(dir, name)
+		if err != nil {
+			return true, nil, fmt.Errorf("read stdin directory file %q: %w", name, err)
+		}
+		if !json.Valid(raw) {
+			return true, nil, fmt.Errorf("stdin directory file %q is not valid json", name)
+		}
+
+		remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+		if err != nil {
+			return true, nil, fmt.Errorf("extract remote config from stdin directory file %q: %w", name, err)
+		}
+
+		cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
+		if err != nil {
+			return true, nil, fmt.Errorf("decode stdin directory file %q: %w", name, err)
+		}
+
+		projectID := strings.TrimSuffix(name, filepath.Ext(name))
+		project := core.Project{
+			Name:      stdinDirectoryProjectName(projectID),
+			ProjectID: projectID,
+		}
+		version := stdinVersion(remoteConfigRaw)
+		rows = append(rows, flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)...)
+	}
+	corelog.For("get").Info("parsed remote configs from stdin directory", "files", len(names), "parameters", len(rows))
+	return true, rows, nil
+}
+
+// filterJSONFileNames returns only top-level .json file names.
+func filterJSONFileNames(names []string) []string {
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		if strings.EqualFold(filepath.Ext(name), ".json") {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+// stdinDirectoryProjectName builds a display name from a file stem.
+func stdinDirectoryProjectName(stem string) string {
+	parts := strings.FieldsFunc(stem, func(r rune) bool {
+		return r == '-' || r == '_'
+	})
+	for i, part := range parts {
+		parts[i] = capitalizeProjectNamePart(part)
+	}
+	return strings.Join(parts, " ")
+}
+
+// capitalizeProjectNamePart capitalizes a project name segment.
+func capitalizeProjectNamePart(part string) string {
+	if part == "" {
+		return ""
+	}
+	runes := []rune(strings.ToLower(part))
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
 
 // stdinVersion handles stdin version and returns the resulting value or error.
@@ -422,7 +551,7 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 }
 
 // flattenParameters handles flatten parameters and returns the resulting value or error.
-func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedAt time.Time, status, version string, compiledExpr *filter.Expression) []parameterRow {
+func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedAt time.Time, status, version string, compiledExpr *filter.Expression, search shared.ParameterSearch) []parameterRow {
 	if cfg == nil {
 		return nil
 	}
@@ -445,12 +574,16 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 		group := cfg.ParameterGroups[groupKey]
 		paramKeys := sortedStringKeys(group.Parameters)
 		for _, key := range paramKeys {
+			param := group.Parameters[key]
 			match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, groupKey)
 			if !ok || !match {
 				continue
 			}
+			if !shared.MatchParameterSearch(key, param, cfg, search) {
+				continue
+			}
 			seen[key] = struct{}{}
-			rows = append(rows, buildParameterRow(project, groupKey, key, group.Parameters[key], version, cachedAt, status, conditionOrder, conditionColors))
+			rows = append(rows, buildParameterRow(project, groupKey, key, param, version, cachedAt, status, conditionOrder, conditionColors))
 		}
 	}
 
@@ -462,11 +595,15 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 		rootParams[key] = param
 	}
 	for _, key := range sortedStringKeys(rootParams) {
+		param := rootParams[key]
 		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, defaultGroupLabel)
 		if !ok || !match {
 			continue
 		}
-		rows = append(rows, buildParameterRow(project, defaultGroupLabel, key, rootParams[key], version, cachedAt, status, conditionOrder, conditionColors))
+		if !shared.MatchParameterSearch(key, param, cfg, search) {
+			continue
+		}
+		rows = append(rows, buildParameterRow(project, defaultGroupLabel, key, param, version, cachedAt, status, conditionOrder, conditionColors))
 	}
 
 	return rows
@@ -514,6 +651,7 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 		ProjectID:    project.ProjectID,
 		Group:        group,
 		Key:          key,
+		Description:  strings.TrimSpace(param.Description),
 		DefaultValue: defaultValue,
 		Conditional:  len(conditions) > 0,
 		Conditions:   conditions,
@@ -525,55 +663,63 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 	}
 }
 
-// filterProjects filters filter projects and returns the resulting value or error.
-func filterProjects(projects []core.Project, raw string) []core.Project {
-	mode, query := parseFilter(raw)
-	if query == "" {
-		return projects
-	}
-
-	filtered := make([]core.Project, 0, len(projects))
-	for _, project := range projects {
-		nameMatch, _ := filter.Match(project.Name, query, mode)
-		idMatch, _ := filter.Match(project.ProjectID, query, mode)
-		if nameMatch || idMatch {
-			filtered = append(filtered, project)
+// singleExactProjectFilter reports whether table output can omit project columns.
+func singleExactProjectFilter(rawFilters []string) bool {
+	exact := false
+	for _, raw := range rawFilters {
+		mode, query := parseFilter(raw)
+		if strings.TrimSpace(query) == "" {
+			continue
 		}
+		if mode != filter.ModeExact {
+			return false
+		}
+		if exact {
+			return false
+		}
+		exact = true
 	}
-	return filtered
+	return exact
 }
 
 // filterParameterRows filters filter parameter rows and returns the resulting value or error.
-func filterParameterRows(rows []parameterRow, raw string) []parameterRow {
-	mode, query := parseFilter(raw)
-	if query == "" {
+func filterParameterRows(rows []parameterRow, rawFilters []string) []parameterRow {
+	filters := shared.ParseFilters(rawFilters)
+	if len(filters) == 0 {
 		return rows
 	}
 
 	filtered := make([]parameterRow, 0, len(rows))
 	for _, row := range rows {
-		match, _ := filter.Match(row.Key, query, mode)
-		if match {
+		if shared.MatchAnyFilter(row.Key, filters) {
 			filtered = append(filtered, row)
 		}
 	}
 	return filtered
 }
 
-// filterParameterRowsByExpr filters filter parameter rows by expr and returns the resulting value or error.
-func filterParameterRowsByExpr(rows []parameterRow, project core.Project, cfg *firebase.RemoteConfig, compiledExpr *filter.Expression) []parameterRow {
-	if compiledExpr == nil {
-		return rows
-	}
+// hasFilters reports whether any filter query is non-empty.
+func hasFilters(rawFilters []string) bool {
+	return len(shared.ParseFilters(rawFilters)) > 0
+}
 
-	filtered := make([]parameterRow, 0, len(rows))
-	for _, row := range rows {
-		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, row.Key, row.Group)
-		if ok && match {
-			filtered = append(filtered, row)
+// singleExactParameterFilter reports whether table output can hide exact key column.
+func singleExactParameterFilter(rawFilters []string) bool {
+	exact := false
+	for _, raw := range rawFilters {
+		mode, query := parseFilter(raw)
+		if strings.TrimSpace(query) == "" {
+			continue
 		}
+		if mode != filter.ModeExact {
+			return false
+		}
+		if exact {
+			return false
+		}
+		exact = true
 	}
-	return filtered
+	return exact
 }
 
 // parseFilter parses parse filter and returns the resulting value or error.
@@ -659,14 +805,14 @@ func buildTableRows(projects []loadedProjectParameters, rows []parameterRow) []p
 }
 
 // renderParametersTable renders render parameters table and returns the resulting value or error.
-func renderParametersTable(rows []parameterRow, mode filter.Mode, query string, includeProject bool) string {
+func renderParametersTable(rows []parameterRow, highlightFilters []shared.QueryFilter, allowHideKey, includeProject bool) string {
 	noColor := clistyles.NoColorEnabled()
 	projectWidth := lipgloss.Width("Project")
 	groupWidth := lipgloss.Width("Group")
 	keyWidth := lipgloss.Width("Key")
 	typeWidth := lipgloss.Width("Type")
 	globalLabelWidth := longestConditionWidth(rows)
-	layout := chooseTableLayout(rows, globalLabelWidth, includeProject, mode == filter.ModeExact && strings.TrimSpace(query) != "")
+	layout := chooseTableLayout(rows, globalLabelWidth, includeProject, allowHideKey)
 	valuesWidth := max(lipgloss.Width("Values"), layout.valueWidth)
 	tableRows := make([][]string, 0, len(rows))
 
@@ -676,15 +822,11 @@ func renderParametersTable(rows []parameterRow, mode filter.Mode, query string, 
 		if !noColor && isStripedDataRow(rowIndex) {
 			rowBG = clistyles.ColorRowStripe
 		}
-		match, highlights := filter.Match(row.Key, query, mode)
-		if !match {
-			highlights = nil
-		}
-
 		projectCell := row.Project
 		if strings.TrimSpace(projectCell) == "" {
 			projectCell = row.ProjectID
 		}
+		highlights := shared.HighlightFilters(row.Key, highlightFilters)
 		keyCell := renderHighlightedText(row.Key, clistyles.PanelText, highlights, rowBG)
 
 		rowCells := make([]string, 0, 5)
@@ -803,14 +945,13 @@ func isStripedDataRow(row int) bool {
 
 // rowStatus handles row status and returns the resulting value or error.
 func rowStatus(rows []parameterRow, row int) string {
-	if row <= 0 {
+	if row < 0 {
 		return ""
 	}
-	index := row - 1
-	if index < 0 || index >= len(rows) {
+	if row >= len(rows) {
 		return ""
 	}
-	return rows[index].Status
+	return rows[row].Status
 }
 
 // chooseTableLayout handles choose table layout and returns the resulting value or error.
@@ -1107,7 +1248,7 @@ func isErrorStatus(status string) bool {
 // logGetTotals handles log get totals and returns the resulting value or error.
 func logGetTotals(output string, rows []parameterRow) {
 	logger := corelog.For("get")
-	logger.Info("total", "output", output, "projects", countOutputProjects(rows), "values", countOutputValues(rows))
+	logger.Info("total", "output", output, "projects", countOutputProjects(rows), "parameters", countOutputParameters(rows), "values", countOutputValues(rows))
 }
 
 // countOutputProjects handles count output projects and returns the resulting value or error.
@@ -1122,14 +1263,35 @@ func countOutputProjects(rows []parameterRow) int {
 	return len(seen)
 }
 
+// countOutputParameters handles count output parameters and returns the resulting value or error.
+func countOutputParameters(rows []parameterRow) int {
+	total := 0
+	for _, row := range rows {
+		if strings.TrimSpace(row.Key) == "" {
+			continue
+		}
+		total++
+	}
+	return total
+}
+
 // countOutputValues handles count output values and returns the resulting value or error.
 func countOutputValues(rows []parameterRow) int {
 	total := 0
 	for _, row := range rows {
-		if row.DefaultValue != nil {
-			total++
+		total += countValueLines(row.ValueLines)
+	}
+	return total
+}
+
+// countValueLines handles count value lines and returns the resulting value or error.
+func countValueLines(lines []valueLine) int {
+	total := 0
+	for _, line := range lines {
+		if line.Missing {
+			continue
 		}
-		total += len(row.Conditions)
+		total++
 	}
 	return total
 }

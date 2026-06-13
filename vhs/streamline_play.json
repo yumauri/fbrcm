@@ -1,0 +1,372 @@
+{
+  "conditions": [
+    {
+      "name": "living_room_devices",
+      "expression": "app.userProperty['device_class'].exactlyMatches(['tv','console'])",
+      "description": "TV and console sessions",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "sports_market_us",
+      "expression": "device.country in ['us'] && app.userProperty['sports_fan'].exactlyMatches(['true'])",
+      "description": "US sports fans",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "kids_profile",
+      "expression": "app.userProperty['profile_type'].exactlyMatches(['kids'])",
+      "description": "Kids profile active",
+      "tagColor": "ORANGE"
+    },
+    {
+      "name": "low_bandwidth",
+      "expression": "app.userProperty['bandwidth_band'].exactlyMatches(['low'])",
+      "description": "Low bandwidth sessions",
+      "tagColor": "RED"
+    },
+    {
+      "name": "new_player_rollout_15",
+      "expression": "percent <= 15",
+      "description": "New player stack rollout",
+      "tagColor": "PURPLE"
+    }
+  ],
+  "parameters": {},
+  "parameterGroups": {
+    "playback": {
+      "description": "Player behavior and streaming quality",
+      "parameters": {
+        "player_stack": {
+          "defaultValue": {
+            "value": "stable_v4"
+          },
+          "description": "Playback stack version",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "new_player_rollout_15": {
+              "value": "next_v1"
+            }
+          }
+        },
+        "default_bitrate_cap_kbps": {
+          "defaultValue": {
+            "value": "6500"
+          },
+          "description": "Default adaptive bitrate cap",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "low_bandwidth": {
+              "value": "1800"
+            }
+          }
+        },
+        "autoplay_next_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Autoplay next episode",
+          "valueType": "BOOLEAN"
+        },
+        "skip_intro_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Show skip intro control",
+          "valueType": "BOOLEAN"
+        },
+        "live_latency_target_seconds": {
+          "defaultValue": {
+            "value": "12"
+          },
+          "description": "Live stream target latency",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "sports_market_us": {
+              "value": "6"
+            }
+          }
+        },
+        "subtitle_default_size": {
+          "defaultValue": {
+            "value": "medium"
+          },
+          "description": "Default subtitle size",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "living_room_devices": {
+              "value": "large"
+            }
+          }
+        },
+        "playback_error_retry_policy": {
+          "defaultValue": {
+            "value": "{\"maxRetries\":3,\"backoffMs\":[500,1500,4000]}"
+          },
+          "description": "Retry policy for playback errors",
+          "valueType": "JSON"
+        }
+      }
+    },
+    "discovery": {
+      "description": "Home rails, search and recommendation surfaces",
+      "parameters": {
+        "home_rail_order": {
+          "defaultValue": {
+            "value": "[\"continue_watching\",\"top_picks\",\"trending\",\"new_releases\"]"
+          },
+          "description": "Home rail order",
+          "valueType": "JSON",
+          "conditionalValues": {
+            "kids_profile": {
+              "value": "[\"continue_watching\",\"kids_favorites\",\"learning\",\"new_releases\"]"
+            }
+          }
+        },
+        "trending_window_hours": {
+          "defaultValue": {
+            "value": "12"
+          },
+          "description": "Trending rank time window",
+          "valueType": "NUMBER"
+        },
+        "enable_voice_search": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable voice search entry point",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "living_room_devices": {
+              "value": "true"
+            }
+          }
+        },
+        "search_suggestions_count": {
+          "defaultValue": {
+            "value": "6"
+          },
+          "description": "Number of search suggestions",
+          "valueType": "NUMBER"
+        },
+        "hero_autoplay_muted": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Autoplay hero preview muted",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "living_room_devices": {
+              "value": "true"
+            }
+          }
+        },
+        "recs_model": {
+          "defaultValue": {
+            "value": "watch_next_v22"
+          },
+          "description": "Recommendation model name",
+          "valueType": "STRING"
+        },
+        "kids_search_safe_mode": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Force safe search in kids profiles",
+          "valueType": "BOOLEAN"
+        }
+      }
+    },
+    "sports": {
+      "description": "Sports live events and notifications",
+      "parameters": {
+        "sports_hub_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Show sports hub",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "sports_market_us": {
+              "value": "true"
+            }
+          }
+        },
+        "live_score_overlay_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "description": "Show live score overlay",
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "sports_market_us": {
+              "value": "true"
+            }
+          }
+        },
+        "spoiler_free_mode_default": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Hide scores until user opts in",
+          "valueType": "BOOLEAN"
+        },
+        "game_reminder_minutes": {
+          "defaultValue": {
+            "value": "20"
+          },
+          "description": "Minutes before game reminder",
+          "valueType": "NUMBER"
+        },
+        "preferred_sports_order": {
+          "defaultValue": {
+            "value": "[\"football\",\"basketball\",\"baseball\",\"soccer\"]"
+          },
+          "description": "Sports ordering",
+          "valueType": "JSON"
+        },
+        "blackout_message": {
+          "defaultValue": {
+            "value": "This event is unavailable in your area"
+          },
+          "description": "Blackout copy",
+          "valueType": "STRING"
+        },
+        "dvr_window_hours": {
+          "defaultValue": {
+            "value": "72"
+          },
+          "description": "Replay availability window",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "profiles": {
+      "description": "Profiles, maturity and family settings",
+      "parameters": {
+        "max_profiles_per_account": {
+          "defaultValue": {
+            "value": "5"
+          },
+          "description": "Maximum profiles per account",
+          "valueType": "NUMBER"
+        },
+        "kids_pin_required": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Require PIN to exit kids profile",
+          "valueType": "BOOLEAN"
+        },
+        "maturity_rating_default": {
+          "defaultValue": {
+            "value": "PG-13"
+          },
+          "description": "Default maturity rating",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "kids_profile": {
+              "value": "G"
+            }
+          }
+        },
+        "profile_avatar_pack": {
+          "defaultValue": {
+            "value": "neon_premiere"
+          },
+          "description": "Default avatar pack",
+          "valueType": "STRING",
+          "conditionalValues": {
+            "kids_profile": {
+              "value": "storybook"
+            }
+          }
+        },
+        "continue_watching_limit": {
+          "defaultValue": {
+            "value": "30"
+          },
+          "description": "Continue watching item limit",
+          "valueType": "NUMBER"
+        },
+        "downloads_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow offline downloads",
+          "valueType": "BOOLEAN"
+        },
+        "downloads_max_items": {
+          "defaultValue": {
+            "value": "25"
+          },
+          "description": "Maximum offline downloads",
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "kids_profile": {
+              "value": "10"
+            }
+          }
+        }
+      }
+    },
+    "monetization": {
+      "description": "Plans, ads and merchandising",
+      "parameters": {
+        "ad_load_per_hour": {
+          "defaultValue": {
+            "value": "4"
+          },
+          "description": "Ads per hour on ad-supported plan",
+          "valueType": "NUMBER"
+        },
+        "pre_roll_ads_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable pre-roll ads",
+          "valueType": "BOOLEAN"
+        },
+        "upsell_banner_copy": {
+          "defaultValue": {
+            "value": "Go ad-free with Premium"
+          },
+          "description": "Plan upsell copy",
+          "valueType": "STRING"
+        },
+        "annual_plan_badge": {
+          "defaultValue": {
+            "value": "Best value"
+          },
+          "description": "Annual plan badge copy",
+          "valueType": "STRING"
+        },
+        "storefront_slots": {
+          "defaultValue": {
+            "value": "[\"premium\",\"sports_pack\",\"family\"]"
+          },
+          "description": "Storefront module order",
+          "valueType": "JSON"
+        },
+        "promo_trial_days": {
+          "defaultValue": {
+            "value": "7"
+          },
+          "description": "Promotional trial days",
+          "valueType": "NUMBER"
+        },
+        "pause_subscription_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow subscription pause",
+          "valueType": "BOOLEAN"
+        }
+      }
+    }
+  },
+  "version": {
+    "versionNumber": "312",
+    "updateTime": "2026-05-16T08:12:00.000Z",
+    "description": "Demo streaming media Remote Config for VHS recording"
+  }
+}

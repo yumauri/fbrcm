@@ -75,7 +75,7 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Delete Remote Config parameters",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectFilter, err := cmd.Flags().GetString("project")
+			projectFilters, err := cmd.Flags().GetStringArray("project")
 			if err != nil {
 				return err
 			}
@@ -87,39 +87,45 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			paramFilter, err := cmd.Flags().GetString("filter")
+			paramFilters, err := cmd.Flags().GetStringArray("filter")
 			if err != nil {
 				return err
 			}
+			searchValue, err := cmd.Flags().GetString("search")
+			if err != nil {
+				return err
+			}
+			search := shared.NewParameterSearch(searchValue)
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
 				return err
 			}
 			if len(args) > 0 {
-				if strings.TrimSpace(paramFilter) != "" {
+				if hasFilters(paramFilters) {
 					return fmt.Errorf("parameter argument cannot be used together with --filter")
 				}
-				paramFilter = "=" + args[0]
+				paramFilters = []string{"=" + args[0]}
 			}
 
 			if stdinAvailable(cmd.InOrStdin()) {
 				corelog.For("delete").Info("stdin mode enabled; using remote config from stdin")
-				return runDeleteStdin(cmd, paramFilter, projectExpr)
+				return runDeleteStdin(cmd, paramFilters, projectExpr, search)
 			}
-			return runDeleteRemote(cmd, svc, projectFilter, projectExpr, paramFilter, yes, dryRun)
+			return runDeleteRemote(cmd, svc, projectFilters, projectExpr, paramFilters, search, yes, dryRun)
 		},
 	}
 
-	cmd.Flags().StringP("project", "p", "", "Filter projects by mode-prefixed query (^, /, ~, =)")
-	cmd.Flags().StringP("filter", "f", "", "Filter parameters by mode-prefixed query (^, /, ~, =)")
+	cmd.Flags().StringArrayP("project", "p", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
+	cmd.Flags().StringArrayP("filter", "f", nil, "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
+	cmd.Flags().String("search", "", "Search parameters by name, description, values, and conditions")
 	cmd.Flags().Bool("dry-run", false, "Log Firebase write requests without sending them")
 	cmd.Flags().BoolP("yes", "y", false, "Print diff and delete without confirmation")
 	return cmd
 }
 
 // runDeleteRemote runs run delete remote and returns the resulting value or error.
-func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectExpr, paramFilter string, yes bool, dryRun bool) error {
+func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilters []string, projectExpr string, paramFilters []string, search shared.ParameterSearch, yes bool, dryRun bool) error {
 	ctx := context.Background()
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
@@ -129,7 +135,7 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectE
 	if err != nil {
 		return err
 	}
-	projects = filterProjects(projects, projectFilter)
+	projects = shared.FilterProjects(projects, projectFilters)
 	sortProjects(projects)
 	compiledExpr, ok := shared.CompileExpr(projectExpr, "")
 	if !ok {
@@ -144,7 +150,7 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectE
 				return err
 			}
 
-			matched := collectMatchingParams(project, cfg.cfg, paramFilter, compiledExpr)
+			matched := collectMatchingParams(project, cfg.cfg, paramFilters, search, compiledExpr)
 			if len(matched) == 0 {
 				break
 			}
@@ -188,7 +194,7 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, projectFilter, projectE
 }
 
 // runDeleteStdin runs run delete stdin and returns the resulting value or error.
-func runDeleteStdin(cmd *cobra.Command, paramFilter, projectExpr string) error {
+func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr string, search shared.ParameterSearch) error {
 	raw, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
 		return fmt.Errorf("read stdin: %w", err)
@@ -197,7 +203,12 @@ func runDeleteStdin(cmd *cobra.Command, paramFilter, projectExpr string) error {
 		return fmt.Errorf("stdin remote config is not valid json")
 	}
 
-	cfg, err := firebase.ParseRemoteConfig(raw)
+	remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+	if err != nil {
+		return err
+	}
+
+	cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 	if err != nil {
 		return fmt.Errorf("decode stdin remote config: %w", err)
 	}
@@ -207,13 +218,13 @@ func runDeleteStdin(cmd *cobra.Command, paramFilter, projectExpr string) error {
 		return nil
 	}
 
-	order, err := parseRemoteConfigOrder(raw)
+	order, err := parseRemoteConfigOrder(remoteConfigRaw)
 	if err != nil {
 		return fmt.Errorf("parse stdin remote config order: %w", err)
 	}
 
 	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
-	matched := collectMatchingParams(project, cfg, paramFilter, compiledExpr)
+	matched := collectMatchingParams(project, cfg, paramFilters, search, compiledExpr)
 	deleted, finalCfg, err := confirmAndDeleteProject(cmd, "<stdin>", cfg, matched, true, cmd.ErrOrStderr())
 	if err != nil {
 		return err
@@ -300,17 +311,17 @@ func runConfirmationPrompt(prompt string, fallbackOut io.Writer) (bool, error) {
 }
 
 // collectMatchingParams handles collect matching params and returns the resulting value or error.
-func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, rawFilter string, compiledExpr *filter.Expression) []paramTarget {
+func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, rawFilters []string, search shared.ParameterSearch, compiledExpr *filter.Expression) []paramTarget {
 	all := collectParamTargets(cfg)
-	mode, query := parseFilter(rawFilter)
+	filters := shared.ParseFilters(rawFilters)
 
 	filtered := make([]paramTarget, 0, len(all))
 	for _, target := range all {
-		if query != "" {
-			match, _ := filter.Match(target.key, query, mode)
-			if !match {
-				continue
-			}
+		if !shared.MatchAnyFilter(target.key, filters) {
+			continue
+		}
+		if !shared.MatchParameterSearch(target.key, target.param, cfg, search) {
+			continue
 		}
 		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, target.key, target.groupOrDefault())
 		if !ok || !match {
@@ -319,6 +330,11 @@ func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, raw
 		filtered = append(filtered, target)
 	}
 	return filtered
+}
+
+// hasFilters reports whether any filter query is non-empty.
+func hasFilters(rawFilters []string) bool {
+	return len(shared.ParseFilters(rawFilters)) > 0
 }
 
 // collectParamTargets handles collect param targets and returns the resulting value or error.
@@ -352,38 +368,6 @@ func (t paramTarget) groupOrDefault() string {
 		return defaultDeleteGroupLabel
 	}
 	return t.group
-}
-
-// filterProjects filters filter projects and returns the resulting value or error.
-func filterProjects(projects []core.Project, raw string) []core.Project {
-	mode, query := parseFilter(raw)
-	if query == "" {
-		return projects
-	}
-
-	filtered := make([]core.Project, 0, len(projects))
-	for _, project := range projects {
-		nameMatch, _ := filter.Match(project.Name, query, mode)
-		idMatch, _ := filter.Match(project.ProjectID, query, mode)
-		if nameMatch || idMatch {
-			filtered = append(filtered, project)
-		}
-	}
-	return filtered
-}
-
-// parseFilter parses parse filter and returns the resulting value or error.
-func parseFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-	return mode, string([]rune(raw)[1:])
 }
 
 // sortProjects handles sort projects and returns the resulting value or error.

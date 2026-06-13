@@ -18,6 +18,7 @@ import (
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
 	"github.com/yumauri/fbrcm/tui/components/parameters"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -142,6 +143,12 @@ func (m Model) SetActive(active bool) Model {
 	return m
 }
 
+// ResetScroll resets details viewport scroll position.
+func (m Model) ResetScroll() Model {
+	m.viewport.GotoTop()
+	return m
+}
+
 // SetBridgeActive sets bridge active for Model and returns the resulting state or error.
 func (m Model) SetBridgeActive(active bool) Model {
 	m.bridgeActive = active
@@ -187,6 +194,9 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 		m.originalParam = core.ParametersEntry{}
 	}
 	m.refreshViewport()
+	if m.data != nil && m.selectedValue < 0 && m.activeField == fieldNone {
+		m.viewport.GotoTop()
+	}
 	return m
 }
 
@@ -198,6 +208,11 @@ func (m Model) Data() *messages.ParameterViewData {
 // FieldActive handles field active for Model and returns the resulting state or error.
 func (m Model) FieldActive() bool {
 	return m.activeField != fieldNone
+}
+
+// TextInputActive reports whether active field should receive printable key strokes.
+func (m Model) TextInputActive() bool {
+	return m.activeField == fieldName || m.activeField == fieldDescription
 }
 
 // ValueSelected handles value selected for Model and returns the resulting state or error.
@@ -317,6 +332,39 @@ func (m Model) ActivateName() (Model, tea.Cmd) {
 	return m, m.nameInput.Focus()
 }
 
+// ActivateGroup activates group editor.
+func (m Model) ActivateGroup() (Model, tea.Cmd) {
+	m.activateField(fieldGroup)
+	m.openDropdown(1)
+	m.refreshViewport()
+	return m, nil
+}
+
+// SelectedRawValue returns selected value raw content.
+func (m Model) SelectedRawValue() (string, bool) {
+	if !m.ValueSelected() {
+		return "", false
+	}
+	return m.data.Parameter.Values[m.selectedValue].RawValue, true
+}
+
+// CurrentConditionalValueAnchor returns selected conditional value deletion target.
+func (m Model) CurrentConditionalValueAnchor() (parameters.ConditionalValueAnchor, bool) {
+	if !m.ValueSelected() {
+		return parameters.ConditionalValueAnchor{}, false
+	}
+	value := m.data.Parameter.Values[m.selectedValue]
+	if value.Label == "" || value.Label == "default" {
+		return parameters.ConditionalValueAnchor{}, false
+	}
+	return parameters.ConditionalValueAnchor{
+		Project:    m.data.Project,
+		GroupKey:   m.data.GroupKey,
+		ParamKey:   m.data.Parameter.Key,
+		ValueLabel: value.Label,
+	}, true
+}
+
 // DropdownOpen handles dropdown open for Model and returns the resulting state or error.
 func (m Model) DropdownOpen() bool {
 	return m.dropdownOpen && (m.activeField == fieldGroup || m.activeField == fieldType)
@@ -431,21 +479,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		k := msg.String()
 		if m.data != nil {
-			switch msg.String() {
-			case "down":
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionDown, k):
 				if !m.dropdownOpen {
 					m.focusNextItem(1)
 					m.refreshViewport()
 					return m, nil
 				}
-			case "up":
+			case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionUp, k):
 				if !m.dropdownOpen {
 					m.focusNextItem(-1)
 					m.refreshViewport()
 					return m, nil
 				}
-			case "esc":
+			case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionClose, k):
 				if m.activeField != fieldNone {
 					if m.dropdownOpen {
 						m.closeDropdown()
@@ -467,12 +516,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			switch m.activeField {
 			case fieldGroup:
 				if m.dropdownOpen {
-					switch msg.String() {
-					case "up":
+					switch {
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionUp, k):
 						m.moveDropdown(-1)
-					case "down":
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionDown, k):
 						m.moveDropdown(1)
-					case "enter":
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
 						m.commitDropdown()
 					default:
 						if m.dropdownInputSelected() {
@@ -480,10 +529,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 						}
 					}
 				} else {
-					switch msg.String() {
-					case "right":
+					switch {
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionRight, k):
 						m.openDropdown(1)
-					case "enter":
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
 						if m.dropdownOpen {
 							m.commitDropdown()
 						} else {
@@ -493,26 +542,26 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			case fieldType:
 				if m.dropdownOpen {
-					switch msg.String() {
-					case "up":
+					switch {
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionUp, k):
 						m.moveDropdown(-1)
-					case "down":
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionDown, k):
 						m.moveDropdown(1)
-					case "enter":
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
 						m.commitDropdown()
 					}
 				} else {
-					switch msg.String() {
-					case "right":
+					switch {
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionRight, k):
 						m.openDropdown(1)
-					case "enter":
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
 						m = m.DeactivateField()
 					}
 				}
 			case fieldName:
 				m.nameInput, cmd = m.nameInput.Update(msg)
 			case fieldDescription:
-				if msg.String() != "enter" {
+				if !tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
 					m.descInput, cmd = m.descInput.Update(msg)
 					m.normalizeDescriptionInput()
 				}
@@ -521,23 +570,23 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, cmd
 		}
 		if m.ValueSelected() {
-			switch msg.String() {
-			case "right", "f4":
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, k):
 				return m, nil
 			}
 		}
-		switch msg.String() {
-		case "up", "k":
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionUp, k):
 			m.viewport.ScrollUp(1)
-		case "down", "j":
+		case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionDown, k):
 			m.viewport.ScrollDown(1)
-		case "pgup", "h":
+		case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionPageUp, k):
 			m.viewport.PageUp()
-		case "pgdown", "l":
+		case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionPageDown, k):
 			m.viewport.PageDown()
-		case "home":
+		case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionHome, k):
 			m.viewport.GotoTop()
-		case "end":
+		case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionEnd, k):
 			m.viewport.GotoBottom()
 		}
 	case tea.MouseWheelMsg:
@@ -631,6 +680,7 @@ func (m *Model) refreshViewport() {
 	m.viewport.SetWidth(width)
 	m.viewport.SetHeight(max(m.height-2, 1))
 	m.viewport.SetContentLines(m.renderContentLines())
+	m.ensureSelectedBlockVisible()
 }
 
 // renderContentLines renders render content lines for Model and returns the resulting state or error.
@@ -939,9 +989,14 @@ func (m *Model) positionCursorForClick(field fieldID, x, y int) {
 func (m *Model) ensureSelectionVisible() {
 	line := -1
 	if m.activeField != fieldNone {
+		if m.activeField == fieldGroup {
+			m.viewport.GotoTop()
+			return
+		}
 		line = m.fieldValueLine(m.activeField)
 	} else if m.selectedValue >= 0 {
-		line = m.valueConditionLine(m.selectedValue)
+		m.ensureValueVisible(m.selectedValue)
+		return
 	}
 	if line < 0 {
 		return
@@ -953,6 +1008,43 @@ func (m *Model) ensureSelectionVisible() {
 		m.viewport.SetYOffset(line)
 	case line > bottom:
 		m.viewport.SetYOffset(max(line-m.viewport.Height()+1, 0))
+	}
+}
+
+// ensureSelectedBlockVisible keeps selected details content in view after rerender.
+func (m *Model) ensureSelectedBlockVisible() {
+	if m.activeField == fieldGroup {
+		m.viewport.GotoTop()
+		return
+	}
+	if m.activeField != fieldNone {
+		m.ensureSelectionVisible()
+		return
+	}
+	if m.selectedValue >= 0 {
+		m.ensureValueVisible(m.selectedValue)
+	}
+}
+
+// ensureValueVisible adjusts scroll so selected condition and value are visible when possible.
+func (m *Model) ensureValueVisible(index int) {
+	if m.data == nil || index < 0 || index >= len(m.data.Parameter.Values) {
+		return
+	}
+	start := m.valueConditionLine(index)
+	end := m.valueEndLine(index)
+	height := max(m.viewport.Height(), 1)
+	if end-start+1 > height {
+		m.viewport.SetYOffset(start)
+		return
+	}
+	top := m.viewport.YOffset()
+	bottom := top + height - 1
+	switch {
+	case start < top:
+		m.viewport.SetYOffset(start)
+	case end > bottom:
+		m.viewport.SetYOffset(max(end-height+1, 0))
 	}
 }
 
@@ -1525,9 +1617,25 @@ func (m Model) valueConditionLine(index int) int {
 		if i == index {
 			return line
 		}
-		line += 1 + len(wrappedLines(value.Value, max(width-4, 1))) + 1
+		line += m.valueVisualHeight(value, width)
 	}
 	return line
+}
+
+// valueEndLine returns last rendered line for condition label plus value body.
+func (m Model) valueEndLine(index int) int {
+	if m.data == nil || index < 0 || index >= len(m.data.Parameter.Values) {
+		return 0
+	}
+	width := max(m.width-5, 1)
+	start := m.valueConditionLine(index)
+	valueLines := m.renderValueLines(m.data.Parameter.Values[index], max(width-4, 1))
+	return start + len(valueLines)
+}
+
+// valueVisualHeight returns condition label, rendered value, and trailing spacer height.
+func (m Model) valueVisualHeight(value core.ParametersValue, width int) int {
+	return 1 + len(m.renderValueLines(value, max(width-4, 1))) + 1
 }
 
 // dropdownCurrentLabel handles dropdown current label for Model and returns the resulting state or error.
@@ -1751,10 +1859,19 @@ func renderJSONValueLines(value string, width int) []string {
 	if err := json.Indent(&out, []byte(value), "", "  "); err != nil {
 		return renderPlainValueLines(value, width, corestyles.ValueTextStyle(value, "json"))
 	}
-	lines := strings.Split(out.String(), "\n")
-	rendered := make([]string, 0, len(lines))
+	formatted := out.String()
+	lines := strings.Split(formatted, "\n")
+	ranges := make([]jsoninput.JSONRange, 0, len(lines))
+	offset := 0
 	for _, line := range lines {
-		highlighted := jsoninput.HighlightJSONVisible(line)
+		lineLen := len([]rune(line))
+		ranges = append(ranges, jsoninput.JSONRange{Start: offset, End: offset + lineLen, CursorCol: -1})
+		offset += lineLen + 1
+	}
+
+	highlightedLines := jsoninput.HighlightJSONRanges(formatted, ranges)
+	rendered := make([]string, 0, len(highlightedLines))
+	for _, highlighted := range highlightedLines {
 		rendered = append(rendered, wrapRenderedLine(highlighted, width)...)
 	}
 	return rendered
@@ -1769,12 +1886,29 @@ func wrapRenderedLine(value string, width int) []string {
 		return []string{value}
 	}
 	lines := make([]string, 0)
+	indent := min(leadingSpaceWidth(ansi.Strip(value))+2, max(width-1, 0))
+	indentText := strings.Repeat(" ", indent)
 	remaining := value
 	for lipgloss.Width(remaining) > width {
 		part := ansi.Truncate(remaining, width, "")
 		lines = append(lines, part)
 		remaining = ansi.Cut(remaining, lipgloss.Width(part), lipgloss.Width(remaining))
+		if indent > 0 {
+			remaining = indentText + remaining
+		}
 	}
 	lines = append(lines, remaining)
 	return lines
+}
+
+// leadingSpaceWidth handles leading space width and returns the resulting value or error.
+func leadingSpaceWidth(value string) int {
+	width := 0
+	for _, r := range value {
+		if r != ' ' {
+			break
+		}
+		width++
+	}
+	return width
 }

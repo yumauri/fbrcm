@@ -39,12 +39,16 @@ type updateSpec struct {
 	group string
 	// description stores description for updateSpec.
 	description string
+	// removeConditionalValues stores conditional value names to remove for updateSpec.
+	removeConditionalValues []string
 	// nameChanged stores name changed for updateSpec.
 	nameChanged bool
 	// groupChanged stores group changed for updateSpec.
 	groupChanged bool
 	// descriptionChanged stores description changed for updateSpec.
 	descriptionChanged bool
+	// removeAllConditionalValues stores remove all conditional values for updateSpec.
+	removeAllConditionalValues bool
 }
 
 // projectConfig holds project config state used by the updatecmd package.
@@ -84,7 +88,7 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Update Remote Config parameters",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectFilter, err := cmd.Flags().GetString("project")
+			projectFilters, err := cmd.Flags().GetStringArray("project")
 			if err != nil {
 				return err
 			}
@@ -96,10 +100,15 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			paramFilter, err := cmd.Flags().GetString("filter")
+			paramFilters, err := cmd.Flags().GetStringArray("filter")
 			if err != nil {
 				return err
 			}
+			searchValue, err := cmd.Flags().GetString("search")
+			if err != nil {
+				return err
+			}
+			search := shared.NewParameterSearch(searchValue)
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
 				return err
@@ -120,15 +129,23 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			removeAllConditionalValues, err := cmd.Flags().GetBool("remove-all-conditional-values")
+			if err != nil {
+				return err
+			}
+			removeConditionalValues, err := readRemoveConditionalValues(cmd)
+			if err != nil {
+				return err
+			}
 			value, err := readValueSpec(cmd)
 			if err != nil {
 				return err
 			}
 			if len(args) > 0 {
-				if strings.TrimSpace(paramFilter) != "" {
+				if hasFilters(paramFilters) {
 					return fmt.Errorf("parameter argument cannot be used together with --filter")
 				}
-				paramFilter = "=" + args[0]
+				paramFilters = []string{"=" + args[0]}
 			}
 
 			groupChanged := cmd.Flags().Changed("group")
@@ -145,26 +162,29 @@ func New(svc *core.Core) *cobra.Command {
 			}
 
 			spec := updateSpec{
-				value:              value,
-				name:               name,
-				group:              groupName,
-				description:        description,
-				nameChanged:        nameChanged,
-				groupChanged:       groupChanged,
-				descriptionChanged: descriptionChanged,
+				value:                      value,
+				name:                       name,
+				group:                      groupName,
+				description:                description,
+				removeConditionalValues:    removeConditionalValues,
+				nameChanged:                nameChanged,
+				groupChanged:               groupChanged,
+				descriptionChanged:         descriptionChanged,
+				removeAllConditionalValues: removeAllConditionalValues,
 			}
 
 			if stdinAvailable(cmd.InOrStdin()) {
 				corelog.For("update").Info("stdin mode enabled; using remote config from stdin")
-				return runUpdateStdin(cmd, paramFilter, paramExpr, spec)
+				return runUpdateStdin(cmd, paramFilters, paramExpr, search, spec)
 			}
-			return runUpdateRemote(cmd, svc, projectFilter, paramExpr, paramFilter, spec, yes, dryRun)
+			return runUpdateRemote(cmd, svc, projectFilters, paramExpr, paramFilters, search, spec, yes, dryRun)
 		},
 	}
 
-	cmd.Flags().StringP("project", "p", "", "Filter projects by mode-prefixed query (^, /, ~, =)")
-	cmd.Flags().StringP("filter", "f", "", "Filter parameters by mode-prefixed query (^, /, ~, =)")
+	cmd.Flags().StringArrayP("project", "p", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
+	cmd.Flags().StringArrayP("filter", "f", nil, "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
+	cmd.Flags().String("search", "", "Search parameters by name, description, values, and conditions")
 	cmd.Flags().Bool("dry-run", false, "Log Firebase write requests without sending them")
 	cmd.Flags().BoolP("yes", "y", false, "Print diff and update without confirmation")
 	cmd.Flags().String("description", "", "Parameter description")
@@ -175,9 +195,34 @@ func New(svc *core.Core) *cobra.Command {
 	cmd.Flags().String("number", "", "Number parameter value")
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
+	cmd.Flags().Bool("remove-all-conditional-values", false, "Remove all conditional values from matched parameters")
+	cmd.Flags().StringArray("remove-conditional-value", nil, "Remove a conditional value from matched parameters; may be repeated")
 	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json")
 	cmd.MarkFlagsMutuallyExclusive("group", "no-group")
+	cmd.MarkFlagsMutuallyExclusive("remove-all-conditional-values", "remove-conditional-value")
 	return cmd
+}
+
+// readRemoveConditionalValues reads remove conditional values and returns the resulting value or error.
+func readRemoveConditionalValues(cmd *cobra.Command) ([]string, error) {
+	values, err := cmd.Flags().GetStringArray("remove-conditional-value")
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return nil, fmt.Errorf("--remove-conditional-value cannot be empty")
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out, nil
 }
 
 // readValueSpec reads read value spec and returns the resulting value or error.
@@ -238,7 +283,7 @@ func readValueSpec(cmd *cobra.Command) (*valueSpec, error) {
 }
 
 // runUpdateRemote runs run update remote and returns the resulting value or error.
-func runUpdateRemote(cmd *cobra.Command, svc *core.Core, projectFilter, paramExpr, paramFilter string, spec updateSpec, yes bool, dryRun bool) error {
+func runUpdateRemote(cmd *cobra.Command, svc *core.Core, projectFilters []string, paramExpr string, paramFilters []string, search shared.ParameterSearch, spec updateSpec, yes bool, dryRun bool) error {
 	ctx := context.Background()
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
@@ -248,7 +293,7 @@ func runUpdateRemote(cmd *cobra.Command, svc *core.Core, projectFilter, paramExp
 	if err != nil {
 		return err
 	}
-	projects = filterProjects(projects, projectFilter)
+	projects = shared.FilterProjects(projects, projectFilters)
 	sortProjects(projects)
 	compiledExpr, ok := shared.CompileExpr(paramExpr, "")
 	if !ok {
@@ -262,7 +307,7 @@ func runUpdateRemote(cmd *cobra.Command, svc *core.Core, projectFilter, paramExp
 			if err != nil {
 				return err
 			}
-			matched := collectMatchingParams(project, cfg.cfg, paramFilter, compiledExpr)
+			matched := collectMatchingParams(project, cfg.cfg, paramFilters, search, compiledExpr)
 			if len(matched) == 0 {
 				break
 			}
@@ -304,7 +349,7 @@ func runUpdateRemote(cmd *cobra.Command, svc *core.Core, projectFilter, paramExp
 }
 
 // runUpdateStdin runs run update stdin and returns the resulting value or error.
-func runUpdateStdin(cmd *cobra.Command, paramFilter, paramExpr string, spec updateSpec) error {
+func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramExpr string, search shared.ParameterSearch, spec updateSpec) error {
 	raw, err := io.ReadAll(cmd.InOrStdin())
 	if err != nil {
 		return fmt.Errorf("read stdin: %w", err)
@@ -312,7 +357,11 @@ func runUpdateStdin(cmd *cobra.Command, paramFilter, paramExpr string, spec upda
 	if !json.Valid(raw) {
 		return fmt.Errorf("stdin remote config is not valid json")
 	}
-	cfg, err := firebase.ParseRemoteConfig(raw)
+	remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+	if err != nil {
+		return err
+	}
+	cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 	if err != nil {
 		return fmt.Errorf("decode stdin remote config: %w", err)
 	}
@@ -323,7 +372,7 @@ func runUpdateStdin(cmd *cobra.Command, paramFilter, paramExpr string, spec upda
 	}
 
 	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
-	matched := collectMatchingParams(project, cfg, paramFilter, compiledExpr)
+	matched := collectMatchingParams(project, cfg, paramFilters, search, compiledExpr)
 	updated, finalCfg, err := confirmAndUpdateProject(cmd, "<stdin>", cfg, matched, spec, true, cmd.ErrOrStderr())
 	if err != nil {
 		return err
@@ -391,6 +440,16 @@ func updateParamSlot(cfg *firebase.RemoteConfig, target paramTarget, spec update
 	}
 	if spec.descriptionChanged {
 		param.Description = spec.description
+	}
+	if spec.removeAllConditionalValues {
+		param.ConditionalValues = nil
+	} else if len(spec.removeConditionalValues) > 0 {
+		for _, name := range spec.removeConditionalValues {
+			delete(param.ConditionalValues, name)
+		}
+		if len(param.ConditionalValues) == 0 {
+			param.ConditionalValues = nil
+		}
 	}
 
 	nextGroup := target.group
@@ -475,17 +534,17 @@ func runConfirmationPrompt(prompt string, fallbackOut io.Writer) (bool, error) {
 }
 
 // collectMatchingParams handles collect matching params and returns the resulting value or error.
-func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, rawFilter string, compiledExpr *filter.Expression) []paramTarget {
+func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, rawFilters []string, search shared.ParameterSearch, compiledExpr *filter.Expression) []paramTarget {
 	all := collectParamTargets(cfg)
-	mode, query := parseFilter(rawFilter)
+	filters := shared.ParseFilters(rawFilters)
 
 	filtered := make([]paramTarget, 0, len(all))
 	for _, target := range all {
-		if query != "" {
-			match, _ := filter.Match(target.key, query, mode)
-			if !match {
-				continue
-			}
+		if !shared.MatchAnyFilter(target.key, filters) {
+			continue
+		}
+		if !shared.MatchParameterSearch(target.key, target.param, cfg, search) {
+			continue
 		}
 		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, target.key, target.groupOrDefault())
 		if !ok || !match {
@@ -494,6 +553,11 @@ func collectMatchingParams(project core.Project, cfg *firebase.RemoteConfig, raw
 		filtered = append(filtered, target)
 	}
 	return filtered
+}
+
+// hasFilters reports whether any filter query is non-empty.
+func hasFilters(rawFilters []string) bool {
+	return len(shared.ParseFilters(rawFilters)) > 0
 }
 
 // collectParamTargets handles collect param targets and returns the resulting value or error.
@@ -540,38 +604,6 @@ func revalidateProjectConfig(ctx context.Context, svc *core.Core, project core.P
 		return nil, fmt.Errorf("decode remote config for %s: %w", project.ProjectID, err)
 	}
 	return &projectConfig{project: project, cache: cache, cfg: cloneRemoteConfig(cfg)}, nil
-}
-
-// filterProjects filters filter projects and returns the resulting value or error.
-func filterProjects(projects []core.Project, raw string) []core.Project {
-	mode, query := parseFilter(raw)
-	if query == "" {
-		return projects
-	}
-
-	filtered := make([]core.Project, 0, len(projects))
-	for _, project := range projects {
-		nameMatch, _ := filter.Match(project.Name, query, mode)
-		idMatch, _ := filter.Match(project.ProjectID, query, mode)
-		if nameMatch || idMatch {
-			filtered = append(filtered, project)
-		}
-	}
-	return filtered
-}
-
-// parseFilter parses parse filter and returns the resulting value or error.
-func parseFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-	return mode, string([]rune(raw)[1:])
 }
 
 // sortProjects handles sort projects and returns the resulting value or error.

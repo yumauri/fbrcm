@@ -5,12 +5,15 @@ import (
 	"strconv"
 	"strings"
 
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -172,7 +175,7 @@ func (m Model) View() string {
 func (m *Model) resize() {
 	if m.expanded {
 		innerWidth := max(m.screenW-6, 4)
-		innerHeight := max(m.screenH-6, 4)
+		innerHeight := stringContentHeight(m.screenH)
 		gutter := lineNumberGutter(m.area.LineCount())
 		m.area.SetWidth(max(innerWidth-gutter, 1))
 		m.area.SetHeight(innerHeight)
@@ -192,7 +195,7 @@ func (m *Model) resize() {
 // renderExpandedArea renders render expanded area for Model and returns the resulting state or error.
 func (m Model) renderExpandedArea() string {
 	width := max(m.screenW-6, 4)
-	height := max(m.screenH-6, 4)
+	height := stringContentHeight(m.screenH)
 	cursorLine := m.area.Line()
 	lineInfo := m.area.LineInfo()
 	cursorSegment := lineInfo.RowOffset
@@ -382,8 +385,8 @@ func (m Model) renderExpandedBox() string {
 	borderStyle := styles.BorderStyle(true)
 	body := strings.Split(m.renderExpandedArea(), "\n")
 	innerWidth := max(m.screenW-6, 4)
-	contentHeight := max(m.screenH-6, 4)
-	scrollbar := expandedScrollbarState(m.area, contentHeight)
+	contentHeight := stringContentHeight(m.screenH)
+	scrollbar := expandedScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
 	lines := []string{borderStyle.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
 	for i := range contentHeight {
@@ -400,8 +403,54 @@ func (m Model) renderExpandedBox() string {
 		}
 		lines = append(lines, borderStyle.Render("│")+line+rightEdge)
 	}
+	lines = append(lines, borderStyle.Render("│")+renderHelpFooter(stringHelpText(innerWidth), innerWidth)+borderStyle.Render("│"))
 	lines = append(lines, borderStyle.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
 	return strings.Join(lines, "\n")
+}
+
+// visualLineCount handles visual line count and returns the resulting value or error.
+func (m Model) visualLineCount() int {
+	lines := strings.Split(m.area.Value(), "\n")
+	if len(lines) == 0 {
+		return 1
+	}
+	gutter := lineNumberGutter(len(lines))
+	contentWidth := max(max(m.screenW-6, 4)-gutter, 1)
+	count := 0
+	for _, line := range lines {
+		count += len(wrapLine(line, contentWidth))
+	}
+	return max(count, 1)
+}
+
+// stringContentHeight handles string content height and returns the resulting value or error.
+func stringContentHeight(screenH int) int {
+	return max(screenH-7, 3)
+}
+
+// stringHelpText handles string help text and returns the resulting value or error.
+func stringHelpText(width int) string {
+	m := help.New()
+	m.ShortSeparator = " • "
+	m.Styles.ShortKey = styles.FilterText
+	m.Styles.ShortDesc = styles.PanelMuted
+	m.Styles.ShortSeparator = styles.PanelMuted
+	m.Styles.Ellipsis = styles.PanelMuted
+	m.SetWidth(width)
+	return m.ShortHelpView([]key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockStringInput, tuiconfig.ActionSave, "save"),
+		tuiconfig.Binding(tuiconfig.BlockStringInput, tuiconfig.ActionCancel, "cancel"),
+		tuiconfig.Binding(tuiconfig.BlockStringInput, tuiconfig.ActionToggleExpanded, "expand/collapse"),
+		tuiconfig.Binding(tuiconfig.BlockStringInput, tuiconfig.ActionCopyValue, "copy"),
+	})
+}
+
+// renderHelpFooter renders help footer and returns the resulting value or error.
+func renderHelpFooter(text string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	return text + strings.Repeat(" ", max(width-lipgloss.Width(text), 0))
 }
 
 // expandedScrollbar holds expanded scrollbar state used by the stringinput package.
@@ -415,18 +464,17 @@ type expandedScrollbar struct {
 }
 
 // expandedScrollbarState handles expanded scrollbar state and returns the resulting value or error.
-func expandedScrollbarState(area textarea.Model, visible int) expandedScrollbar {
+func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
 	if visible <= 0 {
 		return expandedScrollbar{}
 	}
-	total := area.LineCount()
 	if total <= visible {
 		return expandedScrollbar{}
 	}
 	thumbHeight := max(1, (visible*visible)/total)
 	maxThumbStart := visible - thumbHeight
 	maxOffset := max(total-visible, 1)
-	thumbStart := (area.ScrollYOffset() * maxThumbStart) / maxOffset
+	thumbStart := (min(offset, maxOffset) * maxThumbStart) / maxOffset
 	return expandedScrollbar{
 		visible:    true,
 		thumbStart: thumbStart,

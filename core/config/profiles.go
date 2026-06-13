@@ -74,6 +74,57 @@ func ListProfiles() ([]string, error) {
 	return profiles, nil
 }
 
+// GetProfileConfigDirPath gets profile config directory path and returns the resulting value or error.
+func GetProfileConfigDirPath(name string) (string, error) {
+	if err := ValidateProfileName(name); err != nil {
+		return "", err
+	}
+	return profileConfigDir(name), nil
+}
+
+// GetProfileCacheDirPath gets profile cache directory path and returns the resulting value or error.
+func GetProfileCacheDirPath(name string) (string, error) {
+	if err := ValidateProfileName(name); err != nil {
+		return "", err
+	}
+	return profileCacheDir(name), nil
+}
+
+// PurgeProfile removes profile config and cache directories and returns the resulting value or error.
+func PurgeProfile(name string) error {
+	if err := EnsureProfileCanPurge(name); err != nil {
+		return err
+	}
+	if err := os.RemoveAll(profileConfigDir(name)); err != nil {
+		return fmt.Errorf("remove profile config dir: %w", err)
+	}
+	if err := os.RemoveAll(profileCacheDir(name)); err != nil {
+		return fmt.Errorf("remove profile cache dir: %w", err)
+	}
+	corelog.For("config").Info("profile purged", "profile", name, "config_dir", profileConfigDir(name), "cache_dir", profileCacheDir(name))
+	return nil
+}
+
+// EnsureProfileCanPurge validates profile purge safety and returns the resulting value or error.
+func EnsureProfileCanPurge(name string) error {
+	if err := ValidateProfileName(name); err != nil {
+		return err
+	}
+	active, err := loadActiveProfile()
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if active == name {
+		err := fmt.Errorf("cannot purge active profile %q", name)
+		corelog.For("config").Error("active profile purge rejected", "profile", name, "err", err)
+		return err
+	}
+	if !profileConfigDirExists(name) {
+		return fmt.Errorf("profile %q does not exist", name)
+	}
+	return nil
+}
+
 // SwitchProfile handles switch profile and returns the resulting value or error.
 func SwitchProfile(name string) error {
 	if err := ValidateProfileName(name); err != nil {
@@ -175,9 +226,14 @@ func activeProfileOrDefault() string {
 		corelog.For("config").Error("active profile missing", "profile", profile, "config_dir", profileConfigDir(profile))
 		return profile
 	}
-	if err := SwitchProfile(DefaultProfileName); err != nil {
+	if err := ensureProfileDirs(DefaultProfileName); err != nil {
+		corelog.For("config").Error("ensure default profile dirs failed", "err", err)
+		return DefaultProfileName
+	}
+	if err := saveActiveProfile(DefaultProfileName); err != nil {
 		corelog.For("config").Error("ensure default profile failed", "err", err)
 	}
+	corelog.For("config").Info("current profile", "profile", DefaultProfileName)
 	return DefaultProfileName
 }
 

@@ -254,6 +254,18 @@ type MoveOption struct {
 	Label string
 }
 
+// ConditionalValueAnchor holds selected conditional value deletion target.
+type ConditionalValueAnchor struct {
+	// Project stores project for ConditionalValueAnchor.
+	Project core.Project
+	// GroupKey stores group key for ConditionalValueAnchor.
+	GroupKey string
+	// ParamKey stores param key for ConditionalValueAnchor.
+	ParamKey string
+	// ValueLabel stores value label for ConditionalValueAnchor.
+	ValueLabel string
+}
+
 // BoolValueAnchor holds bool value anchor state used by the parameters package.
 type BoolValueAnchor struct {
 	// Project stores project for BoolValueAnchor.
@@ -1338,7 +1350,11 @@ func (m Model) CurrentParameterViewData() (*messages.ParameterViewData, bool) {
 func (m Model) selectionChangedCmd(activate bool) tea.Cmd {
 	data, ok := m.currentParameterViewData()
 	if !ok {
-		return nil
+		return func() tea.Msg {
+			return messages.ParameterSelectionChangedMsg{
+				ResetScroll: true,
+			}
+		}
 	}
 
 	return func() tea.Msg {
@@ -1978,6 +1994,32 @@ func (m Model) CurrentMoveAnchor() (MoveAnchor, bool) {
 	default:
 		return MoveAnchor{}, false
 	}
+}
+
+// CurrentConditionalValueAnchor handles current conditional value anchor.
+func (m Model) CurrentConditionalValueAnchor() (ConditionalValueAnchor, bool) {
+	if m.cursor < 0 || m.cursor >= len(m.visible) {
+		return ConditionalValueAnchor{}, false
+	}
+	node := m.visible[m.cursor]
+	if node.kind != nodeValue || node.transient {
+		return ConditionalValueAnchor{}, false
+	}
+	project := m.projectByID(node.projectID)
+	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
+	if project == nil || param == nil || node.valueIdx <= 0 || node.valueIdx >= len(param.Values) {
+		return ConditionalValueAnchor{}, false
+	}
+	value := param.Values[node.valueIdx]
+	if value.Label == "" || value.Label == "default" {
+		return ConditionalValueAnchor{}, false
+	}
+	return ConditionalValueAnchor{
+		Project:    project.project,
+		GroupKey:   node.groupKey,
+		ParamKey:   node.paramKey,
+		ValueLabel: value.Label,
+	}, true
 }
 
 // CurrentBoolValueAnchor handles current bool value anchor for Model and returns the resulting state or error.

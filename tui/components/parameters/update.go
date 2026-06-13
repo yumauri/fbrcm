@@ -4,7 +4,7 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
@@ -38,26 +38,27 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			break
 		}
 
-		if mode, ok := filterbox.ModeForKey(msg.String()); ok {
+		k := msg.String()
+		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
 			cmd := m.filter.Activate(mode)
 			m.applyFilter()
 			return m, tea.Batch(cmd, keyboardCaptureCmd(true), m.selectionChangedCmd(false))
 		}
 
 		if m.filter.Focused() {
-			switch msg.String() {
-			case "enter":
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterApply, k):
 				m.filter.Blur()
 				return m, keyboardCaptureCmd(false)
-			case "esc":
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterCancel, k):
 				m.filter.ClearAndBlur()
 				m.applyFilter()
 				return m, keyboardCaptureCmd(false)
-			case "up":
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterUp, k):
 				m.filter.Blur()
 				m.moveCursor(-1)
 				return m, keyboardCaptureCmd(false)
-			case "down":
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterDown, k):
 				m.filter.Blur()
 				m.moveCursor(1)
 				return m, keyboardCaptureCmd(false)
@@ -72,55 +73,55 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmd, m.selectionChangedCmd(false))
 		}
 
-		switch msg.String() {
-		case "up", "k":
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionUp, k):
 			m.moveCursor(-1)
 			return m, m.selectionChangedCmd(false)
-		case "down", "j":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDown, k):
 			m.moveCursor(1)
 			return m, m.selectionChangedCmd(false)
-		case "pgdown":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionNextGroup, k):
 			m.moveToNextGroup()
 			return m, m.selectionChangedCmd(false)
-		case "pgup":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPrevGroup, k):
 			m.moveToPrevGroup()
 			return m, m.selectionChangedCmd(false)
-		case "left", "h":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCollapse, k):
 			m.collapseCurrent()
 			return m, m.selectionChangedCmd(false)
-		case "right", "l":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionExpand, k):
 			m.expandCurrent()
 			return m, m.selectionChangedCmd(false)
-		case " ", "space":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggle, k):
 			m.toggleCurrentParameter()
 			return m, m.selectionChangedCmd(false)
-		case "home":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionFirst, k):
 			m.moveToCurrentProjectHeader()
 			return m, m.selectionChangedCmd(false)
-		case "end":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionLast, k):
 			m.moveToLastParameterInCurrentProject()
 			return m, m.selectionChangedCmd(false)
-		case ">":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionExpandAll, k):
 			m.setAllParametersExpanded(true)
 			return m, m.selectionChangedCmd(false)
-		case "<":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCollapseAll, k):
 			m.setAllParametersExpanded(false)
 			return m, m.selectionChangedCmd(false)
-		case ")":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionExpandGroups, k):
 			m.setAllGroupsExpanded(true)
 			return m, m.selectionChangedCmd(false)
-		case "(":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCollapseGroups, k):
 			m.setAllGroupsExpanded(false)
 			return m, m.selectionChangedCmd(false)
-		case "enter":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionOpenDetails, k):
 			return m, m.selectionChangedCmd(true)
-		case "r":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReload, k):
 			return m, m.revalidateCurrentProjectCmd()
-		case "R":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k):
 			return m, m.revalidateAllProjectsCmd()
-		case "y":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCopyName, k):
 			return m, m.copyCurrentParameterNameCmd()
-		case "Y":
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCopyPath, k):
 			return m, m.copyCurrentParameterPathCmd()
 		}
 
