@@ -17,7 +17,6 @@ import (
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
-	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
@@ -57,7 +56,17 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "update",
 		Short: "Update projects from Firebase into cache",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projects, source, err := svc.SyncProjects(context.Background())
+			authID, err := cmd.Flags().GetString("auth")
+			if err != nil {
+				return err
+			}
+			var projects []core.Project
+			var source string
+			if authID != "" {
+				projects, source, err = svc.SyncProjectsForAuth(context.Background(), authID)
+			} else {
+				projects, source, err = svc.SyncProjects(context.Background())
+			}
 			if err != nil {
 				return err
 			}
@@ -67,14 +76,15 @@ func New(svc *core.Core) *cobra.Command {
 	}
 
 	listCmd.Flags().Bool("json", false, "Print projects as JSON")
-	listCmd.Flags().StringP("filter", "f", "", "Filter projects by mode-prefixed query (^, /, ~, =)")
+	listCmd.Flags().StringArrayP("filter", "f", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
 	listCmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	listCmd.Flags().Bool("update", false, "Update projects from Firebase before printing")
 	listCmd.Flags().Bool("url", false, "Include Firebase Console Remote Config URL")
 	updateCmd.Flags().Bool("json", false, "Print projects as JSON")
-	updateCmd.Flags().StringP("filter", "f", "", "Filter projects by mode-prefixed query (^, /, ~, =)")
+	updateCmd.Flags().StringArrayP("filter", "f", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
 	updateCmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	updateCmd.Flags().Bool("url", false, "Include Firebase Console Remote Config URL")
+	updateCmd.Flags().String("auth", "", "Sync projects for one auth id")
 
 	pathCmd := &cobra.Command{
 		Use:   "path",
@@ -146,7 +156,7 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 		return err
 	}
 
-	filterValue, err := cmd.Flags().GetString("filter")
+	filterValues, err := cmd.Flags().GetStringArray("filter")
 	if err != nil {
 		return err
 	}
@@ -159,12 +169,12 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 		return err
 	}
 
-	projects = filterProjects(projects, filterValue)
+	projects = shared.FilterProjects(projects, filterValues)
 	projects, err = shared.FilterProjectsByExpr(context.Background(), svc, projects, projectExpr)
 	if err != nil {
 		return err
 	}
-	mode, query := parseFilter(filterValue)
+	highlightFilters := shared.ParseFilters(filterValues)
 
 	if jsonOut {
 		encoder := json.NewEncoder(cmd.OutOrStdout())
@@ -176,7 +186,7 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 		return nil
 	}
 
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProjectsTable(projects, mode, query, withURL))
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProjectsTable(projects, highlightFilters, withURL))
 	logProjectsTotal(projects)
 	return nil
 }
@@ -186,46 +196,14 @@ func logProjectsTotal(projects []core.Project) {
 	corelog.For("projects").Info("total", "projects", len(projects))
 }
 
-// filterProjects filters filter projects and returns the resulting value or error.
-func filterProjects(projects []core.Project, raw string) []core.Project {
-	mode, query := parseFilter(raw)
-	if query == "" {
-		return projects
-	}
-
-	filtered := make([]core.Project, 0, len(projects))
-	for _, project := range projects {
-		nameMatch, _ := filter.Match(project.Name, query, mode)
-		idMatch, _ := filter.Match(project.ProjectID, query, mode)
-		if nameMatch || idMatch {
-			filtered = append(filtered, project)
-		}
-	}
-	return filtered
-}
-
-// parseFilter parses parse filter and returns the resulting value or error.
-func parseFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-
-	return mode, string([]rune(raw)[1:])
-}
-
 // renderProjectsTable renders render projects table and returns the resulting value or error.
-func renderProjectsTable(projects []core.Project, mode filter.Mode, query string, withURL bool) string {
+func renderProjectsTable(projects []core.Project, highlightFilters []shared.QueryFilter, withURL bool) string {
 	noColor := clistyles.NoColorEnabled()
 	rows := make([][]string, 0, len(projects))
 	projectWidth := lipgloss.Width("Project")
 	idWidth := lipgloss.Width("Project ID")
 	numberWidth := lipgloss.Width("Number")
+	authWidth := lipgloss.Width("Auth")
 	updatedAtWidth := lipgloss.Width("Updated At")
 	syncedAtWidth := lipgloss.Width("Synced At")
 	linkWidth := lipgloss.Width("URL")
@@ -235,14 +213,8 @@ func renderProjectsTable(projects []core.Project, mode filter.Mode, query string
 		if !noColor && rowIndex >= 0 && rowIndex%2 == 1 {
 			rowBG = clistyles.ColorRowStripe
 		}
-		nameMatch, nameHighlights := filter.Match(project.Name, query, mode)
-		if !nameMatch {
-			nameHighlights = nil
-		}
-		idMatch, idHighlights := filter.Match(project.ProjectID, query, mode)
-		if !idMatch {
-			idHighlights = nil
-		}
+		nameHighlights := shared.HighlightFilters(project.Name, highlightFilters)
+		idHighlights := shared.HighlightFilters(project.ProjectID, highlightFilters)
 
 		projectCell := renderHighlightedText(project.Name, clistyles.PanelText, nameHighlights, rowBG)
 		idCell := renderHighlightedText(project.ProjectID, clistyles.PanelMuted, idHighlights, rowBG)
@@ -253,12 +225,14 @@ func renderProjectsTable(projects []core.Project, mode filter.Mode, query string
 			projectCell,
 			idCell,
 			project.ProjectNumber,
+			project.AuthID,
 			updatedAt,
 			syncedAt,
 		}
 		projectWidth = max(projectWidth, lipgloss.Width(project.Name))
 		idWidth = max(idWidth, lipgloss.Width(project.ProjectID))
 		numberWidth = max(numberWidth, lipgloss.Width(project.ProjectNumber))
+		authWidth = max(authWidth, lipgloss.Width(project.AuthID))
 		updatedAtWidth = max(updatedAtWidth, lipgloss.Width(updatedAt))
 		syncedAtWidth = max(syncedAtWidth, lipgloss.Width(syncedAt))
 		if withURL {
@@ -287,14 +261,14 @@ func renderProjectsTable(projects []core.Project, mode filter.Mode, query string
 		if col == 0 {
 			return style.Foreground(clistyles.PaletteSlateBright)
 		}
-		if withURL && col == 5 {
+		if withURL && col == 6 {
 			return style.Foreground(clistyles.PaletteBlueBright)
 		}
 		return style.Foreground(clistyles.PaletteSlateDim)
 	}
 
-	headers := []string{"Project", "Project ID", "Number", "Updated At", "Synced At"}
-	width := projectWidth + idWidth + numberWidth + updatedAtWidth + syncedAtWidth + 16
+	headers := []string{"Project", "Project ID", "Number", "Auth", "Updated At", "Synced At"}
+	width := projectWidth + idWidth + numberWidth + authWidth + updatedAtWidth + syncedAtWidth + 19
 	if withURL {
 		headers = append(headers, "URL")
 		width += linkWidth + 3
@@ -326,6 +300,10 @@ type projectJSON struct {
 	State string `json:"state,omitempty"`
 	// ETag stores etag for projectJSON.
 	ETag string `json:"etag,omitempty"`
+	// AuthID stores auth id for projectJSON.
+	AuthID string `json:"auth_id"`
+	// DiscoveredBy stores discovering auth ids for projectJSON.
+	DiscoveredBy []string `json:"discovered_by,omitempty"`
 	// UpdatedAt stores updated at for projectJSON.
 	UpdatedAt string `json:"updated_at,omitempty"`
 	// SyncedAt stores synced at for projectJSON.
@@ -339,13 +317,15 @@ func projectsJSON(projects []core.Project, withURL bool) []projectJSON {
 	out := make([]projectJSON, len(projects))
 	for i, project := range projects {
 		out[i] = projectJSON{
-			Project:   project.Name,
-			ProjectID: project.ProjectID,
-			Number:    project.ProjectNumber,
-			State:     project.State,
-			ETag:      project.ETag,
-			UpdatedAt: project.UpdatedAt,
-			SyncedAt:  project.SyncedAt,
+			Project:      project.Name,
+			ProjectID:    project.ProjectID,
+			Number:       project.ProjectNumber,
+			State:        project.State,
+			ETag:         project.ETag,
+			AuthID:       project.AuthID,
+			DiscoveredBy: append([]string(nil), project.DiscoveredBy...),
+			UpdatedAt:    project.UpdatedAt,
+			SyncedAt:     project.SyncedAt,
 		}
 		if withURL {
 			out[i].URL = firebase.RemoteConfigConsoleURL(project.ProjectID)

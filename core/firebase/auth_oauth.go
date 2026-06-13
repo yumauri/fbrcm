@@ -16,44 +16,44 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"github.com/yumauri/fbrcm/core/browser"
-	"github.com/yumauri/fbrcm/core/config"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
-const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
-
 // Create HTTP client configured with OAuth2 credentials
-func oauthHTTPClient(ctx context.Context, autoOpen bool) (*http.Client, error) {
+func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, autoOpen bool) (*http.Client, error) {
 	logger := corelog.For("firebase")
 	persistAuthState := !IsDryRun(ctx)
-	secretPath := config.GetSecretFilePath()
-	logger.Info("load oauth client secret", "path", secretPath)
+	logger.Info("load oauth client secret", "path", clientSecretPath)
 
-	clientSecretData, err := os.ReadFile(secretPath)
+	clientSecretData, err := os.ReadFile(clientSecretPath)
 	if err != nil {
-		logger.Error("read oauth client secret failed", "path", secretPath, "err", err)
+		logger.Error("read oauth client secret failed", "path", clientSecretPath, "err", err)
 		return nil, fmt.Errorf("reading OAuth client secret: %w", err)
 	}
 
 	oauthCfg, err := google.ConfigFromJSON(clientSecretData, cloudPlatformScope)
 	if err != nil {
-		logger.Error("parse oauth client secret failed", "path", secretPath, "err", err)
+		logger.Error("parse oauth client secret failed", "path", clientSecretPath, "err", err)
 		return nil, fmt.Errorf("parsing OAuth client secret: %w", err)
 	}
 
-	tok, err := readCachedToken()
+	tok, err := readCachedToken(tokenPath)
 	if err != nil {
 		logger.Error("read cached oauth token failed", "err", err)
 		return nil, err
 	}
 	if tok == nil {
+		if IsOffline() {
+			logger.Warn("offline mode, cannot start oauth authorization flow")
+			return nil, ErrOffline
+		}
 		logger.Warn("oauth token cache miss; starting authorization flow")
 		tok, err = authorizeDesktopClient(ctx, oauthCfg, true, autoOpen)
 		if err != nil {
 			return nil, err
 		}
 		if persistAuthState {
-			if err := writeCachedToken(tok); err != nil {
+			if err := writeCachedToken(tokenPath, tok); err != nil {
 				return nil, err
 			}
 		} else {
@@ -61,10 +61,17 @@ func oauthHTTPClient(ctx context.Context, autoOpen bool) (*http.Client, error) {
 		}
 	}
 
+	if IsOffline() {
+		logger.Warn("offline mode, using cached oauth token without refresh", "has_refresh_token", tok.RefreshToken != "")
+		client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(tok))
+		return wrapAuthHTTPClient(client), nil
+	}
+
 	baseTokenSource := oauthCfg.TokenSource(ctx, tok)
 	tokenSource := &persistingTokenSource{
 		base:    baseTokenSource,
 		persist: persistAuthState,
+		path:    tokenPath,
 	}
 
 	tok, err = tokenSource.Token()
@@ -75,7 +82,7 @@ func oauthHTTPClient(ctx context.Context, autoOpen bool) (*http.Client, error) {
 			return nil, err
 		}
 		if persistAuthState {
-			if err := writeCachedToken(tok); err != nil {
+			if err := writeCachedToken(tokenPath, tok); err != nil {
 				return nil, err
 			}
 		} else {
@@ -85,13 +92,13 @@ func oauthHTTPClient(ctx context.Context, autoOpen bool) (*http.Client, error) {
 		tokenSource = &persistingTokenSource{
 			base:    baseTokenSource,
 			persist: persistAuthState,
+			path:    tokenPath,
 		}
 	}
 
 	logger.Debug("oauth http client ready")
 	client := oauth2.NewClient(ctx, tokenSource)
-	client.Transport = newResilientTransport(client.Transport)
-	return client, nil
+	return wrapAuthHTTPClient(client), nil
 }
 
 // Authorizes a desktop client using OAuth2 and returns the OAuth token

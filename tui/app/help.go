@@ -1,10 +1,13 @@
 package app
 
 import (
+	"strings"
+
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/panels"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -39,14 +42,14 @@ func newHelpModel() help.Model {
 // ShortHelp handles short help for helpKeyMap and returns the resulting state or error.
 func (k helpKeyMap) ShortHelp() []key.Binding {
 	common := []key.Binding{
-		key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
+		tuiconfig.Binding(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, "quit"),
 	}
 
 	if k.keyboardCapture {
 		return append(common,
-			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "close filter")),
-			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "apply")),
-			key.NewBinding(key.WithKeys("~", "^", "/", "="), key.WithHelp("~ ^ / =", "filter")),
+			tuiconfig.Binding(tuiconfig.BlockFilter, tuiconfig.ActionFilterCancel, "close filter"),
+			tuiconfig.Binding(tuiconfig.BlockFilter, tuiconfig.ActionFilterApply, "apply"),
+			filterBinding(),
 		)
 	}
 
@@ -57,28 +60,28 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 			modeLabel = "expand"
 		}
 		return append(common,
-			key.NewBinding(key.WithKeys("f9"), key.WithHelp("F9", modeLabel)),
-			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
-			key.NewBinding(key.WithKeys("space"), key.WithHelp("space", "mark")),
-			key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
-			key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "refresh")),
-			key.NewBinding(key.WithKeys("~", "^", "/", "="), key.WithHelp("~ ^ / =", "filter")),
+			tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, modeLabel),
+			tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionSelect, "select"),
+			tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMark, "mark"),
+			tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionOpen, "open"),
+			tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionRefresh, "refresh"),
+			filterBinding(),
 		)
 	case panels.Parameters:
 		return append(common,
-			key.NewBinding(key.WithKeys("f11"), key.WithHelp("F11", "maximize")),
-			key.NewBinding(key.WithKeys("f2"), key.WithHelp("F2", "rename")),
-			key.NewBinding(key.WithKeys("f4"), key.WithHelp("F4", "edit")),
-			key.NewBinding(key.WithKeys("shift+f4"), key.WithHelp("S-F4", "new")),
-			key.NewBinding(key.WithKeys("f5"), key.WithHelp("F5", "duplicate")),
-			key.NewBinding(key.WithKeys("f6"), key.WithHelp("F6", "move")),
-			key.NewBinding(key.WithKeys("space"), key.WithHelp("space", "toggle")),
-			key.NewBinding(key.WithKeys("f8"), key.WithHelp("F8", "delete")),
-			key.NewBinding(key.WithKeys("p", "P"), key.WithHelp("p/P", "publish")),
-			key.NewBinding(key.WithKeys("d", "D"), key.WithHelp("d/D", "discard")),
-			key.NewBinding(key.WithKeys("y", "Y"), key.WithHelp("y/Y", "copy")),
-			key.NewBinding(key.WithKeys("r", "R"), key.WithHelp("r/R", "reload")),
-			key.NewBinding(key.WithKeys("~", "^", "/", "="), key.WithHelp("~ ^ / =", "filter")),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, "maximize"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionRename, "rename"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionEdit, "edit"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionNew, "new"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, "duplicate"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionMove, "move"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggle, "toggle"),
+			tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionDelete, "delete"),
+			compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionPublish), ref(tuiconfig.BlockParameters, tuiconfig.ActionPublishAll), "publish"),
+			compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionDiscard), ref(tuiconfig.BlockParameters, tuiconfig.ActionDiscardAll), "discard"),
+			compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionCopyName), ref(tuiconfig.BlockParameters, tuiconfig.ActionCopyPath), "copy"),
+			compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionReload), ref(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll), "reload"),
+			filterBinding(),
 		)
 	case panels.Logs:
 		modeLabel := "collapse"
@@ -86,18 +89,62 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 			modeLabel = "expand"
 		}
 		return append(common,
-			key.NewBinding(key.WithKeys("f9"), key.WithHelp("F9", modeLabel)),
-			key.NewBinding(key.WithKeys("[", "]"), key.WithHelp("[/]", "level")),
-			key.NewBinding(key.WithKeys("-", "_", "=", "+"), key.WithHelp("-/+", "resize")),
+			tuiconfig.Binding(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, modeLabel),
+			compoundBinding(ref(tuiconfig.BlockLogs, tuiconfig.ActionLevelDown), ref(tuiconfig.BlockLogs, tuiconfig.ActionLevelUp), "level"),
+			compoundBinding(ref(tuiconfig.BlockLogs, tuiconfig.ActionResizeShrink), ref(tuiconfig.BlockLogs, tuiconfig.ActionResizeGrow), "resize"),
 		)
 	case panels.Details:
 		return append(common,
-			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "close")),
-			key.NewBinding(key.WithKeys("f8"), key.WithHelp("F8", "delete")),
+			tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionClose, "close"),
+			tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionRename, "rename"),
+			tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, "edit"),
+			tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionMove, "move"),
+			tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionDelete, "delete"),
+			compoundBinding(ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyName), ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath), "copy"),
+			tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, "copy value"),
 		)
 	default:
 		return common
 	}
+}
+
+func filterBinding() key.Binding {
+	return multiBinding("filter",
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterFuzzy),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterStartsWith),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterIncludes),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterExact),
+	)
+}
+
+type helpRef struct {
+	block  tuiconfig.Block
+	action tuiconfig.Action
+}
+
+func ref(block tuiconfig.Block, action tuiconfig.Action) helpRef {
+	return helpRef{block: block, action: action}
+}
+
+func compoundBinding(first, second helpRef, desc string) key.Binding {
+	return multiBinding(desc, first, second)
+}
+
+func multiBinding(desc string, refs ...helpRef) key.Binding {
+	var keys []string
+	var labels []string
+	for _, item := range refs {
+		itemKeys := tuiconfig.Keys(item.block, item.action)
+		if len(itemKeys) == 0 {
+			continue
+		}
+		keys = append(keys, itemKeys...)
+		labels = append(labels, tuiconfig.Label(item.block, item.action))
+	}
+	label := strings.Join(labels, "/")
+	binding := key.NewBinding(key.WithKeys(keys...), key.WithHelp(label, desc))
+	binding.SetEnabled(len(keys) > 0)
+	return binding
 }
 
 // FullHelp handles full help for helpKeyMap and returns the resulting state or error.

@@ -6,8 +6,10 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core/config"
 )
@@ -17,6 +19,11 @@ func New() *cobra.Command {
 	profileCmd := &cobra.Command{
 		Use:   "profile",
 		Short: "Manage profiles",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), config.GetActiveProfileName())
+			return nil
+		},
 	}
 
 	listCmd := &cobra.Command{
@@ -27,6 +34,7 @@ func New() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			activeProfile := config.GetActiveProfileName()
 			profiles, err := config.ListProfiles()
 			if err != nil {
 				return err
@@ -34,9 +42,9 @@ func New() *cobra.Command {
 			if jsonOut {
 				encoder := json.NewEncoder(cmd.OutOrStdout())
 				encoder.SetIndent("", "  ")
-				return encoder.Encode(profiles)
+				return encoder.Encode(newProfileListItems(profiles, activeProfile))
 			}
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProfilesTable(profiles))
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProfilesTable(profiles, activeProfile))
 			return nil
 		},
 	}
@@ -68,18 +76,135 @@ func New() *cobra.Command {
 		},
 	}
 
-	profileCmd.AddCommand(listCmd, switchCmd, renameCmd)
+	pathCmd := &cobra.Command{
+		Use:   "path <profile>",
+		Short: "Print profile config and cache directory paths",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return printProfilePaths(cmd, args[0])
+		},
+	}
+	pathCmd.Flags().Bool("json", false, "Print paths as JSON")
+
+	purgeCmd := &cobra.Command{
+		Use:   "purge <profile>",
+		Short: "Delete profile config and cache directories",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return purgeProfile(cmd, args[0])
+		},
+	}
+	purgeCmd.Flags().BoolP("yes", "y", false, "Skip confirmation dialog")
+
+	profileCmd.AddCommand(listCmd, switchCmd, renameCmd, pathCmd, purgeCmd)
 	return profileCmd
 }
 
+type profilePathItem struct {
+	Path string `json:"path"`
+}
+
+// printProfilePaths prints profile paths and returns the resulting value or error.
+func printProfilePaths(cmd *cobra.Command, profileName string) error {
+	configPath, cachePath, err := profilePaths(profileName)
+	if err != nil {
+		return err
+	}
+	jsonOut, err := cmd.Flags().GetBool("json")
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		encoder := json.NewEncoder(cmd.OutOrStdout())
+		encoder.SetIndent("", "  ")
+		return encoder.Encode([]profilePathItem{
+			{Path: configPath},
+			{Path: cachePath},
+		})
+	}
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), configPath)
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), cachePath)
+	return nil
+}
+
+// purgeProfile purges profile directories and returns the resulting value or error.
+func purgeProfile(cmd *cobra.Command, profileName string) error {
+	configPath, cachePath, err := profilePaths(profileName)
+	if err != nil {
+		return err
+	}
+	if err := config.EnsureProfileCanPurge(profileName); err != nil {
+		return err
+	}
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return err
+	}
+	if !yes {
+		confirm := shared.NewConfirmation(
+			fmt.Sprintf("Delete profile %s folders?\n%s\n%s", profileName, configPath, cachePath),
+			confirmation.Yes,
+			shared.ConfirmationOptions{Destructive: true},
+		)
+		ok, err := confirm.RunPrompt()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+	}
+	if err := config.PurgeProfile(profileName); err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged profile: %s\n", profileName)
+	return nil
+}
+
+// profilePaths resolves profile paths and returns the resulting value or error.
+func profilePaths(profileName string) (string, string, error) {
+	configPath, err := config.GetProfileConfigDirPath(profileName)
+	if err != nil {
+		return "", "", err
+	}
+	cachePath, err := config.GetProfileCacheDirPath(profileName)
+	if err != nil {
+		return "", "", err
+	}
+	return configPath, cachePath, nil
+}
+
+type profileListItem struct {
+	Profile string `json:"profile"`
+	Active  bool   `json:"active"`
+}
+
+// newProfileListItems prepares profiles for JSON output.
+func newProfileListItems(profiles []string, activeProfile string) []profileListItem {
+	items := make([]profileListItem, 0, len(profiles))
+	for _, profile := range profiles {
+		items = append(items, profileListItem{
+			Profile: profile,
+			Active:  profile == activeProfile,
+		})
+	}
+	return items
+}
+
 // renderProfilesTable renders render profiles table and returns the resulting value or error.
-func renderProfilesTable(profiles []string) string {
+func renderProfilesTable(profiles []string, activeProfile string) string {
 	noColor := clistyles.NoColorEnabled()
 	rows := make([][]string, 0, len(profiles))
 	profileWidth := lipgloss.Width("Profile")
+	activeWidth := lipgloss.Width("Active")
 	for _, profile := range profiles {
-		rows = append(rows, []string{profile})
+		activeMarker := ""
+		if profile == activeProfile {
+			activeMarker = "✓"
+		}
+		rows = append(rows, []string{profile, activeMarker})
 		profileWidth = max(profileWidth, lipgloss.Width(profile))
+		activeWidth = max(activeWidth, lipgloss.Width(activeMarker))
 	}
 
 	styleFunc := func(row, col int) lipgloss.Style {
@@ -97,9 +222,9 @@ func renderProfilesTable(profiles []string) string {
 	}
 
 	tbl := table.New().
-		Headers("Profile").
+		Headers("Profile", "Active").
 		Rows(rows...).
-		Width(profileWidth + 4).
+		Width(profileWidth + activeWidth + 8).
 		Border(lipgloss.NormalBorder()).
 		BorderHeader(true).
 		BorderRow(false).

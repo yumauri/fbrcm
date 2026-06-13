@@ -8,10 +8,11 @@ import (
 	"github.com/spf13/cobra"
 
 	addcmd "github.com/yumauri/fbrcm/cli/commands/add"
+	authcmd "github.com/yumauri/fbrcm/cli/commands/auth"
 	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
+	configcmd "github.com/yumauri/fbrcm/cli/commands/config"
 	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
-	logincmd "github.com/yumauri/fbrcm/cli/commands/login"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
@@ -49,10 +50,11 @@ func Execute(s *core.Core, version, commit, date string) {
 	rootCmd.SetVersionTemplate(versionTemplate)
 
 	rootCmd.AddCommand(addcmd.New(s))
+	rootCmd.AddCommand(authcmd.New(s))
 	rootCmd.AddCommand(cachecmd.New())
+	rootCmd.AddCommand(configcmd.New())
 	rootCmd.AddCommand(deletecmd.New(s))
 	rootCmd.AddCommand(getcmd.New(s))
-	rootCmd.AddCommand(logincmd.New(s))
 	rootCmd.AddCommand(profilecmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))
 	rootCmd.AddCommand(projectscmd.New(s))

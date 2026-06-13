@@ -30,14 +30,14 @@ Install to a custom directory:
 curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | INSTALL_DIR="$HOME/.local/bin" sh
 ```
 
-Install with Homebrew:
+Install with [Homebrew](https://brew.sh):
 
 ```sh
-brew tap yumauri/homebrew-tap
+brew tap yumauri/tap
 brew install --cask fbrcm
 ```
 
-Install with Scoop on Windows:
+Install with [Scoop](https://scoop.sh) on Windows:
 
 ```powershell
 scoop bucket add yumauri https://github.com/yumauri/scoop-bucket
@@ -71,7 +71,11 @@ go build -o fbrcm .
 
 ## First Setup
 
-`fbrcm` uses Google OAuth. You need a Desktop app OAuth client secret JSON:
+`fbrcm` supports three Google auth methods: OAuth desktop login, service account keys, and gcloud Application Default Credentials (ADC).
+
+### OAuth Desktop Login
+
+You need a Desktop app OAuth client secret JSON:
 
 > [!NOTE]
 > APIs & Services -> Credentials -> Create Credentials -> OAuth client ID -> Desktop app
@@ -87,13 +91,15 @@ go build -o fbrcm .
 Import downloaded client secret file:
 
 ```sh
-fbrcm login import --from /path/to/client_secret.json
+fbrcm auth add oauth default --from /path/to/client-secret.json
 ```
+
+If `--from` is omitted, the command reads piped stdin; without stdin it opens an interactive `.json` file picker.
 
 After the client secret is imported, authenticate:
 
 ```sh
-fbrcm login
+fbrcm auth login default
 ```
 
 The app opens a browser authorization page and waits for the local OAuth callback. If the browser does not open, copy the printed URL into a browser.
@@ -101,22 +107,44 @@ The app opens a browser authorization page and waits for the local OAuth callbac
 Check current auth files:
 
 ```sh
-fbrcm login whoami
-fbrcm login path
+fbrcm auth path default
+```
+
+### Service Account
+
+Import a service account JSON key:
+
+```sh
+fbrcm auth add service-account prod --from /path/to/service-account.json
+```
+
+If `--from` is omitted, the command reads piped stdin; without stdin it opens an interactive `.json` file picker.
+
+### gcloud ADC
+
+Create Application Default Credentials with gcloud, then add an auth identity that uses ADC discovery:
+
+```sh
+gcloud auth application-default login
+fbrcm auth add gcloud default
 ```
 
 ## Where Auth Is Stored
 
 By default, `fbrcm` stores per-profile files under your user config and cache directories.
 
-- Client secret: `~/.config/fbrcm/<profile>/client_secret.json`
+- Auth config: `~/.config/fbrcm/<profile>/auth-config.json`
+- OAuth client secrets: `~/.config/fbrcm/<profile>/auth/<auth-id>/client-secret.json`
+- Service account keys: `~/.config/fbrcm/<profile>/auth/<auth-id>/service-account.json`
 - Projects cache: `~/.config/fbrcm/<profile>/projects-config.json`
-- OAuth token cache: user cache directory, under `fbrcm/<profile>/token.json`
+- OAuth token cache: user cache directory, under `fbrcm/<profile>/auth/<auth-id>/token.json`
+
+Project cache is a known-project registry. Each project stores its selected `auth_id`, so different projects can use different auth identities.
 
 Exact paths:
 
 ```sh
-fbrcm login path
+fbrcm auth path default
 fbrcm projects path
 fbrcm cache path
 ```
@@ -129,7 +157,7 @@ You can override root directories with environment variables:
 Delete auth files:
 
 ```sh
-fbrcm login purge
+fbrcm auth purge default
 ```
 
 ## Basic Usage
@@ -161,7 +189,10 @@ Get Remote Config parameters across projects:
 fbrcm get
 fbrcm get some_parameter
 fbrcm get --project my-project
+fbrcm get --project proj1 --project proj2
 fbrcm get --filter login
+fbrcm get --filter login --filter checkout
+fbrcm get --search rollout
 fbrcm get --json
 ```
 
@@ -177,6 +208,7 @@ Import Remote Config:
 fbrcm project import <project-id> --from remote-config.json --dry-run
 fbrcm project import <project-id> --from remote-config.json --merge
 fbrcm project import <project-id> --from remote-config.json --override
+fbrcm project import <project-id> --from remote-config.json --search rollout --dry-run
 ```
 
 Add parameter:
@@ -191,6 +223,7 @@ Update parameter:
 ```sh
 fbrcm update existing_parameter --project my-project --string "new value" --dry-run
 fbrcm update existing_parameter --project my-project --name renamed_parameter --yes
+fbrcm update --filter feature --search rollout --boolean true --dry-run
 ```
 
 Delete parameter:
@@ -198,6 +231,7 @@ Delete parameter:
 ```sh
 fbrcm delete old_parameter --project my-project --dry-run
 fbrcm delete old_parameter --project my-project --yes
+fbrcm delete --filter old --search rollout --dry-run
 ```
 
 Manage caches:
@@ -213,6 +247,7 @@ fbrcm projects purge
 Profiles let you keep separate OAuth clients, project caches, and token caches.
 
 ```sh
+fbrcm profile
 fbrcm profile list
 fbrcm profile switch work
 fbrcm profile switch personal
@@ -240,6 +275,8 @@ fbrcm get --project '=my-project-id'
 
 Several commands also support `--expr` with [expr-lang](https://expr-lang.org/docs/language-definition) expressions for advanced filtering.
 
+Parameter commands support `--search` for matching names, descriptions, values, condition names, and condition expressions. `--filter`, parameter-context `--expr`, and `--search` are ANDed.
+
 ## What It Can Do
 
 - Open a TUI for browsing projects and Remote Config parameters
@@ -262,4 +299,4 @@ Several commands also support `--expr` with [expr-lang](https://expr-lang.org/do
 
 Use `--dry-run` before imports, updates, adds, and deletes when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
 
-Keep `client_secret.json` and `token.json` private. They grant access through your Google account permissions.
+Keep `client-secret.json`, `token.json`, and service-account key files private. They grant access through Google account or service account permissions.

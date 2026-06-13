@@ -4,11 +4,21 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
 	"github.com/yumauri/fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-var rootStyle = lipgloss.NewStyle()
+var (
+	rootStyle = lipgloss.NewStyle()
+
+	offlineBadgeStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(lipgloss.Color("15")).
+				Background(lipgloss.Color("196")).
+				Padding(0, 1)
+)
 
 // View handles view for Model and returns the resulting state or error.
 func (m Model) View() tea.View {
@@ -73,6 +83,10 @@ func (m Model) View() tea.View {
 		x, y := m.dialog.Position()
 		layers = append(layers, lipgloss.NewLayer(dialog).ID("dialog").X(x).Y(y).Z(4))
 	}
+	if firebase.IsOffline() {
+		badge := offlineBadgeView()
+		layers = append(layers, lipgloss.NewLayer(badge).ID("offline").X(max(m.width-lipgloss.Width(badge), 0)).Y(max(m.height-1, 0)).Z(99))
+	}
 	if len(layers) > 1 {
 		body = lipgloss.NewCompositor(layers...).Render()
 	}
@@ -96,4 +110,12 @@ func (m Model) detailsX() int {
 func (m Model) detailsWidth() int {
 	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
 	return m.detailsWidthForLayout(layout)
+}
+
+// offlineBadgeView renders the offline mode indicator.
+func offlineBadgeView() string {
+	if styles.NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true).Reverse(true).Padding(0, 1).Render("OFFLINE")
+	}
+	return offlineBadgeStyle.Render("OFFLINE")
 }

@@ -145,7 +145,6 @@ func (s *Core) DeleteParameter(ctx context.Context, projectID, groupKey, paramKe
 	}
 	finalCfg := cloneRemoteConfig(currentCfg)
 	removeParamSlot(finalCfg, paramKey, NormalizeRemoteConfigGroupKey(groupKey))
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -208,12 +207,73 @@ func (s *Core) DeleteGroup(ctx context.Context, projectID, groupKey string, publ
 		logger.Error("delete group failed", "project_id", projectID, "group", groupKey, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
 	if reflect.DeepEqual(currentCfg, finalCfg) {
 		return nil, nil, hasDraft, fmt.Errorf("group not changed")
+	}
+
+	finalRaw, err := marshalRemoteConfig(finalCfg)
+	if err != nil {
+		return nil, nil, hasDraft, err
+	}
+
+	if publish {
+		updatedRaw, nextETag, err := s.PublishRemoteConfigWithETag(ctx, projectID, finalRaw, cache.ETag)
+		if err != nil {
+			return nil, nil, hasDraft, err
+		}
+		if err := config.DeleteDraft(projectID); err != nil {
+			logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
+		}
+		updatedCache := &config.ParametersCache{
+			ETag:         nextETag,
+			CachedAt:     time.Now().UTC(),
+			RemoteConfig: updatedRaw,
+		}
+		tree, err := s.BuildParametersTree(updatedCache)
+		return updatedCache, tree, false, err
+	}
+
+	if err := config.SaveDraft(projectID, finalRaw); err != nil {
+		return nil, nil, hasDraft, err
+	}
+	tree, err := s.BuildParametersTreeFromRaw(finalRaw, cache.CachedAt, cache.ETag)
+	return cache, tree, true, err
+}
+
+// DeleteConditionalValue removes one conditional value for Core.
+func (s *Core) DeleteConditionalValue(ctx context.Context, projectID, groupKey, paramKey, valueLabel string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
+	logger := corelog.For("core")
+	cache, source, err := s.GetParameters(ctx, projectID, false)
+	_ = source
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	currentRaw, hasDraft, err := s.LoadDraft(projectID)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	if !hasDraft {
+		currentRaw = cache.RemoteConfig
+	}
+
+	currentCfg, err := firebase.ParseRemoteConfig(currentRaw)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("decode current remote config: %w", err)
+	}
+	finalCfg := cloneRemoteConfig(currentCfg)
+	if err := deleteConditionalValueSlot(finalCfg, paramKey, NormalizeRemoteConfigGroupKey(groupKey), valueLabel); err != nil {
+		logger.Error("delete conditional value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "publish", publish, "err", err)
+		return nil, nil, hasDraft, err
+	}
+	removeEmptyGroups(finalCfg)
+	dropUnknownConditionReferences(finalCfg)
+
+	if reflect.DeepEqual(currentCfg, finalCfg) {
+		return nil, nil, hasDraft, fmt.Errorf("conditional value not changed")
 	}
 
 	finalRaw, err := marshalRemoteConfig(finalCfg)
@@ -271,7 +331,6 @@ func (s *Core) RenameParameter(ctx context.Context, projectID, groupKey, paramKe
 		logger.Error("rename parameter failed", "project_id", projectID, "group", groupKey, "param", paramKey, "next_param", nextParamKey, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -334,7 +393,6 @@ func (s *Core) RenameGroup(ctx context.Context, projectID, groupKey, nextGroupKe
 		logger.Error("rename group failed", "project_id", projectID, "group", groupKey, "next_group", nextGroupKey, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -397,7 +455,6 @@ func (s *Core) MoveParameter(ctx context.Context, projectID, groupKey, paramKey,
 		logger.Error("move parameter failed", "project_id", projectID, "group", groupKey, "param", paramKey, "next_group", nextGroupKey, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -460,7 +517,6 @@ func (s *Core) EditParameterDetails(ctx context.Context, projectID string, edit 
 		logger.Error("edit parameter details failed", "project_id", projectID, "group", edit.GroupKey, "param", edit.ParamKey, "next_group", edit.NextGroupKey, "next_param", edit.NextParamKey, "next_type", edit.NextValueType, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -523,7 +579,6 @@ func (s *Core) MoveGroup(ctx context.Context, projectID, groupKey, nextGroupKey 
 		logger.Error("move group failed", "project_id", projectID, "group", groupKey, "next_group", nextGroupKey, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -586,7 +641,6 @@ func (s *Core) SetBooleanParameterValue(ctx context.Context, projectID, groupKey
 		logger.Error("set boolean parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -649,7 +703,6 @@ func (s *Core) SetNumberParameterValue(ctx context.Context, projectID, groupKey,
 		logger.Error("set number parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -712,7 +765,6 @@ func (s *Core) SetStringParameterValue(ctx context.Context, projectID, groupKey,
 		logger.Error("set string parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -775,7 +827,6 @@ func (s *Core) SetJSONParameterValue(ctx context.Context, projectID, groupKey, p
 		logger.Error("set json parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -837,7 +888,6 @@ func (s *Core) DuplicateParameter(ctx context.Context, projectID, groupKey, para
 	if err != nil {
 		return nil, nil, hasDraft, "", err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -878,7 +928,6 @@ func (s *Core) DuplicateParameterNamed(ctx context.Context, projectID, groupKey,
 		logger.Error("duplicate parameter failed", "project_id", projectID, "group", groupKey, "param", paramKey, "next_param", nextParamKey, "publish", publish, "err", err)
 		return nil, nil, hasDraft, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -935,7 +984,6 @@ func (s *Core) PreviewDeleteParameter(projectID, groupKey, paramKey string) (*Pa
 
 	finalCfg := cloneRemoteConfig(currentCfg)
 	removeParamSlot(finalCfg, paramKey, NormalizeRemoteConfigGroupKey(groupKey))
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -980,12 +1028,55 @@ func (s *Core) PreviewDeleteGroup(projectID, groupKey string) (*ParametersCache,
 		logger.Error("preview delete group failed", "project_id", projectID, "group", groupKey, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
 	if reflect.DeepEqual(currentCfg, finalCfg) {
 		return nil, nil, fmt.Errorf("group not changed")
+	}
+
+	finalRaw, err := marshalRemoteConfig(finalCfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cache, finalRaw, nil
+}
+
+// PreviewDeleteConditionalValue previews one conditional value removal.
+func (s *Core) PreviewDeleteConditionalValue(projectID, groupKey, paramKey, valueLabel string) (*ParametersCache, json.RawMessage, error) {
+	logger := corelog.For("core")
+	cache, _, err := s.InspectParametersCache(projectID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if cache == nil {
+		return nil, nil, fmt.Errorf("parameters cache not found")
+	}
+
+	currentRaw := cache.RemoteConfig
+	draftRaw, hasDraft, err := s.LoadDraft(projectID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if hasDraft {
+		currentRaw = draftRaw
+	}
+
+	currentCfg, err := firebase.ParseRemoteConfig(currentRaw)
+	if err != nil {
+		return nil, nil, fmt.Errorf("decode current remote config: %w", err)
+	}
+
+	finalCfg := cloneRemoteConfig(currentCfg)
+	if err := deleteConditionalValueSlot(finalCfg, paramKey, NormalizeRemoteConfigGroupKey(groupKey), valueLabel); err != nil {
+		logger.Error("preview delete conditional value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
+		return nil, nil, err
+	}
+	removeEmptyGroups(finalCfg)
+	dropUnknownConditionReferences(finalCfg)
+
+	if reflect.DeepEqual(currentCfg, finalCfg) {
+		return nil, nil, fmt.Errorf("conditional value not changed")
 	}
 
 	finalRaw, err := marshalRemoteConfig(finalCfg)
@@ -1025,7 +1116,6 @@ func (s *Core) PreviewRenameParameter(projectID, groupKey, paramKey, nextParamKe
 		logger.Error("preview rename parameter failed", "project_id", projectID, "group", groupKey, "param", paramKey, "next_param", nextParamKey, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1070,7 +1160,6 @@ func (s *Core) PreviewRenameGroup(projectID, groupKey, nextGroupKey string) (*Pa
 		logger.Error("preview rename group failed", "project_id", projectID, "group", groupKey, "next_group", nextGroupKey, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1115,7 +1204,6 @@ func (s *Core) PreviewMoveParameter(projectID, groupKey, paramKey, nextGroupKey 
 		logger.Error("preview move parameter failed", "project_id", projectID, "group", groupKey, "param", paramKey, "next_group", nextGroupKey, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1157,7 +1245,6 @@ func (s *Core) PreviewEditParameterDetails(projectID string, edit ParameterDetai
 		logger.Error("preview edit parameter details failed", "project_id", projectID, "group", edit.GroupKey, "param", edit.ParamKey, "next_group", edit.NextGroupKey, "next_param", edit.NextParamKey, "next_type", edit.NextValueType, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1198,7 +1285,6 @@ func (s *Core) PreviewMoveGroup(projectID, groupKey, nextGroupKey string) (*Para
 		logger.Error("preview move group failed", "project_id", projectID, "group", groupKey, "next_group", nextGroupKey, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1243,7 +1329,6 @@ func (s *Core) PreviewSetBooleanParameterValue(projectID, groupKey, paramKey, va
 		logger.Error("preview set boolean parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1288,7 +1373,6 @@ func (s *Core) PreviewSetNumberParameterValue(projectID, groupKey, paramKey, val
 		logger.Error("preview set number parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1333,7 +1417,6 @@ func (s *Core) PreviewSetStringParameterValue(projectID, groupKey, paramKey, val
 		logger.Error("preview set string parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1378,7 +1461,6 @@ func (s *Core) PreviewSetJSONParameterValue(projectID, groupKey, paramKey, value
 		logger.Error("preview set json parameter value failed", "project_id", projectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1423,7 +1505,6 @@ func (s *Core) PreviewDuplicateParameter(projectID, groupKey, paramKey, nextPara
 		logger.Error("preview duplicate parameter failed", "project_id", projectID, "group", groupKey, "param", paramKey, "next_param", nextParamKey, "err", err)
 		return nil, nil, err
 	}
-	pruneUnusedConditions(finalCfg)
 	removeEmptyGroups(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
 
@@ -1569,7 +1650,6 @@ func mergeDraftWithLatest(baseRaw, draftRaw, latestRaw json.RawMessage) (json.Ra
 		}
 		return nil, false, fmt.Errorf("draft conflict on %s", slotDisplayKey(key))
 	}
-	pruneUnusedConditions(merged)
 	removeEmptyGroups(merged)
 	dropUnknownConditionReferences(merged)
 
@@ -2193,6 +2273,29 @@ func setJSONParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueLabe
 	return nil
 }
 
+// deleteConditionalValueSlot removes a conditional value from one parameter.
+func deleteConditionalValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueLabel string) error {
+	if valueLabel == "default" || strings.TrimSpace(valueLabel) == "" {
+		return fmt.Errorf("conditional value not found")
+	}
+	slot, ok := lookupParamSlot(cfg, key, groupName)
+	if !ok {
+		return fmt.Errorf("parameter not found")
+	}
+	if slot.param.ConditionalValues == nil {
+		return fmt.Errorf("conditional value %q not found", valueLabel)
+	}
+	if _, ok := slot.param.ConditionalValues[valueLabel]; !ok {
+		return fmt.Errorf("conditional value %q not found", valueLabel)
+	}
+	delete(slot.param.ConditionalValues, valueLabel)
+	if len(slot.param.ConditionalValues) == 0 {
+		slot.param.ConditionalValues = nil
+	}
+	setParamSlot(cfg, key, slot)
+	return nil
+}
+
 // duplicateParamSlot handles duplicate param slot and returns the resulting value or error.
 func duplicateParamSlot(cfg *firebase.RemoteConfig, key, groupName string) (string, error) {
 	slot, ok := lookupParamSlot(cfg, key, groupName)
@@ -2280,34 +2383,6 @@ func lookupAnyParamSlot(cfg *firebase.RemoteConfig, key string) (paramSlot, bool
 		}
 	}
 	return paramSlot{}, false
-}
-
-// pruneUnusedConditions handles prune unused conditions and returns the resulting value or error.
-func pruneUnusedConditions(cfg *firebase.RemoteConfig) {
-	if cfg == nil || len(cfg.Conditions) == 0 {
-		return
-	}
-	used := make(map[string]struct{})
-	collectUsedConditions(used, cfg.Parameters)
-	for _, group := range cfg.ParameterGroups {
-		collectUsedConditions(used, group.Parameters)
-	}
-	kept := make([]firebase.RemoteConfigCondition, 0, len(cfg.Conditions))
-	for _, condition := range cfg.Conditions {
-		if _, ok := used[condition.Name]; ok {
-			kept = append(kept, condition)
-		}
-	}
-	cfg.Conditions = kept
-}
-
-// collectUsedConditions handles collect used conditions and returns the resulting value or error.
-func collectUsedConditions(used map[string]struct{}, params map[string]firebase.RemoteConfigParam) {
-	for _, param := range params {
-		for condition := range param.ConditionalValues {
-			used[condition] = struct{}{}
-		}
-	}
 }
 
 // dropUnknownConditionReferences handles drop unknown condition references and returns the resulting value or error.

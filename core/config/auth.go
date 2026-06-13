@@ -1,0 +1,275 @@
+package config
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+const (
+	AuthConfigVersion      = 1
+	AuthTypeOAuth          = "oauth"
+	AuthTypeServiceAccount = "service-account"
+	AuthTypeGCloud         = "gcloud"
+)
+
+// AuthFile holds auth registry state.
+type AuthFile struct {
+	Version       int         `json:"version"`
+	DefaultAuthID string      `json:"default_auth_id"`
+	Auth          []AuthEntry `json:"auth"`
+}
+
+// AuthEntry describes one configured auth identity.
+type AuthEntry struct {
+	ID                 string `json:"id"`
+	Type               string `json:"type"`
+	Label              string `json:"label"`
+	ClientSecretPath   string `json:"client_secret_path,omitempty"`
+	TokenPath          string `json:"token_path,omitempty"`
+	ServiceAccountPath string `json:"service_account_path,omitempty"`
+}
+
+// ValidateAuthID validates auth id as a single safe path segment.
+func ValidateAuthID(id string) error {
+	if strings.TrimSpace(id) == "" {
+		return fmt.Errorf("auth id cannot be empty")
+	}
+	if strings.TrimSpace(id) != id {
+		return fmt.Errorf("auth id cannot have leading or trailing whitespace")
+	}
+	if id == "." || id == ".." {
+		return fmt.Errorf("auth id %q is reserved", id)
+	}
+	if strings.ContainsAny(id, `/\`) {
+		return fmt.Errorf("auth id cannot contain path separators")
+	}
+	if filepath.Clean(id) != id {
+		return fmt.Errorf("auth id must be a single path segment")
+	}
+	return nil
+}
+
+// LoadAuth loads auth registry.
+func LoadAuth() (*AuthFile, error) {
+	path := GetAuthFilePath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read auth config: %w", err)
+	}
+	var file AuthFile
+	if err := json.Unmarshal(data, &file); err != nil {
+		return nil, fmt.Errorf("decode auth config: %w", err)
+	}
+	if err := validateAuthFile(&file); err != nil {
+		return nil, err
+	}
+	return &file, nil
+}
+
+// SaveAuth saves auth registry.
+func SaveAuth(file *AuthFile) error {
+	if file == nil {
+		return fmt.Errorf("auth config is nil")
+	}
+	file.Version = AuthConfigVersion
+	sort.SliceStable(file.Auth, func(i, j int) bool {
+		return file.Auth[i].ID < file.Auth[j].ID
+	})
+	if file.DefaultAuthID == "" && len(file.Auth) > 0 {
+		file.DefaultAuthID = file.Auth[0].ID
+	}
+	if err := validateAuthFile(file); err != nil {
+		return err
+	}
+	if err := EnsurePrivateDir(GetConfigDirPath()); err != nil {
+		return fmt.Errorf("create config dir: %w", err)
+	}
+	data, err := json.MarshalIndent(file, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode auth config: %w", err)
+	}
+	data = append(data, '\n')
+	path := GetAuthFilePath()
+	if err := os.WriteFile(path, data, PrivateFileMode); err != nil {
+		return fmt.Errorf("write auth config: %w", err)
+	}
+	if err := EnsurePrivateFile(path); err != nil {
+		return fmt.Errorf("chmod auth config: %w", err)
+	}
+	return nil
+}
+
+// DefaultOAuthAuthEntry builds default OAuth auth entry for id.
+func DefaultOAuthAuthEntry(id, label string) AuthEntry {
+	return AuthEntry{
+		ID:               id,
+		Type:             AuthTypeOAuth,
+		Label:            label,
+		ClientSecretPath: filepath.ToSlash(filepath.Join("auth", id, "client-secret.json")),
+		TokenPath:        filepath.ToSlash(filepath.Join("auth", id, "token.json")),
+	}
+}
+
+// DefaultServiceAccountAuthEntry builds default service account auth entry for id.
+func DefaultServiceAccountAuthEntry(id, label string) AuthEntry {
+	return AuthEntry{
+		ID:                 id,
+		Type:               AuthTypeServiceAccount,
+		Label:              label,
+		ServiceAccountPath: filepath.ToSlash(filepath.Join("auth", id, "service-account.json")),
+	}
+}
+
+// DefaultGCloudAuthEntry builds default gcloud ADC auth entry for id.
+func DefaultGCloudAuthEntry(id, label string) AuthEntry {
+	return AuthEntry{
+		ID:    id,
+		Type:  AuthTypeGCloud,
+		Label: label,
+	}
+}
+
+// UpsertAuthEntry upserts auth entry and makes first entry default.
+func UpsertAuthEntry(file *AuthFile, entry AuthEntry) *AuthFile {
+	if file == nil {
+		file = &AuthFile{Version: AuthConfigVersion}
+	}
+	replaced := false
+	for i := range file.Auth {
+		if file.Auth[i].ID == entry.ID {
+			file.Auth[i] = entry
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		file.Auth = append(file.Auth, entry)
+	}
+	if file.DefaultAuthID == "" {
+		file.DefaultAuthID = entry.ID
+	}
+	return file
+}
+
+// FindAuth finds an auth entry by id.
+func (f *AuthFile) FindAuth(id string) (AuthEntry, bool) {
+	if f == nil {
+		return AuthEntry{}, false
+	}
+	for _, entry := range f.Auth {
+		if entry.ID == id {
+			return entry, true
+		}
+	}
+	return AuthEntry{}, false
+}
+
+// OAuthClientSecretPath resolves OAuth client secret path for entry.
+func OAuthClientSecretPath(entry AuthEntry) string {
+	return resolveConfigAuthPath(entry.ClientSecretPath)
+}
+
+// OAuthTokenPath resolves OAuth token path for entry.
+func OAuthTokenPath(entry AuthEntry) string {
+	return resolveCacheAuthPath(entry.TokenPath)
+}
+
+// ServiceAccountKeyPath resolves service account key path for entry.
+func ServiceAccountKeyPath(entry AuthEntry) string {
+	return resolveConfigAuthPath(entry.ServiceAccountPath)
+}
+
+// RemoveAuth removes auth entry by id.
+func RemoveAuth(file *AuthFile, id string) (*AuthFile, bool) {
+	if file == nil {
+		return &AuthFile{Version: AuthConfigVersion}, false
+	}
+	next := make([]AuthEntry, 0, len(file.Auth))
+	removed := false
+	for _, entry := range file.Auth {
+		if entry.ID == id {
+			removed = true
+			continue
+		}
+		next = append(next, entry)
+	}
+	file.Auth = next
+	if file.DefaultAuthID == id {
+		file.DefaultAuthID = ""
+		if len(file.Auth) > 0 {
+			file.DefaultAuthID = file.Auth[0].ID
+		}
+	}
+	return file, removed
+}
+
+func validateAuthFile(file *AuthFile) error {
+	if file.Version != AuthConfigVersion {
+		return fmt.Errorf("unsupported auth config version %d", file.Version)
+	}
+	seen := map[string]struct{}{}
+	defaultSeen := file.DefaultAuthID == ""
+	for _, entry := range file.Auth {
+		if err := ValidateAuthID(entry.ID); err != nil {
+			return err
+		}
+		if _, ok := seen[entry.ID]; ok {
+			return fmt.Errorf("duplicate auth id %q", entry.ID)
+		}
+		seen[entry.ID] = struct{}{}
+		switch entry.Type {
+		case AuthTypeOAuth:
+			if strings.TrimSpace(entry.ClientSecretPath) == "" {
+				return fmt.Errorf("auth %s client secret path is empty", entry.ID)
+			}
+			if strings.TrimSpace(entry.TokenPath) == "" {
+				return fmt.Errorf("auth %s token path is empty", entry.ID)
+			}
+		case AuthTypeServiceAccount:
+			if strings.TrimSpace(entry.ServiceAccountPath) == "" {
+				return fmt.Errorf("auth %s service account path is empty", entry.ID)
+			}
+		case AuthTypeGCloud:
+		default:
+			return fmt.Errorf("unsupported auth type %q for %s", entry.Type, entry.ID)
+		}
+		if entry.ID == file.DefaultAuthID {
+			defaultSeen = true
+		}
+	}
+	if !defaultSeen {
+		return fmt.Errorf("default auth %q is not configured", file.DefaultAuthID)
+	}
+	return nil
+}
+
+func resolveConfigAuthPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(GetConfigDirPath(), filepath.FromSlash(path))
+}
+
+func resolveCacheAuthPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(GetCacheDirPath(), filepath.FromSlash(path))
+}
+
+// LoadAuthOrEmpty loads auth registry or returns an empty one on cache miss.
+func LoadAuthOrEmpty() (*AuthFile, error) {
+	file, err := LoadAuth()
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return &AuthFile{Version: AuthConfigVersion}, nil
+		}
+		return nil, err
+	}
+	return file, nil
+}

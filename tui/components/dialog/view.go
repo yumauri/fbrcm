@@ -38,7 +38,7 @@ func (m Model) View() string {
 	lines = append(lines, strings.Repeat(" ", contentWidth))
 	lines = append(lines, renderBlockAlignedRight(m.renderButtons(), contentWidth)...)
 
-	return renderFrame(m.title, lines, contentWidth)
+	return renderFrame(m.title, lines, contentWidth, m.scrollbar(), bodyHeight)
 }
 
 // Position handles position for Model and returns the resulting state or error.
@@ -87,13 +87,27 @@ func appendInterleavedSpaces(items []string) []string {
 	return out
 }
 
+// scrollbarState holds scrollbar state state used by the dialog package.
+type scrollbarState struct {
+	// visible stores visible for scrollbarState.
+	visible bool
+	// thumbStart stores thumb start for scrollbarState.
+	thumbStart int
+	// thumbEnd stores thumb end for scrollbarState.
+	thumbEnd int
+}
+
 // renderFrame renders render frame and returns the resulting value or error.
-func renderFrame(title string, body []string, contentWidth int) string {
+func renderFrame(title string, body []string, contentWidth int, scrollbar scrollbarState, bodyHeight int) string {
 	frameWidth := contentWidth + 5
 	top := renderTopBorder(title, frameWidth)
 	lines := []string{" " + top + " ", " " + borderStyle.Render("│  ") + strings.Repeat(" ", contentWidth) + borderStyle.Render(" │") + " "}
-	for _, line := range body {
-		lines = append(lines, " "+borderStyle.Render("│  ")+padToWidth(line, contentWidth)+borderStyle.Render(" │")+" ")
+	for i, line := range body {
+		rightEdge := borderStyle.Render("│")
+		if scrollbar.visible && i < bodyHeight && i >= scrollbar.thumbStart && i <= scrollbar.thumbEnd {
+			rightEdge = styles.ScrollbarThumb.Render("█")
+		}
+		lines = append(lines, " "+borderStyle.Render("│  ")+padToWidth(line, contentWidth)+borderStyle.Render(" ")+rightEdge+" ")
 	}
 	lines = append(lines, " "+borderStyle.Render("╰"+strings.Repeat("─", contentWidth+3)+"╯")+" ")
 	return strings.Join(lines, "\n")

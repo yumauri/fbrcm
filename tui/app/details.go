@@ -49,6 +49,16 @@ func (m *Model) openNewParameterDetails() tea.Cmd {
 	return cmd
 }
 
+// activateDetailsGroup activates details group editor.
+func (m *Model) activateDetailsGroup() tea.Cmd {
+	if !m.detailsVisible {
+		return nil
+	}
+	var cmd tea.Cmd
+	m.details, cmd = m.details.ActivateGroup()
+	return cmd
+}
+
 // requestCloseDetails handles request close details for Model and returns the resulting state or error.
 func (m *Model) requestCloseDetails() tea.Cmd {
 	if m.details.FieldActive() {
@@ -97,8 +107,62 @@ func (m *Model) submitDetailsForm() tea.Cmd {
 	return nil
 }
 
+// requestDeleteDetails opens delete flow for details parameter.
+func (m *Model) requestDeleteDetails() tea.Cmd {
+	if anchor, ok := m.details.CurrentConditionalValueAnchor(); ok {
+		if m.parameters.HasDraft(anchor.Project.ProjectID) {
+			return m.deleteConditionalValueCmd(anchor.Project, anchor.GroupKey, anchor.ParamKey, anchor.ValueLabel, false)
+		}
+		m.openDeleteConditionalValueDialog(anchor.Project, anchor.GroupKey, anchor.ParamKey, anchor.ValueLabel)
+		x, y, width, height := m.details.Bounds()
+		m.dialog = m.dialog.CenterWithin(x, y, width, height)
+		return nil
+	}
+	data := m.details.Data()
+	if data == nil {
+		return nil
+	}
+	if m.parameters.HasDraft(data.Project.ProjectID) {
+		return m.deleteParameterCmd(data.Project, data.GroupKey, data.Parameter.Key, false, true)
+	}
+	m.openDeleteDialog(data.Project, data.GroupKey, data.Parameter.Key, true)
+	x, y, width, height := m.details.Bounds()
+	m.dialog = m.dialog.CenterWithin(x, y, width, height)
+	return nil
+}
+
+// copyDetailsNameCmd copies current details parameter name.
+func (m Model) copyDetailsNameCmd() tea.Cmd {
+	data := m.details.Data()
+	if data == nil {
+		return nil
+	}
+	return copyToClipboardCmd(data.Parameter.Key)
+}
+
+// copyDetailsPathCmd copies current details parameter path.
+func (m Model) copyDetailsPathCmd() tea.Cmd {
+	data := m.details.Data()
+	if data == nil {
+		return nil
+	}
+	return copyToClipboardCmd(data.Project.ProjectID + "/" + data.GroupKey + "/" + data.Parameter.Key)
+}
+
+// copyDetailsSelectedValueCmd copies selected details value.
+func (m Model) copyDetailsSelectedValueCmd() tea.Cmd {
+	value, ok := m.details.SelectedRawValue()
+	if !ok {
+		return nil
+	}
+	return copyToClipboardCmd(value)
+}
+
 // applyParameterSelection handles apply parameter selection for Model and returns the resulting state or error.
 func (m *Model) applyParameterSelection(msg messages.ParameterSelectionChangedMsg) {
+	if msg.ResetScroll {
+		m.details = m.details.ResetScroll()
+	}
 	if msg.Data != nil {
 		m.details = m.details.SetData(msg.Data)
 	}
@@ -110,6 +174,10 @@ func (m *Model) applyParameterSelection(msg messages.ParameterSelectionChangedMs
 
 // handleParameterSelection handles handle parameter selection for Model and returns the resulting state or error.
 func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedMsg) tea.Cmd {
+	if msg.Data == nil && msg.ResetScroll {
+		m.applyParameterSelection(msg)
+		return nil
+	}
 	if !m.detailsVisible || !m.details.Dirty() {
 		m.applyParameterSelection(msg)
 		return nil

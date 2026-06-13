@@ -83,8 +83,9 @@ func New(svc *core.Core) *cobra.Command {
 	}
 	importCmd.Flags().String("from", "", "Read Remote Config JSON from file path")
 	importCmd.Flags().StringArray("group", nil, "Import only specified parameter group; may be repeated")
-	importCmd.Flags().StringP("filter", "f", "", "Filter parameters by mode-prefixed query (^, /, ~, =)")
+	importCmd.Flags().StringArrayP("filter", "f", nil, "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated")
 	importCmd.Flags().String("expr", "", "Filter imported config by expr-lang expression")
+	importCmd.Flags().String("search", "", "Search imported parameters by name, description, values, and conditions")
 	importCmd.Flags().Bool("dry-run", false, "Log Firebase write requests without sending them")
 	importCmd.Flags().Bool("remove-all-conditions", false, "Remove all conditions and conditional values from imported config")
 	importCmd.Flags().Bool("remove-project-specific-conditions", false, "Remove project specific conditions and their usages from imported config")

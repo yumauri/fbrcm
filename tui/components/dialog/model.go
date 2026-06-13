@@ -1,9 +1,12 @@
 package dialog
 
 import (
+	"strings"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"strings"
+
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 type ButtonVariant int
@@ -145,24 +148,25 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "left", "h", "shift+tab":
+		k := msg.String()
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionPrev, k):
 			m.move(-1)
-		case "right", "l", "tab":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionNext, k):
 			m.move(1)
-		case "up", "k":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionUp, k):
 			m.scrollBy(-1)
-		case "down", "j":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionDown, k):
 			m.scrollBy(1)
-		case "pgup":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionPageUp, k):
 			m.scrollBy(-5)
-		case "pgdown":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionPageDown, k):
 			m.scrollBy(5)
-		case "home":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionHome, k):
 			m.scroll = 0
-		case "end":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionEnd, k):
 			m.scroll = m.maxScroll()
-		case "enter":
+		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionSubmit, k):
 			if m.selected >= 0 && m.selected < len(m.buttons) {
 				cmd := m.buttons[m.selected].OnPress
 				m = m.Close()
@@ -221,6 +225,28 @@ func (m *Model) scrollBy(delta int) {
 // maxScroll handles max scroll for Model and returns the resulting state or error.
 func (m Model) maxScroll() int {
 	return max(len(m.body)-m.bodyHeight(), 0)
+}
+
+// scrollbar handles scrollbar for Model and returns the resulting state or error.
+func (m Model) scrollbar() scrollbarState {
+	contentHeight := m.bodyHeight()
+	totalLines := len(m.body)
+	if contentHeight <= 0 || totalLines <= contentHeight {
+		return scrollbarState{}
+	}
+
+	thumbHeight := max(2, (contentHeight*contentHeight)/totalLines)
+	thumbHeight = min(thumbHeight, contentHeight)
+
+	maxOffset := max(totalLines-contentHeight, 1)
+	maxThumbStart := max(contentHeight-thumbHeight, 0)
+	thumbStart := (m.scroll * maxThumbStart) / maxOffset
+
+	return scrollbarState{
+		visible:    true,
+		thumbStart: thumbStart,
+		thumbEnd:   min(thumbStart+thumbHeight-1, contentHeight-1),
+	}
 }
 
 // bodyHeight handles body height for Model and returns the resulting state or error.

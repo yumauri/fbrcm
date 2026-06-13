@@ -26,8 +26,10 @@ import (
 type importOptions struct {
 	// groups stores groups for importOptions.
 	groups []string
-	// paramFilter stores param filter for importOptions.
-	paramFilter string
+	// paramFilters stores param filters for importOptions.
+	paramFilters []string
+	// search stores search for importOptions.
+	search shared.ParameterSearch
 	// expr stores expr for importOptions.
 	expr string
 	// removeAllConditions stores remove all conditions for importOptions.
@@ -123,7 +125,12 @@ func runImportCommand(cmd *cobra.Command, svc *core.Core, project core.Project) 
 		return fmt.Errorf("remote config input is not valid json")
 	}
 
-	importCfg, err := firebase.ParseRemoteConfig(raw)
+	remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+	if err != nil {
+		return err
+	}
+
+	importCfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 	if err != nil {
 		return fmt.Errorf("decode remote config: %w", err)
 	}
@@ -204,7 +211,7 @@ func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	if err != nil {
 		return opts, err
 	}
-	opts.paramFilter, err = cmd.Flags().GetString("filter")
+	opts.paramFilters, err = cmd.Flags().GetStringArray("filter")
 	if err != nil {
 		return opts, err
 	}
@@ -212,6 +219,11 @@ func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	if err != nil {
 		return opts, err
 	}
+	searchValue, err := cmd.Flags().GetString("search")
+	if err != nil {
+		return opts, err
+	}
+	opts.search = shared.NewParameterSearch(searchValue)
 	opts.removeAllConditions, err = cmd.Flags().GetBool("remove-all-conditions")
 	if err != nil {
 		return opts, err
@@ -242,7 +254,6 @@ func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 
 	opts.groups = normalizeGroups(opts.groups)
 	opts.expr = strings.TrimSpace(opts.expr)
-	opts.paramFilter = strings.TrimSpace(opts.paramFilter)
 	return opts, nil
 }
 
@@ -272,8 +283,12 @@ func transformImportConfig(project core.Project, cfg *firebase.RemoteConfig, opt
 		}
 		pruneUnusedConditions(cfg)
 	}
-	if opts.paramFilter != "" {
-		filterImportParameters(cfg, opts.paramFilter)
+	if len(shared.ParseFilters(opts.paramFilters)) > 0 {
+		filterImportParameters(cfg, opts.paramFilters)
+		pruneUnusedConditions(cfg)
+	}
+	if !opts.search.Empty() {
+		filterImportParametersBySearch(cfg, opts.search)
 		pruneUnusedConditions(cfg)
 	}
 	if opts.expr != "" {
@@ -325,15 +340,32 @@ func filterImportGroups(cfg *firebase.RemoteConfig, groups []string) error {
 }
 
 // filterImportParameters filters filter import parameters and returns the resulting value or error.
-func filterImportParameters(cfg *firebase.RemoteConfig, raw string) {
-	mode, query := parseImportFilter(raw)
-	if query == "" {
+func filterImportParameters(cfg *firebase.RemoteConfig, rawFilters []string) {
+	filters := shared.ParseFilters(rawFilters)
+	if len(filters) == 0 {
 		return
 	}
 
-	cfg.Parameters = filterImportParamMap(cfg.Parameters, mode, query)
+	cfg.Parameters = filterImportParamMap(cfg.Parameters, filters)
 	for groupName, group := range cfg.ParameterGroups {
-		group.Parameters = filterImportParamMap(group.Parameters, mode, query)
+		group.Parameters = filterImportParamMap(group.Parameters, filters)
+		if len(group.Parameters) == 0 {
+			delete(cfg.ParameterGroups, groupName)
+			continue
+		}
+		cfg.ParameterGroups[groupName] = group
+	}
+}
+
+// filterImportParametersBySearch filters import parameters by search and returns the resulting value or error.
+func filterImportParametersBySearch(cfg *firebase.RemoteConfig, search shared.ParameterSearch) {
+	if search.Empty() {
+		return
+	}
+
+	cfg.Parameters = filterImportParamMapBySearch(cfg, cfg.Parameters, search)
+	for groupName, group := range cfg.ParameterGroups {
+		group.Parameters = filterImportParamMapBySearch(cfg, group.Parameters, search)
 		if len(group.Parameters) == 0 {
 			delete(cfg.ParameterGroups, groupName)
 			continue
@@ -360,15 +392,32 @@ func filterImportParametersByExpr(project core.Project, cfg *firebase.RemoteConf
 }
 
 // filterImportParamMap filters filter import param map and returns the resulting value or error.
-func filterImportParamMap(params map[string]firebase.RemoteConfigParam, mode filter.Mode, query string) map[string]firebase.RemoteConfigParam {
+func filterImportParamMap(params map[string]firebase.RemoteConfigParam, filters []shared.QueryFilter) map[string]firebase.RemoteConfigParam {
 	if len(params) == 0 {
 		return nil
 	}
 
 	filtered := make(map[string]firebase.RemoteConfigParam, len(params))
 	for key, param := range params {
-		match, _ := filter.Match(key, query, mode)
-		if match {
+		if shared.MatchAnyFilter(key, filters) {
+			filtered[key] = param
+		}
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+	return filtered
+}
+
+// filterImportParamMapBySearch filters import param map by search and returns the resulting value or error.
+func filterImportParamMapBySearch(cfg *firebase.RemoteConfig, params map[string]firebase.RemoteConfigParam, search shared.ParameterSearch) map[string]firebase.RemoteConfigParam {
+	if len(params) == 0 {
+		return nil
+	}
+
+	filtered := make(map[string]firebase.RemoteConfigParam, len(params))
+	for key, param := range params {
+		if shared.MatchParameterSearch(key, param, cfg, search) {
 			filtered[key] = param
 		}
 	}
@@ -395,20 +444,6 @@ func filterImportParamMapByExpr(project core.Project, cfg *firebase.RemoteConfig
 		return nil
 	}
 	return filtered
-}
-
-// parseImportFilter parses parse import filter and returns the resulting value or error.
-func parseImportFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-	return mode, string([]rune(raw)[1:])
 }
 
 // removeAllConditions removes remove all conditions and returns the resulting value or error.

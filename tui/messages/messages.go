@@ -93,6 +93,8 @@ type ParameterSelectionChangedMsg struct {
 	Data *ParameterViewData
 	// Activate stores activate for ParameterSelectionChangedMsg.
 	Activate bool
+	// ResetScroll stores reset scroll for ParameterSelectionChangedMsg.
+	ResetScroll bool
 }
 
 // QuitMsg holds quit msg state used by the messages package.

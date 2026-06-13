@@ -130,11 +130,6 @@ func (m Model) View(width int, active bool, count int) []string {
 	return []string{separator, content}
 }
 
-// ModeForKey handles mode for key and returns the resulting value or error.
-func ModeForKey(key string) (filter.Mode, bool) {
-	return filter.ModeFromLabel(key)
-}
-
 // textinputStyles handles textinput styles and returns the resulting value or error.
 func textinputStyles() textinput.Styles {
 	inputStyles := textinput.DefaultDarkStyles()

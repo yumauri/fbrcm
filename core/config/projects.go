@@ -14,6 +14,8 @@ import (
 
 // File holds file state used by the config package.
 type File struct {
+	// Version stores projects config version.
+	Version int `json:"version"`
 	// Projects stores projects for File.
 	Projects []Project `json:"projects"`
 	// SyncedAt stores synced at for File.
@@ -21,6 +23,8 @@ type File struct {
 }
 
 var ErrEmptyProjectsFile = errors.New("projects config is empty")
+
+const ProjectsConfigVersion = 2
 
 // Project holds project state used by the config package.
 type Project struct {
@@ -38,6 +42,10 @@ type Project struct {
 	UpdatedAt string `json:"updated_at,omitempty"`
 	// SyncedAt stores synced at for Project.
 	SyncedAt string `json:"synced_at,omitempty"`
+	// AuthID stores selected auth identity for Project.
+	AuthID string `json:"auth_id"`
+	// DiscoveredBy stores auth identities that discovered Project.
+	DiscoveredBy []string `json:"discovered_by,omitempty"`
 }
 
 // Load list of projects from the projects file
@@ -65,6 +73,17 @@ func LoadProjects() ([]Project, error) {
 		logger.Error("decode projects config failed", "path", path, "err", err)
 		return nil, fmt.Errorf("decode projects config: %w", err)
 	}
+	if file.Version != ProjectsConfigVersion {
+		return nil, fmt.Errorf("unsupported projects config version %d", file.Version)
+	}
+	for _, project := range file.Projects {
+		if strings.TrimSpace(project.ProjectID) == "" {
+			return nil, fmt.Errorf("projects config contains project without project_id")
+		}
+		if strings.TrimSpace(project.AuthID) == "" {
+			return nil, fmt.Errorf("project %s missing auth_id", project.ProjectID)
+		}
+	}
 
 	sortProjects(file.Projects)
 	logger.Info("loaded projects config", "path", path, "count", len(file.Projects), "synced_at", file.SyncedAt)
@@ -79,8 +98,12 @@ func SaveProjects(projects []Project, updatedAt time.Time) error {
 	}
 
 	file := File{
+		Version:  ProjectsConfigVersion,
 		Projects: append([]Project(nil), projects...),
 		SyncedAt: updatedAt.UTC().Format(time.RFC3339),
+	}
+	for i := range file.Projects {
+		sort.Strings(file.Projects[i].DiscoveredBy)
 	}
 	sortProjects(file.Projects)
 

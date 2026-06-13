@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
@@ -41,30 +42,31 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if !m.active {
 			break
 		}
-		switch msg.String() {
-		case "[":
+		k := msg.String()
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionLevelDown, k):
 			m.moveLevel(-1)
-		case "]":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionLevelUp, k):
 			m.moveLevel(1)
-		case "enter":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionBlankLine, k):
 			m.lines = append(m.lines, "")
 			m.refreshViewport()
-		case "up", "k":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionUp, k):
 			m.viewport.ScrollUp(1)
 			m.follow = false
-		case "down", "j":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionDown, k):
 			m.viewport.ScrollDown(1)
 			m.follow = m.viewport.AtBottom()
-		case "pgup", "h":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionPageUp, k):
 			m.viewport.PageUp()
 			m.follow = false
-		case "pgdown", "l":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionPageDown, k):
 			m.viewport.PageDown()
 			m.follow = m.viewport.AtBottom()
-		case "home":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionHome, k):
 			m.viewport.GotoTop()
 			m.follow = false
-		case "end":
+		case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionEnd, k):
 			m.viewport.GotoBottom()
 			m.follow = true
 		}

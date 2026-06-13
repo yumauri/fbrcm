@@ -182,7 +182,7 @@ func (s *Core) fetchParameters(ctx context.Context, projectID string) (*Paramete
 	logger := corelog.For("core")
 	logger.Info("fetch parameters from firebase", "project_id", projectID)
 
-	fb, err := s.firebaseService(ctx)
+	fb, err := s.firebaseServiceForProject(ctx, projectID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -227,7 +227,7 @@ func (s *Core) verifyParameters(ctx context.Context, projectID string, cache *Pa
 		return nil, "", fmt.Errorf("decode cached remote config: %w", err)
 	}
 
-	fb, err := s.firebaseService(ctx)
+	fb, err := s.firebaseServiceForProject(ctx, projectID)
 	if err != nil {
 		return nil, "", err
 	}

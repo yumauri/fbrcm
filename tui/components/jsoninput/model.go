@@ -8,14 +8,33 @@ import (
 	"strings"
 	"unicode"
 
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	rw "github.com/mattn/go-runewidth"
 	"github.com/rivo/uniseg"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
+
+type jsonContainer struct {
+	kind           rune
+	expectingKey   bool
+	expectingValue bool
+}
+
+// JSONRange holds JSON highlight range state used by the jsoninput package.
+type JSONRange struct {
+	// Start stores start for JSONRange.
+	Start int
+	// End stores end for JSONRange.
+	End int
+	// CursorCol stores cursor col for JSONRange.
+	CursorCol int
+}
 
 // Model holds model state used by the jsoninput package.
 type Model struct {
@@ -125,7 +144,7 @@ func (m Model) View() string {
 // resize handles resize for Model and returns the resulting state or error.
 func (m *Model) resize() {
 	innerWidth := max(m.screenW-6, 4)
-	innerHeight := max(m.screenH-6, 4)
+	innerHeight := jsonContentHeight(m.screenH)
 	gutter := lineNumberGutter(m.area.LineCount())
 	m.area.SetWidth(max(innerWidth-gutter, 1))
 	m.area.SetHeight(innerHeight)
@@ -194,44 +213,78 @@ func (m Model) renderArea() string {
 
 	// visualLine holds visual line state used by the jsoninput package.
 	type visualLine struct {
-		// rendered stores rendered for visualLine.
-		rendered string
 		// lineIndex stores line index for visualLine.
 		lineIndex int
+		// start stores start for visualLine.
+		start int
+		// end stores end for visualLine.
+		end int
+		// cursorCol stores cursor col for visualLine.
+		cursorCol int
 	}
 
-	lines := strings.Split(m.area.Value(), "\n")
+	value := m.area.Value()
+	lines := strings.Split(value, "\n")
 	if len(lines) == 0 {
 		lines = []string{""}
+	}
+	lineStarts := make([]int, len(lines))
+	offset := 0
+	for i, line := range lines {
+		lineStarts[i] = offset
+		offset += len([]rune(line)) + 1
 	}
 	gutter := lineNumberGutter(len(lines))
 	contentWidth := max(max(m.screenW-6, 4)-gutter, 1)
 
 	visual := make([]visualLine, 0, len(lines))
 	for i, line := range lines {
+		lineStart := lineStarts[i]
+		lineLen := len([]rune(line))
 		wrapped := wrapPlainLine(line, contentWidth)
 		for seg, part := range wrapped {
 			cursorColumn := -1
 			if i == cursorLine && seg == lineInfo.RowOffset {
-				cursorColumn = part.start + min(lineInfo.ColumnOffset, len([]rune(part.text)))
+				cursorColumn = lineStart + part.start + min(lineInfo.ColumnOffset, len([]rune(part.text)))
 			}
-			end := part.start + len([]rune(part.text))
-			rendered := highlightJSONRange(line, part.start, end, cursorColumn)
-			visual = append(visual, visualLine{rendered: rendered, lineIndex: i})
+			start := min(part.start, lineLen)
+			end := min(part.start+len([]rune(part.text)), lineLen)
+			visual = append(visual, visualLine{
+				lineIndex: i,
+				start:     lineStart + start,
+				end:       lineStart + end,
+				cursorCol: cursorColumn,
+			})
 		}
 	}
 	if len(visual) == 0 {
-		visual = append(visual, visualLine{rendered: "", lineIndex: 0})
+		visual = append(visual, visualLine{lineIndex: 0, cursorCol: -1})
 	}
 
+	visibleRanges := make([]JSONRange, 0, height)
+	visibleRangeRows := make([]int, 0, height)
+	for row := range height {
+		idx := scrollY + row
+		if idx < len(visual) {
+			line := visual[idx]
+			visibleRanges = append(visibleRanges, JSONRange{Start: line.start, End: line.end, CursorCol: line.cursorCol})
+			visibleRangeRows = append(visibleRangeRows, row)
+		}
+	}
+	highlighted := highlightJSONRanges(value, visibleRanges)
+
 	rows := make([]string, 0, height)
+	highlightedByRow := make(map[int]string, len(highlighted))
+	for i, row := range visibleRangeRows {
+		highlightedByRow[row] = highlighted[i]
+	}
 	for row := range height {
 		var lineOut strings.Builder
 		idx := scrollY + row
 		if idx < len(visual) {
 			line := visual[idx]
 			lineOut.WriteString(renderLineNumber(line.lineIndex+1, len(lines), line.lineIndex == cursorLine))
-			lineOut.WriteString(padHighlighted(line.rendered, contentWidth))
+			lineOut.WriteString(padHighlighted(highlightedByRow[row], contentWidth))
 		} else {
 			lineOut.WriteString(strings.Repeat(" ", gutter))
 			lineOut.WriteString(strings.Repeat(" ", contentWidth))
@@ -329,29 +382,60 @@ func repeatSpaces(n int) []rune {
 
 // highlightJSONRange handles highlight jsonrange and returns the resulting value or error.
 func highlightJSONRange(value string, start, end, cursorCol int) string {
+	ranges := highlightJSONRanges(value, []JSONRange{{Start: start, End: end, CursorCol: cursorCol}})
+	if len(ranges) == 0 {
+		return ""
+	}
+	return ranges[0]
+}
+
+// highlightJSONRanges handles highlight jsonranges and returns the resulting value or error.
+func highlightJSONRanges(value string, ranges []JSONRange) []string {
+	if len(ranges) == 0 {
+		return nil
+	}
 	runes := []rune(value)
-	if start < 0 {
-		start = 0
+	normalized := make([]JSONRange, len(ranges))
+	for i, r := range ranges {
+		if r.Start < 0 {
+			r.Start = 0
+		}
+		if r.End < r.Start {
+			r.End = r.Start
+		}
+		if r.Start > len(runes) {
+			r.Start = len(runes)
+		}
+		if r.End > len(runes) {
+			r.End = len(runes)
+		}
+		normalized[i] = r
 	}
-	if end < start {
-		end = start
+
+	builders := make([]strings.Builder, len(normalized))
+	rangeIndex := 0
+	advanceRange := func(pos int) {
+		for rangeIndex < len(normalized) && pos >= normalized[rangeIndex].End {
+			rangeIndex++
+		}
 	}
-	if start > len(runes) {
-		start = len(runes)
+	writeVisible := func(pos int, rendered string) {
+		advanceRange(pos)
+		if rangeIndex >= len(normalized) {
+			return
+		}
+		r := normalized[rangeIndex]
+		if pos >= r.Start && pos < r.End {
+			builders[rangeIndex].WriteString(rendered)
+		}
 	}
-	if end > len(runes) {
-		end = len(runes)
-	}
-	var out strings.Builder
+
 	inString := false
 	escaped := false
-	afterColon := false
 	stringIsKey := false
+	stack := make([]jsonContainer, 0, 8)
 	lit := strings.Builder{}
 	litStart := 0
-	visible := func(pos int) bool {
-		return pos >= start && pos < end
-	}
 	flushLit := func() {
 		if lit.Len() == 0 {
 			return
@@ -361,28 +445,44 @@ func highlightJSONRange(value string, start, end, cursorCol int) string {
 		style := jsonTokenStyle(token)
 		for offset, r := range tokenRunes {
 			pos := litStart + offset
-			if pos == cursorCol && visible(pos) {
-				out.WriteString(cursorStyle().Render(style.Render(string(r))))
-				continue
+			advanceRange(pos)
+			rendered := style.Render(string(r))
+			if rangeIndex < len(normalized) && pos == normalized[rangeIndex].CursorCol {
+				rendered = cursorStyle().Render(rendered)
 			}
-			if visible(pos) {
-				out.WriteString(style.Render(string(r)))
-			}
+			writeVisible(pos, rendered)
 		}
 		lit.Reset()
 	}
 	writeStyledRune := func(pos int, r rune, style lipgloss.Style) {
-		if !visible(pos) {
-			return
-		}
+		advanceRange(pos)
 		rendered := style.Render(string(r))
-		if pos == cursorCol {
+		if rangeIndex < len(normalized) && pos == normalized[rangeIndex].CursorCol {
 			rendered = cursorStyle().Render(rendered)
 		}
-		out.WriteString(rendered)
+		writeVisible(pos, rendered)
+	}
+	currentStringIsKey := func() bool {
+		if len(stack) == 0 {
+			return false
+		}
+		top := stack[len(stack)-1]
+		return top.kind == '{' && top.expectingKey
+	}
+	markValueStarted := func() {
+		if len(stack) == 0 {
+			return
+		}
+		top := &stack[len(stack)-1]
+		if top.kind == '{' && top.expectingValue {
+			top.expectingValue = false
+		}
 	}
 
 	for i, r := range runes {
+		if rangeIndex >= len(normalized) {
+			break
+		}
 		if inString {
 			if escaped {
 				writeStyledRune(i, r, jsonStringContextStyle(stringIsKey))
@@ -397,7 +497,6 @@ func highlightJSONRange(value string, start, end, cursorCol int) string {
 			writeStyledRune(i, r, jsonStringContextStyle(stringIsKey))
 			if r == '"' {
 				inString = false
-				afterColon = false
 			}
 			continue
 		}
@@ -405,12 +504,35 @@ func highlightJSONRange(value string, start, end, cursorCol int) string {
 		case '"':
 			flushLit()
 			inString = true
-			stringIsKey = !afterColon
+			stringIsKey = currentStringIsKey()
+			if stringIsKey {
+				stack[len(stack)-1].expectingKey = false
+			} else {
+				markValueStarted()
+			}
 			writeStyledRune(i, r, jsonStringContextStyle(stringIsKey))
 		case '{', '}', '[', ']', ':', ',':
 			flushLit()
-			if r == ':' {
-				afterColon = true
+			switch r {
+			case '{':
+				markValueStarted()
+				stack = append(stack, jsonContainer{kind: '{', expectingKey: true})
+			case '[':
+				markValueStarted()
+				stack = append(stack, jsonContainer{kind: '['})
+			case '}', ']':
+				if len(stack) > 0 {
+					stack = stack[:len(stack)-1]
+				}
+			case ':':
+				if len(stack) > 0 && stack[len(stack)-1].kind == '{' {
+					stack[len(stack)-1].expectingValue = true
+				}
+			case ',':
+				if len(stack) > 0 && stack[len(stack)-1].kind == '{' {
+					stack[len(stack)-1].expectingKey = true
+					stack[len(stack)-1].expectingValue = false
+				}
 			}
 			writeStyledRune(i, r, jsonPunctuationStyle())
 		case ' ', '\n', '\t', '\r':
@@ -419,15 +541,21 @@ func highlightJSONRange(value string, start, end, cursorCol int) string {
 		default:
 			if lit.Len() == 0 {
 				litStart = i
+				markValueStarted()
 			}
 			lit.WriteRune(r)
 		}
 	}
 	flushLit()
-	if cursorCol == end || (cursorCol == len(runes) && cursorCol >= start && cursorCol <= end) {
-		out.WriteString(cursorStyle().Render(" "))
+	out := make([]string, len(builders))
+	for i := range builders {
+		r := normalized[i]
+		if r.CursorCol == r.End || (r.CursorCol == len(runes) && r.CursorCol >= r.Start && r.CursorCol <= r.End) {
+			builders[i].WriteString(cursorStyle().Render(" "))
+		}
+		out[i] = builders[i].String()
 	}
-	return out.String()
+	return out
 }
 
 // renderLineNumber renders render line number and returns the resulting value or error.
@@ -463,8 +591,8 @@ func highlightJSONVisible(value string) string {
 	var out strings.Builder
 	inString := false
 	escaped := false
-	afterColon := false
 	stringIsKey := false
+	stack := make([]jsonContainer, 0, 8)
 	lit := strings.Builder{}
 	flushLit := func() {
 		if lit.Len() == 0 {
@@ -474,6 +602,22 @@ func highlightJSONVisible(value string) string {
 		style := jsonTokenStyle(token)
 		out.WriteString(style.Render(token))
 		lit.Reset()
+	}
+	currentStringIsKey := func() bool {
+		if len(stack) == 0 {
+			return false
+		}
+		top := stack[len(stack)-1]
+		return top.kind == '{' && top.expectingKey
+	}
+	markValueStarted := func() {
+		if len(stack) == 0 {
+			return
+		}
+		top := &stack[len(stack)-1]
+		if top.kind == '{' && top.expectingValue {
+			top.expectingValue = false
+		}
 	}
 	for _, r := range value {
 		if inString {
@@ -490,7 +634,6 @@ func highlightJSONVisible(value string) string {
 			out.WriteString(highlightJSONRune(r, true, stringIsKey))
 			if r == '"' {
 				inString = false
-				afterColon = false
 			}
 			continue
 		}
@@ -498,18 +641,44 @@ func highlightJSONVisible(value string) string {
 		case '"':
 			flushLit()
 			inString = true
-			stringIsKey = !afterColon
+			stringIsKey = currentStringIsKey()
+			if stringIsKey {
+				stack[len(stack)-1].expectingKey = false
+			} else {
+				markValueStarted()
+			}
 			out.WriteString(jsonStringContextStyle(stringIsKey).Render(`"`))
 		case '{', '}', '[', ']', ':', ',':
 			flushLit()
-			if r == ':' {
-				afterColon = true
+			switch r {
+			case '{':
+				markValueStarted()
+				stack = append(stack, jsonContainer{kind: '{', expectingKey: true})
+			case '[':
+				markValueStarted()
+				stack = append(stack, jsonContainer{kind: '['})
+			case '}', ']':
+				if len(stack) > 0 {
+					stack = stack[:len(stack)-1]
+				}
+			case ':':
+				if len(stack) > 0 && stack[len(stack)-1].kind == '{' {
+					stack[len(stack)-1].expectingValue = true
+				}
+			case ',':
+				if len(stack) > 0 && stack[len(stack)-1].kind == '{' {
+					stack[len(stack)-1].expectingKey = true
+					stack[len(stack)-1].expectingValue = false
+				}
 			}
 			out.WriteString(highlightJSONRune(r, false, false))
 		case ' ', '\n', '\t', '\r':
 			flushLit()
 			out.WriteRune(r)
 		default:
+			if lit.Len() == 0 {
+				markValueStarted()
+			}
 			lit.WriteRune(r)
 		}
 	}
@@ -520,6 +689,16 @@ func highlightJSONVisible(value string) string {
 // HighlightJSONVisible handles highlight jsonvisible and returns the resulting value or error.
 func HighlightJSONVisible(value string) string {
 	return highlightJSONVisible(value)
+}
+
+// HighlightJSONRange handles highlight jsonrange and returns the resulting value or error.
+func HighlightJSONRange(value string, start, end, cursorCol int) string {
+	return highlightJSONRange(value, start, end, cursorCol)
+}
+
+// HighlightJSONRanges handles highlight jsonranges and returns the resulting value or error.
+func HighlightJSONRanges(value string, ranges []JSONRange) []string {
+	return highlightJSONRanges(value, ranges)
 }
 
 // highlightJSONRune handles highlight jsonrune and returns the resulting value or error.
@@ -608,8 +787,8 @@ func (m Model) renderBox() string {
 	border := borderStyle(m.Valid())
 	body := strings.Split(m.renderArea(), "\n")
 	innerWidth := max(m.screenW-6, 4)
-	contentHeight := max(m.screenH-6, 4)
-	scrollbar := expandedScrollbarState(m.area, contentHeight)
+	contentHeight := jsonContentHeight(m.screenH)
+	scrollbar := expandedScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
 	lines := []string{border.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
 	for i := range contentHeight {
@@ -626,8 +805,54 @@ func (m Model) renderBox() string {
 		}
 		lines = append(lines, border.Render("│")+line+rightEdge)
 	}
+	lines = append(lines, border.Render("│")+renderHelpFooter(jsonHelpText(innerWidth), innerWidth)+border.Render("│"))
 	lines = append(lines, border.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
 	return strings.Join(lines, "\n")
+}
+
+// visualLineCount handles visual line count and returns the resulting value or error.
+func (m Model) visualLineCount() int {
+	lines := strings.Split(m.area.Value(), "\n")
+	if len(lines) == 0 {
+		return 1
+	}
+	gutter := lineNumberGutter(len(lines))
+	contentWidth := max(max(m.screenW-6, 4)-gutter, 1)
+	count := 0
+	for _, line := range lines {
+		count += len(wrapPlainLine(line, contentWidth))
+	}
+	return max(count, 1)
+}
+
+// jsonContentHeight handles json content height and returns the resulting value or error.
+func jsonContentHeight(screenH int) int {
+	return max(screenH-7, 3)
+}
+
+// jsonHelpText handles json help text and returns the resulting value or error.
+func jsonHelpText(width int) string {
+	m := help.New()
+	m.ShortSeparator = " • "
+	m.Styles.ShortKey = styles.FilterText
+	m.Styles.ShortDesc = styles.PanelMuted
+	m.Styles.ShortSeparator = styles.PanelMuted
+	m.Styles.Ellipsis = styles.PanelMuted
+	m.SetWidth(width)
+	return m.ShortHelpView([]key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionSave, "save"),
+		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionFormat, "format"),
+		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionCancel, "cancel"),
+		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionCopyValue, "copy"),
+	})
+}
+
+// renderHelpFooter renders help footer and returns the resulting value or error.
+func renderHelpFooter(text string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	return text + strings.Repeat(" ", max(width-lipgloss.Width(text), 0))
 }
 
 // expandedScrollbar holds expanded scrollbar state used by the jsoninput package.
@@ -641,18 +866,17 @@ type expandedScrollbar struct {
 }
 
 // expandedScrollbarState handles expanded scrollbar state and returns the resulting value or error.
-func expandedScrollbarState(area textarea.Model, visible int) expandedScrollbar {
+func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
 	if visible <= 0 {
 		return expandedScrollbar{}
 	}
-	total := area.LineCount()
 	if total <= visible {
 		return expandedScrollbar{}
 	}
 	thumbHeight := max(1, (visible*visible)/total)
 	maxThumbStart := visible - thumbHeight
 	maxOffset := max(total-visible, 1)
-	thumbStart := (area.ScrollYOffset() * maxThumbStart) / maxOffset
+	thumbStart := (min(offset, maxOffset) * maxThumbStart) / maxOffset
 	return expandedScrollbar{
 		visible:    true,
 		thumbStart: thumbStart,

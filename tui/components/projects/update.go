@@ -9,7 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/core/browser"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
-	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -44,7 +44,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 		}
 
-		if mode, ok := filterbox.ModeForKey(msg.String()); ok {
+		k := msg.String()
+		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
 			cmd := m.filter.Activate(mode)
 			m.applyFilter()
 			m.syncViewport()
@@ -52,22 +53,22 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		if m.filter.Focused() {
-			switch msg.String() {
-			case "enter":
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterApply, k):
 				m.filter.Blur()
 				m.selectOnlyCurrent()
 				m.refreshViewport()
 				return m, tea.Batch(m.selectionChangedCmd(), keyboardCaptureCmd(false), setActivePanelCmd(panels.Parameters))
-			case "esc":
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterCancel, k):
 				m.filter.ClearAndBlur()
 				m.applyFilter()
 				m.syncViewport()
 				return m, keyboardCaptureCmd(false)
-			case "up":
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterUp, k):
 				m.filter.Blur()
 				m.moveCursor(-1)
 				return m, keyboardCaptureCmd(false)
-			case "down":
+			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterDown, k):
 				m.filter.Blur()
 				m.moveCursor(1)
 				return m, keyboardCaptureCmd(false)
@@ -83,32 +84,32 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		switch msg.String() {
-		case "up", "k":
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionUp, k):
 			m.moveCursor(-1)
-		case "down", "j":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionDown, k):
 			m.moveCursor(1)
-		case "home":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionHome, k):
 			m.jumpToFirst()
-		case "end":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionEnd, k):
 			m.jumpToLast()
-		case "r":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionRefresh, k):
 			if m.loading {
 				break
 			}
 			m.loading = true
 			m.refreshViewport()
 			return m, tea.Batch(m.syncProjectsCmd(), m.spinner.Tick)
-		case "pgdown", "l":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionPageDown, k):
 			m.pageDown()
-		case "pgup", "h":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionPageUp, k):
 			m.pageUp()
-		case "enter":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionSelect, k):
 			m.selectOnlyCurrent()
 			return m, tea.Batch(m.selectionChangedCmd(), setActivePanelCmd(panels.Parameters))
-		case "o":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionOpen, k):
 			return m, m.openCurrentProjectCmd()
-		case "space":
+		case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionMark, k):
 			m.toggleCurrentSelection()
 			return m, m.selectionChangedCmd()
 		}

@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -14,7 +15,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.dialog.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			if msg.String() == "esc" {
+			if tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionCancel, msg.String()) {
 				m.closeDialog(false)
 				return m, nil
 			}
@@ -31,21 +32,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.boolPicker.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
+			k := msg.String()
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockBoolInput, tuiconfig.ActionCancel, k):
 				m.closeBoolPicker()
 				return m, nil
-			case "ctrl+y":
+			case tuiconfig.Matches(tuiconfig.BlockBoolInput, tuiconfig.ActionCopyValue, k):
 				if value, ok := m.boolPicker.CurrentString(); ok {
 					return m, copyToClipboardCmd(value)
 				}
 				return m, nil
-			case "enter":
+			case tuiconfig.Matches(tuiconfig.BlockBoolInput, tuiconfig.ActionSubmit, k):
 				return m, m.submitBoolPicker()
-			case "up", "k":
+			case tuiconfig.Matches(tuiconfig.BlockBoolInput, tuiconfig.ActionUp, k):
 				m.boolPicker.Move(-1)
 				return m, nil
-			case "down", "j":
+			case tuiconfig.Matches(tuiconfig.BlockBoolInput, tuiconfig.ActionDown, k):
 				m.boolPicker.Move(1)
 				return m, nil
 			}
@@ -57,23 +59,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.jsonInput.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
+			k := msg.String()
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockJSONInput, tuiconfig.ActionCancel, k):
 				m.closeJSONInput()
 				return m, nil
-			case "ctrl+y":
+			case tuiconfig.Matches(tuiconfig.BlockJSONInput, tuiconfig.ActionCopyValue, k):
 				return m, copyToClipboardCmd(m.jsonInput.PrettyValue())
-			case "ctrl+f":
+			case tuiconfig.Matches(tuiconfig.BlockJSONInput, tuiconfig.ActionFormat, k):
 				if m.jsonInput.Valid() {
 					m.jsonInput = m.jsonInput.Reformat()
 				}
 				return m, nil
-			case "ctrl+s":
-				if m.jsonInput.Valid() {
-					return m, m.submitJSONInput()
-				}
-				return m, nil
-			case "ctrl+enter":
+			case tuiconfig.Matches(tuiconfig.BlockJSONInput, tuiconfig.ActionSave, k):
 				if m.jsonInput.Valid() {
 					return m, m.submitJSONInput()
 				}
@@ -94,13 +92,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.numberInput.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
+			k := msg.String()
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockNumberInput, tuiconfig.ActionCancel, k):
 				m.closeNumberInput()
 				return m, nil
-			case "ctrl+y":
+			case tuiconfig.Matches(tuiconfig.BlockNumberInput, tuiconfig.ActionCopyValue, k):
 				return m, copyToClipboardCmd(m.numberInput.Value())
-			case "enter":
+			case tuiconfig.Matches(tuiconfig.BlockNumberInput, tuiconfig.ActionSubmit, k):
 				if m.numberInput.Valid() {
 					return m, m.submitNumberInput()
 				}
@@ -127,19 +126,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.stringInput.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
+			k := msg.String()
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionCancel, k):
 				m.closeStringInput()
 				return m, nil
-			case "ctrl+y":
+			case tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionCopyValue, k):
 				return m, copyToClipboardCmd(m.stringInput.Value())
-			case "f4":
+			case tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionToggleExpanded, k):
 				return m, m.toggleStringInputMode()
-			case "ctrl+s":
+			case tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionSave, k):
 				return m, m.submitStringInput()
-			case "ctrl+enter":
-				return m, m.submitStringInput()
-			case "enter":
+			case tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionSubmit, k):
 				if !m.stringInput.IsExpanded() {
 					return m, m.submitStringInput()
 				}
@@ -159,18 +157,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.moveParam.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
+			k := msg.String()
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionCancel, k):
 				m.closeMoveParam()
 				return m, nil
-			case "enter":
+			case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionSubmit, k):
 				if _, ok := m.moveParam.Current(); ok {
 					return m, m.submitMoveParam()
 				}
 				return m, nil
-			case "up", "k":
+			case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionUp, k):
 				return m, m.moveParam.Move(-1)
-			case "down", "j":
+			case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionDown, k):
 				return m, m.moveParam.Move(1)
 			}
 			if m.moveParam.InputSelected() {
@@ -191,10 +190,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.renameInput.IsOpen() {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			switch msg.String() {
-			case "esc":
+			k := msg.String()
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockRenameInput, tuiconfig.ActionCancel, k):
 				return m, m.cancelRenameInput()
-			case "enter":
+			case tuiconfig.Matches(tuiconfig.BlockRenameInput, tuiconfig.ActionSubmit, k):
 				return m, m.submitRenameInput()
 			}
 			var cmd tea.Cmd
@@ -304,26 +304,49 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.applyLayout()
 
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		k := msg.String()
+		if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, k) {
 			return m, tea.Quit
 		}
 		if m.active == panels.Details && m.detailsVisible {
-			switch msg.String() {
-			case "tab":
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
 				m.setActive(m.nextTabPanel())
 				return m, nil
-			case "esc":
+			case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
 				if m.details.FieldActive() || m.details.ValueSelected() {
 					var cmd tea.Cmd
 					m.details, cmd = m.details.Update(msg)
 					return m, cmd
 				}
 				return m, m.requestCloseDetails()
-			case "ctrl+enter":
+			case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionSubmit, k):
 				return m, m.submitDetailsForm()
-			case "right", "f4":
+			case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, k):
 				if m.details.ValueSelected() {
 					return m, m.openDetailsValueEditor()
+				}
+			}
+			if !m.details.TextInputActive() {
+				switch {
+				case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
+					return m, tea.Quit
+				case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionMove, k):
+					return m, m.activateDetailsGroup()
+				case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionRename, k):
+					var cmd tea.Cmd
+					m.details, cmd = m.details.ActivateName()
+					return m, cmd
+				case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyName, k):
+					return m, m.copyDetailsNameCmd()
+				case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath, k):
+					return m, m.copyDetailsPathCmd()
+				case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, k):
+					if m.details.ValueSelected() {
+						return m, m.copyDetailsSelectedValueCmd()
+					}
+				case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k):
+					return m, m.requestDeleteDetails()
 				}
 			}
 			if m.details.FieldActive() {
@@ -333,36 +356,39 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		if !m.keyboardCaptured() {
-			switch msg.String() {
-			case "q":
+			switch {
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 				return m, tea.Quit
-			case "esc":
+			case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
 				if m.active == panels.Details && m.detailsVisible {
 					m.detailsVisible = false
 					m.setActive(panels.Parameters)
 				}
-			case "1":
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusProjects, k):
 				m.setActive(panels.Projects)
-			case "2":
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k):
 				m.setActive(panels.Parameters)
-			case "3":
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
 				if m.detailsVisible {
 					m.setActive(panels.Details)
 				}
-			case "0":
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusLogs, k):
 				m.setActive(panels.Logs)
-			case "f9":
+			case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k):
 				if m.active == panels.Projects {
 					m.toggleProjectsMode()
 				}
 				if m.active == panels.Logs {
 					m.toggleLogsMode()
 				}
-			case "f11":
+				if m.active == panels.Parameters {
+					return m, m.openDuplicateInput()
+				}
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
 				if m.active == panels.Parameters {
 					m.toggleParametersMaximize()
 				}
-			case "=", "+":
+			case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeGrow, k):
 				if m.active == panels.Logs {
 					if m.logsMode == logsPanelModeCollapsed {
 						m.growLogsFromCollapsed()
@@ -370,14 +396,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 					m.resizeLogsHeight(1)
 				}
-			case "-", "_":
+			case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeShrink, k):
 				if m.active == panels.Logs {
 					m.resizeLogsHeight(-1)
 				}
-			case "tab":
+			case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
 				m.setActive(m.nextTabPanel())
-			case "f8":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDelete, k), tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k):
 				if m.active == panels.Parameters {
+					if anchor, ok := m.parameters.CurrentConditionalValueAnchor(); ok {
+						if m.parameters.HasDraft(anchor.Project.ProjectID) {
+							return m, m.deleteConditionalValueCmd(anchor.Project, anchor.GroupKey, anchor.ParamKey, anchor.ValueLabel, false)
+						}
+						m.openDeleteConditionalValueDialog(anchor.Project, anchor.GroupKey, anchor.ParamKey, anchor.ValueLabel)
+						return m, nil
+					}
 					project, groupKey, groupLabel, ok := m.parameters.CurrentGroupRef()
 					if ok {
 						if m.parameters.HasDraft(project.ProjectID) {
@@ -396,30 +429,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 				if m.active == panels.Details && m.detailsVisible {
-					data := m.details.Data()
-					if data != nil {
-						if m.parameters.HasDraft(data.Project.ProjectID) {
-							return m, m.deleteParameterCmd(data.Project, data.GroupKey, data.Parameter.Key, false, true)
-						}
-						m.openDeleteDialog(data.Project, data.GroupKey, data.Parameter.Key, true)
-						x, y, width, height := m.details.Bounds()
-						m.dialog = m.dialog.CenterWithin(x, y, width, height)
-						return m, nil
-					}
+					return m, m.requestDeleteDetails()
 				}
-			case "f2":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionRename, k):
 				if m.active == panels.Parameters {
 					return m, m.openRenameInput()
 				}
-			case "f5":
-				if m.active == panels.Parameters {
-					return m, m.openDuplicateInput()
-				}
-			case "shift+f4":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionNew, k):
 				if m.active == panels.Parameters {
 					return m, m.openNewParameterDetails()
 				}
-			case "f4":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionEdit, k):
 				if m.active == panels.Parameters {
 					if _, ok := m.parameters.CurrentBoolValueAnchor(); ok {
 						return m, m.openBoolPicker()
@@ -449,11 +469,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 					return m, nil
 				}
-			case "f6":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionMove, k):
 				if m.active == panels.Parameters {
 					return m, m.openMoveParam()
 				}
-			case "p":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublish, k):
 				if m.active == panels.Parameters {
 					project, ok := m.parameters.CurrentProject()
 					if ok && m.parameters.HasDraft(project.ProjectID) {
@@ -461,7 +481,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, nil
 					}
 				}
-			case "P":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublishAll, k):
 				if m.active == panels.Parameters {
 					projects := m.parameters.DraftProjects()
 					if len(projects) > 0 {
@@ -473,7 +493,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, nil
 					}
 				}
-			case "d":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscard, k):
 				if m.active == panels.Parameters {
 					project, ok := m.parameters.CurrentProject()
 					if ok && m.parameters.HasDraft(project.ProjectID) {
@@ -481,7 +501,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, nil
 					}
 				}
-			case "D":
+			case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscardAll, k):
 				if m.active == panels.Parameters {
 					projects := m.parameters.DraftProjects()
 					if len(projects) > 0 {

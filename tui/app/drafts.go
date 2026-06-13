@@ -85,6 +85,25 @@ func (m *Model) openDeleteGroupDialog(project core.Project, groupKey, groupLabel
 	})
 }
 
+// openDeleteConditionalValueDialog opens delete conditional value dialog.
+func (m *Model) openDeleteConditionalValueDialog(project core.Project, groupKey, paramKey, valueLabel string) {
+	body, err := m.deleteConditionalValueDialogBody(project, groupKey, paramKey, valueLabel)
+	if err != nil {
+		corelog.For("tui.delete").Error("delete conditional value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
+		m.openErrorDialog("Delete Conditional Value Failed", project, err.Error())
+		return
+	}
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title: "Delete Conditional Value?",
+		Body:  body,
+		Buttons: []dialogcmp.Button{
+			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.deleteConditionalValueCmd(project, groupKey, paramKey, valueLabel, true)},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.deleteConditionalValueCmd(project, groupKey, paramKey, valueLabel, false)},
+			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
+		},
+	})
+}
+
 // openDraftDialog opens open draft dialog for Model and returns the resulting state or error.
 func (m *Model) openDraftDialog(project core.Project, mode dialogMode, queue []pendingDialog) {
 	body, ok := m.draftDialogBody(project, mode)
@@ -341,6 +360,40 @@ func (m Model) deleteGroupDialogBody(project core.Project, groupKey string) ([]s
 	lines = append(lines, "")
 	lines = append(lines, dialogDiffLines(diffText)...)
 	return lines, true
+}
+
+// deleteConditionalValueDialogBody handles conditional value delete dialog body.
+func (m Model) deleteConditionalValueDialogBody(project core.Project, groupKey, paramKey, valueLabel string) ([]string, error) {
+	cache, finalRaw, err := m.svc.PreviewDeleteConditionalValue(project.ProjectID, groupKey, paramKey, valueLabel)
+	if err != nil || cache == nil {
+		if err == nil {
+			err = fmt.Errorf("parameters cache not found")
+		}
+		return nil, err
+	}
+
+	currentCfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
+	if err != nil {
+		return nil, err
+	}
+	finalCfg, err := firebase.ParseRemoteConfig(finalRaw)
+	if err != nil {
+		return nil, err
+	}
+
+	diffText, hasChanges := shared.RenderRemoteConfigDiff(currentCfg, finalCfg)
+	lines := []string{
+		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		"",
+		"Delete conditional value or draft changes?",
+	}
+	if !hasChanges {
+		return nil, fmt.Errorf("conditional value not changed")
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, dialogDiffLines(diffText)...)
+	return lines, nil
 }
 
 // draftDialogBody handles draft dialog body for Model and returns the resulting state or error.
@@ -649,6 +702,33 @@ func (m Model) deleteGroupCmd(project core.Project, groupKey string, publish boo
 			HasDraft:    hasDraft,
 			StaleDraft:  !publish && hasDraft && stale,
 			Revalidate:  false,
+		}
+	}
+}
+
+// deleteConditionalValueCmd removes one conditional value.
+func (m Model) deleteConditionalValueCmd(project core.Project, groupKey, paramKey, valueLabel string, publish bool) tea.Cmd {
+	return func() tea.Msg {
+		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
+		_, tree, hasDraft, err := m.svc.DeleteConditionalValue(context.Background(), project.ProjectID, groupKey, paramKey, valueLabel, publish)
+		if err != nil {
+			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
+		}
+		source := "draft"
+		if publish {
+			source = "firebase"
+		}
+		return messages.ParametersLoadedMsg{
+			Project:        project,
+			Tree:           tree,
+			Source:         source,
+			CacheSource:    "cache",
+			Err:            nil,
+			HasDraft:       hasDraft,
+			StaleDraft:     !publish && hasDraft && stale,
+			Revalidate:     false,
+			SelectGroupKey: groupKey,
+			SelectParamKey: paramKey,
 		}
 	}
 }

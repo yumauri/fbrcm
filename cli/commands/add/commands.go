@@ -17,7 +17,6 @@ import (
 
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
-	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
@@ -99,7 +98,7 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Add Remote Config parameter",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectFilter, err := cmd.Flags().GetString("project")
+			projectFilters, err := cmd.Flags().GetStringArray("project")
 			if err != nil {
 				return err
 			}
@@ -134,11 +133,11 @@ func New(svc *core.Core) *cobra.Command {
 				corelog.For("add").Info("stdin mode enabled; using remote config from stdin")
 				return runAddStdin(cmd, key, groupName, description, spec, projectExpr)
 			}
-			return runAddRemote(cmd, svc, key, projectFilter, projectExpr, groupName, description, spec, dryRun)
+			return runAddRemote(cmd, svc, key, projectFilters, projectExpr, groupName, description, spec, dryRun)
 		},
 	}
 
-	cmd.Flags().StringP("project", "p", "", "Filter projects by mode-prefixed query (^, /, ~, =)")
+	cmd.Flags().StringArrayP("project", "p", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	cmd.Flags().Bool("dry-run", false, "Log Firebase write requests without sending them")
 	cmd.Flags().String("description", "", "Parameter description")
@@ -230,7 +229,7 @@ func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
 }
 
 // runAddRemote runs run add remote and returns the resulting value or error.
-func runAddRemote(cmd *cobra.Command, svc *core.Core, key, projectFilter, projectExpr, groupName, description string, spec addValueSpec, dryRun bool) error {
+func runAddRemote(cmd *cobra.Command, svc *core.Core, key string, projectFilters []string, projectExpr, groupName, description string, spec addValueSpec, dryRun bool) error {
 	ctx := context.Background()
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
@@ -240,7 +239,7 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, key, projectFilter, projec
 	if err != nil {
 		return err
 	}
-	projects = filterProjects(projects, projectFilter)
+	projects = shared.FilterProjects(projects, projectFilters)
 	projects, err = shared.FilterProjectsByExpr(ctx, svc, projects, projectExpr)
 	if err != nil {
 		return err
@@ -306,7 +305,12 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 		return fmt.Errorf("stdin remote config is not valid json")
 	}
 
-	cfg, err := firebase.ParseRemoteConfig(raw)
+	remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+	if err != nil {
+		return err
+	}
+
+	cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 	if err != nil {
 		return fmt.Errorf("decode stdin remote config: %w", err)
 	}
@@ -316,7 +320,7 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 		return nil
 	}
 
-	order, err := parseRemoteConfigOrder(raw)
+	order, err := parseRemoteConfigOrder(remoteConfigRaw)
 	if err != nil {
 		return fmt.Errorf("parse stdin remote config order: %w", err)
 	}
@@ -423,38 +427,6 @@ func revalidateProjectConfig(ctx context.Context, svc *core.Core, project core.P
 		cache:   cache,
 		cfg:     cloneRemoteConfig(cfg),
 	}, nil
-}
-
-// filterProjects filters filter projects and returns the resulting value or error.
-func filterProjects(projects []core.Project, raw string) []core.Project {
-	mode, query := parseFilter(raw)
-	if query == "" {
-		return projects
-	}
-
-	filtered := make([]core.Project, 0, len(projects))
-	for _, project := range projects {
-		nameMatch, _ := filter.Match(project.Name, query, mode)
-		idMatch, _ := filter.Match(project.ProjectID, query, mode)
-		if nameMatch || idMatch {
-			filtered = append(filtered, project)
-		}
-	}
-	return filtered
-}
-
-// parseFilter parses parse filter and returns the resulting value or error.
-func parseFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-	return mode, string([]rune(raw)[1:])
 }
 
 // sortProjects handles sort projects and returns the resulting value or error.

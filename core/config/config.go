@@ -14,6 +14,8 @@ import (
 type AppConfig struct {
 	// Profile stores profile for AppConfig.
 	Profile string `toml:"profile"`
+	// Keys stores TUI keybindings by action name for AppConfig.
+	Keys map[string]map[string][]string `toml:"keys"`
 }
 
 // GetGlobalConfigFilePath gets global config file path and returns the resulting value or error.
