@@ -3,10 +3,11 @@ package firebase
 import (
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 
-	charmlog "github.com/charmbracelet/log"
+	charmlog "charm.land/log/v2"
+
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 // logHTTPRequest logs an HTTP request without exposing sensitive headers or query values.
@@ -39,7 +40,7 @@ func formatHeaders(headers http.Header) string {
 	for key := range headers {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	strfold.Sort(keys)
 
 	parts := make([]string, 0, len(keys))
 	for _, key := range keys {

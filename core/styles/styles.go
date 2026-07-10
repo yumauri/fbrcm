@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	charmlog "github.com/charmbracelet/log"
+	charmlog "charm.land/log/v2"
 
 	"github.com/yumauri/fbrcm/core/env"
 )
@@ -100,38 +100,15 @@ func LogLevelColor(level charmlog.Level) string {
 	}
 }
 
-func ConditionColor(name string) string {
-	switch strings.ToUpper(strings.TrimSpace(name)) {
-	case "BLUE":
-		return PaletteBlueBright
-	case "BROWN", "ORANGE":
-		return PaletteOrange
-	case "CYAN":
-		return PaletteConditionCyan
-	case "DEEP_ORANGE":
-		return PaletteConditionDeepOrange
-	case "GREEN":
-		return PaletteConditionGreen
-	case "INDIGO":
-		return PaletteConditionIndigo
-	case "LIME":
-		return PaletteConditionLime
-	case "PINK":
-		return PaletteConditionPink
-	case "PURPLE":
-		return PaletteConditionPurple
-	case "TEAL":
-		return PaletteConditionTeal
-	default:
-		return PaletteBlueBright
-	}
-}
-
 func LogLevelLipglossColor(level charmlog.Level) color.Color {
 	return lipgloss.Color(LogLevelColor(level))
 }
 
 func ConditionLipglossColor(name string) color.Color {
+	return conditionPaletteColor(name)
+}
+
+func conditionPaletteColor(name string) color.Color {
 	switch strings.ToUpper(strings.TrimSpace(name)) {
 	case "BLUE":
 		return ColorBlueBright

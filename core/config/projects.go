@@ -1,15 +1,14 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"time"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 type File struct {
@@ -42,13 +41,13 @@ func LoadProjects() ([]Project, error) {
 	logger := corelog.For("config")
 	logger.Debug("read projects config", "path", path)
 
-	data, err := os.ReadFile(path)
+	data, err := readFileBytes(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if isNotExist(err) {
 			logger.Warn("projects config cache miss", "path", path)
-			return nil, fmt.Errorf("read projects config: %w", err)
+		} else {
+			logger.Error("read projects config failed", "path", path, "err", err)
 		}
-		logger.Error("read projects config failed", "path", path, "err", err)
 		return nil, fmt.Errorf("read projects config: %w", err)
 	}
 	if strings.TrimSpace(string(data)) == "" {
@@ -57,7 +56,7 @@ func LoadProjects() ([]Project, error) {
 	}
 
 	var file File
-	if err := json.Unmarshal(data, &file); err != nil {
+	if err := decodeJSON(data, &file); err != nil {
 		logger.Error("decode projects config failed", "path", path, "err", err)
 		return nil, fmt.Errorf("decode projects config: %w", err)
 	}
@@ -73,7 +72,7 @@ func LoadProjects() ([]Project, error) {
 		}
 	}
 
-	sortProjects(file.Projects)
+	strfold.SortProjects(file.Projects, func(p Project) string { return p.Name }, func(p Project) string { return p.ProjectID })
 	logger.Info("loaded projects config", "path", path, "count", len(file.Projects), "synced_at", file.SyncedAt)
 	return file.Projects, nil
 }
@@ -91,24 +90,18 @@ func SaveProjects(projects []Project, updatedAt time.Time) error {
 		SyncedAt: updatedAt.UTC().Format(time.RFC3339),
 	}
 	for i := range file.Projects {
-		sort.Strings(file.Projects[i].DiscoveredBy)
+		strfold.Sort(file.Projects[i].DiscoveredBy)
 	}
-	sortProjects(file.Projects)
-
-	data, err := json.MarshalIndent(file, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encode projects config: %w", err)
-	}
-	data = append(data, '\n')
+	strfold.SortProjects(file.Projects, func(p Project) string { return p.Name }, func(p Project) string { return p.ProjectID })
 
 	path := GetProjectsFilePath()
 	logger.Debug("write projects config", "path", path, "count", len(file.Projects), "synced_at", file.SyncedAt)
-	if err := os.WriteFile(path, data, PrivateFileMode); err != nil {
+	if err := writeJSONFile(path, file); err != nil {
+		if isEncodeError(err) {
+			return fmt.Errorf("encode projects config: %w", err)
+		}
 		logger.Error("write projects config failed", "path", path, "err", err)
 		return fmt.Errorf("write projects config: %w", err)
-	}
-	if err := EnsurePrivateFile(path); err != nil {
-		return fmt.Errorf("chmod projects config: %w", err)
 	}
 
 	logger.Info("saved projects config", "path", path, "count", len(file.Projects), "synced_at", file.SyncedAt)
@@ -120,21 +113,11 @@ func PurgeProjects() error {
 	path := GetProjectsFilePath()
 	logger := corelog.For("config")
 	logger.Debug("remove projects config", "path", path)
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(path); err != nil && !isNotExist(err) {
 		logger.Error("remove projects config failed", "path", path, "err", err)
 		return fmt.Errorf("remove projects config: %w", err)
 	}
 
 	logger.Info("projects config removed", "path", path)
 	return nil
-}
-
-// Helper to sort projects
-func sortProjects(projects []Project) {
-	sort.Slice(projects, func(i, j int) bool {
-		if projects[i].Name == projects[j].Name {
-			return projects[i].ProjectID < projects[j].ProjectID
-		}
-		return projects[i].Name < projects[j].Name
-	})
 }

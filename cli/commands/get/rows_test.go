@@ -67,7 +67,7 @@ func TestFlattenParametersOrdersGroupsAndRootParams(t *testing.T) {
 	if len(grouped.ValueLines) != 2 || grouped.ValueLines[0].Label != "ga" || grouped.ValueLines[1].Label != "beta" {
 		t.Fatalf("value line labels = %#v, want condition order ga,beta", valueLineLabels(grouped.ValueLines))
 	}
-	if rows[1].Group != defaultGroupLabel || rows[1].Type != "NUMBER" {
+	if rows[1].Group != shared.DefaultRootGroupLabel || rows[1].Type != "NUMBER" {
 		t.Fatalf("root row = %#v, want root NUMBER row", rows[1])
 	}
 	if rows[1].CachedAt != cachedAt || rows[1].Status != "cache" {
@@ -87,13 +87,25 @@ func TestFilterHelpers(t *testing.T) {
 		t.Fatalf("exact filtered keys = %#v, want %#v", got, want)
 	}
 
-	mode, query := parseFilter("=alpha")
-	if mode != filter.ModeExact || query != "alpha" {
-		t.Fatalf("parseFilter exact = %v/%q, want exact/alpha", mode, query)
+	projectRows := []parameterRow{
+		{Project: "Setplex", ProjectID: "setplex-686c9", Key: "alpha"},
+		{Project: "Adyl Tv", ProjectID: "adyl-tv", Key: "alpha"},
 	}
-	mode, query = parseFilter(" alpha ")
+	filteredProjects := filterParameterRowsByProject(projectRows, []string{"setplex"})
+	if got, want := rowProjectIDs(filteredProjects), []string{"setplex-686c9"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("project filtered rows = %#v, want %#v", got, want)
+	}
+	if got := filterParameterRowsByProject(projectRows, nil); len(got) != len(projectRows) {
+		t.Fatalf("empty project filters = %d rows, want %d", len(got), len(projectRows))
+	}
+
+	mode, query := filter.ParseModePrefixedQuery("=alpha")
+	if mode != filter.ModeExact || query != "alpha" {
+		t.Fatalf("ParseModePrefixedQuery exact = %v/%q, want exact/alpha", mode, query)
+	}
+	mode, query = filter.ParseModePrefixedQuery(" alpha ")
 	if mode != filter.ModeFuzzy || query != "alpha" {
-		t.Fatalf("parseFilter fuzzy = %v/%q, want fuzzy/alpha", mode, query)
+		t.Fatalf("ParseModePrefixedQuery fuzzy = %v/%q, want fuzzy/alpha", mode, query)
 	}
 
 	for _, fn := range []struct {
@@ -120,8 +132,8 @@ func TestFilterHelpers(t *testing.T) {
 
 func TestSortParameterRows(t *testing.T) {
 	rows := []parameterRow{
-		{Project: "Beta", ProjectID: "project-b", Group: defaultGroupLabel, Key: "zeta"},
-		{Project: "", ProjectID: "project-c", Group: defaultGroupLabel, Key: "alpha"},
+		{Project: "Beta", ProjectID: "project-b", Group: shared.DefaultRootGroupLabel, Key: "zeta"},
+		{Project: "", ProjectID: "project-c", Group: shared.DefaultRootGroupLabel, Key: "alpha"},
 		{Project: "alpha", ProjectID: "project-a2", Group: "B", Key: "beta"},
 		{Project: "Alpha", ProjectID: "project-a1", Group: "B", Key: "alpha"},
 		{Project: "Alpha", ProjectID: "project-a1", Group: "A", Key: "zeta"},
@@ -148,7 +160,7 @@ func TestBuildTableRowsAddsMissingProjects(t *testing.T) {
 		{project: core.Project{Name: "Project B", ProjectID: "project-b"}, status: "missing"},
 	}
 	rows := []parameterRow{
-		{Project: "Project A", ProjectID: "project-a", Group: defaultGroupLabel, Key: "flag", ValueLines: []valueLine{{Label: "Default value", Value: "on"}}},
+		{Project: "Project A", ProjectID: "project-a", Group: shared.DefaultRootGroupLabel, Key: "flag", ValueLines: []valueLine{{Label: "Default value", Value: "on"}}},
 	}
 
 	tableRows := buildTableRows(projects, rows)
@@ -196,6 +208,14 @@ func rowIDs(rows []parameterRow) []string {
 	ids := make([]string, len(rows))
 	for i, row := range rows {
 		ids[i] = row.ProjectID + "/" + row.Group + "/" + row.Key
+	}
+	return ids
+}
+
+func rowProjectIDs(rows []parameterRow) []string {
+	ids := make([]string, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ProjectID
 	}
 	return ids
 }

@@ -1,0 +1,20 @@
+{
+  "parameters": {
+    "feature_login": {
+      "defaultValue": {
+        "value": "on"
+      },
+      "description": "Login feature toggle",
+      "valueType": "STRING"
+    },
+    "max_retries": {
+      "defaultValue": {
+        "value": "3"
+      },
+      "valueType": "NUMBER"
+    }
+  },
+  "version": {
+    "versionNumber": "1"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parameters": {
+    "recommended_product": {
+      "defaultValue": {
+        "personalizationValue": {
+          "personalizationId": "prod-rec-v1"
+        }
+      },
+      "valueType": "STRING"
+    },
+    "gradual_rollout": {
+      "defaultValue": {
+        "rolloutValue": {
+          "percent": 25
+        }
+      },
+      "valueType": "STRING"
+    }
+  },
+  "version": {
+    "versionNumber": "5"
+  }
+}

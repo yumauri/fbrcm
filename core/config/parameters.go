@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -38,20 +37,19 @@ func LoadParametersCache(projectID string) (*ParametersCache, error) {
 	logger := corelog.For("config")
 	logger.Debug("read parameters cache", "project_id", projectID, "path", path)
 
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			logger.Warn("parameters cache miss", "project_id", projectID, "path", path)
-			return nil, fmt.Errorf("read parameters cache: %w", err)
-		}
-		logger.Error("read parameters cache failed", "project_id", projectID, "path", path, "err", err)
-		return nil, fmt.Errorf("read parameters cache: %w", err)
-	}
-
 	var cache ParametersCache
-	if err := json.Unmarshal(data, &cache); err != nil {
-		logger.Error("decode parameters cache failed", "project_id", projectID, "path", path, "err", err)
-		return nil, fmt.Errorf("decode parameters cache: %w", err)
+	if err := readJSONFile(path, &cache); err != nil {
+		if isNotExist(err) {
+			logger.Warn("parameters cache miss", "project_id", projectID, "path", path)
+		} else if !isDecodeError(err) {
+			logger.Error("read parameters cache failed", "project_id", projectID, "path", path, "err", err)
+		} else {
+			logger.Error("decode parameters cache failed", "project_id", projectID, "path", path, "err", err)
+		}
+		if isDecodeError(err) {
+			return nil, fmt.Errorf("decode parameters cache: %w", err)
+		}
+		return nil, fmt.Errorf("read parameters cache: %w", err)
 	}
 
 	logger.Info("loaded parameters cache", "project_id", projectID, "path", path, "etag", cache.ETag, "version", parametersCacheVersion(cache.RemoteConfig))
@@ -65,26 +63,19 @@ func SaveParametersCache(projectID string, cache *ParametersCache) error {
 		return fmt.Errorf("create parameters cache dir: %w", err)
 	}
 
-	data, err := json.MarshalIndent(cache, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encode parameters cache: %w", err)
-	}
-	data = append(data, '\n')
-
 	logger.Debug("write parameters cache", "project_id", projectID, "path", path, "etag", cache.ETag)
-	if err := os.WriteFile(path, data, PrivateFileMode); err != nil {
+	if err := writeJSONFile(path, cache); err != nil {
+		if isEncodeError(err) {
+			return fmt.Errorf("encode parameters cache: %w", err)
+		}
 		logger.Error("write parameters cache failed", "project_id", projectID, "path", path, "err", err)
 		return fmt.Errorf("write parameters cache: %w", err)
-	}
-	if err := EnsurePrivateFile(path); err != nil {
-		return fmt.Errorf("chmod parameters cache: %w", err)
 	}
 
 	logger.Info("saved parameters cache", "project_id", projectID, "path", path, "etag", cache.ETag)
 	return nil
 }
 
-// IsFresh reports fresh for ParametersCache and returns the resulting state or error.
 func (c *ParametersCache) IsFresh(now time.Time) bool {
 	if c == nil || c.CachedAt.IsZero() {
 		return false

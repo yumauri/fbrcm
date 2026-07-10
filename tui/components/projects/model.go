@@ -70,7 +70,6 @@ func New(svc *core.Core) Model {
 	}
 }
 
-// Init initializes init for Model and returns the resulting state or error.
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.listProjectsCmd(),
@@ -78,18 +77,6 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-// SetSize sets size for Model and returns the resulting state or error.
-func (m Model) SetSize(width, height int) Model {
-	if m.width == width && m.height == height {
-		return m
-	}
-	m.width = width
-	m.height = height
-	m.syncViewport()
-	return m
-}
-
-// SetBounds sets bounds for Model and returns the resulting state or error.
 func (m Model) SetBounds(x, y, width, height int) Model {
 	if m.x == x && m.y == y && m.width == width && m.height == height {
 		return m
@@ -102,7 +89,6 @@ func (m Model) SetBounds(x, y, width, height int) Model {
 	return m
 }
 
-// SetActive sets active for Model and returns the resulting state or error.
 func (m Model) SetActive(active bool) Model {
 	m.active = active
 	if !active {
@@ -111,7 +97,6 @@ func (m Model) SetActive(active bool) Model {
 	return m
 }
 
-// SetCollapsed sets collapsed for Model and returns the resulting state or error.
 func (m Model) SetCollapsed(collapsed bool) Model {
 	m.collapsed = collapsed
 	if collapsed {

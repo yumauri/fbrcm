@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/erikgeiser/promptkit/confirmation"
@@ -19,8 +18,12 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "auth",
 		Short: "Manage auth identities",
 	}
+	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newPurgeCommand(svc), newBindCommand(svc))
+	return authCmd
+}
 
-	listCmd := &cobra.Command{
+func newListCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List auth identities",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -33,21 +36,27 @@ func New(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(map[string]any{"default_auth_id": defaultAuthID, "auth": entries})
+				return shared.WriteJSON(cmd, map[string]any{"default_auth_id": defaultAuthID, "auth": entries})
 			}
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderAuthTable(entries, defaultAuthID))
 			return nil
 		},
 	}
-	listCmd.Flags().Bool("json", false, "Print auth identities as JSON")
+	cmd.Flags().Bool("json", false, "Print auth identities as JSON")
+	return cmd
+}
 
-	addCmd := &cobra.Command{
+func newAddCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add auth identity",
 	}
-	addOAuthCmd := &cobra.Command{
+	cmd.AddCommand(newAddOAuthCommand(svc), newAddServiceAccountCommand(svc), newAddGCloudCommand(svc))
+	return cmd
+}
+
+func newAddOAuthCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "oauth <auth-id>",
 		Short: "Add OAuth auth identity",
 		Args:  cobra.ExactArgs(1),
@@ -60,7 +69,7 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			data, err := readOAuthClientSecret(cmd, fromPath)
+			data, err := shared.ReadJSONInput(cmd, fromPath, "client secret", shared.ErrNoJSONSelection)
 			if err != nil {
 				return err
 			}
@@ -77,10 +86,13 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	addOAuthCmd.Flags().String("from", "", "Import OAuth client secret from file path; if omitted, read stdin or open file picker")
-	addOAuthCmd.Flags().String("label", "", "Auth identity label")
+	cmd.Flags().String("from", "", "Import OAuth client secret from file path; if omitted, read stdin or open file picker")
+	cmd.Flags().String("label", "", "Auth identity label")
+	return cmd
+}
 
-	addServiceAccountCmd := &cobra.Command{
+func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "service-account <auth-id>",
 		Short: "Add service account auth identity",
 		Args:  cobra.ExactArgs(1),
@@ -93,7 +105,7 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			data, err := readJSONFileInput(cmd, fromPath, "service account key")
+			data, err := shared.ReadJSONInput(cmd, fromPath, "service account key", shared.ErrNoJSONSelection)
 			if err != nil {
 				return err
 			}
@@ -110,10 +122,13 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	addServiceAccountCmd.Flags().String("from", "", "Import service account key from file path; if omitted, read stdin or open file picker")
-	addServiceAccountCmd.Flags().String("label", "", "Auth identity label")
+	cmd.Flags().String("from", "", "Import service account key from file path; if omitted, read stdin or open file picker")
+	cmd.Flags().String("label", "", "Auth identity label")
+	return cmd
+}
 
-	addGCloudCmd := &cobra.Command{
+func newAddGCloudCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "gcloud <auth-id>",
 		Short: "Add gcloud ADC auth identity",
 		Args:  cobra.ExactArgs(1),
@@ -131,10 +146,12 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	addGCloudCmd.Flags().String("label", "", "Auth identity label")
-	addCmd.AddCommand(addOAuthCmd, addServiceAccountCmd, addGCloudCmd)
+	cmd.Flags().String("label", "", "Auth identity label")
+	return cmd
+}
 
-	loginCmd := &cobra.Command{
+func newLoginCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "login <auth-id>",
 		Short: "Authenticate auth identity",
 		Args:  cobra.ExactArgs(1),
@@ -163,9 +180,12 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	loginCmd.Flags().Bool("noopen", false, "Do not open browser automatically")
+	cmd.Flags().Bool("noopen", false, "Do not open browser automatically")
+	return cmd
+}
 
-	pathCmd := &cobra.Command{
+func newPathCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "path <auth-id>",
 		Short: "Print auth file paths",
 		Args:  cobra.ExactArgs(1),
@@ -180,9 +200,7 @@ func New(svc *core.Core) *cobra.Command {
 			}
 			payload := authPathPayload(auth, paths)
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(payload)
+				return shared.WriteJSON(cmd, payload)
 			}
 			for _, path := range authPathLines(auth, paths) {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
@@ -190,9 +208,12 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	pathCmd.Flags().Bool("json", false, "Print paths as JSON")
+	cmd.Flags().Bool("json", false, "Print paths as JSON")
+	return cmd
+}
 
-	purgeCmd := &cobra.Command{
+func newPurgeCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "purge <auth-id>",
 		Short: "Delete auth identity files",
 		Args:  cobra.ExactArgs(1),
@@ -226,9 +247,12 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	purgeCmd.Flags().BoolP("yes", "y", false, "Skip confirmation dialog")
+	shared.AddYesFlag(cmd, "Skip confirmation dialog")
+	return cmd
+}
 
-	bindCmd := &cobra.Command{
+func newBindCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "bind <project-query>",
 		Short: "Bind projects to auth identity",
 		Args:  cobra.ExactArgs(1),
@@ -250,8 +274,6 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	bindCmd.Flags().String("auth", "", "Auth id to bind")
-
-	authCmd.AddCommand(listCmd, addCmd, loginCmd, pathCmd, purgeCmd, bindCmd)
-	return authCmd
+	cmd.Flags().String("auth", "", "Auth id to bind")
+	return cmd
 }

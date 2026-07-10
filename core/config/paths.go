@@ -88,16 +88,6 @@ func GetAuthFilePath() string {
 	return getPaths().authFile
 }
 
-// GetAuthConfigDirPath gets the path to auth config storage.
-func GetAuthConfigDirPath() string {
-	return filepath.Join(getPaths().configDir, "auth")
-}
-
-// GetAuthCacheDirPath gets the path to auth cache storage.
-func GetAuthCacheDirPath() string {
-	return filepath.Join(getPaths().cacheDir, "auth")
-}
-
 // Resolve location of the config directory, depending on the environment
 func resolveConfigDir() string {
 	logger := corelog.For("config")

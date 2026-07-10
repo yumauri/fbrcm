@@ -5,6 +5,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -104,7 +106,7 @@ func renderFrame(title string, body []string, contentWidth int, scrollbar scroll
 }
 
 func renderTopBorder(title string, frameWidth int) string {
-	titleText := truncatePlain(" "+title+" ", max(frameWidth-6, 0))
+	titleText := viewutil.TruncatePlain(" "+title+" ", max(frameWidth-6, 0))
 	left := borderStyle.Render("╭─")
 	right := borderStyle.Render("─╮")
 	fillWidth := max(frameWidth-printableWidth(left)-printableWidth(right)-printableWidth(titleText), 0)
@@ -134,17 +136,6 @@ func renderBlockAlignedRight(block string, width int) []string {
 
 func padToWidth(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-printableWidth(value), 0))
-}
-
-func truncatePlain(value string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-	runes := []rune(value)
-	if len(runes) <= width {
-		return value
-	}
-	return string(runes[:width])
 }
 
 func printableWidth(value string) int {

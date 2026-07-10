@@ -22,7 +22,7 @@ type QueryFilter struct {
 func ParseFilters(rawFilters []string) []QueryFilter {
 	filters := make([]QueryFilter, 0, len(rawFilters))
 	for _, raw := range rawFilters {
-		mode, query := ParseFilter(raw)
+		mode, query := filter.ParseModePrefixedQuery(raw)
 		if query == "" {
 			continue
 		}
@@ -90,21 +90,6 @@ func FilterProjects(projects []core.Project, rawFilters []string) []core.Project
 	return filtered
 }
 
-// ParseFilter parses a mode-prefixed query.
-func ParseFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-	return mode, string([]rune(raw)[1:])
-}
-
-// FilterProjectsByExpr filters projects by expr and returns the resulting value or error.
 func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.Project, rawExpr string) ([]core.Project, error) {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -133,7 +118,6 @@ func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.P
 	return filtered, nil
 }
 
-// MatchProjectByExpr matches project by expr and returns the resulting value or error.
 func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExpr string) bool {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -169,7 +153,6 @@ func CompileExpr(rawExpr, projectID string) (*filter.Expression, bool) {
 	return compiled, true
 }
 
-// MatchProjectByCompiledExpr matches project by compiled expr and returns the resulting value or error.
 func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig) (bool, bool) {
 	if compiled == nil {
 		return true, true
@@ -184,7 +167,6 @@ func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Projec
 	return match, true
 }
 
-// MatchParameterByCompiledExpr matches parameter by compiled expr and returns the resulting value or error.
 func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig, name, group string) (bool, bool) {
 	if compiled == nil {
 		return true, true

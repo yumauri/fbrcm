@@ -35,7 +35,6 @@ func (m *Model) currentJSONValueAnchor() (parameters.JSONValueAnchor, bool) {
 	return m.parameters.CurrentJSONValueAnchor()
 }
 
-// openDetailsValueEditor opens open details value editor for Model and returns the resulting state or error.
 func (m *Model) openDetailsValueEditor() tea.Cmd {
 	m.valueEditSource = panels.Details
 	if _, ok := m.details.CurrentBoolValueAnchor(); ok {

@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -14,10 +13,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 func writeRowsJSON(cmd *cobra.Command, rows []parameterRow) error {
@@ -58,7 +59,7 @@ func loadStdinParameterRows(cmd *cobra.Command, compiledExpr *filter.Expression,
 		return nil, nil, fmt.Errorf("stdin remote config is not valid json")
 	}
 
-	remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+	remoteConfigRaw, err := rc.ExtractRemoteConfigJSON(raw)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -79,7 +80,7 @@ func loadStdinParameterRows(cmd *cobra.Command, compiledExpr *filter.Expression,
 }
 
 // loadStdinDirectoryParameterRows loads JSON remote configs from a directory passed as stdin.
-func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectExpr string, search shared.ParameterSearch) (bool, []parameterRow, error) {
+func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectFilters []string, projectExpr string, search shared.ParameterSearch) (bool, []parameterRow, error) {
 	dir, ok := cmd.InOrStdin().(*os.File)
 	if !ok {
 		return false, nil, nil
@@ -97,7 +98,7 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectExpr string, sea
 		return true, nil, fmt.Errorf("read stdin directory: %w", err)
 	}
 	names = filterJSONFileNames(names)
-	sort.Strings(names)
+	strfold.Sort(names)
 
 	compiledExpr, ok := shared.CompileExpr(projectExpr, "<stdin-dir>")
 	if !ok {
@@ -106,6 +107,15 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectExpr string, sea
 
 	rows := make([]parameterRow, 0)
 	for _, name := range names {
+		projectID := strings.TrimSuffix(name, filepath.Ext(name))
+		project := core.Project{
+			Name:      stdinDirectoryProjectName(projectID),
+			ProjectID: projectID,
+		}
+		if len(shared.FilterProjects([]core.Project{project}, projectFilters)) == 0 {
+			continue
+		}
+
 		raw, err := readStdinDirectoryFile(dir, name)
 		if err != nil {
 			return true, nil, fmt.Errorf("read stdin directory file %q: %w", name, err)
@@ -114,7 +124,7 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectExpr string, sea
 			return true, nil, fmt.Errorf("stdin directory file %q is not valid json", name)
 		}
 
-		remoteConfigRaw, err := shared.ExtractRemoteConfigJSON(raw)
+		remoteConfigRaw, err := rc.ExtractRemoteConfigJSON(raw)
 		if err != nil {
 			return true, nil, fmt.Errorf("extract remote config from stdin directory file %q: %w", name, err)
 		}
@@ -124,11 +134,6 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectExpr string, sea
 			return true, nil, fmt.Errorf("decode stdin directory file %q: %w", name, err)
 		}
 
-		projectID := strings.TrimSuffix(name, filepath.Ext(name))
-		project := core.Project{
-			Name:      stdinDirectoryProjectName(projectID),
-			ProjectID: projectID,
-		}
 		version := stdinVersion(remoteConfigRaw)
 		rows = append(rows, flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)...)
 	}

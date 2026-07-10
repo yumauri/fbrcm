@@ -2,9 +2,9 @@ package get
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
+	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
@@ -90,9 +90,9 @@ func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core
 func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedProjectParameters, error) {
 	cache, source, err := loadProjectParameters(ctx, svc, project.ProjectID, update)
 	if err == nil {
-		cfg, parseErr := firebase.ParseRemoteConfig(cache.RemoteConfig)
+		cfg, parseErr := rc.ParseProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
 		if parseErr != nil {
-			return loadedProjectParameters{}, fmt.Errorf("decode remote config for %s: %w", project.ProjectID, parseErr)
+			return loadedProjectParameters{}, parseErr
 		}
 		return loadedProjectParameters{
 			project: project,
@@ -108,9 +108,9 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 		return loadedProjectParameters{}, err
 	}
 	if state != core.ParametersCacheMissing && cache != nil {
-		cfg, parseErr := firebase.ParseRemoteConfig(cache.RemoteConfig)
+		cfg, parseErr := rc.ParseCachedProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
 		if parseErr != nil {
-			return loadedProjectParameters{}, fmt.Errorf("decode cached remote config for %s: %w", project.ProjectID, parseErr)
+			return loadedProjectParameters{}, parseErr
 		}
 		return loadedProjectParameters{
 			project: project,

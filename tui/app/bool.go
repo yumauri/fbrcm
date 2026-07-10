@@ -7,33 +7,21 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
-	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
-	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-// openBoolPicker opens open bool picker for Model and returns the resulting state or error.
 func (m *Model) openBoolPicker() tea.Cmd {
-	if m.active == panels.Details {
-		m.valueEditSource = panels.Details
-	} else {
-		m.valueEditSource = panels.Parameters
-	}
+	source := m.currentValueEditSource()
 	anchor, ok := m.currentBoolValueAnchor()
 	if !ok {
 		return nil
 	}
-	m.closeDialog(false)
-	m.closeJSONInput()
-	m.closeNumberInput()
-	m.closeStringInput()
-	m.closeRenameInput()
-	m.closeMoveParam()
+	m.closeOverlays()
+	m.valueEditSource = source
 	m.boolPicker = m.boolPicker.Open(anchor.X, anchor.Y, anchor.Value)
 	return nil
 }
 
-// closeBoolPicker closes close bool picker for Model and returns the resulting state or error.
 func (m *Model) closeBoolPicker() {
 	if !m.boolPicker.IsOpen() {
 		return
@@ -74,7 +62,6 @@ func (m *Model) submitBoolPicker() tea.Cmd {
 	return nil
 }
 
-// closeBoolPickerIfOrphaned closes close bool picker if orphaned for Model and returns the resulting state or error.
 func (m *Model) closeBoolPickerIfOrphaned() {
 	if !m.boolPicker.IsOpen() {
 		return
@@ -85,23 +72,12 @@ func (m *Model) closeBoolPickerIfOrphaned() {
 	m.closeBoolPicker()
 }
 
-// openBoolValueDialog opens open bool value dialog for Model and returns the resulting state or error.
 func (m *Model) openBoolValueDialog(project core.Project, groupKey, paramKey, valueLabel string, nextValue bool) {
-	body, err := m.boolValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
-	if err != nil {
+	m.openValueEditDialog(project, func() ([]string, error) {
+		return m.boolValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
+	}, func(err error) {
 		corelog.For("tui.bool").Error("boolean value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "err", err)
-		m.openErrorDialog("Edit Value Failed", project, err.Error())
-		return
-	}
-	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Edit Value?",
-		Body:  body,
-		Buttons: []dialogcmp.Button{
-			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false)},
-			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
-		},
-	})
+	}, m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
 }
 
 func (m Model) boolValueDialogBody(project core.Project, groupKey, paramKey, valueLabel string, nextValue bool) ([]string, error) {
@@ -110,14 +86,9 @@ func (m Model) boolValueDialogBody(project core.Project, groupKey, paramKey, val
 	})
 }
 
-// setBooleanParameterValueCmd sets set boolean parameter value cmd for Model and returns the resulting state or error.
 func (m Model) setBooleanParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel string, nextValue, publish bool) tea.Cmd {
-	return func() tea.Msg {
-		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
-		_, tree, hasDraft, err := m.svc.SetBooleanParameterValue(context.Background(), project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
-		if err != nil {
-			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
-		}
-		return m.valueEditLoadedMsg(project, groupKey, paramKey, tree, hasDraft, stale, publish)
-	}
+	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
+		_, tree, hasDraft, err := m.svc.SetBooleanParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
+		return tree, hasDraft, err
+	})
 }

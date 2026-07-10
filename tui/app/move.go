@@ -5,29 +5,21 @@ import (
 	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
 )
 
-// openMoveParam opens open move param for Model and returns the resulting state or error.
-func (m *Model) openMoveParam() tea.Cmd {
+func (m *Model) openMoveParam() {
 	anchor, ok := m.parameters.CurrentMoveAnchor()
 	if !ok {
 		project, _ := m.parameters.CurrentProject()
 		m.openErrorDialog("Move Failed", project, "No target groups available.")
-		return nil
+		return
 	}
-	m.closeDialog(false)
-	m.closeJSONInput()
-	m.closeBoolPicker()
-	m.closeNumberInput()
-	m.closeStringInput()
-	m.closeRenameInput()
+	m.closeOverlays()
 	options := make([]moveparam.Option, 0, len(anchor.Options))
 	for _, option := range anchor.Options {
 		options = append(options, moveparam.Option{Key: option.Key, Label: option.Label})
 	}
 	m.moveParam = m.moveParam.Open(anchor.X, anchor.Y, anchor.Label, options)
-	return nil
 }
 
-// closeMoveParam closes close move param for Model and returns the resulting state or error.
 func (m *Model) closeMoveParam() {
 	if !m.moveParam.IsOpen() {
 		return
@@ -60,7 +52,6 @@ func (m *Model) submitMoveParam() tea.Cmd {
 	return nil
 }
 
-// closeMoveIfOrphaned closes close move if orphaned for Model and returns the resulting state or error.
 func (m *Model) closeMoveIfOrphaned() {
 	if !m.moveParam.IsOpen() {
 		return

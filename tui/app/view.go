@@ -22,26 +22,57 @@ var (
 
 func (m Model) View() tea.View {
 	if m.width < minsize.MinWidth || m.height < minsize.MinHeight {
-		v := tea.NewView(rootStyle.Render(minsize.View(m.width, m.height)))
-		v.AltScreen = true
-		v.MouseMode = tea.MouseModeNone
-		return v
+		return appView(rootStyle.Render(minsize.View(m.width, m.height)), tea.MouseModeNone)
 	}
 
+	body := m.baseView()
+	layers := m.overlayLayers(body)
+	if len(layers) > 1 {
+		body = lipgloss.NewCompositor(layers...).Render()
+	}
+
+	return appView(rootStyle.Render(body), m.mouseMode())
+}
+
+func appView(content string, mouseMode tea.MouseMode) tea.View {
+	v := tea.NewView(content)
+	v.AltScreen = true
+	v.MouseMode = mouseMode
+	return v
+}
+
+func (m Model) mouseMode() tea.MouseMode {
+	if m.active == panels.Logs {
+		return tea.MouseModeNone
+	}
+	return tea.MouseModeAllMotion
+}
+
+func (m Model) baseView() string {
 	topRow := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		m.projects.View(m.active == panels.Projects),
 		m.parameters.View(m.active == panels.Parameters),
 	)
 
-	body := lipgloss.JoinVertical(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		topRow,
 		m.logs.View(m.active == panels.Logs),
 		m.helpView(),
 	)
+}
 
+func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers := []*lipgloss.Layer{lipgloss.NewLayer(body).ID("base")}
+	layers = m.appendDetailsLayers(layers)
+	layers = m.appendInputLayers(layers)
+	layers = m.appendDialogLayers(layers)
+	layers = m.appendOfflineLayer(layers)
+	return layers
+}
+
+func (m Model) appendDetailsLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if m.detailsVisible {
 		layers = append(layers, lipgloss.NewLayer(m.details.View()).ID("details").X(m.detailsX()).Y(0).Z(1))
 		if m.details.DropdownOpen() {
@@ -51,6 +82,10 @@ func (m Model) View() tea.View {
 			layers = append(layers, lipgloss.NewLayer(m.details.DropdownListView()).ID("details-dropdown-list").X(x).Y(y).Z(2))
 		}
 	}
+	return layers
+}
+
+func (m Model) appendInputLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if m.boolPicker.IsOpen() {
 		x, y := m.boolPicker.Position()
 		layers = append(layers, lipgloss.NewLayer(m.boolPicker.View()).ID("bool-picker").X(x).Y(y).Z(2))
@@ -77,27 +112,24 @@ func (m Model) View() tea.View {
 		x, y := m.renameInput.Position()
 		layers = append(layers, lipgloss.NewLayer(m.renameInput.View()).ID("rename").X(x).Y(y).Z(3))
 	}
+	return layers
+}
+
+func (m Model) appendDialogLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if m.dialog.IsOpen() {
 		dialog := m.dialog.View()
 		x, y := m.dialog.Position()
 		layers = append(layers, lipgloss.NewLayer(dialog).ID("dialog").X(x).Y(y).Z(4))
 	}
+	return layers
+}
+
+func (m Model) appendOfflineLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if firebase.IsOffline() {
 		badge := offlineBadgeView()
 		layers = append(layers, lipgloss.NewLayer(badge).ID("offline").X(max(m.width-lipgloss.Width(badge), 0)).Y(max(m.height-1, 0)).Z(99))
 	}
-	if len(layers) > 1 {
-		body = lipgloss.NewCompositor(layers...).Render()
-	}
-
-	v := tea.NewView(rootStyle.Render(body))
-	v.AltScreen = true
-	if m.active == panels.Logs {
-		v.MouseMode = tea.MouseModeNone
-	} else {
-		v.MouseMode = tea.MouseModeAllMotion
-	}
-	return v
+	return layers
 }
 
 func (m Model) detailsX() int {

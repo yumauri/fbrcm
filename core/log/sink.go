@@ -38,7 +38,6 @@ func newLineSink() *lineSink {
 	}
 }
 
-// Write writes write for lineSink and returns the resulting state or error.
 func (s *lineSink) Write(p []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

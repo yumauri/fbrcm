@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 const DefaultProfileName = "default"
@@ -36,7 +36,7 @@ func EnsureActiveProfile() error {
 		corelog.For("config").Error("active profile missing", "profile", profile, "config_dir", profileConfigDir(profile), "err", err)
 		return err
 	}
-	if err := ensureExistingProfileDirs(profile); err != nil {
+	if err := ensureProfileDirs(profile, false); err != nil {
 		return err
 	}
 	corelog.For("config").Info("current profile", "profile", profile)
@@ -67,7 +67,7 @@ func ListProfiles() ([]string, error) {
 	for name := range seen {
 		profiles = append(profiles, name)
 	}
-	sort.Strings(profiles)
+	strfold.Sort(profiles)
 	return profiles, nil
 }
 
@@ -99,7 +99,6 @@ func PurgeProfile(name string) error {
 	return nil
 }
 
-// EnsureProfileCanPurge validates profile purge safety and returns the resulting value or error.
 func EnsureProfileCanPurge(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
@@ -123,7 +122,7 @@ func SwitchProfile(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
 	}
-	if err := ensureProfileDirs(name); err != nil {
+	if err := ensureProfileDirs(name, true); err != nil {
 		return err
 	}
 	if err := saveActiveProfile(name); err != nil {
@@ -189,23 +188,7 @@ func RenameProfile(oldName, newName string) error {
 }
 
 func ValidateProfileName(name string) error {
-	trimmed := strings.TrimSpace(name)
-	if trimmed == "" {
-		return fmt.Errorf("profile name cannot be empty")
-	}
-	if trimmed != name {
-		return fmt.Errorf("profile name cannot have leading or trailing whitespace")
-	}
-	if name == "." || name == ".." {
-		return fmt.Errorf("profile name %q is reserved", name)
-	}
-	if strings.ContainsAny(name, `/\`) {
-		return fmt.Errorf("profile name cannot contain path separators")
-	}
-	if filepath.Clean(name) != name {
-		return fmt.Errorf("profile name must be a single path segment")
-	}
-	return nil
+	return validatePathSegment(name, "profile name")
 }
 
 func activeProfileOrDefault() string {
@@ -216,7 +199,7 @@ func activeProfileOrDefault() string {
 		corelog.For("config").Error("active profile missing", "profile", profile, "config_dir", profileConfigDir(profile))
 		return profile
 	}
-	if err := ensureProfileDirs(DefaultProfileName); err != nil {
+	if err := ensureProfileDirs(DefaultProfileName, true); err != nil {
 		corelog.For("config").Error("ensure default profile dirs failed", "err", err)
 		return DefaultProfileName
 	}
@@ -227,19 +210,13 @@ func activeProfileOrDefault() string {
 	return DefaultProfileName
 }
 
-func ensureProfileDirs(name string) error {
-	if err := EnsurePrivateDir(profileConfigDir(name)); err != nil {
-		return fmt.Errorf("create profile config dir: %w", err)
+func ensureProfileDirs(name string, createConfig bool) error {
+	configAction := "secure"
+	if createConfig {
+		configAction = "create"
 	}
-	if err := EnsurePrivateDir(profileCacheDir(name)); err != nil {
-		return fmt.Errorf("create profile cache dir: %w", err)
-	}
-	return nil
-}
-
-func ensureExistingProfileDirs(name string) error {
 	if err := EnsurePrivateDir(profileConfigDir(name)); err != nil {
-		return fmt.Errorf("secure profile config dir: %w", err)
+		return fmt.Errorf("%s profile config dir: %w", configAction, err)
 	}
 	if err := EnsurePrivateDir(profileCacheDir(name)); err != nil {
 		return fmt.Errorf("create profile cache dir: %w", err)

@@ -12,7 +12,6 @@ import (
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
-// Init initializes init and returns the resulting value or error.
 func Init(s *core.Core) {
 	corelog.For("tui").Debug("start tui")
 	if _, err := tuiconfig.Load(); err != nil {

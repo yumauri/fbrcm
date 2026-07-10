@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/tui/components/inputstyles"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -20,7 +21,7 @@ type Model struct {
 func New() Model {
 	input := textinput.New()
 	input.Prompt = ""
-	input.SetStyles(textinputStyles())
+	input.SetStyles(inputstyles.TextInput())
 	input.Blur()
 
 	return Model{
@@ -37,7 +38,6 @@ func (m Model) Value() string {
 	return m.input.Value()
 }
 
-// Focused focuses ed for Model and returns the resulting state or error.
 func (m Model) Focused() bool {
 	return m.input.Focused()
 }
@@ -59,7 +59,6 @@ func (m *Model) Activate(mode filter.Mode) tea.Cmd {
 	return m.input.Focus()
 }
 
-// Blur blurs blur for Model and returns the resulting state or error.
 func (m *Model) Blur() {
 	m.input.Blur()
 }
@@ -69,7 +68,6 @@ func (m *Model) ClearAndBlur() {
 	m.input.Blur()
 }
 
-// SetWidth sets width for Model and returns the resulting state or error.
 func (m *Model) SetWidth(width int) {
 	m.input.SetWidth(max(width-3, 1))
 }
@@ -116,21 +114,6 @@ func (m Model) View(width int, active bool, count int) []string {
 	content += borderStyle.Render("│")
 
 	return []string{separator, content}
-}
-
-func textinputStyles() textinput.Styles {
-	inputStyles := textinput.DefaultDarkStyles()
-	filterStyle := styles.FilterText
-	inputStyles.Focused.Text = filterStyle
-	inputStyles.Focused.Prompt = filterStyle
-	inputStyles.Focused.Placeholder = filterStyle
-	inputStyles.Focused.Suggestion = filterStyle
-	inputStyles.Blurred.Text = filterStyle
-	inputStyles.Blurred.Prompt = filterStyle
-	inputStyles.Blurred.Placeholder = filterStyle
-	inputStyles.Blurred.Suggestion = filterStyle
-	inputStyles.Cursor.Color = styles.PaletteYellow
-	return inputStyles
 }
 
 func truncateStyled(value string, width int) string {

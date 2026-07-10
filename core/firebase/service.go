@@ -15,10 +15,6 @@ type Service struct {
 	useTargetProjectQuota bool
 }
 
-func NewService(ctx context.Context) (*Service, error) {
-	return nil, errAuthRequired()
-}
-
 // NewServiceForAuth constructs service for auth entry with options.
 func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool) (*Service, error) {
 	logger := corelog.For("firebase")
@@ -36,6 +32,15 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 		quotaProjectID:        quotaProjectID,
 		useTargetProjectQuota: useTargetProjectQuota,
 	}, nil
+}
+
+// NewServiceWithHTTPClient constructs a Service that sends API requests with client.
+// It exists for tests that stub Firebase HTTP responses.
+func NewServiceWithHTTPClient(client *http.Client) *Service {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return &Service{httpClient: client}
 }
 
 func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool) (*http.Client, string, bool, error) {

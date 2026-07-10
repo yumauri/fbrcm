@@ -4,7 +4,7 @@ import (
 	"image/color"
 
 	"charm.land/lipgloss/v2"
-	charmlog "github.com/charmbracelet/log"
+	charmlog "charm.land/log/v2"
 
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 )

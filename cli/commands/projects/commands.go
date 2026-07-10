@@ -2,7 +2,6 @@ package projects
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/erikgeiser/promptkit/confirmation"
@@ -18,8 +17,12 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "projects",
 		Short: "Manage projects list",
 	}
+	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newPathCommand(), newPurgeCommand(svc))
+	return projectsCmd
+}
 
-	listCmd := &cobra.Command{
+func newListCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List projects using cache-first loading",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -42,8 +45,13 @@ func New(svc *core.Core) *cobra.Command {
 			return printProjects(cmd, svc, projects, source)
 		},
 	}
+	addProjectOutputFlags(cmd)
+	cmd.Flags().Bool("update", false, "Update projects from Firebase before printing")
+	return cmd
+}
 
-	updateCmd := &cobra.Command{
+func newUpdateCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update projects from Firebase into cache",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,19 +73,20 @@ func New(svc *core.Core) *cobra.Command {
 			return printProjects(cmd, svc, projects, source)
 		},
 	}
+	addProjectOutputFlags(cmd)
+	cmd.Flags().String("auth", "", "Sync projects for one auth id")
+	return cmd
+}
 
-	listCmd.Flags().Bool("json", false, "Print projects as JSON")
-	listCmd.Flags().StringArrayP("filter", "f", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
-	listCmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
-	listCmd.Flags().Bool("update", false, "Update projects from Firebase before printing")
-	listCmd.Flags().Bool("url", false, "Include Firebase Console Remote Config URL")
-	updateCmd.Flags().Bool("json", false, "Print projects as JSON")
-	updateCmd.Flags().StringArrayP("filter", "f", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
-	updateCmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
-	updateCmd.Flags().Bool("url", false, "Include Firebase Console Remote Config URL")
-	updateCmd.Flags().String("auth", "", "Sync projects for one auth id")
+func addProjectOutputFlags(cmd *cobra.Command) {
+	cmd.Flags().Bool("json", false, "Print projects as JSON")
+	shared.AddProjectListFilterFlag(cmd)
+	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
+	cmd.Flags().Bool("url", false, "Include Firebase Console Remote Config URL")
+}
 
-	pathCmd := &cobra.Command{
+func newPathCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "path",
 		Short: "Print projects config file path",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,9 +97,7 @@ func New(svc *core.Core) *cobra.Command {
 
 			path := config.GetProjectsFilePath()
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(map[string]string{"path": path}); err != nil {
+				if err := shared.WriteJSON(cmd, map[string]string{"path": path}); err != nil {
 					return fmt.Errorf("encode projects path json: %w", err)
 				}
 				return nil
@@ -100,9 +107,12 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	pathCmd.Flags().Bool("json", false, "Print path as JSON")
+	cmd.Flags().Bool("json", false, "Print path as JSON")
+	return cmd
+}
 
-	purgeCmd := &cobra.Command{
+func newPurgeCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "purge",
 		Short: "Delete cached projects config file",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -133,8 +143,6 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	purgeCmd.Flags().BoolP("yes", "y", false, "Skip confirmation dialog")
-
-	projectsCmd.AddCommand(listCmd, updateCmd, pathCmd, purgeCmd)
-	return projectsCmd
+	shared.AddYesFlag(cmd, "Skip confirmation dialog")
+	return cmd
 }

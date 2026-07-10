@@ -248,11 +248,5 @@ func normalizeRemoteConfigRaw(raw json.RawMessage) json.RawMessage {
 	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("{}")) {
 		return json.RawMessage(`{"version":{"versionNumber":"NA"}}`)
 	}
-	trimmed = bytes.ReplaceAll(trimmed, []byte(`\u003c`), []byte("<"))
-	trimmed = bytes.ReplaceAll(trimmed, []byte(`\u003e`), []byte(">"))
-	trimmed = bytes.ReplaceAll(trimmed, []byte(`\u0026`), []byte("&"))
-	trimmed = bytes.ReplaceAll(trimmed, []byte(`\u003C`), []byte("<"))
-	trimmed = bytes.ReplaceAll(trimmed, []byte(`\u003E`), []byte(">"))
-	trimmed = bytes.ReplaceAll(trimmed, []byte(`\u0026`), []byte("&"))
-	return trimmed
+	return json.RawMessage(NormalizeJSONEscapes(trimmed))
 }

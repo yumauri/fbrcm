@@ -1,12 +1,13 @@
 package shared
 
 import (
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 // ParamTarget identifies a parameter and the group it belongs to.
@@ -31,20 +32,20 @@ func CollectParamTargets(cfg *firebase.RemoteConfig) []ParamTarget {
 	}
 
 	out := make([]ParamTarget, 0, len(cfg.Parameters)+len(cfg.ParameterGroups))
-	for _, key := range SortedStringKeys(cfg.Parameters) {
+	for _, key := range strfold.SortedKeys(cfg.Parameters) {
 		out = append(out, ParamTarget{Key: key, Param: cfg.Parameters[key]})
 	}
-	for _, groupName := range SortedStringKeys(cfg.ParameterGroups) {
+	for _, groupName := range strfold.SortedKeys(cfg.ParameterGroups) {
 		group := cfg.ParameterGroups[groupName]
-		for _, key := range SortedStringKeys(group.Parameters) {
+		for _, key := range strfold.SortedKeys(group.Parameters) {
 			out = append(out, ParamTarget{Key: key, Group: groupName, Param: group.Parameters[key]})
 		}
 	}
-	sort.Slice(out, func(i, j int) bool {
-		if !strings.EqualFold(out[i].Key, out[j].Key) {
-			return strings.ToLower(out[i].Key) < strings.ToLower(out[j].Key)
+	slices.SortFunc(out, func(left, right ParamTarget) int {
+		if cmp := strfold.Compare(left.Key, right.Key); cmp != 0 {
+			return cmp
 		}
-		return strings.ToLower(out[i].Group) < strings.ToLower(out[j].Group)
+		return strfold.Compare(left.Group, right.Group)
 	})
 	return out
 }

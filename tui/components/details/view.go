@@ -5,6 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -14,10 +15,10 @@ func (m Model) View() string {
 	}
 
 	body := strings.Split(m.viewport.View(), "\n")
-	return renderPanel(body, m.width, m.height, m.active, m.bridgeActive, m.Invalid(), m.scrollbar())
+	return renderPanel(body, m.width, m.height, m.active, m.Invalid(), m.scrollbar())
 }
 
-func renderPanel(body []string, width, height int, active, bridgeActive, invalid bool, scrollbar scrollbarState) string {
+func renderPanel(body []string, width, height int, active, invalid bool, scrollbar scrollbarState) string {
 	if width <= 1 || height <= 1 {
 		return ""
 	}
@@ -32,7 +33,7 @@ func renderPanel(body []string, width, height int, active, bridgeActive, invalid
 	innerWidth := max(panelWidth-4, 0)
 	contentHeight := max(height-2, 0)
 
-	titleText := truncatePlain(" "+panelTitle+" ", max(panelWidth-2, 0))
+	titleText := viewutil.TruncatePlain(" "+panelTitle+" ", max(panelWidth-2, 0))
 	titleWidth := lipgloss.Width(titleText)
 	topPrefixWidth := min(2, panelWidth)
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
@@ -56,19 +57,6 @@ func renderPanel(body []string, width, height int, active, bridgeActive, invalid
 
 	lines = append(lines, " "+borderStyle.Render("╰"+strings.Repeat("─", max(panelWidth-1, 0))))
 	return strings.Join(lines, "\n")
-}
-
-func truncatePlain(value string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-
-	runes := []rune(value)
-	if len(runes) <= width {
-		return value
-	}
-
-	return string(runes[:width])
 }
 
 type scrollbarState struct {

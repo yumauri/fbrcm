@@ -3,7 +3,6 @@ package project
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +11,9 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 
+	importpkg "github.com/yumauri/fbrcm/cli/commands/project/import"
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/cli/shared/rc"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -24,8 +25,12 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "project",
 		Short: "Manage project remote config",
 	}
+	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc))
+	return projectCmd
+}
 
-	exportCmd := &cobra.Command{
+func newExportCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "export <project>",
 		Short: "Export project Remote Config JSON",
 		Args:  cobra.ExactArgs(1),
@@ -45,7 +50,7 @@ func New(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if toPath == "" {
-				body := shared.TrimTrailingLineBreaks(shared.NormalizeExportJSON(raw))
+				body := rc.TrimTrailingLineBreaks(rc.NormalizeExportJSON(raw))
 				_, err = cmd.OutOrStdout().Write(body)
 				return err
 			}
@@ -57,9 +62,12 @@ func New(svc *core.Core) *cobra.Command {
 			return nil
 		},
 	}
-	exportCmd.Flags().String("to", "", "Write Remote Config JSON to file path")
+	cmd.Flags().String("to", "", "Write Remote Config JSON to file path")
+	return cmd
+}
 
-	importCmd := &cobra.Command{
+func newImportCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "import <project>",
 		Short: "Import project Remote Config JSON",
 		Args:  cobra.ExactArgs(1),
@@ -77,25 +85,22 @@ func New(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return runImportCommand(cmd, svc, project)
+			return importpkg.Run(cmd, svc, project)
 		},
 	}
-	importCmd.Flags().String("from", "", "Read Remote Config JSON from file path")
-	importCmd.Flags().StringArray("group", nil, "Import only specified parameter group; may be repeated")
-	importCmd.Flags().StringArrayP("filter", "f", nil, "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated")
-	importCmd.Flags().String("expr", "", "Filter imported config by expr-lang expression")
-	importCmd.Flags().String("search", "", "Search imported parameters by name, description, values, and conditions")
-	importCmd.Flags().Bool("dry-run", false, "Log Firebase write requests without sending them")
-	importCmd.Flags().Bool("remove-all-conditions", false, "Remove all conditions and conditional values from imported config")
-	importCmd.Flags().Bool("remove-project-specific-conditions", false, "Remove project specific conditions and their usages from imported config")
-	importCmd.Flags().Bool("merge", false, "Merge imported config into current project config")
-	importCmd.Flags().Bool("override", false, "Replace current project config with imported config")
-	importCmd.Flags().String("merge-resolve", "", "Conflict resolution for merge: current or import")
-	importCmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "remove-project-specific-conditions")
-	importCmd.MarkFlagsMutuallyExclusive("merge", "override")
-
-	projectCmd.AddCommand(exportCmd, importCmd)
-	return projectCmd
+	cmd.Flags().String("from", "", "Read Remote Config JSON from file path")
+	cmd.Flags().StringArray("group", nil, "Import only specified parameter group; may be repeated")
+	shared.AddParameterFilterFlags(cmd)
+	cmd.Flags().String("expr", "", "Filter imported config by expr-lang expression")
+	shared.AddDryRunFlag(cmd)
+	cmd.Flags().Bool("remove-all-conditions", false, "Remove all conditions and conditional values from imported config")
+	cmd.Flags().Bool("remove-project-specific-conditions", false, "Remove project specific conditions and their usages from imported config")
+	cmd.Flags().Bool("merge", false, "Merge imported config into current project config")
+	cmd.Flags().Bool("override", false, "Replace current project config with imported config")
+	cmd.Flags().String("merge-resolve", "", "Conflict resolution for merge: current or import")
+	cmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "remove-project-specific-conditions")
+	cmd.MarkFlagsMutuallyExclusive("merge", "override")
+	return cmd
 }
 
 func resolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
@@ -169,43 +174,8 @@ func renderAmbiguousProjectsTable(projects []core.Project) string {
 	return tbl.String()
 }
 
-func readImportRemoteConfig(cmd *cobra.Command) ([]byte, error) {
-	fromPath, err := cmd.Flags().GetString("from")
-	if err != nil {
-		return nil, err
-	}
-
-	switch {
-	case fromPath != "":
-		data, err := os.ReadFile(fromPath)
-		if err != nil {
-			return nil, fmt.Errorf("read source file: %w", err)
-		}
-		return data, nil
-	case stdinAvailable():
-		data, err := io.ReadAll(cmd.InOrStdin())
-		if err != nil {
-			return nil, fmt.Errorf("read stdin: %w", err)
-		}
-		return data, nil
-	default:
-		selectedPath, err := pickJSONFile()
-		if err != nil {
-			return nil, err
-		}
-		if selectedPath == "" {
-			return nil, nil
-		}
-		data, err := os.ReadFile(selectedPath)
-		if err != nil {
-			return nil, fmt.Errorf("read selected file: %w", err)
-		}
-		return data, nil
-	}
-}
-
 func writeRemoteConfigFile(path string, raw []byte) error {
-	raw = shared.TrimTrailingLineBreaks(shared.NormalizeExportJSON(raw))
+	raw = rc.TrimTrailingLineBreaks(rc.NormalizeExportJSON(raw))
 	dir := filepath.Dir(path)
 	if dir != "." {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -216,12 +186,4 @@ func writeRemoteConfigFile(path string, raw []byte) error {
 		return fmt.Errorf("write destination file: %w", err)
 	}
 	return nil
-}
-
-func stdinAvailable() bool {
-	info, err := os.Stdin.Stat()
-	if err != nil {
-		return false
-	}
-	return (info.Mode() & os.ModeCharDevice) == 0
 }

@@ -11,7 +11,6 @@ func WithDryRun(ctx context.Context) context.Context {
 	return context.WithValue(ctx, dryRunContextKey{}, true)
 }
 
-// IsDryRun reports dry run and returns the resulting value or error.
 func IsDryRun(ctx context.Context) bool {
 	if ctx == nil {
 		return false

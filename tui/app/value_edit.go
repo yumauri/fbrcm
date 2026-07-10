@@ -1,15 +1,20 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/yumauri/fbrcm/cli/shared"
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/yumauri/fbrcm/core"
-	"github.com/yumauri/fbrcm/core/firebase"
+	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
 type previewValueEditFunc func() (*core.ParametersCache, []byte, error)
+type valueDialogBodyFunc func() ([]string, error)
+type setParameterValueFunc func(context.Context) (*core.ParametersTree, bool, error)
 
 func (m Model) valueEditDialogBody(project core.Project, preview previewValueEditFunc) ([]string, error) {
 	cache, finalRaw, err := preview()
@@ -20,16 +25,12 @@ func (m Model) valueEditDialogBody(project core.Project, preview previewValueEdi
 		return nil, err
 	}
 
-	currentCfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
-	if err != nil {
-		return nil, err
-	}
-	finalCfg, err := firebase.ParseRemoteConfig(finalRaw)
+	currentCfg, finalCfg, err := parseRemoteConfigPair(cache.RemoteConfig, finalRaw)
 	if err != nil {
 		return nil, err
 	}
 
-	diffText, hasChanges := shared.RenderRemoteConfigDiff(currentCfg, finalCfg)
+	diffText, hasChanges := rcdiff.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	if !hasChanges {
 		return nil, fmt.Errorf("parameter value not changed")
 	}
@@ -42,6 +43,35 @@ func (m Model) valueEditDialogBody(project core.Project, preview previewValueEdi
 	}
 	lines = append(lines, dialogDiffLines(diffText)...)
 	return lines, nil
+}
+
+func (m *Model) openValueEditDialog(project core.Project, bodyFn valueDialogBodyFunc, logErr func(error), applyCmd, draftCmd tea.Cmd) {
+	body, err := bodyFn()
+	if err != nil {
+		logErr(err)
+		m.openErrorDialog("Edit Value Failed", project, err.Error())
+		return
+	}
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title: "Edit Value?",
+		Body:  body,
+		Buttons: []dialogcmp.Button{
+			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: applyCmd},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: draftCmd},
+			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
+		},
+	})
+}
+
+func (m Model) runSetParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel string, publish bool, set setParameterValueFunc) tea.Cmd {
+	return func() tea.Msg {
+		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
+		tree, hasDraft, err := set(context.Background())
+		if err != nil {
+			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
+		}
+		return m.valueEditLoadedMsg(project, groupKey, paramKey, tree, hasDraft, stale, publish)
+	}
 }
 
 func (m Model) valueEditLoadedMsg(project core.Project, groupKey, paramKey string, tree *core.ParametersTree, hasDraft, stale, publish bool) messages.ParametersLoadedMsg {

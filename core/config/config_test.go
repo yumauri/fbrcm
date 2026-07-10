@@ -1,0 +1,451 @@
+package config
+
+import (
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/yumauri/fbrcm/core/env"
+)
+
+func setupTestDirs(t *testing.T) {
+	t.Helper()
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	resetPaths()
+}
+
+func writeFile(t *testing.T, path string, content string, mode os.FileMode) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", filepath.Dir(path), err)
+	}
+	if err := os.WriteFile(path, []byte(content), mode); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func assertFileMode(t *testing.T, path string, want os.FileMode) {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat %s: %v", path, err)
+	}
+	if got := info.Mode().Perm(); got != want {
+		t.Fatalf("%s mode = %o, want %o", path, got, want)
+	}
+}
+
+func TestEnsurePrivateDirAndFile(t *testing.T) {
+	setupTestDirs(t)
+	dir := filepath.Join(t.TempDir(), "nested", "private")
+	path := filepath.Join(dir, "secret.json")
+
+	if err := EnsurePrivateDir(dir); err != nil {
+		t.Fatalf("EnsurePrivateDir returned error: %v", err)
+	}
+	assertFileMode(t, dir, PrivateDirMode)
+
+	writeFile(t, path, "{}", 0o644)
+	if err := EnsurePrivateFile(path); err != nil {
+		t.Fatalf("EnsurePrivateFile returned error: %v", err)
+	}
+	assertFileMode(t, path, PrivateFileMode)
+}
+
+func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
+	setupTestDirs(t)
+
+	_, err := LoadAppConfig()
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("LoadAppConfig missing = %v, want ErrNotExist", err)
+	}
+
+	writeFile(t, GetGlobalConfigFilePath(), "profile = [", PrivateFileMode)
+	_, err = LoadAppConfig()
+	if err == nil || !strings.Contains(err.Error(), "decode global config") {
+		t.Fatalf("LoadAppConfig corrupt = %v, want decode error", err)
+	}
+
+	cfg := &AppConfig{Profile: "work", Keys: map[string]map[string][]string{"global": {"quit": {"q"}}}}
+	if err := SaveAppConfig(cfg); err != nil {
+		t.Fatalf("SaveAppConfig returned error: %v", err)
+	}
+	assertFileMode(t, GetGlobalConfigFilePath(), PrivateFileMode)
+
+	loaded, err := LoadAppConfig()
+	if err != nil {
+		t.Fatalf("LoadAppConfig returned error: %v", err)
+	}
+	if loaded.Profile != "work" {
+		t.Fatalf("profile = %q, want work", loaded.Profile)
+	}
+}
+
+func TestSwitchProfileWritesConfigToml(t *testing.T) {
+	setupTestDirs(t)
+
+	if err := SwitchProfile("staging"); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+	if got := GetActiveProfileName(); got != "staging" {
+		t.Fatalf("active profile = %q, want staging", got)
+	}
+
+	loaded, err := LoadAppConfig()
+	if err != nil {
+		t.Fatalf("LoadAppConfig returned error: %v", err)
+	}
+	if loaded.Profile != "staging" {
+		t.Fatalf("config.toml profile = %q, want staging", loaded.Profile)
+	}
+	assertFileMode(t, profileConfigDir("staging"), PrivateDirMode)
+	assertFileMode(t, profileCacheDir("staging"), PrivateDirMode)
+}
+
+func TestValidateProfileNameAndAuthID(t *testing.T) {
+	t.Parallel()
+
+	for _, id := range []string{"", " ", "..", "a/b", `a\b`} {
+		if err := ValidateProfileName(id); err == nil {
+			t.Fatalf("ValidateProfileName(%q) = nil, want error", id)
+		}
+		if err := ValidateAuthID(id); err == nil {
+			t.Fatalf("ValidateAuthID(%q) = nil, want error", id)
+		}
+	}
+	if err := ValidateProfileName("valid-name"); err != nil {
+		t.Fatalf("ValidateProfileName valid = %v", err)
+	}
+	if err := ValidateAuthID("valid-id"); err != nil {
+		t.Fatalf("ValidateAuthID valid = %v", err)
+	}
+}
+
+func TestLoadAuthMissingCorruptAndRoundTrip(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	_, err := LoadAuth()
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("LoadAuth missing = %v, want ErrNotExist", err)
+	}
+
+	empty, err := LoadAuthOrEmpty()
+	if err != nil {
+		t.Fatalf("LoadAuthOrEmpty missing = %v", err)
+	}
+	if empty.Version != AuthConfigVersion || len(empty.Auth) != 0 {
+		t.Fatalf("LoadAuthOrEmpty = %+v, want empty v1", empty)
+	}
+
+	writeFile(t, GetAuthFilePath(), "{", PrivateFileMode)
+	_, err = LoadAuth()
+	if err == nil || !strings.Contains(err.Error(), "decode auth config") {
+		t.Fatalf("LoadAuth corrupt = %v, want decode error", err)
+	}
+
+	entry := DefaultOAuthAuthEntry("main", "Main OAuth")
+	file := UpsertAuthEntry(nil, entry)
+	if err := SaveAuth(file); err != nil {
+		t.Fatalf("SaveAuth returned error: %v", err)
+	}
+	assertFileMode(t, GetAuthFilePath(), PrivateFileMode)
+
+	loaded, err := LoadAuth()
+	if err != nil {
+		t.Fatalf("LoadAuth returned error: %v", err)
+	}
+	got, ok := loaded.FindAuth("main")
+	if !ok || got.Label != "Main OAuth" {
+		t.Fatalf("FindAuth = %+v, ok=%v", got, ok)
+	}
+}
+
+func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	_, err := LoadProjects()
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("LoadProjects missing = %v, want ErrNotExist", err)
+	}
+
+	writeFile(t, GetProjectsFilePath(), "   \n", PrivateFileMode)
+	_, err = LoadProjects()
+	if !errors.Is(err, ErrEmptyProjectsFile) {
+		t.Fatalf("LoadProjects empty = %v, want ErrEmptyProjectsFile", err)
+	}
+
+	writeFile(t, GetProjectsFilePath(), "{", PrivateFileMode)
+	_, err = LoadProjects()
+	if err == nil || !strings.Contains(err.Error(), "decode projects config") {
+		t.Fatalf("LoadProjects corrupt = %v, want decode error", err)
+	}
+
+	projects := []Project{{
+		Name:      "Demo",
+		ProjectID: "demo",
+		AuthID:    "main",
+	}}
+	if err := SaveProjects(projects, time.Now()); err != nil {
+		t.Fatalf("SaveProjects returned error: %v", err)
+	}
+	assertFileMode(t, GetProjectsFilePath(), PrivateFileMode)
+
+	loaded, err := LoadProjects()
+	if err != nil {
+		t.Fatalf("LoadProjects returned error: %v", err)
+	}
+	if len(loaded) != 1 || loaded[0].ProjectID != "demo" {
+		t.Fatalf("LoadProjects = %+v, want demo project", loaded)
+	}
+}
+
+func TestLoadParametersCacheMissingCorruptAndRoundTrip(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	_, err := LoadParametersCache("demo")
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("LoadParametersCache missing = %v, want ErrNotExist", err)
+	}
+
+	path := GetParametersCachePath("demo")
+	writeFile(t, path, "{", PrivateFileMode)
+	_, err = LoadParametersCache("demo")
+	if err == nil || !strings.Contains(err.Error(), "decode parameters cache") {
+		t.Fatalf("LoadParametersCache corrupt = %v, want decode error", err)
+	}
+
+	now := time.Now().UTC()
+	cache := &ParametersCache{
+		ETag:         "etag-1",
+		CachedAt:     now,
+		RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"1"}}`),
+	}
+	if err := SaveParametersCache("demo", cache); err != nil {
+		t.Fatalf("SaveParametersCache returned error: %v", err)
+	}
+	assertFileMode(t, path, PrivateFileMode)
+
+	loaded, err := LoadParametersCache("demo")
+	if err != nil {
+		t.Fatalf("LoadParametersCache returned error: %v", err)
+	}
+	if loaded.ETag != "etag-1" {
+		t.Fatalf("etag = %q, want etag-1", loaded.ETag)
+	}
+}
+
+func TestParametersCacheIsFresh(t *testing.T) {
+	now := time.Now()
+	fresh := &ParametersCache{CachedAt: now.Add(-5 * time.Minute)}
+	stale := &ParametersCache{CachedAt: now.Add(-11 * time.Minute)}
+
+	if !fresh.IsFresh(now) {
+		t.Fatal("fresh cache reported stale")
+	}
+	if stale.IsFresh(now) {
+		t.Fatal("stale cache reported fresh")
+	}
+	if (*ParametersCache)(nil).IsFresh(now) {
+		t.Fatal("nil cache reported fresh")
+	}
+}
+
+func TestDraftLoadSaveDeleteAndList(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	_, err := LoadDraft("demo")
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("LoadDraft missing = %v, want ErrNotExist", err)
+	}
+
+	if err := SaveDraft("demo", json.RawMessage(`{"parameters":`)); err == nil {
+		t.Fatal("SaveDraft invalid JSON returned nil error")
+	}
+
+	raw := json.RawMessage(`{"version":{"versionNumber":"1"},"parameters":{"flag":{"defaultValue":{"value":"draft"}}}}`)
+	if err := SaveDraft("demo", raw); err != nil {
+		t.Fatalf("SaveDraft returned error: %v", err)
+	}
+	assertFileMode(t, GetDraftPath("demo"), PrivateFileMode)
+
+	loaded, err := LoadDraft("demo")
+	if err != nil {
+		t.Fatalf("LoadDraft returned error: %v", err)
+	}
+	if string(loaded) != string(raw) {
+		t.Fatalf("LoadDraft = %s, want %s", loaded, raw)
+	}
+
+	ids, err := ListDraftProjectIDs()
+	if err != nil {
+		t.Fatalf("ListDraftProjectIDs returned error: %v", err)
+	}
+	if len(ids) != 1 || ids[0] != "demo" {
+		t.Fatalf("ListDraftProjectIDs = %v, want [demo]", ids)
+	}
+
+	if err := DeleteDraft("demo"); err != nil {
+		t.Fatalf("DeleteDraft returned error: %v", err)
+	}
+	_, err = LoadDraft("demo")
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("LoadDraft after delete = %v, want ErrNotExist", err)
+	}
+}
+
+func TestListDraftProjectIDsMissingDir(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	ids, err := ListDraftProjectIDs()
+	if err != nil {
+		t.Fatalf("ListDraftProjectIDs returned error: %v", err)
+	}
+	if ids != nil {
+		t.Fatalf("ListDraftProjectIDs = %v, want nil", ids)
+	}
+}
+
+func TestListProfilesAndEnsureActiveProfile(t *testing.T) {
+	setupTestDirs(t)
+
+	profiles, err := ListProfiles()
+	if err != nil {
+		t.Fatalf("ListProfiles empty root = %v", err)
+	}
+	if len(profiles) != 0 {
+		t.Fatalf("ListProfiles = %v, want empty", profiles)
+	}
+
+	if err := SwitchProfile("work"); err != nil {
+		t.Fatalf("SwitchProfile work = %v", err)
+	}
+	if err := SwitchProfile("staging"); err != nil {
+		t.Fatalf("SwitchProfile staging = %v", err)
+	}
+
+	profiles, err = ListProfiles()
+	if err != nil {
+		t.Fatalf("ListProfiles = %v", err)
+	}
+	if len(profiles) != 2 {
+		t.Fatalf("ListProfiles = %v, want [staging work]", profiles)
+	}
+	if profiles[0] != "staging" || profiles[1] != "work" {
+		t.Fatalf("ListProfiles = %v, want sorted [staging work]", profiles)
+	}
+
+	if err := EnsureActiveProfile(); err != nil {
+		t.Fatalf("EnsureActiveProfile = %v", err)
+	}
+	if got := GetActiveProfileName(); got != "staging" {
+		t.Fatalf("active profile = %q, want staging", got)
+	}
+}
+
+func TestRenameProfileUpdatesActiveProfile(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("alpha"); err != nil {
+		t.Fatalf("SwitchProfile alpha = %v", err)
+	}
+
+	if err := RenameProfile("alpha", "beta"); err != nil {
+		t.Fatalf("RenameProfile = %v", err)
+	}
+	if got := GetActiveProfileName(); got != "beta" {
+		t.Fatalf("active profile = %q, want beta", got)
+	}
+
+	profiles, err := ListProfiles()
+	if err != nil {
+		t.Fatalf("ListProfiles = %v", err)
+	}
+	if len(profiles) != 1 || profiles[0] != "beta" {
+		t.Fatalf("ListProfiles = %v, want [beta]", profiles)
+	}
+}
+
+func TestRenameProfileRejectsExistingTarget(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("one"); err != nil {
+		t.Fatalf("SwitchProfile one = %v", err)
+	}
+	if err := SwitchProfile("two"); err != nil {
+		t.Fatalf("SwitchProfile two = %v", err)
+	}
+
+	err := RenameProfile("one", "two")
+	if err == nil || !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("RenameProfile = %v, want already exists error", err)
+	}
+}
+
+func TestPurgeProfileRejectsActiveProfile(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("keep"); err != nil {
+		t.Fatalf("SwitchProfile keep = %v", err)
+	}
+
+	err := PurgeProfile("keep")
+	if err == nil || !strings.Contains(err.Error(), "cannot purge active profile") {
+		t.Fatalf("PurgeProfile active = %v, want rejection", err)
+	}
+}
+
+func TestPurgeProfileRemovesInactiveProfile(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("active"); err != nil {
+		t.Fatalf("SwitchProfile active = %v", err)
+	}
+	if err := SwitchProfile("temp"); err != nil {
+		t.Fatalf("SwitchProfile temp = %v", err)
+	}
+	if err := SwitchProfile("active"); err != nil {
+		t.Fatalf("SwitchProfile active again = %v", err)
+	}
+
+	if err := PurgeProfile("temp"); err != nil {
+		t.Fatalf("PurgeProfile temp = %v", err)
+	}
+	profiles, err := ListProfiles()
+	if err != nil {
+		t.Fatalf("ListProfiles = %v", err)
+	}
+	if len(profiles) != 1 || profiles[0] != "active" {
+		t.Fatalf("ListProfiles = %v, want [active]", profiles)
+	}
+}
+
+func TestGetProfileDirPathsValidateName(t *testing.T) {
+	setupTestDirs(t)
+
+	if _, err := GetProfileConfigDirPath("valid"); err != nil {
+		t.Fatalf("GetProfileConfigDirPath valid = %v", err)
+	}
+	if _, err := GetProfileCacheDirPath("valid"); err != nil {
+		t.Fatalf("GetProfileCacheDirPath valid = %v", err)
+	}
+	if _, err := GetProfileConfigDirPath("../bad"); err == nil {
+		t.Fatal("GetProfileConfigDirPath invalid = nil, want error")
+	}
+}

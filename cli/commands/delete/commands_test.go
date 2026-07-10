@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -84,10 +85,10 @@ func TestRenderDeletedParameterIncludesDetails(t *testing.T) {
 		},
 	}
 
-	got := renderDeletedParameter(target)
+	got := rc.RenderRemovedParameterDetail(target.Key, target.Group, target.Param)
 	for _, want := range []string{"flag [group-a]", "type:", "STRING", "description:", "default:", "cond beta:"} {
 		if !strings.Contains(got, want) {
-			t.Fatalf("renderDeletedParameter = %q, want substring %q", got, want)
+			t.Fatalf("RenderRemovedParameterDetail = %q, want substring %q", got, want)
 		}
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
-	charmlog "github.com/charmbracelet/log"
+	charmlog "charm.land/log/v2"
 
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -61,23 +61,10 @@ func New(svc *core.Core) Model {
 	return m
 }
 
-// Init initializes init for Model and returns the resulting state or error.
 func (m Model) Init() tea.Cmd {
 	return waitForLogCmd(m.sub)
 }
 
-// SetSize sets size for Model and returns the resulting state or error.
-func (m Model) SetSize(width, height int) Model {
-	if m.width == width && m.height == height {
-		return m
-	}
-	m.width = width
-	m.height = height
-	m.refreshViewport()
-	return m
-}
-
-// SetBounds sets bounds for Model and returns the resulting state or error.
 func (m Model) SetBounds(x, y, width, height int) Model {
 	if m.x == x && m.y == y && m.width == width && m.height == height {
 		return m
@@ -90,13 +77,11 @@ func (m Model) SetBounds(x, y, width, height int) Model {
 	return m
 }
 
-// SetActive sets active for Model and returns the resulting state or error.
 func (m Model) SetActive(active bool) Model {
 	m.active = active
 	return m
 }
 
-// moveLevel moves move level for Model and returns the resulting state or error.
 func (m *Model) moveLevel(delta int) {
 	levels := corelog.AvailableLevels()
 	current := 0
@@ -136,7 +121,6 @@ func (m *Model) refreshViewport() {
 	m.viewport.SetYOffset(min(offset, maxOffset))
 }
 
-// isMouseInside reports is mouse inside for Model and returns the resulting state or error.
 func (m Model) isMouseInside(mouse tea.Mouse) bool {
 	return mouse.X >= m.x && mouse.X < m.x+m.width && mouse.Y >= m.y && mouse.Y < m.y+m.height
 }

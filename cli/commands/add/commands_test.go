@@ -54,7 +54,10 @@ func TestAddParameterClonesAndRejectsDuplicates(t *testing.T) {
 		},
 	}
 
-	changed, finalCfg := addParameter(original, "new_flag", "", "New flag", addValueSpec{value: "on", valueType: "BOOLEAN"})
+	changed, finalCfg, err := addParameter(original, "new_flag", "", "New flag", addValueSpec{value: "on", valueType: "BOOLEAN"})
+	if err != nil {
+		t.Fatalf("addParameter returned error: %v", err)
+	}
 	if !changed {
 		t.Fatalf("addParameter changed = false, want true")
 	}
@@ -69,7 +72,10 @@ func TestAddParameterClonesAndRejectsDuplicates(t *testing.T) {
 		t.Fatalf("new_flag metadata = %q/%q, want New flag/BOOLEAN", param.Description, param.ValueType)
 	}
 
-	changed, finalCfg = addParameter(original, "existing", "group-a", "Duplicate", addValueSpec{value: "new", valueType: "STRING"})
+	changed, finalCfg, err = addParameter(original, "existing", "group-a", "Duplicate", addValueSpec{value: "new", valueType: "STRING"})
+	if err != nil {
+		t.Fatalf("addParameter returned error: %v", err)
+	}
 	if changed {
 		t.Fatalf("duplicate addParameter changed = true, want false")
 	}

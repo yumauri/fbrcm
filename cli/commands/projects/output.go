@@ -2,7 +2,6 @@ package projects
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"image/color"
 	"strings"
@@ -47,9 +46,7 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 	highlightFilters := shared.ParseFilters(filterValues)
 
 	if jsonOut {
-		encoder := json.NewEncoder(cmd.OutOrStdout())
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(projectsJSON(projects, withURL)); err != nil {
+		if err := shared.WriteJSON(cmd, projectsJSON(projects, withURL)); err != nil {
 			return fmt.Errorf("encode projects json: %w", err)
 		}
 		logProjectsTotal(projects)

@@ -1,0 +1,31 @@
+{
+  "parameters": {
+    "empty_string": {
+      "defaultValue": {
+        "value": ""
+      },
+      "valueType": "STRING"
+    },
+    "empty_boolean": {
+      "defaultValue": {
+        "value": ""
+      },
+      "valueType": "BOOLEAN"
+    },
+    "in_app_default": {
+      "defaultValue": {
+        "useInAppDefault": true
+      },
+      "valueType": "STRING"
+    },
+    "plain_flag": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "valueType": "BOOLEAN"
+    }
+  },
+  "version": {
+    "versionNumber": "4"
+  }
+}

@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 type cacheEntry struct {
@@ -38,16 +39,17 @@ func loadCacheEntries() ([]cacheEntry, error) {
 }
 
 func sortCacheEntries(entries []cacheEntry) {
-	sort.Slice(entries, func(i, j int) bool {
-		left := strings.ToLower(entries[i].ProjectID)
-		right := strings.ToLower(entries[j].ProjectID)
-		if left == right {
-			if entries[i].Draft != entries[j].Draft {
-				return !entries[i].Draft
-			}
-			return entries[i].ProjectID < entries[j].ProjectID
+	slices.SortFunc(entries, func(left, right cacheEntry) int {
+		if cmp := strfold.CompareFolded(left.ProjectID, right.ProjectID); cmp != 0 {
+			return cmp
 		}
-		return left < right
+		if left.Draft != right.Draft {
+			if !left.Draft {
+				return -1
+			}
+			return 1
+		}
+		return strfold.Compare(left.ProjectID, right.ProjectID)
 	})
 }
 

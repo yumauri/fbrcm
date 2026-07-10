@@ -1,0 +1,32 @@
+{
+  "parameters": {
+    "app_theme": {
+      "defaultValue": {
+        "value": "light"
+      },
+      "valueType": "STRING"
+    }
+  },
+  "parameterGroups": {
+    "checkout": {
+      "description": "Checkout flow flags",
+      "parameters": {
+        "enable_coupons": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "valueType": "BOOLEAN"
+        },
+        "tax_rate": {
+          "defaultValue": {
+            "value": "0.08"
+          },
+          "valueType": "NUMBER"
+        }
+      }
+    }
+  },
+  "version": {
+    "versionNumber": "2"
+  }
+}

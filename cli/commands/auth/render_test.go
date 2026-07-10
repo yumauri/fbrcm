@@ -1,12 +1,9 @@
 package auth
 
 import (
-	"os"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -56,27 +53,6 @@ func TestRenderAuthTablePlainText(t *testing.T) {
 		if !strings.Contains(table, want) {
 			t.Fatalf("renderAuthTable = %q, want substring %q", table, want)
 		}
-	}
-}
-
-func TestReadJSONFileInputFromPath(t *testing.T) {
-	file, err := os.CreateTemp(t.TempDir(), "secret-*.json")
-	if err != nil {
-		t.Fatalf("create temp file: %v", err)
-	}
-	if _, err := file.WriteString(`{"client_id":"demo"}`); err != nil {
-		t.Fatalf("write temp file: %v", err)
-	}
-	if err := file.Close(); err != nil {
-		t.Fatalf("close temp file: %v", err)
-	}
-
-	got, err := readJSONFileInput(&cobra.Command{}, file.Name(), "client secret")
-	if err != nil {
-		t.Fatalf("readJSONFileInput returned error: %v", err)
-	}
-	if string(got) != `{"client_id":"demo"}` {
-		t.Fatalf("readJSONFileInput = %q, want temp file content", string(got))
 	}
 }
 

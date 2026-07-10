@@ -2,6 +2,7 @@ package shared
 
 import (
 	"image/color"
+	"io"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -18,6 +19,17 @@ type ConfirmationNote struct {
 type ConfirmationOptions struct {
 	Destructive bool
 	Notes       []ConfirmationNote
+}
+
+// RunConfirmationPrompt shows a yes/no prompt and returns the user's choice.
+// When destructive is true the affirmative option is styled as destructive.
+// A non-nil fallbackOut overrides the prompt's output writer.
+func RunConfirmationPrompt(prompt string, destructive bool, fallbackOut io.Writer) (bool, error) {
+	confirm := NewConfirmation(prompt, confirmation.Yes, ConfirmationOptions{Destructive: destructive})
+	if fallbackOut != nil {
+		confirm.Output = fallbackOut
+	}
+	return confirm.RunPrompt()
 }
 
 func NewConfirmation(prompt string, defaultValue confirmation.Value, options ConfirmationOptions) *confirmation.Confirmation {

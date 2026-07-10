@@ -7,7 +7,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-// closeDetailsPanel closes close details panel for Model and returns the resulting state or error.
 func (m *Model) closeDetailsPanel() {
 	m.detailsVisible = false
 	m.details = m.details.SetData(nil)
@@ -18,19 +17,12 @@ func (m *Model) closeDetailsPanel() {
 	}
 }
 
-// openNewParameterDetails opens open new parameter details for Model and returns the resulting state or error.
 func (m *Model) openNewParameterDetails() tea.Cmd {
 	project, groupKey, afterParamKey, ok := m.parameters.CurrentNewParameterTarget()
 	if !ok {
 		return nil
 	}
-	m.closeDialog(false)
-	m.closeJSONInput()
-	m.closeBoolPicker()
-	m.closeNumberInput()
-	m.closeStringInput()
-	m.closeMoveParam()
-	m.closeRenameInput()
+	m.closeOverlays()
 	m.parameters.OpenTransientNewParameter(project.ProjectID, groupKey, afterParamKey)
 	data, ok := m.parameters.CurrentParameterViewData()
 	if !ok {

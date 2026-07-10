@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/tui/components/inputstyles"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -23,7 +24,6 @@ func New() Model {
 	return Model{input: newInput()}
 }
 
-// Open opens open for Model and returns the resulting state or error.
 func (m Model) Open(x, y, minWidth, maxWidth int, value string) (Model, tea.Cmd) {
 	m.x = x
 	m.y = y
@@ -37,7 +37,6 @@ func (m Model) Open(x, y, minWidth, maxWidth int, value string) (Model, tea.Cmd)
 	return m, m.input.Focus()
 }
 
-// Close closes close for Model and returns the resulting state or error.
 func (m Model) Close() Model {
 	m.open = false
 	m.input.Blur()
@@ -45,7 +44,6 @@ func (m Model) Close() Model {
 	return m
 }
 
-// IsOpen reports open for Model and returns the resulting state or error.
 func (m Model) IsOpen() bool {
 	return m.open
 }
@@ -75,7 +73,6 @@ func (m Model) View() string {
 	return inputBorderStyle.Render(" " + m.input.View())
 }
 
-// setInputWidth sets set input width for Model and returns the resulting state or error.
 func (m *Model) setInputWidth() {
 	innerWidth := max(m.minWidth, lipgloss.Width(m.input.Value())+1)
 	innerWidth = min(innerWidth, max(m.maxWidth-2, 1))
@@ -86,25 +83,10 @@ var inputBorderStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
 	BorderForeground(styles.PaletteBlueBright)
 
-func textinputStyles() textinput.Styles {
-	inputStyles := textinput.DefaultDarkStyles()
-	filterStyle := styles.FilterText
-	inputStyles.Focused.Text = filterStyle
-	inputStyles.Focused.Prompt = filterStyle
-	inputStyles.Focused.Placeholder = filterStyle
-	inputStyles.Focused.Suggestion = filterStyle
-	inputStyles.Blurred.Text = filterStyle
-	inputStyles.Blurred.Prompt = filterStyle
-	inputStyles.Blurred.Placeholder = filterStyle
-	inputStyles.Blurred.Suggestion = filterStyle
-	inputStyles.Cursor.Color = styles.PaletteYellow
-	return inputStyles
-}
-
 func newInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""
-	input.SetStyles(textinputStyles())
+	input.SetStyles(inputstyles.TextInput())
 	input.Blur()
 	return input
 }

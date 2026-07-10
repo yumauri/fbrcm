@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/erikgeiser/promptkit/confirmation"
@@ -16,8 +15,12 @@ func New() *cobra.Command {
 		Use:   "cache",
 		Short: "Manage cached parameters files",
 	}
+	cacheCmd.AddCommand(newPathCommand(), newPurgeCommand(), newListCommand())
+	return cacheCmd
+}
 
-	pathCmd := &cobra.Command{
+func newPathCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "path",
 		Short: "Print parameters cache directory path",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -28,18 +31,19 @@ func New() *cobra.Command {
 
 			path := config.GetCacheDirPath()
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(map[string]string{"path": path})
+				return shared.WriteJSON(cmd, map[string]string{"path": path})
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
 			return nil
 		},
 	}
-	pathCmd.Flags().Bool("json", false, "Print path as JSON")
+	cmd.Flags().Bool("json", false, "Print path as JSON")
+	return cmd
+}
 
-	purgeCmd := &cobra.Command{
+func newPurgeCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "purge",
 		Short: "Delete cached parameters files",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -97,9 +101,12 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
-	purgeCmd.Flags().BoolP("yes", "y", false, "Skip confirmation dialog")
+	shared.AddYesFlag(cmd, "Skip confirmation dialog")
+	return cmd
+}
 
-	listCmd := &cobra.Command{
+func newListCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List cached parameters files",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -114,9 +121,7 @@ func New() *cobra.Command {
 			}
 
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				if err := encoder.Encode(entries); err != nil {
+				if err := shared.WriteJSON(cmd, entries); err != nil {
 					return err
 				}
 				logCacheTotal(entries)
@@ -128,8 +133,6 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
-	listCmd.Flags().Bool("json", false, "Print cache entries as JSON")
-
-	cacheCmd.AddCommand(pathCmd, purgeCmd, listCmd)
-	return cacheCmd
+	cmd.Flags().Bool("json", false, "Print cache entries as JSON")
+	return cmd
 }

@@ -32,6 +32,18 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	}
 }
 
+func TestRootCommandKeepsProfileBypassContract(t *testing.T) {
+	cmd := newRootCommand(nil, "1.2.3", "abc123", "2026-06-14")
+
+	profile, _, err := cmd.Find([]string{"profile", "list"})
+	if err != nil {
+		t.Fatalf("find profile list: %v", err)
+	}
+	if !isProfileCommand(profile) {
+		t.Fatalf("profile list command no longer bypasses active profile setup")
+	}
+}
+
 func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 	var counts []int
 	for range 3 {

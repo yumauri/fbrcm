@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"strings"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 type Project struct {
@@ -115,12 +115,7 @@ func (s *Service) ListProjects(ctx context.Context) ([]Project, error) {
 		pageToken = payload.NextPageToken
 	}
 
-	sort.Slice(projects, func(i, j int) bool {
-		if projects[i].Name == projects[j].Name {
-			return projects[i].ProjectID < projects[j].ProjectID
-		}
-		return projects[i].Name < projects[j].Name
-	})
+	strfold.SortProjects(projects, func(p Project) string { return p.Name }, func(p Project) string { return p.ProjectID })
 
 	enriched, err := s.enrichProjects(ctx, projects)
 	if err != nil {

@@ -27,6 +27,14 @@ func EnsurePrivateDir(path string) error {
 	return nil
 }
 
+// WritePrivateFile writes data with private file mode and ensures permissions.
+func WritePrivateFile(path string, data []byte) error {
+	if err := os.WriteFile(path, data, PrivateFileMode); err != nil {
+		return err
+	}
+	return EnsurePrivateFile(path)
+}
+
 // Ensure file is private to the user
 func EnsurePrivateFile(path string) error {
 	logger := corelog.For("config")

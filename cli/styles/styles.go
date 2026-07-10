@@ -4,7 +4,7 @@ import (
 	"image/color"
 
 	"charm.land/lipgloss/v2"
-	charmlog "github.com/charmbracelet/log"
+	charmlog "charm.land/log/v2"
 
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
@@ -41,6 +41,7 @@ func NoColorEnabled() bool {
 	return corestyles.NoColorEnabled()
 }
 
+// BorderStyle returns the CLI border style. CLI panels do not use active borders.
 func BorderStyle(_ bool) lipgloss.Style {
 	return BorderInactive
 }

@@ -9,14 +9,26 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 type addValueSpec struct {
 	value     string
 	valueType string
+}
+
+type addOptions struct {
+	projectFilters []string
+	projectExpr    string
+	dryRun         bool
+	groupName      string
+	description    string
+	valueSpec      addValueSpec
+	key            string
 }
 
 type addTotals struct {
@@ -31,48 +43,18 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Add Remote Config parameter",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectFilters, err := cmd.Flags().GetStringArray("project")
-			if err != nil {
-				return err
-			}
-			projectExpr, err := cmd.Flags().GetString("expr")
-			if err != nil {
-				return err
-			}
-			dryRun, err := cmd.Flags().GetBool("dry-run")
-			if err != nil {
-				return err
-			}
-			groupName, err := cmd.Flags().GetString("group")
-			if err != nil {
-				return err
-			}
-			description, err := cmd.Flags().GetString("description")
-			if err != nil {
-				return err
-			}
-			spec, err := readAddValueSpec(cmd)
-			if err != nil {
-				return err
-			}
-
-			key := strings.TrimSpace(args[0])
-			if key == "" {
-				return fmt.Errorf("parameter key cannot be empty")
-			}
-			groupName = strings.TrimSpace(groupName)
-
-			if shared.StdinAvailable(cmd.InOrStdin()) {
-				corelog.For("add").Info("stdin mode enabled; using remote config from stdin")
-				return runAddStdin(cmd, key, groupName, description, spec, projectExpr)
-			}
-			return runAddRemote(cmd, svc, key, projectFilters, projectExpr, groupName, description, spec, dryRun)
+			return runAddCommand(cmd, svc, args)
 		},
 	}
 
-	cmd.Flags().StringArrayP("project", "p", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
+	addFlags(cmd)
+	return cmd
+}
+
+func addFlags(cmd *cobra.Command) {
+	shared.AddProjectFilterFlag(cmd)
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
-	cmd.Flags().Bool("dry-run", false, "Log Firebase write requests without sending them")
+	shared.AddDryRunFlag(cmd)
 	cmd.Flags().String("description", "", "Parameter description")
 	cmd.Flags().String("group", "", "Target parameter group")
 	cmd.Flags().String("boolean", "", "Boolean parameter value: true or false")
@@ -80,7 +62,60 @@ func New(svc *core.Core) *cobra.Command {
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
 	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json")
-	return cmd
+}
+
+func runAddCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
+	opts, err := readAddOptions(cmd, args)
+	if err != nil {
+		return err
+	}
+	if shared.StdinAvailable(cmd.InOrStdin()) {
+		corelog.For("add").Info("stdin mode enabled; using remote config from stdin")
+		return runAddStdin(cmd, opts.key, opts.groupName, opts.description, opts.valueSpec, opts.projectExpr)
+	}
+	return runAddRemote(cmd, svc, opts)
+}
+
+func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
+	projectFilters, err := cmd.Flags().GetStringArray("project")
+	if err != nil {
+		return addOptions{}, err
+	}
+	projectExpr, err := cmd.Flags().GetString("expr")
+	if err != nil {
+		return addOptions{}, err
+	}
+	dryRun, err := cmd.Flags().GetBool("dry-run")
+	if err != nil {
+		return addOptions{}, err
+	}
+	groupName, err := cmd.Flags().GetString("group")
+	if err != nil {
+		return addOptions{}, err
+	}
+	description, err := cmd.Flags().GetString("description")
+	if err != nil {
+		return addOptions{}, err
+	}
+	spec, err := readAddValueSpec(cmd)
+	if err != nil {
+		return addOptions{}, err
+	}
+
+	key := strings.TrimSpace(args[0])
+	if key == "" {
+		return addOptions{}, fmt.Errorf("parameter key cannot be empty")
+	}
+
+	return addOptions{
+		projectFilters: projectFilters,
+		projectExpr:    projectExpr,
+		dryRun:         dryRun,
+		groupName:      strings.TrimSpace(groupName),
+		description:    description,
+		valueSpec:      spec,
+		key:            key,
+	}, nil
 }
 
 func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
@@ -91,9 +126,9 @@ func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
 	return addValueSpec{value: value.Value, valueType: value.Type}, nil
 }
 
-func runAddRemote(cmd *cobra.Command, svc *core.Core, key string, projectFilters []string, projectExpr, groupName, description string, spec addValueSpec, dryRun bool) error {
+func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	ctx := context.Background()
-	if dryRun {
+	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
 
@@ -101,57 +136,41 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, key string, projectFilters
 	if err != nil {
 		return err
 	}
-	projects = shared.FilterProjects(projects, projectFilters)
-	projects, err = shared.FilterProjectsByExpr(ctx, svc, projects, projectExpr)
+	projects = shared.FilterProjects(projects, opts.projectFilters)
+	projects, err = shared.FilterProjectsByExpr(ctx, svc, projects, opts.projectExpr)
 	if err != nil {
 		return err
 	}
-	shared.SortProjects(projects)
+	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
-	var totals addTotals
-	for _, project := range projects {
-		for {
-			cfg, err := shared.RevalidateProjectConfig(ctx, svc, project)
+	totals, err := rc.RunRemotePublishLoop(ctx, cmd, svc, projects, "add", "➕", func(project core.Project, _ *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
+		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+			changed, finalCfg, err := addParameter(current, opts.key, opts.groupName, opts.description, opts.valueSpec)
 			if err != nil {
-				return err
+				return 0, nil, err
 			}
-
-			changedCount, retry, err := shared.PublishProjectConfigMutation(ctx, svc, cfg, "add", cmd.ErrOrStderr(), func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
-				changed, finalCfg := addParameter(current, key, groupName, description, spec)
-				if !changed {
-					corelog.For("add").Error("parameter already exists; skipping", "project_id", project.ProjectID, "parameter", key)
-					return 0, finalCfg, nil
-				}
-				diffText, hasChanges := shared.RenderRemoteConfigDiff(current, finalCfg)
-				if !hasChanges {
-					return 0, finalCfg, nil
-				}
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
-				return 1, finalCfg, nil
-			})
-			if err != nil {
-				return err
+			if !changed {
+				corelog.For("add").Error("parameter already exists; skipping", "project_id", project.ProjectID, "parameter", opts.key)
+				return 0, finalCfg, nil
 			}
-			if changedCount == 0 {
-				break
+			diffText, hasChanges := rc.RenderRemoteConfigDiff(current, finalCfg)
+			if !hasChanges {
+				return 0, finalCfg, nil
 			}
-			if retry {
-				continue
-			}
-
-			totals.modifiedProjects++
-			totals.addedParams += changedCount
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "➕ published: %s\n", project.ProjectID)
-			break
-		}
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+			return 1, finalCfg, nil
+		}, nil
+	})
+	if err != nil {
+		return err
 	}
 
-	logAddTotals("remote", totals)
+	logAddTotals("remote", addTotals{modifiedProjects: totals.ModifiedProjects, addedParams: totals.ChangedParams})
 	return nil
 }
 
 func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec addValueSpec, projectExpr string) error {
-	cfg, remoteConfigRaw, err := shared.ReadRemoteConfigInput(cmd.InOrStdin())
+	cfg, remoteConfigRaw, err := rc.ReadRemoteConfigInput(cmd.InOrStdin())
 	if err != nil {
 		return err
 	}
@@ -160,38 +179,34 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 		return nil
 	}
 
-	order, err := shared.ParseRemoteConfigOrder(remoteConfigRaw)
+	changed, finalCfg, err := addParameter(cfg, key, groupName, description, spec)
 	if err != nil {
-		return fmt.Errorf("parse stdin remote config order: %w", err)
+		return err
 	}
-
-	changed, finalCfg := addParameter(cfg, key, groupName, description, spec)
 	if !changed {
 		corelog.For("add").Error("parameter already exists; skipping", "project_id", "<stdin>", "parameter", key)
 	} else {
-		diffText, hasChanges := shared.RenderRemoteConfigDiff(cfg, finalCfg)
+		diffText, hasChanges := rc.RenderRemoteConfigDiff(cfg, finalCfg)
 		if hasChanges {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 		}
-		if groupName == "" {
-			order.Parameters = append(order.Parameters, key)
-		} else {
+	}
+
+	var mutate rc.OrderMutator
+	if changed {
+		mutate = func(order *rc.RemoteConfigOrder) {
+			if groupName == "" {
+				order.Parameters = append(order.Parameters, key)
+				return
+			}
 			if !slices.Contains(order.Groups, groupName) {
 				order.Groups = append(order.Groups, groupName)
 			}
 			order.GroupParameters[groupName] = append(order.GroupParameters[groupName], key)
 		}
 	}
-
-	out, err := shared.MarshalPrettyRemoteConfigWithOrder(finalCfg, order)
-	if err != nil {
+	if err := rc.WriteOrderPreservingRemoteConfigStdoutWithOrder(cmd, finalCfg, remoteConfigRaw, mutate); err != nil {
 		return err
-	}
-	if _, err := cmd.OutOrStdout().Write(out); err != nil {
-		return err
-	}
-	if len(out) == 0 || out[len(out)-1] != '\n' {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 
 	totals := addTotals{}
@@ -203,10 +218,13 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 	return nil
 }
 
-func addParameter(cfg *firebase.RemoteConfig, key, groupName, description string, spec addValueSpec) (bool, *firebase.RemoteConfig) {
-	finalCfg := shared.CloneRemoteConfig(cfg)
+func addParameter(cfg *firebase.RemoteConfig, key, groupName, description string, spec addValueSpec) (bool, *firebase.RemoteConfig, error) {
+	finalCfg, err := firebase.CloneRemoteConfig(cfg)
+	if err != nil {
+		return false, nil, err
+	}
 	if shared.ParamExists(finalCfg, key) {
-		return false, finalCfg
+		return false, finalCfg, nil
 	}
 
 	param := firebase.RemoteConfigParam{
@@ -216,7 +234,7 @@ func addParameter(cfg *firebase.RemoteConfig, key, groupName, description string
 	}
 
 	shared.SetParamSlot(finalCfg, key, groupName, param)
-	return true, finalCfg
+	return true, finalCfg, nil
 }
 
 func logAddTotals(mode string, totals addTotals) {

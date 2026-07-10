@@ -6,6 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -21,7 +22,6 @@ func New() Model {
 	return Model{}
 }
 
-// Open opens open for Model and returns the resulting state or error.
 func (m Model) Open(x, y int, current bool) Model {
 	m.x = x
 	m.y = y
@@ -35,7 +35,6 @@ func (m Model) Open(x, y int, current bool) Model {
 	return m
 }
 
-// Close closes close for Model and returns the resulting state or error.
 func (m Model) Close() Model {
 	m.open = false
 	m.values = nil
@@ -43,7 +42,6 @@ func (m Model) Close() Model {
 	return m
 }
 
-// IsOpen reports open for Model and returns the resulting state or error.
 func (m Model) IsOpen() bool {
 	return m.open
 }
@@ -52,7 +50,6 @@ func (m Model) Position() (int, int) {
 	return m.x, m.y - m.selected - 1
 }
 
-// Move moves move for Model and returns the resulting state or error.
 func (m *Model) Move(delta int) {
 	if len(m.values) == 0 {
 		return
@@ -74,10 +71,6 @@ func (m Model) CurrentString() (string, bool) {
 	return m.values[m.selected], true
 }
 
-func (m Model) Changed() bool {
-	return m.open && m.selected > 0
-}
-
 func (m Model) View() string {
 	if !m.open || len(m.values) == 0 {
 		return ""
@@ -97,7 +90,7 @@ func (m Model) renderRow(index, width int) string {
 	if index == m.selected {
 		left = borderStyle.Render("▸ ")
 	}
-	return left + valueStyle(m.values[index]).Render(padRight(m.values[index], width)) + borderStyle.Render(" │")
+	return left + valueStyle(m.values[index]).Render(viewutil.PadRight(m.values[index], width)) + borderStyle.Render(" │")
 }
 
 var borderStyle = lipgloss.NewStyle().Foreground(styles.PaletteBlueBright)
@@ -111,8 +104,4 @@ func valueStyle(value string) lipgloss.Style {
 		return lipgloss.NewStyle()
 	}
 	return style
-}
-
-func padRight(value string, width int) string {
-	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))
 }

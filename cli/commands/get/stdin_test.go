@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/yumauri/fbrcm/cli/shared"
 )
 
 func TestWriteRowsJSONFormatsRows(t *testing.T) {
@@ -21,7 +22,7 @@ func TestWriteRowsJSONFormatsRows(t *testing.T) {
 		{
 			Project:      "Project A",
 			ProjectID:    "project-a",
-			Group:        defaultGroupLabel,
+			Group:        shared.DefaultRootGroupLabel,
 			Key:          "welcome_flag",
 			Description:  "Welcome <flag>",
 			DefaultValue: &defaultValue,

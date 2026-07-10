@@ -32,6 +32,7 @@ type ParametersLoadedMsg struct {
 	DetailsSaved           bool
 	Err                    error
 	Revalidate             bool
+	RevalidateCache        *core.ParametersCache
 	HasDraft               bool
 	StaleDraft             bool
 }
@@ -56,8 +57,6 @@ type ParameterSelectionChangedMsg struct {
 	Activate    bool
 	ResetScroll bool
 }
-
-type QuitMsg struct{}
 
 type KeyboardCaptureMsg struct {
 	Enabled bool

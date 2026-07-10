@@ -95,7 +95,6 @@ func New(svc *core.Core) Model {
 	return m
 }
 
-// Init initializes init for Model and returns the resulting state or error.
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.projects.Init(),

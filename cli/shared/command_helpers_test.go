@@ -3,8 +3,6 @@ package shared
 import (
 	"io"
 	"testing"
-
-	"github.com/yumauri/fbrcm/core"
 )
 
 func TestResolveParameterArgFilters(t *testing.T) {
@@ -41,25 +39,6 @@ func TestHasFiltersDropsEmptyQueries(t *testing.T) {
 	}
 	if !HasFilters([]string{"flag"}) {
 		t.Fatalf("HasFilters returned false for non-empty query")
-	}
-}
-
-func TestSortProjects(t *testing.T) {
-	projects := []core.Project{
-		{Name: "", ProjectID: "zeta"},
-		{Name: "Alpha", ProjectID: "project-b"},
-		{Name: "alpha", ProjectID: "project-a"},
-		{Name: "Beta", ProjectID: "project-c"},
-	}
-
-	SortProjects(projects)
-
-	got := []string{projects[0].ProjectID, projects[1].ProjectID, projects[2].ProjectID, projects[3].ProjectID}
-	want := []string{"project-a", "project-b", "project-c", "zeta"}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("sorted IDs = %#v, want %#v", got, want)
-		}
 	}
 }
 

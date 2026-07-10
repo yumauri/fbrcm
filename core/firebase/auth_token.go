@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 
 	"golang.org/x/oauth2"
 
 	"github.com/yumauri/fbrcm/core/config"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
+
+var tokenCacheMu sync.Mutex
 
 // oauth2.TokenSource implementation with persistent caching of OAuth tokens
 type persistingTokenSource struct {
@@ -58,6 +62,9 @@ func tokensEqual(a, b *oauth2.Token) bool {
 
 // Reads the cached OAuth token from disk
 func readCachedToken(path string) (*oauth2.Token, error) {
+	tokenCacheMu.Lock()
+	defer tokenCacheMu.Unlock()
+
 	logger := corelog.For("firebase")
 	logger.Debug("read cached oauth token", "path", path)
 	data, err := os.ReadFile(path)
@@ -70,10 +77,20 @@ func readCachedToken(path string) (*oauth2.Token, error) {
 		return nil, fmt.Errorf("reading cached OAuth token: %w", err)
 	}
 
+	data = bytesTrimSpace(data)
+	if len(data) == 0 {
+		logger.Warn("oauth token cache empty; treating as miss", "path", path)
+		return nil, nil
+	}
+	if !json.Valid(data) {
+		logger.Warn("oauth token cache corrupt; treating as miss", "path", path)
+		return nil, nil
+	}
+
 	var tok oauth2.Token
 	if err := json.Unmarshal(data, &tok); err != nil {
-		logger.Error("decode cached oauth token failed", "path", path, "err", err)
-		return nil, fmt.Errorf("decoding cached OAuth token: %w", err)
+		logger.Warn("decode cached oauth token failed; treating as miss", "path", path, "err", err)
+		return nil, nil
 	}
 	logger.Info("loaded cached oauth token", "path", path, "has_refresh_token", tok.RefreshToken != "")
 	return &tok, nil
@@ -81,6 +98,9 @@ func readCachedToken(path string) (*oauth2.Token, error) {
 
 // Writes the OAuth token to disk for caching
 func writeCachedToken(path string, tok *oauth2.Token) error {
+	tokenCacheMu.Lock()
+	defer tokenCacheMu.Unlock()
+
 	logger := corelog.For("firebase")
 	if err := config.EnsurePrivateDir(filepath.Dir(path)); err != nil {
 		return fmt.Errorf("creating token cache directory: %w", err)
@@ -92,8 +112,14 @@ func writeCachedToken(path string, tok *oauth2.Token) error {
 		return fmt.Errorf("encoding OAuth token: %w", err)
 	}
 	logger.Debug("write cached oauth token", "path", path)
-	if err := os.WriteFile(path, data, config.PrivateFileMode); err != nil {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, config.PrivateFileMode); err != nil {
 		logger.Error("write cached oauth token failed", "path", path, "err", err)
+		return fmt.Errorf("writing cached OAuth token: %w", err)
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		logger.Error("rename cached oauth token failed", "path", path, "err", err)
 		return fmt.Errorf("writing cached OAuth token: %w", err)
 	}
 	if err := config.EnsurePrivateFile(path); err != nil {
@@ -103,6 +129,6 @@ func writeCachedToken(path string, tok *oauth2.Token) error {
 	return nil
 }
 
-func ReadCachedToken() (*oauth2.Token, error) {
-	return nil, fmt.Errorf("auth id is required")
+func bytesTrimSpace(data []byte) []byte {
+	return []byte(strings.TrimSpace(string(data)))
 }

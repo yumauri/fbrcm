@@ -1,11 +1,11 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 )
 
@@ -14,8 +14,12 @@ func New() *cobra.Command {
 		Use:   "config",
 		Short: "Manage global config file",
 	}
+	configCmd.AddCommand(newPathCommand())
+	return configCmd
+}
 
-	pathCmd := &cobra.Command{
+func newPathCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "path",
 		Short: "Print global config file path",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,17 +30,13 @@ func New() *cobra.Command {
 
 			path := coreconfig.GetGlobalConfigFilePath()
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(map[string]string{"path": path})
+				return shared.WriteJSON(cmd, map[string]string{"path": path})
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
 			return nil
 		},
 	}
-	pathCmd.Flags().Bool("json", false, "Print path as JSON")
-
-	configCmd.AddCommand(pathCmd)
-	return configCmd
+	cmd.Flags().Bool("json", false, "Print path as JSON")
+	return cmd
 }

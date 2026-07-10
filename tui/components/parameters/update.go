@@ -41,26 +41,26 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
 			cmd := m.filter.Activate(mode)
 			m.applyFilter()
-			return m, tea.Batch(cmd, keyboardCaptureCmd(true), m.selectionChangedCmd(false))
+			return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true), m.selectionChangedCmd(false))
 		}
 
 		if m.filter.Focused() {
 			switch {
 			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterApply, k):
 				m.filter.Blur()
-				return m, keyboardCaptureCmd(false)
+				return m, messages.KeyboardCaptureCmd(false)
 			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterCancel, k):
 				m.filter.ClearAndBlur()
 				m.applyFilter()
-				return m, keyboardCaptureCmd(false)
+				return m, messages.KeyboardCaptureCmd(false)
 			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterUp, k):
 				m.filter.Blur()
 				m.moveCursor(-1)
-				return m, keyboardCaptureCmd(false)
+				return m, messages.KeyboardCaptureCmd(false)
 			case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterDown, k):
 				m.filter.Blur()
 				m.moveCursor(1)
-				return m, keyboardCaptureCmd(false)
+				return m, messages.KeyboardCaptureCmd(false)
 			}
 
 			before := m.filter.Value()
@@ -128,13 +128,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if !m.isMouseInside(msg.Mouse()) {
 			if m.filter.Focused() {
 				m.filter.Blur()
-				return m, keyboardCaptureCmd(false)
+				return m, messages.KeyboardCaptureCmd(false)
 			}
 			break
 		}
 		if m.isMouseOnFilter(msg.Mouse()) {
 			cmd := m.filter.Activate(m.filter.Mode())
-			return m, tea.Batch(cmd, keyboardCaptureCmd(true))
+			return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true))
 		}
 		if m.filter.Focused() {
 			m.filter.Blur()
@@ -142,7 +142,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.cursor = index
 				m.ensureCursorVisible()
 			}
-			return m, tea.Batch(keyboardCaptureCmd(false), m.selectionChangedCmd(false))
+			return m, tea.Batch(messages.KeyboardCaptureCmd(false), m.selectionChangedCmd(false))
 		}
 		if index, ok := m.nodeIndexAtMouse(msg.Mouse()); ok {
 			m.cursor = index
@@ -170,14 +170,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	return m, nil
-}
-
-func keyboardCaptureCmd(enabled bool) tea.Cmd {
-	return func() tea.Msg {
-		return messages.KeyboardCaptureMsg{
-			Enabled: enabled,
-		}
-	}
 }
 
 func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {

@@ -1,13 +1,12 @@
 package config
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
+
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 const (
@@ -36,34 +35,18 @@ type AuthEntry struct {
 
 // ValidateAuthID validates auth id as a single safe path segment.
 func ValidateAuthID(id string) error {
-	if strings.TrimSpace(id) == "" {
-		return fmt.Errorf("auth id cannot be empty")
-	}
-	if strings.TrimSpace(id) != id {
-		return fmt.Errorf("auth id cannot have leading or trailing whitespace")
-	}
-	if id == "." || id == ".." {
-		return fmt.Errorf("auth id %q is reserved", id)
-	}
-	if strings.ContainsAny(id, `/\`) {
-		return fmt.Errorf("auth id cannot contain path separators")
-	}
-	if filepath.Clean(id) != id {
-		return fmt.Errorf("auth id must be a single path segment")
-	}
-	return nil
+	return validatePathSegment(id, "auth id")
 }
 
 // LoadAuth loads auth registry.
 func LoadAuth() (*AuthFile, error) {
 	path := GetAuthFilePath()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read auth config: %w", err)
-	}
 	var file AuthFile
-	if err := json.Unmarshal(data, &file); err != nil {
-		return nil, fmt.Errorf("decode auth config: %w", err)
+	if err := readJSONFile(path, &file); err != nil {
+		if isDecodeError(err) {
+			return nil, fmt.Errorf("decode auth config: %w", err)
+		}
+		return nil, fmt.Errorf("read auth config: %w", err)
 	}
 	if err := validateAuthFile(&file); err != nil {
 		return nil, err
@@ -77,8 +60,8 @@ func SaveAuth(file *AuthFile) error {
 		return fmt.Errorf("auth config is nil")
 	}
 	file.Version = AuthConfigVersion
-	sort.SliceStable(file.Auth, func(i, j int) bool {
-		return file.Auth[i].ID < file.Auth[j].ID
+	slices.SortStableFunc(file.Auth, func(left, right AuthEntry) int {
+		return strfold.Compare(left.ID, right.ID)
 	})
 	if file.DefaultAuthID == "" && len(file.Auth) > 0 {
 		file.DefaultAuthID = file.Auth[0].ID
@@ -89,17 +72,12 @@ func SaveAuth(file *AuthFile) error {
 	if err := EnsurePrivateDir(GetConfigDirPath()); err != nil {
 		return fmt.Errorf("create config dir: %w", err)
 	}
-	data, err := json.MarshalIndent(file, "", "  ")
-	if err != nil {
-		return fmt.Errorf("encode auth config: %w", err)
-	}
-	data = append(data, '\n')
 	path := GetAuthFilePath()
-	if err := os.WriteFile(path, data, PrivateFileMode); err != nil {
+	if err := writeJSONFile(path, file); err != nil {
+		if isEncodeError(err) {
+			return fmt.Errorf("encode auth config: %w", err)
+		}
 		return fmt.Errorf("write auth config: %w", err)
-	}
-	if err := EnsurePrivateFile(path); err != nil {
-		return fmt.Errorf("chmod auth config: %w", err)
 	}
 	return nil
 }
@@ -295,7 +273,7 @@ func resolveCacheAuthPath(path string) string {
 func LoadAuthOrEmpty() (*AuthFile, error) {
 	file, err := LoadAuth()
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if isNotExist(err) {
 			return &AuthFile{Version: AuthConfigVersion}, nil
 		}
 		return nil, err

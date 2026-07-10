@@ -1,0 +1,101 @@
+package core
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/yumauri/fbrcm/core/firebase"
+)
+
+func TestExportRemoteConfig(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	const body = `{"version":{"versionNumber":"7"},"parameters":{"flag":{"defaultValue":{"value":"x"}}}}`
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "/remoteConfig") {
+				return jsonResponse(http.StatusOK, body, `"etag-export"`), nil
+			}
+			return nil, io.EOF
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	raw, etag, err := svc.ExportRemoteConfig(context.Background(), "demo")
+	if err != nil {
+		t.Fatalf("ExportRemoteConfig = %v", err)
+	}
+	if etag != `"etag-export"` {
+		t.Fatalf("etag = %q, want %q", etag, `"etag-export"`)
+	}
+	assertRemoteConfigVersion(t, raw, "7")
+}
+
+func TestValidateRemoteConfigWithETag(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	payload := remoteConfigRaw("1", map[string]string{"flag": "on"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodPut && strings.Contains(req.URL.RawQuery, "validateOnly=true") {
+				return jsonResponse(http.StatusOK, string(payload), `"etag-1"`), nil
+			}
+			return nil, io.EOF
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	if err := svc.ValidateRemoteConfigWithETag(context.Background(), "demo", payload, "etag-1"); err != nil {
+		t.Fatalf("ValidateRemoteConfigWithETag = %v", err)
+	}
+}
+
+func TestPublishRemoteConfigWithETagDryRunSkipsCache(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	payload := remoteConfigRaw("2", map[string]string{"flag": "published"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodPut && !strings.Contains(req.URL.RawQuery, "validateOnly") {
+				return jsonResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+			}
+			return nil, io.EOF
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	ctx := firebase.WithDryRun(context.Background())
+	raw, etag, err := svc.PublishRemoteConfigWithETag(ctx, "demo", payload, "etag-1")
+	if err != nil {
+		t.Fatalf("PublishRemoteConfigWithETag dry-run = %v", err)
+	}
+	if etag != `"etag-2"` {
+		t.Fatalf("etag = %q, want %q", etag, `"etag-2"`)
+	}
+	if string(raw) != string(payload) {
+		t.Fatalf("raw = %s, want %s", raw, payload)
+	}
+
+	_, state, err := svc.InspectParametersCache("demo")
+	if err != nil || state != ParametersCacheMissing {
+		t.Fatalf("InspectParametersCache after dry-run publish = state %v err %v, want missing", state, err)
+	}
+}
+
+func TestPublishRemoteConfigWithETagRejectsInvalidJSON(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	injectFirebaseService(t, svc, "main", firebase.NewServiceWithHTTPClient(http.DefaultClient))
+
+	_, _, err := svc.PublishRemoteConfigWithETag(context.Background(), "demo", json.RawMessage("{"), "etag-1")
+	if err == nil || !strings.Contains(err.Error(), "decode remote config") {
+		t.Fatalf("PublishRemoteConfigWithETag invalid = %v, want decode error", err)
+	}
+}

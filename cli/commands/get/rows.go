@@ -1,15 +1,17 @@
 package get
 
 import (
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/yumauri/fbrcm/cli/commands/get/table"
 	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedAt time.Time, status, version string, compiledExpr *filter.Expression, search shared.ParameterSearch) []parameterRow {
@@ -30,10 +32,10 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 
 	rows := make([]parameterRow, 0)
 	seen := make(map[string]struct{})
-	groupKeys := sortedStringKeys(cfg.ParameterGroups)
+	groupKeys := strfold.SortedKeys(cfg.ParameterGroups)
 	for _, groupKey := range groupKeys {
 		group := cfg.ParameterGroups[groupKey]
-		paramKeys := sortedStringKeys(group.Parameters)
+		paramKeys := strfold.SortedKeys(group.Parameters)
 		for _, key := range paramKeys {
 			param := group.Parameters[key]
 			match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, groupKey)
@@ -55,16 +57,16 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 		}
 		rootParams[key] = param
 	}
-	for _, key := range sortedStringKeys(rootParams) {
+	for _, key := range strfold.SortedKeys(rootParams) {
 		param := rootParams[key]
-		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, defaultGroupLabel)
+		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, shared.DefaultRootGroupLabel)
 		if !ok || !match {
 			continue
 		}
 		if !shared.MatchParameterSearch(key, param, cfg, search) {
 			continue
 		}
-		rows = append(rows, buildParameterRow(project, defaultGroupLabel, key, param, version, cachedAt, status, conditionOrder, conditionColors))
+		rows = append(rows, buildParameterRow(project, shared.DefaultRootGroupLabel, key, param, version, cachedAt, status, conditionOrder, conditionColors))
 	}
 
 	return rows
@@ -74,30 +76,30 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 	conditions := make([]parameterConditionJSON, 0, len(param.ConditionalValues))
 	valueLines := make([]valueLine, 0, len(param.ConditionalValues)+1)
 
-	for _, name := range sortedConditionalKeys(param.ConditionalValues, conditionOrder) {
-		value := formatRemoteConfigValue(param.ConditionalValues[name], param.ValueType)
+	for _, name := range table.SortedConditionalKeys(param.ConditionalValues, conditionOrder) {
+		value := core.FormatRemoteConfigDisplayValue(param.ConditionalValues[name], param.ValueType)
 		conditions = append(conditions, parameterConditionJSON{
 			Name:  name,
-			Value: valueForJSON(value),
+			Value: table.ValueForJSON(value),
 		})
 		valueLines = append(valueLines, valueLine{
 			Label:     name,
 			Value:     value,
 			Color:     clistyles.ConditionLipglossColor(conditionColors[name]),
 			IsDefault: false,
-			ValueType: valueTypeKey(param.ValueType),
+			ValueType: table.ValueTypeKey(param.ValueType),
 		})
 	}
 
 	var defaultValue *string
 	if param.DefaultValue != nil {
-		formatted := formatRemoteConfigValue(*param.DefaultValue, param.ValueType)
-		defaultValue = valueForJSON(formatted)
+		formatted := core.FormatRemoteConfigDisplayValue(*param.DefaultValue, param.ValueType)
+		defaultValue = table.ValueForJSON(formatted)
 		valueLines = append(valueLines, valueLine{
 			Label:     "Default value",
 			Value:     formatted,
 			IsDefault: true,
-			ValueType: valueTypeKey(param.ValueType),
+			ValueType: table.ValueTypeKey(param.ValueType),
 		})
 	}
 
@@ -143,6 +145,21 @@ func filterParameterRows(rows []parameterRow, rawFilters []string) []parameterRo
 	return filtered
 }
 
+func filterParameterRowsByProject(rows []parameterRow, rawFilters []string) []parameterRow {
+	if len(shared.ParseFilters(rawFilters)) == 0 {
+		return rows
+	}
+
+	filtered := make([]parameterRow, 0, len(rows))
+	for _, row := range rows {
+		project := core.Project{Name: row.Project, ProjectID: row.ProjectID}
+		if len(shared.FilterProjects([]core.Project{project}, rawFilters)) > 0 {
+			filtered = append(filtered, row)
+		}
+	}
+	return filtered
+}
+
 // singleExactParameterFilter reports whether table output can hide exact key column.
 func singleExactParameterFilter(rawFilters []string) bool {
 	return singleExactFilter(rawFilters)
@@ -151,7 +168,7 @@ func singleExactParameterFilter(rawFilters []string) bool {
 func singleExactFilter(rawFilters []string) bool {
 	exact := false
 	for _, raw := range rawFilters {
-		mode, query := parseFilter(raw)
+		mode, query := filter.ParseModePrefixedQuery(raw)
 		if strings.TrimSpace(query) == "" {
 			continue
 		}
@@ -166,40 +183,15 @@ func singleExactFilter(rawFilters []string) bool {
 	return exact
 }
 
-func parseFilter(raw string) (filter.Mode, string) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return filter.ModeFuzzy, ""
-	}
-
-	mode, ok := filter.ModeFromLabel(string([]rune(raw)[0]))
-	if !ok {
-		return filter.ModeFuzzy, raw
-	}
-
-	return mode, string([]rune(raw)[1:])
-}
-
 func sortParameterRows(rows []parameterRow) {
-	sort.Slice(rows, func(i, j int) bool {
-		leftProject := strings.ToLower(strings.TrimSpace(rows[i].Project))
-		rightProject := strings.ToLower(strings.TrimSpace(rows[j].Project))
-		if leftProject == "" {
-			leftProject = strings.ToLower(rows[i].ProjectID)
+	slices.SortFunc(rows, func(left, right parameterRow) int {
+		if cmp := strfold.CompareProjects(left.Project, left.ProjectID, right.Project, right.ProjectID); cmp != 0 {
+			return cmp
 		}
-		if rightProject == "" {
-			rightProject = strings.ToLower(rows[j].ProjectID)
+		if cmp := strfold.CompareFolded(left.Group, right.Group); cmp != 0 {
+			return cmp
 		}
-		switch {
-		case leftProject != rightProject:
-			return leftProject < rightProject
-		case !strings.EqualFold(rows[i].ProjectID, rows[j].ProjectID):
-			return strings.ToLower(rows[i].ProjectID) < strings.ToLower(rows[j].ProjectID)
-		case !strings.EqualFold(rows[i].Group, rows[j].Group):
-			return strings.ToLower(rows[i].Group) < strings.ToLower(rows[j].Group)
-		default:
-			return strings.ToLower(rows[i].Key) < strings.ToLower(rows[j].Key)
-		}
+		return strfold.CompareFolded(left.Key, right.Key)
 	})
 }
 

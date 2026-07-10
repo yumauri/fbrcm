@@ -19,7 +19,6 @@ var (
 	date    = "unknown"
 )
 
-// main handles main and returns the resulting value or error.
 func main() {
 	mode := corelog.ModeCLI
 	if len(os.Args) == 1 {

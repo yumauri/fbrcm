@@ -7,7 +7,6 @@ const (
 	logsPanelModeCollapsed
 )
 
-// toggleLogsMode toggles toggle logs mode for Model and returns the resulting state or error.
 func (m *Model) toggleLogsMode() {
 	if m.logsMode == logsPanelModeCollapsed {
 		m.expandLogsFromCollapsed()
@@ -41,7 +40,6 @@ func (m *Model) growLogsFromCollapsed() {
 	m.resizeLogsHeight(1)
 }
 
-// setLogsMode sets set logs mode for Model and returns the resulting state or error.
 func (m *Model) setLogsMode(mode logsPanelMode) {
 	if m.logsMode == mode {
 		return

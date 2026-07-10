@@ -39,7 +39,23 @@ func ModeFromLabel(label string) (Mode, bool) {
 	}
 }
 
-// Match matches match and returns the resulting value or error.
+// ParseModePrefixedQuery parses a mode-prefixed query string.
+// Leading and trailing whitespace is trimmed. An empty string yields fuzzy mode
+// with an empty query. When the first rune is a mode label (~, ^, /, =), that
+// mode is selected and the remainder of the string is the query.
+func ParseModePrefixedQuery(raw string) (Mode, string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ModeFuzzy, ""
+	}
+
+	mode, ok := ModeFromLabel(string([]rune(raw)[0]))
+	if !ok {
+		return ModeFuzzy, raw
+	}
+	return mode, string([]rune(raw)[1:])
+}
+
 func Match(value, query string, mode Mode) (bool, []int) {
 	if query == "" {
 		return true, nil

@@ -2,14 +2,13 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 func GetDraftsDirPath() string {
@@ -25,13 +24,13 @@ func LoadDraft(projectID string) (json.RawMessage, error) {
 	logger := corelog.For("config")
 	logger.Debug("read draft", "project_id", projectID, "path", path)
 
-	data, err := os.ReadFile(path)
+	data, err := readFileBytes(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			logger.Warn("draft miss", "project_id", projectID, "path", path)
-			return nil, fmt.Errorf("read draft: %w", err)
+		if isNotExist(err) {
+			logger.Debug("draft miss", "project_id", projectID, "path", path)
+		} else {
+			logger.Error("read draft failed", "project_id", projectID, "path", path, "err", err)
 		}
-		logger.Error("read draft failed", "project_id", projectID, "path", path, "err", err)
 		return nil, fmt.Errorf("read draft: %w", err)
 	}
 
@@ -58,12 +57,9 @@ func SaveDraft(projectID string, raw json.RawMessage) error {
 	path := GetDraftPath(projectID)
 	logger.Debug("write draft", "project_id", projectID, "path", path)
 	data := append(append(json.RawMessage(nil), raw...), '\n')
-	if err := os.WriteFile(path, data, PrivateFileMode); err != nil {
+	if err := WritePrivateFile(path, data); err != nil {
 		logger.Error("write draft failed", "project_id", projectID, "path", path, "err", err)
 		return fmt.Errorf("write draft: %w", err)
-	}
-	if err := EnsurePrivateFile(path); err != nil {
-		return fmt.Errorf("chmod draft: %w", err)
 	}
 
 	logger.Info("saved draft", "project_id", projectID, "path", path, "bytes", len(raw))
@@ -74,7 +70,7 @@ func DeleteDraft(projectID string) error {
 	path := GetDraftPath(projectID)
 	logger := corelog.For("config")
 	logger.Debug("remove draft", "project_id", projectID, "path", path)
-	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(path); err != nil && !isNotExist(err) {
 		logger.Error("remove draft failed", "project_id", projectID, "path", path, "err", err)
 		return fmt.Errorf("remove draft: %w", err)
 	}
@@ -89,7 +85,7 @@ func ListDraftProjectIDs() ([]string, error) {
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if isNotExist(err) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("read drafts dir: %w", err)
@@ -106,7 +102,7 @@ func ListDraftProjectIDs() ([]string, error) {
 		}
 		ids = append(ids, strings.TrimSuffix(name, ".json"))
 	}
-	sort.Strings(ids)
+	strfold.Sort(ids)
 	return ids, nil
 }
 

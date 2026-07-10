@@ -4,9 +4,10 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	charmlog "github.com/charmbracelet/log"
+	charmlog "charm.land/log/v2"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -46,8 +47,8 @@ func renderLogsPanel(body []string, width, height int, active bool, currentLevel
 }
 
 func renderTopBorder(width int, borderStyle, titleStyle lipgloss.Style, currentLevel charmlog.Level, follow, flashStatus bool) string {
-	leftPrefix := borderStyle.Render(truncatePlain("──", width))
-	title := titleStyle.Render(truncatePlain(" "+panelTitle+" ", max(width-lipgloss.Width(leftPrefix), 0)))
+	leftPrefix := borderStyle.Render(viewutil.TruncatePlain("──", width))
+	title := titleStyle.Render(viewutil.TruncatePlain(" "+panelTitle+" ", max(width-lipgloss.Width(leftPrefix), 0)))
 	titleSep := borderStyle.Render("──")
 	modeLabel := " scroll "
 	if follow {
@@ -93,7 +94,7 @@ func renderLevelSegment(borderStyle lipgloss.Style, currentLevel charmlog.Level)
 		if i > 0 {
 			b.WriteString(borderStyle.Render("─"))
 		}
-		label := truncatePlain(levelLabel(level), 4)
+		label := viewutil.TruncatePlain(levelLabel(level), 4)
 		style := lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color(corelog.LevelColor(level))).
@@ -106,7 +107,6 @@ func renderLevelSegment(borderStyle lipgloss.Style, currentLevel charmlog.Level)
 	return b.String()
 }
 
-// selectedLevelStyle selects selected level style and returns the resulting value or error.
 func selectedLevelStyle(base lipgloss.Style, level charmlog.Level) lipgloss.Style {
 	if styles.NoColorEnabled() {
 		return base.Reverse(true)
@@ -122,19 +122,6 @@ func levelLabel(level charmlog.Level) string {
 		return "SLNT"
 	}
 	return strings.ToUpper(level.String())
-}
-
-func truncatePlain(value string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-
-	runes := []rune(value)
-	if len(runes) <= width {
-		return value
-	}
-
-	return string(runes[:width])
 }
 
 func truncateANSI(value string, width int) string {

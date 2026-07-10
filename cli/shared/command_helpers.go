@@ -1,14 +1,21 @@
 package shared
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"sort"
-	"strings"
 
-	"github.com/yumauri/fbrcm/core"
+	"github.com/spf13/cobra"
 )
+
+// WriteJSON encodes v as indented JSON to the command's stdout. Callers wrap
+// the returned error with their own context when needed.
+func WriteJSON(cmd *cobra.Command, v any) error {
+	encoder := json.NewEncoder(cmd.OutOrStdout())
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(v)
+}
 
 // HasFilters reports whether any filter query is non-empty after parsing.
 func HasFilters(rawFilters []string) bool {
@@ -24,24 +31,6 @@ func ResolveParameterArgFilters(args []string, rawFilters []string) ([]string, e
 		return nil, fmt.Errorf("parameter argument cannot be used together with --filter")
 	}
 	return []string{"=" + args[0]}, nil
-}
-
-// SortProjects orders projects the same way across CLI commands.
-func SortProjects(projects []core.Project) {
-	sort.Slice(projects, func(i, j int) bool {
-		leftName := strings.ToLower(strings.TrimSpace(projects[i].Name))
-		rightName := strings.ToLower(strings.TrimSpace(projects[j].Name))
-		if leftName == "" {
-			leftName = strings.ToLower(projects[i].ProjectID)
-		}
-		if rightName == "" {
-			rightName = strings.ToLower(projects[j].ProjectID)
-		}
-		if leftName == rightName {
-			return strings.ToLower(projects[i].ProjectID) < strings.ToLower(projects[j].ProjectID)
-		}
-		return leftName < rightName
-	})
 }
 
 // StdinAvailable reports whether the given reader is a non-terminal file.

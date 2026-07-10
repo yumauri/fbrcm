@@ -7,28 +7,17 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
-	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
-	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-// openNumberInput opens open number input for Model and returns the resulting state or error.
 func (m *Model) openNumberInput() tea.Cmd {
-	if m.active == panels.Details {
-		m.valueEditSource = panels.Details
-	} else {
-		m.valueEditSource = panels.Parameters
-	}
+	source := m.currentValueEditSource()
 	anchor, ok := m.currentNumberValueAnchor()
 	if !ok {
 		return nil
 	}
-	m.closeDialog(false)
-	m.closeJSONInput()
-	m.closeBoolPicker()
-	m.closeStringInput()
-	m.closeMoveParam()
-	m.closeRenameInput()
+	m.closeOverlays()
+	m.valueEditSource = source
 	var cmd tea.Cmd
 	m.numberInput, cmd = m.numberInput.Open(anchor.X, anchor.Y, anchor.Width, anchor.MaxWidth, anchor.CurrentValue)
 	if m.valueEditSource == panels.Details {
@@ -37,7 +26,6 @@ func (m *Model) openNumberInput() tea.Cmd {
 	return cmd
 }
 
-// closeNumberInput closes close number input for Model and returns the resulting state or error.
 func (m *Model) closeNumberInput() {
 	if !m.numberInput.IsOpen() {
 		return
@@ -73,7 +61,6 @@ func (m *Model) submitNumberInput() tea.Cmd {
 	return nil
 }
 
-// closeNumberInputIfOrphaned closes close number input if orphaned for Model and returns the resulting state or error.
 func (m *Model) closeNumberInputIfOrphaned() {
 	if !m.numberInput.IsOpen() {
 		return
@@ -84,23 +71,12 @@ func (m *Model) closeNumberInputIfOrphaned() {
 	m.closeNumberInput()
 }
 
-// openNumberValueDialog opens open number value dialog for Model and returns the resulting state or error.
 func (m *Model) openNumberValueDialog(project core.Project, groupKey, paramKey, valueLabel, nextValue string) {
-	body, err := m.numberValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
-	if err != nil {
+	m.openValueEditDialog(project, func() ([]string, error) {
+		return m.numberValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
+	}, func(err error) {
 		corelog.For("tui.number").Error("number value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "err", err)
-		m.openErrorDialog("Edit Value Failed", project, err.Error())
-		return
-	}
-	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Edit Value?",
-		Body:  body,
-		Buttons: []dialogcmp.Button{
-			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false)},
-			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
-		},
-	})
+	}, m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
 }
 
 func (m Model) numberValueDialogBody(project core.Project, groupKey, paramKey, valueLabel, nextValue string) ([]string, error) {
@@ -109,14 +85,9 @@ func (m Model) numberValueDialogBody(project core.Project, groupKey, paramKey, v
 	})
 }
 
-// setNumberParameterValueCmd sets set number parameter value cmd for Model and returns the resulting state or error.
 func (m Model) setNumberParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool) tea.Cmd {
-	return func() tea.Msg {
-		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
-		_, tree, hasDraft, err := m.svc.SetNumberParameterValue(context.Background(), project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
-		if err != nil {
-			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
-		}
-		return m.valueEditLoadedMsg(project, groupKey, paramKey, tree, hasDraft, stale, publish)
-	}
+	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
+		_, tree, hasDraft, err := m.svc.SetNumberParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
+		return tree, hasDraft, err
+	})
 }

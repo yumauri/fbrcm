@@ -1,11 +1,11 @@
 package shared
 
 import (
-	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 // ParameterSearch holds prepared search query variants.
@@ -42,7 +42,7 @@ func MatchParameterSearch(name string, param firebase.RemoteConfigParam, cfg *fi
 		}
 	}
 
-	conditionNames := sortedStringKeys(param.ConditionalValues)
+	conditionNames := strfold.SortedKeys(param.ConditionalValues)
 	normalizedParts := []string{name, param.Description}
 	rawParts := make([]string, 0, 1+len(conditionNames)*2)
 
@@ -78,20 +78,4 @@ func normalizeSearchText(value string) string {
 
 func collapseSpaces(value string) string {
 	return strings.Join(strings.Fields(value), " ")
-}
-
-func sortedStringKeys[V any](items map[string]V) []string {
-	keys := make([]string, 0, len(items))
-	for key := range items {
-		keys = append(keys, key)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		left := strings.ToLower(keys[i])
-		right := strings.ToLower(keys[j])
-		if left == right {
-			return keys[i] < keys[j]
-		}
-		return left < right
-	})
-	return keys
 }

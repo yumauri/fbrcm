@@ -6,11 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/charmbracelet/lipgloss"
-	charmlog "github.com/charmbracelet/log"
-	"github.com/muesli/termenv"
+	"charm.land/lipgloss/v2"
+	charmlog "charm.land/log/v2"
+	"github.com/charmbracelet/colorprofile"
 
 	"github.com/yumauri/fbrcm/core/env"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 type Mode string
@@ -23,14 +24,8 @@ const (
 const SilentLevel charmlog.Level = 42
 
 const (
-	urlColor          = "117"
-	silentLevelColor  = "245"
-	debugLevelColor   = "63"
-	infoLevelColor    = "86"
-	warnLevelColor    = "192"
-	errorLevelColor   = "204"
-	fatalLevelColor   = "134"
-	defaultLevelColor = "255"
+	urlColor         = "117"
+	silentLevelColor = "245"
 )
 
 type manager struct {
@@ -58,7 +53,6 @@ func newManager() *manager {
 	}
 }
 
-// Init initializes init and returns the resulting value or error.
 func Init(mode Mode) {
 	global.init(mode)
 }
@@ -83,7 +77,6 @@ func CurrentLevel() charmlog.Level {
 	return global.currentLevel()
 }
 
-// SetLevel sets level and returns the resulting value or error.
 func SetLevel(level charmlog.Level) {
 	global.setLevel(level)
 }
@@ -103,23 +96,9 @@ func LevelColor(level charmlog.Level) string {
 	if level == SilentLevel {
 		return silentLevelColor
 	}
-	switch level {
-	case charmlog.DebugLevel:
-		return debugLevelColor
-	case charmlog.InfoLevel:
-		return infoLevelColor
-	case charmlog.WarnLevel:
-		return warnLevelColor
-	case charmlog.ErrorLevel:
-		return errorLevelColor
-	case charmlog.FatalLevel:
-		return fatalLevelColor
-	default:
-		return defaultLevelColor
-	}
+	return corestyles.LogLevelColor(level)
 }
 
-// init initializes init for manager and returns the resulting state or error.
 func (m *manager) init(mode Mode) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -130,9 +109,9 @@ func (m *manager) init(mode Mode) {
 	m.logger.SetTimeFormat("15:04:05")
 	m.setLevelLocked(charmlog.InfoLevel)
 	if env.NoColorEnabled() {
-		m.logger.SetColorProfile(termenv.Ascii)
+		m.logger.SetColorProfile(colorprofile.Ascii)
 	} else {
-		m.logger.SetColorProfile(termenv.ANSI256)
+		m.logger.SetColorProfile(colorprofile.ANSI256)
 	}
 	m.logger.SetStyles(loggerStyles())
 
@@ -160,14 +139,12 @@ func (m *manager) currentLevel() charmlog.Level {
 	return m.level
 }
 
-// setLevel sets set level for manager and returns the resulting state or error.
 func (m *manager) setLevel(level charmlog.Level) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.setLevelLocked(level)
 }
 
-// setLevelLocked sets set level locked for manager and returns the resulting state or error.
 func (m *manager) setLevelLocked(level charmlog.Level) {
 	m.level = level
 	if level == SilentLevel {

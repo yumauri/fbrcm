@@ -87,7 +87,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// isErrorLogLine reports is error log line and returns the resulting value or error.
 func isErrorLogLine(line string) bool {
 	plain := ansiOSCRe.ReplaceAllString(line, "")
 	plain = ansiCSIRe.ReplaceAllString(plain, "")

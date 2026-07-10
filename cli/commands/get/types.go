@@ -1,14 +1,12 @@
 package get
 
 import (
-	"image/color"
 	"time"
+
+	"github.com/yumauri/fbrcm/cli/commands/get/table"
 )
 
-type parameterConditionJSON struct {
-	Name  string  `json:"name"`
-	Value *string `json:"value"`
-}
+type parameterConditionJSON = table.ParameterConditionJSON
 
 type parameterRowJSON struct {
 	Project      string                   `json:"project"`
@@ -25,36 +23,5 @@ type parameterRowJSON struct {
 	Status       *string                  `json:"status"`
 }
 
-type parameterRow struct {
-	Project      string
-	ProjectID    string
-	Group        string
-	Key          string
-	Description  string
-	DefaultValue *string
-	Conditional  bool
-	Conditions   []parameterConditionJSON
-	Type         string
-	Version      string
-	CachedAt     time.Time
-	Status       string
-	ValueLines   []valueLine
-}
-
-type tableLayout struct {
-	includeProject bool
-	includeGroup   bool
-	includeKey     bool
-	includeType    bool
-	showNames      bool
-	valueWidth     int
-}
-
-type valueLine struct {
-	Label     string
-	Value     string
-	Color     color.Color
-	IsDefault bool
-	Missing   bool
-	ValueType string
-}
+type parameterRow = table.Row
+type valueLine = table.ValueLine

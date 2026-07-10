@@ -7,34 +7,22 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
-	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
-	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-// openJSONInput opens open jsoninput for Model and returns the resulting state or error.
 func (m *Model) openJSONInput() tea.Cmd {
-	if m.active == panels.Details {
-		m.valueEditSource = panels.Details
-	} else {
-		m.valueEditSource = panels.Parameters
-	}
+	source := m.currentValueEditSource()
 	anchor, ok := m.currentJSONValueAnchor()
 	if !ok {
 		return nil
 	}
-	m.closeDialog(false)
-	m.closeBoolPicker()
-	m.closeNumberInput()
-	m.closeStringInput()
-	m.closeMoveParam()
-	m.closeRenameInput()
+	m.closeOverlays()
+	m.valueEditSource = source
 	var cmd tea.Cmd
 	m.jsonInput, cmd = m.jsonInput.Open(m.width, m.height, anchor.CurrentValue)
 	return cmd
 }
 
-// closeJSONInput closes close jsoninput for Model and returns the resulting state or error.
 func (m *Model) closeJSONInput() {
 	if !m.jsonInput.IsOpen() {
 		return
@@ -69,7 +57,6 @@ func (m *Model) submitJSONInput() tea.Cmd {
 	return nil
 }
 
-// closeJSONInputIfOrphaned closes close jsoninput if orphaned for Model and returns the resulting state or error.
 func (m *Model) closeJSONInputIfOrphaned() {
 	if !m.jsonInput.IsOpen() {
 		return
@@ -80,23 +67,12 @@ func (m *Model) closeJSONInputIfOrphaned() {
 	m.closeJSONInput()
 }
 
-// openJSONValueDialog opens open jsonvalue dialog for Model and returns the resulting state or error.
 func (m *Model) openJSONValueDialog(project core.Project, groupKey, paramKey, valueLabel, nextValue string) {
-	body, err := m.jsonValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
-	if err != nil {
+	m.openValueEditDialog(project, func() ([]string, error) {
+		return m.jsonValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
+	}, func(err error) {
 		corelog.For("tui.json").Error("json value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
-		m.openErrorDialog("Edit Value Failed", project, err.Error())
-		return
-	}
-	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Edit Value?",
-		Body:  body,
-		Buttons: []dialogcmp.Button{
-			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false)},
-			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
-		},
-	})
+	}, m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
 }
 
 func (m Model) jsonValueDialogBody(project core.Project, groupKey, paramKey, valueLabel, nextValue string) ([]string, error) {
@@ -105,14 +81,9 @@ func (m Model) jsonValueDialogBody(project core.Project, groupKey, paramKey, val
 	})
 }
 
-// setJSONParameterValueCmd sets set jsonparameter value cmd for Model and returns the resulting state or error.
 func (m Model) setJSONParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool) tea.Cmd {
-	return func() tea.Msg {
-		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
-		_, tree, hasDraft, err := m.svc.SetJSONParameterValue(context.Background(), project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
-		if err != nil {
-			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
-		}
-		return m.valueEditLoadedMsg(project, groupKey, paramKey, tree, hasDraft, stale, publish)
-	}
+	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
+		_, tree, hasDraft, err := m.svc.SetJSONParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
+		return tree, hasDraft, err
+	})
 }

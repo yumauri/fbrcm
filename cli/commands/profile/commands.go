@@ -1,7 +1,6 @@
 package profile
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"charm.land/lipgloss/v2"
@@ -24,8 +23,12 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
+	profileCmd.AddCommand(newListCommand(), newSwitchCommand(), newRenameCommand(), newPathCommand(), newPurgeCommand())
+	return profileCmd
+}
 
-	listCmd := &cobra.Command{
+func newListCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List profiles",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -39,17 +42,18 @@ func New() *cobra.Command {
 				return err
 			}
 			if jsonOut {
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(newProfileListItems(profiles, activeProfile))
+				return shared.WriteJSON(cmd, newProfileListItems(profiles, activeProfile))
 			}
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProfilesTable(profiles, activeProfile))
 			return nil
 		},
 	}
-	listCmd.Flags().Bool("json", false, "Print profiles as JSON")
+	cmd.Flags().Bool("json", false, "Print profiles as JSON")
+	return cmd
+}
 
-	switchCmd := &cobra.Command{
+func newSwitchCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "switch <name>",
 		Short: "Switch to a profile, creating it if needed",
 		Args:  cobra.ExactArgs(1),
@@ -61,8 +65,10 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
+}
 
-	renameCmd := &cobra.Command{
+func newRenameCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "rename <old-name> <new-name>",
 		Short: "Rename an existing profile",
 		Args:  cobra.ExactArgs(2),
@@ -74,8 +80,10 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
+}
 
-	pathCmd := &cobra.Command{
+func newPathCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "path <profile>",
 		Short: "Print profile config and cache directory paths",
 		Args:  cobra.ExactArgs(1),
@@ -83,9 +91,12 @@ func New() *cobra.Command {
 			return printProfilePaths(cmd, args[0])
 		},
 	}
-	pathCmd.Flags().Bool("json", false, "Print paths as JSON")
+	cmd.Flags().Bool("json", false, "Print paths as JSON")
+	return cmd
+}
 
-	purgeCmd := &cobra.Command{
+func newPurgeCommand() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "purge <profile>",
 		Short: "Delete profile config and cache directories",
 		Args:  cobra.ExactArgs(1),
@@ -93,17 +104,14 @@ func New() *cobra.Command {
 			return purgeProfile(cmd, args[0])
 		},
 	}
-	purgeCmd.Flags().BoolP("yes", "y", false, "Skip confirmation dialog")
-
-	profileCmd.AddCommand(listCmd, switchCmd, renameCmd, pathCmd, purgeCmd)
-	return profileCmd
+	shared.AddYesFlag(cmd, "Skip confirmation dialog")
+	return cmd
 }
 
 type profilePathItem struct {
 	Path string `json:"path"`
 }
 
-// printProfilePaths prints profile paths and returns the resulting value or error.
 func printProfilePaths(cmd *cobra.Command, profileName string) error {
 	configPath, cachePath, err := profilePaths(profileName)
 	if err != nil {
@@ -114,9 +122,7 @@ func printProfilePaths(cmd *cobra.Command, profileName string) error {
 		return err
 	}
 	if jsonOut {
-		encoder := json.NewEncoder(cmd.OutOrStdout())
-		encoder.SetIndent("", "  ")
-		return encoder.Encode([]profilePathItem{
+		return shared.WriteJSON(cmd, []profilePathItem{
 			{Path: configPath},
 			{Path: cachePath},
 		})
@@ -126,7 +132,6 @@ func printProfilePaths(cmd *cobra.Command, profileName string) error {
 	return nil
 }
 
-// purgeProfile purges profile directories and returns the resulting value or error.
 func purgeProfile(cmd *cobra.Command, profileName string) error {
 	configPath, cachePath, err := profilePaths(profileName)
 	if err != nil {
@@ -160,7 +165,6 @@ func purgeProfile(cmd *cobra.Command, profileName string) error {
 	return nil
 }
 
-// profilePaths resolves profile paths and returns the resulting value or error.
 func profilePaths(profileName string) (string, string, error) {
 	configPath, err := config.GetProfileConfigDirPath(profileName)
 	if err != nil {
