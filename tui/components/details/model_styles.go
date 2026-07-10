@@ -6,7 +6,10 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-const panelTitle = "[3] Details"
+const (
+	panelTitleKey   = "³"
+	panelTitleLabel = "Details"
+)
 
 var (
 	labelStyle             = styles.PanelMuted

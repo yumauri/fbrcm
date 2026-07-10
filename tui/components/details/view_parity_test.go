@@ -100,7 +100,7 @@ func TestCurrentConditionalValueAnchorFirstConditional(t *testing.T) {
 	}
 }
 
-const detailsViewSnapshot = ` ╭─ [3] Details ────────────────────────────────────────────
+const detailsViewSnapshot = ` ╭─ ³Details ───────────────────────────────────────────────
  │ Project
  │ Demo Prod (demo-prod)
  │

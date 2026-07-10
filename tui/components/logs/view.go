@@ -11,7 +11,10 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-const panelTitle = "[0] Logs"
+const (
+	panelTitleKey   = "⁰"
+	panelTitleLabel = "Logs"
+)
 
 func (m Model) View(active bool) string {
 	body := strings.Split(m.viewport.View(), "\n")
@@ -25,7 +28,7 @@ func renderLogsPanel(body []string, width, height int, active bool, currentLevel
 	}
 
 	borderStyle := styles.BorderStyle(active)
-	top := renderTopBorder(width, borderStyle, styles.TitleStyle(active), currentLevel, follow, flashStatus)
+	top := renderTopBorder(width, borderStyle, active, currentLevel, follow, flashStatus)
 	if height == 1 {
 		return top
 	}
@@ -46,9 +49,9 @@ func renderLogsPanel(body []string, width, height int, active bool, currentLevel
 	return strings.Join(lines, "\n")
 }
 
-func renderTopBorder(width int, borderStyle, titleStyle lipgloss.Style, currentLevel charmlog.Level, follow, flashStatus bool) string {
+func renderTopBorder(width int, borderStyle lipgloss.Style, active bool, currentLevel charmlog.Level, follow, flashStatus bool) string {
 	leftPrefix := borderStyle.Render(viewutil.TruncatePlain("──", width))
-	title := titleStyle.Render(viewutil.TruncatePlain(" "+panelTitle+" ", max(width-lipgloss.Width(leftPrefix), 0)))
+	title, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(width-lipgloss.Width(leftPrefix), 0))
 	titleSep := borderStyle.Render("──")
 	modeLabel := " scroll "
 	if follow {
@@ -70,7 +73,7 @@ func renderTopBorder(width int, borderStyle, titleStyle lipgloss.Style, currentL
 	modeSep := borderStyle.Render("──")
 
 	levelSegment := renderLevelSegment(borderStyle, currentLevel)
-	usedWidth := lipgloss.Width(leftPrefix) + lipgloss.Width(title) + lipgloss.Width(titleSep) + lipgloss.Width(levelSegment) + lipgloss.Width(mode) + lipgloss.Width(modeSep)
+	usedWidth := lipgloss.Width(leftPrefix) + titleWidth + lipgloss.Width(titleSep) + lipgloss.Width(levelSegment) + lipgloss.Width(mode) + lipgloss.Width(modeSep)
 	if usedWidth >= width {
 		top := leftPrefix + title + titleSep + levelSegment + mode + modeSep
 		return truncateANSI(top, width)

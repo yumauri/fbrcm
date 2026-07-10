@@ -21,7 +21,7 @@ func TestProjectsViewSnapshot(t *testing.T) {
 	}
 }
 
-const projectsViewSnapshot = `── [1] Projects ─────────── 3 ─╮
+const projectsViewSnapshot = `── ¹Projects ────────────── 3 ─╮
  Alpha Project                 │
   alpha                        │
                                │

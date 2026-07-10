@@ -124,7 +124,7 @@ func TestCurrentConditionalValueAnchorFirstConditional(t *testing.T) {
 	}
 }
 
-const parametersViewSnapshot = `╭─ [2] Parameters ─────────────────────────────────────────╮
+const parametersViewSnapshot = `╭─ ²Parameters ────────────────────────────────────────────╮
 │Demo Prod demo-prod                             v12 staled│
 │▾ (root)                                                  │
 │  feature_login                                           │

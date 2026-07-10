@@ -9,7 +9,10 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-const panelTitle = "[2] Parameters"
+const (
+	panelTitleKey   = "²"
+	panelTitleLabel = "Parameters"
+)
 
 var (
 	projectMetaStyle        = styles.PanelMuted

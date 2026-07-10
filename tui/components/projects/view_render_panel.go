@@ -15,14 +15,11 @@ func renderPanel(body string, width, height int, active bool, scrollbar scrollba
 	}
 
 	borderStyle := styles.BorderStyle(active)
-	titleStyle := styles.TitleStyle(active)
 	innerWidth := max(width-1, 0)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)
-	titleText := viewutil.TruncatePlain(" "+panelTitle+" ", max(width-topPrefixWidth-1, 0))
-	titleWidth := lipgloss.Width(titleText)
+	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(width-topPrefixWidth-1, 0))
 	topPrefix := borderStyle.Render(strings.Repeat("─", topPrefixWidth))
-	mainRendered := titleStyle.Render(titleText)
 	rightMarginWidth := 1
 	secondaryText := secondary.text
 	secondaryRendered := ""
@@ -39,7 +36,7 @@ func renderPanel(body string, width, height int, active bool, scrollbar scrollba
 	}
 	topGap := borderStyle.Render(strings.Repeat("─", gapWidth))
 	topRightFill := borderStyle.Render(strings.Repeat("─", rightMarginWidth))
-	top := topPrefix + mainRendered + topGap + secondaryRendered + topRightFill + borderStyle.Render("╮")
+	top := topPrefix + titleRendered + topGap + secondaryRendered + topRightFill + borderStyle.Render("╮")
 
 	lines := []string{top}
 	bodyLines := strings.Split(body, "\n")

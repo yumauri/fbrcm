@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	panelTitle = "[1] Projects"
+	panelTitleKey   = "¹"
+	panelTitleLabel = "Projects"
 
 	itemStyle = styles.PanelText
 	metaStyle = styles.PanelMuted

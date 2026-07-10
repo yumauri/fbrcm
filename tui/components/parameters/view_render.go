@@ -5,7 +5,6 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -183,12 +182,10 @@ func renderPanel(body []string, width, height int, active bool, scrollbar scroll
 	}
 
 	borderStyle := styles.BorderStyle(active)
-	titleStyle := styles.TitleStyle(active)
 	innerWidth := max(width-2, 0)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)
-	titleText := viewutil.TruncatePlain(" "+panelTitle+" ", max(width-topPrefixWidth-1, 0))
-	titleWidth := lipgloss.Width(titleText)
+	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(width-topPrefixWidth-1, 0))
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
 	topFillWidth := max(width-topPrefixWidth-titleWidth-1, 0)
 	topFill := borderStyle.Render(strings.Repeat("─", topFillWidth))
@@ -197,7 +194,7 @@ func renderPanel(body []string, width, height int, active bool, scrollbar scroll
 		topRight = borderStyle.Render("╮")
 	}
 
-	lines := []string{topPrefix + titleStyle.Render(titleText) + topFill + topRight}
+	lines := []string{topPrefix + titleRendered + topFill + topRight}
 	for i := range contentHeight {
 		line := ""
 		if i < len(body) {

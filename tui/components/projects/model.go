@@ -128,13 +128,13 @@ func (m *Model) refreshViewport() {
 }
 
 func (m Model) PreferredWidth() int {
-	longest := lipgloss.Width(panelTitle)
+	longest := lipgloss.Width(panelTitleKey + panelTitleLabel)
 	for _, project := range m.allProjects {
 		longest = max(longest, lipgloss.Width(project.Name))
 		longest = max(longest, lipgloss.Width(" "+project.ProjectID))
 	}
 
-	mainTitleWidth := lipgloss.Width(" " + panelTitle + " ")
+	mainTitleWidth := lipgloss.Width(" " + panelTitleKey + panelTitleLabel + " ")
 	secondaryWidth := max(lipgloss.Width(" "+m.secondaryTitleText()+" "), 3)
 	headerWidth := 3 + mainTitleWidth + 2 + secondaryWidth + 2 + 1
 

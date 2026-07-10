@@ -2,6 +2,7 @@ package styles
 
 import (
 	"image/color"
+	"strings"
 
 	"charm.land/lipgloss/v2"
 	charmlog "charm.land/log/v2"
@@ -91,6 +92,41 @@ func TitleStyle(active bool) lipgloss.Style {
 	}
 
 	return PanelTitleActive
+}
+
+func PanelHeaderTitle(key, title string, active bool, maxWidth int) (string, int) {
+	text := truncateHeaderText(" "+key+title+" ", maxWidth)
+	width := lipgloss.Width(text)
+	if text == "" {
+		return "", width
+	}
+	if active {
+		return TitleStyle(true).Render(text), width
+	}
+	if !strings.Contains(text, key) {
+		return PanelTitle.Render(text), width
+	}
+
+	before, after, _ := strings.Cut(text, key)
+	return PanelTitle.Render(before) + FilterText.Render(key) + PanelTitle.Render(after), width
+}
+
+func truncateHeaderText(text string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	used := 0
+	for _, r := range text {
+		rw := lipgloss.Width(string(r))
+		if used+rw > width {
+			break
+		}
+		b.WriteRune(r)
+		used += rw
+	}
+	return b.String()
 }
 
 func ProjectStateStyle(cursor, selected bool) lipgloss.Style {

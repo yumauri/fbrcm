@@ -145,7 +145,7 @@ func findMsg[T any](msgs []tea.Msg) T {
 	return zero
 }
 
-const loadedProjectsSnapshot = `── [1] Projects ─────────── 3 ─╮
+const loadedProjectsSnapshot = `── ¹Projects ────────────── 3 ─╮
  Alpha Project                 │
   alpha                        │
                                │
