@@ -31,7 +31,7 @@ func isProfileCommand(cmd *cobra.Command) bool {
 func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "fbrcm",
-		Short: "Firebase project viewer",
+		Short: "Firebase Remote Config manager",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if isProfileCommand(cmd) || cmd.Name() == "help" {
 				return nil

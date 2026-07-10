@@ -1,6 +1,6 @@
 # fbrcm
 
-`fbrcm` is a terminal tool for Firebase Remote Config management. It helps you view Firebase projects, inspect parameters across projects, export and import Remote Config JSON, and safely add, update, or delete Remote Config parameters.
+`fbrcm` is a terminal Firebase Remote Config manager. It helps you manage Remote Config across Firebase projects, inspect parameters, export and import Remote Config JSON, and safely add, update, or delete Remote Config parameters.
 
 Run `fbrcm` without arguments to open the interactive TUI. Run `fbrcm <command>` to use the CLI.
 
@@ -279,9 +279,9 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 
 ## What It Can Do
 
-- Open a TUI for browsing projects and Remote Config parameters
+- Open a TUI for managing Firebase projects and Remote Config parameters
 - List Firebase projects available to the authenticated Google account
-- Cache project and parameter data locally
+- Cache project metadata and Remote Config snapshots locally
 - Fetch Remote Config from Firebase
 - Show parameters across many projects
 - Filter projects and parameters

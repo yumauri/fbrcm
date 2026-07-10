@@ -23,7 +23,7 @@ import (
 func New(svc *core.Core) *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:   "project",
-		Short: "Manage project remote config",
+		Short: "Export and import project Remote Config",
 	}
 	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc))
 	return projectCmd

@@ -1,6 +1,6 @@
 # fbrcm CLI
 
-`fbrcm` runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode.
+`fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode.
 
 ## Command Tree
 
@@ -400,7 +400,7 @@ Flags:
 
 ### `fbrcm cache list`
 
-Lists cached parameter files and draft files.
+Lists cached Remote Config snapshots and draft files.
 
 Flags:
 
@@ -412,7 +412,7 @@ JSON entries include project ID, project name, version, file size, cached time, 
 
 ### `fbrcm cache path`
 
-Prints parameters cache directory path.
+Prints Remote Config cache directory path.
 
 Flags:
 
@@ -422,7 +422,7 @@ Flags:
 
 ### `fbrcm cache purge`
 
-Deletes cached parameter files. If drafts exist, prompts separately before deleting drafts.
+Deletes cached Remote Config snapshots. If drafts exist, prompts separately before deleting drafts.
 
 Flags:
 

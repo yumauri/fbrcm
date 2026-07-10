@@ -15,8 +15,8 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if first == second {
 		t.Fatalf("newRootCommand returned the same command instance")
 	}
-	if first.Use != "fbrcm" || first.Short != "Firebase project viewer" {
-		t.Fatalf("root metadata = %q/%q, want fbrcm/Firebase project viewer", first.Use, first.Short)
+	if first.Use != "fbrcm" || first.Short != "Firebase Remote Config manager" {
+		t.Fatalf("root metadata = %q/%q, want fbrcm/Firebase Remote Config manager", first.Use, first.Short)
 	}
 	if first.Version != "1.2.3 (commit abc123, built 2026-06-14)" {
 		t.Fatalf("version = %q, want formatted version", first.Version)

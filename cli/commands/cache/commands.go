@@ -13,7 +13,7 @@ import (
 func New() *cobra.Command {
 	cacheCmd := &cobra.Command{
 		Use:   "cache",
-		Short: "Manage cached parameters files",
+		Short: "Manage cached Remote Config snapshots",
 	}
 	cacheCmd.AddCommand(newPathCommand(), newPurgeCommand(), newListCommand())
 	return cacheCmd
@@ -22,7 +22,7 @@ func New() *cobra.Command {
 func newPathCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "path",
-		Short: "Print parameters cache directory path",
+		Short: "Print Remote Config cache directory path",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
@@ -45,7 +45,7 @@ func newPathCommand() *cobra.Command {
 func newPurgeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "purge",
-		Short: "Delete cached parameters files",
+		Short: "Delete cached Remote Config snapshots",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
@@ -55,7 +55,7 @@ func newPurgeCommand() *cobra.Command {
 			deleteCaches := true
 			if !yes {
 				confirm := shared.NewConfirmation(
-					fmt.Sprintf("Delete cached parameters files in %s?", config.GetParametersCacheDirPath()),
+					fmt.Sprintf("Delete cached Remote Config snapshots in %s?", config.GetParametersCacheDirPath()),
 					confirmation.Yes,
 					shared.ConfirmationOptions{Destructive: true},
 				)
@@ -108,7 +108,7 @@ func newPurgeCommand() *cobra.Command {
 func newListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List cached parameters files",
+		Short: "List cached Remote Config snapshots",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
