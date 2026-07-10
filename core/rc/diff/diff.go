@@ -30,30 +30,43 @@ type paramView struct {
 // RenderRemoteConfigDiff renders a human-readable diff between two Remote Config
 // snapshots. The returned bool is true when any condition or parameter changed.
 func RenderRemoteConfigDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, bool) {
+	return RenderResult(CompareRemoteConfigs(currentCfg, finalCfg))
+}
+
+func RenderResult(result Result) (string, bool) {
 	var sections []string
 
-	conditionsText, conditionCounts := renderConditionsDiff(currentCfg, finalCfg)
-	paramsText, parameterCounts := renderParametersDiff(currentCfg, finalCfg)
+	conditionsText, conditionCounts := renderConditionsDiff(result)
+	groupsText, groupCounts := renderGroupDescriptionsDiff(result)
+	paramsText, parameterCounts := renderParametersDiff(result)
 
 	if conditionsText != "" {
 		sections = append(sections, conditionsText)
+	}
+	if groupsText != "" {
+		sections = append(sections, groupsText)
 	}
 	if paramsText != "" {
 		sections = append(sections, paramsText)
 	}
 
 	hasChanges := conditionCounts.added+conditionCounts.removed+conditionCounts.changed+
+		groupCounts.added+groupCounts.removed+groupCounts.changed+
 		parameterCounts.added+parameterCounts.removed+parameterCounts.changed > 0
 	if !hasChanges {
 		return "", false
 	}
 
 	summary := fmt.Sprintf(
-		"Summary:\n  %s condition added, %s removed, %s changed, %s unchanged\n  %s parameter added, %s removed, %s changed, %s unchanged",
+		"Summary:\n  %s condition added, %s removed, %s changed, %s unchanged\n  %s group description added, %s removed, %s changed, %s unchanged\n  %s parameter added, %s removed, %s changed, %s unchanged",
 		formatCount(conditionCounts.added),
 		formatCount(conditionCounts.removed),
 		formatCount(conditionCounts.changed),
 		formatCount(conditionCounts.unchanged),
+		formatCount(groupCounts.added),
+		formatCount(groupCounts.removed),
+		formatCount(groupCounts.changed),
+		formatCount(groupCounts.unchanged),
 		formatCount(parameterCounts.added),
 		formatCount(parameterCounts.removed),
 		formatCount(parameterCounts.changed),

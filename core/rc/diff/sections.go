@@ -2,52 +2,25 @@ package diff
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
-
-	"github.com/yumauri/fbrcm/core/firebase"
-	"github.com/yumauri/fbrcm/core/strfold"
 )
 
-func renderConditionsDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, diffCounts) {
-	current := make(map[string]firebase.RemoteConfigCondition, len(currentCfg.Conditions))
-	final := make(map[string]firebase.RemoteConfigCondition, len(finalCfg.Conditions))
-	keys := make([]string, 0, len(currentCfg.Conditions)+len(finalCfg.Conditions))
-	seen := make(map[string]struct{})
-
-	for _, condition := range currentCfg.Conditions {
-		current[condition.Name] = condition
-		if _, ok := seen[condition.Name]; !ok {
-			keys = append(keys, condition.Name)
-			seen[condition.Name] = struct{}{}
-		}
-	}
-	for _, condition := range finalCfg.Conditions {
-		final[condition.Name] = condition
-		if _, ok := seen[condition.Name]; !ok {
-			keys = append(keys, condition.Name)
-			seen[condition.Name] = struct{}{}
-		}
-	}
-	strfold.Sort(keys)
-
+func renderConditionsDiff(result Result) (string, diffCounts) {
 	var lines []string
 	var counts diffCounts
-	for _, key := range keys {
-		left, hasLeft := current[key]
-		right, hasRight := final[key]
-		switch {
-		case !hasLeft && hasRight:
+	for _, change := range result.Conditions {
+		switch change.Kind {
+		case ChangeAdded:
 			counts.added++
-			lines = append(lines, fmt.Sprintf("  + %-15s %s", colorAdded(key), formatConditionSummary(right)))
-		case hasLeft && !hasRight:
+			lines = append(lines, fmt.Sprintf("  + %-15s %s", colorAdded(change.Name), formatConditionSummary(*change.Final)))
+		case ChangeRemoved:
 			counts.removed++
-			lines = append(lines, fmt.Sprintf("  - %-15s %s", colorRemoved(key), formatConditionSummary(left)))
-		case reflect.DeepEqual(left, right):
+			lines = append(lines, fmt.Sprintf("  - %-15s %s", colorRemoved(change.Name), formatConditionSummary(*change.Current)))
+		case ChangeUnchanged:
 			counts.unchanged++
-		default:
+		case ChangeChanged:
 			counts.changed++
-			lines = append(lines, fmt.Sprintf("  ~ %-15s %s → %s", colorChanged(key), colorRemoved(formatConditionSummary(left)), colorAdded(formatConditionSummary(right))))
+			lines = append(lines, fmt.Sprintf("  ~ %-15s %s → %s", colorChanged(change.Name), colorRemoved(formatConditionSummary(*change.Current)), colorAdded(formatConditionSummary(*change.Final))))
 		}
 	}
 
@@ -57,40 +30,50 @@ func renderConditionsDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, 
 	return "Conditions:\n" + strings.Join(lines, "\n"), counts
 }
 
-func renderParametersDiff(currentCfg, finalCfg *firebase.RemoteConfig) (string, diffCounts) {
-	current := collectParamViews(currentCfg)
-	final := collectParamViews(finalCfg)
-	keys := make([]string, 0, len(current)+len(final))
-	seen := make(map[string]struct{})
-	for key := range current {
-		keys = append(keys, key)
-		seen[key] = struct{}{}
-	}
-	for key := range final {
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		keys = append(keys, key)
-	}
-	strfold.Sort(keys)
-
+func renderGroupDescriptionsDiff(result Result) (string, diffCounts) {
 	var lines []string
 	var counts diffCounts
-	for _, key := range keys {
-		left, hasLeft := current[key]
-		right, hasRight := final[key]
-		switch {
-		case !hasLeft && hasRight:
+	for _, change := range result.GroupDescriptions {
+		switch change.Kind {
+		case ChangeAdded:
 			counts.added++
-			lines = append(lines, renderAddedParameter(key, right)...)
-		case hasLeft && !hasRight:
+			lines = append(lines, fmt.Sprintf("  + %-15s %s", colorAdded(formatGroupValue(change.Group)), change.Final))
+		case ChangeRemoved:
 			counts.removed++
-			lines = append(lines, renderRemovedParameter(key, left)...)
-		case reflect.DeepEqual(left, right):
+			lines = append(lines, fmt.Sprintf("  - %-15s %s", colorRemoved(formatGroupValue(change.Group)), change.Current))
+		case ChangeUnchanged:
 			counts.unchanged++
-		default:
+		case ChangeChanged:
 			counts.changed++
-			lines = append(lines, renderChangedParameter(key, left, right)...)
+			lines = append(lines, fmt.Sprintf("  ~ %-15s %s → %s", colorChanged(formatGroupValue(change.Group)), colorRemoved(change.Current), colorAdded(change.Final)))
+		}
+	}
+	if len(lines) == 0 {
+		return "", counts
+	}
+	return "Group descriptions:\n" + strings.Join(lines, "\n"), counts
+}
+
+func renderParametersDiff(result Result) (string, diffCounts) {
+	var lines []string
+	var counts diffCounts
+	for _, change := range result.Parameters {
+		switch change.Kind {
+		case ChangeAdded:
+			counts.added++
+			lines = append(lines, renderAddedParameter(change.Key, paramView{Group: change.Group, Param: *change.Final})...)
+		case ChangeRemoved:
+			counts.removed++
+			lines = append(lines, renderRemovedParameter(change.Key, paramView{Group: change.Group, Param: *change.Current})...)
+		case ChangeUnchanged:
+			counts.unchanged++
+		case ChangeChanged:
+			counts.changed++
+			leftGroup := change.Group
+			if change.PreviousGroup != "" || change.PreviousKey != "" {
+				leftGroup = change.PreviousGroup
+			}
+			lines = append(lines, renderChangedParameter(change.Key, paramView{Group: leftGroup, Param: *change.Current}, paramView{Group: change.Group, Param: *change.Final})...)
 		}
 	}
 	if len(lines) == 0 {

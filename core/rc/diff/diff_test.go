@@ -151,6 +151,36 @@ func TestRenderRemoteConfigDiffRemovedParameter(t *testing.T) {
 	}
 }
 
+func TestCompareRemoteConfigsTreatsGroupMoveAsChange(t *testing.T) {
+	current := &firebase.RemoteConfig{
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"group-a": {
+				Parameters: map[string]firebase.RemoteConfigParam{
+					"flag": {
+						DefaultValue: &firebase.RemoteConfigValue{Value: "old"},
+					},
+				},
+			},
+		},
+	}
+	final := &firebase.RemoteConfig{
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"flag": {
+				DefaultValue: &firebase.RemoteConfigValue{Value: "new"},
+			},
+		},
+	}
+
+	result := CompareRemoteConfigs(current, final)
+	if len(result.Parameters) != 1 {
+		t.Fatalf("parameter changes = %d, want one move change", len(result.Parameters))
+	}
+	change := result.Parameters[0]
+	if change.Kind != ChangeChanged || change.Group != "" || change.PreviousGroup != "group-a" {
+		t.Fatalf("change = %+v, want changed move group-a -> root", change)
+	}
+}
+
 func TestConflictPreviewAndChoiceValues(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 

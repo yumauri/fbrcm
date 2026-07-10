@@ -97,6 +97,28 @@ fbrcm [--help] [--version]
 │   │   ├── --json
 │   │   ├── --url
 │   │   └── --auth <auth-id>
+│   ├── diff <source-project> <target-project>
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --group <name>        repeated
+│   │   ├── --expr <expr>
+│   │   ├── --search <text>
+│   │   ├── --parameters
+│   │   ├── --conditions
+│   │   ├── --cached
+│   │   └── --json
+│   ├── promote <source-project> <target-project>
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --group <name>        repeated
+│   │   ├── --expr <expr>
+│   │   ├── --search <text>
+│   │   ├── --parameters
+│   │   ├── --conditions
+│   │   ├── --interactive
+│   │   ├── --all
+│   │   ├── --prune
+│   │   ├── --dry-run
+│   │   ├── --yes, -y
+│   │   └── --json
 │   ├── path [--json]
 │   └── purge [--yes|-y]
 │
@@ -377,6 +399,54 @@ Flags:
 --url                  include Firebase Console Remote Config URL
 --auth <auth-id>       sync projects for one auth identity
 ```
+
+### `fbrcm projects diff <source-project> <target-project>`
+
+Compares Remote Config between two projects. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Project arguments match project ID first, then exact display name case-insensitively.
+
+By default, command fetches live Remote Config for both projects. Use `--cached` to compare local parameter cache entries instead.
+
+Flags:
+
+```text
+-f, --filter <query>   include only matching parameter keys; may be repeated
+--group <name>         include only parameters in named group; may be repeated
+--expr <expr>          include only parameters matching parameter context expression
+--search <text>        include only parameters matching rich search text
+--parameters           include only parameter and group description differences
+--conditions           include only condition differences
+--cached               compare cached Remote Config snapshots
+--json                 print structured diff JSON
+```
+
+Default output is a terminal diff grouped by conditions, group descriptions, and parameters. JSON output includes source project, target project, summary counts, and structured change records.
+
+### `fbrcm projects promote <source-project> <target-project>`
+
+Promotes selected Remote Config changes from source project to target project. `<source-project>` is the desired config. `<target-project>` is the project that may be published.
+
+By default in an interactive terminal, command reviews eligible changes item by item before publishing. V1 selection is whole-item based: parameter slots, conditions, and group descriptions. Parameter selection automatically includes required condition definitions and group descriptions when needed.
+
+Default promotion includes source additions and source updates. Target-only removals are ignored unless `--prune` is set.
+
+Flags:
+
+```text
+-f, --filter <query>   promote only matching parameter keys; may be repeated
+--group <name>         promote only parameters in named group; may be repeated
+--expr <expr>          promote only parameters matching parameter context expression
+--search <text>        promote only parameters matching rich search text
+--parameters           promote only parameter and group description changes
+--conditions           promote only condition changes
+--interactive          review each promotion item interactively
+--all                  select all eligible changes without per-item prompts
+--prune                include target-only removals
+--dry-run              validate/log Firebase write requests, do not publish
+-y, --yes              skip final publish confirmation
+--json                 print promotion result JSON
+```
+
+Non-interactive promote requires explicit selection intent: `--all`, `--filter`, `--group`, `--expr`, or `--search`. Command reloads the target before publishing, validates with Firebase, publishes using the latest target ETag, and retries if the target changes during promotion.
 
 ### `fbrcm projects path`
 

@@ -17,7 +17,7 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "projects",
 		Short: "Manage Firebase projects for Remote Config",
 	}
-	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newPathCommand(), newPurgeCommand(svc))
+	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newDiffCommand(svc), newPromoteCommand(svc), newPathCommand(), newPurgeCommand(svc))
 	return projectsCmd
 }
 
