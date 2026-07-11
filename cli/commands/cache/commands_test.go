@@ -79,3 +79,19 @@ func TestCachePurgeWithYes(t *testing.T) {
 		t.Fatalf("output = %q", out.String())
 	}
 }
+
+func TestCachePurgeEmptyDoesNotPrompt(t *testing.T) {
+	setupCacheTest(t)
+	purgeCmd, _, err := New().Find([]string{"purge"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	purgeCmd.SetOut(&out)
+	if err := purgeCmd.RunE(purgeCmd, nil); err != nil {
+		t.Fatalf("empty cache purge = %v", err)
+	}
+	if !strings.Contains(out.String(), "Nothing to purge") {
+		t.Fatalf("output = %q", out.String())
+	}
+}

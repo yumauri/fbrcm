@@ -71,18 +71,50 @@ fbrcm [--help] [--version]
 │
 ├── project
 │   ├── export <project> [--to <path>]
-│   └── import <project>
-│       ├── --from <path>
-│       ├── --group <name>        repeated
-│       ├── --filter, -f <query>  repeated
-│       ├── --expr <expr>
-│       ├── --search <text>
-│       ├── --dry-run
-│       ├── --remove-all-conditions
-│       ├── --remove-project-specific-conditions
-│       ├── --merge
-│       ├── --override
-│       └── --merge-resolve current|import
+│   ├── import <project>
+│   │   ├── --from <path>
+│   │   ├── --group <name>        repeated
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --expr <expr>
+│   │   ├── --search <text>
+│   │   ├── --dry-run
+│   │   ├── --remove-all-conditions
+│   │   ├── --remove-project-specific-conditions
+│   │   ├── --merge
+│   │   ├── --override
+│   │   └── --merge-resolve current|import
+│   └── versions
+│       ├── list <project>
+│       │   ├── --limit <n>
+│       │   ├── --all
+│       │   ├── --before <version>
+│       │   ├── --since <RFC3339>
+│       │   ├── --until <RFC3339>
+│       │   ├── --cached
+│       │   └── --json
+│       ├── show <project> <version>
+│       │   ├── --cached
+│       │   └── --json
+│       ├── diff <project> <from> [<to>]
+│       │   ├── --filter, -f <query>  repeated
+│       │   ├── --group <name>        repeated
+│       │   ├── --expr <expr>
+│       │   ├── --search <text>
+│       │   ├── --parameters
+│       │   ├── --conditions
+│       │   ├── --cached
+│       │   └── --json
+│       ├── export <project> <version>
+│       │   ├── --to <path>
+│       │   └── --cached
+│       ├── rollback <project> <version>
+│       │   ├── --dry-run
+│       │   ├── --yes, -y
+│       │   └── --json
+│       └── restore <project> <version>
+│           ├── --dry-run
+│           ├── --yes, -y
+│           └── --json
 │
 ├── projects
 │   ├── list
@@ -168,6 +200,16 @@ Flags named `--project` or `--filter` use mode-prefixed query strings:
 
 Project filters match project display name or project ID. Parameter filters match parameter key. `--project` and `--filter` may be repeated; repeated values are ORed and must be passed as separate flags.
 
+### Positional Project Resolution
+
+Commands that accept a positional `<project>` argument resolve it in this order:
+
+1. Exact case-insensitive project ID.
+2. Exact case-insensitive project display name.
+3. Case-insensitive substring match against project ID or display name.
+
+A single match is selected. Multiple exact-name or substring matches print only the ambiguous projects and return an error. No match prints the known-project table and returns an error. Exact ID always wins, including when another project's display name has the same text.
+
 ### Parameter Search
 
 Parameter-context commands also support `--search <text>`. It searches parameter name, description, default value, conditional values, condition names, and condition expressions. Name/description/condition-name matching is case-insensitive and ignores punctuation; value/expression matching is case-sensitive. `--search` is ANDed with `--filter` and parameter-context `--expr`.
@@ -183,6 +225,7 @@ get
 delete
 update
 project import
+project versions diff
 ```
 
 Project-context commands:
@@ -319,7 +362,7 @@ Stdin mode reads Remote Config JSON from stdin, deletes matching parameters, and
 
 ### `fbrcm project export <project>`
 
-Exports one project's Remote Config JSON. `<project>` matches project ID first, then exact display name case-insensitively. Ambiguous or missing names print matching project table.
+Exports one project's Remote Config JSON. `<project>` uses the shared positional project resolution described above.
 
 Flags:
 
@@ -372,6 +415,148 @@ If current config is empty, import replaces it. If current config has content an
 
 After import transform, unused conditions, unknown condition references, empty groups, and version metadata are removed. Command validates, prints diff, asks for confirmation, then publishes.
 
+### Remote Config version history
+
+Version commands are scoped to one project and use the same project resolution as `project export`: project ID is matched first, followed by exact display name case-insensitively.
+
+Firebase history and the local cache serve different purposes:
+
+- Firebase history is authoritative for published-version metadata and native rollback availability.
+- The local cache contains immutable templates that `fbrcm` has fetched or published. It may be incomplete, but it can retain a template after Firebase removes that version from its history.
+- Firebase retains at most 300 versions. Inactive versions older than 90 days may be removed.
+- Reading or caching a historical version does not change the current cache pointer.
+- Successful publish, rollback, or restore creates and caches a new current version.
+
+Version arguments accept a positive numeric version or a symbolic alias:
+
+```text
+142
+current
+latest
+previous
+current~2
+latest~3
+```
+
+`current` and `latest` are equivalent. `previous` is shorthand for `current~1`. `current~N` and `latest~N` walk backward by `N` publications; they do not subtract `N` from the numeric version. For example, if history is `142, 140, 137`, then `current~2` resolves to version `137`.
+
+In live mode, relative selectors walk authoritative Firebase history. With `--cached`, they walk locally cached version numbers below the cached current version; because local history may be incomplete, a cached relative selector is not guaranteed to identify the same publication as its live equivalent. Relative distance must be between 1 and 299. Commands fail clearly when the requested relative position is unavailable.
+
+Commands always verify that an exact numeric version fetch returns the requested version; they never silently substitute another version.
+
+### `fbrcm project versions list <project>`
+
+Lists published Remote Config versions newest first. Live mode reads authoritative metadata from Firebase and marks locally cached versions. Cached mode performs no Firebase request and lists only local immutable snapshots.
+
+Flags:
+
+```text
+--limit <n>          maximum versions to print; default 20; must be greater than zero
+--all                retrieve every available version; mutually exclusive with an explicit --limit
+--before <version>   newest version number to include
+--since <RFC3339>    omit versions published before this time
+--until <RFC3339>    omit versions published at or after this time
+--cached             list local snapshots without contacting Firebase
+--json               print structured JSON
+```
+
+Human live output includes version number, current marker, publication time, updating user, origin, update type, cached marker, and description. Cached output includes version, current marker, cache time, size, and any metadata stored in the template.
+
+In cached mode, `--since` and `--until` apply to the local cache time because authoritative publication metadata may be unavailable.
+
+JSON output is an object containing `project`, `versions`, and optional `next_page_token`. Each version includes Firebase metadata plus `current`, `cached`, and available local cache fields.
+
+### `fbrcm project versions show <project> <version>`
+
+Shows metadata for one exact version. Normal mode uses an existing immutable snapshot first and otherwise retrieves and caches the requested version from Firebase without moving the current pointer.
+
+Flags:
+
+```text
+--cached   require the exact local snapshot and perform no Firebase request
+--json     print structured metadata JSON
+```
+
+Use `project versions export` when the complete Remote Config JSON is needed.
+
+### `fbrcm project versions diff <project> <from> [<to>]`
+
+Compares two versions of the same project. Direction is always `<from> → <to>`. When `<to>` is omitted, it defaults to `current`.
+
+Flags:
+
+```text
+-f, --filter <query>   include only matching parameter keys; may be repeated
+--group <name>         include only parameters in named group; may be repeated
+--expr <expr>          include only parameters matching parameter context expression
+--search <text>        include only parameters matching rich search text
+--parameters           include only parameter and group description differences
+--conditions           include only condition differences
+--cached               require both exact local snapshots and perform no Firebase requests
+--json                 print structured diff JSON
+```
+
+`--parameters` and `--conditions` are mutually exclusive. Default output reuses the conditions, group descriptions, parameters, and summary diff format used by `projects diff`. JSON output contains `project`, `from_version`, `to_version`, and `diff`.
+
+### `fbrcm project versions export <project> <version>`
+
+Exports one historical Remote Config template. Retrieval is cache-first and never changes the current pointer.
+
+Flags:
+
+```text
+--to <path>   write normalized JSON to a private file; default prints JSON to stdout
+--cached      require the exact local snapshot and perform no Firebase request
+```
+
+Normalization matches `project export`.
+
+### `fbrcm project versions rollback <project> <version>`
+
+Uses Firebase's native rollback operation. It does not reactivate the old version number: Firebase force-publishes the selected historical template as a new version whose metadata records the rollback source.
+
+Before publishing, the command:
+
+1. Resolves the exact source and current versions.
+2. Prints the complete `current → source` diff.
+3. Explains that rollback creates a new version.
+4. Asks for confirmation naming the canonical project ID.
+5. Rechecks the current version immediately before rollback and stops if it changed during preview.
+
+Flags:
+
+```text
+--dry-run   show the exact recovery diff without publishing
+-y, --yes   skip final publish confirmation
+--json      print a structured operation result
+```
+
+Rolling back to the current version is a no-op. A successful result reports the previous version, rollback source, and newly published version. Native Firebase rollback is a force update; the final recheck narrows but cannot eliminate the race window after that check.
+
+If Firebase no longer retains a locally cached source version, rollback reports the failure and suggests the corresponding `restore` command.
+
+### `fbrcm project versions restore <project> <version>`
+
+Republishes an exact locally cached immutable snapshot. Restore exists for recovery when Firebase no longer retains the historical version.
+
+Unlike rollback, restore:
+
+- Requires the source version to be present locally.
+- Publishes through the normal validated, ETag-protected update flow.
+- Creates a normal new Remote Config version rather than Firebase rollback metadata.
+
+It otherwise uses the same complete diff preview, confirmation, dry-run, current-version recheck, JSON contract, and success fields as rollback.
+
+Flags:
+
+```text
+--dry-run   validate and preview the cached snapshot without publishing
+-y, --yes   skip final publish confirmation
+--json      print a structured operation result
+```
+
+Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, and `changed`. Human previews are written separately from JSON data so stdout remains machine-readable.
+
 ### `fbrcm projects list`
 
 Lists projects using cache-first loading.
@@ -402,7 +587,7 @@ Flags:
 
 ### `fbrcm projects diff <source-project> <target-project>`
 
-Compares Remote Config between two projects. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Project arguments match project ID first, then exact display name case-insensitively.
+Compares Remote Config between two projects. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Both arguments use shared positional project resolution.
 
 By default, command fetches live Remote Config for both projects. Use `--cached` to compare local parameter cache entries instead.
 
@@ -470,7 +655,7 @@ Flags:
 
 ### `fbrcm cache list`
 
-Lists cached Remote Config snapshots and draft files.
+Lists immutable cached Remote Config versions and mutable draft files.
 
 Flags:
 
@@ -492,7 +677,7 @@ Flags:
 
 ### `fbrcm cache purge`
 
-Deletes cached Remote Config snapshots. If drafts exist, prompts separately before deleting drafts.
+Deletes all locally cached immutable Remote Config versions. The confirmation reports snapshot count, total size, and project count, and warns that versions no longer retained by Firebase may be permanently lost. If drafts exist, prompts separately before deleting drafts.
 
 Flags:
 

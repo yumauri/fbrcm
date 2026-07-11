@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
@@ -52,12 +53,30 @@ func newPurgeCommand() *cobra.Command {
 				return err
 			}
 
-			deleteCaches := true
-			if !yes {
+			entries, err := loadCacheEntries()
+			if err != nil {
+				return err
+			}
+			if len(entries) == 0 {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 Nothing to purge")
+				return nil
+			}
+			var snapshotCount int
+			var snapshotSize int64
+			projects := map[string]struct{}{}
+			for _, entry := range entries {
+				if !entry.Draft {
+					snapshotCount++
+					snapshotSize += entry.Size
+					projects[entry.ProjectID] = struct{}{}
+				}
+			}
+			deleteCaches := snapshotCount > 0
+			if deleteCaches && !yes {
 				confirm := shared.NewConfirmation(
-					fmt.Sprintf("Delete cached Remote Config snapshots in %s?", config.GetParametersCacheDirPath()),
+					fmt.Sprintf("Delete %d cached Remote Config versions (%s) across %d projects?", snapshotCount, strings.TrimSpace(humanSize(snapshotSize)), len(projects)),
 					confirmation.Yes,
-					shared.ConfirmationOptions{Destructive: true},
+					shared.ConfirmationOptions{Destructive: true, Notes: []shared.ConfirmationNote{{Text: "Local versions no longer retained by Firebase may be permanently lost."}}},
 				)
 				ok, err := confirm.RunPrompt()
 				if err != nil {

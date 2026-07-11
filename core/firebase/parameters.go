@@ -47,13 +47,38 @@ type RemoteConfigValue struct {
 }
 
 type RemoteConfigVersion struct {
-	VersionNumber string `json:"versionNumber,omitempty"`
-	UpdateTime    string `json:"updateTime,omitempty"`
-	Description   string `json:"description,omitempty"`
+	VersionNumber  string           `json:"versionNumber,omitempty"`
+	UpdateTime     string           `json:"updateTime,omitempty"`
+	UpdateUser     RemoteConfigUser `json:"updateUser,omitzero"`
+	Description    string           `json:"description,omitempty"`
+	UpdateOrigin   string           `json:"updateOrigin,omitempty"`
+	UpdateType     string           `json:"updateType,omitempty"`
+	RollbackSource string           `json:"rollbackSource,omitempty"`
+	IsLegacy       bool             `json:"isLegacy,omitempty"`
+}
+
+type RemoteConfigUser struct {
+	Name     string `json:"name,omitempty"`
+	Email    string `json:"email,omitempty"`
+	ImageURL string `json:"imageUrl,omitempty"`
 }
 
 type listVersionsResponse struct {
-	Versions []RemoteConfigVersion `json:"versions"`
+	Versions      []RemoteConfigVersion `json:"versions"`
+	NextPageToken string                `json:"nextPageToken,omitempty"`
+}
+
+type ListVersionsOptions struct {
+	PageSize         int
+	PageToken        string
+	EndVersionNumber string
+	StartTime        string
+	EndTime          string
+}
+
+type RemoteConfigVersionsPage struct {
+	Versions      []RemoteConfigVersion
+	NextPageToken string
 }
 
 const notAvailableVersion = "NA"
@@ -201,18 +226,49 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 }
 
 func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID string) (RemoteConfigVersion, error) {
+	page, err := s.ListRemoteConfigVersions(ctx, projectID, ListVersionsOptions{PageSize: 1})
+	if err != nil {
+		return RemoteConfigVersion{}, err
+	}
+	if len(page.Versions) == 0 {
+		return RemoteConfigVersion{VersionNumber: notAvailableVersion}, nil
+	}
+	return page.Versions[0], nil
+}
+
+func (s *Service) ListRemoteConfigVersions(ctx context.Context, projectID string, opts ListVersionsOptions) (RemoteConfigVersionsPage, error) {
 	logger := corelog.For("firebase")
-	logger.Info("get latest remote config version", "project_id", projectID)
+	logger.Info("list remote config versions", "project_id", projectID)
+	values := url.Values{}
+	if opts.PageSize > 0 {
+		values.Set("pageSize", fmt.Sprint(opts.PageSize))
+	}
+	if strings.TrimSpace(opts.PageToken) != "" {
+		values.Set("pageToken", opts.PageToken)
+	}
+	if strings.TrimSpace(opts.EndVersionNumber) != "" {
+		values.Set("endVersionNumber", opts.EndVersionNumber)
+	}
+	if strings.TrimSpace(opts.StartTime) != "" {
+		values.Set("startTime", opts.StartTime)
+	}
+	if strings.TrimSpace(opts.EndTime) != "" {
+		values.Set("endTime", opts.EndTime)
+	}
+	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig:listVersions", projectID)
+	if encoded := values.Encode(); encoded != "" {
+		endpoint += "?" + encoded
+	}
 
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig:listVersions?pageSize=1", projectID),
+		endpoint,
 		nil,
 	)
 	if err != nil {
 		logger.Error("create remote config version request failed", "project_id", projectID, "err", err)
-		return RemoteConfigVersion{}, fmt.Errorf("create remote config version request: %w", err)
+		return RemoteConfigVersionsPage{}, fmt.Errorf("create remote config version request: %w", err)
 	}
 	s.setQuotaProject(req, projectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
@@ -220,7 +276,7 @@ func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID st
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		logger.Error("remote config version request failed", "project_id", projectID, "err", err)
-		return RemoteConfigVersion{}, fmt.Errorf("list remote config versions: %w", err)
+		return RemoteConfigVersionsPage{}, fmt.Errorf("list remote config versions: %w", err)
 	}
 	logHTTPResponse(logger.With("project_id", projectID), req, resp)
 
@@ -228,28 +284,56 @@ func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID st
 	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		logger.Error("read remote config versions response failed", "project_id", projectID, "err", err)
-		return RemoteConfigVersion{}, fmt.Errorf("read remote config versions response: %w", err)
+		return RemoteConfigVersionsPage{}, fmt.Errorf("read remote config versions response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("remote config versions api returned non-200", "project_id", projectID, "status", resp.Status)
-		return RemoteConfigVersion{}, fmt.Errorf("remote config versions api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return RemoteConfigVersionsPage{}, fmt.Errorf("remote config versions api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
 	var payload listVersionsResponse
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&payload); err != nil {
 		logger.Error("decode remote config versions failed", "project_id", projectID, "err", err)
-		return RemoteConfigVersion{}, fmt.Errorf("decode remote config versions response: %w", err)
+		return RemoteConfigVersionsPage{}, fmt.Errorf("decode remote config versions response: %w", err)
 	}
-	if len(payload.Versions) == 0 {
-		logger.Info("remote config versions empty; using NA", "project_id", projectID)
-		return RemoteConfigVersion{VersionNumber: notAvailableVersion}, nil
+	for i := range payload.Versions {
+		if strings.TrimSpace(payload.Versions[i].VersionNumber) == "" {
+			payload.Versions[i].VersionNumber = notAvailableVersion
+		}
 	}
-	if strings.TrimSpace(payload.Versions[0].VersionNumber) == "" {
-		payload.Versions[0].VersionNumber = notAvailableVersion
-	}
+	return RemoteConfigVersionsPage(payload), nil
+}
 
-	logger.Info("latest remote config version loaded", "project_id", projectID, "version", payload.Versions[0].VersionNumber)
-	return payload.Versions[0], nil
+func (s *Service) RollbackRemoteConfig(ctx context.Context, projectID, versionNumber string) (json.RawMessage, string, error) {
+	body, err := json.Marshal(map[string]string{"versionNumber": strings.TrimSpace(versionNumber)})
+	if err != nil {
+		return nil, "", err
+	}
+	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig:rollback", projectID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return nil, "", fmt.Errorf("create rollback request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(body)), nil }
+	s.setQuotaProject(req, projectID)
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("rollback remote config: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("read rollback response: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("rollback remote config api returned %s: %s", resp.Status, strings.TrimSpace(string(respBody)))
+	}
+	respBody = normalizeRemoteConfigRaw(respBody)
+	if !json.Valid(respBody) {
+		return nil, "", fmt.Errorf("rollback remote config api returned invalid json")
+	}
+	return bytes.TrimSpace(respBody), strings.TrimSpace(resp.Header.Get("ETag")), nil
 }
 
 func normalizeRemoteConfigRaw(raw json.RawMessage) json.RawMessage {

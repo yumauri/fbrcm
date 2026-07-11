@@ -202,6 +202,25 @@ Export one project Remote Config:
 fbrcm project export <project-id> --to remote-config.json
 ```
 
+Inspect and recover Remote Config version history:
+
+```sh
+fbrcm project versions list <project-id>
+fbrcm project versions show <project-id> 142
+fbrcm project versions diff <project-id> 138 current
+fbrcm project versions rollback <project-id> 138 --dry-run
+fbrcm project versions rollback <project-id> 138
+```
+
+Firebase version history is authoritative, but Firebase retains at most 300 versions and may remove inactive versions older than 90 days. `fbrcm` keeps immutable templates it has encountered until the cache is purged. A cached version that Firebase no longer retains can be republished with:
+
+```sh
+fbrcm project versions restore <project-id> 37 --dry-run
+fbrcm project versions restore <project-id> 37
+```
+
+`rollback` uses Firebase's native rollback operation and creates a new version with rollback metadata. `restore` republishes a local snapshot as a normal new version. Both commands print a full diff and ask for confirmation unless `--yes` is used.
+
 Import Remote Config:
 
 ```sh
@@ -282,6 +301,7 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 - Open a TUI for managing Firebase projects and Remote Config parameters
 - List Firebase projects available to the authenticated Google account
 - Cache project metadata and Remote Config snapshots locally
+- List, inspect, compare, export, roll back, and restore Remote Config versions
 - Fetch Remote Config from Firebase
 - Show parameters across many projects
 - Filter projects and parameters
@@ -297,6 +317,8 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 
 ## Safety Notes
 
-Use `--dry-run` before imports, updates, adds, and deletes when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
+Use `--dry-run` before imports, updates, adds, deletes, rollbacks, and restores when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
+
+Purging the Remote Config cache deletes every locally retained immutable version. Versions no longer retained by Firebase may then be permanently unavailable.
 
 Keep `client-secret.json`, `token.json`, and service-account key files private. They grant access through Google account or service account permissions.

@@ -297,6 +297,31 @@ func TestParametersCacheVersionsArePreservedAndLatestWins(t *testing.T) {
 	}
 }
 
+func TestSaveParametersCacheSnapshotDoesNotMoveCurrentPointer(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	current := &ParametersCache{ETag: "etag-10", CachedAt: time.Now().UTC(), RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"10"}}`)}
+	if err := SaveParametersCache("demo", current); err != nil {
+		t.Fatal(err)
+	}
+	historical := &ParametersCache{ETag: "etag-3", CachedAt: time.Now().UTC(), RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"3"}}`)}
+	if err := SaveParametersCacheSnapshot("demo", historical); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := LoadParametersCache("demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.ETag != "etag-10" {
+		t.Fatalf("current pointer moved to %q", loaded.ETag)
+	}
+	if _, err := LoadParametersCacheVersion("demo", "3"); err != nil {
+		t.Fatalf("historical snapshot missing: %v", err)
+	}
+}
+
 func TestLoadParametersCacheLegacyFile(t *testing.T) {
 	setupTestDirs(t)
 	if err := SwitchProfile(DefaultProfileName); err != nil {

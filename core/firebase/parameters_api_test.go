@@ -2,6 +2,7 @@ package firebase
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -38,6 +39,41 @@ func TestGetRemoteConfigAndLatestVersion(t *testing.T) {
 	version, err := svc.GetLatestRemoteConfigVersion(context.Background(), "demo")
 	if err != nil || version.VersionNumber != "12" {
 		t.Fatalf("GetLatestRemoteConfigVersion = %+v err=%v", version, err)
+	}
+}
+
+func TestListRemoteConfigVersionsAndRollback(t *testing.T) {
+	svc := NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		switch req.Method {
+		case http.MethodGet:
+			if req.URL.Query().Get("pageSize") != "25" || req.URL.Query().Get("pageToken") != "next" || req.URL.Query().Get("endVersionNumber") != "40" {
+				t.Fatalf("query = %q", req.URL.RawQuery)
+			}
+			return jsonHTTPResponse(http.StatusOK, `{"versions":[{"versionNumber":"39","updateUser":{"email":"a@example.com"},"updateOrigin":"REST_API","updateType":"ROLLBACK","rollbackSource":"37"}],"nextPageToken":"older"}`, ""), nil
+		case http.MethodPost:
+			var payload map[string]string
+			if err := json.NewDecoder(req.Body).Decode(&payload); err != nil {
+				t.Fatal(err)
+			}
+			if payload["versionNumber"] != "37" {
+				t.Fatalf("rollback payload = %#v", payload)
+			}
+			return jsonHTTPResponse(http.StatusOK, `{"version":{"versionNumber":"41","rollbackSource":"37"}}`, `"etag-41"`), nil
+		default:
+			return nil, io.EOF
+		}
+	})})
+	page, err := svc.ListRemoteConfigVersions(context.Background(), "demo", ListVersionsOptions{PageSize: 25, PageToken: "next", EndVersionNumber: "40"})
+	if err != nil || page.NextPageToken != "older" || len(page.Versions) != 1 || page.Versions[0].UpdateUser.Email != "a@example.com" {
+		t.Fatalf("ListRemoteConfigVersions = %+v err=%v", page, err)
+	}
+	raw, etag, err := svc.RollbackRemoteConfig(context.Background(), "demo", "37")
+	if err != nil || etag != `"etag-41"` {
+		t.Fatalf("RollbackRemoteConfig etag=%q err=%v", etag, err)
+	}
+	cfg, _ := ParseRemoteConfig(raw)
+	if cfg.Version.VersionNumber != "41" {
+		t.Fatalf("rollback version = %s", cfg.Version.VersionNumber)
 	}
 }
 

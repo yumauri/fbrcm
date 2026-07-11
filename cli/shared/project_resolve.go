@@ -11,6 +11,7 @@ import (
 
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
 )
 
 func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
@@ -19,18 +20,7 @@ func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 		return core.Project{}, err
 	}
 
-	for _, project := range projects {
-		if strings.EqualFold(project.ProjectID, query) {
-			return project, nil
-		}
-	}
-
-	matches := make([]core.Project, 0, 1)
-	for _, project := range projects {
-		if strings.EqualFold(project.Name, query) {
-			matches = append(matches, project)
-		}
-	}
+	matches := matchProjectsForArg(projects, query)
 
 	switch len(matches) {
 	case 1:
@@ -44,6 +34,36 @@ func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches))
 		return core.Project{}, fmt.Errorf("several projects match %q", query)
 	}
+}
+
+func matchProjectsForArg(projects []core.Project, query string) []core.Project {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil
+	}
+	for _, project := range projects {
+		if strings.EqualFold(project.ProjectID, query) {
+			return []core.Project{project}
+		}
+	}
+	exactNames := make([]core.Project, 0, 1)
+	for _, project := range projects {
+		if strings.EqualFold(project.Name, query) {
+			exactNames = append(exactNames, project)
+		}
+	}
+	if len(exactNames) > 0 {
+		return exactNames
+	}
+	substringMatches := make([]core.Project, 0, 1)
+	for _, project := range projects {
+		nameMatch, _ := filter.Match(project.Name, query, filter.ModeIncludes)
+		idMatch, _ := filter.Match(project.ProjectID, query, filter.ModeIncludes)
+		if nameMatch || idMatch {
+			substringMatches = append(substringMatches, project)
+		}
+	}
+	return substringMatches
 }
 
 func RenderProjectsChoiceTable(projects []core.Project) string {

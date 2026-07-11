@@ -92,6 +92,16 @@ func LoadParametersCacheVersion(projectID, version string) (*ParametersCache, er
 }
 
 func SaveParametersCache(projectID string, cache *ParametersCache) error {
+	return saveParametersCache(projectID, cache, true)
+}
+
+// SaveParametersCacheSnapshot preserves an immutable historical snapshot without
+// changing which version is considered current.
+func SaveParametersCacheSnapshot(projectID string, cache *ParametersCache) error {
+	return saveParametersCache(projectID, cache, false)
+}
+
+func saveParametersCache(projectID string, cache *ParametersCache, current bool) error {
 	version := parametersCacheVersion(cache.RemoteConfig)
 	if !isNumericVersion(version) {
 		return saveLegacyParametersCache(projectID, cache)
@@ -111,12 +121,28 @@ func SaveParametersCache(projectID string, cache *ParametersCache) error {
 		logger.Error("write parameters cache failed", "project_id", projectID, "path", path, "err", err)
 		return fmt.Errorf("write parameters cache: %w", err)
 	}
-	if err := updateParametersCachePointer(projectID, path, cache); err != nil {
-		return err
+	if current {
+		if err := updateParametersCachePointer(projectID, path, cache); err != nil {
+			return err
+		}
 	}
 
 	logger.Info("saved versioned parameters cache", "project_id", projectID, "path", path, "etag", cache.ETag, "version", version)
 	return nil
+}
+
+func ListParametersCacheSnapshotsForProject(projectID string) ([]ParametersCacheSnapshot, error) {
+	all, err := ListParametersCacheSnapshots()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ParametersCacheSnapshot, 0)
+	for _, snapshot := range all {
+		if snapshot.ProjectID == projectID {
+			out = append(out, snapshot)
+		}
+	}
+	return out, nil
 }
 
 func ListParametersCacheSnapshots() ([]ParametersCacheSnapshot, error) {

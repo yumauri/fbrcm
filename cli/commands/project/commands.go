@@ -21,7 +21,7 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "project",
 		Short: "Export and import project Remote Config",
 	}
-	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc))
+	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc), newVersionsCommand(svc))
 	return projectCmd
 }
 
