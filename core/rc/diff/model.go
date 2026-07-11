@@ -122,13 +122,13 @@ func compareConditions(currentCfg, finalCfg *firebase.RemoteConfig) []ConditionC
 		right, hasRight := final[key]
 		switch {
 		case !hasLeft && hasRight:
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeAdded, Final: conditionPtr(right)})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeAdded, Final: &right})
 		case hasLeft && !hasRight:
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeRemoved, Current: conditionPtr(left)})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeRemoved, Current: &left})
 		case reflect.DeepEqual(left, right):
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeUnchanged, Current: conditionPtr(left), Final: conditionPtr(right)})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeUnchanged, Current: &left, Final: &right})
 		default:
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeChanged, Current: conditionPtr(left), Final: conditionPtr(right)})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeChanged, Current: &left, Final: &right})
 		}
 	}
 	return changes
@@ -204,8 +204,8 @@ func compareParameters(currentCfg, finalCfg *firebase.RemoteConfig) []ParameterC
 				PreviousKey:   rcmutate.SlotKeyParam(slotKey),
 				PreviousGroup: left.Group,
 				Kind:          ChangeChanged,
-				Current:       paramPtr(left.Param),
-				Final:         paramPtr(right.Param),
+				Current:       &left.Param,
+				Final:         &right.Param,
 			})
 			skip[nextKey] = struct{}{}
 			continue
@@ -216,13 +216,13 @@ func compareParameters(currentCfg, finalCfg *firebase.RemoteConfig) []ParameterC
 		group := rcmutate.SlotKeyGroup(slotKey)
 		switch {
 		case !hasLeft && hasRight:
-			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeAdded, Final: paramPtr(right.Param)})
+			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeAdded, Final: &right.Param})
 		case hasLeft && !hasRight:
-			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeRemoved, Current: paramPtr(left.Param)})
+			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeRemoved, Current: &left.Param})
 		case reflect.DeepEqual(left.Param, right.Param):
-			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeUnchanged, Current: paramPtr(left.Param), Final: paramPtr(right.Param)})
+			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeUnchanged, Current: &left.Param, Final: &right.Param})
 		default:
-			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeChanged, Current: paramPtr(left.Param), Final: paramPtr(right.Param)})
+			changes = append(changes, ParameterChange{Key: key, Group: group, Kind: ChangeChanged, Current: &left.Param, Final: &right.Param})
 		}
 	}
 	return changes
@@ -299,12 +299,4 @@ func addSummary(left, right Summary) Summary {
 		Changed:   left.Changed + right.Changed,
 		Unchanged: left.Unchanged + right.Unchanged,
 	}
-}
-
-func conditionPtr(value firebase.RemoteConfigCondition) *firebase.RemoteConfigCondition {
-	return &value
-}
-
-func paramPtr(value firebase.RemoteConfigParam) *firebase.RemoteConfigParam {
-	return &value
 }

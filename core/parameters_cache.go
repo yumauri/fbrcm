@@ -46,7 +46,7 @@ func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) 
 	logger.Debug("get parameters requested", "project_id", projectID, "force", force)
 
 	if force {
-		return s.fetchParameters(ctx, projectID)
+		return s.fetchLatestParameters(ctx, projectID)
 	}
 
 	cache, state, err := s.InspectParametersCache(projectID)
@@ -63,7 +63,7 @@ func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) 
 		return s.verifyParameters(ctx, projectID, cache)
 	default:
 		logger.Warn("fetching parameters from firebase due to cache miss", "project_id", projectID)
-		return s.fetchParameters(ctx, projectID)
+		return s.fetchLatestParameters(ctx, projectID)
 	}
 }
 
@@ -78,7 +78,7 @@ func (s *Core) RevalidateParameters(ctx context.Context, projectID string) (*Par
 
 	if state == ParametersCacheMissing || cache == nil {
 		logger.Warn("fetching parameters from firebase due to cache miss during revalidation", "project_id", projectID)
-		return s.fetchParameters(ctx, projectID)
+		return s.fetchLatestParameters(ctx, projectID)
 	}
 
 	return s.verifyParameters(ctx, projectID, cache)
@@ -101,15 +101,48 @@ func (s *Core) BuildParametersTree(cache *ParametersCache) (*ParametersTree, err
 }
 
 func (s *Core) fetchParameters(ctx context.Context, projectID string) (*ParametersCache, string, error) {
+	return s.fetchParametersVersion(ctx, projectID, "")
+}
+
+func (s *Core) fetchLatestParameters(ctx context.Context, projectID string) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
-	logger.Info("fetch parameters from firebase", "project_id", projectID)
+	fb, err := s.firebaseServiceForProject(ctx, projectID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	latestVersion, err := fb.GetLatestRemoteConfigVersion(ctx, projectID)
+	if err != nil {
+		logger.Error("remote config version check failed", "project_id", projectID, "err", err)
+		return nil, "", fmt.Errorf("firebase error: %w", err)
+	}
+
+	if latestVersion.VersionNumber != "" {
+		cache, err := config.LoadParametersCacheVersion(projectID, latestVersion.VersionNumber)
+		if err == nil {
+			return s.refreshVerifiedCache(ctx, projectID, cache, latestVersion.VersionNumber)
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return nil, "", err
+		}
+	}
+
+	if latestVersion.VersionNumber == "" || latestVersion.VersionNumber == "NA" {
+		return s.fetchParameters(ctx, projectID)
+	}
+	return s.fetchParametersVersion(ctx, projectID, latestVersion.VersionNumber)
+}
+
+func (s *Core) fetchParametersVersion(ctx context.Context, projectID, version string) (*ParametersCache, string, error) {
+	logger := corelog.For("core")
+	logger.Info("fetch parameters from firebase", "project_id", projectID, "version", version)
 
 	fb, err := s.firebaseServiceForProject(ctx, projectID)
 	if err != nil {
 		return nil, "", err
 	}
 
-	raw, etag, err := fb.GetRemoteConfig(ctx, projectID)
+	raw, etag, err := fb.GetRemoteConfig(ctx, projectID, version)
 	if err != nil {
 		logger.Error("firebase remote config fetch failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("firebase error: %w", err)
@@ -160,22 +193,41 @@ func (s *Core) verifyParameters(ctx context.Context, projectID string, cache *Pa
 	}
 
 	if latestVersion.VersionNumber != "" && latestVersion.VersionNumber == remoteConfig.Version.VersionNumber {
-		refreshed := *cache
-		refreshed.CachedAt = time.Now().UTC()
-		if firebase.IsDryRun(ctx) {
-			logger.Warn("dry run, skip parameters cache timestamp refresh", "project_id", projectID, "version", latestVersion.VersionNumber)
-			return &refreshed, "cache-verified", nil
+		return s.refreshVerifiedCache(ctx, projectID, cache, latestVersion.VersionNumber)
+	}
+
+	if latestVersion.VersionNumber != "" {
+		latestCache, err := config.LoadParametersCacheVersion(projectID, latestVersion.VersionNumber)
+		if err == nil {
+			logger.Info("parameters latest version already cached", "project_id", projectID, "version", latestVersion.VersionNumber)
+			return s.refreshVerifiedCache(ctx, projectID, latestCache, latestVersion.VersionNumber)
 		}
-		if err := config.SaveParametersCache(projectID, &refreshed); err != nil {
-			logger.Error("refresh parameters cache timestamp failed", "project_id", projectID, "err", err)
-			return nil, "", fmt.Errorf("refresh parameters cache timestamp: %w", err)
+		if !errors.Is(err, os.ErrNotExist) {
+			return nil, "", err
 		}
-		logger.Info("parameters cache verified as current", "project_id", projectID, "version", latestVersion.VersionNumber)
-		return &refreshed, "cache-verified", nil
 	}
 
 	logger.Info("parameters cache outdated; refetching", "project_id", projectID, "cached_version", remoteConfig.Version.VersionNumber, "latest_version", latestVersion.VersionNumber)
-	return s.fetchParameters(ctx, projectID)
+	if latestVersion.VersionNumber == "" || latestVersion.VersionNumber == "NA" {
+		return s.fetchParameters(ctx, projectID)
+	}
+	return s.fetchParametersVersion(ctx, projectID, latestVersion.VersionNumber)
+}
+
+func (s *Core) refreshVerifiedCache(ctx context.Context, projectID string, cache *ParametersCache, version string) (*ParametersCache, string, error) {
+	logger := corelog.For("core")
+	refreshed := *cache
+	refreshed.CachedAt = time.Now().UTC()
+	if firebase.IsDryRun(ctx) {
+		logger.Warn("dry run, skip parameters cache timestamp refresh", "project_id", projectID, "version", version)
+		return &refreshed, "cache-verified", nil
+	}
+	if err := config.SaveParametersCache(projectID, &refreshed); err != nil {
+		logger.Error("refresh parameters cache timestamp failed", "project_id", projectID, "err", err)
+		return nil, "", fmt.Errorf("refresh parameters cache timestamp: %w", err)
+	}
+	logger.Info("parameters cache verified as current", "project_id", projectID, "version", version)
+	return &refreshed, "cache-verified", nil
 }
 
 func ParametersStatusLabel(source string, cachedAt time.Time, hasTree bool, err error) string {

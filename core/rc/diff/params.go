@@ -30,19 +30,6 @@ func RenderRemovedParameterDetail(key, group string, param firebase.RemoteConfig
 	return "\n" + strings.Join(lines, "\n")
 }
 
-func collectParamViews(cfg *firebase.RemoteConfig) map[string]paramView {
-	out := make(map[string]paramView)
-	for key, param := range cfg.Parameters {
-		out[key] = paramView{Param: param}
-	}
-	for groupName, group := range cfg.ParameterGroups {
-		for key, param := range group.Parameters {
-			out[key] = paramView{Group: groupName, Param: param}
-		}
-	}
-	return out
-}
-
 func renderAddedParameter(key string, value paramView) []string {
 	lines := []string{fmt.Sprintf("  + %s", colorAdded(rcdisplay.FormatParameterHeader(key, value.Group)))}
 	lines = append(lines, renderAddedParameterDetails(value.Param)...)

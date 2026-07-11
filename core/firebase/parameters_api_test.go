@@ -41,6 +41,30 @@ func TestGetRemoteConfigAndLatestVersion(t *testing.T) {
 	}
 }
 
+func TestGetRemoteConfigVersion(t *testing.T) {
+	const rcBody = `{"version":{"versionNumber":"7"}}`
+	svc := NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if got := req.URL.Query().Get("versionNumber"); got != "7" {
+				t.Fatalf("versionNumber query = %q, want 7", got)
+			}
+			return jsonHTTPResponse(http.StatusOK, rcBody, `"etag-7"`), nil
+		}),
+	})
+
+	raw, etag, err := svc.GetRemoteConfig(context.Background(), "demo", "7")
+	if err != nil {
+		t.Fatalf("GetRemoteConfig version = %v", err)
+	}
+	if etag != `"etag-7"` {
+		t.Fatalf("etag = %q, want etag-7", etag)
+	}
+	cfg, err := ParseRemoteConfig(raw)
+	if err != nil || cfg.Version.VersionNumber != "7" {
+		t.Fatalf("ParseRemoteConfig = %v version=%q", err, cfg.Version.VersionNumber)
+	}
+}
+
 func TestUpdateRemoteConfigValidateOnly(t *testing.T) {
 	payload := []byte(`{"version":{"versionNumber":"3"},"parameters":{"flag":{"defaultValue":{"value":"x"}}}}`)
 	svc := NewServiceWithHTTPClient(&http.Client{

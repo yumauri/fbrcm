@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -86,6 +87,33 @@ func TestPublishRemoteConfigWithETagDryRunSkipsCache(t *testing.T) {
 	_, state, err := svc.InspectParametersCache("demo")
 	if err != nil || state != ParametersCacheMissing {
 		t.Fatalf("InspectParametersCache after dry-run publish = state %v err %v, want missing", state, err)
+	}
+}
+
+func TestPublishRemoteConfigWithETagWritesVersionedCache(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	payload := remoteConfigRaw("2", map[string]string{"flag": "published"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodPut && !strings.Contains(req.URL.RawQuery, "validateOnly") {
+				return jsonResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+			}
+			return nil, io.EOF
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	if _, _, err := svc.PublishRemoteConfigWithETag(context.Background(), "demo", payload, "etag-1"); err != nil {
+		t.Fatalf("PublishRemoteConfigWithETag = %v", err)
+	}
+	cache, err := config.LoadParametersCacheVersion("demo", "2")
+	if err != nil {
+		t.Fatalf("LoadParametersCacheVersion = %v", err)
+	}
+	if cache.ETag != `"etag-2"` {
+		t.Fatalf("etag = %q, want etag-2", cache.ETag)
 	}
 }
 

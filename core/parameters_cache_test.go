@@ -70,7 +70,13 @@ func TestGetParametersForceFetchFromFirebase(t *testing.T) {
 	const fetchedBody = `{"version":{"versionNumber":"99"},"parameters":{"flag":{"defaultValue":{"value":"new"}}}}`
 	client := firebase.NewServiceWithHTTPClient(&http.Client{
 		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "listVersions") {
+				return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"99"}]}`, ""), nil
+			}
 			if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "/remoteConfig") && !strings.Contains(req.URL.Path, "listVersions") {
+				if got := req.URL.Query().Get("versionNumber"); got != "99" {
+					t.Fatalf("versionNumber query = %q, want 99", got)
+				}
 				return jsonResponse(http.StatusOK, fetchedBody, `"etag-new"`), nil
 			}
 			return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
@@ -93,6 +99,9 @@ func TestGetParametersForceFetchFromFirebase(t *testing.T) {
 	}
 	if loaded.ETag != `"etag-new"` {
 		t.Fatalf("persisted etag = %q, want %q", loaded.ETag, `"etag-new"`)
+	}
+	if _, err := config.LoadParametersCacheVersion("demo", "1"); err != nil {
+		t.Fatalf("old version not preserved: %v", err)
 	}
 }
 
@@ -122,6 +131,77 @@ func TestRevalidateParametersRefreshesVerifiedCache(t *testing.T) {
 	}
 	if !cache.CachedAt.After(before.CachedAt) {
 		t.Fatalf("CachedAt not refreshed: before=%v after=%v", before.CachedAt, cache.CachedAt)
+	}
+}
+
+func TestRevalidateParametersUsesCachedLatestVersion(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	saveStaleParametersCache(t, "demo", "5")
+	cache := &config.ParametersCache{
+		ETag:         "etag-6",
+		CachedAt:     time.Now().UTC().Add(-20 * time.Minute),
+		RemoteConfig: remoteConfigRaw("6", map[string]string{"flag": "cached-latest"}),
+	}
+	if err := config.SaveParametersCache("demo", cache); err != nil {
+		t.Fatalf("SaveParametersCache latest = %v", err)
+	}
+
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "listVersions") {
+				return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"6"}]}`, ""), nil
+			}
+			return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	loaded, source, err := svc.RevalidateParameters(context.Background(), "demo")
+	if err != nil {
+		t.Fatalf("RevalidateParameters = %v", err)
+	}
+	if source != "cache-verified" {
+		t.Fatalf("source = %q, want cache-verified", source)
+	}
+	assertRemoteConfigVersion(t, loaded.RemoteConfig, "6")
+}
+
+func TestRevalidateParametersFetchesUncachedLatestVersion(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	saveStaleParametersCache(t, "demo", "5")
+
+	const fetchedBody = `{"version":{"versionNumber":"6"},"parameters":{"flag":{"defaultValue":{"value":"new"}}}}`
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "listVersions") {
+				return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"6"}]}`, ""), nil
+			}
+			if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "/remoteConfig") && !strings.Contains(req.URL.Path, "listVersions") {
+				if got := req.URL.Query().Get("versionNumber"); got != "6" {
+					t.Fatalf("versionNumber query = %q, want 6", got)
+				}
+				return jsonResponse(http.StatusOK, fetchedBody, `"etag-6"`), nil
+			}
+			return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	loaded, source, err := svc.RevalidateParameters(context.Background(), "demo")
+	if err != nil {
+		t.Fatalf("RevalidateParameters = %v", err)
+	}
+	if source != "firebase" {
+		t.Fatalf("source = %q, want firebase", source)
+	}
+	assertRemoteConfigVersion(t, loaded.RemoteConfig, "6")
+	if _, err := config.LoadParametersCacheVersion("demo", "5"); err != nil {
+		t.Fatalf("old version not preserved: %v", err)
+	}
+	if _, err := config.LoadParametersCacheVersion("demo", "6"); err != nil {
+		t.Fatalf("new version not cached: %v", err)
 	}
 }
 

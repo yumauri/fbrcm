@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -49,53 +50,64 @@ func sortCacheEntries(entries []cacheEntry) {
 			}
 			return 1
 		}
+		if !left.Draft {
+			if cmp := compareVersionsDesc(left.Version, right.Version); cmp != 0 {
+				return cmp
+			}
+		}
 		return strfold.Compare(left.ProjectID, right.ProjectID)
 	})
 }
 
 func loadParametersCacheEntries(projectNames map[string]string) ([]cacheEntry, error) {
-	dir := config.GetParametersCacheDirPath()
-	files, err := os.ReadDir(dir)
+	snapshots, err := config.ListParametersCacheSnapshots()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return []cacheEntry{}, nil
-		}
-		return nil, fmt.Errorf("read cache dir: %w", err)
+		return nil, err
 	}
 
-	entries := make([]cacheEntry, 0, len(files))
-	for _, file := range files {
-		if file.IsDir() || filepath.Ext(file.Name()) != ".json" {
-			continue
-		}
-
-		projectID := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		path := filepath.Join(dir, file.Name())
-		info, err := file.Info()
-		if err != nil {
-			return nil, fmt.Errorf("stat cache file %s: %w", path, err)
-		}
-
-		cache, err := config.LoadParametersCache(projectID)
-		if err != nil {
-			return nil, err
-		}
-
-		version := ""
-		if remoteConfig, err := firebase.ParseRemoteConfig(cache.RemoteConfig); err == nil {
+	entries := make([]cacheEntry, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		version := snapshot.Version
+		if remoteConfig, err := firebase.ParseRemoteConfig(snapshot.Cache.RemoteConfig); err == nil {
 			version = remoteConfig.Version.VersionNumber
 		}
-		cachedAt := cache.CachedAt
+		cachedAt := snapshot.Cache.CachedAt
 		entries = append(entries, cacheEntry{
-			ProjectID: projectID,
-			Project:   projectNames[projectID],
+			ProjectID: snapshot.ProjectID,
+			Project:   projectNames[snapshot.ProjectID],
 			Version:   version,
 			CachedAt:  &cachedAt,
-			Size:      info.Size(),
-			Path:      path,
+			Size:      snapshot.Size,
+			Path:      snapshot.Path,
 		})
 	}
 	return entries, nil
+}
+
+func compareVersionsDesc(left, right string) int {
+	leftN, leftOK := parseCacheVersion(left)
+	rightN, rightOK := parseCacheVersion(right)
+	if leftOK && rightOK && leftN != rightN {
+		if leftN > rightN {
+			return -1
+		}
+		return 1
+	}
+	if leftOK != rightOK {
+		if leftOK {
+			return -1
+		}
+		return 1
+	}
+	return strfold.Compare(right, left)
+}
+
+func parseCacheVersion(version string) (int64, bool) {
+	n, err := strconv.ParseInt(strings.TrimSpace(version), 10, 64)
+	if err != nil || n <= 0 {
+		return 0, false
+	}
+	return n, true
 }
 
 func loadDraftEntries(projectNames map[string]string) ([]cacheEntry, error) {

@@ -70,14 +70,23 @@ func ParseRemoteConfig(raw json.RawMessage) (*RemoteConfig, error) {
 	return &cfg, nil
 }
 
-func (s *Service) GetRemoteConfig(ctx context.Context, projectID string) (json.RawMessage, string, error) {
+func (s *Service) GetRemoteConfig(ctx context.Context, projectID string, versionNumber ...string) (json.RawMessage, string, error) {
 	logger := corelog.For("firebase")
-	logger.Info("get remote config", "project_id", projectID)
+	version := ""
+	if len(versionNumber) > 0 {
+		version = strings.TrimSpace(versionNumber[0])
+	}
+	logger.Info("get remote config", "project_id", projectID, "version", version)
+
+	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig", projectID)
+	if version != "" {
+		endpoint += "?" + url.Values{"versionNumber": []string{version}}.Encode()
+	}
 
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig", projectID),
+		endpoint,
 		nil,
 	)
 	if err != nil {

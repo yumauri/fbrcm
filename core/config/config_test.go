@@ -238,7 +238,22 @@ func TestLoadParametersCacheMissingCorruptAndRoundTrip(t *testing.T) {
 	if err := SaveParametersCache("demo", cache); err != nil {
 		t.Fatalf("SaveParametersCache returned error: %v", err)
 	}
-	assertFileMode(t, path, PrivateFileMode)
+	versionPath := GetParametersCacheVersionPath("demo", "1")
+	assertFileMode(t, versionPath, PrivateFileMode)
+	info, err := os.Lstat(path)
+	if err != nil {
+		t.Fatalf("lstat current pointer: %v", err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("current cache path is not a symlink: mode=%s", info.Mode())
+	}
+	target, err := os.Readlink(path)
+	if err != nil {
+		t.Fatalf("readlink current pointer: %v", err)
+	}
+	if target != filepath.Base(versionPath) {
+		t.Fatalf("pointer target = %q, want %q", target, filepath.Base(versionPath))
+	}
 
 	loaded, err := LoadParametersCache("demo")
 	if err != nil {
@@ -246,6 +261,114 @@ func TestLoadParametersCacheMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 	if loaded.ETag != "etag-1" {
 		t.Fatalf("etag = %q, want etag-1", loaded.ETag)
+	}
+}
+
+func TestParametersCacheVersionsArePreservedAndLatestWins(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	if err := SaveParametersCache("demo", &ParametersCache{
+		ETag:         "etag-2",
+		CachedAt:     time.Now().UTC(),
+		RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"2"}}`),
+	}); err != nil {
+		t.Fatalf("SaveParametersCache v2 = %v", err)
+	}
+	if err := SaveParametersCache("demo", &ParametersCache{
+		ETag:         "etag-10",
+		CachedAt:     time.Now().UTC(),
+		RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"10"}}`),
+	}); err != nil {
+		t.Fatalf("SaveParametersCache v10 = %v", err)
+	}
+
+	if _, err := os.Stat(GetParametersCacheVersionPath("demo", "2")); err != nil {
+		t.Fatalf("v2 snapshot missing: %v", err)
+	}
+	loaded, err := LoadParametersCache("demo")
+	if err != nil {
+		t.Fatalf("LoadParametersCache = %v", err)
+	}
+	if loaded.ETag != "etag-10" {
+		t.Fatalf("loaded etag = %q, want etag-10", loaded.ETag)
+	}
+}
+
+func TestLoadParametersCacheLegacyFile(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+
+	writeFile(t, GetParametersCachePath("demo"), `{"etag":"legacy","cached_at":"2026-06-21T12:00:00Z","remote_config":{"version":{"versionNumber":"1"}}}`, PrivateFileMode)
+	loaded, err := LoadParametersCache("demo")
+	if err != nil {
+		t.Fatalf("LoadParametersCache legacy = %v", err)
+	}
+	if loaded.ETag != "legacy" {
+		t.Fatalf("legacy etag = %q", loaded.ETag)
+	}
+}
+
+func TestListParametersCacheSnapshotsSkipsPointer(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+	if err := SaveParametersCache("demo", &ParametersCache{
+		ETag:         "etag-1",
+		CachedAt:     time.Now().UTC(),
+		RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"1"}}`),
+	}); err != nil {
+		t.Fatalf("SaveParametersCache = %v", err)
+	}
+
+	snapshots, err := ListParametersCacheSnapshots()
+	if err != nil {
+		t.Fatalf("ListParametersCacheSnapshots = %v", err)
+	}
+	if len(snapshots) != 1 {
+		t.Fatalf("snapshot count = %d, want 1: %+v", len(snapshots), snapshots)
+	}
+	if snapshots[0].ProjectID != "demo" || snapshots[0].Version != "1" {
+		t.Fatalf("snapshot = %+v, want demo v1", snapshots[0])
+	}
+}
+
+func TestSaveParametersCachePointerCopyFallback(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+	original := createParametersCacheSymlink
+	createParametersCacheSymlink = func(string, string) error {
+		return errors.New("no symlink")
+	}
+	t.Cleanup(func() { createParametersCacheSymlink = original })
+
+	if err := SaveParametersCache("demo", &ParametersCache{
+		ETag:         "etag-1",
+		CachedAt:     time.Now().UTC(),
+		RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"1"}}`),
+	}); err != nil {
+		t.Fatalf("SaveParametersCache = %v", err)
+	}
+	info, err := os.Lstat(GetParametersCachePath("demo"))
+	if err != nil {
+		t.Fatalf("lstat pointer copy: %v", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		t.Fatalf("pointer fallback is symlink, want regular file")
+	}
+	loaded, err := LoadParametersCache("demo")
+	if err != nil {
+		t.Fatalf("LoadParametersCache fallback = %v", err)
+	}
+	if loaded.ETag != "etag-1" {
+		t.Fatalf("fallback etag = %q", loaded.ETag)
 	}
 }
 
