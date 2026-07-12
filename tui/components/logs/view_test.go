@@ -11,7 +11,7 @@ import (
 
 func TestRenderLogsPanelEmpty(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	got := testutil.NormalizeViewSnapshot(renderLogsPanel(nil, 60, 5, true, charmlog.InfoLevel, true, false))
+	got := testutil.NormalizeViewSnapshot(renderLogsPanel(nil, 60, 5, true, true, charmlog.InfoLevel, true, false))
 	if !strings.Contains(got, "Logs") || !strings.Contains(got, "live") {
 		t.Fatalf("panel = %q", got)
 	}
@@ -20,7 +20,7 @@ func TestRenderLogsPanelEmpty(t *testing.T) {
 func TestRenderLogsPanelWithBody(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	body := []string{"line one", "line two"}
-	got := testutil.NormalizeViewSnapshot(renderLogsPanel(body, 50, 4, false, charmlog.DebugLevel, false, false))
+	got := testutil.NormalizeViewSnapshot(renderLogsPanel(body, 50, 4, false, false, charmlog.DebugLevel, false, false))
 	if !strings.Contains(got, "line one") || !strings.Contains(got, "scroll") {
 		t.Fatalf("panel = %q", got)
 	}

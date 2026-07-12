@@ -9,21 +9,25 @@ import (
 )
 
 func (m Model) View() string {
+	return m.ViewWithBorder(m.active)
+}
+
+func (m Model) ViewWithBorder(borderActive bool) string {
 	if m.width <= 0 || m.height <= 0 {
 		return ""
 	}
 
 	body := strings.Split(m.viewport.View(), "\n")
-	return renderPanel(body, m.width, m.height, m.active, m.Invalid(), m.scrollbar())
+	return renderPanel(body, m.width, m.height, m.active, borderActive, m.Invalid(), m.scrollbar())
 }
 
-func renderPanel(body []string, width, height int, active, invalid bool, scrollbar scrollbarState) string {
+func renderPanel(body []string, width, height int, active, borderActive, invalid bool, scrollbar scrollbarState) string {
 	if width <= 1 || height <= 1 {
 		return ""
 	}
 
-	borderStyle := styles.BorderStyle(active)
-	if invalid {
+	borderStyle := styles.BorderStyle(borderActive)
+	if invalid && borderActive {
 		borderStyle = lipgloss.NewStyle().Foreground(styles.PaletteError)
 	}
 

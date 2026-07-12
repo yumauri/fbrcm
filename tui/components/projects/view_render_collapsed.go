@@ -27,15 +27,19 @@ type secondaryTitleState struct {
 	style lipgloss.Style
 }
 
-func renderCollapsedPanel(height int, active bool) string {
+func renderCollapsedPanel(height int, active, borderActive bool) string {
 	if height <= 0 {
 		return ""
 	}
 
-	borderStyle := styles.BorderStyle(active)
+	borderStyle := styles.BorderStyle(borderActive)
 	titleStyle := collapsedTitleStyle(active)
 	railStyle := collapsedRailStyle(active)
 	capStyle := collapsedCapStyle(active)
+	if active && !borderActive {
+		railStyle = borderStyle
+		capStyle = borderStyle
+	}
 
 	lines := make([]string, 0, height)
 	lines = append(lines, borderStyle.Render("─╮"))

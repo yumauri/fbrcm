@@ -9,12 +9,12 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-func renderPanel(body string, width, height int, active bool, scrollbar scrollbarState, secondary secondaryTitleState, footer []string) string {
+func renderPanel(body string, width, height int, active, borderActive bool, scrollbar scrollbarState, secondary secondaryTitleState, footer []string) string {
 	if width <= 0 || height <= 0 {
 		return ""
 	}
 
-	borderStyle := styles.BorderStyle(active)
+	borderStyle := styles.BorderStyle(borderActive)
 	innerWidth := max(width-1, 0)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)

@@ -17,10 +17,20 @@ func Load() (State, error) {
 		}
 		cfg = &coreconfig.AppConfig{}
 	}
+	changed := false
+	if cfg.PowerlineGlyphs == nil {
+		enabled := true
+		cfg.PowerlineGlyphs = &enabled
+		changed = true
+	}
+	powerlineGlyphs = *cfg.PowerlineGlyphs
 	merged := merge(DefaultKeyMap(), cfg.Keys)
 	nextConfig := toConfigMap(merged)
 	if !reflect.DeepEqual(cfg.Keys, nextConfig) {
 		cfg.Keys = nextConfig
+		changed = true
+	}
+	if changed {
 		if err := coreconfig.SaveAppConfig(cfg); err != nil {
 			return State{}, err
 		}
@@ -29,6 +39,10 @@ func Load() (State, error) {
 	logConflicts(active)
 	return Current(), nil
 }
+
+// PowerlineGlyphsEnabled reports whether private-use Powerline separators
+// should be used instead of standard Unicode triangle fallbacks.
+func PowerlineGlyphsEnabled() bool { return powerlineGlyphs }
 
 func merge(defaults KeyMap, configured map[string]map[string][]string) KeyMap {
 	out := Clone(defaults)

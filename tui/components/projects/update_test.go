@@ -41,6 +41,9 @@ func TestProjectsKeyMovementAndSelection(t *testing.T) {
 	if active.Panel != panels.Parameters {
 		t.Fatalf("active panel = %v, want Parameters", active.Panel)
 	}
+	if !active.ResetParametersTab {
+		t.Fatal("Enter selection did not request the Parameters tab")
+	}
 }
 
 func TestProjectsUpdateIgnoredWhileLoading(t *testing.T) {
@@ -54,6 +57,24 @@ func TestProjectsUpdateIgnoredWhileLoading(t *testing.T) {
 	}
 	if !next.loading {
 		t.Fatalf("loading changed to false")
+	}
+}
+
+func TestProjectsMarkChangesSelectionWithoutChangingPanel(t *testing.T) {
+	m := loadedProjectsModel()
+	_, cmd := m.Update(keyPress(tea.KeySpace))
+	if cmd == nil {
+		t.Fatal("mark selection command is nil")
+	}
+	msgs := runBatch(t, cmd)
+	selection := findMsg[messages.ProjectsSelectionChangedMsg](msgs)
+	if len(selection.Projects) != 1 || selection.Projects[0].ProjectID != "alpha" {
+		t.Fatalf("marked projects = %+v, want alpha", selection.Projects)
+	}
+	for _, msg := range msgs {
+		if _, ok := msg.(messages.SetActivePanelMsg); ok {
+			t.Fatal("Space multiselect unexpectedly requested a panel change")
+		}
 	}
 }
 
@@ -85,6 +106,9 @@ func TestProjectsFilterApplySelectsCurrentAndReleasesKeyboard(t *testing.T) {
 	active := findMsg[messages.SetActivePanelMsg](msgs)
 	if active.Panel != panels.Parameters {
 		t.Fatalf("active panel = %v, want Parameters", active.Panel)
+	}
+	if !active.ResetParametersTab {
+		t.Fatal("filtered Enter selection did not request the Parameters tab")
 	}
 }
 

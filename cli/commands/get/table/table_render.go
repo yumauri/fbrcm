@@ -137,7 +137,7 @@ func renderTreeChrome(value string, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return value
 	}
-	return applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDim), rowBG).Render(value)
+	return applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDark), rowBG).Render(value)
 }
 
 func renderDefaultLabel(label string, rowBG color.Color) string {

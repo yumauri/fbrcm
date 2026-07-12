@@ -49,28 +49,35 @@ func (m *Model) applyLayout() {
 func (m Model) nextTabPanel() panels.ID {
 	if m.active == panels.Logs {
 		if m.detailsVisible {
-			if m.prevTop == panels.Details || m.prevTop == panels.Parameters {
+			if m.prevTop == panels.Details || m.prevTop == panels.Parameters || m.prevTop == panels.History {
 				return m.prevTop
 			}
-			return panels.Parameters
+			return m.selectedParametersTab()
 		}
 		return m.prevTop
 	}
 
 	if m.detailsVisible {
 		if m.active == panels.Details {
-			return panels.Parameters
+			return m.selectedParametersTab()
 		}
 		if m.active == panels.Parameters {
 			return panels.Details
 		}
-		return panels.Parameters
+		return m.selectedParametersTab()
 	}
 
-	if m.active == panels.Parameters {
+	if m.active == panels.Parameters || m.active == panels.History {
 		return panels.Projects
 	}
 
+	return m.selectedParametersTab()
+}
+
+func (m Model) selectedParametersTab() panels.ID {
+	if m.parametersTab == panels.History {
+		return panels.History
+	}
 	return panels.Parameters
 }
 
@@ -79,11 +86,15 @@ func (m *Model) setActive(panel panels.ID) {
 		m.prevTop = panel
 	}
 	m.active = panel
+	if panel == panels.Parameters || panel == panels.History {
+		m.parametersTab = panel
+		m.parameters = m.parameters.SetHistory(panel == panels.History)
+	}
 	if m.capture != panels.None && m.capture != panel {
 		m.capture = panels.None
 	}
 	m.projects = m.projects.SetActive(panel == panels.Projects)
-	m.parameters = m.parameters.SetActive(panel == panels.Parameters)
+	m.parameters = m.parameters.SetActive(panel == panels.Parameters || panel == panels.History)
 	m.details = m.details.SetActive(panel == panels.Details)
 	m.details = m.details.SetBridgeActive(panel == panels.Parameters)
 	m.logs = m.logs.SetActive(panel == panels.Logs)
@@ -106,6 +117,9 @@ func (m Model) panelAt(x, y int) (panels.ID, bool) {
 	if y < layout.topHeight {
 		if x < layout.leftWidth {
 			return panels.Projects, true
+		}
+		if m.selectedParametersTab() == panels.History {
+			return panels.History, true
 		}
 		return panels.Parameters, true
 	}

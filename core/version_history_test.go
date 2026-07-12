@@ -104,6 +104,45 @@ func TestGetRemoteConfigRelativeFirebaseVersion(t *testing.T) {
 	}
 }
 
+func TestGetRemoteConfigVersionPairSharesFirebaseHistoryRequest(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	current := &config.ParametersCache{ETag: "etag-10", CachedAt: time.Now().UTC(), RemoteConfig: []byte(`{"version":{"versionNumber":"10"}}`)}
+	if err := config.SaveParametersCache("demo", current); err != nil {
+		t.Fatal(err)
+	}
+
+	listRequests := 0
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "listVersions") {
+			listRequests++
+			if req.URL.Query().Get("pageSize") != "2" {
+				t.Fatalf("pageSize = %q, want 2", req.URL.Query().Get("pageSize"))
+			}
+			return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"10"},{"versionNumber":"9"}]}`, ""), nil
+		}
+		if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "/remoteConfig") {
+			if got := req.URL.Query().Get("versionNumber"); got != "9" {
+				t.Fatalf("versionNumber = %q, want 9", got)
+			}
+			return jsonResponse(http.StatusOK, `{"version":{"versionNumber":"9"}}`, `"etag-9"`), nil
+		}
+		return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	from, to, err := svc.GetRemoteConfigVersionPair(context.Background(), "demo", "previous", "current", false)
+	if err != nil {
+		t.Fatalf("GetRemoteConfigVersionPair = %v", err)
+	}
+	if from.Version.VersionNumber != "9" || to.Version.VersionNumber != "10" {
+		t.Fatalf("pair = %s -> %s, want 9 -> 10", from.Version.VersionNumber, to.Version.VersionNumber)
+	}
+	if listRequests != 1 {
+		t.Fatalf("list requests = %d, want 1", listRequests)
+	}
+}
+
 func TestParseRelativeVersionSelectorRejectsInvalidDistance(t *testing.T) {
 	for _, selector := range []string{"current~0", "latest~-1", "current~x", "current~300", "42~1"} {
 		if _, _, _, err := parseRelativeVersionSelector(selector); err == nil {

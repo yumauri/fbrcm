@@ -75,14 +75,19 @@ func (m *Model) contentLines() []string {
 }
 
 func (m Model) View(active bool) string {
+	return m.ViewWithBorder(active, active)
+}
+
+func (m Model) ViewWithBorder(active, borderActive bool) string {
 	if m.collapsed {
-		return renderCollapsedPanel(m.height, active)
+		return renderCollapsedPanel(m.height, active, borderActive)
 	}
 	return renderPanel(
 		m.viewport.View(),
 		m.width,
 		m.height,
 		active,
+		borderActive,
 		m.scrollbar(),
 		m.secondaryTitle(),
 		m.filter.View(m.width, active, len(m.projects)),

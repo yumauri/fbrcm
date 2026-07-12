@@ -37,6 +37,40 @@ type ParametersLoadedMsg struct {
 	StaleDraft             bool
 }
 
+type HistoryLoadedMsg struct {
+	Project                             core.Project
+	PreviousTree, CurrentTree           *core.ParametersTree
+	PreviousVersion, CurrentVersion     string
+	PreviousPublished, CurrentPublished string
+	Versions                            []core.RemoteConfigVersionEntry
+	Err                                 error
+}
+
+type HistoryRollbackRequestedMsg struct {
+	Project                 core.Project
+	Target                  core.RemoteConfigVersionEntry
+	PickerLeft              bool
+	LeftCursor, RightCursor int
+}
+
+type HistoryRollbackPreviewLoadedMsg struct {
+	Project         core.Project
+	Target, Current *core.ResolvedRemoteConfigVersion
+	Diff            string
+	Changed         bool
+	Err             error
+}
+
+type HistoryRollbackConfirmedMsg struct{}
+type HistoryRollbackCanceledMsg struct{}
+
+type HistoryRollbackCompletedMsg struct {
+	Project core.Project
+	Result  core.VersionPublishResult
+	Tree    *core.ParametersTree
+	Err     error
+}
+
 type ParameterViewData struct {
 	Project          core.Project
 	GroupKey         string
@@ -63,7 +97,8 @@ type KeyboardCaptureMsg struct {
 }
 
 type SetActivePanelMsg struct {
-	Panel panels.ID
+	Panel              panels.ID
+	ResetParametersTab bool
 }
 
 type LogLineMsg struct {

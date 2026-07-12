@@ -49,32 +49,57 @@ func (m Model) mouseMode() tea.MouseMode {
 }
 
 func (m Model) baseView() string {
+	popupOpen := m.popupWindowOpen()
+	projectsActive := m.active == panels.Projects
+	parametersActive := m.active == panels.Parameters || m.active == panels.History
+	logsActive := m.active == panels.Logs
 	topRow := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		m.projects.View(m.active == panels.Projects),
-		m.parameters.View(m.active == panels.Parameters),
+		m.projects.ViewWithBorder(projectsActive, projectsActive && !popupOpen),
+		m.parameters.ViewWithBorder(parametersActive, parametersActive && !popupOpen),
 	)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		topRow,
-		m.logs.View(m.active == panels.Logs),
+		m.logs.ViewWithBorder(logsActive, logsActive && !popupOpen),
 		m.helpView(),
 	)
+}
+
+func (m Model) popupWindowOpen() bool {
+	return m.parameters.HistoryPickerOpen() ||
+		m.details.DropdownOpen() ||
+		m.dialog.IsOpen() ||
+		m.boolPicker.IsOpen() ||
+		m.jsonInput.IsOpen() ||
+		m.numberInput.IsOpen() ||
+		m.stringInput.IsOpen() ||
+		m.moveParam.IsOpen() ||
+		m.renameInput.IsOpen()
 }
 
 func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers := []*lipgloss.Layer{lipgloss.NewLayer(body).ID("base")}
 	layers = m.appendDetailsLayers(layers)
+	layers = m.appendHistoryPickerLayer(layers)
 	layers = m.appendInputLayers(layers)
 	layers = m.appendDialogLayers(layers)
 	layers = m.appendOfflineLayer(layers)
 	return layers
 }
 
+func (m Model) appendHistoryPickerLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.parameters.HistoryPickerOpen() {
+		return layers
+	}
+	x, y := m.parameters.HistoryPickerPosition()
+	return append(layers, lipgloss.NewLayer(m.parameters.HistoryPickerView()).ID("history-version-picker").X(x).Y(y).Z(4))
+}
+
 func (m Model) appendDetailsLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if m.detailsVisible {
-		layers = append(layers, lipgloss.NewLayer(m.details.View()).ID("details").X(m.detailsX()).Y(0).Z(1))
+		layers = append(layers, lipgloss.NewLayer(m.detailsPanelView()).ID("details").X(m.detailsX()).Y(0).Z(1))
 		if m.details.DropdownOpen() {
 			x, y := m.details.DropdownCurrentPosition()
 			layers = append(layers, lipgloss.NewLayer(m.details.DropdownCurrentView()).ID("details-dropdown-current").X(x).Y(y).Z(2))
@@ -83,6 +108,10 @@ func (m Model) appendDetailsLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 		}
 	}
 	return layers
+}
+
+func (m Model) detailsPanelView() string {
+	return m.details.ViewWithBorder(m.active == panels.Details && !m.popupWindowOpen())
 }
 
 func (m Model) appendInputLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {

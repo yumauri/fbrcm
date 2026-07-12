@@ -4,9 +4,11 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
+	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/components/jsoninput"
@@ -15,24 +17,43 @@ import (
 )
 
 func (m Model) renderNode(node visibleNode, selected bool) string {
+	var line string
 	switch node.kind {
 	case nodeProject:
-		return m.renderProjectNode(node, selected, false)
+		line = m.renderProjectNode(node, selected, false)
 	case nodeGroup:
-		return m.renderGroupNode(node, selected, false)
+		line = m.renderGroupNode(node, selected, false)
 	case nodeParameter:
-		return m.renderParameterNode(node, selected)
+		line = m.renderParameterNode(node, selected)
 	case nodeValue:
-		return m.renderValueNode(node, selected)
+		line = m.renderValueNode(node, selected)
 	default:
 		return ""
 	}
+	if m.history && !m.historyStacked() && (node.kind != nodeParameter || !node.expanded) {
+		return m.renderHistoryGridLine(line, selected, node.kind)
+	}
+	return line
 }
 
 func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	width := max(m.width-2, 0)
 	layout := m.parameterRenderLayout()
 	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
+	if m.history {
+		previous, current, kind := m.historyParameterPair(node.projectID, node.groupKey, node.paramKey)
+		if current != nil {
+			param = current
+		} else {
+			param = previous
+		}
+		if param != nil {
+			if node.expanded {
+				return m.renderHistoryExpandedParameterNode(param, current, kind, selected)
+			}
+			return m.renderHistoryParameterNode(node, param, previous, current, kind, selected)
+		}
+	}
 	if param == nil {
 		return strings.Repeat(" ", width)
 	}
@@ -120,7 +141,151 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	return viewutil.PadRight(line, width)
 }
 
+func (m Model) renderHistoryExpandedParameterNode(param, current *core.ParametersEntry, kind rcdiff.ChangeKind, selected bool) string {
+	width := m.viewportWidth()
+	nameStyle := parameterStyle
+	if background := historyChangeBackground(kind); background != nil {
+		nameStyle = nameStyle.Background(background)
+	}
+	if selected {
+		nameStyle = parameterSelectionStyle()
+	}
+	if isDeprecatedDescription(param.Description) {
+		nameStyle = nameStyle.Strikethrough(true).Faint(true)
+	}
+	prefix := "  "
+	if selected {
+		prefix = parameterSelectionStyle().Render(prefix)
+	}
+	line := prefix + m.renderHighlightedParameterKey(param.Key, nameStyle, selected)
+	description := param.Description
+	if current != nil {
+		description = current.Description
+	}
+	if description != "" {
+		descStyle := descriptionStyle
+		if selected {
+			if styles.NoColorEnabled() {
+				descStyle = lipgloss.NewStyle().Reverse(true).Italic(true)
+			} else {
+				descStyle = descStyle.Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
+			}
+			line += parameterSelectionStyle().Render("  ")
+		} else {
+			line += "  "
+		}
+		line += descStyle.Render(description)
+	}
+	if selected {
+		return fillSelectedLine(line, width, parameterSelectionStyle())
+	}
+	return viewutil.PadRight(line, width)
+}
+
+func (m Model) renderHistoryParameterNode(node visibleNode, param, previous, current *core.ParametersEntry, kind rcdiff.ChangeKind, selected bool) string {
+	width := max(m.width-2, 0)
+	layout := m.parameterRenderLayout()
+	nameWidth := layout.nameWidth
+	columns := m.historyColumnLayout()
+	nameStyle := parameterStyle
+	if background := historyChangeBackground(kind); background != nil {
+		nameStyle = nameStyle.Background(background)
+	}
+	if selected {
+		nameStyle = parameterSelectionStyle()
+	}
+	if isDeprecatedDescription(param.Description) {
+		nameStyle = nameStyle.Strikethrough(true).Faint(true)
+	}
+	name := viewutil.PadRight(m.renderHighlightedParameterKey(param.Key, nameStyle, selected), nameWidth)
+	leftIcon, rightIcon := "", ""
+	if previous != nil {
+		leftIcon = historyParameterIcon(previous)
+	}
+	if current != nil {
+		rightIcon = historyParameterIcon(current)
+	}
+	leftPrefix, rightPrefix := leftIcon, rightIcon
+	if leftPrefix != "" {
+		leftPrefix += " "
+	}
+	if rightPrefix != "" {
+		rightPrefix += " "
+	}
+	if selected {
+		leftPlain := historyValueText(previous, max(columns.leftWidth-lipgloss.Width(leftPrefix), 0))
+		rightPlain := historyValueText(current, max(columns.rightWidth-lipgloss.Width(rightPrefix), 0))
+		left, right := leftPrefix+leftPlain, rightPrefix+rightPlain
+		plainPrefix := viewutil.PadRight("  "+viewutil.PadRight(param.Key, nameWidth), columns.leftBorder)
+		plain := plainPrefix + " " + viewutil.PadRight(left, columns.leftWidth) + " " + right
+		return parameterSelectionStyle().Render(viewutil.PadRight(plain, width))
+	}
+	prefix := viewutil.PadRight("  "+name, columns.leftBorder)
+	leftValue := m.renderHistoryParameterValues(node, previous, false, max(columns.leftWidth-lipgloss.Width(leftPrefix), 0))
+	rightValue := m.renderHistoryParameterValues(node, current, false, max(columns.rightWidth-lipgloss.Width(rightPrefix), 0))
+	leftCell, rightCell := "", ""
+	if leftIcon != "" {
+		leftCell = iconStyle.Render(leftIcon) + " "
+	}
+	if rightIcon != "" {
+		rightCell = iconStyle.Render(rightIcon) + " "
+	}
+	leftCell += leftValue
+	rightCell += rightValue
+	line := prefix + " " + viewutil.PadRight(leftCell, columns.leftWidth) + " " + rightCell
+	return viewutil.PadRight(line, width)
+}
+
+func (m Model) renderHistoryParameterValues(node visibleNode, param *core.ParametersEntry, selected bool, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	if param == nil {
+		return ""
+	}
+	parts := make([]string, 0, max(1, len(param.Values)*2-1))
+	remaining := width
+	for i := range param.Values {
+		if i > 0 {
+			if remaining <= 3 {
+				break
+			}
+			parts = append(parts, parameterSeparatorStyle.Render(" / "))
+			remaining -= 3
+		}
+		kind := m.historyValueKind(node.projectID, node.groupKey, node.paramKey, param.Values[i].Label)
+		rendered := m.renderHistoryTypedValue(&param.Values[i], kind, selected, remaining)
+		parts = append(parts, rendered)
+		remaining -= lipgloss.Width(rendered)
+		if remaining <= 0 {
+			break
+		}
+	}
+	if len(parts) == 0 {
+		return "—"
+	}
+	return strings.Join(parts, "")
+}
+
+func (m Model) renderHistoryTypedValue(value *core.ParametersValue, kind rcdiff.ChangeKind, selected bool, width int) string {
+	if value == nil || width <= 0 {
+		return ""
+	}
+	clipped := *value
+	clipped.Value = ansi.Truncate(clipped.Value, width, "")
+	rendered := m.renderParameterValueWithBase(clipped, selected)
+	if !selected {
+		if background := historyChangeBackground(kind); background != nil {
+			rendered = lipgloss.NewStyle().Background(background).Render(rendered)
+		}
+	}
+	return rendered
+}
+
 func (m Model) renderValueNode(node visibleNode, selected bool) string {
+	if m.history {
+		return m.renderHistoryValueNode(node, selected)
+	}
 	width := max(m.width-2, 0)
 	layout := m.parameterRenderLayout()
 	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
@@ -160,6 +325,49 @@ func (m Model) renderValueNode(node visibleNode, selected bool) string {
 	filler := strings.Repeat("╌", fillerWidth)
 	valueRendered := m.renderParameterValue(value, selected)
 	line := tree + " " + labelStyle.Render(label) + leafLineStyle.Render(" "+filler+" ") + valueRendered
+	return viewutil.PadRight(line, width)
+}
+
+func (m Model) renderHistoryValueNode(node visibleNode, selected bool) string {
+	width := max(m.width-2, 0)
+	columns := m.historyColumnLayout()
+	previous, current := m.historyValuePair(node.projectID, node.groupKey, node.paramKey, node.label)
+	kind := m.historyValueKind(node.projectID, node.groupKey, node.paramKey, node.label)
+	merged := m.historyMergedParameter(node.projectID, node.groupKey, node.paramKey)
+	conditionLabel := rcdisplay.FormatConditionLabel(node.label)
+	conditionWidth := parameterConditionWidth(merged)
+	connector := m.valueConnector(node, merged)
+	layout := m.parameterRenderLayout()
+	leafOffset := 1
+	if merged == nil || len(merged.Values) == 1 {
+		leafOffset = 2
+	}
+	leafOffset++
+	leafValueStart := layout.valueStart + leafOffset
+	labelStart := max(leafValueStart-conditionWidth-4, layout.paramStart+2)
+	tree := branchGlyph(layout.paramStart, labelStart, connector)
+	fillerWidth := max(leafValueStart-labelStart-lipgloss.Width(conditionLabel)-3, 1)
+	labelStyle := conditionDefaultStyle
+	if value := m.historyMergedValue(node.projectID, node.groupKey, node.paramKey, node.label); value != nil && value.Label != "default" {
+		labelStyle = m.conditionStyle(value.Color)
+	}
+	prefix := leafLineStyle.Render(tree) + " " + labelStyle.Render(conditionLabel) + leafLineStyle.Render(" "+strings.Repeat("╌", fillerWidth)+" ")
+	prefixWidth := lipgloss.Width(prefix)
+	leftPadding := max(prefixWidth-columns.leftStart, 0)
+	rightPrefix := ansi.Cut(prefix, columns.leftStart, prefixWidth)
+	if previous == nil {
+		prefix = ansi.Cut(prefix, 0, columns.leftStart) + strings.Repeat(" ", leftPadding)
+	}
+	if current == nil {
+		rightPrefix = strings.Repeat(" ", leftPadding)
+	}
+	leftAvailable := max(columns.leftWidth-leftPadding, 0)
+	rightAvailable := max(columns.rightWidth-leftPadding, 0)
+	left := m.renderHistoryTypedValue(previous, kind, selected, leftAvailable)
+	right := m.renderHistoryTypedValue(current, kind, selected, rightAvailable)
+	leftCell := left
+	rightCell := rightPrefix + right
+	line := prefix + viewutil.PadRight(leftCell, max(columns.leftWidth-leftPadding, 0)) + " " + rightCell
 	return viewutil.PadRight(line, width)
 }
 

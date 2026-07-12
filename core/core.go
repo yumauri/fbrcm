@@ -23,6 +23,8 @@ type Core struct {
 	firebaseMu sync.Mutex
 	// firebaseInit deduplicates concurrent client creation per auth id.
 	firebaseInit singleflight.Group
+	// versionHistory deduplicates concurrent version-pair reads per project and selectors.
+	versionHistory singleflight.Group
 }
 
 func NewService(ctx context.Context) (*Core, error) {

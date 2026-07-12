@@ -5,6 +5,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/core/rc/diff"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/rootgroup"
 )
@@ -14,6 +15,10 @@ func (m Model) buildVisible() []visibleNode {
 	query := m.filter.Value()
 	filtering := query != ""
 	for _, project := range m.projects {
+		tree := project.tree
+		if m.history {
+			tree = m.historyTree(project.project.ProjectID, tree)
+		}
 		nodes = append(nodes, visibleNode{
 			kind:      nodeProject,
 			projectID: project.project.ProjectID,
@@ -37,7 +42,7 @@ func (m Model) buildVisible() []visibleNode {
 			})
 			continue
 		}
-		if project.tree == nil || len(project.tree.Groups) == 0 {
+		if tree == nil || len(tree.Groups) == 0 {
 			if created := m.transientNew; created != nil && created.projectID == project.project.ProjectID {
 				nodes = appendTransientNewRootGroup(nodes, project.project.ProjectID, created)
 				continue
@@ -51,7 +56,7 @@ func (m Model) buildVisible() []visibleNode {
 		}
 
 		transientRootShown := false
-		for _, group := range project.tree.Groups {
+		for _, group := range tree.Groups {
 			if created := m.transientNew; created != nil &&
 				created.projectID == project.project.ProjectID &&
 				core.NormalizeRemoteConfigGroupKey(created.groupKey) == "" &&
@@ -164,7 +169,83 @@ func (m Model) buildVisible() []visibleNode {
 		}
 	}
 
+	if m.history && m.historyChangesOnly {
+		return m.historyChangesOnlyNodes(nodes)
+	}
 	return nodes
+}
+
+func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
+	changedParams := make(map[string]bool)
+	changedGroups := make(map[string]int)
+	changedProjects := make(map[string]bool)
+	statusProjects := make(map[string]bool)
+	for _, project := range m.projects {
+		// Project rows remain as navigation anchors even when the active filters
+		// remove every group and parameter beneath them. History version actions
+		// are scoped through the project at the cursor.
+		changedProjects[project.project.ProjectID] = true
+		state := m.histories[project.project.ProjectID]
+		if project.loading || project.verifying || project.err != nil || state.loading || state.err != nil {
+			statusProjects[project.project.ProjectID] = true
+		}
+	}
+	for _, node := range nodes {
+		if node.kind != nodeParameter || node.transient {
+			continue
+		}
+		if !isVisibleHistoryChange(m.histories[node.projectID].paramKinds[historyParamKey(node.groupKey, node.paramKey)]) {
+			continue
+		}
+		paramKey := historyVisibleParamKey(node.projectID, node.groupKey, node.paramKey)
+		groupKey := historyVisibleGroupKey(node.projectID, node.groupKey)
+		changedParams[paramKey] = true
+		changedGroups[groupKey]++
+		changedProjects[node.projectID] = true
+	}
+
+	out := make([]visibleNode, 0, len(nodes))
+	for _, node := range nodes {
+		switch node.kind {
+		case nodeProject:
+			if changedProjects[node.projectID] {
+				out = append(out, node)
+			}
+		case nodeGroup:
+			if count := changedGroups[historyVisibleGroupKey(node.projectID, node.groupKey)]; count > 0 {
+				node.summary = fmt.Sprintf("%d", count)
+				out = append(out, node)
+			}
+		case nodeParameter:
+			if changedParams[historyVisibleParamKey(node.projectID, node.groupKey, node.paramKey)] {
+				out = append(out, node)
+			}
+		case nodeValue:
+			if node.paramKey == "" {
+				if statusProjects[node.projectID] {
+					out = append(out, node)
+				}
+				continue
+			}
+			if changedParams[historyVisibleParamKey(node.projectID, node.groupKey, node.paramKey)] &&
+				isVisibleHistoryChange(m.historyValueKind(node.projectID, node.groupKey, node.paramKey, node.label)) {
+				out = append(out, node)
+			}
+		}
+	}
+	return out
+}
+
+func isVisibleHistoryChange(kind diff.ChangeKind) bool {
+	return kind == diff.ChangeAdded || kind == diff.ChangeRemoved || kind == diff.ChangeChanged
+}
+
+func historyVisibleGroupKey(projectID, groupKey string) string {
+	return projectID + "\x00" + groupKey
+}
+
+func historyVisibleParamKey(projectID, groupKey, paramKey string) string {
+	return projectID + "\x00" + groupKey + "\x00" + paramKey
 }
 
 func appendTransientNewRootGroup(nodes []visibleNode, projectID string, created *transientNewParameter) []visibleNode {

@@ -3,6 +3,16 @@ package app
 import tea "charm.land/bubbletea/v2"
 
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
+	if m.parameters.HistoryPickerOpen() {
+		switch msg.(type) {
+		case tea.KeyMsg:
+			var cmd tea.Cmd
+			m.parameters, cmd = m.parameters.Update(msg)
+			return m, cmd, true
+		case tea.MouseMsg:
+			return m, nil, true
+		}
+	}
 	if m.dialog.IsOpen() {
 		return m.updateDialog(msg)
 	}

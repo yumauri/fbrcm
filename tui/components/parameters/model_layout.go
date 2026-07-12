@@ -6,9 +6,17 @@ import (
 )
 
 func (m *Model) syncVisible() {
+	m.parameterNameWidth = m.computeMaxParameterNameWidth()
 	m.visible = m.buildVisible()
+	m.visibleParamCount = 0
+	for _, node := range m.visible {
+		if node.kind == nodeParameter {
+			m.visibleParamCount++
+		}
+	}
 	if len(m.visible) == 0 {
 		m.lineIndexByNode = nil
+		m.projectNodeFor, m.groupNodeFor = nil, nil
 		m.cursor, m.offset, m.totalLines = 0, 0, 0
 		return
 	}
@@ -19,8 +27,18 @@ func (m *Model) syncVisible() {
 
 func (m *Model) recomputeLineLayout() {
 	m.lineIndexByNode = make([]int, len(m.visible))
+	m.projectNodeFor = make([]int, len(m.visible))
+	m.groupNodeFor = make([]int, len(m.visible))
 	line := 0
+	projectIndex, groupIndex := -1, -1
 	for i := range m.visible {
+		if m.visible[i].kind == nodeProject {
+			projectIndex, groupIndex = i, -1
+		}
+		if m.visible[i].kind == nodeGroup {
+			groupIndex = i
+		}
+		m.projectNodeFor[i], m.groupNodeFor[i] = projectIndex, groupIndex
 		m.lineIndexByNode[i] = line
 		line += m.nodeBlockLineCount(i)
 	}
@@ -55,12 +73,17 @@ func (m Model) parameterRenderLayout() parameterRenderLayout {
 }
 
 func (m Model) maxParameterNameWidth() int {
+	return m.parameterNameWidth
+}
+
+func (m Model) computeMaxParameterNameWidth() int {
 	width := 0
 	for _, project := range m.projects {
-		if project.tree == nil {
+		tree := project.tree
+		if tree == nil {
 			continue
 		}
-		for _, group := range project.tree.Groups {
+		for _, group := range tree.Groups {
 			for _, param := range group.Parameters {
 				width = max(width, lipgloss.Width(param.Key))
 			}
@@ -72,13 +95,7 @@ func (m Model) maxParameterNameWidth() int {
 func (m Model) LongestParameterNameWidth() int { return m.maxParameterNameWidth() }
 
 func (m Model) filteredParameterCount() int {
-	count := 0
-	for _, node := range m.visible {
-		if node.kind == nodeParameter {
-			count++
-		}
-	}
-	return count
+	return m.visibleParamCount
 }
 
 func (m Model) CurrentProject() (core.Project, bool) { return m.currentProject() }

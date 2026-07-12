@@ -72,7 +72,8 @@ func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
 		t.Fatalf("LoadAppConfig corrupt = %v, want decode error", err)
 	}
 
-	cfg := &AppConfig{Profile: "work", Keys: map[string]map[string][]string{"global": {"quit": {"q"}}}}
+	disabled := false
+	cfg := &AppConfig{Profile: "work", PowerlineGlyphs: &disabled, Keys: map[string]map[string][]string{"global": {"quit": {"q"}}}}
 	if err := SaveAppConfig(cfg); err != nil {
 		t.Fatalf("SaveAppConfig returned error: %v", err)
 	}
@@ -84,6 +85,9 @@ func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 	if loaded.Profile != "work" {
 		t.Fatalf("profile = %q, want work", loaded.Profile)
+	}
+	if loaded.PowerlineGlyphs == nil || *loaded.PowerlineGlyphs {
+		t.Fatalf("powerline_glyphs = %v, want false", loaded.PowerlineGlyphs)
 	}
 }
 

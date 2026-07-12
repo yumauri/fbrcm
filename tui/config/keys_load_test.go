@@ -21,6 +21,23 @@ func TestMergeKeyMapUsesConfiguredKeys(t *testing.T) {
 	}
 }
 
+func TestMergeKeyMapIgnoresLegacyHistoryPairBindings(t *testing.T) {
+	defaults := DefaultKeyMap()
+	configured := map[string]map[string][]string{
+		string(BlockHistory): {
+			"both_older": {"-"},
+			"both_newer": {"+"},
+		},
+	}
+	merged := merge(defaults, configured)
+	if got := merged[BlockHistory][ActionHistoryBothOlder]; len(got) != 1 || got[0] != "," {
+		t.Fatalf("older pair keys = %v, want [,]", got)
+	}
+	if got := merged[BlockHistory][ActionHistoryBothNewer]; len(got) != 1 || got[0] != "." {
+		t.Fatalf("newer pair keys = %v, want [.]", got)
+	}
+}
+
 func TestCleanKeysDedupesAndDropsEmpty(t *testing.T) {
 	got := cleanKeys([]string{"a", "", "a", "b"})
 	if len(got) != 2 || got[0] != "a" || got[1] != "b" {
@@ -47,6 +64,45 @@ func TestLoadMergesAndPersistsMissingKeys(t *testing.T) {
 	}
 	if _, ok := cfg.Keys[string(BlockGlobal)]; !ok {
 		t.Fatalf("config keys = %+v, want global block persisted", cfg.Keys)
+	}
+	if _, ok := cfg.Keys[string(BlockHistoryPicker)]; !ok {
+		t.Fatalf("config keys = %+v, want history picker block persisted", cfg.Keys)
+	}
+	if cfg.PowerlineGlyphs == nil || !*cfg.PowerlineGlyphs {
+		t.Fatalf("powerline_glyphs = %v, want default true", cfg.PowerlineGlyphs)
+	}
+}
+
+func TestLoadRespectsDisabledPowerlineGlyphs(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Cleanup(func() { powerlineGlyphs = true })
+
+	disabled := false
+	if err := config.SaveAppConfig(&config.AppConfig{PowerlineGlyphs: &disabled}); err != nil {
+		t.Fatalf("SaveAppConfig = %v", err)
+	}
+	if _, err := Load(); err != nil {
+		t.Fatalf("Load = %v", err)
+	}
+	if PowerlineGlyphsEnabled() {
+		t.Fatal("PowerlineGlyphsEnabled() = true, want false")
+	}
+}
+
+func TestDefaultKeyMapIncludesAllHistoryPickerBindings(t *testing.T) {
+	actions := DefaultKeyMap()[BlockHistoryPicker]
+	for _, action := range []Action{ActionCancel, ActionToggle, ActionLeft, ActionRight, ActionHistoryBothOlder, ActionHistoryBothNewer, ActionHistoryRollback, ActionReset, ActionUp, ActionDown, ActionPageUp, ActionPageDown, ActionHome, ActionEnd, ActionSubmit} {
+		if len(actions[action]) == 0 {
+			t.Fatalf("history picker action %q has no default binding", action)
+		}
+	}
+}
+
+func TestDefaultKeyMapIncludesHistoryChangesToggle(t *testing.T) {
+	if got := DefaultKeyMap()[BlockHistory][ActionHistoryChanges]; len(got) != 1 || got[0] != "c" {
+		t.Fatalf("history changes toggle = %v, want [c]", got)
 	}
 }
 

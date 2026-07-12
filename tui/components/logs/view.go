@@ -17,17 +17,21 @@ const (
 )
 
 func (m Model) View(active bool) string {
-	body := strings.Split(m.viewport.View(), "\n")
-
-	return renderLogsPanel(body, m.width, m.height, active, m.level, m.follow, m.statusFlashOn)
+	return m.ViewWithBorder(active, active)
 }
 
-func renderLogsPanel(body []string, width, height int, active bool, currentLevel charmlog.Level, follow, flashStatus bool) string {
+func (m Model) ViewWithBorder(active, borderActive bool) string {
+	body := strings.Split(m.viewport.View(), "\n")
+
+	return renderLogsPanel(body, m.width, m.height, active, borderActive, m.level, m.follow, m.statusFlashOn)
+}
+
+func renderLogsPanel(body []string, width, height int, active, borderActive bool, currentLevel charmlog.Level, follow, flashStatus bool) string {
 	if width <= 0 || height <= 0 {
 		return ""
 	}
 
-	borderStyle := styles.BorderStyle(active)
+	borderStyle := styles.BorderStyle(borderActive)
 	top := renderTopBorder(width, borderStyle, active, currentLevel, follow, flashStatus)
 	if height == 1 {
 		return top

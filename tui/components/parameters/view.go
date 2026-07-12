@@ -1,12 +1,19 @@
 package parameters
 
 import (
+	"fmt"
+	"sort"
+
 	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 )
 
 func (m Model) View(active bool) string {
+	return m.ViewWithBorder(active, active)
+}
+
+func (m Model) ViewWithBorder(active, borderActive bool) string {
 	projectLine, groupLine, bodyStart := m.stickyHeaderLines(m.offset)
 	bodyLines := m.visibleBodyLines(bodyStart)
 	lines := make([]string, 0, len(bodyLines)+2)
@@ -17,7 +24,8 @@ func (m Model) View(active bool) string {
 		lines = append(lines, groupLine)
 	}
 	lines = append(lines, bodyLines...)
-	return renderPanel(lines, m.width, m.height, active, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()))
+	borders := []int(nil)
+	return renderPanel(lines, m.width, m.height, active, borderActive, m.history, m.historyModeLabels(), borders, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()))
 }
 
 func (m Model) renderBody() []string {
@@ -39,6 +47,28 @@ func (m Model) renderBody() []string {
 		lines = append(lines, m.renderNodeBlock(i, false)...)
 	}
 	return lines
+}
+
+func (m Model) historyModeLabels() []string {
+	if !m.history {
+		return nil
+	}
+	if !m.historyChangesOnly {
+		return []string{" all "}
+	}
+	counts := historyChangeCounts{}
+	for _, project := range m.projects {
+		projectCounts := m.histories[project.project.ProjectID].counts
+		counts.added += projectCounts.added
+		counts.removed += projectCounts.removed
+		counts.changed += projectCounts.changed
+	}
+	return []string{
+		fmt.Sprintf(" Δ %d changed · %d added · %d removed ", counts.changed, counts.added, counts.removed),
+		" Δ changes only ",
+		" Δ changes ",
+		" Δ ",
+	}
 }
 
 func (m Model) visibleBodyLines(startLine int) []string {
@@ -63,7 +93,10 @@ func (m Model) visibleBodyLines(startLine int) []string {
 	endLine := startLine + height
 	lines := make([]string, 0, height)
 
-	for i := 0; i < len(m.visible); i++ {
+	first := sort.Search(len(m.visible), func(i int) bool {
+		return m.lineIndexByNode[i]+m.nodeBlockLineCount(i) > startLine
+	})
+	for i := first; i < len(m.visible); i++ {
 		rowStart := m.lineIndexByNode[i]
 		rowHeight := m.nodeBlockLineCount(i)
 		rowEnd := rowStart + rowHeight

@@ -217,7 +217,10 @@ func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {
 
 func setActivePanelCmd(panel panels.ID) tea.Cmd {
 	return func() tea.Msg {
-		return messages.SetActivePanelMsg{Panel: panel}
+		return messages.SetActivePanelMsg{
+			Panel:              panel,
+			ResetParametersTab: panel == panels.Parameters,
+		}
 	}
 }
 

@@ -55,10 +55,14 @@ func (m *Model) moveToLastParameterInCurrentProject() {
 func (m *Model) setAllParametersExpanded(expanded bool) {
 	snapshot := m.captureSelectionSnapshot(expanded, false)
 	for _, project := range m.projects {
-		if project.tree == nil {
+		tree := project.tree
+		if m.history {
+			tree = m.historyTree(project.project.ProjectID, tree)
+		}
+		if tree == nil {
 			continue
 		}
-		for _, group := range project.tree.Groups {
+		for _, group := range tree.Groups {
 			for _, param := range group.Parameters {
 				m.paramExpanded[m.paramKey(project.project.ProjectID, group.Key, param.Key)] = expanded
 			}
@@ -71,10 +75,14 @@ func (m *Model) setAllParametersExpanded(expanded bool) {
 func (m *Model) setAllGroupsExpanded(expanded bool) {
 	snapshot := m.captureSelectionSnapshot(expanded, true)
 	for _, project := range m.projects {
-		if project.tree == nil {
+		tree := project.tree
+		if m.history {
+			tree = m.historyTree(project.project.ProjectID, tree)
+		}
+		if tree == nil {
 			continue
 		}
-		for _, group := range project.tree.Groups {
+		for _, group := range tree.Groups {
 			m.groupExpanded[m.groupKey(project.project.ProjectID, group.Key)] = expanded
 		}
 	}

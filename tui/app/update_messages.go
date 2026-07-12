@@ -10,6 +10,22 @@ import (
 
 func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	switch msg := msg.(type) {
+	case messages.HistoryRollbackRequestedMsg:
+		return m.beginHistoryRollback(msg)
+
+	case messages.HistoryRollbackPreviewLoadedMsg:
+		return m.updateHistoryRollbackPreview(msg)
+
+	case messages.HistoryRollbackConfirmedMsg:
+		return m.confirmHistoryRollback()
+
+	case messages.HistoryRollbackCanceledMsg:
+		m.cancelHistoryRollback()
+		return m, nil, true
+
+	case messages.HistoryRollbackCompletedMsg:
+		return m.updateHistoryRollbackCompleted(msg)
+
 	case messages.KeyboardCaptureMsg:
 		if msg.Enabled {
 			m.capture = m.active
@@ -18,9 +34,22 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 		}
 
 	case messages.SetActivePanelMsg:
-		m.setActive(msg.Panel)
+		panel := msg.Panel
+		if panel == panels.Parameters && m.active == panels.Projects && !msg.ResetParametersTab {
+			panel = m.selectedParametersTab()
+		}
+		m.setActive(panel)
+		if panel == panels.History {
+			var cmd tea.Cmd
+			m.parameters, cmd = m.parameters.LoadHistory()
+			return m, cmd, true
+		}
 
 	case messages.DialogCanceledMsg:
+		if m.historyRollback != nil {
+			m.cancelHistoryRollback()
+			return m, nil, true
+		}
 		m.dialogQueue = nil
 		m.pendingDetails = nil
 

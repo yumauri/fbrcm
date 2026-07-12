@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -84,11 +85,64 @@ func TestWindowSizeUpdateEnablesNormalView(t *testing.T) {
 	}
 }
 
+func TestPopupWindowDimsBasePanelBorders(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Parameters)
+	m.boolPicker = m.boolPicker.Open(10, 5, true)
+
+	if !m.popupWindowOpen() {
+		t.Fatal("popupWindowOpen() = false with boolean picker open")
+	}
+
+	wantTop := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		m.projects.ViewWithBorder(false, false),
+		m.parameters.ViewWithBorder(true, false),
+	)
+	want := lipgloss.JoinVertical(
+		lipgloss.Left,
+		wantTop,
+		m.logs.ViewWithBorder(false, false),
+		m.helpView(),
+	)
+	if got := m.baseView(); got != want {
+		t.Fatal("base view does not render inactive panel borders while popup is open")
+	}
+
+	m.boolPicker = m.boolPicker.Close()
+	if m.popupWindowOpen() {
+		t.Fatal("popupWindowOpen() = true after boolean picker closed")
+	}
+	wantTop = lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		m.projects.ViewWithBorder(false, false),
+		m.parameters.ViewWithBorder(true, true),
+	)
+	want = lipgloss.JoinVertical(
+		lipgloss.Left,
+		wantTop,
+		m.logs.ViewWithBorder(false, false),
+		m.helpView(),
+	)
+	if got := m.baseView(); got != want {
+		t.Fatal("base view does not restore only the focused panel border after popup closes")
+	}
+}
+
+func TestPopupWindowDimsDetailsPanelBorder(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Details)
+	m.detailsVisible = true
+	m.boolPicker = m.boolPicker.Open(10, 5, true)
+
+	if got, want := m.detailsPanelView(), m.details.ViewWithBorder(false); got != want {
+		t.Fatal("details panel does not render an inactive border while popup is open")
+	}
+}
+
 const minSizeViewSnapshot = `
  Terminal too small
  Minimum size 80x20`
 
-const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ─────────────────────────────────────────────────╮
+const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ⁹History ─────────────────────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -113,7 +167,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • c collapse • enter select • space mark • o open • u update • ~/^///= filter`
 
-const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ─────────────────────────────────────────────────╮
+const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ⁹History ─────────────────────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -138,7 +192,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • c collapse • [/] level • -/_/=/+ resize`
 
-const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ─────────────────────────────────────────────────╮
+const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ⁹History ─────────────────────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │

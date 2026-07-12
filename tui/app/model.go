@@ -34,6 +34,7 @@ type Model struct {
 	logsSaved       int
 	help            help.Model
 	active          panels.ID
+	parametersTab   panels.ID
 	prevTop         panels.ID
 	capture         panels.ID
 	detailsVisible  bool
@@ -48,6 +49,7 @@ type Model struct {
 	duplicate       *duplicateSession
 	newParameter    *newParameterSession
 	pendingDetails  *pendingDetailsSelection
+	historyRollback *historyRollbackSession
 	valueEditSource panels.ID
 
 	width  int
@@ -73,22 +75,23 @@ type newParameterSession struct {
 
 func New(svc *core.Core) Model {
 	m := Model{
-		svc:         svc,
-		projects:    projects.New(svc),
-		parameters:  parameters.New(svc),
-		dialog:      dialogcmp.New(),
-		jsonInput:   jsoninput.New(),
-		boolPicker:  boolpicker.New(),
-		numberInput: numberinput.New(),
-		stringInput: stringinput.New(),
-		moveParam:   moveparam.New(),
-		renameInput: renameinput.New(),
-		details:     details.New(),
-		logs:        logs.New(svc),
-		logsHeight:  defaultLogsPanelHeight,
-		help:        newHelpModel(),
-		active:      panels.Projects,
-		prevTop:     panels.Projects,
+		svc:           svc,
+		projects:      projects.New(svc),
+		parameters:    parameters.New(svc),
+		dialog:        dialogcmp.New(),
+		jsonInput:     jsoninput.New(),
+		boolPicker:    boolpicker.New(),
+		numberInput:   numberinput.New(),
+		stringInput:   stringinput.New(),
+		moveParam:     moveparam.New(),
+		renameInput:   renameinput.New(),
+		details:       details.New(),
+		logs:          logs.New(svc),
+		logsHeight:    defaultLogsPanelHeight,
+		help:          newHelpModel(),
+		active:        panels.Projects,
+		parametersTab: panels.Parameters,
+		prevTop:       panels.Projects,
 	}
 
 	m.projects = m.projects.SetActive(true)

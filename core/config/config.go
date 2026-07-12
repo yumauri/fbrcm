@@ -8,8 +8,9 @@ import (
 )
 
 type AppConfig struct {
-	Profile string                         `toml:"profile"`
-	Keys    map[string]map[string][]string `toml:"keys"`
+	Profile         string                         `toml:"profile"`
+	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty"`
+	Keys            map[string]map[string][]string `toml:"keys"`
 }
 
 func GetGlobalConfigFilePath() string {

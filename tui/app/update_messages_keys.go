@@ -76,6 +76,11 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 		m.setActive(panels.Projects)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k):
 		m.setActive(panels.Parameters)
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k):
+		m.setActive(panels.History)
+		var cmd tea.Cmd
+		m.parameters, cmd = m.parameters.LoadHistory()
+		return m, cmd, true
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
 		if m.detailsVisible {
 			m.setActive(panels.Details)
@@ -85,7 +90,7 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k):
 		return m.updateModeOrDuplicateKey()
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
-		if m.active == panels.Parameters {
+		if m.active == panels.Parameters || m.active == panels.History {
 			m.toggleParametersMaximize()
 		}
 	case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeGrow, k):
@@ -122,12 +127,24 @@ func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 			return m, nil, true
 		}
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublish, k):
+		if m.active != panels.Parameters {
+			return m, nil, false
+		}
 		return m.openCurrentDraftDialog(dialogModePublishDraft)
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublishAll, k):
+		if m.active != panels.Parameters {
+			return m, nil, false
+		}
 		return m.openDraftDialogs(dialogModePublishDraft)
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscard, k):
+		if m.active != panels.Parameters {
+			return m, nil, false
+		}
 		return m.openCurrentDraftDialog(dialogModeDiscardDraft)
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscardAll, k):
+		if m.active != panels.Parameters {
+			return m, nil, false
+		}
 		return m.openDraftDialogs(dialogModeDiscardDraft)
 	}
 	return m, nil, false

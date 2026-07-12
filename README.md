@@ -69,6 +69,44 @@ go build -o fbrcm .
 ./fbrcm --help
 ```
 
+## TUI Configuration
+
+The TUI stores its global settings in `config.toml` under the fbrcm config directory. Powerline separators are enabled by default; disable them to use standard Unicode arrows when the terminal font does not include Powerline glyphs:
+
+```toml
+powerline_glyphs = false
+```
+
+History and version-chooser keys are configurable like all other TUI bindings:
+
+```toml
+[keys.global]
+focus_history = ["9"]
+
+[keys.history]
+pair_older = [","]
+pair_newer = ["."]
+choose_versions = ["v"]
+toggle_changes = ["c"]
+
+[keys.history_picker]
+cancel = ["esc"]
+toggle = ["tab", "shift+tab"]
+left = ["left"]
+right = ["right"]
+pair_older = [","]
+pair_newer = ["."]
+rollback = ["R"]
+reset = ["r"]
+up = ["up", "k"]
+down = ["down", "j"]
+page_up = ["pgup"]
+page_down = ["pgdown"]
+home = ["home"]
+end = ["end"]
+submit = ["enter"]
+```
+
 ## First Setup
 
 `fbrcm` supports three Google auth methods: OAuth desktop login, service account keys, and gcloud Application Default Credentials (ADC).

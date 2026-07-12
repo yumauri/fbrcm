@@ -31,6 +31,9 @@ var (
 	PanelTitle = lipgloss.NewStyle().
 			Foreground(PaletteSlateBright)
 
+	PanelTitleInactiveTab = lipgloss.NewStyle().
+				Foreground(PaletteSlateDark)
+
 	PanelTitleActive = lipgloss.NewStyle().
 				Bold(true).
 				Foreground(PaletteYellow).
@@ -109,6 +112,32 @@ func PanelHeaderTitle(key, title string, active bool, maxWidth int) (string, int
 
 	before, after, _ := strings.Cut(text, key)
 	return PanelTitle.Render(before) + FilterText.Render(key) + PanelTitle.Render(after), width
+}
+
+// PanelHeaderTab renders a tab title independently from panel focus. The
+// selected tab keeps the normal title style while an unselected sibling is
+// muted; shortcut hints retain their yellow filter-key style.
+func PanelHeaderTab(key, title string, selected, focused bool, maxWidth int) (string, int) {
+	text := truncateHeaderText(" "+key+title+" ", maxWidth)
+	width := lipgloss.Width(text)
+	if text == "" {
+		return "", width
+	}
+	if selected && focused {
+		return TitleStyle(true).Render(text), width
+	}
+	if !strings.Contains(text, key) {
+		if selected {
+			return PanelTitle.Render(text), width
+		}
+		return PanelTitleInactiveTab.Render(text), width
+	}
+	before, after, _ := strings.Cut(text, key)
+	labelStyle := PanelTitleInactiveTab
+	if selected {
+		labelStyle = PanelTitle
+	}
+	return labelStyle.Render(before) + FilterText.Render(key) + labelStyle.Render(after), width
 }
 
 func truncateHeaderText(text string, width int) string {

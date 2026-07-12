@@ -146,6 +146,9 @@ func (m Model) CurrentParameterViewData() (*messages.ParameterViewData, bool) {
 }
 
 func (m Model) selectionChangedCmd(activate bool) tea.Cmd {
+	if m.history {
+		return nil
+	}
 	data, ok := m.currentParameterViewData()
 	if !ok {
 		return func() tea.Msg {

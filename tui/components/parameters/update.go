@@ -10,8 +10,16 @@ import (
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case messages.HistoryLoadedMsg:
+		m.updateHistory(msg)
+		return m, nil
 	case messages.ProjectsSelectionChangedMsg:
 		cmd := m.setProjects(msg.Projects)
+		if m.history {
+			var historyCmd tea.Cmd
+			m, historyCmd = m.LoadHistory()
+			cmd = tea.Batch(cmd, historyCmd)
+		}
 		if m.anyLoading() {
 			return m, tea.Batch(cmd, m.spin.Tick, m.selectionChangedCmd(false))
 		}
@@ -19,6 +27,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case messages.ParametersLoadedMsg:
 		cmd := m.updateProject(msg)
+		m.invalidateHistoryIfVersionChanged(msg.Project.ProjectID)
+		if m.history {
+			var historyCmd tea.Cmd
+			m, historyCmd = m.LoadHistory()
+			cmd = tea.Batch(cmd, historyCmd)
+		}
 		if m.anyLoading() {
 			return m, tea.Batch(cmd, m.spin.Tick, m.selectionChangedCmd(false))
 		}
@@ -38,6 +52,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		k := msg.String()
+		if m.history {
+			if next, cmd, handled := m.updateHistoryKey(msg, k); handled {
+				return next, cmd
+			}
+		}
 		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
 			cmd := m.filter.Activate(mode)
 			m.applyFilter()
@@ -113,6 +132,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.setAllGroupsExpanded(false)
 			return m, m.selectionChangedCmd(false)
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionOpenDetails, k):
+			if m.history {
+				return m, nil
+			}
 			return m, m.selectionChangedCmd(true)
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReload, k):
 			return m, m.revalidateCurrentProjectCmd()

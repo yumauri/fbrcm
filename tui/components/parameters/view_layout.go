@@ -1,5 +1,7 @@
 package parameters
 
+import "sort"
+
 func (m Model) stickyHeaderLines(offset int) (string, string, int) {
 	projectIndex, groupIndex, bodyStart, _ := m.stickyHeaderContext(offset)
 	if projectIndex < 0 || projectIndex >= len(m.visible) {
@@ -12,6 +14,9 @@ func (m Model) stickyHeaderLines(offset int) (string, string, int) {
 	}
 	projectUnderlined := m.projectHasHiddenContentAbove(m.visible[projectIndex].projectID, excludedGroupKey, bodyStart)
 	projectLine := m.renderProjectNode(m.visible[projectIndex], projectIndex == m.cursor, projectUnderlined)
+	if m.history && !m.historyStacked() {
+		projectLine = m.renderHistoryGridLine(projectLine, projectIndex == m.cursor, nodeProject)
+	}
 
 	if groupIndex < 0 {
 		return projectLine, "", bodyStart
@@ -19,6 +24,9 @@ func (m Model) stickyHeaderLines(offset int) (string, string, int) {
 
 	groupUnderlined := m.groupHasHiddenContentAbove(m.visible[groupIndex].projectID, m.visible[groupIndex].groupKey, bodyStart)
 	groupLine := m.renderGroupNode(m.visible[groupIndex], groupIndex == m.cursor, groupUnderlined)
+	if m.history && !m.historyStacked() {
+		groupLine = m.renderHistoryGridLine(groupLine, groupIndex == m.cursor, nodeGroup)
+	}
 	return projectLine, groupLine, bodyStart
 }
 
@@ -47,24 +55,18 @@ func (m Model) nodeIndexAtLine(line int) int {
 		return len(m.visible) - 1
 	}
 
-	for i := 0; i < len(m.visible); i++ {
-		start := m.lineIndexByNode[i]
-		end := start + m.nodeBlockLineCount(i)
-		if line >= start && line < end {
-			return i
-		}
-	}
-	return len(m.visible) - 1
+	index := sort.Search(len(m.visible), func(i int) bool {
+		return m.lineIndexByNode[i]+m.nodeBlockLineCount(i) > line
+	})
+	return min(index, len(m.visible)-1)
 }
 
 func (m Model) projectNodeIndexFor(nodeIndex int) int {
 	if nodeIndex < 0 || nodeIndex >= len(m.visible) {
 		return -1
 	}
-	for i := min(nodeIndex, len(m.visible)-1); i >= 0; i-- {
-		if m.visible[i].kind == nodeProject && m.visible[i].projectID == m.visible[nodeIndex].projectID {
-			return i
-		}
+	if nodeIndex < len(m.projectNodeFor) {
+		return m.projectNodeFor[nodeIndex]
 	}
 	return -1
 }
@@ -77,11 +79,10 @@ func (m Model) groupNodeIndexFor(nodeIndex int) int {
 	if groupKey == "" {
 		return -1
 	}
-	for i := min(nodeIndex, len(m.visible)-1); i >= 0; i-- {
-		if m.visible[i].kind == nodeGroup &&
-			m.visible[i].projectID == m.visible[nodeIndex].projectID &&
-			m.visible[i].groupKey == groupKey {
-			return i
+	if nodeIndex < len(m.groupNodeFor) {
+		index := m.groupNodeFor[nodeIndex]
+		if index >= 0 && m.visible[index].groupKey == groupKey {
+			return index
 		}
 	}
 	return -1
@@ -172,12 +173,13 @@ func (m Model) bodyVisibleLinesForOffset(offset int) int {
 }
 
 func (m Model) projectHasHiddenContentAbove(projectID, excludedGroupKey string, bodyStart int) bool {
-	for i, node := range m.visible {
+	for i := m.nodeIndexAtLine(bodyStart - 1); i >= 0; i-- {
+		node := m.visible[i]
 		if node.projectID != projectID {
-			continue
+			return false
 		}
 		if node.kind == nodeProject {
-			continue
+			return false
 		}
 		if node.kind == nodeGroup && node.groupKey == excludedGroupKey {
 			continue
@@ -190,12 +192,13 @@ func (m Model) projectHasHiddenContentAbove(projectID, excludedGroupKey string, 
 }
 
 func (m Model) groupHasHiddenContentAbove(projectID, groupKey string, bodyStart int) bool {
-	for i, node := range m.visible {
+	for i := m.nodeIndexAtLine(bodyStart - 1); i >= 0; i-- {
+		node := m.visible[i]
 		if node.projectID != projectID || node.groupKey != groupKey {
-			continue
+			return false
 		}
 		if node.kind == nodeGroup {
-			continue
+			return false
 		}
 		if m.lineIndexByNode[i] < bodyStart {
 			return true

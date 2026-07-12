@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -13,7 +14,7 @@ var (
 	projectIDStyle   = styles.PanelMuted
 	groupOpenStyle   = styles.PanelText.Bold(true).Foreground(styles.PaletteYellow)
 	groupClosedStyle = styles.PanelMuted
-	iconStyle        = styles.PanelMuted
+	iconStyle        = lipgloss.NewStyle().Foreground(styles.PaletteSlateDark)
 	leafLineStyle    = iconStyle
 
 	projectSelectedLineStyle   = lipgloss.NewStyle().Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
@@ -67,6 +68,9 @@ func (m Model) renderNodeBlock(index int, selected bool) []string {
 
 	node := m.visible[index]
 	lines := []string{m.renderNode(node, selected)}
+	if m.history && m.historyStacked() {
+		lines = m.renderHistoryStackedNode(node, selected)
+	}
 	if node.kind == nodeValue && m.isLastValueNode(index) {
 		lines = append(lines, "")
 	}
@@ -92,6 +96,11 @@ func (m Model) nodeBlockLineCount(index int) int {
 	}
 	count := 1
 	node := m.visible[index]
+	if m.history && m.historyStacked() {
+		if node.kind == nodeValue {
+			count = m.historyStackedValueLineCount(node)
+		}
+	}
 	if node.kind == nodeValue && m.isLastValueNode(index) {
 		count++
 	}
@@ -176,25 +185,47 @@ func (m Model) isEmptyExpandedGroup(index int) bool {
 	return next.kind == nodeGroup || next.kind == nodeProject
 }
 
-func renderPanel(body []string, width, height int, active bool, scrollbar scrollbarState, footer []string) string {
+func renderPanel(body []string, width, height int, active, borderActive, history bool, historyModes []string, historyBorders []int, scrollbar scrollbarState, footer []string) string {
 	if width <= 0 || height <= 0 {
 		return ""
 	}
 
-	borderStyle := styles.BorderStyle(active)
+	borderStyle := styles.BorderStyle(borderActive)
 	innerWidth := max(width-2, 0)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)
-	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(width-topPrefixWidth-1, 0))
+	paramsTitle, paramsWidth := styles.PanelHeaderTab(panelTitleKey, panelTitleLabel, !history, active, max(width-topPrefixWidth-1, 0))
+	historyTitle, historyWidth := styles.PanelHeaderTab(historyTitleKey, historyTitleLabel, history, active, max(width-topPrefixWidth-paramsWidth-4, 0))
+	titleRendered := paramsTitle + borderStyle.Render("──") + historyTitle
+	titleWidth := paramsWidth + 2 + historyWidth
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
-	topFillWidth := max(width-topPrefixWidth-titleWidth-1, 0)
+	remainingWidth := max(width-topPrefixWidth-titleWidth-1, 0)
+	mode := ""
+	modeWidth := 0
+	for _, candidate := range historyModes {
+		candidateWidth := lipgloss.Width(candidate)
+		if candidateWidth+1 <= remainingWidth {
+			modeStyle := styles.PanelTitleInactiveTab
+			if active && borderActive {
+				modeStyle = styles.PanelTitle
+			}
+			mode = modeStyle.Render(candidate) + borderStyle.Render("─")
+			modeWidth = candidateWidth + 1
+			break
+		}
+	}
+	topFillWidth := max(remainingWidth-modeWidth, 0)
 	topFill := borderStyle.Render(strings.Repeat("─", topFillWidth))
 	topRight := ""
 	if width > topPrefixWidth+titleWidth {
 		topRight = borderStyle.Render("╮")
 	}
 
-	lines := []string{topPrefix + titleRendered + topFill + topRight}
+	top := topPrefix + titleRendered + topFill + mode + topRight
+	if history {
+		top = replacePanelGridGlyphs(top, width, historyBorders, "┬", borderStyle)
+	}
+	lines := []string{top}
 	for i := range contentHeight {
 		line := ""
 		if i < len(body) {
@@ -206,6 +237,9 @@ func renderPanel(body []string, width, height int, active bool, scrollbar scroll
 		}
 		if line == "" {
 			line = strings.Repeat(" ", innerWidth)
+			if history {
+				line = replaceInnerGridGlyphs(line, innerWidth, historyBorders, borderStyle)
+			}
 		}
 		lines = append(lines,
 			borderStyle.Render("│")+line+rightEdge,
@@ -217,11 +251,43 @@ func renderPanel(body []string, width, height int, active bool, scrollbar scroll
 		if i == 0 {
 			left = "├"
 		}
-		lines = append(lines, borderStyle.Render(left)+footerLine)
+		footerRendered := borderStyle.Render(left) + footerLine
+		if history {
+			glyph := "│"
+			if i == 0 {
+				glyph = "┼"
+			}
+			footerRendered = replacePanelGridGlyphs(footerRendered, width, historyBorders, glyph, borderStyle)
+		}
+		lines = append(lines, footerRendered)
 	}
 
 	bottom := borderStyle.Render("╰" + strings.Repeat("─", max(width-2, 0)) + "╯")
+	if history {
+		bottom = replacePanelGridGlyphs(bottom, width, historyBorders, "┴", borderStyle)
+	}
 	lines = append(lines, bottom)
 
 	return strings.Join(lines, "\n")
+}
+
+func replaceInnerGridGlyphs(line string, width int, positions []int, style lipgloss.Style) string {
+	for _, position := range positions {
+		if position < 0 || position >= width {
+			continue
+		}
+		line = ansi.Cut(line, 0, position) + style.Render("│") + ansi.Cut(line, position+1, width)
+	}
+	return line
+}
+
+func replacePanelGridGlyphs(line string, width int, positions []int, glyph string, style lipgloss.Style) string {
+	shifted := make([]int, 0, len(positions))
+	for _, position := range positions {
+		shifted = append(shifted, position+1)
+	}
+	for _, position := range shifted {
+		line = ansi.Cut(line, 0, position) + style.Render(glyph) + ansi.Cut(line, position+1, width)
+	}
+	return line
 }

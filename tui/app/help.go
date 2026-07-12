@@ -46,12 +46,26 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 		return append(common, k.projectsHelp()...)
 	case panels.Parameters:
 		return append(common, parametersHelp()...)
+	case panels.History:
+		return append(common, historyHelp()...)
 	case panels.Logs:
 		return append(common, k.logsHelp()...)
 	case panels.Details:
 		return append(common, detailsHelp()...)
 	default:
 		return common
+	}
+}
+
+func historyHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockHistory, tuiconfig.ActionHistoryChanges, "changes only"),
+		compoundBinding(ref(tuiconfig.BlockHistory, tuiconfig.ActionHistoryBothOlder), ref(tuiconfig.BlockHistory, tuiconfig.ActionHistoryBothNewer), "both versions"),
+		tuiconfig.Binding(tuiconfig.BlockHistory, tuiconfig.ActionHistoryChoose, "choose versions"),
+		tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, "maximize"),
+		tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggle, "toggle"),
+		compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionCopyName), ref(tuiconfig.BlockParameters, tuiconfig.ActionCopyPath), "copy"),
+		filterBinding(),
 	}
 }
 

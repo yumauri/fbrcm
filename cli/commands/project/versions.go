@@ -122,11 +122,7 @@ func newVersionsDiffCommand(svc *core.Core) *cobra.Command {
 			to = args[2]
 		}
 		opts := readVersionDiffOptions(cmd)
-		fromCfg, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, args[1], opts.cached)
-		if err != nil {
-			return err
-		}
-		toCfg, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, to, opts.cached)
+		fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(context.Background(), project.ProjectID, args[1], to, opts.cached)
 		if err != nil {
 			return err
 		}
