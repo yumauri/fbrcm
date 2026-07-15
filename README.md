@@ -185,6 +185,7 @@ Exact paths:
 fbrcm auth path default
 fbrcm projects path
 fbrcm cache path
+fbrcm draft path
 ```
 
 You can override root directories with environment variables:
@@ -291,6 +292,29 @@ fbrcm delete old_parameter --project my-project --yes
 fbrcm delete --filter old --search rollout --dry-run
 ```
 
+Stage changes in profile-scoped local drafts instead of publishing immediately:
+
+```sh
+fbrcm add new_flag --project my-project --boolean true --draft
+fbrcm update existing_parameter --project my-project --string "new value" --draft --yes
+fbrcm delete old_parameter --project my-project --draft --yes
+fbrcm project import <project-id> --from remote-config.json --merge --draft
+```
+
+Inspect and resolve drafts:
+
+```sh
+fbrcm draft list
+fbrcm draft show <project-id> --to recovered-draft.json
+fbrcm draft diff <project-id>
+fbrcm draft diff <project-id> --against current
+fbrcm draft publish <project-id> --dry-run
+fbrcm draft publish <project-id>
+fbrcm draft discard <project-id>
+```
+
+Publishing rebases local draft changes onto the latest Firebase Remote Config and refuses conflicting changes. `draft publish --all` and `draft discard --all` process every draft in the active profile. Other CLI write commands refuse to publish over a project with an unresolved draft.
+
 Manage caches:
 
 ```sh
@@ -349,14 +373,18 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 - Override current config with imported config
 - Remove project-specific conditions during import
 - Add, update, rename, move, duplicate, and delete parameters
+- Display empty parameter groups and remove groups explicitly with the TUI delete action
+- Stage, inspect, diff, safely publish, recover, and discard local drafts
 - Edit parameter values as boolean, number, string, or JSON
 - Validate and publish Remote Config through Firebase APIs
 - Use `--dry-run` on write commands to preview Firebase writes without sending them
 
 ## Safety Notes
 
-Use `--dry-run` before imports, updates, adds, deletes, rollbacks, and restores when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
+Use `--dry-run` before imports, updates, adds, deletes, draft publishes, rollbacks, and restores when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
 
 Purging the Remote Config cache deletes every locally retained immutable version. Versions no longer retained by Firebase may then be permanently unavailable.
+
+Drafts are managed separately from cached snapshots. `fbrcm cache purge` does not delete drafts; use `fbrcm draft discard` explicitly.
 
 Keep `client-secret.json`, `token.json`, and service-account key files private. They grant access through Google account or service account permissions.

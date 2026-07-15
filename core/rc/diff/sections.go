@@ -20,7 +20,15 @@ func renderConditionsDiff(result Result) (string, diffCounts) {
 			counts.unchanged++
 		case ChangeChanged:
 			counts.changed++
-			lines = append(lines, fmt.Sprintf("  ~ %-15s %s → %s", colorChanged(change.Name), colorRemoved(formatConditionSummary(*change.Current)), colorAdded(formatConditionSummary(*change.Final))))
+			currentSummary := formatConditionSummary(*change.Current)
+			finalSummary := formatConditionSummary(*change.Final)
+			detail := fmt.Sprintf("%s → %s", colorRemoved(currentSummary), colorAdded(finalSummary))
+			if currentSummary == finalSummary && change.PreviousPosition != change.FinalPosition {
+				detail = fmt.Sprintf("position %s → %s", colorRemoved(fmt.Sprint(change.PreviousPosition)), colorAdded(fmt.Sprint(change.FinalPosition)))
+			} else if change.PreviousPosition != change.FinalPosition {
+				detail += fmt.Sprintf("; position %s → %s", colorRemoved(fmt.Sprint(change.PreviousPosition)), colorAdded(fmt.Sprint(change.FinalPosition)))
+			}
+			lines = append(lines, fmt.Sprintf("  ~ %-15s %s", colorChanged(change.Name), detail))
 		}
 	}
 

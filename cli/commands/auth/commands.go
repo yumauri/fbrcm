@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -225,7 +224,6 @@ func newPurgeCommand(svc *core.Core) *cobra.Command {
 			if !yes {
 				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete auth identity %s and its files?", args[0]),
-					confirmation.Yes,
 					shared.ConfirmationOptions{Destructive: true},
 				)
 				ok, err := confirm.RunPrompt()

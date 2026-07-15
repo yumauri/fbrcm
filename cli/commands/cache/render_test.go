@@ -28,22 +28,19 @@ func TestHumanSize(t *testing.T) {
 
 func TestSortCacheEntries(t *testing.T) {
 	entries := []cacheEntry{
-		{ProjectID: "beta", Draft: true},
-		{ProjectID: "Alpha", Draft: true},
-		{ProjectID: "alpha", Draft: false},
-		{ProjectID: "beta", Draft: false},
+		{ProjectID: "beta", Version: "1"},
+		{ProjectID: "Alpha", Version: "2"},
+		{ProjectID: "alpha", Version: "3"},
+		{ProjectID: "beta", Version: "4"},
 	}
 
 	sortCacheEntries(entries)
 
 	got := make([]string, len(entries))
 	for i, entry := range entries {
-		got[i] = entry.ProjectID
-		if entry.Draft {
-			got[i] += ":draft"
-		}
+		got[i] = entry.ProjectID + ":" + entry.Version
 	}
-	want := []string{"alpha", "Alpha:draft", "beta", "beta:draft"}
+	want := []string{"alpha:3", "Alpha:2", "beta:4", "beta:1"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("sorted entries = %#v, want %#v", got, want)
 	}
@@ -62,10 +59,10 @@ func TestRenderCacheTablePlainText(t *testing.T) {
 
 	table := renderCacheTable([]cacheEntry{
 		{ProjectID: "project-a", Project: "Project A", Version: "42", Size: 1536, CachedAt: &cachedAt},
-		{ProjectID: "project-b", Project: "Project B", Version: "43", Size: 10, Draft: true},
+		{ProjectID: "project-b", Project: "Project B", Version: "43", Size: 10},
 	})
 
-	for _, want := range []string{"Project ID", "project-a", "Project A", "42", "1.5 KB", "project-b", "draft"} {
+	for _, want := range []string{"Project ID", "project-a", "Project A", "42", "1.5 KB", "project-b", "43"} {
 		if !strings.Contains(table, want) {
 			t.Fatalf("renderCacheTable = %q, want substring %q", table, want)
 		}

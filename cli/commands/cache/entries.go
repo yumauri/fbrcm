@@ -1,9 +1,6 @@
 package cache
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -20,7 +17,6 @@ type cacheEntry struct {
 	Version   string     `json:"version"`
 	Size      int64      `json:"size"`
 	CachedAt  *time.Time `json:"cached_at"`
-	Draft     bool       `json:"draft"`
 	Path      string     `json:"path"`
 }
 
@@ -30,11 +26,6 @@ func loadCacheEntries() ([]cacheEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	draftEntries, err := loadDraftEntries(projectNames)
-	if err != nil {
-		return nil, err
-	}
-	entries = append(entries, draftEntries...)
 	sortCacheEntries(entries)
 	return entries, nil
 }
@@ -44,16 +35,8 @@ func sortCacheEntries(entries []cacheEntry) {
 		if cmp := strfold.CompareFolded(left.ProjectID, right.ProjectID); cmp != 0 {
 			return cmp
 		}
-		if left.Draft != right.Draft {
-			if !left.Draft {
-				return -1
-			}
-			return 1
-		}
-		if !left.Draft {
-			if cmp := compareVersionsDesc(left.Version, right.Version); cmp != 0 {
-				return cmp
-			}
+		if cmp := compareVersionsDesc(left.Version, right.Version); cmp != 0 {
+			return cmp
 		}
 		return strfold.Compare(left.ProjectID, right.ProjectID)
 	})
@@ -108,51 +91,6 @@ func parseCacheVersion(version string) (int64, bool) {
 		return 0, false
 	}
 	return n, true
-}
-
-func loadDraftEntries(projectNames map[string]string) ([]cacheEntry, error) {
-	dir := config.GetDraftsDirPath()
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return []cacheEntry{}, nil
-		}
-		return nil, fmt.Errorf("read drafts dir: %w", err)
-	}
-
-	entries := make([]cacheEntry, 0, len(files))
-	for _, file := range files {
-		if file.IsDir() || filepath.Ext(file.Name()) != ".json" {
-			continue
-		}
-
-		projectID := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		path := filepath.Join(dir, file.Name())
-		info, err := file.Info()
-		if err != nil {
-			return nil, fmt.Errorf("stat draft file %s: %w", path, err)
-		}
-
-		raw, err := config.LoadDraft(projectID)
-		if err != nil {
-			return nil, err
-		}
-
-		version := ""
-		if remoteConfig, err := firebase.ParseRemoteConfig(raw); err == nil {
-			version = remoteConfig.Version.VersionNumber
-		}
-
-		entries = append(entries, cacheEntry{
-			ProjectID: projectID,
-			Project:   projectNames[projectID],
-			Version:   version,
-			Size:      info.Size(),
-			Draft:     true,
-			Path:      path,
-		})
-	}
-	return entries, nil
 }
 
 func loadProjectNames() map[string]string {

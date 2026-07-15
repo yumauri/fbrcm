@@ -62,7 +62,7 @@ func transformImportConfig(project core.Project, cfg *firebase.RemoteConfig, opt
 
 	pruneUnusedConditions(cfg)
 	dropUnknownConditionReferences(cfg)
-	removeEmptyGroups(cfg)
+	normalizeEmptyParameterMaps(cfg)
 	return nil
 }
 
@@ -97,10 +97,6 @@ func filterImportParameters(cfg *firebase.RemoteConfig, rawFilters []string) {
 	cfg.Parameters = filterImportParamMap(cfg.Parameters, filters)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = filterImportParamMap(group.Parameters, filters)
-		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
-			continue
-		}
 		cfg.ParameterGroups[groupName] = group
 	}
 }
@@ -113,10 +109,6 @@ func filterImportParametersBySearch(cfg *firebase.RemoteConfig, search shared.Pa
 	cfg.Parameters = filterImportParamMapBySearch(cfg, cfg.Parameters, search)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = filterImportParamMapBySearch(cfg, group.Parameters, search)
-		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
-			continue
-		}
 		cfg.ParameterGroups[groupName] = group
 	}
 }
@@ -129,10 +121,6 @@ func filterImportParametersByExpr(project core.Project, cfg *firebase.RemoteConf
 	cfg.Parameters = filterImportParamMapByExpr(project, cfg, cfg.Parameters, shared.DefaultRootGroupLabel, compiledExpr)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = filterImportParamMapByExpr(project, cfg, group.Parameters, groupName, compiledExpr)
-		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
-			continue
-		}
 		cfg.ParameterGroups[groupName] = group
 	}
 }
@@ -194,10 +182,6 @@ func removeAllConditions(cfg *firebase.RemoteConfig) {
 	cfg.Parameters = stripAllConditionalValues(cfg.Parameters, nil)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = stripAllConditionalValues(group.Parameters, nil)
-		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
-			continue
-		}
 		cfg.ParameterGroups[groupName] = group
 	}
 }
@@ -216,10 +200,6 @@ func removeProjectSpecificConditions(cfg *firebase.RemoteConfig) {
 	cfg.Parameters = stripAllConditionalValues(cfg.Parameters, deleted)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = stripAllConditionalValues(group.Parameters, deleted)
-		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
-			continue
-		}
 		cfg.ParameterGroups[groupName] = group
 	}
 }

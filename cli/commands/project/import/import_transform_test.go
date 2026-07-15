@@ -38,6 +38,7 @@ func TestTransformImportConfigRemovesProjectSpecificConditions(t *testing.T) {
 				},
 			},
 			"group-empty": {
+				Description: "keep metadata",
 				Parameters: map[string]firebase.RemoteConfigParam{
 					"group_drop": {
 						ConditionalValues: map[string]firebase.RemoteConfigValue{
@@ -69,8 +70,15 @@ func TestTransformImportConfigRemovesProjectSpecificConditions(t *testing.T) {
 	if _, ok := rootKeep.ConditionalValues["keep"]; !ok {
 		t.Fatalf("root_keep lost keep conditional: %#v", rootKeep.ConditionalValues)
 	}
-	if _, ok := cfg.ParameterGroups["group-empty"]; ok {
-		t.Fatalf("group-empty still present: %#v", cfg.ParameterGroups["group-empty"])
+	emptyGroup, ok := cfg.ParameterGroups["group-empty"]
+	if !ok {
+		t.Fatalf("group-empty was removed: %#v", cfg.ParameterGroups)
+	}
+	if emptyGroup.Parameters != nil {
+		t.Fatalf("group-empty parameters = %#v, want nil", emptyGroup.Parameters)
+	}
+	if emptyGroup.Description != "keep metadata" {
+		t.Fatalf("group-empty description = %q, want preserved metadata", emptyGroup.Description)
 	}
 	if _, ok := cfg.ParameterGroups["group-a"]; !ok {
 		t.Fatalf("group-a missing: %#v", cfg.ParameterGroups)

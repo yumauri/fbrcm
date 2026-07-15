@@ -5,7 +5,6 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -147,7 +146,6 @@ func purgeProfile(cmd *cobra.Command, profileName string) error {
 	if !yes {
 		confirm := shared.NewConfirmation(
 			fmt.Sprintf("Delete profile %s folders?\n%s\n%s", profileName, configPath, cachePath),
-			confirmation.Yes,
 			shared.ConfirmationOptions{Destructive: true},
 		)
 		ok, err := confirm.RunPrompt()

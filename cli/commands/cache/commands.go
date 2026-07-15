@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -23,14 +22,14 @@ func New() *cobra.Command {
 func newPathCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "path",
-		Short: "Print Remote Config cache directory path",
+		Short: "Print cached Remote Config snapshots directory path",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
 				return err
 			}
 
-			path := config.GetCacheDirPath()
+			path := config.GetParametersCacheDirPath()
 			if jsonOut {
 				return shared.WriteJSON(cmd, map[string]string{"path": path})
 			}
@@ -65,17 +64,14 @@ func newPurgeCommand() *cobra.Command {
 			var snapshotSize int64
 			projects := map[string]struct{}{}
 			for _, entry := range entries {
-				if !entry.Draft {
-					snapshotCount++
-					snapshotSize += entry.Size
-					projects[entry.ProjectID] = struct{}{}
-				}
+				snapshotCount++
+				snapshotSize += entry.Size
+				projects[entry.ProjectID] = struct{}{}
 			}
 			deleteCaches := snapshotCount > 0
 			if deleteCaches && !yes {
 				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete %d cached Remote Config versions (%s) across %d projects?", snapshotCount, strings.TrimSpace(humanSize(snapshotSize)), len(projects)),
-					confirmation.Yes,
 					shared.ConfirmationOptions{Destructive: true, Notes: []shared.ConfirmationNote{{Text: "Local versions no longer retained by Firebase may be permanently lost."}}},
 				)
 				ok, err := confirm.RunPrompt()
@@ -89,32 +85,6 @@ func newPurgeCommand() *cobra.Command {
 					return err
 				}
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged caches: %s\n", config.GetParametersCacheDirPath())
-			}
-
-			draftIDs, err := config.ListDraftProjectIDs()
-			if err != nil {
-				return err
-			}
-			if len(draftIDs) > 0 {
-				deleteDrafts := true
-				if !yes {
-					confirm := shared.NewConfirmation(
-						fmt.Sprintf("Delete draft files in %s?", config.GetDraftsDirPath()),
-						confirmation.No,
-						shared.ConfirmationOptions{Destructive: true},
-					)
-					ok, err := confirm.RunPrompt()
-					if err != nil {
-						return err
-					}
-					deleteDrafts = ok
-				}
-				if deleteDrafts {
-					if err := config.PurgeDrafts(); err != nil {
-						return err
-					}
-					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged drafts: %s\n", config.GetDraftsDirPath())
-				}
 			}
 
 			return nil

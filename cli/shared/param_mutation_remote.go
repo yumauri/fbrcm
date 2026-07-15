@@ -19,6 +19,7 @@ type ParameterMutationOpts struct {
 	Search         ParameterSearch
 	Yes            bool
 	DryRun         bool
+	Draft          bool
 }
 
 // ReadParameterMutationOpts reads project/filter/search/expr/dry-run/yes flags and resolves
@@ -35,6 +36,13 @@ func ReadParameterMutationOpts(cmd *cobra.Command, args []string) (ParameterMuta
 	dryRun, err := cmd.Flags().GetBool("dry-run")
 	if err != nil {
 		return ParameterMutationOpts{}, err
+	}
+	draftMode := false
+	if cmd.Flags().Lookup("draft") != nil {
+		draftMode, err = cmd.Flags().GetBool("draft")
+		if err != nil {
+			return ParameterMutationOpts{}, err
+		}
 	}
 	paramFilters, err := cmd.Flags().GetStringArray("filter")
 	if err != nil {
@@ -61,6 +69,7 @@ func ReadParameterMutationOpts(cmd *cobra.Command, args []string) (ParameterMuta
 		Search:         NewParameterSearch(searchValue),
 		Yes:            yes,
 		DryRun:         dryRun,
+		Draft:          draftMode,
 	}, nil
 }
 
@@ -87,7 +96,7 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 		return rc.RemoteMutationTotals{}, nil
 	}
 
-	return rc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, func(project core.Project, cfg *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
+	plan := func(project core.Project, cfg *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
 		matched := CollectMatchingParamTargets(project, cfg.Config, opts.ParamFilters, opts.Search, compiledExpr, DefaultRootGroupLabel)
 		if len(matched) == 0 {
 			return nil, nil
@@ -95,5 +104,9 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			return apply(cmd, project, current, matched, opts.Yes)
 		}, nil
-	})
+	}
+	if opts.Draft {
+		return rc.RunRemoteDraftLoop(ctx, cmd, svc, projects, operation, plan)
+	}
+	return rc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
 }

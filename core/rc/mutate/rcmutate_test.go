@@ -88,10 +88,11 @@ func TestCollectParamSlotsUsesCompositeKeys(t *testing.T) {
 	}
 }
 
-func TestRemoveParamSlotDropsEmptyGroup(t *testing.T) {
+func TestRemoveParamSlotPreservesEmptyGroup(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{
 			"g": {
+				Description: "metadata",
 				Parameters: map[string]firebase.RemoteConfigParam{
 					"only": {ValueType: "STRING"},
 				},
@@ -99,8 +100,12 @@ func TestRemoveParamSlotDropsEmptyGroup(t *testing.T) {
 		},
 	}
 	rcmutate.RemoveParamSlot(cfg, "only", "g")
-	if _, ok := cfg.ParameterGroups["g"]; ok {
-		t.Fatalf("empty group still present: %#v", cfg.ParameterGroups)
+	group, ok := cfg.ParameterGroups["g"]
+	if !ok {
+		t.Fatalf("empty group was removed: %#v", cfg.ParameterGroups)
+	}
+	if group.Description != "metadata" || group.Parameters != nil {
+		t.Fatalf("group = %#v, want preserved description and nil parameters", group)
 	}
 }
 
@@ -125,6 +130,7 @@ func TestDropUnknownConditionReferences(t *testing.T) {
 		},
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{
 			"empty-group": {
+				Description: "keep metadata",
 				Parameters: map[string]firebase.RemoteConfigParam{
 					"group_drop": {
 						ConditionalValues: map[string]firebase.RemoteConfigValue{
@@ -141,8 +147,12 @@ func TestDropUnknownConditionReferences(t *testing.T) {
 	if _, ok := cfg.Parameters["root_drop"]; ok {
 		t.Fatalf("root_drop still present")
 	}
-	if _, ok := cfg.ParameterGroups["empty-group"]; ok {
-		t.Fatalf("empty-group still present")
+	group, ok := cfg.ParameterGroups["empty-group"]
+	if !ok {
+		t.Fatal("empty-group was removed")
+	}
+	if group.Description != "keep metadata" || group.Parameters != nil {
+		t.Fatalf("empty-group = %#v, want preserved metadata and nil parameters", group)
 	}
 	rootKeep := cfg.Parameters["root_keep"]
 	if _, ok := rootKeep.ConditionalValues["remove"]; ok {
@@ -153,16 +163,20 @@ func TestDropUnknownConditionReferences(t *testing.T) {
 	}
 }
 
-func TestRemoveEmptyGroups(t *testing.T) {
+func TestNormalizeEmptyParameterMapsPreservesGroups(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		Parameters: map[string]firebase.RemoteConfigParam{},
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{
-			"empty": {Parameters: map[string]firebase.RemoteConfigParam{}},
+			"empty": {Description: "metadata", Parameters: map[string]firebase.RemoteConfigParam{}},
 		},
 	}
-	rcmutate.RemoveEmptyGroups(cfg)
-	if cfg.ParameterGroups != nil {
-		t.Fatalf("ParameterGroups = %#v, want nil", cfg.ParameterGroups)
+	rcmutate.NormalizeEmptyParameterMaps(cfg)
+	group, ok := cfg.ParameterGroups["empty"]
+	if !ok {
+		t.Fatalf("ParameterGroups = %#v, want empty group preserved", cfg.ParameterGroups)
+	}
+	if group.Description != "metadata" || group.Parameters != nil {
+		t.Fatalf("group = %#v, want preserved metadata and nil parameters", group)
 	}
 	if cfg.Parameters != nil {
 		t.Fatalf("Parameters = %#v, want nil", cfg.Parameters)
@@ -190,7 +204,7 @@ func TestFixtureRoundTripMutateNormalize(t *testing.T) {
 			}
 
 			rcmutate.DropUnknownConditionReferences(cfg)
-			rcmutate.RemoveEmptyGroups(cfg)
+			rcmutate.NormalizeEmptyParameterMaps(cfg)
 
 			out, err := firebase.MarshalRemoteConfig(cfg)
 			if err != nil {

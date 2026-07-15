@@ -104,6 +104,46 @@ func TestApplySelectedGroupedParameterPullsGroupDescription(t *testing.T) {
 	}
 }
 
+func TestApplyPreservesUnchangedEmptyGroup(t *testing.T) {
+	group := firebase.RemoteConfigGroup{Description: "metadata"}
+	source := &firebase.RemoteConfig{
+		Parameters:      map[string]firebase.RemoteConfigParam{"flag": stringParam("source")},
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{"empty": group},
+	}
+	target := &firebase.RemoteConfig{
+		Parameters:      map[string]firebase.RemoteConfigParam{"flag": stringParam("target")},
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{"empty": group},
+	}
+
+	plan := BuildPlan(source, target, Options{})
+	finalCfg, _, err := Apply(plan, SelectAll(plan.Items), Options{})
+	if err != nil {
+		t.Fatalf("Apply returned error: %v", err)
+	}
+	got, ok := finalCfg.ParameterGroups["empty"]
+	if !ok || got.Description != "metadata" || len(got.Parameters) != 0 {
+		t.Fatalf("empty group = %#v, ok = %v; want preserved metadata-only group", got, ok)
+	}
+}
+
+func TestApplyPruneRemovesExplicitlySelectedEmptyGroup(t *testing.T) {
+	source := &firebase.RemoteConfig{}
+	target := &firebase.RemoteConfig{
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"remove": {Description: "metadata"},
+		},
+	}
+
+	plan := BuildPlan(source, target, Options{Prune: true})
+	finalCfg, _, err := Apply(plan, SelectAll(plan.Items), Options{Prune: true})
+	if err != nil {
+		t.Fatalf("Apply returned error: %v", err)
+	}
+	if _, ok := finalCfg.ParameterGroups["remove"]; ok {
+		t.Fatalf("explicitly pruned group still present: %#v", finalCfg.ParameterGroups["remove"])
+	}
+}
+
 func stringParam(value string) firebase.RemoteConfigParam {
 	return firebase.RemoteConfigParam{
 		DefaultValue: &firebase.RemoteConfigValue{Value: value},

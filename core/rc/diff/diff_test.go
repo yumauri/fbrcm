@@ -234,3 +234,12 @@ func TestDiffFormattingHelpers(t *testing.T) {
 		t.Fatalf("emptyAsDash(value) = %q, want value", got)
 	}
 }
+
+func TestConditionOrderChangeIsReported(t *testing.T) {
+	left := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{{Name: "a", Expression: "true"}, {Name: "b", Expression: "false"}}}
+	right := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{{Name: "b", Expression: "false"}, {Name: "a", Expression: "true"}}}
+	text, changed := RenderRemoteConfigDiff(left, right)
+	if !changed || !strings.Contains(text, "position") {
+		t.Fatalf("condition reorder diff = %q, changed = %v", text, changed)
+	}
+}

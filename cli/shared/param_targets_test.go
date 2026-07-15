@@ -36,16 +36,20 @@ func TestCollectParamTargetsSortsByKeyThenGroup(t *testing.T) {
 	}
 }
 
-func TestRemoveParamSlotRemovesEmptyGroup(t *testing.T) {
+func TestRemoveParamSlotPreservesEmptyGroup(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{
-			"group-a": {Parameters: map[string]firebase.RemoteConfigParam{"flag": {}}},
+			"group-a": {Description: "metadata", Parameters: map[string]firebase.RemoteConfigParam{"flag": {}}},
 		},
 	}
 
 	RemoveParamSlot(cfg, "flag", "group-a")
-	if _, ok := cfg.ParameterGroups["group-a"]; ok {
-		t.Fatalf("empty group was not removed")
+	group, ok := cfg.ParameterGroups["group-a"]
+	if !ok {
+		t.Fatal("empty group was removed")
+	}
+	if group.Description != "metadata" || group.Parameters != nil {
+		t.Fatalf("group = %#v, want preserved metadata and nil parameters", group)
 	}
 }
 

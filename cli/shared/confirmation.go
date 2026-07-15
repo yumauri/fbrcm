@@ -25,15 +25,16 @@ type ConfirmationOptions struct {
 // When destructive is true the affirmative option is styled as destructive.
 // A non-nil fallbackOut overrides the prompt's output writer.
 func RunConfirmationPrompt(prompt string, destructive bool, fallbackOut io.Writer) (bool, error) {
-	confirm := NewConfirmation(prompt, confirmation.Yes, ConfirmationOptions{Destructive: destructive})
+	confirm := NewConfirmation(prompt, ConfirmationOptions{Destructive: destructive})
 	if fallbackOut != nil {
 		confirm.Output = fallbackOut
 	}
 	return confirm.RunPrompt()
 }
 
-func NewConfirmation(prompt string, defaultValue confirmation.Value, options ConfirmationOptions) *confirmation.Confirmation {
-	confirm := confirmation.New(prompt, defaultValue)
+// NewConfirmation creates a CLI confirmation with Yes selected by default.
+func NewConfirmation(prompt string, options ConfirmationOptions) *confirmation.Confirmation {
+	confirm := confirmation.New(prompt, confirmation.Yes)
 	hint := renderConfirmationNotes(options.Notes)
 
 	confirm.Template = `

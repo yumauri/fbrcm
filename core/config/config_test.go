@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -428,12 +429,10 @@ func TestDraftLoadSaveDeleteAndList(t *testing.T) {
 		t.Fatalf("LoadDraft missing = %v, want ErrNotExist", err)
 	}
 
-	if err := SaveDraft("demo", json.RawMessage(`{"parameters":`)); err == nil {
-		t.Fatal("SaveDraft invalid JSON returned nil error")
-	}
-
 	raw := json.RawMessage(`{"version":{"versionNumber":"1"},"parameters":{"flag":{"defaultValue":{"value":"draft"}}}}`)
-	if err := SaveDraft("demo", raw); err != nil {
+	now := time.Now().UTC()
+	stored := &Draft{FormatVersion: DraftFormatVersion, ProjectID: "demo", BaseVersion: "1", BaseETag: "etag-1", CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: raw, RemoteConfig: raw}
+	if err := SaveDraft(stored); err != nil {
 		t.Fatalf("SaveDraft returned error: %v", err)
 	}
 	assertFileMode(t, GetDraftPath("demo"), PrivateFileMode)
@@ -442,8 +441,11 @@ func TestDraftLoadSaveDeleteAndList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadDraft returned error: %v", err)
 	}
-	if string(loaded) != string(raw) {
-		t.Fatalf("LoadDraft = %s, want %s", loaded, raw)
+	var gotJSON, wantJSON any
+	_ = json.Unmarshal(loaded.RemoteConfig, &gotJSON)
+	_ = json.Unmarshal(raw, &wantJSON)
+	if !reflect.DeepEqual(gotJSON, wantJSON) || loaded.BaseVersion != "1" {
+		t.Fatalf("LoadDraft = %+v, want remote config and base version 1", loaded)
 	}
 
 	ids, err := ListDraftProjectIDs()
@@ -475,6 +477,20 @@ func TestListDraftProjectIDsMissingDir(t *testing.T) {
 	}
 	if ids != nil {
 		t.Fatalf("ListDraftProjectIDs = %v, want nil", ids)
+	}
+}
+
+func TestLoadDraftRejectsPlainRemoteConfigFormat(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatalf("SwitchProfile returned error: %v", err)
+	}
+	if err := EnsurePrivateDir(GetDraftsDirPath()); err != nil {
+		t.Fatalf("EnsurePrivateDir returned error: %v", err)
+	}
+	writeFile(t, GetDraftPath("demo"), `{"version":{"versionNumber":"1"}}`, PrivateFileMode)
+	if _, err := LoadDraft("demo"); err == nil || !strings.Contains(err.Error(), "unsupported draft format") {
+		t.Fatalf("LoadDraft legacy format error = %v", err)
 	}
 }
 

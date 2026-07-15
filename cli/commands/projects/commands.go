@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -123,7 +122,6 @@ func newPurgeCommand(svc *core.Core) *cobra.Command {
 			if !yes {
 				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete cached projects config file %s?", config.GetProjectsFilePath()),
-					confirmation.Yes,
 					shared.ConfirmationOptions{Destructive: true},
 				)
 				ok, err := confirm.RunPrompt()

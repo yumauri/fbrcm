@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
@@ -51,8 +52,14 @@ func MergeWithLatest(baseRaw, draftRaw, latestRaw json.RawMessage) (json.RawMess
 		}
 		return nil, false, fmt.Errorf("draft conflict on %s", rcmutate.SlotDisplayKey(key))
 	}
-	rcmutate.RemoveEmptyGroups(merged)
+	if err := mergeGroupDescriptions(baseCfg, draftCfg, latestCfg, merged); err != nil {
+		return nil, false, err
+	}
+	if err := mergeConditions(baseCfg, draftCfg, latestCfg, merged); err != nil {
+		return nil, false, err
+	}
 	rcmutate.DropUnknownConditionReferences(merged)
+	rcmutate.NormalizeEmptyParameterMaps(merged)
 
 	if reflect.DeepEqual(latestCfg, merged) {
 		return nil, false, nil
@@ -62,6 +69,150 @@ func MergeWithLatest(baseRaw, draftRaw, latestRaw json.RawMessage) (json.RawMess
 		return nil, false, err
 	}
 	return raw, true, nil
+}
+
+type groupDescriptionState struct {
+	Description string
+	Present     bool
+}
+
+func mergeGroupDescriptions(base, draft, latest, merged *firebase.RemoteConfig) error {
+	keys := make(map[string]struct{})
+	for name := range base.ParameterGroups {
+		keys[name] = struct{}{}
+	}
+	for name := range draft.ParameterGroups {
+		keys[name] = struct{}{}
+	}
+	for name := range latest.ParameterGroups {
+		keys[name] = struct{}{}
+	}
+	names := make([]string, 0, len(keys))
+	for name := range keys {
+		names = append(names, name)
+	}
+	strfold.Sort(names)
+	for _, name := range names {
+		baseState := groupDescription(base, name)
+		draftState := groupDescription(draft, name)
+		latestState := groupDescription(latest, name)
+		if reflect.DeepEqual(baseState, draftState) {
+			continue
+		}
+		if !reflect.DeepEqual(baseState, latestState) && !reflect.DeepEqual(draftState, latestState) {
+			return fmt.Errorf("draft conflict on group description %s", name)
+		}
+		if !draftState.Present {
+			delete(merged.ParameterGroups, name)
+			continue
+		}
+		group, ok := merged.ParameterGroups[name]
+		if !ok {
+			if merged.ParameterGroups == nil {
+				merged.ParameterGroups = make(map[string]firebase.RemoteConfigGroup)
+			}
+			group = firebase.RemoteConfigGroup{}
+		}
+		group.Description = draftState.Description
+		merged.ParameterGroups[name] = group
+	}
+	return nil
+}
+
+func groupDescription(cfg *firebase.RemoteConfig, name string) groupDescriptionState {
+	group, ok := cfg.ParameterGroups[name]
+	return groupDescriptionState{Description: group.Description, Present: ok}
+}
+
+func mergeConditions(base, draft, latest, merged *firebase.RemoteConfig) error {
+	baseByName := conditionsByName(base.Conditions)
+	draftByName := conditionsByName(draft.Conditions)
+	latestByName := conditionsByName(latest.Conditions)
+	keys := make(map[string]struct{})
+	for name := range baseByName {
+		keys[name] = struct{}{}
+	}
+	for name := range draftByName {
+		keys[name] = struct{}{}
+	}
+	for name := range latestByName {
+		keys[name] = struct{}{}
+	}
+	names := make([]string, 0, len(keys))
+	for name := range keys {
+		names = append(names, name)
+	}
+	strfold.Sort(names)
+	mergedByName := conditionsByName(merged.Conditions)
+	for _, name := range names {
+		baseCondition, inBase := baseByName[name]
+		draftCondition, inDraft := draftByName[name]
+		latestCondition, inLatest := latestByName[name]
+		localChanged := inBase != inDraft || !reflect.DeepEqual(baseCondition, draftCondition)
+		if !localChanged {
+			continue
+		}
+		remoteChanged := inBase != inLatest || !reflect.DeepEqual(baseCondition, latestCondition)
+		if remoteChanged && (inDraft != inLatest || !reflect.DeepEqual(draftCondition, latestCondition)) {
+			return fmt.Errorf("draft conflict on condition %s", name)
+		}
+		if inDraft {
+			mergedByName[name] = draftCondition
+		} else {
+			delete(mergedByName, name)
+		}
+	}
+
+	baseOrder := conditionOrder(base.Conditions)
+	draftOrder := conditionOrder(draft.Conditions)
+	latestOrder := conditionOrder(latest.Conditions)
+	localOrderChanged := !slices.Equal(baseOrder, draftOrder)
+	remoteOrderChanged := !slices.Equal(baseOrder, latestOrder)
+	if localOrderChanged && remoteOrderChanged && !slices.Equal(draftOrder, latestOrder) {
+		return fmt.Errorf("draft conflict on condition order")
+	}
+	order := latestOrder
+	if localOrderChanged {
+		order = draftOrder
+	}
+	merged.Conditions = make([]firebase.RemoteConfigCondition, 0, len(mergedByName))
+	seen := make(map[string]bool, len(mergedByName))
+	for _, name := range order {
+		if condition, ok := mergedByName[name]; ok {
+			merged.Conditions = append(merged.Conditions, condition)
+			seen[name] = true
+		}
+	}
+	remaining := make([]string, 0)
+	for name := range mergedByName {
+		if !seen[name] {
+			remaining = append(remaining, name)
+		}
+	}
+	strfold.Sort(remaining)
+	for _, name := range remaining {
+		merged.Conditions = append(merged.Conditions, mergedByName[name])
+	}
+	if len(merged.Conditions) == 0 {
+		merged.Conditions = nil
+	}
+	return nil
+}
+
+func conditionsByName(conditions []firebase.RemoteConfigCondition) map[string]firebase.RemoteConfigCondition {
+	out := make(map[string]firebase.RemoteConfigCondition, len(conditions))
+	for _, condition := range conditions {
+		out[condition.Name] = condition
+	}
+	return out
+}
+
+func conditionOrder(conditions []firebase.RemoteConfigCondition) []string {
+	out := make([]string, 0, len(conditions))
+	for _, condition := range conditions {
+		out = append(out, condition.Name)
+	}
+	return out
 }
 
 func sortedSlotKeys(maps ...map[string]rcmutate.Slot) []string {

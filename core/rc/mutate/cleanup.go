@@ -3,8 +3,8 @@ package mutate
 import "github.com/yumauri/fbrcm/core/firebase"
 
 // DropUnknownConditionReferences removes conditional values whose condition names
-// are not present in cfg.Conditions, drops parameters left without values, and
-// removes empty groups.
+// are not present in cfg.Conditions and drops parameters left without values.
+// Groups are preserved even when those removals leave them empty.
 func DropUnknownConditionReferences(cfg *firebase.RemoteConfig) {
 	allowed := make(map[string]struct{}, len(cfg.Conditions))
 	for _, condition := range cfg.Conditions {
@@ -13,12 +13,9 @@ func DropUnknownConditionReferences(cfg *firebase.RemoteConfig) {
 	cfg.Parameters = stripUnknownConditionRefs(cfg.Parameters, allowed)
 	for groupName, group := range cfg.ParameterGroups {
 		group.Parameters = stripUnknownConditionRefs(group.Parameters, allowed)
-		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
-			continue
-		}
 		cfg.ParameterGroups[groupName] = group
 	}
+	NormalizeEmptyParameterMaps(cfg)
 }
 
 func stripUnknownConditionRefs(params map[string]firebase.RemoteConfigParam, allowed map[string]struct{}) map[string]firebase.RemoteConfigParam {
@@ -52,11 +49,16 @@ func stripUnknownConditionRefs(params map[string]firebase.RemoteConfigParam, all
 	return out
 }
 
-// RemoveEmptyGroups deletes groups with no parameters and normalizes nil maps.
-func RemoveEmptyGroups(cfg *firebase.RemoteConfig) {
+// NormalizeEmptyParameterMaps normalizes empty parameter maps without removing
+// groups. Empty groups are valid Remote Config entities and may carry metadata.
+func NormalizeEmptyParameterMaps(cfg *firebase.RemoteConfig) {
+	if cfg == nil {
+		return
+	}
 	for groupName, group := range cfg.ParameterGroups {
 		if len(group.Parameters) == 0 {
-			delete(cfg.ParameterGroups, groupName)
+			group.Parameters = nil
+			cfg.ParameterGroups[groupName] = group
 		}
 	}
 	if len(cfg.ParameterGroups) == 0 {

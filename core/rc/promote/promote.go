@@ -132,8 +132,24 @@ func Apply(plan Plan, selected map[ItemID]bool, opts Options) (*firebase.RemoteC
 	}
 
 	rcmutate.DropUnknownConditionReferences(finalCfg)
-	rcmutate.RemoveEmptyGroups(finalCfg)
+	removeExplicitlyPrunedGroups(finalCfg, plan.Source, selected)
+	rcmutate.NormalizeEmptyParameterMaps(finalCfg)
 	return finalCfg, applied, nil
+}
+
+func removeExplicitlyPrunedGroups(cfg, source *firebase.RemoteConfig, selected map[ItemID]bool) {
+	for groupName, group := range cfg.ParameterGroups {
+		if len(group.Parameters) > 0 {
+			continue
+		}
+		if _, exists := source.ParameterGroups[groupName]; exists {
+			continue
+		}
+		id := ItemID{Kind: rcdiff.ItemGroupDescription, Name: groupName}
+		if selected[id] {
+			delete(cfg.ParameterGroups, groupName)
+		}
+	}
 }
 
 func withDependencies(plan Plan, selected map[ItemID]bool) map[ItemID]bool {

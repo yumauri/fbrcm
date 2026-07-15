@@ -8,6 +8,7 @@ import (
 
 func TestLoadSaveDeleteAndList(t *testing.T) {
 	setupDraftTestEnv(t)
+	saveParametersCache(t, "demo", "etag-1", remoteConfigRaw("1", map[string]string{"flag": "base"}))
 
 	if raw, hasDraft, err := Load("demo"); err != nil || hasDraft || raw != nil {
 		t.Fatalf("Load missing = (%q, %v, %v), want (nil, false, nil)", raw, hasDraft, err)

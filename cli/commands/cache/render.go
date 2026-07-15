@@ -22,9 +22,7 @@ func renderCacheTable(entries []cacheEntry) string {
 
 	for _, entry := range entries {
 		cachedAt := ""
-		if entry.Draft {
-			cachedAt = "draft"
-		} else if entry.CachedAt != nil && !entry.CachedAt.IsZero() {
+		if entry.CachedAt != nil && !entry.CachedAt.IsZero() {
 			cachedAt = entry.CachedAt.Local().Format("2006-01-02 15:04:05")
 		}
 		size := humanSize(entry.Size)
@@ -59,9 +57,6 @@ func renderCacheTable(entries []cacheEntry) string {
 		}
 		if row >= 0 && row%2 == 1 {
 			style = style.Background(clistyles.ColorRowStripe)
-		}
-		if row >= 0 && col == 4 && entries[row].Draft {
-			return style.Foreground(clistyles.PaletteError)
 		}
 		if col == 1 {
 			return style.Foreground(clistyles.PaletteSlateBright)

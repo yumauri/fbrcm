@@ -8,5 +8,5 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmdtest.AssertCommandStructure(t, New(nil), "delete [parameter]",
-		"project", "filter", "expr", "search", "dry-run", "yes")
+		"project", "filter", "expr", "search", "dry-run", "draft", "yes")
 }

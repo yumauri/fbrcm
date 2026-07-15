@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 	"time"
 
@@ -153,6 +154,25 @@ func TestBuildTreeGroupedOnlyNoRootBucket(t *testing.T) {
 	}
 	if tree.Groups[0].Key != "alpha" {
 		t.Fatalf("group key = %q, want alpha", tree.Groups[0].Key)
+	}
+}
+
+func TestBuildTreeIncludesEmptyAndDescriptionOnlyGroups(t *testing.T) {
+	cfg := &firebase.RemoteConfig{
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"empty": {},
+			"ROKU":  {Description: "FLAGS FOR ROKU"},
+		},
+	}
+
+	tree := BuildTree(cfg, time.Now(), "etag")
+	if got, want := groupKeys(tree.Groups), []string{"empty", "ROKU"}; !slices.Equal(got, want) {
+		t.Fatalf("group keys = %v, want %v", got, want)
+	}
+	for _, group := range tree.Groups {
+		if len(group.Parameters) != 0 {
+			t.Fatalf("group %q parameters = %#v, want empty", group.Key, group.Parameters)
+		}
 	}
 }
 

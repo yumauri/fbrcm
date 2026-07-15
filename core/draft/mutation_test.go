@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+
+	"github.com/yumauri/fbrcm/core/firebase"
+	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 )
 
 func TestMutationOperations(t *testing.T) {
@@ -191,4 +194,91 @@ func TestDuplicateParameterAutoNamed(t *testing.T) {
 	}
 	assertParamValue(t, raw, "flag", "old")
 	assertParamValue(t, raw, "flag_copy", "old")
+}
+
+func TestMutationPreservesEmptyGroups(t *testing.T) {
+	setupDraftTestEnv(t)
+	baseRaw := marshalRemoteConfig(firebase.RemoteConfig{
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"flag": remoteConfigParam("old", "STRING"),
+		},
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"empty": {},
+			"ROKU":  {Description: "FLAGS FOR ROKU"},
+		},
+		Version: firebase.RemoteConfigVersion{VersionNumber: "1"},
+	})
+	cache := saveParametersCache(t, "demo", "etag-1", baseRaw)
+	deps := (&fakeDeps{cache: cache}).deps()
+
+	result, _, err := Mutate(context.Background(), deps, "demo", false, MutationSpec{
+		Apply: SetStringParameterValue("", "flag", "default", "new"),
+	})
+	if err != nil {
+		t.Fatalf("Mutate returned error: %v", err)
+	}
+	assertPreservedEmptyGroups(t, result.FinalRaw)
+
+	stored, ok, err := LoadRecord("demo")
+	if err != nil || !ok {
+		t.Fatalf("LoadRecord ok = %v, err = %v", ok, err)
+	}
+	assertPreservedEmptyGroups(t, stored.BaseRemoteConfig)
+	assertPreservedEmptyGroups(t, stored.RemoteConfig)
+	baseCfg, _ := firebase.ParseRemoteConfig(stored.BaseRemoteConfig)
+	draftCfg, _ := firebase.ParseRemoteConfig(stored.RemoteConfig)
+	groupChanges := rcdiff.CompareRemoteConfigs(baseCfg, draftCfg).GroupDescriptionSummary()
+	if groupChanges.Added != 0 || groupChanges.Removed != 0 || groupChanges.Changed != 0 {
+		t.Fatalf("group description changes = %+v, want no changes", groupChanges)
+	}
+}
+
+func TestDeleteLastParameterPreservesGroup(t *testing.T) {
+	setupDraftTestEnv(t)
+	baseRaw := marshalRemoteConfig(firebase.RemoteConfig{
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"group": {
+				Description: "metadata",
+				Parameters: map[string]firebase.RemoteConfigParam{
+					"flag": remoteConfigParam("old", "STRING"),
+				},
+			},
+		},
+		Version: firebase.RemoteConfigVersion{VersionNumber: "1"},
+	})
+	cache := saveParametersCache(t, "demo", "etag-1", baseRaw)
+	deps := (&fakeDeps{cache: cache}).deps()
+
+	result, _, err := Mutate(context.Background(), deps, "demo", false, MutationSpec{
+		Apply: DeleteParameter("group", "flag"),
+	})
+	if err != nil {
+		t.Fatalf("Mutate returned error: %v", err)
+	}
+	cfg, err := firebase.ParseRemoteConfig(result.FinalRaw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfig returned error: %v", err)
+	}
+	group, ok := cfg.ParameterGroups["group"]
+	if !ok {
+		t.Fatal("group was removed with its last parameter")
+	}
+	if group.Description != "metadata" || len(group.Parameters) != 0 {
+		t.Fatalf("group = %#v, want preserved empty group with metadata", group)
+	}
+}
+
+func assertPreservedEmptyGroups(t *testing.T, raw json.RawMessage) {
+	t.Helper()
+	cfg, err := firebase.ParseRemoteConfig(raw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfig returned error: %v", err)
+	}
+	if _, ok := cfg.ParameterGroups["empty"]; !ok {
+		t.Fatal("empty group was removed")
+	}
+	group, ok := cfg.ParameterGroups["ROKU"]
+	if !ok || group.Description != "FLAGS FOR ROKU" || len(group.Parameters) != 0 {
+		t.Fatalf("ROKU group = %#v, ok = %v; want preserved description-only group", group, ok)
+	}
 }

@@ -1,21 +1,22 @@
 package draft
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // Deps supplies draft pipeline callbacks that require Core services.
 type Deps struct {
-	GetParameters               func(ctx context.Context, projectID string, force bool) (*config.ParametersCache, string, error)
-	InspectParametersCache      func(projectID string) (*config.ParametersCache, error)
-	PublishRemoteConfigWithETag func(ctx context.Context, projectID string, raw json.RawMessage, etag string) (json.RawMessage, string, error)
+	GetParameters                func(ctx context.Context, projectID string, force bool) (*config.ParametersCache, string, error)
+	InspectParametersCache       func(projectID string) (*config.ParametersCache, error)
+	ValidateRemoteConfigWithETag func(ctx context.Context, projectID string, raw json.RawMessage, etag string) error
+	PublishRemoteConfigWithETag  func(ctx context.Context, projectID string, raw json.RawMessage, etag string) (json.RawMessage, string, error)
 }
 
 // MutateResult is the outcome of a draft mutation before tree building.
@@ -25,6 +26,24 @@ type MutateResult struct {
 	HasDraft  bool
 	Published bool
 }
+
+type PublishPlan struct {
+	Draft      *Record
+	Latest     *config.ParametersCache
+	Candidate  json.RawMessage
+	HasChanges bool
+	Rebased    bool
+}
+
+type PublishedCleanupError struct {
+	Err error
+}
+
+func (e *PublishedCleanupError) Error() string {
+	return fmt.Sprintf("draft was published but local cleanup failed: %v", e.Err)
+}
+
+func (e *PublishedCleanupError) Unwrap() error { return e.Err }
 
 func Mutate(ctx context.Context, deps Deps, projectID string, publish bool, spec MutationSpec) (*MutateResult, bool, error) {
 	cache, _, err := deps.GetParameters(ctx, projectID, false)
@@ -69,6 +88,35 @@ func Preview(deps Deps, projectID string, spec MutationSpec) (*config.Parameters
 func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache *config.ParametersCache, finalRaw json.RawMessage, hasDraft bool, publish bool) (*MutateResult, bool, error) {
 	logger := corelog.For("core")
 	if publish {
+		if hasDraft {
+			stored, ok, err := LoadRecord(projectID)
+			if err != nil {
+				return nil, hasDraft, err
+			}
+			if !ok {
+				return nil, hasDraft, fmt.Errorf("draft not found")
+			}
+			latest, _, err := deps.GetParameters(ctx, projectID, true)
+			if err != nil {
+				return nil, hasDraft, err
+			}
+			mergedRaw, changed, err := MergeWithLatest(stored.BaseRemoteConfig, finalRaw, latest.RemoteConfig)
+			if err != nil {
+				return nil, hasDraft, err
+			}
+			if !changed {
+				if err := Delete(projectID); err != nil {
+					return nil, hasDraft, err
+				}
+				return &MutateResult{Cache: latest, FinalRaw: latest.RemoteConfig}, false, nil
+			}
+			if deps.ValidateRemoteConfigWithETag != nil {
+				if err := deps.ValidateRemoteConfigWithETag(ctx, projectID, mergedRaw, latest.ETag); err != nil {
+					return nil, hasDraft, err
+				}
+			}
+			finalRaw, cache = mergedRaw, latest
+		}
 		updatedRaw, nextETag, err := deps.PublishRemoteConfigWithETag(ctx, projectID, finalRaw, cache.ETag)
 		if err != nil {
 			return nil, hasDraft, err
@@ -89,7 +137,7 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 		}, false, nil
 	}
 
-	if err := Save(projectID, finalRaw); err != nil {
+	if err := SaveWithBase(projectID, cache, finalRaw); err != nil {
 		return nil, hasDraft, err
 	}
 	return &MutateResult{
@@ -101,31 +149,91 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 
 // PublishExistingDraft publishes the on-disk draft for one project.
 func PublishExistingDraft(ctx context.Context, deps Deps, projectID string) (*config.ParametersCache, json.RawMessage, error) {
-	logger := corelog.For("core")
-	cache, _, err := deps.GetParameters(ctx, projectID, false)
+	plan, err := PreparePublish(ctx, deps, projectID)
 	if err != nil {
 		return nil, nil, err
 	}
-	draftRaw, hasDraft, err := Load(projectID)
+	return ExecutePublish(ctx, deps, projectID, plan)
+}
+
+func PreparePublish(ctx context.Context, deps Deps, projectID string) (*PublishPlan, error) {
+	stored, hasDraft, err := LoadRecord(projectID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if !hasDraft {
-		return nil, nil, fmt.Errorf("draft not found")
+		return nil, fmt.Errorf("draft not found")
+	}
+	cache, _, err := deps.GetParameters(ctx, projectID, true)
+	if err != nil {
+		return nil, err
 	}
 
-	updatedRaw, nextETag, err := deps.PublishRemoteConfigWithETag(ctx, projectID, draftRaw, cache.ETag)
+	candidateRaw, hasChanges, err := MergeWithLatest(stored.BaseRemoteConfig, stored.RemoteConfig, cache.RemoteConfig)
+	if err != nil {
+		return nil, err
+	}
+	baseCfg, err := firebase.ParseRemoteConfig(stored.BaseRemoteConfig)
+	if err != nil {
+		return nil, err
+	}
+	latestCfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
+	if err != nil {
+		return nil, err
+	}
+	if !hasChanges {
+		candidateRaw = cache.RemoteConfig
+	}
+	return &PublishPlan{
+		Draft:      stored,
+		Latest:     cache,
+		Candidate:  candidateRaw,
+		HasChanges: hasChanges,
+		Rebased:    baseCfg.Version.VersionNumber != latestCfg.Version.VersionNumber,
+	}, nil
+}
+
+func ExecutePublish(ctx context.Context, deps Deps, projectID string, plan *PublishPlan) (*config.ParametersCache, json.RawMessage, error) {
+	logger := corelog.For("core")
+	if plan == nil || plan.Draft == nil || plan.Latest == nil {
+		return nil, nil, fmt.Errorf("draft publish plan is incomplete")
+	}
+	current, ok, err := LoadRecord(projectID)
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := Delete(projectID); err != nil {
-		logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
+	if !ok || !current.UpdatedAt.Equal(plan.Draft.UpdatedAt) {
+		return nil, nil, fmt.Errorf("draft changed during preview; rerun the command")
+	}
+	if !plan.HasChanges {
+		if !firebase.IsDryRun(ctx) {
+			if err := Delete(projectID); err != nil {
+				return nil, nil, err
+			}
+		}
+		return plan.Latest, plan.Latest.RemoteConfig, nil
+	}
+	if deps.ValidateRemoteConfigWithETag != nil {
+		if err := deps.ValidateRemoteConfigWithETag(ctx, projectID, plan.Candidate, plan.Latest.ETag); err != nil {
+			return nil, nil, err
+		}
+	}
+	if firebase.IsDryRun(ctx) {
+		return &config.ParametersCache{ETag: plan.Latest.ETag, CachedAt: plan.Latest.CachedAt, RemoteConfig: plan.Candidate}, plan.Candidate, nil
 	}
 
+	updatedRaw, nextETag, err := deps.PublishRemoteConfigWithETag(ctx, projectID, plan.Candidate, plan.Latest.ETag)
+	if err != nil {
+		return nil, nil, err
+	}
 	updatedCache := &config.ParametersCache{
 		ETag:         nextETag,
 		CachedAt:     time.Now().UTC(),
 		RemoteConfig: updatedRaw,
+	}
+	if err := Delete(projectID); err != nil {
+		logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
+		return updatedCache, updatedRaw, &PublishedCleanupError{Err: err}
 	}
 	return updatedCache, updatedRaw, nil
 }
@@ -147,7 +255,7 @@ func RefreshDraftAware(ctx context.Context, deps Deps, projectID string, previou
 		return nil, err
 	}
 
-	draftRaw, hasDraft, err := Load(projectID)
+	stored, hasDraft, err := LoadRecord(projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,17 +267,21 @@ func RefreshDraftAware(ctx context.Context, deps Deps, projectID string, previou
 		}, nil
 	}
 
-	if previousCache == nil || bytes.Equal(previousCache.RemoteConfig, cache.RemoteConfig) {
+	latestCfg, parseErr := firebase.ParseRemoteConfig(cache.RemoteConfig)
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	if stored.BaseVersion == latestCfg.Version.VersionNumber {
 		return &RefreshOutcome{
 			Cache:    cache,
 			Source:   "draft",
 			HasDraft: true,
-			DraftRaw: draftRaw,
+			DraftRaw: stored.RemoteConfig,
 			UseDraft: true,
 		}, nil
 	}
 
-	mergedRaw, hasChanges, err := MergeWithLatest(previousCache.RemoteConfig, draftRaw, cache.RemoteConfig)
+	mergedRaw, hasChanges, err := MergeWithLatest(stored.BaseRemoteConfig, stored.RemoteConfig, cache.RemoteConfig)
 	if err != nil {
 		logger.Error("merge draft with latest failed", "project_id", projectID, "err", err)
 		return &RefreshOutcome{
@@ -177,7 +289,7 @@ func RefreshDraftAware(ctx context.Context, deps Deps, projectID string, previou
 			Source:     "draft-stale",
 			HasDraft:   true,
 			StaleDraft: true,
-			DraftRaw:   draftRaw,
+			DraftRaw:   stored.RemoteConfig,
 			UseDraft:   true,
 		}, nil
 	}
@@ -191,7 +303,7 @@ func RefreshDraftAware(ctx context.Context, deps Deps, projectID string, previou
 			HasDraft: false,
 		}, nil
 	}
-	if err := Save(projectID, mergedRaw); err != nil {
+	if err := SaveRebased(projectID, cache, mergedRaw, stored.CreatedAt); err != nil {
 		return nil, err
 	}
 	return &RefreshOutcome{

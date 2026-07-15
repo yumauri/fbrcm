@@ -25,6 +25,7 @@ type addOptions struct {
 	projectFilters []string
 	projectExpr    string
 	dryRun         bool
+	draft          bool
 	groupName      string
 	description    string
 	valueSpec      addValueSpec
@@ -55,6 +56,7 @@ func addFlags(cmd *cobra.Command) {
 	shared.AddProjectFilterFlag(cmd)
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
+	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	cmd.Flags().String("description", "", "Parameter description")
 	cmd.Flags().String("group", "", "Target parameter group")
 	cmd.Flags().String("boolean", "", "Boolean parameter value: true or false")
@@ -70,6 +72,9 @@ func runAddCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	if shared.StdinAvailable(cmd.InOrStdin()) {
+		if opts.draft {
+			return fmt.Errorf("--draft is unavailable in stdin mode")
+		}
 		corelog.For("add").Info("stdin mode enabled; using remote config from stdin")
 		return runAddStdin(cmd, opts.key, opts.groupName, opts.description, opts.valueSpec, opts.projectExpr)
 	}
@@ -86,6 +91,10 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 		return addOptions{}, err
 	}
 	dryRun, err := cmd.Flags().GetBool("dry-run")
+	if err != nil {
+		return addOptions{}, err
+	}
+	draftMode, err := cmd.Flags().GetBool("draft")
 	if err != nil {
 		return addOptions{}, err
 	}
@@ -111,6 +120,7 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 		projectFilters: projectFilters,
 		projectExpr:    projectExpr,
 		dryRun:         dryRun,
+		draft:          draftMode,
 		groupName:      strings.TrimSpace(groupName),
 		description:    description,
 		valueSpec:      spec,
@@ -143,7 +153,7 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	}
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
-	totals, err := rc.RunRemotePublishLoop(ctx, cmd, svc, projects, "add", "➕", func(project core.Project, _ *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
+	plan := func(project core.Project, _ *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
 		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			changed, finalCfg, err := addParameter(current, opts.key, opts.groupName, opts.description, opts.valueSpec)
 			if err != nil {
@@ -160,7 +170,13 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 			return 1, finalCfg, nil
 		}, nil
-	})
+	}
+	var totals rc.RemoteMutationTotals
+	if opts.draft {
+		totals, err = rc.RunRemoteDraftLoop(ctx, cmd, svc, projects, "add", plan)
+	} else {
+		totals, err = rc.RunRemotePublishLoop(ctx, cmd, svc, projects, "add", "➕", plan)
+	}
 	if err != nil {
 		return err
 	}

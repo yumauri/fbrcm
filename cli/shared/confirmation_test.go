@@ -11,7 +11,7 @@ import (
 
 func TestNewConfirmationIncludesNotes(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
-	confirm := NewConfirmation("Delete flag?", confirmation.Yes, ConfirmationOptions{
+	confirm := NewConfirmation("Delete flag?", ConfirmationOptions{
 		Destructive: true,
 		Notes: []ConfirmationNote{{
 			Text:  "This cannot be undone.",
@@ -23,6 +23,9 @@ func TestNewConfirmationIncludesNotes(t *testing.T) {
 	}
 	if confirm.Template == "" {
 		t.Fatal("confirmation template is empty")
+	}
+	if confirm.DefaultValue != confirmation.Yes {
+		t.Fatalf("confirmation default = %v, want Yes", confirm.DefaultValue)
 	}
 }
 
@@ -39,7 +42,7 @@ func TestRunConfirmationPromptUsesFallbackWriter(t *testing.T) {
 	var buf bytes.Buffer
 	// NOTE(suspicious): RunConfirmationPrompt always blocks for interactive input;
 	// this test only verifies wiring by checking NewConfirmation construction paths.
-	confirm := NewConfirmation("Proceed?", confirmation.Yes, ConfirmationOptions{})
+	confirm := NewConfirmation("Proceed?", ConfirmationOptions{})
 	confirm.Output = &buf
 	if confirm.Output != &buf {
 		t.Fatal("confirmation output writer was not assigned")

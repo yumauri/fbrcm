@@ -38,7 +38,7 @@ never imports `cli/` or `tui/`.
 | Package | Responsibility |
 | --- | --- |
 | `cli/app` | Root command assembly and top-level error handling. |
-| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `config`, `delete`, `get`, `profile`, `project`, `projects`, `update`). |
+| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `config`, `delete`, `draft`, `get`, `profile`, `project`, `projects`, `update`). |
 | `cli/shared` | Reusable command plumbing: flags, project/parameter filtering, confirmation prompts, JSON input. |
 | `cli/shared/rc` | Remote Config CLI pipeline: input extraction, order-preserving JSON, diff rendering, export normalization, validate/publish with ETag retry. Imported directly by RC mutation commands (`add`, `delete`, `update`, `get`, `project`). |
 | `cli/styles` | CLI palette and `NO_COLOR` handling. |
@@ -119,6 +119,7 @@ Add or extend tests at the layer you touch:
 ### Invariants
 
 - Root group key representations (`""`, `__default__`, `(root)`) must stay consistent — see [root-group-key.md](root-group-key.md).
+- Empty Remote Config parameter groups are first-class entities and may carry descriptions. Parameter mutation, filtering, condition cleanup, draft merge, and promotion must preserve them; only explicit group operations may remove them. In the TUI, the configured delete action opens confirmation when no draft exists and stages removal immediately when a draft already exists, matching other edits.
 - Private file I/O goes through `core/config.WritePrivateFile`.
 
 ### Stop criteria

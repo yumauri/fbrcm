@@ -1,9 +1,12 @@
 package app
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
+
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/messages"
@@ -68,6 +71,9 @@ func dialogTitle(t *testing.T, m Model) string {
 	}
 	if strings.Contains(view, "Delete Conditional Value Failed") {
 		return "Delete Conditional Value Failed"
+	}
+	if strings.Contains(view, "Delete Group?") {
+		return "Delete Group?"
 	}
 	return view
 }
@@ -141,5 +147,46 @@ func TestDeleteKeyRoutesDetailsFirstConditionalToConditionalDelete(t *testing.T)
 	}
 	if !strings.Contains(title, "Conditional Value") {
 		t.Fatalf("dialog title = %q, want conditional value delete path", title)
+	}
+}
+
+func TestDeleteKeyStagesEmptyGroupRemovalWhenDraftExists(t *testing.T) {
+	svc := newRenameTestService(t)
+	raw := json.RawMessage(`{"parameterGroups":{"empty":{"description":"metadata"}},"version":{"versionNumber":"1"}}`)
+	saveRenameParametersCache(t, "demo", raw)
+	if err := svc.SaveDraft("demo", raw); err != nil {
+		t.Fatalf("SaveDraft returned error: %v", err)
+	}
+	m := New(svc)
+	m.setActive(panels.Parameters)
+	m.dialog = m.dialog.SetBounds(0, 0, 80, 24)
+	m.parameters, _ = m.parameters.Update(messages.ProjectsSelectionChangedMsg{
+		Projects: []core.Project{{Name: "Demo", ProjectID: "demo"}},
+	})
+	m.parameters, _ = m.parameters.Update(messages.ParametersLoadedMsg{
+		Project:  core.Project{Name: "Demo", ProjectID: "demo"},
+		Tree:     &core.ParametersTree{Groups: []core.ParametersGroup{{Key: "empty", Label: "empty"}}},
+		Source:   "draft",
+		HasDraft: true,
+	})
+	m.parameters = m.parameters.SetBounds(0, 0, 80, 20).SetActive(true)
+	var cmd tea.Cmd
+	m.parameters, cmd = m.parameters.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyDown}))
+	if cmd != nil {
+		_ = cmd()
+	}
+	if _, groupKey, _, ok := m.parameters.CurrentGroupRef(); !ok || groupKey != "empty" {
+		t.Fatalf("current group = %q, ok = %v; want empty, true", groupKey, ok)
+	}
+
+	next, deleteCmd, handled := m.updateParametersDeleteKey()
+	if !handled {
+		t.Fatal("updateParametersDeleteKey did not handle group delete")
+	}
+	if deleteCmd == nil {
+		t.Fatal("group delete did not return draft mutation command")
+	}
+	if next.dialog.IsOpen() {
+		t.Fatal("group delete opened confirmation for an existing draft")
 	}
 }

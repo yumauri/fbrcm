@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/spf13/cobra"
 
@@ -27,9 +26,22 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if err != nil {
 		return err
 	}
+	draftMode, err := cmd.Flags().GetBool("draft")
+	if err != nil {
+		return err
+	}
 	ctx := context.Background()
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	if !draftMode {
+		hasDraft, draftErr := svc.HasDraft(project.ProjectID)
+		if draftErr != nil {
+			return draftErr
+		}
+		if hasDraft {
+			return fmt.Errorf("project %s has an unpublished draft; use --draft, publish it, or discard it first", project.ProjectID)
+		}
 	}
 
 	raw, err := readRemoteConfig(cmd)
@@ -62,14 +74,30 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return err
 	}
 
-	currentRaw, currentETag, err := svc.ExportRemoteConfig(ctx, project.ProjectID)
-	if err != nil {
-		return err
+	var currentRaw json.RawMessage
+	var currentETag string
+	if draftMode {
+		cache, _, loadErr := svc.GetParameters(ctx, project.ProjectID, true)
+		if loadErr != nil {
+			return loadErr
+		}
+		currentRaw, currentETag = cache.RemoteConfig, cache.ETag
+		if draftRaw, hasDraft, loadErr := svc.LoadDraft(project.ProjectID); loadErr != nil {
+			return loadErr
+		} else if hasDraft {
+			currentRaw = draftRaw
+		}
+	} else {
+		currentRaw, currentETag, err = svc.ExportRemoteConfig(ctx, project.ProjectID)
+		if err != nil {
+			return err
+		}
 	}
 	currentCfg, err := firebase.ParseCloneRemoteConfig(currentRaw)
 	if err != nil {
 		return fmt.Errorf("decode current remote config: %w", err)
 	}
+	currentVersion := currentCfg.Version
 	currentCfg.Version = firebase.RemoteConfigVersion{}
 
 	finalCfg, err := buildFinalImportConfig(cmd, currentCfg, importCfg, opts)
@@ -77,9 +105,12 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return err
 	}
 	finalCfg.Version = firebase.RemoteConfigVersion{}
+	if draftMode {
+		finalCfg.Version = currentVersion
+	}
 	pruneUnusedConditions(finalCfg)
 	dropUnknownConditionReferences(finalCfg)
-	removeEmptyGroups(finalCfg)
+	normalizeEmptyParameterMaps(finalCfg)
 
 	finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
 	if err != nil {
@@ -91,16 +122,20 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
 		return nil
 	}
-
-	if err := svc.ValidateRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
-		return err
+	if !draftMode {
+		if err := svc.ValidateRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
+			return err
+		}
 	}
 
 	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 
+	action := "Publish Remote Config changes to"
+	if draftMode {
+		action = "Save Remote Config draft for"
+	}
 	confirm := shared.NewConfirmation(
-		fmt.Sprintf("Publish Remote Config changes to %s?", project.ProjectID),
-		confirmation.Yes,
+		fmt.Sprintf("%s %s?", action, project.ProjectID),
 		shared.ConfirmationOptions{},
 	)
 	ok, err := confirm.RunPrompt()
@@ -108,6 +143,19 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return err
 	}
 	if !ok {
+		return nil
+	}
+	if draftMode {
+		if !dryRun {
+			if err := svc.SaveDraft(project.ProjectID, finalRaw); err != nil {
+				return err
+			}
+		}
+		status := "drafted"
+		if dryRun {
+			status = "would draft"
+		}
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📝 %s: %s\n", status, project.ProjectID)
 		return nil
 	}
 

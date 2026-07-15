@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -12,11 +13,13 @@ import (
 	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
 	configcmd "github.com/yumauri/fbrcm/cli/commands/config"
 	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
+	draftcmd "github.com/yumauri/fbrcm/cli/commands/draft"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -50,6 +53,7 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd.AddCommand(cachecmd.New())
 	rootCmd.AddCommand(configcmd.New())
 	rootCmd.AddCommand(deletecmd.New(s))
+	rootCmd.AddCommand(draftcmd.New(s))
 	rootCmd.AddCommand(getcmd.New(s))
 	rootCmd.AddCommand(profilecmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))
@@ -63,7 +67,14 @@ func Execute(s *core.Core, version, commit, date string) {
 	corelog.For("cli").Debug("register cli commands")
 	rootCmd := newRootCommand(s, version, commit, date)
 	if err := rootCmd.Execute(); err != nil {
-		corelog.For("cli").Error("cli command failed", "err", err)
-		os.Exit(1)
+		exitCode := 1
+		var exitErr *shared.ExitError
+		if errors.As(err, &exitErr) && exitErr.Code > 0 {
+			exitCode = exitErr.Code
+		}
+		if err.Error() != "" {
+			corelog.For("cli").Error("cli command failed", "err", err)
+		}
+		os.Exit(exitCode)
 	}
 }

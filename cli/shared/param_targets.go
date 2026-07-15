@@ -84,8 +84,7 @@ func RemoveParamSlot(cfg *firebase.RemoteConfig, key, groupName string) {
 	}
 	delete(group.Parameters, key)
 	if len(group.Parameters) == 0 {
-		delete(cfg.ParameterGroups, groupName)
-		return
+		group.Parameters = nil
 	}
 	cfg.ParameterGroups[groupName] = group
 }

@@ -6,7 +6,7 @@ const (
 	projectFilterFlagHelp   = "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
 	parameterFilterFlagHelp = "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated"
 	parameterSearchFlagHelp = "Search parameters by name, description, values, and conditions"
-	dryRunFlagHelp          = "Log Firebase write requests without sending them"
+	dryRunFlagHelp          = "Preview changes without writing local or Firebase state"
 )
 
 func AddProjectFilterFlag(cmd *cobra.Command) {

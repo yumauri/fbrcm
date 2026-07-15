@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -279,6 +278,11 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	if err != nil {
 		return err
 	}
+	if hasDraft, draftErr := svc.HasDraft(project.ProjectID); draftErr != nil {
+		return draftErr
+	} else if hasDraft {
+		return fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)
+	}
 	target, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, selector, restore)
 	if err != nil {
 		return err
@@ -308,7 +312,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	}
 	yes, _ := cmd.Flags().GetBool("yes")
 	if !yes && !dry {
-		confirm := shared.NewConfirmation(fmt.Sprintf("Publish this %s to %s?", map[bool]string{true: "restore", false: "rollback"}[restore], project.ProjectID), confirmation.Yes, shared.ConfirmationOptions{})
+		confirm := shared.NewConfirmation(fmt.Sprintf("Publish this %s to %s?", map[bool]string{true: "restore", false: "rollback"}[restore], project.ProjectID), shared.ConfirmationOptions{})
 		confirm.Output = cmd.ErrOrStderr()
 		ok, err := confirm.RunPrompt()
 		if err != nil || !ok {

@@ -45,6 +45,7 @@ func TestUpdateParamSlotRenamesMovesAndEditsParameter(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{
 			"group-a": {
+				Description: "group metadata",
 				Parameters: map[string]firebase.RemoteConfigParam{
 					"old_flag": {
 						DefaultValue: &firebase.RemoteConfigValue{Value: "old"},
@@ -78,8 +79,12 @@ func TestUpdateParamSlotRenamesMovesAndEditsParameter(t *testing.T) {
 	if err := updateParamSlot(cfg, target, spec); err != nil {
 		t.Fatalf("updateParamSlot returned error: %v", err)
 	}
-	if _, ok := cfg.ParameterGroups["group-a"]; ok {
-		t.Fatalf("group-a still present after moving last parameter to root")
+	group, ok := cfg.ParameterGroups["group-a"]
+	if !ok {
+		t.Fatal("group-a was removed after moving its last parameter to root")
+	}
+	if group.Description != "group metadata" || group.Parameters != nil {
+		t.Fatalf("group-a = %#v, want preserved metadata and nil parameters", group)
 	}
 	param, ok := cfg.Parameters["new_flag"]
 	if !ok {

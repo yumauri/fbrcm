@@ -43,6 +43,7 @@ func addDeleteFlags(cmd *cobra.Command) {
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
+	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and delete without confirmation")
 }
 
@@ -52,6 +53,9 @@ func runDeleteCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	if shared.StdinAvailable(cmd.InOrStdin()) {
+		if opts.Draft {
+			return fmt.Errorf("--draft is unavailable in stdin mode")
+		}
 		corelog.For("delete").Info("stdin mode enabled; using remote config from stdin")
 		return runDeleteStdin(cmd, opts.ParamFilters, opts.ParamExpr, opts.Search)
 	}

@@ -39,10 +39,12 @@ type Result struct {
 }
 
 type ConditionChange struct {
-	Name    string                          `json:"name"`
-	Kind    ChangeKind                      `json:"kind"`
-	Current *firebase.RemoteConfigCondition `json:"current,omitempty"`
-	Final   *firebase.RemoteConfigCondition `json:"final,omitempty"`
+	Name             string                          `json:"name"`
+	Kind             ChangeKind                      `json:"kind"`
+	PreviousPosition int                             `json:"previous_position,omitempty"`
+	FinalPosition    int                             `json:"final_position,omitempty"`
+	Current          *firebase.RemoteConfigCondition `json:"current,omitempty"`
+	Final            *firebase.RemoteConfigCondition `json:"final,omitempty"`
 }
 
 type ParameterChange struct {
@@ -97,18 +99,22 @@ func (r Result) TotalSummary() Summary {
 func compareConditions(currentCfg, finalCfg *firebase.RemoteConfig) []ConditionChange {
 	current := make(map[string]firebase.RemoteConfigCondition, len(currentCfg.Conditions))
 	final := make(map[string]firebase.RemoteConfigCondition, len(finalCfg.Conditions))
+	currentPosition := make(map[string]int, len(currentCfg.Conditions))
+	finalPosition := make(map[string]int, len(finalCfg.Conditions))
 	keys := make([]string, 0, len(currentCfg.Conditions)+len(finalCfg.Conditions))
 	seen := make(map[string]struct{})
 
-	for _, condition := range currentCfg.Conditions {
+	for index, condition := range currentCfg.Conditions {
 		current[condition.Name] = condition
+		currentPosition[condition.Name] = index + 1
 		if _, ok := seen[condition.Name]; !ok {
 			keys = append(keys, condition.Name)
 			seen[condition.Name] = struct{}{}
 		}
 	}
-	for _, condition := range finalCfg.Conditions {
+	for index, condition := range finalCfg.Conditions {
 		final[condition.Name] = condition
+		finalPosition[condition.Name] = index + 1
 		if _, ok := seen[condition.Name]; !ok {
 			keys = append(keys, condition.Name)
 			seen[condition.Name] = struct{}{}
@@ -122,13 +128,13 @@ func compareConditions(currentCfg, finalCfg *firebase.RemoteConfig) []ConditionC
 		right, hasRight := final[key]
 		switch {
 		case !hasLeft && hasRight:
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeAdded, Final: &right})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeAdded, FinalPosition: finalPosition[key], Final: &right})
 		case hasLeft && !hasRight:
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeRemoved, Current: &left})
-		case reflect.DeepEqual(left, right):
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeUnchanged, Current: &left, Final: &right})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeRemoved, PreviousPosition: currentPosition[key], Current: &left})
+		case reflect.DeepEqual(left, right) && currentPosition[key] == finalPosition[key]:
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeUnchanged, PreviousPosition: currentPosition[key], FinalPosition: finalPosition[key], Current: &left, Final: &right})
 		default:
-			changes = append(changes, ConditionChange{Name: key, Kind: ChangeChanged, Current: &left, Final: &right})
+			changes = append(changes, ConditionChange{Name: key, Kind: ChangeChanged, PreviousPosition: currentPosition[key], FinalPosition: finalPosition[key], Current: &left, Final: &right})
 		}
 	}
 	return changes

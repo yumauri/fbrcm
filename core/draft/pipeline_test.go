@@ -92,3 +92,38 @@ func TestPublishExistingDraftSuccessRemovesDraft(t *testing.T) {
 		t.Fatal("draft still present after successful publish")
 	}
 }
+
+func TestPublishExistingDraftRebasesNonConflictingRemoteChanges(t *testing.T) {
+	setupDraftTestEnv(t)
+	base := saveParametersCache(t, "demo", "etag-1", remoteConfigRaw("1", map[string]string{"local": "old", "remote": "old"}))
+	if err := SaveWithBase("demo", base, remoteConfigRaw("1", map[string]string{"local": "draft", "remote": "old"})); err != nil {
+		t.Fatalf("SaveWithBase returned error: %v", err)
+	}
+	latest := saveParametersCache(t, "demo", "etag-2", remoteConfigRaw("2", map[string]string{"local": "old", "remote": "firebase"}))
+	fake := &fakeDeps{cache: latest}
+	_, publishedRaw, err := PublishExistingDraft(context.Background(), fake.deps(), "demo")
+	if err != nil {
+		t.Fatalf("PublishExistingDraft returned error: %v", err)
+	}
+	assertParamValue(t, publishedRaw, "local", "draft")
+	assertParamValue(t, publishedRaw, "remote", "firebase")
+}
+
+func TestPublishExistingDraftConflictKeepsDraft(t *testing.T) {
+	setupDraftTestEnv(t)
+	base := saveParametersCache(t, "demo", "etag-1", remoteConfigRaw("1", map[string]string{"flag": "old"}))
+	if err := SaveWithBase("demo", base, remoteConfigRaw("1", map[string]string{"flag": "draft"})); err != nil {
+		t.Fatalf("SaveWithBase returned error: %v", err)
+	}
+	latest := saveParametersCache(t, "demo", "etag-2", remoteConfigRaw("2", map[string]string{"flag": "firebase"}))
+	fake := &fakeDeps{cache: latest}
+	if _, _, err := PublishExistingDraft(context.Background(), fake.deps(), "demo"); err == nil {
+		t.Fatal("PublishExistingDraft returned nil conflict error")
+	}
+	if fake.publishCalls != 0 {
+		t.Fatalf("publishCalls = %d, want 0", fake.publishCalls)
+	}
+	if _, hasDraft := loadDraft(t, "demo"); !hasDraft {
+		t.Fatal("draft removed after conflict")
+	}
+}

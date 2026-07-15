@@ -102,6 +102,6 @@ func renderGroupsTable(groups []groupSummary) string {
 	return tbl.String()
 }
 
-func removeEmptyGroups(cfg *firebase.RemoteConfig) {
-	rcmutate.RemoveEmptyGroups(cfg)
+func normalizeEmptyParameterMaps(cfg *firebase.RemoteConfig) {
+	rcmutate.NormalizeEmptyParameterMaps(cfg)
 }

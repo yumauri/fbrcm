@@ -1,6 +1,7 @@
 package parameters
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/yumauri/fbrcm/core"
@@ -51,6 +52,29 @@ func TestParametersViewSnapshot(t *testing.T) {
 	got := testutil.NormalizeViewSnapshot(parityTestModel().View(true))
 	if got != parametersViewSnapshot {
 		t.Fatalf("snapshot mismatch\n--- got ---\n%s\n--- want ---\n%s", got, parametersViewSnapshot)
+	}
+}
+
+func TestParametersViewShowsEmptyGroups(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	m := New(nil).SetBounds(0, 0, 60, 12).SetActive(true)
+	m, _ = m.Update(messages.ProjectsSelectionChangedMsg{
+		Projects: []core.Project{{Name: "Demo", ProjectID: "demo"}},
+	})
+	m, _ = m.Update(messages.ParametersLoadedMsg{
+		Project: core.Project{Name: "Demo", ProjectID: "demo"},
+		Tree: &core.ParametersTree{Groups: []core.ParametersGroup{
+			{Key: "empty", Label: "empty"},
+			{Key: "ROKU", Label: "ROKU"},
+		}},
+		Source: "cache",
+	})
+
+	view := testutil.NormalizeViewSnapshot(m.View(true))
+	for _, group := range []string{"empty", "ROKU"} {
+		if !strings.Contains(view, group) {
+			t.Fatalf("view does not show empty group %q:\n%s", group, view)
+		}
 	}
 }
 

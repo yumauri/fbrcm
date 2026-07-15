@@ -11,6 +11,7 @@ fbrcm [--help] [--version]
 │   ├── --project, -p <query>  repeated
 │   ├── --expr <expr>
 │   ├── --dry-run
+│   ├── --draft
 │   ├── --description <text>
 │   ├── --group <name>
 │   └── exactly one value flag:
@@ -39,7 +40,37 @@ fbrcm [--help] [--version]
 │   ├── --expr <expr>
 │   ├── --search <text>
 │   ├── --dry-run
+│   ├── --draft
 │   └── --yes, -y
+│
+├── draft
+│   ├── list
+│   │   ├── --filter, -f <query>  repeated
+│   │   └── --json
+│   ├── path [--json]
+│   ├── show <project>
+│   │   ├── --raw
+│   │   └── --to <path>
+│   ├── diff <project>
+│   │   ├── --against base|current
+│   │   ├── --cached
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --group <name>        repeated
+│   │   ├── --expr <expr>
+│   │   ├── --search <text>
+│   │   ├── --parameters
+│   │   ├── --conditions
+│   │   ├── --json
+│   │   └── --exit-code
+│   ├── publish [project...]
+│   │   ├── --all
+│   │   ├── --dry-run
+│   │   ├── --yes, -y
+│   │   └── --json
+│   └── discard [project...]
+│       ├── --all
+│       ├── --yes, -y
+│       └── --json
 │
 ├── get [parameter]
 │   ├── --project, -p <query>  repeated
@@ -78,6 +109,7 @@ fbrcm [--help] [--version]
 │   │   ├── --expr <expr>
 │   │   ├── --search <text>
 │   │   ├── --dry-run
+│   │   ├── --draft
 │   │   ├── --remove-all-conditions
 │   │   ├── --remove-project-specific-conditions
 │   │   ├── --merge
@@ -160,6 +192,7 @@ fbrcm [--help] [--version]
     ├── --expr <expr>
     ├── --search <text>
     ├── --dry-run
+    ├── --draft
     ├── --yes, -y
     ├── --description <text>
     ├── --group <name>
@@ -179,6 +212,8 @@ fbrcm [--help] [--version]
 All commands support `--help`. Root also supports `--version`.
 
 Most commands require an active profile. `profile` commands and `help` do not. Run `fbrcm profile switch <name>` to switch or create a profile.
+
+Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
 
 Auth identities, project cache, parameter cache, and drafts are profile-scoped. Project cache stores known projects plus their selected `auth_id`. Default storage lives under user config/cache directories. Override roots with:
 
@@ -210,6 +245,8 @@ Commands that accept a positional `<project>` argument resolve it in this order:
 
 A single match is selected. Multiple exact-name or substring matches print only the ambiguous projects and return an error. No match prints the known-project table and returns an error. Exact ID always wins, including when another project's display name has the same text.
 
+Draft commands resolve only locally stored drafts and never synchronize projects as a side effect. An exact case-insensitive draft project ID wins; otherwise the query must uniquely match the locally known project ID or display name. This also permits `show --raw` and `discard` for drafts whose project is no longer present in the projects cache.
+
 ### Parameter Search
 
 Parameter-context commands also support `--search <text>`. It searches parameter name, description, default value, conditional values, condition names, and condition expressions. Name/description/condition-name matching is case-insensitive and ignores punctuation; value/expression matching is case-sensitive. `--search` is ANDed with `--filter` and parameter-context `--expr`.
@@ -224,6 +261,7 @@ Parameter-context commands:
 get
 delete
 update
+draft diff
 project import
 project versions diff
 ```
@@ -243,6 +281,18 @@ add
 `get` also accepts a directory passed as stdin. It reads top-level `.json` files from that directory, accepts raw Remote Config JSON or fbrcm cache JSON in each file, and treats each file as a project. Project ID is the file name without extension. Project name is built from that file name by splitting on `-` and `_`, then capitalizing words.
 
 `project import` reads JSON from `--from`, stdin, or an interactive `.json` file picker. It accepts raw Remote Config JSON or an fbrcm parameters cache JSON file with `remote_config`.
+
+`--draft` is unavailable in stdin transformation mode because piped input has no persistent target project identity.
+
+### Draft lifecycle and write safety
+
+Drafts are profile-scoped, self-contained records. Each record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and a draft format version. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
+
+`add`, `update`, `delete`, and `project import` accept `--draft`. In draft mode they apply changes on top of an existing project draft or create a new draft from freshly revalidated Remote Config. They do not validate or publish to Firebase. Combining `--draft` with `--dry-run` previews the change without writing either draft or Firebase state.
+
+Immediate Remote Config writes refuse to proceed when the target has an unpublished draft. This guard applies to add, update, delete, project import, version rollback/restore, and project promotion. Resolve the draft with `draft publish` or `draft discard`, or add the intended mutation to it with `--draft`.
+
+Draft publish always fetches current Firebase state, performs a three-way merge from base, draft, and current, validates using the current ETag, and publishes only the exact candidate that was previewed. Conflicts preserve the local draft. Successfully published or already-applied drafts are removed locally. A publish that succeeds remotely but cannot remove its local record reports `published-cleanup-failed`; rerunning recognizes the already-applied content and retries cleanup without creating another version.
 
 ## Commands
 
@@ -275,12 +325,15 @@ Other flags:
 ```text
 -p, --project <query>      filter target projects; may be repeated
 --expr <expr>              filter target projects with project context
---dry-run                  validate/log Firebase write requests, do not publish
+--dry-run                  preview without writing local or Firebase state
+--draft                    save changes to local drafts instead of publishing
 --description <text>       parameter description
 --group <name>             add parameter inside group
 ```
 
 Remote mode loads projects, filters them, adds parameter where it does not already exist, validates, and publishes. Existing parameters are skipped.
+
+With `--draft`, the same mutation is stored locally on top of any existing draft. Without `--draft`, the command refuses projects that already have unpublished drafts.
 
 Stdin mode reads Remote Config JSON from stdin, adds parameter to that JSON, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field.
 
@@ -317,7 +370,8 @@ Flags:
 -f, --filter <query>       filter parameters; may be repeated
 --expr <expr>              filter parameters with parameter context
 --search <text>            search parameter names, descriptions, values, and conditions
---dry-run                  validate/log Firebase write requests, do not publish
+--dry-run                  preview without writing local or Firebase state
+--draft                    save changes to local drafts instead of publishing
 -y, --yes                  print diff and update without confirmation
 --description <text>       set parameter description
 --group <name>             move parameter into group
@@ -339,6 +393,8 @@ Conditional value removal edits only `conditionalValues`; it keeps the parameter
 
 Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes with ETag conflict handling.
 
+With `--draft`, mutations compose onto each existing draft and remain local. Without `--draft`, all selected projects are checked for drafts before the first publish, preventing a partially published batch.
+
 Stdin mode reads Remote Config JSON from stdin, updates matching parameters, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. It does not prompt.
 
 ### `fbrcm delete [parameter]`
@@ -352,13 +408,112 @@ Flags:
 -f, --filter <query>    filter parameters; may be repeated
 --expr <expr>           filter parameters with parameter context
 --search <text>         search parameter names, descriptions, values, and conditions
---dry-run               validate/log Firebase write requests, do not publish
+--dry-run               preview without writing local or Firebase state
+--draft                 save changes to local drafts instead of publishing
 -y, --yes               print diff and delete without confirmation
 ```
 
 Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes with ETag conflict handling.
 
+With `--draft`, deletions are saved locally on top of any existing draft. Without `--draft`, all selected projects are checked for drafts before the first publish.
+
 Stdin mode reads Remote Config JSON from stdin, deletes matching parameters, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. It does not prompt.
+
+### `fbrcm draft list`
+
+Lists drafts in the active profile without contacting Firebase. Invalid draft envelopes remain visible instead of failing the complete listing.
+
+Flags:
+
+```text
+-f, --filter <query>   filter by project ID or cached display name; may be repeated
+--json                 print structured JSON
+```
+
+Human output includes project ID, project name, base version, update time, parameter/condition change counts, and status. Status is `ready`, `unchanged`, or `invalid`.
+
+JSON entries include `project_id`, `project`, `base_version`, `created_at`, `updated_at`, byte size, status, validity, base availability, path, and change counts.
+
+### `fbrcm draft path`
+
+Prints the directory containing Remote Config draft files for the active profile.
+
+Flags:
+
+```text
+--json   print {"path": "..."}
+```
+
+### `fbrcm draft show <project>`
+
+Prints one draft for recovery or export. Default output is the validated working Remote Config only, normalized like project export and without status text.
+
+Flags:
+
+```text
+--raw         print the exact stored draft envelope, including its immutable base
+--to <path>   write output to a private file instead of stdout
+```
+
+`--raw` bypasses draft decoding, so it can recover an invalid or damaged envelope. File output is forced to mode `0600`.
+
+### `fbrcm draft diff <project>`
+
+Shows either the local draft intent or the effective publish preview.
+
+Flags:
+
+```text
+--against base|current   comparison target; default base
+--cached                 with current, use the latest local snapshot and do not contact Firebase
+-f, --filter <query>     include only matching parameter keys; may be repeated
+--group <name>           include only parameters in named group; may be repeated
+--expr <expr>            filter parameter changes with parameter context
+--search <text>          filter changed parameters with rich search
+--parameters             include only parameters and group descriptions
+--conditions             include only conditions
+--json                   print structured diff JSON
+--exit-code              return 1 for differences and 2 for errors
+```
+
+`--against base` compares immutable base to stored draft and is entirely local. `--against current` fetches current Firebase state, performs the same three-way merge used by publish, and compares current to the effective candidate. `--cached` makes that second operation local but does not claim the cached snapshot is still current.
+
+`--parameters` and `--conditions` are mutually exclusive. Condition ordering changes are included in human and JSON diffs.
+
+Without `--exit-code`, both differences and no differences return success. With it, exit statuses follow diff conventions: `0` no differences, `1` differences, `2` invalid draft, conflict, or operational error.
+
+### `fbrcm draft publish [project...]`
+
+Safely rebases and publishes one or more drafts. Project arguments may be repeated. Use `--all` instead to process every draft in the active profile; `--all` and positional projects are mutually exclusive.
+
+Flags:
+
+```text
+--all          publish every active-profile draft
+--dry-run      fetch, merge, validate, and preview without publishing or deleting drafts
+-y, --yes      skip publish confirmations
+--json         print structured results
+```
+
+For each project, the command fetches current Firebase state, merges local intent onto it, displays `current → candidate`, and asks for confirmation. It then validates and publishes that candidate with the fetched ETag. A remote change after preview is rejected by ETag protection rather than silently producing a different candidate. Conflicts and validation failures preserve the draft.
+
+If current Firebase state already contains the effective draft changes, no new version is created and the draft is removed as `already-applied`. Batch mode continues after independent project failures and returns nonzero if any item failed.
+
+JSON output is an object with a `results` array. Results include project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, and `published-cleanup-failed`. Prompts and human diffs are kept off JSON stdout.
+
+### `fbrcm draft discard [project...]`
+
+Deletes one or more local drafts without contacting Firebase. Use `--all` instead of positional projects to process the complete active profile.
+
+Flags:
+
+```text
+--all          discard every active-profile draft
+-y, --yes      skip destructive confirmations
+--json         print structured results
+```
+
+Human mode prints the local `base → draft` diff before confirmation. Invalid drafts warn that preview is unavailable but can still be explicitly discarded. Naming a nonexistent draft is an error; `--all` with no drafts is a successful no-op.
 
 ### `fbrcm project export <project>`
 
@@ -394,7 +549,8 @@ Flags:
 -f, --filter <query>                     import only matching parameter keys; may be repeated
 --expr <expr>                            import only parameters matching parameter context expression
 --search <text>                          import only parameters matching rich search text
---dry-run                                validate/log Firebase write requests, do not publish
+--dry-run                                preview without writing local or Firebase state
+--draft                                  save the import as a local draft
 --remove-all-conditions                  remove all conditions and conditional values
 --remove-project-specific-conditions     remove project-specific conditions and their usages
 --merge                                  merge import into current config
@@ -413,7 +569,7 @@ Mutual exclusions:
 
 If current config is empty, import replaces it. If current config has content and neither `--merge` nor `--override` is set, command prompts for strategy. Merge adds missing conditions, groups, and parameters. Conflicting condition, group description, or parameter values prompt unless `--merge-resolve` is set.
 
-After import transform, unused conditions, unknown condition references, empty groups, and version metadata are removed. Command validates, prints diff, asks for confirmation, then publishes.
+After import transform, unused conditions and unknown condition references are removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
 
 ### Remote Config version history
 
@@ -515,6 +671,8 @@ Normalization matches `project export`.
 
 Uses Firebase's native rollback operation. It does not reactivate the old version number: Firebase force-publishes the selected historical template as a new version whose metadata records the rollback source.
 
+Rollback refuses to run while the project has an unpublished draft.
+
 Before publishing, the command:
 
 1. Resolves the exact source and current versions.
@@ -538,6 +696,8 @@ If Firebase no longer retains a locally cached source version, rollback reports 
 ### `fbrcm project versions restore <project> <version>`
 
 Republishes an exact locally cached immutable snapshot. Restore exists for recovery when Firebase no longer retains the historical version.
+
+Restore refuses to run while the project has an unpublished draft.
 
 Unlike rollback, restore:
 
@@ -610,6 +770,8 @@ Default output is a terminal diff grouped by conditions, group descriptions, and
 
 Promotes selected Remote Config changes from source project to target project. `<source-project>` is the desired config. `<target-project>` is the project that may be published.
 
+Promotion refuses to publish when the target project has an unpublished draft.
+
 By default in an interactive terminal, command reviews eligible changes item by item before publishing. V1 selection is whole-item based: parameter slots, conditions, and group descriptions. Parameter selection automatically includes required condition definitions and group descriptions when needed.
 
 Default promotion includes source additions and source updates. Target-only removals are ignored unless `--prune` is set.
@@ -626,7 +788,7 @@ Flags:
 --interactive          review each promotion item interactively
 --all                  select all eligible changes without per-item prompts
 --prune                include target-only removals
---dry-run              validate/log Firebase write requests, do not publish
+--dry-run              preview without writing local or Firebase state
 -y, --yes              skip final publish confirmation
 --json                 print promotion result JSON
 ```
@@ -655,7 +817,7 @@ Flags:
 
 ### `fbrcm cache list`
 
-Lists immutable cached Remote Config versions and mutable draft files.
+Lists immutable cached Remote Config versions. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
 
 Flags:
 
@@ -663,11 +825,11 @@ Flags:
 --json   print cache entries as JSON
 ```
 
-JSON entries include project ID, project name, version, file size, cached time, draft flag, and path.
+JSON entries include project ID, project name, version, file size, cached time, and path.
 
 ### `fbrcm cache path`
 
-Prints Remote Config cache directory path.
+Prints the directory containing immutable cached Remote Config snapshots for the active profile. It does not return the profile-wide cache root used by drafts and OAuth token caches.
 
 Flags:
 
@@ -677,13 +839,15 @@ Flags:
 
 ### `fbrcm cache purge`
 
-Deletes all locally cached immutable Remote Config versions. The confirmation reports snapshot count, total size, and project count, and warns that versions no longer retained by Firebase may be permanently lost. If drafts exist, prompts separately before deleting drafts.
+Deletes all locally cached immutable Remote Config versions. The confirmation reports snapshot count, total size, and project count, and warns that versions no longer retained by Firebase may be permanently lost. Drafts are never deleted by this command.
 
 Flags:
 
 ```text
--y, --yes   skip confirmations and delete both caches and drafts
+-y, --yes   skip cache confirmation
 ```
+
+Use `fbrcm draft discard` or `fbrcm draft discard --all` for explicit draft deletion.
 
 ### `fbrcm config path`
 

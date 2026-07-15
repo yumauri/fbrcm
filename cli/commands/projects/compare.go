@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -217,7 +216,6 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	if !opts.Yes {
 		confirm := shared.NewConfirmation(
 			fmt.Sprintf("Publish selected Remote Config changes to %s?", target.ProjectID),
-			confirmation.Yes,
 			shared.ConfirmationOptions{},
 		)
 		ok, err := confirm.RunPrompt()
@@ -277,6 +275,11 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 }
 
 func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, error) {
+	if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
+		return false, err
+	} else if hasDraft {
+		return false, fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)
+	}
 	for {
 		raw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)
 		if err != nil {

@@ -21,8 +21,8 @@ func BuildMutatedRemoteConfig(currentRaw json.RawMessage, unchangedErr string, m
 	if err := mutate(finalCfg); err != nil {
 		return nil, err
 	}
-	rcmutate.RemoveEmptyGroups(finalCfg)
 	rcmutate.DropUnknownConditionReferences(finalCfg)
+	rcmutate.NormalizeEmptyParameterMaps(finalCfg)
 
 	if unchangedErr != "" && reflect.DeepEqual(currentCfg, finalCfg) {
 		return nil, fmt.Errorf("%s", unchangedErr)

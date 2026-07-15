@@ -11,19 +11,27 @@ import (
 )
 
 type (
-	ParameterDetailsEdit = draft.ParameterDetailsEdit
-	ParameterValueEdit   = draft.ParameterValueEdit
+	ParameterDetailsEdit       = draft.ParameterDetailsEdit
+	ParameterValueEdit         = draft.ParameterValueEdit
+	DraftRecord                = draft.Record
+	DraftPublishPlan           = draft.PublishPlan
+	DraftPublishedCleanupError = draft.PublishedCleanupError
 )
 
 func NormalizeRemoteConfigGroupKey(groupKey string) string {
 	return draft.NormalizeGroupKey(groupKey)
 }
 
+func MergeDraftWithLatest(baseRaw, draftRaw, latestRaw json.RawMessage) (json.RawMessage, bool, error) {
+	return draft.MergeWithLatest(baseRaw, draftRaw, latestRaw)
+}
+
 func (s *Core) draftDeps() draft.Deps {
 	return draft.Deps{
-		GetParameters:               s.GetParameters,
-		InspectParametersCache:      s.inspectParametersCacheOrError,
-		PublishRemoteConfigWithETag: s.PublishRemoteConfigWithETag,
+		GetParameters:                s.GetParameters,
+		InspectParametersCache:       s.inspectParametersCacheOrError,
+		ValidateRemoteConfigWithETag: s.ValidateRemoteConfigWithETag,
+		PublishRemoteConfigWithETag:  s.PublishRemoteConfigWithETag,
 	}
 }
 
@@ -76,12 +84,37 @@ func (s *Core) LoadDraft(projectID string) (json.RawMessage, bool, error) {
 	return draft.Load(projectID)
 }
 
+func (s *Core) LoadDraftRecord(projectID string) (*draft.Record, bool, error) {
+	return draft.LoadRecord(projectID)
+}
+
+func (s *Core) HasDraft(projectID string) (bool, error) {
+	_, ok, err := draft.LoadRecord(projectID)
+	return ok, err
+}
+
 func (s *Core) SaveDraft(projectID string, raw json.RawMessage) error {
 	return draft.Save(projectID, raw)
 }
 
 func (s *Core) DeleteDraft(projectID string) error {
 	return draft.Delete(projectID)
+}
+
+func (s *Core) PrepareDraftPublish(ctx context.Context, projectID string) (*DraftPublishPlan, error) {
+	return draft.PreparePublish(ctx, s.draftDeps(), projectID)
+}
+
+func (s *Core) ExecuteDraftPublish(ctx context.Context, projectID string, plan *DraftPublishPlan) (*ParametersCache, *ParametersTree, error) {
+	cache, _, publishErr := draft.ExecutePublish(ctx, s.draftDeps(), projectID, plan)
+	if publishErr != nil && cache == nil {
+		return nil, nil, publishErr
+	}
+	tree, treeErr := s.BuildParametersTree(cache)
+	if treeErr != nil {
+		return cache, nil, treeErr
+	}
+	return cache, tree, publishErr
 }
 
 func (s *Core) BuildParametersTreeFromRaw(raw json.RawMessage, cachedAt time.Time, etag string) (*ParametersTree, error) {

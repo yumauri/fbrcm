@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
@@ -31,8 +32,8 @@ func TestCachePathCommand(t *testing.T) {
 	if err := pathCmd.RunE(pathCmd, nil); err != nil {
 		t.Fatalf("cache path = %v", err)
 	}
-	if !strings.Contains(out.String(), filepath.Join("cache", config.DefaultProfileName)) {
-		t.Fatalf("output = %q", out.String())
+	if got, want := strings.TrimSpace(out.String()), config.GetParametersCacheDirPath(); got != want {
+		t.Fatalf("output = %q, want %q", got, want)
 	}
 }
 
@@ -50,8 +51,8 @@ func TestCachePathJSON(t *testing.T) {
 	if err := pathCmd.RunE(pathCmd, nil); err != nil {
 		t.Fatalf("cache path json = %v", err)
 	}
-	if !strings.Contains(out.String(), `"path"`) {
-		t.Fatalf("output = %q", out.String())
+	if !strings.Contains(out.String(), `"path": "`+config.GetParametersCacheDirPath()+`"`) {
+		t.Fatalf("output = %q, want snapshots directory", out.String())
 	}
 }
 
@@ -60,6 +61,11 @@ func TestCachePurgeWithYes(t *testing.T) {
 	if err := config.SaveParametersCache("demo", &config.ParametersCache{
 		RemoteConfig: []byte(`{"version":{"versionNumber":"1"}}`),
 	}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	raw := []byte(`{"version":{"versionNumber":"1"}}`)
+	if err := config.SaveDraft(&config.Draft{FormatVersion: config.DraftFormatVersion, ProjectID: "demo", BaseVersion: "1", BaseETag: "etag-1", CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: raw, RemoteConfig: raw}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -77,6 +83,9 @@ func TestCachePurgeWithYes(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "purged caches") {
 		t.Fatalf("output = %q", out.String())
+	}
+	if _, err := config.LoadDraft("demo"); err != nil {
+		t.Fatalf("cache purge removed draft: %v", err)
 	}
 }
 
