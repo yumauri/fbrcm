@@ -3,6 +3,7 @@ package config
 import (
 	"slices"
 	"strings"
+	"unicode"
 
 	"charm.land/bubbles/v2/key"
 
@@ -62,6 +63,39 @@ func Binding(block Block, action Action, desc string) key.Binding {
 // Label returns compact help label for action.
 func Label(block Block, action Action) string {
 	return strings.Join(Keys(block, action), "/")
+}
+
+// ActionKeyHint returns a compact title hint for the action's primary key.
+func ActionKeyHint(block Block, action Action) string {
+	keys := Keys(block, action)
+	if len(keys) == 0 {
+		return ""
+	}
+	return KeyHint(keys[0])
+}
+
+// KeyHint renders single-character keys as superscripts for panel titles.
+// Named and chorded keys remain unchanged so the hint always identifies the
+// configured binding.
+func KeyHint(key string) string {
+	runes := []rune(key)
+	if len(runes) != 1 {
+		return key
+	}
+	if hint, ok := superscriptKeyHints[unicode.ToLower(runes[0])]; ok {
+		return hint
+	}
+	return key
+}
+
+var superscriptKeyHints = map[rune]string{
+	'0': "⁰", '1': "¹", '2': "²", '3': "³", '4': "⁴",
+	'5': "⁵", '6': "⁶", '7': "⁷", '8': "⁸", '9': "⁹",
+	'a': "ᵃ", 'b': "ᵇ", 'c': "ᶜ", 'd': "ᵈ", 'e': "ᵉ",
+	'f': "ᶠ", 'g': "ᵍ", 'h': "ʰ", 'i': "ⁱ", 'j': "ʲ",
+	'k': "ᵏ", 'l': "ˡ", 'm': "ᵐ", 'n': "ⁿ", 'o': "ᵒ",
+	'p': "ᵖ", 'r': "ʳ", 's': "ˢ", 't': "ᵗ", 'u': "ᵘ",
+	'v': "ᵛ", 'w': "ʷ", 'x': "ˣ", 'y': "ʸ", 'z': "ᶻ",
 }
 
 // FilterModeForKey returns filter mode configured for key.

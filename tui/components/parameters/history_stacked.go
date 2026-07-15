@@ -9,6 +9,7 @@ import (
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 func (m Model) renderHistoryStackedNode(node visibleNode, selected bool) []string {
@@ -34,7 +35,7 @@ func (m Model) renderHistoryStackedNode(node visibleNode, selected bool) []strin
 		}
 		header := "  " + m.renderHighlightedParameterKey(headerText, headerStyle, selected)
 		if selected {
-			header = fillSelectedLine(parameterSelectionStyle().Render(header), m.viewportWidth(), parameterSelectionStyle())
+			header = styles.FillSelectedLine(parameterSelectionStyle().Render(header), m.viewportWidth(), parameterSelectionStyle())
 		} else {
 			header = viewutil.PadRight(parameterStyle.Render(header), m.viewportWidth())
 		}

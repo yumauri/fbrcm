@@ -1,5 +1,12 @@
 # Repository conventions
 
+## Reuse and shared logic
+
+- Before implementing parsing, filtering, sorting, terminal sizing, rendering, confirmation, or Remote Config transformations, search the repository for existing behavior and tests that already define the convention.
+- Reuse existing shared and domain helpers whenever the required behavior matches. Do not create command-local copies or slightly different implementations of established behavior.
+- When matching logic exists but is not accessible from the new caller, extract it to the lowest appropriate shared package and update existing callers instead of duplicating it.
+- Add new local logic only when the behavior is genuinely specific to that component; keep the distinction explicit and covered by tests.
+
 ## CLI tables
 
 - Every human-readable CLI table must use the same Lip Gloss table style as the existing `get`, `projects list`, and `cache list` commands.

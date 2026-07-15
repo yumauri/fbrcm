@@ -1,6 +1,7 @@
 package details
 
 import (
+	"fmt"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -8,6 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 func (m *Model) refreshViewport() {
@@ -22,9 +24,12 @@ func (m *Model) refreshViewport() {
 
 func (m Model) renderContentLines() []string {
 	width := max(m.width-5, 1)
+	if m.conditionData != nil {
+		return m.renderConditionContentLines(width)
+	}
 	if m.data == nil {
 		return padLines([]string{
-			"Press Enter on parameter",
+			"Press Enter on parameter or condition",
 			"to open details panel.",
 		}, width)
 	}
@@ -69,6 +74,55 @@ func (m Model) renderContentLines() []string {
 	}
 
 	return padLines(lines, width)
+}
+
+func (m Model) renderConditionContentLines(width int) []string {
+	data := m.conditionData
+	condition := data.Condition
+	lines := make([]string, 0, 24+len(condition.Usages)*4)
+	lines = appendStyledField(lines, width, "Project", rcdisplay.FormatProject(data.Project.Name, data.Project.ProjectID), projectValueStyle)
+	lines = appendStyledField(lines, width, "Priority", fmt.Sprintf("%d (earlier conditions take precedence)", condition.Priority), parameterKeyStyle)
+	lines = appendStyledField(lines, width, "Name", condition.Name, m.conditionStyle(condition.TagColor))
+	color := strings.TrimSpace(condition.TagColor)
+	if color == "" {
+		color = "—"
+	} else {
+		color = "● " + color
+	}
+	lines = appendStyledField(lines, width, "Color", color, m.conditionStyle(condition.TagColor))
+	lines = appendStyledField(lines, width, "Expression", condition.Expression, styles.PanelText)
+	if condition.Description != "" {
+		lines = appendStyledField(lines, width, "Description", condition.Description, styles.PanelText)
+	}
+	lines = append(lines, labelStyle.Render("Used by "+rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")), "")
+	if len(condition.Usages) == 0 {
+		lines = append(lines, styles.PanelMuted.Italic(true).Render("No parameters use this condition."))
+		return padLines(lines, width)
+	}
+	for _, usage := range condition.Usages {
+		path := groupValueStyle.Render(usage.GroupLabel) + labelStyle.Render(" / ") + parameterKeyStyle.Render(usage.ParameterKey)
+		lines = append(lines, ansi.Truncate(path, width, ""))
+		lines = append(lines, m.renderConditionUsageValueLines(usage, width)...)
+		lines = append(lines, "")
+	}
+	return padLines(lines, width)
+}
+
+func (m Model) renderConditionUsageValueLines(usage core.ConditionUsage, width int) []string {
+	value := core.ParametersValue{
+		Value:     usage.Value,
+		RawValue:  usage.RawValue,
+		ValueType: usage.ValueType,
+		Empty:     usage.Plain && usage.RawValue == "",
+		Plain:     usage.Plain,
+	}
+	const indent = "  "
+	valueLines := m.renderValueLines(value, max(width-lipgloss.Width(indent), 1))
+	lines := make([]string, 0, len(valueLines))
+	for _, line := range valueLines {
+		lines = append(lines, ansi.Truncate(indent+line, width, ""))
+	}
+	return lines
 }
 
 func appendStyledField(lines []string, width int, label, value string, style lipgloss.Style) []string {
@@ -148,6 +202,15 @@ func cloneViewData(data *messages.ParameterViewData) *messages.ParameterViewData
 	next.Groups = append([]messages.ParameterGroupOption(nil), data.Groups...)
 	next.ParameterKeys = append([]string(nil), data.ParameterKeys...)
 	next.Parameter = cloneParameterEntry(data.Parameter)
+	return &next
+}
+
+func cloneConditionViewData(data *messages.ConditionViewData) *messages.ConditionViewData {
+	if data == nil {
+		return nil
+	}
+	next := *data
+	next.Condition.Usages = append([]core.ConditionUsage(nil), data.Condition.Usages...)
 	return &next
 }
 

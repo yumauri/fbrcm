@@ -70,6 +70,10 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case messages.ParameterSelectionChangedMsg:
 		return m, m.handleParameterSelection(msg), true
 
+	case messages.ConditionSelectionChangedMsg:
+		m.applyConditionSelection(msg)
+		return m, nil, true
+
 	case messages.ParametersLoadedMsg:
 		m.updateParametersLoadedMessage(msg)
 
@@ -105,6 +109,8 @@ func (m Model) updateChildPanels(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	m.parameters, cmd = m.parameters.Update(msg)
+	cmds = appendCmd(cmds, cmd)
+	m.conditions, cmd = m.conditions.Update(msg)
 	cmds = appendCmd(cmds, cmd)
 	m.closeDetailsIfOrphaned()
 
@@ -178,15 +184,28 @@ func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) 
 	if m.active == panels.Logs {
 		return m, nil, false
 	}
-	if panel, ok := m.panelAt(msg.Mouse().X, msg.Mouse().Y); ok {
-		m.setActive(panel)
-		if panel == panels.Details {
-			var cmd tea.Cmd
-			m.details, cmd = m.details.Update(msg)
-			return m, cmd, true
-		}
+	panel, ok := m.panelAt(msg.Mouse().X, msg.Mouse().Y)
+	if !ok {
+		return m, nil, false
 	}
-	return m, nil, false
+	m.setActive(panel)
+	var cmd tea.Cmd
+	switch panel {
+	case panels.Projects:
+		m.projects, cmd = m.projects.Update(msg)
+		if m.width > 0 && m.height > 0 {
+			m.applyLayout()
+		}
+	case panels.Parameters, panels.History:
+		m.parameters, cmd = m.parameters.Update(msg)
+	case panels.Conditions:
+		m.conditions, cmd = m.conditions.Update(msg)
+	case panels.Details:
+		m.details, cmd = m.details.Update(msg)
+	default:
+		return m, nil, false
+	}
+	return m, cmd, true
 }
 
 func (m Model) updateKeyMessage(msg tea.KeyMsg) (Model, tea.Cmd, bool) {

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/yumauri/fbrcm/core/draft"
@@ -125,6 +126,14 @@ func (s *Core) BuildParametersTreeFromRaw(raw json.RawMessage, cachedAt time.Tim
 	})
 }
 
+func (s *Core) BuildConditionsTreeFromRaw(raw json.RawMessage, cachedAt time.Time, etag string) (*ConditionsTree, error) {
+	return s.BuildConditionsTree(&ParametersCache{
+		ETag:         etag,
+		CachedAt:     cachedAt,
+		RemoteConfig: raw,
+	})
+}
+
 func (s *Core) BuildDraftAwareParametersTree(projectID string, cache *ParametersCache) (*ParametersTree, bool, error) {
 	draftRaw, hasDraft, err := s.LoadDraft(projectID)
 	if err != nil {
@@ -135,5 +144,21 @@ func (s *Core) BuildDraftAwareParametersTree(projectID string, cache *Parameters
 		return tree, true, err
 	}
 	tree, err := s.BuildParametersTree(cache)
+	return tree, false, err
+}
+
+func (s *Core) BuildDraftAwareConditionsTree(projectID string, cache *ParametersCache) (*ConditionsTree, bool, error) {
+	if cache == nil {
+		return nil, false, fmt.Errorf("parameters cache is nil")
+	}
+	draftRaw, hasDraft, err := s.LoadDraft(projectID)
+	if err != nil {
+		return nil, false, err
+	}
+	if hasDraft {
+		tree, err := s.BuildConditionsTreeFromRaw(draftRaw, cache.CachedAt, cache.ETag)
+		return tree, true, err
+	}
+	tree, err := s.BuildConditionsTree(cache)
 	return tree, false, err
 }

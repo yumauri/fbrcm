@@ -19,6 +19,7 @@ type Model struct {
 	bridgeActive  bool
 	viewport      viewport.Model
 	data          *messages.ParameterViewData
+	conditionData *messages.ConditionViewData
 	activeField   fieldID
 	dropdownOpen  bool
 	dropdownIndex int
@@ -82,6 +83,12 @@ func (m Model) SetBridgeActive(active bool) Model {
 func (m Model) Data() *messages.ParameterViewData {
 	return m.data
 }
+
+func (m Model) ConditionData() *messages.ConditionViewData {
+	return m.conditionData
+}
+
+func (m Model) IsCondition() bool { return m.conditionData != nil }
 
 func (m Model) FieldActive() bool {
 	return m.activeField != fieldNone

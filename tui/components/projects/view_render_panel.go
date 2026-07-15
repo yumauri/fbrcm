@@ -18,7 +18,7 @@ func renderPanel(body string, width, height int, active, borderActive bool, scro
 	innerWidth := max(width-1, 0)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)
-	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(width-topPrefixWidth-1, 0))
+	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey(), panelTitleLabel, active, max(width-topPrefixWidth-1, 0))
 	topPrefix := borderStyle.Render(strings.Repeat("─", topPrefixWidth))
 	rightMarginWidth := 1
 	secondaryText := secondary.text

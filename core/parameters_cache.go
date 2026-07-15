@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -97,6 +98,21 @@ func (s *Core) BuildParametersTree(cache *ParametersCache) (*ParametersTree, err
 	tree := parameters.BuildTree(remoteConfig, cache.CachedAt, cache.ETag)
 
 	corelog.For("core").Debug("built parameters tree", "version", tree.Version, "group_count", len(tree.Groups))
+	return tree, nil
+}
+
+func (s *Core) BuildConditionsTree(cache *ParametersCache) (*ConditionsTree, error) {
+	if cache == nil {
+		return nil, fmt.Errorf("parameters cache is nil")
+	}
+
+	remoteConfig, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	tree := conditions.BuildTree(remoteConfig, cache.CachedAt, cache.ETag)
+	corelog.For("core").Debug("built conditions tree", "version", tree.Version, "condition_count", len(tree.Conditions))
 	return tree, nil
 }
 

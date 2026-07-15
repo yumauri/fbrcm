@@ -8,10 +8,15 @@ import (
 )
 
 func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd, bool) {
+	if !m.details.FieldActive() || tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k) {
+		if next, cmd, ok := m.updateGlobalFocusKey(k); ok {
+			return next, cmd, true
+		}
+	}
+	if m.details.IsCondition() {
+		return m.updateConditionDetailsKeyMessage(msg, k)
+	}
 	switch {
-	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
-		m.setActive(m.nextTabPanel())
-		return m, nil, true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
 		if m.details.FieldActive() || m.details.ValueSelected() {
 			var cmd tea.Cmd
@@ -39,6 +44,25 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 	return m, nil, false
 }
 
+func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd, bool) {
+	switch {
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
+		return m, tea.Quit, true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
+		m.closeDetailsPanel()
+		return m, nil, true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyName, k):
+		return m, m.copyDetailsNameCmd(), true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath, k):
+		return m, m.copyDetailsPathCmd(), true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, k):
+		return m, m.copyDetailsSelectedValueCmd(), true
+	}
+	var cmd tea.Cmd
+	m.details, cmd = m.details.Update(msg)
+	return m, cmd, true
+}
+
 func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
@@ -64,45 +88,91 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
-	switch {
-	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k) {
 		return m, tea.Quit, true
-	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
+	}
+	if tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k) {
 		if m.active == panels.Details && m.detailsVisible {
 			m.detailsVisible = false
 			m.setActive(panels.Parameters)
 		}
+		return m, nil, false
+	}
+	if next, cmd, ok := m.updateGlobalFocusKey(k); ok {
+		return next, cmd, true
+	}
+
+	switch {
+	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k):
+		return m.updateModeOrDuplicateKey()
+	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
+		if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History {
+			m.toggleWorkspaceMaximize()
+			return m, nil, true
+		}
+	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReload, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k):
+		if m.active == panels.Conditions {
+			return m.updateConditionsReloadKey(k)
+		}
+	case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeGrow, k):
+		m.updateLogsResizeKey(1)
+	case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeShrink, k):
+		m.updateLogsResizeKey(-1)
+	default:
+		return m.updateGlobalPanelActionKey(k)
+	}
+	return m, nil, false
+}
+
+func (m Model) updateConditionsReloadKey(k string) (Model, tea.Cmd, bool) {
+	if tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k) {
+		cmd := m.parameters.ReloadAllProjects()
+		if cmd != nil {
+			var spinCmd tea.Cmd
+			m.conditions, spinCmd = m.conditions.MarkAllReloading()
+			cmd = tea.Batch(cmd, spinCmd)
+		}
+		return m, cmd, true
+	}
+	project, ok := m.conditions.CurrentProject()
+	if !ok {
+		return m, nil, true
+	}
+	cmd := m.parameters.ReloadProject(project.ProjectID)
+	if cmd != nil {
+		var spinCmd tea.Cmd
+		m.conditions, spinCmd = m.conditions.MarkProjectReloading(project.ProjectID)
+		cmd = tea.Batch(cmd, spinCmd)
+	}
+	return m, cmd, true
+}
+
+func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
+	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusProjects, k):
 		m.setActive(panels.Projects)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k):
 		m.setActive(panels.Parameters)
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusConditions, k):
+		m.setActive(panels.Conditions)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k):
 		m.setActive(panels.History)
 		var cmd tea.Cmd
 		m.parameters, cmd = m.parameters.LoadHistory()
 		return m, cmd, true
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
-		if m.detailsVisible {
-			m.setActive(panels.Details)
+		if !m.detailsVisible {
+			return m, nil, false
 		}
+		m.setActive(panels.Details)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusLogs, k):
 		m.setActive(panels.Logs)
-	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k):
-		return m.updateModeOrDuplicateKey()
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
-		if m.active == panels.Parameters || m.active == panels.History {
-			m.toggleParametersMaximize()
-		}
-	case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeGrow, k):
-		m.updateLogsResizeKey(1)
-	case tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionResizeShrink, k):
-		m.updateLogsResizeKey(-1)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
 		m.setActive(m.nextTabPanel())
 	default:
-		return m.updateGlobalPanelActionKey(k)
+		return m, nil, false
 	}
-	return m, nil, false
+	return m, nil, true
 }
 
 func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {

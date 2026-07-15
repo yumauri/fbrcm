@@ -52,11 +52,16 @@ func (m Model) baseView() string {
 	popupOpen := m.popupWindowOpen()
 	projectsActive := m.active == panels.Projects
 	parametersActive := m.active == panels.Parameters || m.active == panels.History
+	conditionsActive := m.active == panels.Conditions
 	logsActive := m.active == panels.Logs
+	rightPanel := m.parameters.ViewWithBorder(parametersActive, parametersActive && !popupOpen)
+	if m.selectedParametersTab() == panels.Conditions {
+		rightPanel = m.conditions.ViewWithBorder(conditionsActive, conditionsActive && !popupOpen)
+	}
 	topRow := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		m.projects.ViewWithBorder(projectsActive, projectsActive && !popupOpen),
-		m.parameters.ViewWithBorder(parametersActive, parametersActive && !popupOpen),
+		rightPanel,
 	)
 
 	return lipgloss.JoinVertical(

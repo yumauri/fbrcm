@@ -37,6 +37,13 @@ type ParametersLoadedMsg struct {
 	StaleDraft             bool
 }
 
+type ConditionsLoadedMsg struct {
+	Project core.Project
+	Tree    *core.ConditionsTree
+	Source  string
+	Err     error
+}
+
 type HistoryLoadedMsg struct {
 	Project                             core.Project
 	PreviousTree, CurrentTree           *core.ParametersTree
@@ -88,6 +95,17 @@ type ParameterGroupOption struct {
 
 type ParameterSelectionChangedMsg struct {
 	Data        *ParameterViewData
+	Activate    bool
+	ResetScroll bool
+}
+
+type ConditionViewData struct {
+	Project   core.Project
+	Condition core.ConditionEntry
+}
+
+type ConditionSelectionChangedMsg struct {
+	Data        *ConditionViewData
 	Activate    bool
 	ResetScroll bool
 }

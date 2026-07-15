@@ -8,13 +8,17 @@ import (
 
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 const (
-	panelTitleKey   = "⁰"
 	panelTitleLabel = "Logs"
 )
+
+func panelTitleKey() string {
+	return tuiconfig.ActionKeyHint(tuiconfig.BlockGlobal, tuiconfig.ActionFocusLogs)
+}
 
 func (m Model) View(active bool) string {
 	return m.ViewWithBorder(active, active)
@@ -55,7 +59,7 @@ func renderLogsPanel(body []string, width, height int, active, borderActive bool
 
 func renderTopBorder(width int, borderStyle lipgloss.Style, active bool, currentLevel charmlog.Level, follow, flashStatus bool) string {
 	leftPrefix := borderStyle.Render(viewutil.TruncatePlain("──", width))
-	title, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(width-lipgloss.Width(leftPrefix), 0))
+	title, titleWidth := styles.PanelHeaderTitle(panelTitleKey(), panelTitleLabel, active, max(width-lipgloss.Width(leftPrefix), 0))
 	titleSep := borderStyle.Render("──")
 	modeLabel := " scroll "
 	if follow {

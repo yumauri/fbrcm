@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/core/strfold"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 type historyColumns struct {
@@ -73,7 +74,7 @@ func (m Model) renderHistoryGridLine(line string, selected bool, kind visibleNod
 	if fullSelection {
 		selection := parameterSelectionStyle()
 		if kind == nodeProject {
-			selection = projectSelectionStyle()
+			selection = styles.TreeProjectSelectionStyle()
 		}
 		if kind == nodeGroup {
 			selection = groupSelectionStyle()

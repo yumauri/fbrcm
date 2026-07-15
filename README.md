@@ -1,6 +1,6 @@
 # fbrcm
 
-`fbrcm` is a terminal Firebase Remote Config manager. It helps you manage Remote Config across Firebase projects, inspect parameters, export and import Remote Config JSON, and safely add, update, or delete Remote Config parameters.
+`fbrcm` is a terminal Firebase Remote Config manager. It helps you manage Remote Config across Firebase projects, inspect parameters and condition priority/usage, export and import Remote Config JSON, and safely add, update, or delete Remote Config parameters.
 
 Run `fbrcm` without arguments to open the interactive TUI. Run `fbrcm <command>` to use the CLI.
 
@@ -81,7 +81,9 @@ History and version-chooser keys are configurable like all other TUI bindings:
 
 ```toml
 [keys.global]
-focus_history = ["9"]
+focus_conditions = ["3"]
+focus_history = ["4"]
+focus_details = ["5"]
 
 [keys.history]
 pair_older = [","]
@@ -235,6 +237,18 @@ fbrcm get --search rollout
 fbrcm get --json
 ```
 
+Inspect conditions in their Firebase evaluation order and see which parameters use them:
+
+```sh
+fbrcm conditions list <project-id>
+fbrcm conditions list <project-id> --filter beta
+fbrcm conditions list <project-id> --search platform
+fbrcm conditions show <project-id> <condition-name>
+fbrcm conditions show <project-id> <condition-name> --json
+```
+
+In the TUI, press `3` by default to open the read-only Conditions tab. Press Enter on a condition to see its expression, priority, color, and parameter usages.
+
 Export one project Remote Config:
 
 ```sh
@@ -339,7 +353,7 @@ First run creates and uses the `default` profile.
 
 ## Filtering
 
-Project and parameter filters support mode-prefixed queries:
+Project, parameter, and condition filters support mode-prefixed queries:
 
 - No prefix or `~`: fuzzy match.
 - `^`: starts with.
@@ -352,6 +366,7 @@ Examples:
 fbrcm projects list --filter '^prod'
 fbrcm get --filter '/checkout'
 fbrcm get --project '=my-project-id'
+fbrcm conditions list my-project --filter '~bt'
 ```
 
 Several commands also support `--expr` with [expr-lang](https://expr-lang.org/docs/language-definition) expressions for advanced filtering.
@@ -360,12 +375,13 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 
 ## What It Can Do
 
-- Open a TUI for managing Firebase projects and Remote Config parameters
+- Open a TUI for managing Firebase projects and Remote Config parameters and inspecting conditions
 - List Firebase projects available to the authenticated Google account
 - Cache project metadata and Remote Config snapshots locally
 - List, inspect, compare, export, roll back, and restore Remote Config versions
 - Fetch Remote Config from Firebase
 - Show parameters across many projects
+- List conditions in evaluation order and inspect their parameter/value usage
 - Filter projects and parameters
 - Export Remote Config JSON
 - Import Remote Config JSON

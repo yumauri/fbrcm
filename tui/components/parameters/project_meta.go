@@ -5,6 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -70,7 +71,7 @@ func (m Model) projectMetaSegments(project *projectState, selected bool) (badge 
 		parts = append(parts, state)
 	}
 	if project.tree != nil && !project.tree.CachedAt.IsZero() {
-		parts = append(parts, project.tree.CachedAt.Local().Format("2006-01-02 15:04:05"))
+		parts = append(parts, rcdisplay.FormatLocalDateTime(project.tree.CachedAt))
 	}
 	return badge, strings.Join(parts, " ")
 }

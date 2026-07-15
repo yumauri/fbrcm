@@ -666,6 +666,40 @@ func TestHistoryChangesOnlyKeepsChangedParametersAndChangedExpandedValues(t *tes
 	}
 }
 
+func TestHistoryChangesOnlyKeepsCollapsedChangedGroupExpandable(t *testing.T) {
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	previous := historyTreeWithParameters(core.ParametersEntry{
+		Key: "changed", Values: []core.ParametersValue{{Label: "default", Value: "old"}},
+	})
+	current := historyTreeWithParameters(core.ParametersEntry{
+		Key: "changed", Values: []core.ParametersValue{{Label: "default", Value: "new"}},
+	})
+	m := New(nil)
+	m.history = true
+	m.projects = []projectState{{project: project, tree: current}}
+	m.projectIndex[project.ProjectID] = 0
+	m.histories[project.ProjectID] = buildHistoryState(historyState{previous: previous, current: current})
+	m.groupExpanded[m.groupKey(project.ProjectID, "group")] = true
+	m.syncVisible()
+	m = m.toggleHistoryChangesOnly()
+
+	for i, node := range m.visible {
+		if node.kind == nodeGroup {
+			m.cursor = i
+			break
+		}
+	}
+	m.collapseCurrent()
+	if len(m.visible) != 2 || m.visible[1].kind != nodeGroup || m.visible[1].expanded {
+		t.Fatalf("collapsed changed group disappeared or remained expanded: %#v", m.visible)
+	}
+
+	m.expandCurrent()
+	if got := visibleParameterKeys(m); !slices.Equal(got, []string{"changed"}) {
+		t.Fatalf("re-expanded changed group parameters = %v, want [changed]", got)
+	}
+}
+
 func TestHistoryChangesOnlyPreservesIndependentSelections(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	previous := historyTreeWithParameters(

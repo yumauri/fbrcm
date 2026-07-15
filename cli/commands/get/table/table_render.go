@@ -10,7 +10,6 @@ import (
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/strfold"
-	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 func renderHighlightedText(value string, base lipgloss.Style, highlights []int, rowBG color.Color) string {
@@ -168,15 +167,12 @@ func renderValueText(value, valueType string, rowBG color.Color) string {
 	if value == "" || clistyles.NoColorEnabled() {
 		return value
 	}
-	if strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")") {
-		return applyBackground(corestyles.EmptyValueStyle(), rowBG).Render(value)
-	}
 	style := valueTextStyle(value, valueType)
 	return applyBackground(style, rowBG).Render(value)
 }
 
 func valueTextStyle(value, valueType string) lipgloss.Style {
-	return corestyles.ValueTextStyle(value, valueType)
+	return clistyles.RemoteConfigValueStyle(value, valueType)
 }
 
 // ValueTypeKey normalizes a Remote Config value type for display styling.

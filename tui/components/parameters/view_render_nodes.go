@@ -98,7 +98,7 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 				left += parameterSelectionStyle().Render("  ")
 				left += descStyle.Render(param.Description)
 			}
-			return fillSelectedLine(left, width, parameterSelectionStyle())
+			return styles.FillSelectedLine(left, width, parameterSelectionStyle())
 		}
 		return viewutil.PadRight(left, width)
 	}
@@ -108,7 +108,7 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 		if selected {
 			prefix := parameterSelectionStyle().Render("  ")
 			line = prefix + m.renderHighlightedParameterKey(param.Key, style, selected)
-			return fillSelectedLine(line, width, parameterSelectionStyle())
+			return styles.FillSelectedLine(line, width, parameterSelectionStyle())
 		}
 		return viewutil.PadRight(line, width)
 	}
@@ -136,7 +136,7 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	left += prefixStyle.Render(" ")
 	line := left + m.renderCollapsedParameterValues(param.Values, separatorLineStyle, selected)
 	if selected {
-		return fillSelectedLine(line, width, parameterSelectionStyle())
+		return styles.FillSelectedLine(line, width, parameterSelectionStyle())
 	}
 	return viewutil.PadRight(line, width)
 }
@@ -177,7 +177,7 @@ func (m Model) renderHistoryExpandedParameterNode(param, current *core.Parameter
 		line += descStyle.Render(description)
 	}
 	if selected {
-		return fillSelectedLine(line, width, parameterSelectionStyle())
+		return styles.FillSelectedLine(line, width, parameterSelectionStyle())
 	}
 	return viewutil.PadRight(line, width)
 }

@@ -28,8 +28,8 @@ func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) st
 
 	name := viewutil.TruncatePlain(project.project.Name, leftLimit)
 	id := viewutil.TruncatePlain(project.project.ProjectID, max(leftLimit-lipgloss.Width(name)-1, 0))
-	nameStyle := projectNameStyle
-	idStyle := projectIDStyle
+	nameStyle := styles.TreeProjectName
+	idStyle := styles.TreeProjectID
 	if underlined {
 		nameStyle = nameStyle.Underline(true)
 		idStyle = idStyle.Underline(true)
@@ -76,7 +76,7 @@ func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) st
 		line += metaLineStyle.Render(strings.Repeat(" ", gap) + meta)
 	}
 	if selected {
-		return fillSelectedLine(line, width, projectSelectionStyle())
+		return styles.FillSelectedLine(line, width, styles.TreeProjectSelectionStyle())
 	}
 	return viewutil.PadRight(line, width)
 }
@@ -95,22 +95,22 @@ func (m Model) renderHistoryProjectNode(node visibleNode, project *projectState,
 		}
 		name := project.project.Name + " " + project.project.ProjectID
 		name = viewutil.TruncatePlain(name, max(width-lipgloss.Width(meta)-1, 1))
-		nameStyle := projectNameStyle
+		nameStyle := styles.TreeProjectName
 		if underlined {
 			nameStyle = nameStyle.Underline(true)
 		}
 		line := nameStyle.Render(name) + strings.Repeat(" ", max(width-lipgloss.Width(name)-lipgloss.Width(meta), 1)) + projectMetaStyle.Render(meta)
 		line = viewutil.PadRight(line, width)
 		if selected {
-			return projectSelectionStyle().Render(line)
+			return styles.TreeProjectSelectionStyle().Render(line)
 		}
 		return line
 	}
 	columns := m.historyColumnLayout()
 	name := viewutil.TruncatePlain(project.project.Name, columns.leftBorder)
 	id := viewutil.TruncatePlain(project.project.ProjectID, max(columns.leftBorder-lipgloss.Width(name)-1, 0))
-	nameStyle := projectNameStyle
-	idStyle := projectIDStyle
+	nameStyle := styles.TreeProjectName
+	idStyle := styles.TreeProjectID
 	if underlined {
 		nameStyle = nameStyle.Underline(true)
 		idStyle = idStyle.Underline(true)
@@ -139,7 +139,7 @@ func (m Model) renderHistoryProjectNode(node visibleNode, project *projectState,
 	line := left + " " + projectMetaStyle.Render(previousCell) + " " + projectMetaStyle.Render(currentCell)
 	line = viewutil.PadRight(line, width)
 	if selected {
-		return projectSelectionStyle().Render(line)
+		return styles.TreeProjectSelectionStyle().Render(line)
 	}
 	return line
 }
@@ -168,7 +168,7 @@ func (m Model) renderGroupNode(node visibleNode, selected, underlined bool) stri
 		prefixStyle := groupSelectionStyle()
 		prefix := prefixStyle.Render(arrow + " ")
 		line = prefix + style.Render(node.label)
-		return fillSelectedLine(line, width, groupSelectionStyle())
+		return styles.FillSelectedLine(line, width, groupSelectionStyle())
 	}
 	return viewutil.PadRight(line, width)
 }

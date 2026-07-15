@@ -3,13 +3,17 @@ package details
 import (
 	"charm.land/lipgloss/v2"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 const (
-	panelTitleKey   = "³"
 	panelTitleLabel = "Details"
 )
+
+func panelTitleKey() string {
+	return tuiconfig.ActionKeyHint(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails)
+}
 
 var (
 	labelStyle             = styles.PanelMuted

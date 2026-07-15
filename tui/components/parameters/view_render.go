@@ -6,30 +6,20 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/yumauri/fbrcm/tui/components/workspaceheader"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 var (
-	projectNameStyle = styles.PanelText.Bold(true).Foreground(styles.PaletteError)
-	projectIDStyle   = styles.PanelMuted
 	groupOpenStyle   = styles.PanelText.Bold(true).Foreground(styles.PaletteYellow)
 	groupClosedStyle = styles.PanelMuted
 	iconStyle        = lipgloss.NewStyle().Foreground(styles.PaletteSlateDark)
 	leafLineStyle    = iconStyle
 
-	projectSelectedLineStyle   = lipgloss.NewStyle().Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
-	groupSelectedLineStyle     = lipgloss.NewStyle().Background(styles.PaletteGold).Foreground(styles.PaletteSlateBright)
-	parameterSelectedLineStyle = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
-	valueSelectedStyle         = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
-	draftBadgeStyle            = lipgloss.NewStyle().Background(styles.PaletteError).Foreground(styles.PaletteSlateBright).Padding(0, 1)
+	groupSelectedLineStyle = lipgloss.NewStyle().Background(styles.PaletteGold).Foreground(styles.PaletteSlateBright)
+	valueSelectedStyle     = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
+	draftBadgeStyle        = lipgloss.NewStyle().Background(styles.PaletteError).Foreground(styles.PaletteSlateBright).Padding(0, 1)
 )
-
-func projectSelectionStyle() lipgloss.Style {
-	if styles.NoColorEnabled() {
-		return lipgloss.NewStyle().Bold(true).Reverse(true)
-	}
-	return projectSelectedLineStyle
-}
 
 func groupSelectionStyle() lipgloss.Style {
 	if styles.NoColorEnabled() {
@@ -39,10 +29,7 @@ func groupSelectionStyle() lipgloss.Style {
 }
 
 func parameterSelectionStyle() lipgloss.Style {
-	if styles.NoColorEnabled() {
-		return lipgloss.NewStyle().Reverse(true)
-	}
-	return parameterSelectedLineStyle
+	return styles.TreeItemSelectionStyle()
 }
 
 func valueSelectionStyle() lipgloss.Style {
@@ -50,15 +37,6 @@ func valueSelectionStyle() lipgloss.Style {
 		return lipgloss.NewStyle().Reverse(true)
 	}
 	return valueSelectedStyle
-}
-
-func fillSelectedLine(line string, width int, fillStyle lipgloss.Style) string {
-	clipped := lipgloss.NewStyle().MaxWidth(width).Render(line)
-	padding := max(width-lipgloss.Width(clipped), 0)
-	if padding == 0 {
-		return clipped
-	}
-	return clipped + fillStyle.Render(strings.Repeat(" ", padding))
 }
 
 func (m Model) renderNodeBlock(index int, selected bool) []string {
@@ -194,10 +172,11 @@ func renderPanel(body []string, width, height int, active, borderActive, history
 	innerWidth := max(width-2, 0)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)
-	paramsTitle, paramsWidth := styles.PanelHeaderTab(panelTitleKey, panelTitleLabel, !history, active, max(width-topPrefixWidth-1, 0))
-	historyTitle, historyWidth := styles.PanelHeaderTab(historyTitleKey, historyTitleLabel, history, active, max(width-topPrefixWidth-paramsWidth-4, 0))
-	titleRendered := paramsTitle + borderStyle.Render("──") + historyTitle
-	titleWidth := paramsWidth + 2 + historyWidth
+	selectedTab := 0
+	if history {
+		selectedTab = 2
+	}
+	titleRendered, titleWidth := workspaceheader.Render(width, selectedTab, active, borderStyle)
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
 	remainingWidth := max(width-topPrefixWidth-titleWidth-1, 0)
 	mode := ""

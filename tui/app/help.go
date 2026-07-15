@@ -20,6 +20,7 @@ type helpKeyMap struct {
 	projectsMode    projectsPanelMode
 	logsMode        logsPanelMode
 	detailsVisible  bool
+	conditionDetail bool
 }
 
 func newHelpModel() help.Model {
@@ -46,14 +47,37 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 		return append(common, k.projectsHelp()...)
 	case panels.Parameters:
 		return append(common, parametersHelp()...)
+	case panels.Conditions:
+		return append(common, conditionsHelp()...)
 	case panels.History:
 		return append(common, historyHelp()...)
 	case panels.Logs:
 		return append(common, k.logsHelp()...)
 	case panels.Details:
+		if k.conditionDetail {
+			return append(common, conditionDetailsHelp()...)
+		}
 		return append(common, detailsHelp()...)
 	default:
 		return common
+	}
+}
+
+func conditionsHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, "maximize"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionOpenDetails, "details"),
+		compoundBinding(ref(tuiconfig.BlockConditions, tuiconfig.ActionCopyName), ref(tuiconfig.BlockConditions, tuiconfig.ActionCopyPath), "copy"),
+		compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionReload), ref(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll), "update"),
+		filterBinding(),
+	}
+}
+
+func conditionDetailsHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionClose, "close"),
+		compoundBinding(ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyName), ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath), "copy"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, "copy expression"),
 	}
 }
 
@@ -190,6 +214,7 @@ func (m Model) helpView() string {
 		projectsMode:    m.projectsMode,
 		logsMode:        m.logsMode,
 		detailsVisible:  m.detailsVisible,
+		conditionDetail: m.details.IsCondition(),
 	})
 
 	return lipgloss.NewStyle().

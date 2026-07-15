@@ -6,6 +6,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	boolpicker "github.com/yumauri/fbrcm/tui/components/boolpicker"
+	"github.com/yumauri/fbrcm/tui/components/conditions"
 	"github.com/yumauri/fbrcm/tui/components/details"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
@@ -25,6 +26,7 @@ type Model struct {
 
 	projects        projects.Model
 	parameters      parameters.Model
+	conditions      conditions.Model
 	details         details.Model
 	logs            logs.Model
 	projectsMode    projectsPanelMode
@@ -78,6 +80,7 @@ func New(svc *core.Core) Model {
 		svc:           svc,
 		projects:      projects.New(svc),
 		parameters:    parameters.New(svc),
+		conditions:    conditions.New(svc),
 		dialog:        dialogcmp.New(),
 		jsonInput:     jsoninput.New(),
 		boolPicker:    boolpicker.New(),
@@ -102,6 +105,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.projects.Init(),
 		m.parameters.Init(),
+		m.conditions.Init(),
 		m.details.Init(),
 		m.logs.Init(),
 	)

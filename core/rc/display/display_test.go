@@ -2,9 +2,20 @@ package display
 
 import (
 	"testing"
+	"time"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 )
+
+func TestFormatLocalDateTime(t *testing.T) {
+	value := time.Date(2020, time.January, 2, 3, 4, 5, 0, time.Local)
+	if got := FormatLocalDateTime(value); got != "2020-01-02 03:04:05" {
+		t.Fatalf("FormatLocalDateTime() = %q, want 2020-01-02 03:04:05", got)
+	}
+	if got := FormatLocalDateTime(time.Time{}); got != "" {
+		t.Fatalf("FormatLocalDateTime(zero) = %q, want empty", got)
+	}
+}
 
 func TestFormatSummary(t *testing.T) {
 	tests := []struct {
@@ -104,6 +115,21 @@ func TestFormatRawValue(t *testing.T) {
 	for _, tt := range tests {
 		if got := FormatRawValue(tt.value, tt.valueType); got != tt.want {
 			t.Fatalf("FormatRawValue(%q, %q) = %q, want %q", tt.value, tt.valueType, got, tt.want)
+		}
+	}
+}
+
+func TestFormatCount(t *testing.T) {
+	for _, tc := range []struct {
+		count int
+		want  string
+	}{
+		{count: 0, want: "0 parameters"},
+		{count: 1, want: "1 parameter"},
+		{count: 5, want: "5 parameters"},
+	} {
+		if got := FormatCount(tc.count, "parameter", "parameters"); got != tc.want {
+			t.Fatalf("FormatCount(%d) = %q, want %q", tc.count, got, tc.want)
 		}
 	}
 }

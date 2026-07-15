@@ -13,6 +13,7 @@ import (
 
 func (m Model) SetData(data *messages.ParameterViewData) Model {
 	m.data = cloneViewData(data)
+	m.conditionData = nil
 	m.activeField = fieldNone
 	m.dropdownOpen = false
 	m.dropdownIndex = 0
@@ -52,6 +53,19 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 	if m.data != nil && m.selectedValue < 0 && m.activeField == fieldNone {
 		m.viewport.GotoTop()
 	}
+	return m
+}
+
+func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
+	m.data = nil
+	m.conditionData = cloneConditionViewData(data)
+	m.activeField = fieldNone
+	m.dropdownOpen = false
+	m.selectedValue = -1
+	m.valuesInvalid = false
+	m.originalParam = core.ParametersEntry{}
+	m.refreshViewport()
+	m.viewport.GotoTop()
 	return m
 }
 

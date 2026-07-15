@@ -25,13 +25,17 @@ func (m *Model) closeDetailsIfOrphaned() {
 		return
 	}
 	data := m.details.Data()
-	if data == nil {
+	if data != nil {
+		if m.parameters.HasProject(data.Project.ProjectID) {
+			return
+		}
+		m.closeDetailsPanel()
 		return
 	}
-	if m.parameters.HasProject(data.Project.ProjectID) {
-		return
+	conditionData := m.details.ConditionData()
+	if conditionData != nil && !m.conditions.HasProject(conditionData.Project.ProjectID) {
+		m.closeDetailsPanel()
 	}
-	m.closeDetailsPanel()
 }
 
 func (m *Model) applyLayout() {
@@ -40,6 +44,7 @@ func (m *Model) applyLayout() {
 	m.projects = m.projects.SetCollapsed(m.projectsMode == projectsPanelModeCollapsed)
 	m.projects = m.projects.SetBounds(0, 0, layout.leftWidth, layout.topHeight)
 	m.parameters = m.parameters.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
+	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
 	m.dialog = m.dialog.SetBounds(0, 0, m.width, m.height)
 	detailsWidth := m.detailsWidthForLayout(layout)
 	m.details = m.details.SetBounds(layout.bottomWidth-detailsWidth, 0, detailsWidth, layout.topHeight)
@@ -49,7 +54,7 @@ func (m *Model) applyLayout() {
 func (m Model) nextTabPanel() panels.ID {
 	if m.active == panels.Logs {
 		if m.detailsVisible {
-			if m.prevTop == panels.Details || m.prevTop == panels.Parameters || m.prevTop == panels.History {
+			if m.prevTop == panels.Details || m.prevTop == panels.Parameters || m.prevTop == panels.Conditions || m.prevTop == panels.History {
 				return m.prevTop
 			}
 			return m.selectedParametersTab()
@@ -61,13 +66,13 @@ func (m Model) nextTabPanel() panels.ID {
 		if m.active == panels.Details {
 			return m.selectedParametersTab()
 		}
-		if m.active == panels.Parameters {
+		if m.active == panels.Parameters || m.active == panels.Conditions {
 			return panels.Details
 		}
 		return m.selectedParametersTab()
 	}
 
-	if m.active == panels.Parameters || m.active == panels.History {
+	if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History {
 		return panels.Projects
 	}
 
@@ -75,8 +80,8 @@ func (m Model) nextTabPanel() panels.ID {
 }
 
 func (m Model) selectedParametersTab() panels.ID {
-	if m.parametersTab == panels.History {
-		return panels.History
+	if m.parametersTab == panels.History || m.parametersTab == panels.Conditions {
+		return m.parametersTab
 	}
 	return panels.Parameters
 }
@@ -86,7 +91,7 @@ func (m *Model) setActive(panel panels.ID) {
 		m.prevTop = panel
 	}
 	m.active = panel
-	if panel == panels.Parameters || panel == panels.History {
+	if panel == panels.Parameters || panel == panels.Conditions || panel == panels.History {
 		m.parametersTab = panel
 		m.parameters = m.parameters.SetHistory(panel == panels.History)
 	}
@@ -95,8 +100,9 @@ func (m *Model) setActive(panel panels.ID) {
 	}
 	m.projects = m.projects.SetActive(panel == panels.Projects)
 	m.parameters = m.parameters.SetActive(panel == panels.Parameters || panel == panels.History)
+	m.conditions = m.conditions.SetActive(panel == panels.Conditions)
 	m.details = m.details.SetActive(panel == panels.Details)
-	m.details = m.details.SetBridgeActive(panel == panels.Parameters)
+	m.details = m.details.SetBridgeActive(panel == panels.Parameters || panel == panels.Conditions)
 	m.logs = m.logs.SetActive(panel == panels.Logs)
 }
 
@@ -118,10 +124,7 @@ func (m Model) panelAt(x, y int) (panels.ID, bool) {
 		if x < layout.leftWidth {
 			return panels.Projects, true
 		}
-		if m.selectedParametersTab() == panels.History {
-			return panels.History, true
-		}
-		return panels.Parameters, true
+		return m.selectedParametersTab(), true
 	}
 
 	return panels.None, false
@@ -171,7 +174,7 @@ func (m Model) detailsWidthForLayout(layout panelLayout) int {
 
 	// Details content width = panel width - 5:
 	// bridge spacer, left border, left padding, right padding, scrollbar lane.
-	nameFitWidth := m.parameters.LongestParameterNameWidth() + 5
+	nameFitWidth := max(m.parameters.LongestParameterNameWidth(), m.conditions.LongestConditionNameWidth()) + 5
 
 	desired := max(minWidth, nameFitWidth)
 	return min(desired, maxWidth)

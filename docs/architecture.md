@@ -20,9 +20,10 @@ never imports `cli/` or `tui/`.
 
 | Package | Responsibility |
 | --- | --- |
-| `core` | `Core` facade: auth registry, project sync, remote-config export/validate/publish/import, parameters cache + `ParametersTree` view model (tree types in `core/parameters`). Draft lifecycle delegates to `core/draft`. |
+| `core` | `Core` facade: auth registry, project sync, remote-config export/validate/publish/import, parameters cache, `ParametersTree`, and `ConditionsTree` view models. Draft lifecycle delegates to `core/draft`. |
 | `core/draft` | Draft storage, RC slot mutations, three-way merge, mutate/preview/publish pipeline. |
 | `core/parameters` | Parameters view model: tree/group/entry/value types, tree building from Remote Config, display value formatting. |
+| `core/conditions` | Order-aware condition catalog, parameter usage index, and delete/reorder impact models shared by CLI and TUI. |
 | `core/rc/display` | Remote Config display formatting: summary vs diff modes, project/condition labels. |
 | `core/rc/diff` | Colored Remote Config diff rendering for CLI and TUI previews. |
 | `core/rc/mutate` | RC slot collection and in-memory parameter/group mutation. |
@@ -38,7 +39,7 @@ never imports `cli/` or `tui/`.
 | Package | Responsibility |
 | --- | --- |
 | `cli/app` | Root command assembly and top-level error handling. |
-| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `config`, `delete`, `draft`, `get`, `profile`, `project`, `projects`, `update`, `versions`). |
+| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `conditions`, `config`, `delete`, `draft`, `get`, `profile`, `project`, `projects`, `update`, `versions`). |
 | `cli/shared` | Reusable command plumbing: flags, project/parameter filtering, confirmation prompts, JSON input. |
 | `cli/shared/rc` | Remote Config CLI pipeline: input extraction, order-preserving JSON, diff rendering, export normalization, validate/publish with ETag retry. Imported directly by RC mutation commands (`add`, `delete`, `update`, `get`, `project`, `versions`). |
 | `cli/styles` | CLI palette and `NO_COLOR` handling. |
@@ -70,7 +71,7 @@ only formatting is needed.
 | Package | Responsibility |
 | --- | --- |
 | `tui/app` | Root Bubble Tea model that orchestrates panels, overlays, value editors, and draft dialogs. |
-| `tui/components/*` | Panels and overlays: `projects`, `parameters` (`view.go`, `view_layout.go`, `view_render.go`), `details` (`model.go`, `model_fields.go`, …), value editors (`boolpicker`, `numberinput`, `stringinput`, `jsoninput`), `dialog`, `filterbox`, `logs`, `moveparam`, `renameinput`, `minsize`, and `viewutil` helpers. |
+| `tui/components/*` | Panels and overlays: `projects`, `parameters`, the read-only `conditions` priority/usage panel, shared `details`, value editors (`boolpicker`, `numberinput`, `stringinput`, `jsoninput`), `dialog`, `filterbox`, `logs`, `moveparam`, `renameinput`, `minsize`, and `viewutil` helpers. |
 | `tui/config`, `tui/messages`, `tui/panels`, `tui/styles` | Key bindings, inter-component messages, panel identifiers, panel styles. |
 
 ## Charm stack note
@@ -120,6 +121,7 @@ Add or extend tests at the layer you touch:
 
 - Root group key representations (`""`, `__default__`, `(root)`) must stay consistent — see [root-group-key.md](root-group-key.md).
 - Empty Remote Config parameter groups are first-class entities and may carry descriptions. Parameter mutation, filtering, condition cleanup, draft merge, and promotion must preserve them; only explicit group operations may remove them. In the TUI, the configured delete action opens confirmation when no draft exists and stages removal immediately when a draft already exists, matching other edits.
+- Remote Config condition slice order is evaluation priority. View models and promotion must preserve it; alphabetical condition ordering is never semantically safe.
 - Private file I/O goes through `core/config.WritePrivateFile`.
 
 ### Stop criteria

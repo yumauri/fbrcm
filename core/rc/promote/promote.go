@@ -7,7 +7,6 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
-	"github.com/yumauri/fbrcm/core/strfold"
 )
 
 type ItemID struct {
@@ -130,6 +129,7 @@ func Apply(plan Plan, selected map[ItemID]bool, opts Options) (*firebase.RemoteC
 		}
 		applied = append(applied, item)
 	}
+	applySelectedConditionOrder(finalCfg, plan.Source, selected)
 
 	rcmutate.DropUnknownConditionReferences(finalCfg)
 	removeExplicitlyPrunedGroups(finalCfg, plan.Source, selected)
@@ -233,23 +233,105 @@ func applyGroupDescription(target, source *firebase.RemoteConfig, item Item, opt
 }
 
 func applyCondition(target, source *firebase.RemoteConfig, item Item, opts Options) error {
-	conditions := conditionMap(target)
 	sourceConditions := conditionMap(source)
 	if item.Change == rcdiff.ChangeRemoved {
 		if !opts.Prune {
 			return nil
 		}
-		delete(conditions, item.ID.Name)
-		target.Conditions = sortedConditions(conditions)
+		removeCondition(target, item.ID.Name)
 		return nil
 	}
 	sourceCondition, ok := sourceConditions[item.ID.Name]
 	if !ok {
 		return nil
 	}
-	conditions[item.ID.Name] = sourceCondition
-	target.Conditions = sortedConditions(conditions)
+	for i := range target.Conditions {
+		if target.Conditions[i].Name == item.ID.Name {
+			target.Conditions[i] = sourceCondition
+			return nil
+		}
+	}
+	target.Conditions = append(target.Conditions, sourceCondition)
 	return nil
+}
+
+func removeCondition(cfg *firebase.RemoteConfig, name string) {
+	for i := range cfg.Conditions {
+		if cfg.Conditions[i].Name != name {
+			continue
+		}
+		cfg.Conditions = append(cfg.Conditions[:i], cfg.Conditions[i+1:]...)
+		return
+	}
+}
+
+// applySelectedConditionOrder moves only selected source conditions into their
+// source-relative positions. Unselected and target-only conditions retain their
+// relative order, while a fully selected promotion adopts the source order.
+func applySelectedConditionOrder(target, source *firebase.RemoteConfig, selected map[ItemID]bool) {
+	sourcePosition := make(map[string]int, len(source.Conditions))
+	selectedSource := make(map[string]struct{})
+	for i, condition := range source.Conditions {
+		sourcePosition[condition.Name] = i
+		if selected[ItemID{Kind: rcdiff.ItemCondition, Name: condition.Name}] {
+			selectedSource[condition.Name] = struct{}{}
+		}
+	}
+	if len(selectedSource) == 0 {
+		return
+	}
+
+	remaining := make([]firebase.RemoteConfigCondition, 0, len(target.Conditions))
+	selectedConditions := make(map[string]firebase.RemoteConfigCondition, len(selectedSource))
+	for _, condition := range target.Conditions {
+		if _, selected := selectedSource[condition.Name]; selected {
+			selectedConditions[condition.Name] = condition
+			continue
+		}
+		remaining = append(remaining, condition)
+	}
+
+	for _, sourceCondition := range source.Conditions {
+		condition, selected := selectedConditions[sourceCondition.Name]
+		if !selected {
+			continue
+		}
+		remaining = insertConditionBySourceOrder(remaining, condition, sourcePosition)
+	}
+	target.Conditions = remaining
+}
+
+func insertConditionBySourceOrder(conditions []firebase.RemoteConfigCondition, condition firebase.RemoteConfigCondition, sourcePosition map[string]int) []firebase.RemoteConfigCondition {
+	position := sourcePosition[condition.Name]
+	afterIndex := -1
+	afterPosition := len(sourcePosition) + 1
+	beforeIndex := -1
+	beforePosition := -1
+	for i, current := range conditions {
+		currentPosition, inSource := sourcePosition[current.Name]
+		if !inSource {
+			continue
+		}
+		if currentPosition > position && currentPosition < afterPosition {
+			afterIndex = i
+			afterPosition = currentPosition
+		}
+		if currentPosition < position && currentPosition > beforePosition {
+			beforeIndex = i
+			beforePosition = currentPosition
+		}
+	}
+
+	insertAt := len(conditions)
+	if afterIndex >= 0 {
+		insertAt = afterIndex
+	} else if beforeIndex >= 0 {
+		insertAt = beforeIndex + 1
+	}
+	conditions = append(conditions, firebase.RemoteConfigCondition{})
+	copy(conditions[insertAt+1:], conditions[insertAt:])
+	conditions[insertAt] = condition
+	return conditions
 }
 
 func sourceParam(source *firebase.RemoteConfig, key, group string) firebase.RemoteConfigParam {
@@ -270,15 +352,6 @@ func conditionMap(cfg *firebase.RemoteConfig) map[string]firebase.RemoteConfigCo
 	out := make(map[string]firebase.RemoteConfigCondition, len(cfg.Conditions))
 	for _, condition := range cfg.Conditions {
 		out[condition.Name] = condition
-	}
-	return out
-}
-
-func sortedConditions(values map[string]firebase.RemoteConfigCondition) []firebase.RemoteConfigCondition {
-	keys := strfold.SortedKeys(values)
-	out := make([]firebase.RemoteConfigCondition, 0, len(keys))
-	for _, key := range keys {
-		out = append(out, values[key])
 	}
 	return out
 }

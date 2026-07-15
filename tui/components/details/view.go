@@ -35,7 +35,7 @@ func renderPanel(body []string, width, height int, active, borderActive, invalid
 	innerWidth := max(panelWidth-4, 0)
 	contentHeight := max(height-2, 0)
 
-	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey, panelTitleLabel, active, max(panelWidth-2, 0))
+	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey(), panelTitleLabel, active, max(panelWidth-2, 0))
 	topPrefixWidth := min(2, panelWidth)
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
 	topFillWidth := max(panelWidth-topPrefixWidth-titleWidth, 0)

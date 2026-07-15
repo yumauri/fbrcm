@@ -61,6 +61,9 @@ var (
 				Bold(true).
 				Background(PaletteBlueBright)
 
+	TreeProjectName = PanelText.Bold(true).Foreground(PaletteError)
+	TreeProjectID   = PanelMuted
+
 	ScrollbarThumb = lipgloss.NewStyle().
 			Foreground(PaletteYellow)
 
@@ -175,6 +178,32 @@ func ProjectStateStyle(cursor, selected bool) lipgloss.Style {
 	default:
 		return lipgloss.NewStyle()
 	}
+}
+
+// TreeProjectSelectionStyle returns the shared full-row project selection style.
+func TreeProjectSelectionStyle() lipgloss.Style {
+	if NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true).Reverse(true)
+	}
+	return lipgloss.NewStyle().Background(PaletteError).Foreground(PaletteSlateBright)
+}
+
+// TreeItemSelectionStyle returns the shared full-row item selection style.
+func TreeItemSelectionStyle() lipgloss.Style {
+	if NoColorEnabled() {
+		return lipgloss.NewStyle().Reverse(true)
+	}
+	return lipgloss.NewStyle().Background(PaletteBlueDeep).Foreground(PaletteSlateBright)
+}
+
+// FillSelectedLine clips and fills a selected tree row to the available width.
+func FillSelectedLine(line string, width int, fillStyle lipgloss.Style) string {
+	clipped := lipgloss.NewStyle().MaxWidth(width).Render(line)
+	padding := max(width-lipgloss.Width(clipped), 0)
+	if padding == 0 {
+		return clipped
+	}
+	return clipped + fillStyle.Render(strings.Repeat(" ", padding))
 }
 
 func NoColorEnabled() bool {

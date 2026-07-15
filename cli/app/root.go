@@ -11,6 +11,7 @@ import (
 	addcmd "github.com/yumauri/fbrcm/cli/commands/add"
 	authcmd "github.com/yumauri/fbrcm/cli/commands/auth"
 	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
+	conditionscmd "github.com/yumauri/fbrcm/cli/commands/conditions"
 	configcmd "github.com/yumauri/fbrcm/cli/commands/config"
 	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
 	draftcmd "github.com/yumauri/fbrcm/cli/commands/draft"
@@ -52,6 +53,7 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(authcmd.New(s))
 	rootCmd.AddCommand(cachecmd.New())
+	rootCmd.AddCommand(conditionscmd.New(s))
 	rootCmd.AddCommand(configcmd.New())
 	rootCmd.AddCommand(deletecmd.New(s))
 	rootCmd.AddCommand(draftcmd.New(s))

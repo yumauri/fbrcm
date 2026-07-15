@@ -2,13 +2,10 @@ package table
 
 import (
 	"image/color"
-	"os"
-	"strconv"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 	lipglosstable "charm.land/lipgloss/v2/table"
-	"golang.org/x/term"
 
 	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
@@ -163,7 +160,7 @@ func rowStatus(rows []Row, row int) string {
 }
 
 func chooseTableLayout(rows []Row, labelWidth int, includeProject bool, allowHideKey bool) tableLayout {
-	terminalWidth := detectTerminalWidth()
+	terminalWidth := shared.TerminalWidth()
 	layout := tableLayout{
 		includeProject: includeProject,
 		includeGroup:   true,
@@ -248,24 +245,6 @@ func chooseTableLayout(rows []Row, labelWidth int, includeProject bool, allowHid
 	}
 	layout.valueWidth = max(1, min(natural, valueWidth))
 	return layout
-}
-
-func detectTerminalWidth() int {
-	if columns := strings.TrimSpace(os.Getenv("COLUMNS")); columns != "" {
-		if width, err := strconv.Atoi(columns); err == nil && width > 0 {
-			return width
-		}
-	}
-
-	info, err := os.Stdout.Stat()
-	if err == nil && (info.Mode()&os.ModeCharDevice) != 0 {
-		width, _, err := term.GetSize(int(os.Stdout.Fd()))
-		if err == nil && width > 0 {
-			return width
-		}
-	}
-
-	return 80
 }
 
 func tableOverhead(cols int) int {

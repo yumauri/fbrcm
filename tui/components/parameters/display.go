@@ -180,28 +180,37 @@ func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
 	changedGroups := make(map[string]int)
 	changedProjects := make(map[string]bool)
 	statusProjects := make(map[string]bool)
+	query := m.filter.Value()
 	for _, project := range m.projects {
 		// Project rows remain as navigation anchors even when the active filters
 		// remove every group and parameter beneath them. History version actions
 		// are scoped through the project at the cursor.
-		changedProjects[project.project.ProjectID] = true
-		state := m.histories[project.project.ProjectID]
+		projectID := project.project.ProjectID
+		changedProjects[projectID] = true
+		state := m.histories[projectID]
 		if project.loading || project.verifying || project.err != nil || state.loading || state.err != nil {
-			statusProjects[project.project.ProjectID] = true
+			statusProjects[projectID] = true
 		}
-	}
-	for _, node := range nodes {
-		if node.kind != nodeParameter || node.transient {
+
+		// Determine changed groups from the history tree rather than the rendered
+		// nodes. Collapsed groups have no parameter nodes, but their headers must
+		// remain visible so users can expand them again.
+		tree := m.historyTree(projectID, project.tree)
+		if tree == nil {
 			continue
 		}
-		if !isVisibleHistoryChange(m.histories[node.projectID].paramKinds[historyParamKey(node.groupKey, node.paramKey)]) {
-			continue
+		for _, group := range tree.Groups {
+			params := matchedParameters(group.Parameters, query, m.filter.Mode())
+			for _, param := range params {
+				if !isVisibleHistoryChange(state.paramKinds[historyParamKey(group.Key, param.Key)]) {
+					continue
+				}
+				paramKey := historyVisibleParamKey(projectID, group.Key, param.Key)
+				groupKey := historyVisibleGroupKey(projectID, group.Key)
+				changedParams[paramKey] = true
+				changedGroups[groupKey]++
+			}
 		}
-		paramKey := historyVisibleParamKey(node.projectID, node.groupKey, node.paramKey)
-		groupKey := historyVisibleGroupKey(node.projectID, node.groupKey)
-		changedParams[paramKey] = true
-		changedGroups[groupKey]++
-		changedProjects[node.projectID] = true
 	}
 
 	out := make([]visibleNode, 0, len(nodes))

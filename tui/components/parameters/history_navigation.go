@@ -458,6 +458,11 @@ func renderHistoryPickerTabs(layout historyPickerLayout, leftActive bool, underl
 	leftWidth := historyPickerTabWidth(layout.leftLabel)
 	rightWidth := historyPickerTabWidth(layout.rightLabel)
 	tops := viewutil.PadRight(ansi.Truncate(underlying, layout.width, ""), layout.width)
+	gapStart := layout.leftTab + leftWidth
+	gapEnd := layout.rightTab
+	if gapEnd > gapStart {
+		tops = replaceHistoryPickerSegment(tops, gapStart, styles.PanelBorderActive.Render(strings.Repeat("─", gapEnd-gapStart)), layout.width)
+	}
 	tops = replaceHistoryPickerSegment(tops, layout.rightTab, historyPickerTabTop(rightWidth), layout.width)
 	tops = replaceHistoryPickerSegment(tops, layout.leftTab, historyPickerTabTop(leftWidth), layout.width)
 	contents := strings.Repeat(" ", layout.width)

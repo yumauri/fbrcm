@@ -10,13 +10,6 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-const (
-	panelTitleKey     = "²"
-	panelTitleLabel   = "Parameters"
-	historyTitleKey   = "⁹"
-	historyTitleLabel = "History"
-)
-
 var (
 	projectMetaStyle        = styles.PanelMuted
 	parameterStyle          = styles.PanelBody.Foreground(styles.PaletteBlueBright)

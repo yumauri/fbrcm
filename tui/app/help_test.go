@@ -36,6 +36,11 @@ func TestShortHelpDescriptions(t *testing.T) {
 			want: []string{"quit", "maximize", "rename", "edit", "new", "duplicate", "move", "toggle", "delete", "publish", "discard", "copy", "update", "filter"},
 		},
 		{
+			name: "conditions",
+			keys: helpKeyMap{active: panels.Conditions},
+			want: []string{"quit", "maximize", "details", "copy", "update", "filter"},
+		},
+		{
 			name: "logs expanded",
 			keys: helpKeyMap{active: panels.Logs},
 			want: []string{"quit", "collapse", "level", "resize"},

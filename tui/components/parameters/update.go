@@ -139,7 +139,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReload, k):
 			return m, m.revalidateCurrentProjectCmd()
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k):
-			return m, m.revalidateAllProjectsCmd()
+			return m, m.ReloadAllProjects()
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCopyName, k):
 			return m, m.copyCurrentParameterNameCmd()
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionCopyPath, k):

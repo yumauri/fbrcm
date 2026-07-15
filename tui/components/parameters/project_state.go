@@ -112,12 +112,22 @@ func (m *Model) revalidateCurrentProjectCmd() tea.Cmd {
 	if !ok {
 		return nil
 	}
-	m.markProjectRefreshing(project.ProjectID)
-	m.syncVisible()
-	return tea.Batch(m.forceParametersCmd(project), m.spin.Tick)
+	return m.ReloadProject(project.ProjectID)
 }
 
-func (m *Model) revalidateAllProjectsCmd() tea.Cmd {
+// ReloadProject refreshes one selected Remote Config project.
+func (m *Model) ReloadProject(projectID string) tea.Cmd {
+	project := m.projectByID(projectID)
+	if project == nil {
+		return nil
+	}
+	m.markProjectRefreshing(project.project.ProjectID)
+	m.syncVisible()
+	return tea.Batch(m.forceParametersCmd(project.project), m.spin.Tick)
+}
+
+// ReloadAllProjects refreshes every selected Remote Config project.
+func (m *Model) ReloadAllProjects() tea.Cmd {
 	if len(m.projects) == 0 {
 		return nil
 	}

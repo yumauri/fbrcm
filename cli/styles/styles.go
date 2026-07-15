@@ -2,6 +2,7 @@ package styles
 
 import (
 	"image/color"
+	"strings"
 
 	"charm.land/lipgloss/v2"
 	charmlog "charm.land/log/v2"
@@ -48,6 +49,15 @@ func BorderStyle(_ bool) lipgloss.Style {
 
 func ConditionLipglossColor(name string) color.Color {
 	return corestyles.ConditionLipglossColor(name)
+}
+
+// RemoteConfigValueStyle returns the shared type-aware display style used by
+// human-readable CLI values.
+func RemoteConfigValueStyle(value, valueType string) lipgloss.Style {
+	if strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")") {
+		return corestyles.EmptyValueStyle()
+	}
+	return corestyles.ValueTextStyle(value, valueType)
 }
 
 func LogLevelLipglossColor(level charmlog.Level) color.Color {

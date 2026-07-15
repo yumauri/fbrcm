@@ -144,6 +144,82 @@ func TestApplyPruneRemovesExplicitlySelectedEmptyGroup(t *testing.T) {
 	}
 }
 
+func TestApplyConditionUpdatePreservesTargetOrder(t *testing.T) {
+	source := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "first", Expression: "new"},
+		{Name: "second", Expression: "same"},
+		{Name: "third", Expression: "same"},
+	}}
+	target := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "first", Expression: "old"},
+		{Name: "second", Expression: "same"},
+		{Name: "third", Expression: "same"},
+	}}
+
+	plan := BuildPlan(source, target, Options{})
+	finalCfg, _, err := Apply(plan, SelectAll(plan.Items), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertConditionNames(t, finalCfg, "first", "second", "third")
+}
+
+func TestApplyAddedConditionUsesSourceRelativeOrder(t *testing.T) {
+	source := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "first"}, {Name: "added"}, {Name: "last"},
+	}}
+	target := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "target-only"}, {Name: "first"}, {Name: "last"},
+	}}
+
+	plan := BuildPlan(source, target, Options{})
+	finalCfg, _, err := Apply(plan, SelectAll(plan.Items), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertConditionNames(t, finalCfg, "target-only", "first", "added", "last")
+}
+
+func TestApplySelectedOrderChangesDoNotAlphabetizeConditions(t *testing.T) {
+	source := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "zebra"}, {Name: "middle"}, {Name: "alpha"},
+	}}
+	target := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "alpha"}, {Name: "zebra"}, {Name: "middle"},
+	}}
+
+	plan := BuildPlan(source, target, Options{})
+	finalCfg, _, err := Apply(plan, SelectAll(plan.Items), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertConditionNames(t, finalCfg, "zebra", "middle", "alpha")
+}
+
+func TestApplyPrunedConditionPreservesRemainingOrder(t *testing.T) {
+	source := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{{Name: "zebra"}, {Name: "middle"}}}
+	target := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{{Name: "zebra"}, {Name: "remove"}, {Name: "middle"}}}
+
+	plan := BuildPlan(source, target, Options{Prune: true})
+	finalCfg, _, err := Apply(plan, SelectAll(plan.Items), Options{Prune: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertConditionNames(t, finalCfg, "zebra", "middle")
+}
+
+func assertConditionNames(t *testing.T, cfg *firebase.RemoteConfig, want ...string) {
+	t.Helper()
+	if len(cfg.Conditions) != len(want) {
+		t.Fatalf("condition count = %d, want %d: %#v", len(cfg.Conditions), len(want), cfg.Conditions)
+	}
+	for i, condition := range cfg.Conditions {
+		if condition.Name != want[i] {
+			t.Fatalf("condition %d = %q, want %q; all = %#v", i, condition.Name, want[i], cfg.Conditions)
+		}
+	}
+}
+
 func stringParam(value string) firebase.RemoteConfigParam {
 	return firebase.RemoteConfigParam{
 		DefaultValue: &firebase.RemoteConfigValue{Value: value},

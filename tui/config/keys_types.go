@@ -8,6 +8,7 @@ const (
 	BlockFilter        Block = "filter"
 	BlockProjects      Block = "projects"
 	BlockParameters    Block = "parameters"
+	BlockConditions    Block = "conditions"
 	BlockHistory       Block = "history"
 	BlockHistoryPicker Block = "history_picker"
 	BlockDetails       Block = "details"
@@ -40,6 +41,7 @@ const (
 
 	ActionFocusProjects   Action = "focus_projects"
 	ActionFocusParameters Action = "focus_parameters"
+	ActionFocusConditions Action = "focus_conditions"
 	ActionFocusHistory    Action = "focus_history"
 	ActionFocusDetails    Action = "focus_details"
 	ActionFocusLogs       Action = "focus_logs"

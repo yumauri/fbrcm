@@ -6,6 +6,7 @@ const (
 	None ID = iota
 	Projects
 	Parameters
+	Conditions
 	History
 	Details
 	Logs

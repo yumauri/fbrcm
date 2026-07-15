@@ -142,7 +142,7 @@ const minSizeViewSnapshot = `
  Terminal too small
  Minimum size 80x20`
 
-const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ⁹History ─────────────────────────────────────╮
+const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -167,7 +167,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • c collapse • enter select • space mark • o open • u update • ~/^///= filter`
 
-const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ⁹History ─────────────────────────────────────╮
+const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -192,7 +192,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • c collapse • [/] level • -/_/=/+ resize`
 
-const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ⁹History ─────────────────────────────────────╮
+const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │

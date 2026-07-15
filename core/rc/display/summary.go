@@ -1,10 +1,31 @@
 package display
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 )
+
+const localDateTimeLayout = "2006-01-02 15:04:05"
+
+// FormatCount formats a count with the grammatically appropriate noun.
+func FormatCount(count int, singular, plural string) string {
+	noun := plural
+	if count == 1 {
+		noun = singular
+	}
+	return fmt.Sprintf("%d %s", count, noun)
+}
+
+// FormatLocalDateTime formats a timestamp in the local timezone for terminal displays.
+func FormatLocalDateTime(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.Local().Format(localDateTimeLayout)
+}
 
 // FormatSummary formats a Remote Config value for tree summaries and table output.
 func FormatSummary(value firebase.RemoteConfigValue, valueType string) string {

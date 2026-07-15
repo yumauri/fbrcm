@@ -13,7 +13,20 @@ func (m *Model) closeDetailsPanel() {
 	m.newParameter = nil
 	m.parameters.ClearTransientNewParameter()
 	if m.active == panels.Details {
-		m.setActive(panels.Parameters)
+		m.setActive(m.selectedParametersTab())
+	}
+}
+
+func (m *Model) applyConditionSelection(msg messages.ConditionSelectionChangedMsg) {
+	if msg.ResetScroll {
+		m.details = m.details.ResetScroll()
+	}
+	if msg.Data != nil && (!m.detailsVisible || !m.details.Dirty()) {
+		m.details = m.details.SetConditionData(msg.Data)
+	}
+	if msg.Activate && msg.Data != nil && !m.details.Dirty() {
+		m.detailsVisible = true
+		m.setActive(panels.Details)
 	}
 }
 
@@ -123,6 +136,9 @@ func (m *Model) requestDeleteDetails() tea.Cmd {
 
 // copyDetailsNameCmd copies current details parameter name.
 func (m Model) copyDetailsNameCmd() tea.Cmd {
+	if data := m.details.ConditionData(); data != nil {
+		return copyToClipboardCmd(data.Condition.Name)
+	}
 	data := m.details.Data()
 	if data == nil {
 		return nil
@@ -132,6 +148,9 @@ func (m Model) copyDetailsNameCmd() tea.Cmd {
 
 // copyDetailsPathCmd copies current details parameter path.
 func (m Model) copyDetailsPathCmd() tea.Cmd {
+	if data := m.details.ConditionData(); data != nil {
+		return copyToClipboardCmd(data.Project.ProjectID + "/conditions/" + data.Condition.Name)
+	}
 	data := m.details.Data()
 	if data == nil {
 		return nil
@@ -141,6 +160,9 @@ func (m Model) copyDetailsPathCmd() tea.Cmd {
 
 // copyDetailsSelectedValueCmd copies selected details value.
 func (m Model) copyDetailsSelectedValueCmd() tea.Cmd {
+	if data := m.details.ConditionData(); data != nil {
+		return copyToClipboardCmd(data.Condition.Expression)
+	}
 	value, ok := m.details.SelectedRawValue()
 	if !ok {
 		return nil
