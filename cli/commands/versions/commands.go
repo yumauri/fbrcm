@@ -1,4 +1,4 @@
-package project
+package versions
 
 import (
 	"context"
@@ -15,7 +15,8 @@ import (
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 )
 
-func newVersionsCommand(svc *core.Core) *cobra.Command {
+// New constructs the top-level versions command.
+func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "versions", Short: "Inspect and recover project Remote Config versions", Long: "Inspect Firebase Remote Config version history and immutable local snapshots. Version selectors accept a number, current, latest, previous, current~N, or latest~N. Rollback uses Firebase history; restore republishes a locally cached snapshot."}
 	cmd.AddCommand(newVersionsListCommand(svc), newVersionsShowCommand(svc), newVersionsDiffCommand(svc), newVersionsExportCommand(svc), newVersionsRollbackCommand(svc, false), newVersionsRollbackCommand(svc, true))
 	return cmd
@@ -243,7 +244,7 @@ func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 			_, err = cmd.OutOrStdout().Write(body)
 			return err
 		}
-		if err := writeRemoteConfigFile(to, resolved.Cache.RemoteConfig); err != nil {
+		if err := rc.WriteRemoteConfigFile(to, resolved.Cache.RemoteConfig); err != nil {
 			return err
 		}
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported version %s: %s\n", resolved.Version.VersionNumber, to)
@@ -347,7 +348,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	}
 	if err != nil {
 		if !restore && target.Cached {
-			return fmt.Errorf("%w; if Firebase no longer retains version %s, republish the local snapshot with: fbrcm project versions restore %s %s", err, target.Version.VersionNumber, project.ProjectID, target.Version.VersionNumber)
+			return fmt.Errorf("%w; if Firebase no longer retains version %s, republish the local snapshot with: fbrcm versions restore %s %s", err, target.Version.VersionNumber, project.ProjectID, target.Version.VersionNumber)
 		}
 		return err
 	}

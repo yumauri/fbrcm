@@ -2,11 +2,29 @@ package rc
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
+
+// WriteRemoteConfigFile writes normalized Remote Config JSON to a private file.
+func WriteRemoteConfigFile(path string, raw []byte) error {
+	raw = TrimTrailingLineBreaks(NormalizeExportJSON(raw))
+	dir := filepath.Dir(path)
+	if dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("create destination dir: %w", err)
+		}
+	}
+	if err := config.WritePrivateFile(path, raw); err != nil {
+		return fmt.Errorf("write destination file: %w", err)
+	}
+	return nil
+}
 
 // OrderMutator adjusts member order after a stdin mutation.
 type OrderMutator func(order *RemoteConfigOrder)

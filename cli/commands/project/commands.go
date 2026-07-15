@@ -3,8 +3,6 @@ package project
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -21,7 +19,7 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "project",
 		Short: "Export and import project Remote Config",
 	}
-	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc), newVersionsCommand(svc))
+	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc))
 	return projectCmd
 }
 
@@ -51,7 +49,7 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 
-			if err := writeRemoteConfigFile(toPath, raw); err != nil {
+			if err := rc.WriteRemoteConfigFile(toPath, raw); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported: %s\n", toPath)
@@ -98,18 +96,4 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 	cmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "remove-project-specific-conditions")
 	cmd.MarkFlagsMutuallyExclusive("merge", "override")
 	return cmd
-}
-
-func writeRemoteConfigFile(path string, raw []byte) error {
-	raw = rc.TrimTrailingLineBreaks(rc.NormalizeExportJSON(raw))
-	dir := filepath.Dir(path)
-	if dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("create destination dir: %w", err)
-		}
-	}
-	if err := os.WriteFile(path, raw, 0o600); err != nil {
-		return fmt.Errorf("write destination file: %w", err)
-	}
-	return nil
 }

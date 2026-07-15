@@ -5,14 +5,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/yumauri/fbrcm/cli/shared/rc"
 )
 
 func TestWriteRemoteConfigFileNormalizesExportJSON(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "nested", "remote-config.json")
 	raw := []byte("{\"parameters\":{\"flag\":{\"defaultValue\":{\"value\":\"\\u003ctag\\u003e \\u0026 more\"}}}}\n\n")
 
-	if err := writeRemoteConfigFile(path, raw); err != nil {
-		t.Fatalf("writeRemoteConfigFile returned error: %v", err)
+	if err := rc.WriteRemoteConfigFile(path, raw); err != nil {
+		t.Fatalf("WriteRemoteConfigFile returned error: %v", err)
 	}
 
 	data, err := os.ReadFile(path)

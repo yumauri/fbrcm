@@ -19,6 +19,7 @@ import (
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
+	versionscmd "github.com/yumauri/fbrcm/cli/commands/versions"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -59,6 +60,7 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd.AddCommand(projectcmd.New(s))
 	rootCmd.AddCommand(projectscmd.New(s))
 	rootCmd.AddCommand(updatecmd.New(s))
+	rootCmd.AddCommand(versionscmd.New(s))
 
 	return rootCmd
 }

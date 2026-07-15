@@ -244,18 +244,18 @@ fbrcm project export <project-id> --to remote-config.json
 Inspect and recover Remote Config version history:
 
 ```sh
-fbrcm project versions list <project-id>
-fbrcm project versions show <project-id> 142
-fbrcm project versions diff <project-id> 138 current
-fbrcm project versions rollback <project-id> 138 --dry-run
-fbrcm project versions rollback <project-id> 138
+fbrcm versions list <project-id>
+fbrcm versions show <project-id> 142
+fbrcm versions diff <project-id> 138 current
+fbrcm versions rollback <project-id> 138 --dry-run
+fbrcm versions rollback <project-id> 138
 ```
 
 Firebase version history is authoritative, but Firebase retains at most 300 versions and may remove inactive versions older than 90 days. `fbrcm` keeps immutable templates it has encountered until the cache is purged. A cached version that Firebase no longer retains can be republished with:
 
 ```sh
-fbrcm project versions restore <project-id> 37 --dry-run
-fbrcm project versions restore <project-id> 37
+fbrcm versions restore <project-id> 37 --dry-run
+fbrcm versions restore <project-id> 37
 ```
 
 `rollback` uses Firebase's native rollback operation and creates a new version with rollback metadata. `restore` republishes a local snapshot as a normal new version. Both commands print a full diff and ask for confirmation unless `--yes` is used.

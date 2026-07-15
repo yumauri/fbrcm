@@ -38,9 +38,9 @@ never imports `cli/` or `tui/`.
 | Package | Responsibility |
 | --- | --- |
 | `cli/app` | Root command assembly and top-level error handling. |
-| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `config`, `delete`, `draft`, `get`, `profile`, `project`, `projects`, `update`). |
+| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `config`, `delete`, `draft`, `get`, `profile`, `project`, `projects`, `update`, `versions`). |
 | `cli/shared` | Reusable command plumbing: flags, project/parameter filtering, confirmation prompts, JSON input. |
-| `cli/shared/rc` | Remote Config CLI pipeline: input extraction, order-preserving JSON, diff rendering, export normalization, validate/publish with ETag retry. Imported directly by RC mutation commands (`add`, `delete`, `update`, `get`, `project`). |
+| `cli/shared/rc` | Remote Config CLI pipeline: input extraction, order-preserving JSON, diff rendering, export normalization, validate/publish with ETag retry. Imported directly by RC mutation commands (`add`, `delete`, `update`, `get`, `project`, `versions`). |
 | `cli/styles` | CLI palette and `NO_COLOR` handling. |
 
 ### `cli/shared/rc` layout
