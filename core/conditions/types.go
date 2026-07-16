@@ -22,6 +22,16 @@ type Entry struct {
 	Usages      []Usage `json:"usages"`
 }
 
+// DetailsEdit describes an atomic edit of a condition definition and its
+// evaluation priority.
+type DetailsEdit struct {
+	Name           string
+	NextName       string
+	NextExpression string
+	NextTagColor   string
+	NextPriority   int
+}
+
 type Usage struct {
 	GroupKey     string `json:"group_key,omitempty"`
 	GroupLabel   string `json:"group"`

@@ -33,6 +33,9 @@ func newGroupInput() textinput.Model {
 }
 
 func (m Model) conditionStyle(color string) lipgloss.Style {
+	if strings.TrimSpace(color) == "" {
+		return styles.PanelText
+	}
 	return styles.PanelText.Foreground(styles.ConditionLipglossColor(color))
 }
 

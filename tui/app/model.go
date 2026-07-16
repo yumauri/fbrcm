@@ -52,6 +52,7 @@ type Model struct {
 	newParameter    *newParameterSession
 	pendingDetails  *pendingDetailsSelection
 	historyRollback *historyRollbackSession
+	conditionEdit   *conditionEditSession
 	valueEditSource panels.ID
 
 	width  int
@@ -73,6 +74,26 @@ type duplicateSession struct {
 type newParameterSession struct {
 	projectID string
 	groupKey  string
+}
+
+type conditionEditMode int
+
+const (
+	conditionAddName conditionEditMode = iota + 1
+	conditionRename
+	conditionExpression
+	conditionColor
+	conditionMove
+	conditionDetailsExpression
+)
+
+type conditionEditSession struct {
+	mode         conditionEditMode
+	project      core.Project
+	originalName string
+	name         string
+	creating     bool
+	currentColor string
 }
 
 func New(svc *core.Core) Model {

@@ -7,7 +7,7 @@ import (
 )
 
 func (m *Model) focusNextItem(delta int) {
-	if m.data == nil {
+	if m.data == nil && m.conditionData == nil {
 		return
 	}
 	m.nameInput.Blur()
@@ -15,8 +15,12 @@ func (m *Model) focusNextItem(delta int) {
 	m.dropdownOpen = false
 	m.dropdownIndex = 0
 	m.groupInput.Blur()
-	fields := []fieldID{fieldGroup, fieldName, fieldType, fieldDescription}
-	total := len(fields) + len(m.data.Parameter.Values)
+	fields := m.formFields()
+	valueCount := 0
+	if m.data != nil {
+		valueCount = len(m.data.Parameter.Values)
+	}
+	total := len(fields) + valueCount
 	if total == 0 {
 		m.activeField = fieldNone
 		m.selectedValue = -1
@@ -32,7 +36,7 @@ func (m *Model) focusNextItem(delta int) {
 	if idx < 0 && m.selectedValue >= 0 {
 		idx = len(fields) + m.selectedValue
 	}
-	if idx < 0 && delta < 0 && len(m.data.Parameter.Values) > 0 {
+	if idx < 0 && delta < 0 && valueCount > 0 {
 		idx = total
 	}
 	idx = (idx + delta + total) % total
@@ -49,7 +53,20 @@ func (m *Model) focusNextItem(delta int) {
 	if m.activeField == fieldDescription {
 		_ = m.descInput.Focus()
 	}
+	if m.activeField == fieldConditionPriority {
+		_ = m.priorityInput.Focus()
+	}
 	m.ensureSelectionVisible()
+}
+
+func (m Model) formFields() []fieldID {
+	if m.conditionData != nil {
+		return []fieldID{fieldConditionPriority, fieldName, fieldConditionColor}
+	}
+	if m.data != nil {
+		return []fieldID{fieldGroup, fieldName, fieldType, fieldDescription}
+	}
+	return nil
 }
 
 func (m *Model) activateField(field fieldID) {
@@ -60,11 +77,15 @@ func (m *Model) activateField(field fieldID) {
 	m.nameInput.Blur()
 	m.descInput.Blur()
 	m.groupInput.Blur()
+	m.priorityInput.Blur()
 	if field == fieldName {
 		_ = m.nameInput.Focus()
 	}
 	if field == fieldDescription {
 		_ = m.descInput.Focus()
+	}
+	if field == fieldConditionPriority {
+		_ = m.priorityInput.Focus()
 	}
 }
 
@@ -72,8 +93,7 @@ func (m Model) fieldAt(x, y int) (fieldID, bool) {
 	if !m.Contains(x, y) {
 		return fieldNone, false
 	}
-	fields := []fieldID{fieldGroup, fieldName, fieldType, fieldDescription}
-	for _, field := range fields {
+	for _, field := range m.formFields() {
 		if y >= m.fieldScreenY(field) && y < m.fieldScreenY(field)+m.fieldVisualHeight(field) {
 			return field, true
 		}
@@ -110,6 +130,8 @@ func (m *Model) positionCursorForClick(field fieldID, x, y int) {
 	switch field {
 	case fieldName:
 		m.nameInput.SetCursor(min(col, len([]rune(m.nameInput.Value()))))
+	case fieldConditionPriority:
+		m.priorityInput.SetCursor(min(col, len([]rune(m.priorityInput.Value()))))
 	case fieldDescription:
 		line := max(y-m.fieldScreenY(fieldDescription), 0)
 		width := m.descriptionTextWidth()

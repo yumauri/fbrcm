@@ -25,9 +25,15 @@ func (m *Model) closeMoveParam() {
 		return
 	}
 	m.moveParam = m.moveParam.Close()
+	if m.conditionEdit != nil && m.conditionEdit.mode == conditionColor {
+		m.conditionEdit = nil
+	}
 }
 
 func (m *Model) submitMoveParam() tea.Cmd {
+	if cmd, handled := m.submitConditionOption(); handled {
+		return cmd
+	}
 	anchor, ok := m.parameters.CurrentMoveAnchor()
 	if !ok {
 		m.closeMoveParam()

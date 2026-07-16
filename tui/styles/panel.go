@@ -196,6 +196,18 @@ func TreeItemSelectionStyle() lipgloss.Style {
 	return lipgloss.NewStyle().Background(PaletteBlueDeep).Foreground(PaletteSlateBright)
 }
 
+// RenderDraftBadge renders the shared project-row draft marker.
+func RenderDraftBadge(label string, selected bool) string {
+	if selected {
+		return lipgloss.NewStyle().Foreground(PaletteError).Render(label)
+	}
+	return lipgloss.NewStyle().
+		Background(PaletteError).
+		Foreground(PaletteSlateBright).
+		Padding(0, 1).
+		Render(label)
+}
+
 // FillSelectedLine clips and fills a selected tree row to the available width.
 func FillSelectedLine(line string, width int, fillStyle lipgloss.Style) string {
 	clipped := lipgloss.NewStyle().MaxWidth(width).Render(line)

@@ -1,6 +1,8 @@
 package conditions
 
 import (
+	"fmt"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
@@ -10,6 +12,9 @@ import (
 )
 
 func (m *Model) setProjects(projects []core.Project) {
+	if m.move != nil {
+		m.CancelMove()
+	}
 	projects = append([]core.Project(nil), projects...)
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 	next := make([]projectState, 0, len(projects))
@@ -29,6 +34,9 @@ func (m *Model) setProjects(projects []core.Project) {
 }
 
 func (m *Model) updateLoaded(msg messages.ConditionsLoadedMsg) {
+	if m.move != nil {
+		m.CancelMove()
+	}
 	idx, ok := m.projectIndex[msg.Project.ProjectID]
 	if !ok {
 		return
@@ -39,9 +47,22 @@ func (m *Model) updateLoaded(msg messages.ConditionsLoadedMsg) {
 	if msg.Err == nil {
 		state.tree = msg.Tree
 		state.source = msg.Source
+		if msg.Source == "draft" || msg.Source == "draft-stale" {
+			state.hasDraft = true
+			state.staleDraft = msg.Source == "draft-stale"
+			if state.cacheSource == "" {
+				state.cacheSource = "cache"
+			}
+		}
+		if state.cacheVersion == "" && !state.hasDraft && msg.Tree != nil {
+			state.cacheVersion = msg.Tree.Version
+		}
 	}
 	m.projects[idx] = state
 	m.syncVisible()
+	if msg.SelectConditionName != "" {
+		m.selectCondition(msg.Project.ProjectID, msg.SelectConditionName)
+	}
 }
 
 func (m *Model) syncVisible() {
@@ -61,7 +82,7 @@ func (m *Model) syncVisible() {
 			if !conditionMatches(condition, query, mode) {
 				continue
 			}
-			m.visible = append(m.visible, visibleNode{kind: nodeCondition, projectID: project.project.ProjectID, conditionIndex: i})
+			m.visible = append(m.visible, visibleNode{kind: nodeCondition, projectID: project.project.ProjectID, conditionIndex: i, conditionName: condition.Name})
 		}
 	}
 	if len(m.visible) == 0 {
@@ -71,7 +92,7 @@ func (m *Model) syncVisible() {
 	m.cursor = min(max(m.cursor, 0), len(m.visible)-1)
 	if selected.projectID != "" {
 		for i, node := range m.visible {
-			if node.projectID == selected.projectID && node.kind == selected.kind && node.conditionIndex == selected.conditionIndex {
+			if node.projectID == selected.projectID && node.kind == selected.kind && ((node.kind == nodeCondition && node.conditionName == selected.conditionName) || (node.kind != nodeCondition && node.conditionIndex == selected.conditionIndex)) {
 				m.cursor = i
 				break
 			}
@@ -79,6 +100,16 @@ func (m *Model) syncVisible() {
 	}
 	m.cursor = m.nearestSelectableIndex(m.cursor, 1)
 	m.ensureCursorVisible()
+}
+
+func (m *Model) selectCondition(projectID, name string) {
+	for index, node := range m.visible {
+		if node.kind == nodeCondition && node.projectID == projectID && node.conditionName == name {
+			m.cursor = index
+			m.ensureCursorVisible()
+			return
+		}
+	}
 }
 
 func conditionMatches(condition core.ConditionEntry, query string, mode filter.Mode) bool {
@@ -115,7 +146,15 @@ func (m Model) currentData() (*messages.ConditionViewData, bool) {
 	if !ok || m.projects[idx].tree == nil || node.conditionIndex < 0 || node.conditionIndex >= len(m.projects[idx].tree.Conditions) {
 		return nil, false
 	}
-	return &messages.ConditionViewData{Project: m.projects[idx].project, Condition: m.projects[idx].tree.Conditions[node.conditionIndex]}, true
+	names := make([]string, 0, len(m.projects[idx].tree.Conditions))
+	for _, condition := range m.projects[idx].tree.Conditions {
+		names = append(names, condition.Name)
+	}
+	return &messages.ConditionViewData{
+		Project:        m.projects[idx].project,
+		Condition:      m.projects[idx].tree.Conditions[node.conditionIndex],
+		ConditionNames: names,
+	}, true
 }
 
 // CurrentProject returns the project represented by the current Conditions row.
@@ -129,6 +168,72 @@ func (m Model) CurrentProject() (core.Project, bool) {
 		return core.Project{}, false
 	}
 	return m.projects[idx].project, true
+}
+
+func (m Model) CurrentCondition() (*messages.ConditionViewData, bool) {
+	return m.currentData()
+}
+
+func (m Model) CurrentConditions() ([]core.ConditionEntry, bool) {
+	project, ok := m.CurrentProject()
+	if !ok {
+		return nil, false
+	}
+	index, ok := m.projectIndex[project.ProjectID]
+	if !ok || m.projects[index].tree == nil {
+		return nil, false
+	}
+	return append([]core.ConditionEntry(nil), m.projects[index].tree.Conditions...), true
+}
+
+func (m Model) CurrentDeleteImpact() (core.ConditionDeleteImpact, error) {
+	data, ok := m.currentData()
+	if !ok {
+		return core.ConditionDeleteImpact{}, fmt.Errorf("condition not selected")
+	}
+	index := m.projectIndex[data.Project.ProjectID]
+	return m.projects[index].tree.DeleteImpact(data.Condition.Name)
+}
+
+func (m Model) CurrentMoveImpact(priority int) (core.ConditionMoveImpact, error) {
+	data, ok := m.currentData()
+	if !ok {
+		return core.ConditionMoveImpact{}, fmt.Errorf("condition not selected")
+	}
+	index := m.projectIndex[data.Project.ProjectID]
+	return m.projects[index].tree.MoveImpact(data.Condition.Name, priority)
+}
+
+func (m Model) CurrentEditAnchor() (EditAnchor, bool) {
+	data, ok := m.currentData()
+	if !ok {
+		return EditAnchor{}, false
+	}
+	row := m.cursor - m.offset
+	return EditAnchor{
+		Project:   data.Project,
+		Condition: data.Condition,
+		X:         m.x + 8,
+		Y:         m.y + 1 + row,
+		Width:     max(len([]rune(data.Condition.Name)), 1),
+		MaxWidth:  max(m.width-9, 1),
+	}, true
+}
+
+func (m Model) CurrentProjectAnchor() (core.Project, int, int, bool) {
+	project, ok := m.CurrentProject()
+	if !ok {
+		return core.Project{}, 0, 0, false
+	}
+	return project, m.x + 2, m.y + 1 + m.cursor - m.offset, true
+}
+
+func (m Model) HasDraft(projectID string) bool {
+	index, ok := m.projectIndex[projectID]
+	if !ok {
+		return false
+	}
+	return m.projects[index].source == "draft" || m.projects[index].source == "draft-stale"
 }
 
 // MarkProjectReloading updates one Conditions project row and starts its spinner.

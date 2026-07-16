@@ -23,7 +23,7 @@ func (m Model) updateBoolPicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 			}
 			return m, nil, true
 		}
-		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockBoolInput, k, tuiconfig.ActionSubmit, true, m.submitBoolPicker); ok {
+		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockBoolInput, k, tuiconfig.ActionSubmit, true, (*Model).submitBoolPicker); ok {
 			return next, cmd, true
 		}
 		switch {
@@ -59,7 +59,7 @@ func (m Model) updateJSONInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 			}
 			return m, nil, true
 		}
-		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockJSONInput, k, tuiconfig.ActionSave, m.jsonInput.Valid(), m.submitJSONInput); ok {
+		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockJSONInput, k, tuiconfig.ActionSave, m.jsonInput.Valid(), (*Model).submitJSONInput); ok {
 			return next, cmd, true
 		}
 		var cmd tea.Cmd
@@ -88,7 +88,7 @@ func (m Model) updateNumberInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 		if next, cmd, ok := modalCopy(m, tuiconfig.BlockNumberInput, k, m.numberInput.Value()); ok {
 			return next, cmd, true
 		}
-		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockNumberInput, k, tuiconfig.ActionSubmit, m.numberInput.Valid(), m.submitNumberInput); ok {
+		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockNumberInput, k, tuiconfig.ActionSubmit, m.numberInput.Valid(), (*Model).submitNumberInput); ok {
 			return next, cmd, true
 		}
 		return m.updateNumberInputValue(msg)
@@ -125,7 +125,7 @@ func (m Model) updateStringInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 		if tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionToggleExpanded, k) {
 			return m, m.toggleStringInputMode(), true
 		}
-		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockStringInput, k, tuiconfig.ActionSave, true, m.submitStringInput); ok {
+		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockStringInput, k, tuiconfig.ActionSave, true, (*Model).submitStringInput); ok {
 			return next, cmd, true
 		}
 		if tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionSubmit, k) && !m.stringInput.IsExpanded() {

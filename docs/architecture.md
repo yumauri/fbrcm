@@ -23,7 +23,7 @@ never imports `cli/` or `tui/`.
 | `core` | `Core` facade: auth registry, project sync, remote-config export/validate/publish/import, parameters cache, `ParametersTree`, and `ConditionsTree` view models. Draft lifecycle delegates to `core/draft`. |
 | `core/draft` | Draft storage, RC slot mutations, three-way merge, mutate/preview/publish pipeline. |
 | `core/parameters` | Parameters view model: tree/group/entry/value types, tree building from Remote Config, display value formatting. |
-| `core/conditions` | Order-aware condition catalog, parameter usage index, and delete/reorder impact models shared by CLI and TUI. |
+| `core/conditions` | Order-aware condition catalog, validation and definition mutations, parameter usage index, and delete/reorder impact models shared by CLI and TUI. |
 | `core/rc/display` | Remote Config display formatting: summary vs diff modes, project/condition labels. |
 | `core/rc/diff` | Colored Remote Config diff rendering for CLI and TUI previews. |
 | `core/rc/mutate` | RC slot collection and in-memory parameter/group mutation. |
@@ -71,7 +71,7 @@ only formatting is needed.
 | Package | Responsibility |
 | --- | --- |
 | `tui/app` | Root Bubble Tea model that orchestrates panels, overlays, value editors, and draft dialogs. |
-| `tui/components/*` | Panels and overlays: `projects`, `parameters`, the read-only `conditions` priority/usage panel, shared `details`, value editors (`boolpicker`, `numberinput`, `stringinput`, `jsoninput`), `dialog`, `filterbox`, `logs`, `moveparam`, `renameinput`, `minsize`, and `viewutil` helpers. |
+| `tui/components/*` | Panels and overlays: `projects`, `parameters`, the condition definition/priority/usage panel, shared `details`, value editors (`boolpicker`, `numberinput`, `stringinput`, `jsoninput`), `dialog`, `filterbox`, `logs`, reusable option picker (`moveparam`), `renameinput`, `minsize`, and `viewutil` helpers. |
 | `tui/config`, `tui/messages`, `tui/panels`, `tui/styles` | Key bindings, inter-component messages, panel identifiers, panel styles. |
 
 ## Charm stack note

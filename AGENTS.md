@@ -19,6 +19,11 @@
 - Every interactive CLI yes/no confirmation must use `cli/shared.NewConfirmation`; do not construct prompt-kit confirmations directly.
 - Yes must be selected by default for every CLI confirmation. Keep that default centralized in the shared constructor.
 
+## CLI documentation
+
+- Update `CLI.md` in the same change whenever the CLI interface surface changes, including commands, subcommands, positional arguments, flags, defaults, output contracts, confirmations, or other user-visible behavior.
+- Keep both the command tree and the detailed command sections synchronized with the implemented Cobra command structure and its tests.
+
 ## Remote Config groups
 
 - Preserve empty and description-only parameter groups across all parameter mutations, filtering, condition cleanup, drafts, imports, merges, and promotions.

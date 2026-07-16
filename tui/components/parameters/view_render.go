@@ -18,7 +18,6 @@ var (
 
 	groupSelectedLineStyle = lipgloss.NewStyle().Background(styles.PaletteGold).Foreground(styles.PaletteSlateBright)
 	valueSelectedStyle     = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
-	draftBadgeStyle        = lipgloss.NewStyle().Background(styles.PaletteError).Foreground(styles.PaletteSlateBright).Padding(0, 1)
 )
 
 func groupSelectionStyle() lipgloss.Style {

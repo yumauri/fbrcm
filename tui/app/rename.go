@@ -45,6 +45,9 @@ func (m *Model) closeRenameInput() {
 }
 
 func (m *Model) submitRenameInput() tea.Cmd {
+	if m.conditionEdit != nil && (m.conditionEdit.mode == conditionAddName || m.conditionEdit.mode == conditionRename) {
+		return m.submitConditionRenameInput()
+	}
 	anchor, ok := m.parameters.CurrentRenameAnchor()
 	if !ok {
 		m.closeRenameInput()
@@ -145,6 +148,11 @@ func (m *Model) closeRenameIfOrphaned() {
 }
 
 func (m *Model) cancelRenameInput() {
+	if m.conditionEdit != nil && (m.conditionEdit.mode == conditionAddName || m.conditionEdit.mode == conditionRename) {
+		m.conditionEdit = nil
+		m.closeRenameInput()
+		return
+	}
 	anchor, ok := m.parameters.CurrentRenameAnchor()
 	if m.activeDuplicate(anchor) && ok {
 		m.duplicate = nil

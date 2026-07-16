@@ -13,6 +13,9 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 			return m, nil, true
 		}
 	}
+	if m.conditions.MoveActive() {
+		return m.updateConditionMove(msg)
+	}
 	if m.dialog.IsOpen() {
 		return m.updateDialog(msg)
 	}

@@ -9,6 +9,8 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -63,6 +65,41 @@ func TestProjectRowMatchesWorkspaceStyleAndRightAlignsMetadata(t *testing.T) {
 	}
 }
 
+func TestDraftProjectRowMatchesParametersBadgeAndMetadataOrder(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := New(nil)
+	project := projectState{
+		project:     core.Project{Name: "Demo", ProjectID: "demo"},
+		source:      "draft",
+		cacheSource: "cache",
+		hasDraft:    true,
+		tree: &core.ConditionsTree{
+			Version:  "7",
+			CachedAt: time.Now().Add(-5 * time.Minute),
+		},
+	}
+
+	row := m.renderProjectRow(project, false, 64)
+	badge := styles.RenderDraftBadge("draft", false)
+	if !strings.Contains(row, badge) {
+		t.Fatalf("draft project row does not use the shared badge: %q", row)
+	}
+	plain := ansi.Strip(row)
+	draftAt, versionAt, cacheAt := strings.Index(plain, "draft"), strings.Index(plain, "v7"), strings.Index(plain, "cached")
+	if draftAt < 0 || versionAt <= draftAt || cacheAt <= versionAt {
+		t.Fatalf("draft project metadata order = %q; want draft, version, cache state", plain)
+	}
+
+	selected := ansi.Strip(m.renderProjectRow(project, true, 64))
+	if selectedVersionAt := strings.Index(selected, "v7"); selectedVersionAt != versionAt {
+		t.Fatalf("selected metadata starts at column %d, want stable column %d\nunselected: %q\nselected:   %q", selectedVersionAt, versionAt, plain, selected)
+	}
+	date := rcdisplay.FormatLocalDateTime(project.tree.CachedAt)
+	if !strings.HasSuffix(selected, date) {
+		t.Fatalf("selected project metadata was clipped: %q; want date suffix %q", selected, date)
+	}
+}
+
 func TestConditionRowsFillWidthAndColorName(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	m := New(nil)
@@ -94,6 +131,25 @@ func TestConditionRowsFillWidthAndColorName(t *testing.T) {
 	}
 }
 
+func TestConditionWithoutTagColorUsesPanelTextColor(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := New(nil)
+	m.projects = []projectState{{
+		project: core.Project{ProjectID: "demo"},
+		tree: &core.ConditionsTree{Conditions: []core.ConditionEntry{{
+			Priority: 1, Name: "plain", Expression: "true",
+		}}},
+	}}
+	m.projectIndex = map[string]int{"demo": 0}
+
+	row := m.renderNode(visibleNode{kind: nodeCondition, projectID: "demo", conditionIndex: 0}, false, 48)
+	for _, value := range []string{"●", "plain"} {
+		if want := styles.PanelText.Render(value); !strings.Contains(row, want) {
+			t.Fatalf("colorless condition %q is not rendered with the panel text color: %q", value, row)
+		}
+	}
+}
+
 func TestConditionRowsReserveThreeCharactersForPriority(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	m := New(nil)
@@ -110,6 +166,37 @@ func TestConditionRowsReserveThreeCharactersForPriority(t *testing.T) {
 	after := ansi.Strip(m.renderNode(visibleNode{kind: nodeCondition, projectID: "demo", conditionIndex: 1}, false, 48))
 	if got, want := strings.Index(before, "before"), strings.Index(after, "after"); got != want {
 		t.Fatalf("condition names do not align across priority 99/100: columns %d and %d\n%s\n%s", got, want, before, after)
+	}
+}
+
+func TestCurrentEditAnchorTracksRenderedConditionName(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	m := New(nil).SetBounds(17, 3, 48, 10).SetActive(true)
+	m.projects = []projectState{{
+		project: core.Project{Name: "Demo", ProjectID: "demo"},
+		tree: &core.ConditionsTree{Conditions: []core.ConditionEntry{{
+			Priority: 1, Name: "staff", Expression: "true",
+		}}},
+	}}
+	m.projectIndex = map[string]int{"demo": 0}
+	m.syncVisible()
+	m.cursor = 1
+
+	anchor, ok := m.CurrentEditAnchor()
+	if !ok {
+		t.Fatal("CurrentEditAnchor did not return the selected condition")
+	}
+	lines := strings.Split(ansi.Strip(m.ViewWithBorder(true, true)), "\n")
+	conditionLine := 2
+	prefix, _, found := strings.Cut(lines[conditionLine], "staff")
+	if !found {
+		t.Fatalf("condition name not found in rendered row: %q", lines[conditionLine])
+	}
+	if want := m.x + lipgloss.Width(prefix); anchor.X != want {
+		t.Fatalf("anchor X = %d, want rendered name column %d", anchor.X, want)
+	}
+	if want := m.y + conditionLine; anchor.Y != want {
+		t.Fatalf("anchor Y = %d, want rendered condition row %d", anchor.Y, want)
 	}
 }
 
@@ -165,6 +252,24 @@ func TestMarkProjectReloadingStartsConditionsSpinner(t *testing.T) {
 	}
 	if after := next.spin.View(); after == before {
 		t.Fatalf("Conditions spinner frame did not advance: %q", after)
+	}
+}
+
+func TestLoadedSelectionFollowsConditionAfterPriorityMove(t *testing.T) {
+	project := core.Project{ProjectID: "demo"}
+	m := New(nil)
+	m.projects = []projectState{{project: project, tree: &core.ConditionsTree{Conditions: []core.ConditionEntry{{Name: "first"}, {Name: "moved"}}}}}
+	m.projectIndex = map[string]int{"demo": 0}
+	m.syncVisible()
+
+	m.updateLoaded(messages.ConditionsLoadedMsg{
+		Project:             project,
+		Tree:                &core.ConditionsTree{Conditions: []core.ConditionEntry{{Name: "moved"}, {Name: "first"}}},
+		SelectConditionName: "moved",
+	})
+	data, ok := m.CurrentCondition()
+	if !ok || data.Condition.Name != "moved" {
+		t.Fatalf("selected condition after move = %#v, %v", data, ok)
 	}
 }
 

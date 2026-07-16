@@ -21,6 +21,7 @@ type helpKeyMap struct {
 	logsMode        logsPanelMode
 	detailsVisible  bool
 	conditionDetail bool
+	conditionMove   bool
 }
 
 func newHelpModel() help.Model {
@@ -34,6 +35,9 @@ func newHelpModel() help.Model {
 }
 
 func (k helpKeyMap) ShortHelp() []key.Binding {
+	if k.conditionMove {
+		return conditionMoveHelp()
+	}
 	common := []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, "quit"),
 	}
@@ -63,9 +67,26 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 	}
 }
 
+func conditionMoveHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionUp, "move up"),
+		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionDown, "move down"),
+		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionSubmit, "place"),
+		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionCancel, "cancel"),
+	}
+}
+
 func conditionsHelp() []key.Binding {
 	return []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, "maximize"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionRename, "rename"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionEdit, "expression"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionColor, "color"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionNew, "new"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionMove, "priority"),
+		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionDelete, "delete"),
+		compoundBinding(ref(tuiconfig.BlockConditions, tuiconfig.ActionPublish), ref(tuiconfig.BlockConditions, tuiconfig.ActionPublishAll), "publish"),
+		compoundBinding(ref(tuiconfig.BlockConditions, tuiconfig.ActionDiscard), ref(tuiconfig.BlockConditions, tuiconfig.ActionDiscardAll), "discard"),
 		tuiconfig.Binding(tuiconfig.BlockConditions, tuiconfig.ActionOpenDetails, "details"),
 		compoundBinding(ref(tuiconfig.BlockConditions, tuiconfig.ActionCopyName), ref(tuiconfig.BlockConditions, tuiconfig.ActionCopyPath), "copy"),
 		compoundBinding(ref(tuiconfig.BlockParameters, tuiconfig.ActionReload), ref(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll), "update"),
@@ -76,6 +97,11 @@ func conditionsHelp() []key.Binding {
 func conditionDetailsHelp() []key.Binding {
 	return []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionClose, "close"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionRename, "rename"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, "expression"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionColor, "color"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionMove, "priority"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionDelete, "delete"),
 		compoundBinding(ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyName), ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath), "copy"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, "copy expression"),
 	}
@@ -215,6 +241,7 @@ func (m Model) helpView() string {
 		logsMode:        m.logsMode,
 		detailsVisible:  m.detailsVisible,
 		conditionDetail: m.details.IsCondition(),
+		conditionMove:   m.conditions.MoveActive(),
 	})
 
 	return lipgloss.NewStyle().

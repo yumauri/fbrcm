@@ -112,6 +112,9 @@ func (m Model) updateChildPanels(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = appendCmd(cmds, cmd)
 	m.conditions, cmd = m.conditions.Update(msg)
 	cmds = appendCmd(cmds, cmd)
+	if m.conditionEdit != nil && m.conditionEdit.mode == conditionMove && !m.conditions.MoveActive() {
+		m.conditionEdit = nil
+	}
 	m.closeDetailsIfOrphaned()
 
 	m.details, cmd = m.details.Update(msg)
@@ -183,6 +186,11 @@ func (m Model) updatePasteMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) {
 	if m.active == panels.Logs {
 		return m, nil, false
+	}
+	if click, ok := msg.(tea.MouseClickMsg); ok && click.Mouse().Button == tea.MouseLeft {
+		if panel, ok := m.workspaceTabAt(click.Mouse().X, click.Mouse().Y); ok {
+			return m.activateWorkspacePanel(panel)
+		}
 	}
 	panel, ok := m.panelAt(msg.Mouse().X, msg.Mouse().Y)
 	if !ok {

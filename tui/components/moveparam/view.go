@@ -48,6 +48,7 @@ func (m Model) ListView() string {
 			left = borderStyle.Render("╮ ")
 		}
 		content := ""
+		lineStyle := optionLineStyle(i == m.selected)
 		if m.rowIsInput(i) {
 			if i == m.selected {
 				input.SetWidth(max(optionWidth-1, 1))
@@ -58,12 +59,28 @@ func (m Model) ListView() string {
 				content = styles.PanelMuted.Render(viewutil.PadRight(input.Placeholder, optionWidth))
 			}
 		} else if optionIndex, ok := m.optionIndexForRow(i); ok {
-			content = viewutil.PadRight(m.options[optionIndex].Label, optionWidth)
+			option := m.options[optionIndex]
+			content = viewutil.PadRight(option.Label, optionWidth)
+			lineStyle = styledOptionLineStyle(option, i == m.selected)
 		}
-		lines = append(lines, left+optionLineStyle(i == m.selected).Render(content)+borderStyle.Render(" │"))
+		lines = append(lines, left+lineStyle.Render(content)+borderStyle.Render(" │"))
 	}
 	lines = append(lines, borderStyle.Render(bottomLeft+strings.Repeat("─", optionWidth+2)+"╯"))
 	return strings.Join(lines, "\n")
+}
+
+func styledOptionLineStyle(option Option, selected bool) lipgloss.Style {
+	style := optionStyle
+	if option.Foreground != nil {
+		style = style.Foreground(option.Foreground)
+	}
+	if selected && option.KeepForegroundOnSelect {
+		return style.Bold(true)
+	}
+	if selected {
+		return optionLineStyle(true)
+	}
+	return style
 }
 
 func optionLineStyle(selected bool) lipgloss.Style {

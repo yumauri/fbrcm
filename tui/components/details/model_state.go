@@ -1,6 +1,7 @@
 package details
 
 import (
+	"strconv"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -20,6 +21,9 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 	m.nameInput = newTextInput()
 	m.descInput = newDescriptionInput()
 	m.groupInput = newGroupInput()
+	m.priorityInput = newTextInput()
+	m.conditionColor = ""
+	m.conditionExpression = ""
 	m.groupKey = ""
 	m.groupLabel = rootgroup.Label
 	m.typeValue = "STRING"
@@ -64,6 +68,18 @@ func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 	m.selectedValue = -1
 	m.valuesInvalid = false
 	m.originalParam = core.ParametersEntry{}
+	m.nameInput = newTextInput()
+	m.priorityInput = newTextInput()
+	m.groupInput = newGroupInput()
+	m.descInput = newDescriptionInput()
+	m.conditionColor = ""
+	m.conditionExpression = ""
+	if m.conditionData != nil {
+		m.nameInput.SetValue(m.conditionData.Condition.Name)
+		m.priorityInput.SetValue(strconv.Itoa(m.conditionData.Condition.Priority))
+		m.conditionColor = m.conditionData.Condition.TagColor
+		m.conditionExpression = m.conditionData.Condition.Expression
+	}
 	m.refreshViewport()
 	m.viewport.GotoTop()
 	return m
@@ -92,14 +108,20 @@ func (m Model) SetSelectedValue(nextRaw string) Model {
 }
 
 func (m Model) Dirty() bool {
-	return m.data != nil && m.hasChanges()
+	return (m.data != nil && m.hasChanges()) || (m.conditionData != nil && m.conditionHasChanges())
 }
 
 func (m Model) Invalid() bool {
+	if m.conditionData != nil {
+		return m.invalidConditionName() || m.invalidConditionPriority()
+	}
 	return m.invalidName() || m.invalidValues()
 }
 
 func (m Model) InvalidReasons() []string {
+	if m.conditionData != nil {
+		return m.conditionInvalidReasons()
+	}
 	if m.data == nil {
 		return nil
 	}
@@ -116,6 +138,21 @@ func (m Model) InvalidReasons() []string {
 		reasons = append(reasons, "One or more values are invalid for selected type "+m.selectedType()+".")
 	}
 	return reasons
+}
+
+// ConditionEdit returns the pending condition Details form mutation.
+func (m Model) ConditionEdit() (core.ConditionDetailsEdit, bool) {
+	if m.conditionData == nil || !m.conditionHasChanges() {
+		return core.ConditionDetailsEdit{}, false
+	}
+	priority, _ := strconv.Atoi(strings.TrimSpace(m.priorityInput.Value()))
+	return core.ConditionDetailsEdit{
+		Name:           m.conditionData.Condition.Name,
+		NextName:       strings.TrimSpace(m.nameInput.Value()),
+		NextExpression: m.conditionExpression,
+		NextTagColor:   m.conditionColor,
+		NextPriority:   priority,
+	}, true
 }
 
 func (m Model) Edit() (core.ParameterDetailsEdit, bool) {
@@ -135,6 +172,19 @@ func (m Model) Edit() (core.ParameterDetailsEdit, bool) {
 }
 
 func (m Model) MarkSaved() Model {
+	if m.conditionData != nil {
+		edit, ok := m.ConditionEdit()
+		if !ok {
+			return m
+		}
+		m.conditionData.Condition.Name = edit.NextName
+		m.conditionData.Condition.Expression = edit.NextExpression
+		m.conditionData.Condition.TagColor = edit.NextTagColor
+		m.conditionData.Condition.Priority = edit.NextPriority
+		m.activeField = fieldNone
+		m.refreshViewport()
+		return m
+	}
 	if m.data == nil {
 		return m
 	}
@@ -162,6 +212,7 @@ func (m Model) DeactivateField() Model {
 	m.nameInput.Blur()
 	m.descInput.Blur()
 	m.groupInput.Blur()
+	m.priorityInput.Blur()
 	m.refreshViewport()
 	return m
 }
@@ -170,6 +221,37 @@ func (m Model) ActivateName() (Model, tea.Cmd) {
 	m.activateField(fieldName)
 	m.refreshViewport()
 	return m, m.nameInput.Focus()
+}
+
+// ActivateConditionPriority activates the inline numeric priority field.
+func (m Model) ActivateConditionPriority() (Model, tea.Cmd) {
+	if m.conditionData == nil {
+		return m, nil
+	}
+	m.activateField(fieldConditionPriority)
+	m.refreshViewport()
+	return m, m.priorityInput.Focus()
+}
+
+// ActivateConditionColor activates the inline condition color picker.
+func (m Model) ActivateConditionColor() Model {
+	if m.conditionData == nil {
+		return m
+	}
+	m.activateField(fieldConditionColor)
+	m.openDropdown()
+	m.refreshViewport()
+	return m
+}
+
+// SetConditionExpression stages a raw expression edit in the Details form.
+func (m Model) SetConditionExpression(expression string) Model {
+	if m.conditionData == nil {
+		return m
+	}
+	m.conditionExpression = expression
+	m.refreshViewport()
+	return m
 }
 
 // ActivateGroup activates group editor.

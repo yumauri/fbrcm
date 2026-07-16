@@ -85,6 +85,18 @@ focus_conditions = ["3"]
 focus_history = ["4"]
 focus_details = ["5"]
 
+[keys.conditions]
+rename = ["r"]
+edit = ["e"]
+color = ["c"]
+new = ["a"]
+move = ["m"]
+delete = ["x"]
+publish = ["p"]
+publish_all = ["P"]
+discard = ["d"]
+discard_all = ["D"]
+
 [keys.history]
 pair_older = [","]
 pair_newer = ["."]
@@ -247,7 +259,21 @@ fbrcm conditions show <project-id> <condition-name>
 fbrcm conditions show <project-id> <condition-name> --json
 ```
 
-In the TUI, press `3` by default to open the read-only Conditions tab. Press Enter on a condition to see its expression, priority, color, and parameter usages.
+Manage condition definitions from the CLI:
+
+```sh
+fbrcm conditions add <project-id> beta_users --expression "percent <= 10" --color BLUE
+fbrcm conditions edit <project-id> beta_users --expression "percent <= 20"
+fbrcm conditions edit <project-id> beta_users --color GREEN
+fbrcm conditions rename <project-id> beta_users expanded_beta
+fbrcm conditions move <project-id> expanded_beta 1
+fbrcm conditions delete <project-id> expanded_beta
+fbrcm conditions validate <project-id>
+```
+
+Definition mutations print a Remote Config diff and offer publication or can be staged with `--draft`. Use `--dry-run` to preview without persisting state and `--yes` to skip confirmation. `conditions validate` validates the current draft, if present, or the published template with Firebase's validate-only API.
+
+In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish and `d`/`D` to discard project/all drafts. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
 
 Export one project Remote Config:
 
@@ -375,13 +401,13 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 
 ## What It Can Do
 
-- Open a TUI for managing Firebase projects and Remote Config parameters and inspecting conditions
+- Open a TUI for managing Firebase projects, Remote Config parameters, and conditions
 - List Firebase projects available to the authenticated Google account
 - Cache project metadata and Remote Config snapshots locally
 - List, inspect, compare, export, roll back, and restore Remote Config versions
 - Fetch Remote Config from Firebase
 - Show parameters across many projects
-- List conditions in evaluation order and inspect their parameter/value usage
+- Add, edit, rename, reorder, delete, validate, list, and inspect conditions and their parameter/value usage
 - Filter projects and parameters
 - Export Remote Config JSON
 - Import Remote Config JSON

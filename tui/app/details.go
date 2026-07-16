@@ -21,6 +21,12 @@ func (m *Model) applyConditionSelection(msg messages.ConditionSelectionChangedMs
 	if msg.ResetScroll {
 		m.details = m.details.ResetScroll()
 	}
+	if msg.Data == nil {
+		if m.details.IsCondition() {
+			m.closeDetailsPanel()
+		}
+		return
+	}
 	if msg.Data != nil && (!m.detailsVisible || !m.details.Dirty()) {
 		m.details = m.details.SetConditionData(msg.Data)
 	}
@@ -65,6 +71,9 @@ func (m *Model) activateDetailsGroup() tea.Cmd {
 }
 
 func (m *Model) requestCloseDetails() tea.Cmd {
+	if m.details.IsCondition() {
+		return m.requestCloseConditionDetails()
+	}
 	if m.details.FieldActive() {
 		m.details = m.details.DeactivateField()
 		return nil
@@ -90,7 +99,36 @@ func (m *Model) requestCloseDetails() tea.Cmd {
 	return nil
 }
 
+func (m *Model) requestCloseConditionDetails() tea.Cmd {
+	if m.details.FieldActive() {
+		m.details = m.details.DeactivateField()
+		return nil
+	}
+	edit, ok := m.details.ConditionEdit()
+	if !ok {
+		m.closeDetailsPanel()
+		return nil
+	}
+	data := m.details.ConditionData()
+	if data == nil {
+		m.closeDetailsPanel()
+		return nil
+	}
+	if m.details.Invalid() {
+		m.openInvalidDetailsDialog(data.Project, m.details.InvalidReasons(), true)
+		return nil
+	}
+	if m.parameters.HasDraft(data.Project.ProjectID) || m.conditions.HasDraft(data.Project.ProjectID) {
+		return m.conditionDetailsMutationCmd(data.Project, edit, false, true)
+	}
+	m.openConditionDetailsDialog(data.Project, edit, true)
+	return nil
+}
+
 func (m *Model) submitDetailsForm() tea.Cmd {
+	if m.details.IsCondition() {
+		return m.submitConditionDetailsForm()
+	}
 	edit, ok := m.details.Edit()
 	if !ok {
 		return nil
@@ -107,6 +145,26 @@ func (m *Model) submitDetailsForm() tea.Cmd {
 		return m.editParameterDetailsCmd(data.Project, edit, false, false, true)
 	}
 	m.openEditDetailsDialog(data.Project, edit, false, true)
+	return nil
+}
+
+func (m *Model) submitConditionDetailsForm() tea.Cmd {
+	edit, ok := m.details.ConditionEdit()
+	if !ok {
+		return nil
+	}
+	data := m.details.ConditionData()
+	if data == nil {
+		return nil
+	}
+	if m.details.Invalid() {
+		m.openInvalidDetailsDialog(data.Project, m.details.InvalidReasons(), false)
+		return nil
+	}
+	if m.parameters.HasDraft(data.Project.ProjectID) || m.conditions.HasDraft(data.Project.ProjectID) {
+		return m.conditionDetailsMutationCmd(data.Project, edit, false, false)
+	}
+	m.openConditionDetailsDialog(data.Project, edit, false)
 	return nil
 }
 

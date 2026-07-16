@@ -11,27 +11,30 @@ import (
 )
 
 type Model struct {
-	x             int
-	y             int
-	width         int
-	height        int
-	active        bool
-	bridgeActive  bool
-	viewport      viewport.Model
-	data          *messages.ParameterViewData
-	conditionData *messages.ConditionViewData
-	activeField   fieldID
-	dropdownOpen  bool
-	dropdownIndex int
-	groupKey      string
-	groupLabel    string
-	typeValue     string
-	nameInput     textinput.Model
-	descInput     textarea.Model
-	groupInput    textinput.Model
-	selectedValue int
-	valuesInvalid bool
-	originalParam core.ParametersEntry
+	x                   int
+	y                   int
+	width               int
+	height              int
+	active              bool
+	bridgeActive        bool
+	viewport            viewport.Model
+	data                *messages.ParameterViewData
+	conditionData       *messages.ConditionViewData
+	activeField         fieldID
+	dropdownOpen        bool
+	dropdownIndex       int
+	groupKey            string
+	groupLabel          string
+	typeValue           string
+	nameInput           textinput.Model
+	descInput           textarea.Model
+	groupInput          textinput.Model
+	priorityInput       textinput.Model
+	conditionColor      string
+	conditionExpression string
+	selectedValue       int
+	valuesInvalid       bool
+	originalParam       core.ParametersEntry
 }
 
 func New() Model {
@@ -41,10 +44,11 @@ func New() Model {
 	)
 	vp.SoftWrap = true
 	return Model{
-		viewport:   vp,
-		nameInput:  newTextInput(),
-		descInput:  newDescriptionInput(),
-		groupInput: newGroupInput(),
+		viewport:      vp,
+		nameInput:     newTextInput(),
+		descInput:     newDescriptionInput(),
+		groupInput:    newGroupInput(),
+		priorityInput: newTextInput(),
 	}
 }
 
@@ -96,7 +100,7 @@ func (m Model) FieldActive() bool {
 
 // TextInputActive reports whether active field should receive printable key strokes.
 func (m Model) TextInputActive() bool {
-	return m.activeField == fieldName || m.activeField == fieldDescription
+	return m.activeField == fieldName || m.activeField == fieldDescription || m.activeField == fieldConditionPriority
 }
 
 func (m Model) ValueSelected() bool {

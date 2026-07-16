@@ -29,6 +29,9 @@ func (m *Model) closeStringInput() {
 	}
 	m.stringInput = m.stringInput.Close()
 	m.valueEditSource = panels.None
+	if m.conditionEdit != nil && (m.conditionEdit.mode == conditionExpression || m.conditionEdit.mode == conditionDetailsExpression) {
+		m.conditionEdit = nil
+	}
 }
 
 func (m *Model) toggleStringInputMode() tea.Cmd {
@@ -38,6 +41,9 @@ func (m *Model) toggleStringInputMode() tea.Cmd {
 }
 
 func (m *Model) submitStringInput() tea.Cmd {
+	if m.conditionEdit != nil && (m.conditionEdit.mode == conditionExpression || m.conditionEdit.mode == conditionDetailsExpression) {
+		return m.submitConditionExpressionInput()
+	}
 	anchor, ok := m.currentStringValueAnchor()
 	if !ok {
 		m.closeStringInput()

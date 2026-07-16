@@ -69,6 +69,12 @@ func (m Model) DropdownListView() string {
 			} else {
 				content = styles.PanelMuted.Render(viewutil.PadRight(input.Placeholder, width))
 			}
+		} else if m.activeField == fieldConditionColor {
+			style := m.conditionStyle(row.Color)
+			if i == m.dropdownIndex {
+				style = style.Bold(true)
+			}
+			content = style.Render(viewutil.PadRight(row.Label, width))
 		} else {
 			content = dropdownOptionStyle(i == m.dropdownIndex).Render(viewutil.PadRight(row.Label, width))
 		}

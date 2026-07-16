@@ -33,6 +33,29 @@ func Render(width, selected int, focused bool, borderStyle lipgloss.Style) (stri
 	return strings.Join(parts[:], borderStyle.Render("──")), totalWidth + 2*(tabCount-1)
 }
 
+// TabAt returns the tab index at a horizontal coordinate relative to the
+// panel. Border prefix and separator cells are not part of any tab hitbox.
+func TabAt(width, selected, x int) (int, bool) {
+	if x < 0 {
+		return 0, false
+	}
+	widths := tabWidths(width, selected, keys())
+	x -= min(2, width)
+	for index, tabWidth := range widths {
+		if x >= 0 && x < tabWidth {
+			return index, true
+		}
+		x -= tabWidth
+		if index < tabCount-1 {
+			if x >= 0 && x < 2 {
+				return 0, false
+			}
+			x -= 2
+		}
+	}
+	return 0, false
+}
+
 func keys() [tabCount]string {
 	var out [tabCount]string
 	for i, tab := range tabs {

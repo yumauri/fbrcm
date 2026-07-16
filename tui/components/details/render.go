@@ -1,7 +1,6 @@
 package details
 
 import (
-	"fmt"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -15,6 +14,7 @@ import (
 func (m *Model) refreshViewport() {
 	width := max(m.width-5, 1)
 	m.nameInput.SetWidth(max(width-2, 1))
+	m.priorityInput.SetWidth(max(width-2, 1))
 	m.resizeDescriptionInput()
 	m.viewport.SetWidth(width)
 	m.viewport.SetHeight(max(m.height-2, 1))
@@ -81,16 +81,11 @@ func (m Model) renderConditionContentLines(width int) []string {
 	condition := data.Condition
 	lines := make([]string, 0, 24+len(condition.Usages)*4)
 	lines = appendStyledField(lines, width, "Project", rcdisplay.FormatProject(data.Project.Name, data.Project.ProjectID), projectValueStyle)
-	lines = appendStyledField(lines, width, "Priority", fmt.Sprintf("%d (earlier conditions take precedence)", condition.Priority), parameterKeyStyle)
-	lines = appendStyledField(lines, width, "Name", condition.Name, m.conditionStyle(condition.TagColor))
-	color := strings.TrimSpace(condition.TagColor)
-	if color == "" {
-		color = "—"
-	} else {
-		color = "● " + color
-	}
-	lines = appendStyledField(lines, width, "Color", color, m.conditionStyle(condition.TagColor))
-	lines = appendStyledField(lines, width, "Expression", condition.Expression, styles.PanelText)
+	priority := m.renderConditionPriorityField()
+	lines = appendEditableField(lines, width, "Priority", priority, m.conditionFieldChanged(fieldConditionPriority), m.invalidConditionPriority())
+	lines = appendEditableField(lines, width, "Name", m.renderConditionNameField(), m.conditionFieldChanged(fieldName), m.invalidConditionName())
+	lines = appendEditableField(lines, width, "Color", m.renderConditionColorField(), m.conditionFieldChanged(fieldConditionColor), false)
+	lines = appendEditableField(lines, width, "Expression", styles.PanelText.Render(m.conditionExpression), m.conditionExpression != condition.Expression, false)
 	if condition.Description != "" {
 		lines = appendStyledField(lines, width, "Description", condition.Description, styles.PanelText)
 	}
@@ -211,6 +206,7 @@ func cloneConditionViewData(data *messages.ConditionViewData) *messages.Conditio
 	}
 	next := *data
 	next.Condition.Usages = append([]core.ConditionUsage(nil), data.Condition.Usages...)
+	next.ConditionNames = append([]string(nil), data.ConditionNames...)
 	return &next
 }
 

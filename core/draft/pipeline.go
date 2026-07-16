@@ -88,6 +88,7 @@ func Preview(deps Deps, projectID string, spec MutationSpec) (*config.Parameters
 func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache *config.ParametersCache, finalRaw json.RawMessage, hasDraft bool, publish bool) (*MutateResult, bool, error) {
 	logger := corelog.For("core")
 	if publish {
+		validated := false
 		if hasDraft {
 			stored, ok, err := LoadRecord(projectID)
 			if err != nil {
@@ -114,8 +115,14 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 				if err := deps.ValidateRemoteConfigWithETag(ctx, projectID, mergedRaw, latest.ETag); err != nil {
 					return nil, hasDraft, err
 				}
+				validated = true
 			}
 			finalRaw, cache = mergedRaw, latest
+		}
+		if !validated && deps.ValidateRemoteConfigWithETag != nil {
+			if err := deps.ValidateRemoteConfigWithETag(ctx, projectID, finalRaw, cache.ETag); err != nil {
+				return nil, hasDraft, err
+			}
 		}
 		updatedRaw, nextETag, err := deps.PublishRemoteConfigWithETag(ctx, projectID, finalRaw, cache.ETag)
 		if err != nil {

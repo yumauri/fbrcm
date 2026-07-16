@@ -22,10 +22,19 @@ type loadedConditions struct {
 func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "conditions",
-		Short: "Inspect Remote Config conditions",
-		Long:  "Inspect condition priority, expressions, and the parameters that use each condition.",
+		Short: "Inspect and manage Remote Config conditions",
+		Long:  "Inspect and manage condition definitions, evaluation priority, expressions, colors, and parameter usage.",
 	}
-	cmd.AddCommand(newListCommand(svc), newShowCommand(svc))
+	cmd.AddCommand(
+		newListCommand(svc),
+		newShowCommand(svc),
+		newAddCommand(svc),
+		newEditCommand(svc),
+		newRenameCommand(svc),
+		newMoveCommand(svc),
+		newDeleteCommand(svc),
+		newValidateCommand(svc),
+	)
 	return cmd
 }
 

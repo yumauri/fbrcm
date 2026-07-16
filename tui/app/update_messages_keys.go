@@ -45,12 +45,45 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 }
 
 func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd, bool) {
+	if m.details.TextInputActive() &&
+		!tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k) &&
+		!tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionSubmit, k) {
+		var cmd tea.Cmd
+		m.details, cmd = m.details.Update(msg)
+		return m, cmd, true
+	}
+	if m.details.FieldActive() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionRight, k) {
+		var cmd tea.Cmd
+		m.details, cmd = m.details.Update(msg)
+		return m, cmd, true
+	}
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 		return m, tea.Quit, true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
-		m.closeDetailsPanel()
+		if m.details.FieldActive() {
+			var cmd tea.Cmd
+			m.details, cmd = m.details.Update(msg)
+			return m, cmd, true
+		}
+		return m, m.requestCloseDetails(), true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionSubmit, k):
+		return m, m.submitDetailsForm(), true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionRename, k):
+		var cmd tea.Cmd
+		m.details, cmd = m.details.ActivateName()
+		return m, cmd, true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, k):
+		return m, m.openConditionExpressionInput(), true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionColor, k):
+		m.details = m.details.ActivateConditionColor()
 		return m, nil, true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionMove, k):
+		var cmd tea.Cmd
+		m.details, cmd = m.details.ActivateConditionPriority()
+		return m, cmd, true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k):
+		return m, m.requestDeleteCondition(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyName, k):
 		return m, m.copyDetailsNameCmd(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath, k):
@@ -103,7 +136,9 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 	}
 
 	switch {
-	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k):
+	case (m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k)) ||
+		(m.active == panels.Logs && tuiconfig.Matches(tuiconfig.BlockLogs, tuiconfig.ActionToggleMode, k)) ||
+		(m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k)):
 		return m.updateModeOrDuplicateKey()
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
 		if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History {
@@ -152,14 +187,11 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusProjects, k):
 		m.setActive(panels.Projects)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k):
-		m.setActive(panels.Parameters)
+		return m.activateWorkspacePanel(panels.Parameters)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusConditions, k):
-		m.setActive(panels.Conditions)
+		return m.activateWorkspacePanel(panels.Conditions)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k):
-		m.setActive(panels.History)
-		var cmd tea.Cmd
-		m.parameters, cmd = m.parameters.LoadHistory()
-		return m, cmd, true
+		return m.activateWorkspacePanel(panels.History)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
 		if !m.detailsVisible {
 			return m, nil, false
@@ -177,44 +209,43 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 
 func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 	switch {
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDelete, k), tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k):
+	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDelete, k)) ||
+		(m.active == panels.Details && tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k)):
 		return m.updateDeleteKey()
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionRename, k):
-		if m.active == panels.Parameters {
-			return m, m.openRenameInput(), true
-		}
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionNew, k):
-		if m.active == panels.Parameters {
-			return m, m.openNewParameterDetails(), true
-		}
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionEdit, k):
-		if m.active == panels.Parameters {
-			return m.updateParameterEditKey()
-		}
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionMove, k):
-		if m.active == panels.Parameters {
-			m.openMoveParam()
-			return m, nil, true
-		}
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublish, k):
-		if m.active != panels.Parameters {
-			return m, nil, false
-		}
+	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionRename, k):
+		return m, m.openRenameInput(), true
+	case m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionRename, k):
+		return m, m.openConditionRenameInput(), true
+	case m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionEdit, k):
+		return m, m.openConditionExpressionInput(), true
+	case m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionColor, k):
+		m.openConditionColorPicker()
+		return m, nil, true
+	case m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionNew, k):
+		return m, m.openNewConditionInput(), true
+	case m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionMove, k):
+		m.startConditionMove()
+		return m, nil, true
+	case m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionDelete, k):
+		return m, m.requestDeleteCondition(), true
+	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionNew, k):
+		return m, m.openNewParameterDetails(), true
+	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionEdit, k):
+		return m.updateParameterEditKey()
+	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionMove, k):
+		m.openMoveParam()
+		return m, nil, true
+	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublish, k)) ||
+		(m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionPublish, k)):
 		return m.openCurrentDraftDialog(dialogModePublishDraft)
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublishAll, k):
-		if m.active != panels.Parameters {
-			return m, nil, false
-		}
+	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionPublishAll, k)) ||
+		(m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionPublishAll, k)):
 		return m.openDraftDialogs(dialogModePublishDraft)
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscard, k):
-		if m.active != panels.Parameters {
-			return m, nil, false
-		}
+	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscard, k)) ||
+		(m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionDiscard, k)):
 		return m.openCurrentDraftDialog(dialogModeDiscardDraft)
-	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscardAll, k):
-		if m.active != panels.Parameters {
-			return m, nil, false
-		}
+	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDiscardAll, k)) ||
+		(m.active == panels.Conditions && tuiconfig.Matches(tuiconfig.BlockConditions, tuiconfig.ActionDiscardAll, k)):
 		return m.openDraftDialogs(dialogModeDiscardDraft)
 	}
 	return m, nil, false
@@ -249,7 +280,13 @@ func (m Model) updateDeleteKey() (Model, tea.Cmd, bool) {
 		return m.updateParametersDeleteKey()
 	}
 	if m.active == panels.Details && m.detailsVisible {
+		if m.details.IsCondition() {
+			return m, m.requestDeleteCondition(), true
+		}
 		return m, m.requestDeleteDetails(), true
+	}
+	if m.active == panels.Conditions {
+		return m, m.requestDeleteCondition(), true
 	}
 	return m, nil, false
 }
@@ -310,10 +347,13 @@ func (m Model) openCurrentParameterValueEditor() (Model, tea.Cmd, bool) {
 }
 
 func (m Model) openCurrentDraftDialog(mode dialogMode) (Model, tea.Cmd, bool) {
-	if m.active != panels.Parameters {
+	if m.active != panels.Parameters && m.active != panels.Conditions {
 		return m, nil, false
 	}
 	project, ok := m.parameters.CurrentProject()
+	if m.active == panels.Conditions {
+		project, ok = m.conditions.CurrentProject()
+	}
 	if ok && m.parameters.HasDraft(project.ProjectID) {
 		m.openDraftDialog(project, mode, nil)
 		return m, nil, true
@@ -322,7 +362,7 @@ func (m Model) openCurrentDraftDialog(mode dialogMode) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) openDraftDialogs(mode dialogMode) (Model, tea.Cmd, bool) {
-	if m.active != panels.Parameters {
+	if m.active != panels.Parameters && m.active != panels.Conditions {
 		return m, nil, false
 	}
 	projects := m.parameters.DraftProjects()

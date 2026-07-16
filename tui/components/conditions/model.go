@@ -9,11 +9,16 @@ import (
 )
 
 type projectState struct {
-	project core.Project
-	tree    *core.ConditionsTree
-	source  string
-	err     error
-	loading bool
+	project      core.Project
+	tree         *core.ConditionsTree
+	source       string
+	cacheSource  string
+	cacheVersion string
+	draftVersion string
+	hasDraft     bool
+	staleDraft   bool
+	err          error
+	loading      bool
 }
 
 type nodeKind int
@@ -28,6 +33,28 @@ type visibleNode struct {
 	kind           nodeKind
 	projectID      string
 	conditionIndex int
+	conditionName  string
+}
+
+type conditionMoveState struct {
+	projectID     string
+	conditionName string
+	original      []core.ConditionEntry
+}
+
+type EditAnchor struct {
+	Project   core.Project
+	Condition core.ConditionEntry
+	X         int
+	Y         int
+	Width     int
+	MaxWidth  int
+}
+
+// NameOverlayPosition returns the overlay origin whose bordered content starts
+// at the rendered condition name.
+func (a EditAnchor) NameOverlayPosition() (int, int) {
+	return max(a.X-2, 0), max(a.Y-1, 0)
 }
 
 type Model struct {
@@ -42,6 +69,7 @@ type Model struct {
 	visible             []visibleNode
 	cursor              int
 	offset              int
+	move                *conditionMoveState
 }
 
 func New(svc *core.Core) Model {

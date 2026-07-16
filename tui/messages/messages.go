@@ -24,6 +24,7 @@ type ParametersLoadedMsg struct {
 	DraftVersion           string
 	SelectGroupKey         string
 	SelectParamKey         string
+	SelectConditionName    string
 	TransientGroupKey      string
 	TransientAfterParamKey string
 	TransientParamKey      string
@@ -38,10 +39,11 @@ type ParametersLoadedMsg struct {
 }
 
 type ConditionsLoadedMsg struct {
-	Project core.Project
-	Tree    *core.ConditionsTree
-	Source  string
-	Err     error
+	Project             core.Project
+	Tree                *core.ConditionsTree
+	Source              string
+	SelectConditionName string
+	Err                 error
 }
 
 type HistoryLoadedMsg struct {
@@ -100,8 +102,9 @@ type ParameterSelectionChangedMsg struct {
 }
 
 type ConditionViewData struct {
-	Project   core.Project
-	Condition core.ConditionEntry
+	Project        core.Project
+	Condition      core.ConditionEntry
+	ConditionNames []string
 }
 
 type ConditionSelectionChangedMsg struct {

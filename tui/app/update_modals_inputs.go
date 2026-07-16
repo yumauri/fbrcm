@@ -8,6 +8,32 @@ import (
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
+func (m Model) updateConditionMove(msg tea.Msg) (Model, tea.Cmd, bool) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		k := msg.String()
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionCancel, k):
+			m.cancelConditionMove()
+			return m, nil, true
+		case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionSubmit, k):
+			cmd := m.submitConditionMove()
+			return m, cmd, true
+		case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionUp, k):
+			m.conditions.MoveActiveCondition(-1)
+			return m, nil, true
+		case tuiconfig.Matches(tuiconfig.BlockMoveInput, tuiconfig.ActionDown, k):
+			m.conditions.MoveActiveCondition(1)
+			return m, nil, true
+		default:
+			return m, nil, true
+		}
+	case tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+		return m, nil, true
+	}
+	return m, nil, false
+}
+
 func (m Model) updateMoveParam(msg tea.Msg) (Model, tea.Cmd, bool) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -56,7 +82,7 @@ func (m Model) updateRenameInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 		}); ok {
 			return next, cmd, true
 		}
-		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockRenameInput, k, tuiconfig.ActionSubmit, true, m.submitRenameInput); ok {
+		if next, cmd, ok := modalSubmit(m, tuiconfig.BlockRenameInput, k, tuiconfig.ActionSubmit, true, (*Model).submitRenameInput); ok {
 			return next, cmd, true
 		}
 		var cmd tea.Cmd

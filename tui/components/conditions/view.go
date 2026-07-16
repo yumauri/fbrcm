@@ -11,6 +11,7 @@ import (
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/components/workspaceheader"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -36,7 +37,7 @@ func (m Model) bodyLines() []string {
 	end := min(m.offset+height, len(m.visible))
 	lines := make([]string, 0, height)
 	for i := m.offset; i < end; i++ {
-		lines = append(lines, m.renderNode(m.visible[i], i == m.cursor, width))
+		lines = append(lines, m.renderNode(m.visible[i], i == m.cursor && !m.MoveActive(), width))
 	}
 	return lines
 }
@@ -57,8 +58,15 @@ func (m Model) renderNode(node visibleNode, selected bool, width int) string {
 		return strings.Repeat(" ", width)
 	}
 	condition := project.tree.Conditions[node.conditionIndex]
-	conditionStyle := lipgloss.NewStyle().Foreground(styles.ConditionLipglossColor(condition.TagColor))
-	line := fmt.Sprintf(" %3d ", condition.Priority) + conditionStyle.Render("●") + " " + conditionStyle.Render(condition.Name) + styles.PanelMuted.Render(fmt.Sprintf(" · %d uses · %s", len(condition.Usages), condition.Expression))
+	conditionStyle := styles.PanelText
+	if strings.TrimSpace(condition.TagColor) != "" {
+		conditionStyle = lipgloss.NewStyle().Foreground(styles.ConditionLipglossColor(condition.TagColor))
+	}
+	prefix := fmt.Sprintf(" %3d ", condition.Priority)
+	if m.movingCondition(node.projectID, condition.Name) {
+		prefix = conditionMovePrefix(tuiconfig.PowerlineGlyphsEnabled())
+	}
+	line := prefix + conditionStyle.Render("●") + " " + conditionStyle.Render(condition.Name) + styles.PanelMuted.Render(fmt.Sprintf(" · %d uses · %s", len(condition.Usages), condition.Expression))
 	line = ansi.Truncate(line, width, "")
 	if selected {
 		selection := styles.TreeItemSelectionStyle()
@@ -67,44 +75,100 @@ func (m Model) renderNode(node visibleNode, selected bool, width int) string {
 	return viewutil.PadRight(line, width)
 }
 
+func conditionMovePrefix(powerline bool) string {
+	glyph := "▶︎"
+	if powerline {
+		glyph = ""
+	}
+	style := lipgloss.NewStyle().Foreground(styles.TreeItemSelectionStyle().GetBackground())
+	if styles.NoColorEnabled() {
+		style = styles.PanelText.Bold(true)
+	}
+	return " " + strings.Repeat(" ", max(3-lipgloss.Width(glyph), 0)) + style.Render(glyph) + " "
+}
+
 func (m Model) renderProjectRow(project projectState, selected bool, width int) string {
-	meta, metaStyle := m.projectMeta(project), styles.PanelMuted
+	badge, rest := m.projectMetaSegments(project, selected)
+	meta := joinProjectMeta(badge, rest)
+	widthBadge, widthRest := m.projectMetaSegments(project, false)
+	metaWidth := lipgloss.Width(joinProjectMeta(widthBadge, widthRest))
+	metaStyle := styles.PanelMuted
 	if project.err != nil {
 		metaStyle = styles.SecondaryTitleError
 	}
-	metaWidth := lipgloss.Width(meta)
 	leftLimit := max(width-metaWidth-1, 1)
 	name := viewutil.TruncatePlain(project.project.Name, leftLimit)
 	id := viewutil.TruncatePlain(project.project.ProjectID, max(leftLimit-lipgloss.Width(name)-1, 0))
-	left := styles.TreeProjectName.Render(name)
+	nameStyle, idStyle := styles.TreeProjectName, styles.TreeProjectID
+	if selected {
+		if styles.NoColorEnabled() {
+			nameStyle = lipgloss.NewStyle().Bold(true).Reverse(true)
+			idStyle = lipgloss.NewStyle().Bold(true).Reverse(true)
+		} else {
+			nameStyle = nameStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
+			idStyle = idStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
+		}
+	}
+	left := nameStyle.Render(name)
 	if id != "" {
-		left += " " + styles.TreeProjectID.Render(id)
+		separator := " "
+		if selected {
+			separator = idStyle.Render(separator)
+		}
+		left += separator + idStyle.Render(id)
 	}
 	gap := max(width-lipgloss.Width(left)-metaWidth, 1)
-	line := ansi.Truncate(left+metaStyle.Render(strings.Repeat(" ", gap)+meta), width, "")
+	metaLineStyle := metaStyle
 	if selected {
 		selection := styles.TreeProjectSelectionStyle()
-		return styles.FillSelectedLine(selection.Render(ansi.Strip(line)), width, selection)
+		metaLineStyle = selection
+	}
+	line := left
+	if selected && badge != "" {
+		line += metaLineStyle.Render(strings.Repeat(" ", gap)) + " " + badge + " "
+		if rest != "" {
+			line += metaLineStyle.Render(" " + rest)
+		}
+	} else {
+		line += metaLineStyle.Render(strings.Repeat(" ", gap) + meta)
+	}
+	line = ansi.Truncate(line, width, "")
+	if selected {
+		return styles.FillSelectedLine(line, width, styles.TreeProjectSelectionStyle())
 	}
 	return viewutil.PadRight(line, width)
 }
 
-func (m Model) projectMeta(project projectState) string {
-	parts := make([]string, 0, 2)
-	if project.tree != nil && project.tree.Version != "" {
-		parts = append(parts, "v"+project.tree.Version)
+func (m Model) projectMetaSegments(project projectState, selected bool) (badge, rest string) {
+	if project.hasDraft {
+		label := "draft"
+		if project.staleDraft {
+			label = "staled draft"
+			if project.draftVersion != "" {
+				label += " v" + project.draftVersion
+			}
+		}
+		badge = styles.RenderDraftBadge(label, selected)
+	}
+
+	parts := make([]string, 0, 3)
+	if version := project.displayVersion(); version != "" {
+		parts = append(parts, "v"+version)
 	}
 	switch {
 	case project.loading:
 		parts = append(parts, m.spin.View())
 	case project.err != nil:
 		parts = append(parts, "error")
-	case project.source == "draft":
-		parts = append(parts, "draft")
-	case project.source == "draft-stale":
-		parts = append(parts, "staled draft")
 	case project.tree != nil:
-		if status := core.ParametersStatusLabel(project.source, project.tree.CachedAt, true, nil); status != "" {
+		source := project.cacheSource
+		if source == "" {
+			source = project.source
+		}
+		if source == "draft" || source == "draft-stale" {
+			source = "cache"
+		}
+		if status := core.ParametersStatusLabel(source, project.tree.CachedAt, true, nil); status != "" {
 			parts = append(parts, status)
 		}
 	case project.source != "":
@@ -113,7 +177,28 @@ func (m Model) projectMeta(project projectState) string {
 	if project.tree != nil && !project.tree.CachedAt.IsZero() {
 		parts = append(parts, rcdisplay.FormatLocalDateTime(project.tree.CachedAt))
 	}
-	return strings.Join(parts, " ")
+	return badge, strings.Join(parts, " ")
+}
+
+func joinProjectMeta(badge, rest string) string {
+	switch {
+	case badge != "" && rest != "":
+		return badge + " " + rest
+	case badge != "":
+		return badge
+	default:
+		return rest
+	}
+}
+
+func (p projectState) displayVersion() string {
+	if p.staleDraft && p.cacheVersion != "" {
+		return p.cacheVersion
+	}
+	if p.tree != nil && p.tree.Version != "" {
+		return p.tree.Version
+	}
+	return p.cacheVersion
 }
 
 func (m Model) conditionCount() int {

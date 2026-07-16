@@ -26,7 +26,7 @@ func (m Model) CurrentConditionalValueAnchor() (parameters.ConditionalValueAncho
 }
 
 func (m Model) DropdownOpen() bool {
-	return m.dropdownOpen && (m.activeField == fieldGroup || m.activeField == fieldType)
+	return m.dropdownOpen && (m.activeField == fieldGroup || m.activeField == fieldType || m.activeField == fieldConditionColor)
 }
 func (m Model) DropdownCurrentPosition() (int, int) {
 	fieldLine := m.fieldValueLine(m.activeField)

@@ -28,8 +28,27 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		state.loading = true
 		state.err = nil
+		state.hasDraft = msg.HasDraft
+		state.staleDraft = msg.StaleDraft
+		if msg.CacheSource != "" {
+			state.cacheSource = msg.CacheSource
+		} else if msg.Source != "draft" && msg.Source != "draft-stale" {
+			state.cacheSource = msg.Source
+		}
+		if msg.CacheVersion != "" {
+			state.cacheVersion = msg.CacheVersion
+		} else if msg.Tree != nil && !msg.HasDraft {
+			state.cacheVersion = msg.Tree.Version
+		}
+		if msg.DraftVersion != "" {
+			state.draftVersion = msg.DraftVersion
+		} else if msg.HasDraft && msg.Tree != nil {
+			state.draftVersion = msg.Tree.Version
+		} else if !msg.HasDraft {
+			state.draftVersion = ""
+		}
 		m.projects[idx] = state
-		return m, tea.Batch(m.loadConditionsCmd(msg.Project, msg.Source), m.spin.Tick)
+		return m, tea.Batch(m.loadConditionsCmd(msg.Project, msg.Source, msg.SelectConditionName), m.spin.Tick)
 	case messages.ConditionsLoadedMsg:
 		m.updateLoaded(msg)
 		return m, m.selectionChangedCmd(false)

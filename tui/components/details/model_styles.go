@@ -45,6 +45,8 @@ const (
 	fieldName
 	fieldType
 	fieldDescription
+	fieldConditionPriority
+	fieldConditionColor
 )
 
 var typeOptions = []string{"STRING", "BOOLEAN", "NUMBER", "JSON"}

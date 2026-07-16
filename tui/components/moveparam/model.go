@@ -1,6 +1,7 @@
 package moveparam
 
 import (
+	"image/color"
 	"strings"
 	"time"
 
@@ -8,8 +9,10 @@ import (
 )
 
 type Option struct {
-	Key   string
-	Label string
+	Key                    string
+	Label                  string
+	Foreground             color.Color
+	KeepForegroundOnSelect bool
 }
 
 type Model struct {
@@ -20,6 +23,7 @@ type Model struct {
 	selected int
 	input    textinput.Model
 	open     bool
+	allowNew bool
 	search   string
 	lastType time.Time
 }
@@ -34,11 +38,21 @@ func New() Model {
 }
 
 func (m Model) Open(x, y int, label string, options []Option) Model {
+	return m.openWithOptions(x, y, label, options, 0, true)
+}
+
+// OpenOptions opens a fixed option list without the free-form "new group" row.
+func (m Model) OpenOptions(x, y int, label string, options []Option, selected int) Model {
+	return m.openWithOptions(x, y, label, options, selected, false)
+}
+
+func (m Model) openWithOptions(x, y int, label string, options []Option, selected int, allowNew bool) Model {
 	m.x = x
 	m.y = y
 	m.label = label
 	m.options = append([]Option(nil), options...)
-	m.selected = 0
+	m.allowNew = allowNew
+	m.selected = min(max(selected, 0), max(m.rowsCount()-1, 0))
 	m.input = newInput()
 	m.open = true
 	m.search = ""
@@ -54,6 +68,7 @@ func (m Model) Close() Model {
 	m.label = ""
 	m.options = nil
 	m.selected = 0
+	m.allowNew = false
 	m.input = newInput()
 	m.search = ""
 	m.lastType = time.Time{}
@@ -96,6 +111,9 @@ func (m Model) InputSelected() bool {
 }
 
 func (m Model) rowsCount() int {
+	if !m.allowNew {
+		return len(m.options)
+	}
 	if len(m.options) == 0 {
 		return 0
 	}
@@ -103,6 +121,9 @@ func (m Model) rowsCount() int {
 }
 
 func (m Model) rootOptionIndex() int {
+	if !m.allowNew {
+		return -1
+	}
 	if len(m.options) == 0 {
 		return -1
 	}
@@ -114,6 +135,9 @@ func (m Model) rootOptionIndex() int {
 }
 
 func (m Model) inputRowIndex() int {
+	if !m.allowNew {
+		return -1
+	}
 	rootIndex := m.rootOptionIndex()
 	if rootIndex >= 0 {
 		return rootIndex
@@ -122,7 +146,7 @@ func (m Model) inputRowIndex() int {
 }
 
 func (m Model) rowIsInput(row int) bool {
-	return row == m.inputRowIndex()
+	return m.allowNew && row == m.inputRowIndex()
 }
 
 func (m Model) selectedInput() bool {
@@ -132,6 +156,9 @@ func (m Model) selectedInput() bool {
 func (m Model) optionIndexForRow(row int) (int, bool) {
 	if row < 0 || row >= m.rowsCount() || m.rowIsInput(row) {
 		return 0, false
+	}
+	if !m.allowNew {
+		return row, true
 	}
 	inputRow := m.inputRowIndex()
 	if row > inputRow {

@@ -3,6 +3,8 @@ package moveparam
 import (
 	"testing"
 	"time"
+
+	"charm.land/lipgloss/v2"
 )
 
 func TestMoveWrapsAcrossOptionsAndInput(t *testing.T) {
@@ -59,5 +61,32 @@ func TestEmptyOptionsProduceNoOverlay(t *testing.T) {
 	}
 	if _, ok := m.Current(); ok {
 		t.Fatal("empty options should have no current option")
+	}
+}
+
+func TestOpenOptionsHasNoFreeFormRowAndAllowsEmptyKey(t *testing.T) {
+	m := New().OpenOptions(0, 0, "Color", []Option{{Key: "", Label: "No color"}, {Key: "GREEN", Label: "Green"}}, 1)
+	if got := m.rowsCount(); got != 2 {
+		t.Fatalf("rowsCount = %d, want 2", got)
+	}
+	if option, ok := m.Current(); !ok || option.Key != "GREEN" {
+		t.Fatalf("selected option = %#v, %v", option, ok)
+	}
+	_ = m.Move(-1)
+	if option, ok := m.Current(); !ok || option.Key != "" {
+		t.Fatalf("empty-key option = %#v, %v", option, ok)
+	}
+}
+
+func TestStyledOptionKeepsForegroundAndBecomesBoldWhenSelected(t *testing.T) {
+	green := lipgloss.Color("#00ff00")
+	option := Option{Foreground: green, KeepForegroundOnSelect: true}
+
+	style := styledOptionLineStyle(option, true)
+	if style.GetForeground() != green {
+		t.Fatalf("selected foreground = %v, want %v", style.GetForeground(), green)
+	}
+	if !style.GetBold() {
+		t.Fatal("selected styled option is not bold")
 	}
 }

@@ -2,6 +2,7 @@ package draft
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 )
@@ -27,6 +28,43 @@ func TestMutateSavesDraft(t *testing.T) {
 		t.Fatal("draft not saved")
 	}
 	assertParamValue(t, raw, "flag", "new")
+}
+
+func TestDirectMutationValidatesBeforePublish(t *testing.T) {
+	setupDraftTestEnv(t)
+	cache := saveParametersCache(t, "demo", "etag-1", remoteConfigRaw("1", map[string]string{"flag": "old"}))
+	fake := &fakeDeps{cache: cache}
+	deps := fake.deps()
+	validateCalls := 0
+	deps.ValidateRemoteConfigWithETag = func(_ context.Context, projectID string, raw json.RawMessage, etag string) error {
+		validateCalls++
+		if projectID != "demo" || etag != "etag-1" {
+			t.Fatalf("validation target = %s, %s", projectID, etag)
+		}
+		return nil
+	}
+
+	if _, _, err := Mutate(context.Background(), deps, "demo", true, MutationSpec{Apply: SetStringParameterValue("", "flag", "default", "new")}); err != nil {
+		t.Fatal(err)
+	}
+	if validateCalls != 1 || fake.publishCalls != 1 {
+		t.Fatalf("validate calls = %d, publish calls = %d; want 1, 1", validateCalls, fake.publishCalls)
+	}
+}
+
+func TestDirectMutationValidationFailureSkipsPublish(t *testing.T) {
+	setupDraftTestEnv(t)
+	cache := saveParametersCache(t, "demo", "etag-1", remoteConfigRaw("1", map[string]string{"flag": "old"}))
+	fake := &fakeDeps{cache: cache}
+	deps := fake.deps()
+	deps.ValidateRemoteConfigWithETag = func(context.Context, string, json.RawMessage, string) error {
+		return errors.New("invalid expression")
+	}
+
+	_, _, err := Mutate(context.Background(), deps, "demo", true, MutationSpec{Apply: SetStringParameterValue("", "flag", "default", "new")})
+	if err == nil || fake.publishCalls != 0 {
+		t.Fatalf("validation error = %v, publish calls = %d; want error and 0", err, fake.publishCalls)
+	}
 }
 
 func TestPreviewUsesDraftWhenPresent(t *testing.T) {

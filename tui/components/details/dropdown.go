@@ -13,6 +13,7 @@ type dropdownRow struct {
 	Key   string
 	Label string
 	Input bool
+	Color string
 }
 
 func (m Model) dropdownRows() []dropdownRow {
@@ -49,12 +50,30 @@ func (m Model) dropdownRows() []dropdownRow {
 			out = append(out, dropdownRow{Key: option, Label: option})
 		}
 		return out
+	case fieldConditionColor:
+		out := make([]dropdownRow, 0, len(core.ConditionDisplayColors)+1)
+		out = append(out, dropdownRow{Label: "No color"})
+		for _, color := range core.ConditionDisplayColors {
+			out = append(out, dropdownRow{Key: color, Label: conditionColorValue(color), Color: color})
+		}
+		return out
 	default:
 		return nil
 	}
 }
 
 func (m Model) fieldValueLine(field fieldID) int {
+	if m.conditionData != nil {
+		width := max(m.width-5, 1)
+		line := 1 + len(wrappedLines(rcdisplay.FormatProject(m.conditionData.Project.Name, m.conditionData.Project.ProjectID), width)) + 1
+		for _, candidate := range []fieldID{fieldConditionPriority, fieldName, fieldConditionColor} {
+			if field == candidate {
+				return line + 1
+			}
+			line += 3
+		}
+		return 0
+	}
 	if m.data == nil {
 		return 0
 	}
@@ -120,6 +139,8 @@ func (m Model) dropdownCurrentLabel() string {
 		return m.groupLabel
 	case fieldType:
 		return m.typeValue
+	case fieldConditionColor:
+		return conditionColorValue(m.conditionColor)
 	default:
 		return ""
 	}
@@ -129,6 +150,8 @@ func (m Model) dropdownCurrentStyle() lipgloss.Style {
 	switch m.activeField {
 	case fieldGroup:
 		return groupValueStyle
+	case fieldConditionColor:
+		return m.conditionStyle(m.conditionColor)
 	default:
 		return styles.PanelText
 	}
@@ -141,6 +164,14 @@ func (m *Model) openDropdown() {
 	}
 	m.dropdownOpen = true
 	m.dropdownIndex = 0
+	if m.activeField == fieldConditionColor {
+		for index, row := range rows {
+			if row.Key == m.conditionColor {
+				m.dropdownIndex = index
+				break
+			}
+		}
+	}
 	if rows[m.dropdownIndex].Input {
 		_ = m.groupInput.Focus()
 	} else {
@@ -187,6 +218,8 @@ func (m *Model) commitDropdown() {
 			m.groupLabel = row.Label
 		case fieldType:
 			m.typeValue = row.Key
+		case fieldConditionColor:
+			m.conditionColor = row.Key
 		}
 	}
 	m.closeDropdown()

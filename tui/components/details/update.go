@@ -15,7 +15,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		k := msg.String()
-		if m.data != nil {
+		if m.data != nil || m.conditionData != nil {
 			switch {
 			case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionDown, k):
 				if !m.dropdownOpen {
@@ -95,6 +95,26 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			case fieldName:
 				m.nameInput, cmd = m.nameInput.Update(msg)
+			case fieldConditionPriority:
+				m, cmd = m.updatePriorityInput(msg)
+			case fieldConditionColor:
+				if m.dropdownOpen {
+					switch {
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionUp, k):
+						m.moveDropdown(-1)
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionDown, k):
+						m.moveDropdown(1)
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
+						m.commitDropdown()
+					}
+				} else {
+					switch {
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionRight, k):
+						m.openDropdown()
+					case tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
+						m = m.DeactivateField()
+					}
+				}
 			case fieldDescription:
 				if !tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
 					m.descInput, cmd = m.descInput.Update(msg)
@@ -135,7 +155,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.viewport.ScrollDown(1)
 		}
 	case tea.MouseClickMsg:
-		if m.data == nil {
+		if m.data == nil && m.conditionData == nil {
 			break
 		}
 		return m.handleMouseClick(msg)
@@ -144,6 +164,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		switch m.activeField {
 		case fieldName:
 			m.nameInput, cmd = m.nameInput.Update(msg)
+		case fieldConditionPriority:
+			m, cmd = m.updatePriorityInput(msg)
 		case fieldDescription:
 			m.descInput, cmd = m.descInput.Update(msg)
 			m.normalizeDescriptionInput()
@@ -199,7 +221,7 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	}
 	m.activateField(field)
 	m.positionCursorForClick(field, mouse.X, mouse.Y)
-	if field == fieldGroup || field == fieldType {
+	if field == fieldGroup || field == fieldType || field == fieldConditionColor {
 		m.openDropdown()
 	}
 	m.refreshViewport()

@@ -20,12 +20,13 @@ func modalCopy(m Model, block tuiconfig.Block, k, value string) (Model, tea.Cmd,
 	return m, nil, false
 }
 
-func modalSubmit(m Model, block tuiconfig.Block, k string, action tuiconfig.Action, allowed bool, submit func() tea.Cmd) (Model, tea.Cmd, bool) {
+func modalSubmit(m Model, block tuiconfig.Block, k string, action tuiconfig.Action, allowed bool, submit func(*Model) tea.Cmd) (Model, tea.Cmd, bool) {
 	if !tuiconfig.Matches(block, action, k) {
 		return m, nil, false
 	}
 	if allowed {
-		return m, submit(), true
+		cmd := submit(&m)
+		return m, cmd, true
 	}
 	return m, nil, true
 }

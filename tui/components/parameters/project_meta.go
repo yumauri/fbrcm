@@ -51,11 +51,7 @@ func (m Model) projectMetaSegments(project *projectState, selected bool) (badge 
 				label += " v" + project.draftVersion
 			}
 		}
-		if selected {
-			badge = lipgloss.NewStyle().Foreground(styles.PaletteError).Render(label)
-		} else {
-			badge = draftBadgeStyle.Render(label)
-		}
+		badge = styles.RenderDraftBadge(label, selected)
 	}
 
 	parts := make([]string, 0, 3)
