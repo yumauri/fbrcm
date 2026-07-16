@@ -100,6 +100,37 @@ func TestCurrentConditionalValueAnchorFirstConditional(t *testing.T) {
 	}
 }
 
+func TestAddConditionalValuePreservesPriorityAndProducesEdit(t *testing.T) {
+	data := parityViewDataWithConditionals()
+	data.Conditions = []core.ParametersCondition{
+		{Name: "staff", Color: "GREEN"},
+		{Name: "android", Color: "BLUE"},
+		{Name: "ios", Color: "INDIGO"},
+	}
+	m := New().SetBounds(0, 0, 60, 24).SetActive(true).SetData(data)
+
+	next, added := m.AddConditionalValue("staff")
+	if !added {
+		t.Fatal("AddConditionalValue returned false")
+	}
+	got := next.data.Parameter.Values
+	if len(got) != 4 || got[0].Label != "staff" || got[1].Label != "android" || got[2].Label != "ios" || got[3].Label != "default" {
+		t.Fatalf("value order = %+v, want staff, android, ios, default", got)
+	}
+	if got[0].RawValue != "" || got[0].ValueType != "STRING" || got[0].Color != "GREEN" || !got[0].Plain {
+		t.Fatalf("new value = %+v, want empty plain STRING/GREEN", got[0])
+	}
+	edit, ok := next.Edit()
+	if !ok || len(edit.ValueEdits) != 1 || edit.ValueEdits[0].Label != "staff" || edit.ValueEdits[0].NextValue != "" {
+		t.Fatalf("edit = %+v, ok=%v; want empty staff assignment", edit, ok)
+	}
+
+	next = next.RemoveAddedConditionalValue("staff")
+	if len(next.data.Parameter.Values) != 3 || next.Dirty() {
+		t.Fatalf("cancelled values = %+v, dirty=%v; want original clean form", next.data.Parameter.Values, next.Dirty())
+	}
+}
+
 const detailsViewSnapshot = ` ╭─ ⁵Details ───────────────────────────────────────────────
  │ Project
  │ Demo Prod (demo-prod)

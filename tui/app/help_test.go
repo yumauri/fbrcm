@@ -63,7 +63,7 @@ func TestShortHelpDescriptions(t *testing.T) {
 		{
 			name: "details",
 			keys: helpKeyMap{active: panels.Details},
-			want: []string{"quit", "close", "rename", "edit", "move", "delete", "copy", "copy value"},
+			want: []string{"quit", "close", "add conditional value", "rename", "edit", "move", "delete", "copy", "copy value"},
 		},
 	}
 

@@ -67,6 +67,11 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 			return m, m.openDetailsValueEditor(), true
 		}
 
+	case messages.DetailsAddConditionalValueRequestedMsg:
+		if m.active == panels.Details && m.detailsVisible && !m.details.IsCondition() {
+			return m, m.openAddConditionalValue(), true
+		}
+
 	case messages.ParameterSelectionChangedMsg:
 		return m, m.handleParameterSelection(msg), true
 

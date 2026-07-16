@@ -6,10 +6,11 @@ import (
 )
 
 type (
-	ParametersTree  = parameters.Tree
-	ParametersGroup = parameters.Group
-	ParametersEntry = parameters.Entry
-	ParametersValue = parameters.Value
+	ParametersTree      = parameters.Tree
+	ParametersGroup     = parameters.Group
+	ParametersEntry     = parameters.Entry
+	ParametersValue     = parameters.Value
+	ParametersCondition = parameters.Condition
 )
 
 // FormatRemoteConfigDisplayValue formats a Remote Config value for tree summaries

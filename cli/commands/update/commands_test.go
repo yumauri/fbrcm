@@ -145,3 +145,41 @@ func TestUpdateParamSlotRemovesAllConditionalValues(t *testing.T) {
 		t.Fatalf("conditional values = %#v, want nil", cfg.Parameters["flag"].ConditionalValues)
 	}
 }
+
+func TestUpdateParamSlotAssignsConditionalValueWithoutChangingDefault(t *testing.T) {
+	cfg := &firebase.RemoteConfig{
+		Conditions: []firebase.RemoteConfigCondition{{Name: "Beta Users", Expression: "true"}},
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"flag": {
+				DefaultValue: &firebase.RemoteConfigValue{Value: "default"},
+				ValueType:    "STRING",
+			},
+		},
+	}
+	target := shared.ParamTarget{Key: "flag", Param: cfg.Parameters["flag"]}
+	spec := updateSpec{
+		value:     &valueSpec{value: "enabled", valueType: "STRING"},
+		condition: "beta users",
+	}
+
+	if err := updateParamSlot(cfg, target, spec); err != nil {
+		t.Fatal(err)
+	}
+	param := cfg.Parameters["flag"]
+	if param.DefaultValue == nil || param.DefaultValue.Value != "default" {
+		t.Fatalf("default value = %#v, want unchanged", param.DefaultValue)
+	}
+	if got := param.ConditionalValues["Beta Users"].Value; got != "enabled" {
+		t.Fatalf("conditional value = %q, want enabled", got)
+	}
+}
+
+func TestReadUpdateSpecConditionRequiresValue(t *testing.T) {
+	cmd := New(nil)
+	if err := cmd.Flags().Set("condition", "beta"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readUpdateSpec(cmd); err == nil || !strings.Contains(err.Error(), "requires one value flag") {
+		t.Fatalf("readUpdateSpec error = %v", err)
+	}
+}

@@ -47,7 +47,8 @@ func (m Model) valueEdits() []core.ParameterValueEdit {
 	}
 	edits := make([]core.ParameterValueEdit, 0)
 	for _, value := range m.data.Parameter.Values {
-		if original[value.Label] == value.RawValue {
+		originalValue, exists := original[value.Label]
+		if exists && originalValue == value.RawValue {
 			continue
 		}
 		edits = append(edits, core.ParameterValueEdit{

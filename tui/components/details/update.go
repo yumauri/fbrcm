@@ -214,6 +214,9 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 		m.refreshViewport()
 		return m, func() tea.Msg { return messages.DetailsValueEditRequestedMsg{} }
 	}
+	if m.addConditionalValueAt(mouse.X, mouse.Y) {
+		return m, func() tea.Msg { return messages.DetailsAddConditionalValueRequestedMsg{} }
+	}
 
 	field, ok := m.fieldAt(mouse.X, mouse.Y)
 	if !ok {

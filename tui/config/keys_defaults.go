@@ -113,6 +113,7 @@ func DefaultKeyMap() KeyMap {
 		},
 		BlockDetails: {
 			ActionClose:     {"esc"},
+			ActionNew:       {"a"},
 			ActionSubmit:    {"ctrl+enter"},
 			ActionEditValue: {"right", "e"},
 			ActionColor:     {"c"},

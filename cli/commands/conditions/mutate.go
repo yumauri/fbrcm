@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -208,7 +207,7 @@ func readMutationOptions(cmd *cobra.Command) mutationOptions {
 
 func runNamedConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery, requestedName string, opts mutationOptions, operation, emoji string, destructive bool, mutate func(*firebase.RemoteConfig, string) error) error {
 	return runConditionMutation(cmd, svc, projectQuery, opts, operation, emoji, destructive, func(cfg *firebase.RemoteConfig) error {
-		name, ok := resolveConfigConditionName(cfg, requestedName)
+		name, ok := coreconditions.ResolveName(cfg, requestedName)
 		if !ok {
 			return fmt.Errorf("condition %q not found", requestedName)
 		}
@@ -252,18 +251,4 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 		_, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
 	}
 	return err
-}
-
-func resolveConfigConditionName(cfg *firebase.RemoteConfig, requested string) (string, bool) {
-	for _, condition := range cfg.Conditions {
-		if condition.Name == requested {
-			return condition.Name, true
-		}
-	}
-	for _, condition := range cfg.Conditions {
-		if strings.EqualFold(condition.Name, requested) {
-			return condition.Name, true
-		}
-	}
-	return "", false
 }

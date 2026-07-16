@@ -86,6 +86,7 @@ type ParameterViewData struct {
 	GroupLabel       string
 	Groups           []ParameterGroupOption
 	ParameterKeys    []string
+	Conditions       []core.ParametersCondition
 	Parameter        core.ParametersEntry
 	SelectedValueIdx int
 }
@@ -139,3 +140,5 @@ type DetailsInvalidDiscardMsg struct {
 }
 
 type DetailsValueEditRequestedMsg struct{}
+
+type DetailsAddConditionalValueRequestedMsg struct{}

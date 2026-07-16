@@ -175,6 +175,7 @@ func (k helpKeyMap) logsHelp() []key.Binding {
 func detailsHelp() []key.Binding {
 	return []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionClose, "close"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionNew, "add conditional value"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionRename, "rename"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, "edit"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionMove, "move"),

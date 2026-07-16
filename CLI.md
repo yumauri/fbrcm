@@ -236,6 +236,7 @@ fbrcm [--help] [--version]
     ├── --group <name>
     ├── --no-group
     ├── --name <new-name>
+    ├── --condition <name>
     ├── --remove-all-conditional-values
     ├── --remove-conditional-value <condition>  repeated
     └── at most one value flag:
@@ -415,6 +416,7 @@ Flags:
 --group <name>             move parameter into group
 --no-group                 move parameter out of any group
 --name <new-name>          rename parameter; cannot be empty
+--condition <name>         assign the value flag to this condition instead of the default value
 --remove-all-conditional-values
                            remove all conditional values from matched parameters
 --remove-conditional-value <condition>
@@ -425,9 +427,9 @@ Flags:
 --json <json>              set JSON value
 ```
 
-At most one value flag may be used. `--group` and `--no-group` are mutually exclusive. `--remove-all-conditional-values` and `--remove-conditional-value` are mutually exclusive.
+At most one value flag may be used. `--condition` requires a value flag and resolves the condition by exact name, then exact case-insensitive name. It preserves the default and all other conditional values while assigning the selected typed value. `--group` and `--no-group` are mutually exclusive. `--condition`, `--remove-all-conditional-values`, and `--remove-conditional-value` are mutually exclusive.
 
-Conditional value removal edits only `conditionalValues`; it keeps the parameter, default value, description, group, and all conditions themselves.
+Conditional value assignment and removal edit only `conditionalValues`; they keep the parameter, default value, description, group, and all conditions themselves.
 
 Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes with ETag conflict handling.
 

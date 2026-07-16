@@ -64,6 +64,7 @@ func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 		groupLabel = group.Label
 	}
 	groups, paramKeys := parameterViewOptions(project)
+	conditions := parameterConditionOptions(project)
 	if len(groups) == 0 {
 		groups = []messages.ParameterGroupOption{{Key: rootgroup.TreeKey, Label: rootgroup.Label}}
 	}
@@ -76,6 +77,7 @@ func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 			GroupLabel:    groupLabel,
 			Groups:        groups,
 			ParameterKeys: paramKeys,
+			Conditions:    conditions,
 			Parameter: core.ParametersEntry{
 				Key:     "",
 				Summary: "new parameter",
@@ -111,10 +113,18 @@ func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 		GroupLabel:       group.Label,
 		Groups:           groups,
 		ParameterKeys:    paramKeys,
+		Conditions:       conditions,
 		Parameter:        *param,
 		SelectedValueIdx: valueIdx,
 	}
 	return data, true
+}
+
+func parameterConditionOptions(project *projectState) []core.ParametersCondition {
+	if project == nil || project.tree == nil {
+		return nil
+	}
+	return append([]core.ParametersCondition(nil), project.tree.Conditions...)
 }
 
 func parameterViewOptions(project *projectState) ([]messages.ParameterGroupOption, []string) {

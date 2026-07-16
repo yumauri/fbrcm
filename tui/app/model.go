@@ -53,6 +53,7 @@ type Model struct {
 	pendingDetails  *pendingDetailsSelection
 	historyRollback *historyRollbackSession
 	conditionEdit   *conditionEditSession
+	conditionalAdd  *conditionalValueAddSession
 	valueEditSource panels.ID
 
 	width  int
@@ -94,6 +95,10 @@ type conditionEditSession struct {
 	name         string
 	creating     bool
 	currentColor string
+}
+
+type conditionalValueAddSession struct {
+	condition string
 }
 
 func New(svc *core.Core) Model {

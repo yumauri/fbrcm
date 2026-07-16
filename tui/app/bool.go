@@ -50,6 +50,7 @@ func (m *Model) submitBoolPicker() tea.Cmd {
 		if nextRaw != anchor.CurrentValue {
 			m.details = m.details.SetSelectedValue(nextRaw)
 		}
+		m.finishConditionalValueAdd()
 		return nil
 	}
 	if nextValue == anchor.Value {

@@ -72,6 +72,9 @@ func (m Model) renderContentLines() []string {
 	if len(m.data.Parameter.Values) == 0 {
 		lines = append(lines, "No values.")
 	}
+	if len(m.AvailableConditions()) > 0 {
+		lines = append(lines, parameterKeyStyle.Render("  "+addConditionalValueLabel))
+	}
 
 	return padLines(lines, width)
 }
@@ -196,6 +199,7 @@ func cloneViewData(data *messages.ParameterViewData) *messages.ParameterViewData
 	next := *data
 	next.Groups = append([]messages.ParameterGroupOption(nil), data.Groups...)
 	next.ParameterKeys = append([]string(nil), data.ParameterKeys...)
+	next.Conditions = append([]core.ParametersCondition(nil), data.Conditions...)
 	next.Parameter = cloneParameterEntry(data.Parameter)
 	return &next
 }

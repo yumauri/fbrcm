@@ -18,6 +18,7 @@ type valueSpec struct {
 
 type updateSpec struct {
 	value                      *valueSpec
+	condition                  string
 	name                       string
 	group                      string
 	description                string
@@ -68,11 +69,13 @@ func addUpdateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("number", "", "Number parameter value")
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
+	cmd.Flags().String("condition", "", "Set the value for this condition instead of the default value")
 	cmd.Flags().Bool("remove-all-conditional-values", false, "Remove all conditional values from matched parameters")
 	cmd.Flags().StringArray("remove-conditional-value", nil, "Remove a conditional value from matched parameters; may be repeated")
 	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json")
 	cmd.MarkFlagsMutuallyExclusive("group", "no-group")
 	cmd.MarkFlagsMutuallyExclusive("remove-all-conditional-values", "remove-conditional-value")
+	cmd.MarkFlagsMutuallyExclusive("condition", "remove-all-conditional-values", "remove-conditional-value")
 }
 
 func runUpdateCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -134,6 +137,18 @@ func readUpdateSpec(cmd *cobra.Command) (updateSpec, error) {
 	if err != nil {
 		return updateSpec{}, err
 	}
+	condition, err := cmd.Flags().GetString("condition")
+	if err != nil {
+		return updateSpec{}, err
+	}
+	conditionChanged := cmd.Flags().Changed("condition")
+	condition = strings.TrimSpace(condition)
+	if conditionChanged && condition == "" {
+		return updateSpec{}, fmt.Errorf("--condition cannot be empty")
+	}
+	if conditionChanged && value == nil {
+		return updateSpec{}, fmt.Errorf("--condition requires one value flag")
+	}
 
 	groupChanged := cmd.Flags().Changed("group")
 	if noGroup {
@@ -150,6 +165,7 @@ func readUpdateSpec(cmd *cobra.Command) (updateSpec, error) {
 
 	return updateSpec{
 		value:                      value,
+		condition:                  condition,
 		name:                       name,
 		group:                      groupName,
 		description:                description,

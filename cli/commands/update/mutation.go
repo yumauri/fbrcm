@@ -2,12 +2,15 @@ package updatecmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/spf13/cobra"
+
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
+	coreconditions "github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
-	"io"
 )
 
 func confirmAndUpdateProject(cmd *cobra.Command, label string, cfg *firebase.RemoteConfig, matched []shared.ParamTarget, spec updateSpec, yes bool, diffOut io.Writer) ([]shared.ParamTarget, *firebase.RemoteConfig, error) {
@@ -30,7 +33,18 @@ func confirmAndUpdateProject(cmd *cobra.Command, label string, cfg *firebase.Rem
 func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec updateSpec) error {
 	param := target.Param
 	if spec.value != nil {
-		param.DefaultValue = &firebase.RemoteConfigValue{Value: spec.value.value}
+		if spec.condition == "" {
+			param.DefaultValue = &firebase.RemoteConfigValue{Value: spec.value.value}
+		} else {
+			condition, ok := coreconditions.ResolveName(cfg, spec.condition)
+			if !ok {
+				return fmt.Errorf("condition %q not found", spec.condition)
+			}
+			if param.ConditionalValues == nil {
+				param.ConditionalValues = make(map[string]firebase.RemoteConfigValue)
+			}
+			param.ConditionalValues[condition] = firebase.RemoteConfigValue{Value: spec.value.value}
+		}
 		param.ValueType = spec.value.valueType
 	}
 	if spec.descriptionChanged {

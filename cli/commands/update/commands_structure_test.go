@@ -9,5 +9,5 @@ import (
 func TestNewCommandStructure(t *testing.T) {
 	cmdtest.AssertCommandStructure(t, New(nil), "update [parameter]",
 		"project", "filter", "expr", "search", "dry-run", "draft", "yes", "description", "group", "no-group", "name",
-		"boolean", "number", "string", "json", "remove-all-conditional-values", "remove-conditional-value")
+		"boolean", "number", "string", "json", "condition", "remove-all-conditional-values", "remove-conditional-value")
 }

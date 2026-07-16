@@ -115,6 +115,9 @@ func TestBuildTreeFromFixtures(t *testing.T) {
 			}
 
 			if tt.fixture == "with_conditions.json" {
+				if len(tree.Conditions) != 2 || tree.Conditions[0].Name != "android" || tree.Conditions[0].Color != "BLUE" || tree.Conditions[1].Name != "ios" {
+					t.Fatalf("conditions = %+v, want android/BLUE then ios", tree.Conditions)
+				}
 				entry := root.Parameters[0]
 				if entry.Key != "feature_login" {
 					t.Fatalf("param key = %q, want feature_login", entry.Key)

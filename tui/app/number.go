@@ -48,10 +48,14 @@ func (m *Model) submitNumberInput() tea.Cmd {
 	source := m.valueEditSource
 	m.closeNumberInput()
 	if nextValue == anchor.CurrentValue {
+		if source == panels.Details {
+			m.finishConditionalValueAdd()
+		}
 		return nil
 	}
 	if source == panels.Details {
 		m.details = m.details.SetSelectedValue(nextValue)
+		m.finishConditionalValueAdd()
 		return nil
 	}
 	if m.parameters.HasDraft(anchor.Project.ProjectID) {

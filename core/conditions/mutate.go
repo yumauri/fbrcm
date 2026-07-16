@@ -67,6 +67,25 @@ func NormalizeTagColor(color string) (string, error) {
 	return "", fmt.Errorf("unsupported condition color %q (allowed: %s)", color, strings.Join(DisplayColors, ", "))
 }
 
+// ResolveName returns the canonical condition name using exact, then
+// case-insensitive matching.
+func ResolveName(cfg *firebase.RemoteConfig, requested string) (string, bool) {
+	if cfg == nil {
+		return "", false
+	}
+	for _, condition := range cfg.Conditions {
+		if condition.Name == requested {
+			return condition.Name, true
+		}
+	}
+	for _, condition := range cfg.Conditions {
+		if strings.EqualFold(condition.Name, requested) {
+			return condition.Name, true
+		}
+	}
+	return "", false
+}
+
 func Add(cfg *firebase.RemoteConfig, definition Definition, priority int) error {
 	if cfg == nil {
 		return fmt.Errorf("remote config is nil")

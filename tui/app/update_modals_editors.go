@@ -12,6 +12,7 @@ func (m Model) updateBoolPicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case tea.KeyMsg:
 		k := msg.String()
 		if next, cmd, ok := modalCancel(m, tuiconfig.BlockBoolInput, k, func(model Model) Model {
+			model.cancelConditionalValueAdd()
 			model.closeBoolPicker()
 			return model
 		}); ok {
@@ -45,6 +46,7 @@ func (m Model) updateJSONInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case tea.KeyMsg:
 		k := msg.String()
 		if next, cmd, ok := modalCancel(m, tuiconfig.BlockJSONInput, k, func(model Model) Model {
+			model.cancelConditionalValueAdd()
 			model.closeJSONInput()
 			return model
 		}); ok {
@@ -80,6 +82,7 @@ func (m Model) updateNumberInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case tea.KeyMsg:
 		k := msg.String()
 		if next, cmd, ok := modalCancel(m, tuiconfig.BlockNumberInput, k, func(model Model) Model {
+			model.cancelConditionalValueAdd()
 			model.closeNumberInput()
 			return model
 		}); ok {
@@ -114,6 +117,7 @@ func (m Model) updateStringInput(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case tea.KeyMsg:
 		k := msg.String()
 		if next, cmd, ok := modalCancel(m, tuiconfig.BlockStringInput, k, func(model Model) Model {
+			model.cancelConditionalValueAdd()
 			model.closeStringInput()
 			return model
 		}); ok {

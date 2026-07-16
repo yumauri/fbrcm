@@ -146,6 +146,21 @@ func TestMutationOperations(t *testing.T) {
 				assertParamDescription(t, raw, "flag", "updated")
 			},
 		},
+		{
+			name:  "add conditional value from parameter details",
+			cache: conditionOnlyRemoteConfigRaw("1", "flag", "staff"),
+			spec: MutationSpec{Apply: EditParameterDetails(ParameterDetailsEdit{
+				GroupKey:      "",
+				ParamKey:      "flag",
+				NextParamKey:  "flag",
+				NextValueType: "STRING",
+				ValueEdits:    []ParameterValueEdit{{Label: "STAFF", NextValue: "assigned"}},
+			})},
+			assert: func(t *testing.T, raw json.RawMessage) {
+				assertConditionalValue(t, raw, "flag", "staff", "assigned")
+				assertParamValue(t, raw, "flag", "default")
+			},
+		},
 	}
 
 	for _, tt := range tests {

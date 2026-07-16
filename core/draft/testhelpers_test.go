@@ -108,6 +108,17 @@ func conditionalRemoteConfigRaw(version, key, condition, conditionalValue string
 	return marshalRemoteConfig(cfg)
 }
 
+func conditionOnlyRemoteConfigRaw(version, key, condition string) json.RawMessage {
+	cfg := firebase.RemoteConfig{
+		Conditions: []firebase.RemoteConfigCondition{{Name: condition, Expression: "true"}},
+		Parameters: map[string]firebase.RemoteConfigParam{
+			key: remoteConfigParam("default", "STRING"),
+		},
+		Version: firebase.RemoteConfigVersion{VersionNumber: version},
+	}
+	return marshalRemoteConfig(cfg)
+}
+
 func remoteConfigParam(value, valueType string) firebase.RemoteConfigParam {
 	v := firebase.RemoteConfigValue{Value: value}
 	return firebase.RemoteConfigParam{
@@ -187,6 +198,25 @@ func assertConditionalMissing(t *testing.T, raw json.RawMessage, key, condition 
 	}
 	if _, ok := param.ConditionalValues[condition]; ok {
 		t.Fatalf("conditional value %q exists, want missing", condition)
+	}
+}
+
+func assertConditionalValue(t *testing.T, raw json.RawMessage, key, condition, want string) {
+	t.Helper()
+	cfg, err := firebase.ParseRemoteConfig(raw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfig returned error: %v", err)
+	}
+	param, ok := cfg.Parameters[key]
+	if !ok {
+		t.Fatalf("parameter %q missing", key)
+	}
+	value, ok := param.ConditionalValues[condition]
+	if !ok {
+		t.Fatalf("conditional value %q missing", condition)
+	}
+	if value.Value != want {
+		t.Fatalf("conditional value %q = %q, want %q", condition, value.Value, want)
 	}
 }
 

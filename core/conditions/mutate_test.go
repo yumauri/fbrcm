@@ -112,6 +112,16 @@ func TestConditionDefinitionValidation(t *testing.T) {
 	}
 }
 
+func TestResolveNameUsesExactThenCaseInsensitiveMatching(t *testing.T) {
+	cfg := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{{Name: "Beta Users"}}}
+	if got, ok := ResolveName(cfg, "Beta Users"); !ok || got != "Beta Users" {
+		t.Fatalf("exact ResolveName = %q, %v", got, ok)
+	}
+	if got, ok := ResolveName(cfg, "beta users"); !ok || got != "Beta Users" {
+		t.Fatalf("case-insensitive ResolveName = %q, %v", got, ok)
+	}
+}
+
 func conditionNames(cfg *firebase.RemoteConfig) []string {
 	names := make([]string, len(cfg.Conditions))
 	for index, condition := range cfg.Conditions {

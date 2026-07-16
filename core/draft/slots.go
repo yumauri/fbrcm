@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	coreconditions "github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 	rcvalue "github.com/yumauri/fbrcm/core/rc/value"
@@ -67,7 +68,7 @@ func createParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetail
 	}
 	slot := rcmutate.Slot{Group: nextGroup, Param: param}
 	for _, valueEdit := range edit.ValueEdits {
-		if err := setRawParamValue(&slot.Param, valueEdit.Label, valueEdit.NextValue, slot.Param.ValueType); err != nil {
+		if err := setRawParamValue(cfg, &slot.Param, valueEdit.Label, valueEdit.NextValue, slot.Param.ValueType); err != nil {
 			return err
 		}
 	}
@@ -95,7 +96,7 @@ func editParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetailsE
 	slot.Param.Description = strings.TrimSpace(edit.NextDescription)
 	slot.Param.ValueType = normalizeParameterValueType(edit.NextValueType)
 	for _, valueEdit := range edit.ValueEdits {
-		if err := setRawParamValue(&slot.Param, valueEdit.Label, valueEdit.NextValue, slot.Param.ValueType); err != nil {
+		if err := setRawParamValue(cfg, &slot.Param, valueEdit.Label, valueEdit.NextValue, slot.Param.ValueType); err != nil {
 			return err
 		}
 	}
@@ -105,7 +106,7 @@ func editParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetailsE
 	return nil
 }
 
-func setRawParamValue(param *firebase.RemoteConfigParam, valueLabel, nextValue, valueType string) error {
+func setRawParamValue(cfg *firebase.RemoteConfig, param *firebase.RemoteConfigParam, valueLabel, nextValue, valueType string) error {
 	if err := rcvalue.ValidateRawValueForType(nextValue, valueType); err != nil {
 		return err
 	}
@@ -127,18 +128,19 @@ func setRawParamValue(param *firebase.RemoteConfigParam, valueLabel, nextValue, 
 		param.DefaultValue = &next
 		return nil
 	}
-	if param.ConditionalValues == nil {
-		return fmt.Errorf("conditional value %q not found", valueLabel)
-	}
-	current, ok := param.ConditionalValues[valueLabel]
+	canonicalLabel, ok := coreconditions.ResolveName(cfg, valueLabel)
 	if !ok {
-		return fmt.Errorf("conditional value %q not found", valueLabel)
+		return fmt.Errorf("condition %q not found", valueLabel)
 	}
+	if param.ConditionalValues == nil {
+		param.ConditionalValues = make(map[string]firebase.RemoteConfigValue)
+	}
+	current := param.ConditionalValues[canonicalLabel]
 	next, err := updateValue(current)
 	if err != nil {
 		return err
 	}
-	param.ConditionalValues[valueLabel] = next
+	param.ConditionalValues[canonicalLabel] = next
 	return nil
 }
 

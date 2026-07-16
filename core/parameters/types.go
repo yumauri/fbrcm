@@ -3,10 +3,17 @@ package parameters
 import "time"
 
 type Tree struct {
-	Version  string
-	CachedAt time.Time
-	ETag     string
-	Groups   []Group
+	Version    string
+	CachedAt   time.Time
+	ETag       string
+	Conditions []Condition
+	Groups     []Group
+}
+
+type Condition struct {
+	Name       string
+	Expression string
+	Color      string
 }
 
 type Group struct {

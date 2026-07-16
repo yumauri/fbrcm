@@ -23,11 +23,24 @@ func BuildTree(remoteConfig *firebase.RemoteConfig, cachedAt time.Time, etag str
 	}
 
 	return &Tree{
-		Version:  remoteConfig.Version.VersionNumber,
-		CachedAt: cachedAt,
-		ETag:     etag,
-		Groups:   buildGroups(remoteConfig),
+		Version:    remoteConfig.Version.VersionNumber,
+		CachedAt:   cachedAt,
+		ETag:       etag,
+		Conditions: buildConditions(remoteConfig),
+		Groups:     buildGroups(remoteConfig),
 	}
+}
+
+func buildConditions(remoteConfig *firebase.RemoteConfig) []Condition {
+	conditions := make([]Condition, 0, len(remoteConfig.Conditions))
+	for _, condition := range remoteConfig.Conditions {
+		conditions = append(conditions, Condition{
+			Name:       condition.Name,
+			Expression: condition.Expression,
+			Color:      condition.TagColor,
+		})
+	}
+	return conditions
 }
 
 func buildGroups(remoteConfig *firebase.RemoteConfig) []Group {

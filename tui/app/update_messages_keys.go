@@ -100,6 +100,8 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 		return m, tea.Quit, true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionNew, k):
+		return m, m.openAddConditionalValue(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionMove, k):
 		return m, m.activateDetailsGroup(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionRename, k):
