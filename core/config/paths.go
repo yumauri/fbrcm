@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/yumauri/fbrcm/core/env"
@@ -20,8 +21,9 @@ type paths struct {
 }
 
 var (
-	pathsInstance *paths
-	pathsOnce     sync.Once
+	pathsInstance   *paths
+	pathsOnce       sync.Once
+	profileOverride string
 )
 
 // Get application used paths, resolving them once per process
@@ -56,6 +58,27 @@ func getPaths() *paths {
 func resetPaths() {
 	pathsInstance = nil
 	pathsOnce = sync.Once{}
+}
+
+// SetProfileOverride selects a profile for this process without changing the
+// persisted active profile. An empty name clears the explicit override.
+func SetProfileOverride(name string) error {
+	name = strings.TrimSpace(name)
+	if name != "" {
+		if err := ValidateProfileName(name); err != nil {
+			return err
+		}
+	}
+	profileOverride = name
+	resetPaths()
+	return nil
+}
+
+func selectedProfileOverride() (string, bool) {
+	if profileOverride != "" {
+		return profileOverride, true
+	}
+	return env.LookupTrimmed(env.Profile)
 }
 
 // Get the path to the config root directory

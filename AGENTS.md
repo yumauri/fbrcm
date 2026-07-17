@@ -11,6 +11,7 @@
 
 - Every human-readable CLI table must use the same Lip Gloss table style as the existing `get`, `projects list`, and `cache list` commands.
 - Use `lipgloss.NormalBorder()`, a header separator, padded cells, the shared colors from `cli/styles`, alternating row backgrounds, and `NoColorEnabled()` support.
+- Size every table and column to the narrowest width that fits its full content. Consult `cli/shared.TerminalWidth()` only when that natural table would overflow. Choose specific flexible columns and an explicit overflow policy for each: either crop with an ellipsis or wrap into multiline cells, while leaving other columns single-line and content-width whenever possible. Do not assume wrapping is preferred; when the requested behavior is unspecified, identify the likely flexible column and ask the user whether it should wrap or use an ellipsis. Never rely on the terminal to soft-wrap a wider table, and add natural-width plus narrow-terminal regression tests for every new table.
 - Do not implement CLI tables with `text/tabwriter`, manually padded columns, or another ad hoc renderer.
 - Keep machine-readable output behind the command's JSON flag and free of terminal styling.
 

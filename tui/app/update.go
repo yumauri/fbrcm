@@ -3,10 +3,14 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
+		return m, tea.Quit
+	}
 	if next, cmd, ok := m.updateOpenModal(msg); ok {
 		return next, cmd
 	}

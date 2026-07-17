@@ -65,6 +65,10 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		}
 		resp, err := t.base.RoundTrip(attemptReq)
 		releaseRequestSlot()
+		if contextErr := req.Context().Err(); contextErr != nil {
+			closeRetryResponse(resp)
+			return nil, contextErr
+		}
 
 		if !shouldRetry(resp, err) || attempt == attempts {
 			return resp, err

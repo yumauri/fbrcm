@@ -67,7 +67,7 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 	}
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
-		return m, tea.Quit, true
+		return m, m.requestQuit(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
 		if m.details.FieldActive() || m.details.UsageSelected() {
 			var cmd tea.Cmd
@@ -112,7 +112,7 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
-		return m, tea.Quit, true
+		return m, m.requestQuit(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionNew, k):
 		return m, m.openAddConditionalValue(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionMove, k):
@@ -137,7 +137,7 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k) {
-		return m, tea.Quit, true
+		return m, m.requestQuit(), true
 	}
 	if tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k) {
 		if m.active == panels.Details && m.detailsVisible {

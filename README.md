@@ -202,15 +202,39 @@ fbrcm cache path
 fbrcm draft path
 ```
 
-You can override root directories with environment variables:
-
-- `FBRCM_CONFIG_DIR`
-- `FBRCM_CACHE_DIR`
-
 Delete auth files:
 
 ```sh
 fbrcm auth purge default
+```
+
+## Environment Variables
+
+`fbrcm` and its shell installer handle the following environment variables. Empty-value behavior and precedence are called out where they are significant.
+
+| Variable | Scope | Behavior and precedence |
+|---|---|---|
+| `FBRCM_PROFILE` | Application | Selects an existing profile for the current process without changing the persisted active profile. The root `--profile <name>` flag takes precedence; otherwise fbrcm uses the persisted active profile. |
+| `FBRCM_CONFIG_DIR` | Application | Overrides the config root directory. Takes precedence over `XDG_CONFIG_HOME` and the user-home fallback. |
+| `FBRCM_CACHE_DIR` | Application | Overrides the cache root directory. Takes precedence over the operating system's user cache directory. |
+| `FBRCM_OFFLINE` | Application | Enables offline mode when the variable is defined, including when its value is empty or `0`. When it is unset, fbrcm performs a startup connectivity probe and may enable offline mode automatically if the probe fails. |
+| `FBRCM_LOG_LEVEL` | Application | Sets the log threshold to `debug`, `info`, `warn`, `error`, `fatal`, or `silent` (case-insensitive). The default is `info`; an invalid value logs a warning and uses the default. |
+| `NO_COLOR` | Application | Disables ANSI color in CLI tables, logs, prompts, and the TUI when set to a non-empty value. |
+| `COLUMNS` | Application | Supplies terminal width as a positive integer for human-readable CLI output. An invalid value is ignored; fbrcm then detects stdout width and falls back to 80 columns when detection is unavailable. |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Google authentication | Points to an Application Default Credentials JSON file for `gcloud` auth identities and diagnostics. When unset, Google's default credential chain and the platform's well-known ADC file are used. |
+| `XDG_CONFIG_HOME` | Unix config discovery | Supplies the config home when `FBRCM_CONFIG_DIR` is unset; fbrcm appends `/fbrcm`. |
+| `XDG_CACHE_HOME` | Unix cache discovery (except macOS) | Supplies the user cache directory through Go's operating-system lookup when `FBRCM_CACHE_DIR` is unset; fbrcm appends `/fbrcm`. The path must be absolute. |
+| `HOME` | Unix and macOS directory discovery | Supplies the user home used by config, cache, and well-known gcloud ADC path fallbacks. |
+| `USERPROFILE` | Windows directory discovery | Supplies the user home used by config and fallback cache directory discovery. |
+| `LOCALAPPDATA` | Windows cache discovery | Supplies the user cache directory when `FBRCM_CACHE_DIR` is unset; fbrcm appends `fbrcm`. |
+| `APPDATA` | Windows Google authentication | Supplies the directory containing the well-known gcloud ADC path, `gcloud/application_default_credentials.json`, when `GOOGLE_APPLICATION_CREDENTIALS` is unset. |
+| `INSTALL_DIR` | macOS/Linux shell installer | Selects the binary destination for `install.sh`. Defaults to `/usr/local/bin`. |
+
+For example, select a profile for one invocation or override both storage roots:
+
+```sh
+FBRCM_PROFILE=staging fbrcm get
+FBRCM_CONFIG_DIR=/path/to/config FBRCM_CACHE_DIR=/path/to/cache fbrcm doctor
 ```
 
 ## Basic Usage
@@ -274,6 +298,15 @@ fbrcm conditions validate <project-id>
 Definition mutations print a Remote Config diff and offer publication or can be staged with `--draft`. Use `--dry-run` to preview without persisting state and `--yes` to skip confirmation. `conditions validate` validates the current draft, if present, or the published template with Firebase's validate-only API.
 
 In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish and `d`/`D` to discard project/all drafts. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
+
+Pressing `q` quits immediately unless the open Details form has unsaved changes, in which case fbrcm asks before discarding them. `Ctrl+C` always force-quits.
+
+Check local setup, credentials, connectivity, APIs, permissions, and cache writability:
+
+```sh
+fbrcm doctor
+fbrcm doctor --json
+```
 
 Export one project Remote Config:
 

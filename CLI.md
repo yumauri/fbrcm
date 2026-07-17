@@ -5,7 +5,7 @@
 ## Command Tree
 
 ```text
-fbrcm [--help] [--version]
+fbrcm [--help] [--version] [--profile <name>]
 │
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
@@ -79,6 +79,8 @@ fbrcm [--help] [--version]
 │   ├── --dry-run
 │   ├── --draft
 │   └── --yes, -y
+│
+├── doctor [--json] [--timeout <duration>]
 │
 ├── draft
 │   ├── list
@@ -250,7 +252,7 @@ fbrcm [--help] [--version]
 
 All commands support `--help`. Root also supports `--version`.
 
-Most commands require an active profile. `profile` commands and `help` do not. Run `fbrcm profile switch <name>` to switch or create a profile.
+Most commands require a selected profile. `profile`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
 
 Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
 
@@ -259,6 +261,7 @@ Auth identities, project cache, parameter cache, and drafts are profile-scoped. 
 ```text
 FBRCM_CONFIG_DIR
 FBRCM_CACHE_DIR
+FBRCM_PROFILE
 ```
 
 ### Filter Queries
@@ -344,7 +347,10 @@ Flags:
 ```text
 -h, --help      show root help
 -v, --version   print version, commit, and build date
+    --profile   use an existing profile for this invocation without changing the active profile
 ```
+
+`--profile` defaults from `FBRCM_PROFILE`. It applies to every CLI subcommand. `FBRCM_PROFILE` also selects the profile when starting the TUI with no arguments.
 
 ### `fbrcm add <parameter>`
 
@@ -937,6 +943,23 @@ Flags:
 
 ```text
 -y, --yes   skip confirmation
+```
+
+### `fbrcm doctor`
+
+Runs a complete, non-interactive application health check. It verifies the selected profile and profile directories, auth registry, credential files, OAuth token presence and expiry, network/offline state, Cloud Resource Manager API access, Remote Config API reads, required Firebase read/update IAM permissions for cached projects, and profile cache writability.
+
+Doctor never opens OAuth login and never persists a refreshed token. In offline mode it reports the state and skips live API and permission checks. It prints every check even when some fail, and exits with status 1 when any check has `fail` status; warnings alone do not fail the command. The diagnostic run has no overall time limit by default. Pressing `Ctrl+C` cancels the current check, prints the partial table or JSON report, and then exits nonzero.
+
+An expired cached OAuth access token is normal when its refresh token still works. Online diagnostics report that token as `pass` after a successful in-memory refresh, `fail` when refresh fails, and `warn` only when refresh cannot be tested in offline mode. Doctor does not persist the refreshed access token.
+
+Human-readable output uses the narrowest table and column widths that fit all content. When the natural table exceeds the detected terminal width, only Detail shrinks; long paths, permission lists, and API errors wrap onto additional lines inside that cell. Status and Check remain single-line and content-width.
+
+Flags:
+
+```text
+--json                 print the complete report as JSON
+--timeout <duration>   optional positive time limit for the complete diagnostic run
 ```
 
 ### `fbrcm cache list`

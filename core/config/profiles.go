@@ -18,6 +18,19 @@ func GetActiveProfileName() string {
 }
 
 func EnsureActiveProfile() error {
+	if profile, overridden := selectedProfileOverride(); overridden {
+		if err := ValidateProfileName(profile); err != nil {
+			return fmt.Errorf("selected profile: %w", err)
+		}
+		if !profileConfigDirExists(profile) {
+			return fmt.Errorf("selected profile %q does not exist; create it with `fbrcm profile switch %s`", profile, profile)
+		}
+		if err := ensureProfileDirs(profile, false); err != nil {
+			return err
+		}
+		corelog.For("config").Info("current profile", "profile", profile, "override", true)
+		return nil
+	}
 	profile, err := loadActiveProfile()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -192,6 +205,13 @@ func ValidateProfileName(name string) error {
 }
 
 func activeProfileOrDefault() string {
+	if profile, overridden := selectedProfileOverride(); overridden {
+		if err := ValidateProfileName(profile); err != nil {
+			corelog.For("config").Error("selected profile invalid", "profile", profile, "err", err)
+			return DefaultProfileName
+		}
+		return profile
+	}
 	if profile, err := loadActiveProfile(); err == nil && ValidateProfileName(profile) == nil {
 		if profileConfigDirExists(profile) {
 			return profile

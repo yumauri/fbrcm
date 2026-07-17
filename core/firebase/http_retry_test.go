@@ -2,6 +2,7 @@ package firebase
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -48,6 +49,26 @@ func TestSleepContext(t *testing.T) {
 	}
 	if err := sleepContext(context.Background(), 0); err != nil {
 		t.Fatalf("zero delay: %v", err)
+	}
+}
+
+func TestResilientTransportDoesNotRetryCanceledRequest(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	attempts := 0
+	transport := newResilientTransport(roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		attempts++
+		cancel()
+		return nil, ctx.Err()
+	}))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := transport.RoundTrip(req); !errors.Is(err, context.Canceled) {
+		t.Fatalf("RoundTrip error = %v, want context canceled", err)
+	}
+	if attempts != 1 {
+		t.Fatalf("attempts = %d, want 1", attempts)
 	}
 }
 

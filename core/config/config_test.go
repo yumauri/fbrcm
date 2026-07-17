@@ -18,6 +18,10 @@ func setupTestDirs(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "")
+	if err := SetProfileOverride(""); err != nil {
+		t.Fatalf("clear profile override: %v", err)
+	}
 	resetPaths()
 }
 
@@ -528,6 +532,64 @@ func TestListProfilesAndEnsureActiveProfile(t *testing.T) {
 	}
 	if got := GetActiveProfileName(); got != "staging" {
 		t.Fatalf("active profile = %q, want staging", got)
+	}
+}
+
+func TestProfileOverrideDoesNotMutatePersistedProfile(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("active"); err != nil {
+		t.Fatal(err)
+	}
+	if err := SwitchProfile("automation"); err != nil {
+		t.Fatal(err)
+	}
+	if err := SwitchProfile("active"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := SetProfileOverride("automation"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = SetProfileOverride("") })
+	if err := EnsureActiveProfile(); err != nil {
+		t.Fatalf("EnsureActiveProfile override = %v", err)
+	}
+	if got := GetActiveProfileName(); got != "automation" {
+		t.Fatalf("effective profile = %q, want automation", got)
+	}
+	loaded, err := LoadAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Profile != "active" {
+		t.Fatalf("persisted profile = %q, want active", loaded.Profile)
+	}
+}
+
+func TestProfileEnvironmentOverrideAndMissingProfile(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("active"); err != nil {
+		t.Fatal(err)
+	}
+	if err := SwitchProfile("automation"); err != nil {
+		t.Fatal(err)
+	}
+	if err := SwitchProfile("active"); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(env.Profile, "automation")
+	resetPaths()
+	if err := EnsureActiveProfile(); err != nil {
+		t.Fatalf("EnsureActiveProfile env override = %v", err)
+	}
+	if got := GetActiveProfileName(); got != "automation" {
+		t.Fatalf("environment profile = %q, want automation", got)
+	}
+
+	t.Setenv(env.Profile, "missing")
+	resetPaths()
+	if err := EnsureActiveProfile(); err == nil || !strings.Contains(err.Error(), "does not exist") {
+		t.Fatalf("missing environment profile error = %v", err)
 	}
 }
 

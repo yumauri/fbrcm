@@ -34,6 +34,36 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 	}, nil
 }
 
+// NewDiagnosticServiceForAuth constructs a service without starting an
+// interactive OAuth authorization flow or persisting refreshed credentials.
+func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*Service, error) {
+	client, quotaProjectID, useTargetProjectQuota, err := diagnosticAuthHTTPClient(ctx, auth)
+	if err != nil {
+		return nil, err
+	}
+	return &Service{
+		httpClient:            client,
+		quotaProjectID:        quotaProjectID,
+		useTargetProjectQuota: useTargetProjectQuota,
+	}, nil
+}
+
+func diagnosticAuthHTTPClient(ctx context.Context, auth config.AuthEntry) (*http.Client, string, bool, error) {
+	switch auth.Type {
+	case config.AuthTypeOAuth:
+		client, err := diagnosticOAuthHTTPClient(ctx, config.OAuthClientSecretPath(auth), config.OAuthTokenPath(auth))
+		return client, "", false, err
+	case config.AuthTypeServiceAccount:
+		client, err := serviceAccountHTTPClient(ctx, config.ServiceAccountKeyPath(auth))
+		return client, "", false, err
+	case config.AuthTypeGCloud:
+		client, quotaProjectID, err := gcloudHTTPClient(ctx)
+		return client, quotaProjectID, true, err
+	default:
+		return nil, "", false, errAuthRequired()
+	}
+}
+
 // NewServiceWithHTTPClient constructs a Service that sends API requests with client.
 // It exists for tests that stub Firebase HTTP responses.
 func NewServiceWithHTTPClient(client *http.Client) *Service {

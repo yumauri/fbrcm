@@ -14,6 +14,7 @@ import (
 	conditionscmd "github.com/yumauri/fbrcm/cli/commands/conditions"
 	configcmd "github.com/yumauri/fbrcm/cli/commands/config"
 	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
+	doctorcmd "github.com/yumauri/fbrcm/cli/commands/doctor"
 	draftcmd "github.com/yumauri/fbrcm/cli/commands/draft"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
@@ -24,6 +25,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/env"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
@@ -38,7 +40,14 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 		Use:   "fbrcm",
 		Short: "Firebase Remote Config manager",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if isProfileCommand(cmd) || cmd.Name() == "help" {
+			profileName, err := cmd.Flags().GetString("profile")
+			if err != nil {
+				return err
+			}
+			if err := config.SetProfileOverride(profileName); err != nil {
+				return fmt.Errorf("select profile: %w", err)
+			}
+			if isProfileCommand(cmd) || cmd.Name() == "doctor" || cmd.Name() == "help" {
 				return nil
 			}
 			if err := config.EnsureActiveProfile(); err != nil {
@@ -49,6 +58,8 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	}
 	rootCmd.Version = fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
 	rootCmd.SetVersionTemplate(versionTemplate)
+	profileDefault, _ := env.LookupTrimmed(env.Profile)
+	rootCmd.PersistentFlags().String("profile", profileDefault, "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)")
 
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(authcmd.New(s))
@@ -56,6 +67,7 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd.AddCommand(conditionscmd.New(s))
 	rootCmd.AddCommand(configcmd.New())
 	rootCmd.AddCommand(deletecmd.New(s))
+	rootCmd.AddCommand(doctorcmd.New(s))
 	rootCmd.AddCommand(draftcmd.New(s))
 	rootCmd.AddCommand(getcmd.New(s))
 	rootCmd.AddCommand(profilecmd.New())
