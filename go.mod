@@ -10,7 +10,7 @@ require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/charmbracelet/colorprofile v0.4.3
 	github.com/charmbracelet/x/ansi v0.11.7
-	github.com/erikgeiser/promptkit v0.11.0
+	github.com/erikgeiser/promptkit v0.12.0
 	github.com/expr-lang/expr v1.17.8
 	github.com/itchyny/gojq v0.12.19
 	github.com/mattn/go-runewidth v0.0.24

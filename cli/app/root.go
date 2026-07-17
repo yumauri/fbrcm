@@ -17,6 +17,7 @@ import (
 	doctorcmd "github.com/yumauri/fbrcm/cli/commands/doctor"
 	draftcmd "github.com/yumauri/fbrcm/cli/commands/draft"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
+	groupscmd "github.com/yumauri/fbrcm/cli/commands/groups"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
@@ -70,6 +71,7 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd.AddCommand(doctorcmd.New(s))
 	rootCmd.AddCommand(draftcmd.New(s))
 	rootCmd.AddCommand(getcmd.New(s))
+	rootCmd.AddCommand(groupscmd.New(s))
 	rootCmd.AddCommand(profilecmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))
 	rootCmd.AddCommand(projectscmd.New(s))

@@ -1,6 +1,7 @@
 package details
 
 import (
+	"fmt"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -26,6 +27,9 @@ func (m Model) renderContentLines() []string {
 	width := max(m.width-5, 1)
 	if m.conditionData != nil {
 		return m.renderConditionContentLines(width)
+	}
+	if m.groupData != nil {
+		return m.renderGroupContentLines(width)
 	}
 	if m.data == nil {
 		return padLines([]string{
@@ -85,6 +89,15 @@ func (m Model) renderContentLines() []string {
 	return padLines(lines, width)
 }
 
+func (m Model) renderGroupContentLines(width int) []string {
+	lines := make([]string, 0, 12)
+	lines = appendStyledField(lines, width, "Project", rcdisplay.FormatProject(m.groupData.Project.Name, m.groupData.Project.ProjectID), projectValueStyle)
+	lines = appendEditableField(lines, width, "Name", m.renderNameField(), m.groupFieldChanged(fieldName), m.invalidGroupName())
+	lines = appendEditableField(lines, width, "Description", m.renderDescriptionField(), m.groupFieldChanged(fieldDescription), false)
+	lines = appendStyledField(lines, width, "Parameters", fmt.Sprintf("%d", len(m.groupData.Group.Parameters)), styles.PanelText)
+	return padLines(lines, width)
+}
+
 func (m Model) renderConditionContentLines(width int) []string {
 	data := m.conditionData
 	condition := data.Condition
@@ -95,9 +108,7 @@ func (m Model) renderConditionContentLines(width int) []string {
 	lines = appendEditableField(lines, width, "Name", m.renderConditionNameField(), m.conditionFieldChanged(fieldName), m.invalidConditionName())
 	lines = appendEditableField(lines, width, "Color", m.renderConditionColorField(), m.conditionFieldChanged(fieldConditionColor), false)
 	lines = appendEditableField(lines, width, "Expression", styles.PanelText.Render(m.conditionExpression), m.conditionExpression != condition.Expression, false)
-	if condition.Description != "" {
-		lines = appendStyledField(lines, width, "Description", condition.Description, styles.PanelText)
-	}
+	lines = appendEditableField(lines, width, "Description", m.renderDescriptionField(), m.conditionFieldChanged(fieldDescription), false)
 	usedBy := "Used by " + rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")
 	lines = append(lines, fieldTitle(usedBy, len(m.conditionValueEdits()) > 0, m.invalidConditionValues()), "")
 	if len(condition.Usages) == 0 {
@@ -222,6 +233,16 @@ func cloneConditionViewData(data *messages.ConditionViewData) *messages.Conditio
 	next := *data
 	next.Condition = cloneConditionEntry(data.Condition)
 	next.ConditionNames = append([]string(nil), data.ConditionNames...)
+	return &next
+}
+
+func cloneGroupViewData(data *messages.GroupViewData) *messages.GroupViewData {
+	if data == nil {
+		return nil
+	}
+	next := *data
+	next.GroupNames = append([]string(nil), data.GroupNames...)
+	next.Group.Parameters = append([]core.ParametersEntry(nil), data.Group.Parameters...)
 	return &next
 }
 

@@ -33,7 +33,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if len(first.Commands()) != len(second.Commands()) {
 		t.Fatalf("command counts differ: %d vs %d", len(first.Commands()), len(second.Commands()))
 	}
-	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "get", "profile", "project", "projects", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "get", "groups", "profile", "project", "projects", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -57,7 +57,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{14, 14, 14}) {
+	if !reflect.DeepEqual(counts, []int{15, 15, 15}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }

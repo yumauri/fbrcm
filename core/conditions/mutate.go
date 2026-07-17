@@ -30,14 +30,16 @@ var DisplayColors = []string{
 }
 
 type Definition struct {
-	Name       string
-	Expression string
-	TagColor   string
+	Name        string
+	Expression  string
+	Description string
+	TagColor    string
 }
 
 type Edit struct {
-	Expression *string
-	TagColor   *string
+	Expression  *string
+	Description *string
+	TagColor    *string
 }
 
 func NormalizeName(name string) (string, error) {
@@ -114,7 +116,7 @@ func Add(cfg *firebase.RemoteConfig, definition Definition, priority int) error 
 	if priority < 1 || priority > len(cfg.Conditions)+1 {
 		return fmt.Errorf("condition priority must be between 1 and %d", len(cfg.Conditions)+1)
 	}
-	condition := firebase.RemoteConfigCondition{Name: name, Expression: expression, TagColor: color}
+	condition := firebase.RemoteConfigCondition{Name: name, Expression: expression, Description: strings.TrimSpace(definition.Description), TagColor: color}
 	index := priority - 1
 	cfg.Conditions = append(cfg.Conditions, firebase.RemoteConfigCondition{})
 	copy(cfg.Conditions[index+1:], cfg.Conditions[index:])
@@ -134,6 +136,9 @@ func EditDefinition(cfg *firebase.RemoteConfig, name string, edit Edit) error {
 			return err
 		}
 		condition.Expression = expression
+	}
+	if edit.Description != nil {
+		condition.Description = strings.TrimSpace(*edit.Description)
 	}
 	if edit.TagColor != nil {
 		color, err := NormalizeTagColor(*edit.TagColor)
@@ -170,6 +175,7 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	if err != nil {
 		return err
 	}
+	nextDescription := strings.TrimSpace(edit.NextDescription)
 	if edit.NextPriority < 1 || edit.NextPriority > len(cfg.Conditions) {
 		return fmt.Errorf("condition priority must be between 1 and %d", len(cfg.Conditions))
 	}
@@ -180,7 +186,7 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	}
 
 	condition := cfg.Conditions[index]
-	definitionChanged := condition.Name != nextName || condition.Expression != nextExpression || condition.TagColor != nextColor || index+1 != edit.NextPriority
+	definitionChanged := condition.Name != nextName || condition.Expression != nextExpression || condition.Description != nextDescription || condition.TagColor != nextColor || index+1 != edit.NextPriority
 	valuesChanged, err := editUsageValues(cfg, edit.Name, edit.ValueEdits)
 	if err != nil {
 		return err
@@ -191,6 +197,7 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	previousName := condition.Name
 	condition.Name = nextName
 	condition.Expression = nextExpression
+	condition.Description = nextDescription
 	condition.TagColor = nextColor
 
 	target := edit.NextPriority - 1

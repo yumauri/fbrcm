@@ -121,6 +121,9 @@ func (m Model) updateDetailsInvalidDiscard(msg messages.DetailsInvalidDiscardMsg
 	} else if data := m.details.ConditionData(); data != nil {
 		m.details = m.details.SetConditionData(data)
 		m.setActive(panels.Details)
+	} else if data := m.details.GroupData(); data != nil {
+		m.details = m.details.SetGroupData(data)
+		m.setActive(panels.Details)
 	}
 	return m, nil, false
 }

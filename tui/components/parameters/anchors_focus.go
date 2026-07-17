@@ -4,6 +4,21 @@ func (m *Model) FocusParameter(projectID, groupKey, paramKey string) bool {
 	return m.selectParameter(projectID, groupKey, paramKey)
 }
 
+func (m *Model) FocusGroup(projectID, groupKey string) bool {
+	if projectID == "" || groupKey == "" {
+		return false
+	}
+	m.syncVisible()
+	for i, node := range m.visible {
+		if node.kind == nodeGroup && node.projectID == projectID && node.groupKey == groupKey {
+			m.cursor = i
+			m.ensureCursorVisible()
+			return true
+		}
+	}
+	return false
+}
+
 // FocusValue selects a parameter value node by index within the parameter's Values slice.
 func (m *Model) FocusValue(projectID, groupKey, paramKey string, valueIdx int) bool {
 	if projectID == "" || paramKey == "" || valueIdx < 0 {

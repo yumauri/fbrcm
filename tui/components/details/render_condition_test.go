@@ -1,6 +1,7 @@
 package details
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -18,10 +19,11 @@ func conditionDetailsTestModel() Model {
 	return New().SetBounds(0, 0, 60, 40).SetActive(true).SetConditionData(&messages.ConditionViewData{
 		Project: core.Project{Name: "Demo", ProjectID: "demo"},
 		Condition: core.ConditionEntry{
-			Priority:   1,
-			Name:       "staff",
-			TagColor:   "GREEN",
-			Expression: "true",
+			Priority:    1,
+			Name:        "staff",
+			Description: "Employee rollout",
+			TagColor:    "GREEN",
+			Expression:  "true",
 			Usages: []core.ConditionUsage{
 				{GroupLabel: "checkout", ParameterKey: "enabled", ValueType: "BOOLEAN", Value: "true", RawValue: "true", Plain: true},
 				{GroupLabel: "(root)", ParameterKey: "payload", ValueType: "JSON", Value: `{"enabled":true,"limit":2}`, RawValue: `{"enabled":true,"limit":2}`, Plain: true},
@@ -108,13 +110,14 @@ func TestConditionDetailsFieldsStageOneAtomicEdit(t *testing.T) {
 	m.priorityInput.SetValue("2")
 	m.nameInput.SetValue("employees")
 	m.conditionColor = "PURPLE"
+	m.descInput.SetValue("Updated audience")
 	m = m.SetConditionExpression("app.version > '2'")
 
 	edit, ok := m.ConditionEdit()
 	if !ok {
 		t.Fatal("ConditionEdit reported no changes")
 	}
-	if edit.Name != "staff" || edit.NextName != "employees" || edit.NextPriority != 2 || edit.NextTagColor != "PURPLE" || edit.NextExpression != "app.version > '2'" {
+	if edit.Name != "staff" || edit.NextName != "employees" || edit.NextPriority != 2 || edit.NextTagColor != "PURPLE" || edit.NextExpression != "app.version > '2'" || edit.NextDescription != "Updated audience" {
 		t.Fatalf("ConditionEdit = %#v", edit)
 	}
 	if m.Invalid() {
@@ -157,6 +160,7 @@ func TestConditionDetailsFieldsActivateFromMouse(t *testing.T) {
 		{name: "priority", field: fieldConditionPriority},
 		{name: "name", field: fieldName},
 		{name: "color", field: fieldConditionColor, wantDropdown: true},
+		{name: "description", field: fieldDescription},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -167,6 +171,58 @@ func TestConditionDetailsFieldsActivateFromMouse(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConditionUsageNavigationScrollsWholeValueIntoView(t *testing.T) {
+	usages := make([]core.ConditionUsage, 8)
+	for index := range usages {
+		usages[index] = core.ConditionUsage{
+			GroupLabel: "checkout", ParameterKey: fmt.Sprintf("flag_%d", index),
+			ValueType: "BOOLEAN", Value: "true", RawValue: "true", Plain: true,
+		}
+	}
+	m := conditionUsageScrollTestModel(12, usages)
+	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
+
+	last := len(usages) - 1
+	if !m.UsageSelected() || m.selectedUsage != last {
+		t.Fatalf("selected usage = %d, want %d", m.selectedUsage, last)
+	}
+	start := m.conditionUsageParameterLine(last)
+	end := m.conditionUsageEndLine(last)
+	top := m.viewport.YOffset()
+	bottom := top + m.viewport.Height() - 1
+	if start < top || end > bottom {
+		t.Fatalf("selected usage block %d..%d outside viewport %d..%d", start, end, top, bottom)
+	}
+}
+
+func TestOversizedConditionUsagePinsParameterNameToTop(t *testing.T) {
+	usage := core.ConditionUsage{
+		GroupLabel: "checkout", ParameterKey: "payload", ValueType: "JSON", Plain: true,
+		RawValue: `{"one":1,"two":2,"three":3,"four":4,"five":5,"six":6}`,
+		Value:    `{"one":1,"two":2,"three":3,"four":4,"five":5,"six":6}`,
+	}
+	m := conditionUsageScrollTestModel(8, []core.ConditionUsage{usage})
+	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
+
+	start := m.conditionUsageParameterLine(0)
+	end := m.conditionUsageEndLine(0)
+	if end-start+1 <= m.viewport.Height() {
+		t.Fatalf("test usage block height = %d, viewport = %d; want oversized block", end-start+1, m.viewport.Height())
+	}
+	if got := m.viewport.YOffset(); got != start {
+		t.Fatalf("viewport offset = %d, want parameter line %d", got, start)
+	}
+}
+
+func conditionUsageScrollTestModel(height int, usages []core.ConditionUsage) Model {
+	return New().SetBounds(0, 0, 48, height).SetActive(true).SetConditionData(&messages.ConditionViewData{
+		Project: core.Project{Name: "Demo", ProjectID: "demo"},
+		Condition: core.ConditionEntry{
+			Priority: 1, Name: "staff", Expression: "true", Usages: usages,
+		},
+	})
 }
 
 func renderedStylePrefix(style lipgloss.Style) string {

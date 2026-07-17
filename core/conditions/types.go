@@ -25,12 +25,13 @@ type Entry struct {
 // DetailsEdit describes an atomic edit of a condition definition and its
 // evaluation priority.
 type DetailsEdit struct {
-	Name           string
-	NextName       string
-	NextExpression string
-	NextTagColor   string
-	NextPriority   int
-	ValueEdits     []UsageValueEdit
+	Name            string
+	NextName        string
+	NextExpression  string
+	NextDescription string
+	NextTagColor    string
+	NextPriority    int
+	ValueEdits      []UsageValueEdit
 }
 
 type UsageValueEdit struct {

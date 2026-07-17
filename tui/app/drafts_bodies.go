@@ -203,3 +203,16 @@ func (m Model) editDetailsDialogBody(project core.Project, edit core.ParameterDe
 		return cache.RemoteConfig, nil
 	})
 }
+
+func (m Model) editGroupDetailsDialogBody(project core.Project, edit core.GroupDetailsEdit) ([]string, error) {
+	return m.previewDialogBody(project, "Edit group or draft changes?", "group not changed", func() (*core.ParametersCache, json.RawMessage, error) {
+		return m.svc.PreviewEditGroupDetails(project.ProjectID, edit)
+	}, func(cache *core.ParametersCache) (json.RawMessage, error) {
+		if draftRaw, hasDraft, err := m.svc.LoadDraft(project.ProjectID); err != nil {
+			return nil, err
+		} else if hasDraft {
+			return draftRaw, nil
+		}
+		return cache.RemoteConfig, nil
+	})
+}

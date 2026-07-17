@@ -177,6 +177,9 @@ func TestBuildTreeIncludesEmptyAndDescriptionOnlyGroups(t *testing.T) {
 			t.Fatalf("group %q parameters = %#v, want empty", group.Key, group.Parameters)
 		}
 	}
+	if group, ok := findGroup(tree.Groups, "ROKU"); !ok || group.Description != "FLAGS FOR ROKU" {
+		t.Fatalf("ROKU group metadata = %#v, want description", group)
+	}
 }
 
 func TestBuildTreeSkipsDuplicateRootParamsInGroups(t *testing.T) {

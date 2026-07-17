@@ -44,8 +44,8 @@ func (m Model) deleteParameterCmd(project core.Project, groupKey, paramKey strin
 	})
 }
 
-func (m Model) deleteGroupCmd(project core.Project, groupKey string, publish bool) tea.Cmd {
-	return m.draftMutationCmd(project, publish, "", "", false, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
+func (m Model) deleteGroupCmd(project core.Project, groupKey string, publish, closeDetails bool) tea.Cmd {
+	return m.draftMutationCmd(project, publish, "", "", closeDetails, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
 		return m.svc.DeleteGroup(ctx, project.ProjectID, groupKey, publish)
 	})
 }
@@ -126,6 +126,25 @@ func (m Model) editParameterDetailsCmd(project core.Project, edit core.Parameter
 			msg.SelectParamKey = edit.NextParamKey
 		}
 		return msg
+	}
+}
+
+func (m Model) editGroupDetailsCmd(project core.Project, edit core.GroupDetailsEdit, publish, closeDetails bool) tea.Cmd {
+	return func() tea.Msg {
+		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
+		_, tree, hasDraft, err := m.svc.EditGroupDetails(context.Background(), project.ProjectID, edit, publish)
+		if err != nil {
+			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale, CloseDetails: closeDetails}
+		}
+		source := "draft"
+		if publish {
+			source = "firebase"
+		}
+		return messages.ParametersLoadedMsg{
+			Project: project, Tree: tree, Source: source, CacheSource: "cache", HasDraft: hasDraft,
+			StaleDraft: !publish && hasDraft && stale, SelectGroupKey: edit.NextName,
+			CloseDetails: closeDetails, DetailsSaved: true,
+		}
 	}
 }
 

@@ -72,6 +72,22 @@ func (m Model) fieldValueLine(field fieldID) int {
 			}
 			line += 3
 		}
+		line += 1 + len(strings.Split(m.conditionExpression, "\n")) + 1
+		if field == fieldDescription {
+			return line + 1
+		}
+		return 0
+	}
+	if m.groupData != nil {
+		width := max(m.width-5, 1)
+		line := 1 + len(wrappedLines(rcdisplay.FormatProject(m.groupData.Project.Name, m.groupData.Project.ProjectID), width)) + 1
+		if field == fieldName {
+			return line + 1
+		}
+		line += 3
+		if field == fieldDescription {
+			return line + 1
+		}
 		return 0
 	}
 	if m.data == nil {
@@ -142,9 +158,7 @@ func (m Model) conditionUsageParameterLine(index int) int {
 	line := 1 + len(wrappedLines(rcdisplay.FormatProject(m.conditionData.Project.Name, m.conditionData.Project.ProjectID), width)) + 1
 	line += 3 * 3 // priority, name, color
 	line += 1 + len(strings.Split(m.conditionExpression, "\n")) + 1
-	if condition.Description != "" {
-		line += 1 + len(wrappedLines(condition.Description, width)) + 1
-	}
+	line += 1 + m.descriptionVisualHeight() + 1
 	line += 2 // Used by heading and spacer.
 	for usageIndex, usage := range condition.Usages {
 		if usageIndex == index {
@@ -153,6 +167,15 @@ func (m Model) conditionUsageParameterLine(index int) int {
 		line += m.conditionUsageVisualHeight(usage, width)
 	}
 	return line
+}
+
+func (m Model) conditionUsageEndLine(index int) int {
+	if m.conditionData == nil || index < 0 || index >= len(m.conditionData.Condition.Usages) {
+		return 0
+	}
+	width := max(m.width-5, 1)
+	start := m.conditionUsageParameterLine(index)
+	return start + len(m.renderConditionUsageValueLines(m.conditionData.Condition.Usages[index], width))
 }
 
 func (m Model) conditionUsageVisualHeight(usage core.ConditionUsage, width int) int {

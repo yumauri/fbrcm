@@ -31,6 +31,22 @@ func ParseFilters(rawFilters []string) []QueryFilter {
 	return filters
 }
 
+// SingleExactFilter reports whether filters contain exactly one non-empty exact query.
+func SingleExactFilter(rawFilters []string) bool {
+	exact := false
+	for _, raw := range rawFilters {
+		mode, query := filter.ParseModePrefixedQuery(raw)
+		if strings.TrimSpace(query) == "" {
+			continue
+		}
+		if mode != filter.ModeExact || exact {
+			return false
+		}
+		exact = true
+	}
+	return exact
+}
+
 // MatchAnyFilter reports whether value matches any filter. Empty filters match all.
 func MatchAnyFilter(value string, filters []QueryFilter) bool {
 	if len(filters) == 0 {

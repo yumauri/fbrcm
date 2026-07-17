@@ -28,7 +28,7 @@ func (m *Model) openDeleteDialog(project core.Project, groupKey, paramKey string
 	})
 }
 
-func (m *Model) openDeleteGroupDialog(project core.Project, groupKey, groupLabel string) {
+func (m *Model) openDeleteGroupDialog(project core.Project, groupKey, groupLabel string, closeDetails bool) {
 	body, ok := m.deleteGroupDialogBody(project, groupKey)
 	if !ok {
 		body = []string{
@@ -43,8 +43,8 @@ func (m *Model) openDeleteGroupDialog(project core.Project, groupKey, groupLabel
 		Title: "Delete Group?",
 		Body:  body,
 		Buttons: []dialogcmp.Button{
-			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.deleteGroupCmd(project, groupKey, true)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.deleteGroupCmd(project, groupKey, false)},
+			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.deleteGroupCmd(project, groupKey, true, closeDetails)},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.deleteGroupCmd(project, groupKey, false, closeDetails)},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		},
 	})
@@ -192,6 +192,23 @@ func (m *Model) openEditDetailsDialog(project core.Project, edit core.ParameterD
 		Buttons: []dialogcmp.Button{
 			{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPress: m.editParameterDetailsCmd(project, edit, true, closeDetails, selectSaved)},
 			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.editParameterDetailsCmd(project, edit, false, closeDetails, selectSaved)},
+			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: detailsEditCanceledCmd(closeDetails)},
+		},
+	})
+}
+
+func (m *Model) openEditGroupDetailsDialog(project core.Project, edit core.GroupDetailsEdit, closeDetails bool) {
+	body, err := m.editGroupDetailsDialogBody(project, edit)
+	if err != nil {
+		corelog.For("tui.details").Error("edit group details preview failed", "project_id", project.ProjectID, "group", edit.Name, "err", err)
+		m.openErrorDialog("Edit Group Failed", project, err.Error())
+		return
+	}
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title: "Edit Group?", Body: body,
+		Buttons: []dialogcmp.Button{
+			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.editGroupDetailsCmd(project, edit, true, closeDetails)},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.editGroupDetailsCmd(project, edit, false, closeDetails)},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: detailsEditCanceledCmd(closeDetails)},
 		},
 	})

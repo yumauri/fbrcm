@@ -76,6 +76,14 @@ func (m *Model) closeDetailsIfOrphaned() {
 		m.closeDetailsPanel()
 		return
 	}
+	groupData := m.details.GroupData()
+	if groupData != nil {
+		if m.parameters.HasProject(groupData.Project.ProjectID) && m.parameters.HasGroup(groupData.Project.ProjectID, groupData.Group.Key) {
+			return
+		}
+		m.closeDetailsPanel()
+		return
+	}
 	conditionData := m.details.ConditionData()
 	if conditionData != nil && !m.conditions.HasProject(conditionData.Project.ProjectID) {
 		m.closeDetailsPanel()

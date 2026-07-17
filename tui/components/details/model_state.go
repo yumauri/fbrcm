@@ -14,6 +14,7 @@ import (
 
 func (m Model) SetData(data *messages.ParameterViewData) Model {
 	m.data = cloneViewData(data)
+	m.groupData = nil
 	m.conditionData = nil
 	m.activeField = fieldNone
 	m.dropdownOpen = false
@@ -65,6 +66,7 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 
 func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 	m.data = nil
+	m.groupData = nil
 	m.conditionData = cloneConditionViewData(data)
 	m.activeField = fieldNone
 	m.dropdownOpen = false
@@ -86,6 +88,32 @@ func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 		m.priorityInput.SetValue(strconv.Itoa(m.conditionData.Condition.Priority))
 		m.conditionColor = m.conditionData.Condition.TagColor
 		m.conditionExpression = m.conditionData.Condition.Expression
+		m.descInput.SetValue(m.conditionData.Condition.Description)
+	}
+	m.refreshViewport()
+	m.viewport.GotoTop()
+	return m
+}
+
+func (m Model) SetGroupData(data *messages.GroupViewData) Model {
+	m.data = nil
+	m.conditionData = nil
+	m.groupData = cloneGroupViewData(data)
+	m.activeField = fieldNone
+	m.dropdownOpen = false
+	m.selectedValue = -1
+	m.selectedUsage = -1
+	m.selectedAddValue = false
+	m.valuesInvalid = false
+	m.originalParam = core.ParametersEntry{}
+	m.originalCondition = core.ConditionEntry{}
+	m.nameInput = newTextInput()
+	m.descInput = newDescriptionInput()
+	m.groupInput = newGroupInput()
+	m.priorityInput = newTextInput()
+	if m.groupData != nil {
+		m.nameInput.SetValue(m.groupData.Group.Key)
+		m.descInput.SetValue(m.groupData.Group.Description)
 	}
 	m.refreshViewport()
 	m.viewport.GotoTop()
@@ -122,19 +150,40 @@ func (m Model) SetSelectedValue(nextRaw string) Model {
 }
 
 func (m Model) Dirty() bool {
-	return (m.data != nil && m.hasChanges()) || (m.conditionData != nil && m.conditionHasChanges())
+	return (m.data != nil && m.hasChanges()) || (m.groupData != nil && m.groupHasChanges()) || (m.conditionData != nil && m.conditionHasChanges())
 }
 
 func (m Model) Invalid() bool {
 	if m.conditionData != nil {
 		return m.invalidConditionName() || m.invalidConditionPriority() || m.invalidConditionValues()
 	}
+	if m.groupData != nil {
+		return m.invalidGroupName()
+	}
 	return m.invalidName() || m.invalidValues()
+}
+
+func (m Model) GroupEdit() (core.GroupDetailsEdit, bool) {
+	if m.groupData == nil || !m.groupHasChanges() {
+		return core.GroupDetailsEdit{}, false
+	}
+	return core.GroupDetailsEdit{
+		Name: m.groupData.Group.Key, NextName: strings.TrimSpace(m.nameInput.Value()), NextDescription: m.descInput.Value(),
+	}, true
 }
 
 func (m Model) InvalidReasons() []string {
 	if m.conditionData != nil {
 		return m.conditionInvalidReasons()
+	}
+	if m.groupData != nil {
+		if !m.invalidGroupName() {
+			return nil
+		}
+		if strings.TrimSpace(m.nameInput.Value()) == "" {
+			return []string{"Group name is empty."}
+		}
+		return []string{"Group name already exists in this project."}
 	}
 	if m.data == nil {
 		return nil
@@ -161,12 +210,13 @@ func (m Model) ConditionEdit() (core.ConditionDetailsEdit, bool) {
 	}
 	priority, _ := strconv.Atoi(strings.TrimSpace(m.priorityInput.Value()))
 	return core.ConditionDetailsEdit{
-		Name:           m.conditionData.Condition.Name,
-		NextName:       strings.TrimSpace(m.nameInput.Value()),
-		NextExpression: m.conditionExpression,
-		NextTagColor:   m.conditionColor,
-		NextPriority:   priority,
-		ValueEdits:     m.conditionValueEdits(),
+		Name:            m.conditionData.Condition.Name,
+		NextName:        strings.TrimSpace(m.nameInput.Value()),
+		NextExpression:  m.conditionExpression,
+		NextDescription: m.descInput.Value(),
+		NextTagColor:    m.conditionColor,
+		NextPriority:    priority,
+		ValueEdits:      m.conditionValueEdits(),
 	}, true
 }
 
@@ -187,6 +237,18 @@ func (m Model) Edit() (core.ParameterDetailsEdit, bool) {
 }
 
 func (m Model) MarkSaved() Model {
+	if m.groupData != nil {
+		edit, ok := m.GroupEdit()
+		if !ok {
+			return m
+		}
+		m.groupData.Group.Key = edit.NextName
+		m.groupData.Group.Label = edit.NextName
+		m.groupData.Group.Description = edit.NextDescription
+		m.activeField = fieldNone
+		m.refreshViewport()
+		return m
+	}
 	if m.conditionData != nil {
 		edit, ok := m.ConditionEdit()
 		if !ok {
@@ -194,6 +256,7 @@ func (m Model) MarkSaved() Model {
 		}
 		m.conditionData.Condition.Name = edit.NextName
 		m.conditionData.Condition.Expression = edit.NextExpression
+		m.conditionData.Condition.Description = edit.NextDescription
 		m.conditionData.Condition.TagColor = edit.NextTagColor
 		m.conditionData.Condition.Priority = edit.NextPriority
 		m.originalCondition = cloneConditionEntry(m.conditionData.Condition)

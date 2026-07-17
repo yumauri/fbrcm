@@ -21,6 +21,13 @@ func (s *Core) RenameGroup(ctx context.Context, projectID, groupKey, nextGroupKe
 	}, "rename group", "project_id", projectID, "group", groupKey, "next_group", nextGroupKey, "publish", publish))
 }
 
+func (s *Core) EditGroupDetails(ctx context.Context, projectID string, edit GroupDetailsEdit, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
+	return s.mutateDraft(ctx, projectID, publish, withMutationLog(draft.MutationSpec{
+		UnchangedErr: "group not changed",
+		Apply:        draft.EditGroupDetails(edit),
+	}, "edit group details", "project_id", projectID, "group", edit.Name, "next_group", edit.NextName, "publish", publish))
+}
+
 func (s *Core) MoveParameter(ctx context.Context, projectID, groupKey, paramKey, nextGroupKey string, publish bool) (*ParametersCache, *ParametersTree, bool, error) {
 	return s.mutateDraft(ctx, projectID, publish, withMutationLog(draft.MutationSpec{
 		UnchangedErr: "parameter not changed",
@@ -82,6 +89,13 @@ func (s *Core) PreviewRenameGroup(projectID, groupKey, nextGroupKey string) (*Pa
 		UnchangedErr: "group not changed",
 		Apply:        draft.RenameGroup(groupKey, nextGroupKey),
 	}, "preview rename group", "project_id", projectID, "group", groupKey, "next_group", nextGroupKey))
+}
+
+func (s *Core) PreviewEditGroupDetails(projectID string, edit GroupDetailsEdit) (*ParametersCache, json.RawMessage, error) {
+	return s.previewDraft(projectID, withMutationLog(draft.MutationSpec{
+		UnchangedErr: "group not changed",
+		Apply:        draft.EditGroupDetails(edit),
+	}, "preview edit group details", "project_id", projectID, "group", edit.Name, "next_group", edit.NextName))
 }
 
 func (s *Core) PreviewMoveParameter(projectID, groupKey, paramKey, nextGroupKey string) (*ParametersCache, json.RawMessage, error) {

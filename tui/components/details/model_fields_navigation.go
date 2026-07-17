@@ -7,7 +7,7 @@ import (
 )
 
 func (m *Model) focusNextItem(delta int) {
-	if m.data == nil && m.conditionData == nil {
+	if m.data == nil && m.groupData == nil && m.conditionData == nil {
 		return
 	}
 	m.nameInput.Blur()
@@ -88,7 +88,10 @@ func (m *Model) focusNextItem(delta int) {
 
 func (m Model) formFields() []fieldID {
 	if m.conditionData != nil {
-		return []fieldID{fieldConditionPriority, fieldName, fieldConditionColor}
+		return []fieldID{fieldConditionPriority, fieldName, fieldConditionColor, fieldDescription}
+	}
+	if m.groupData != nil {
+		return []fieldID{fieldName, fieldDescription}
 	}
 	if m.data != nil {
 		return []fieldID{fieldGroup, fieldName, fieldType, fieldDescription}
@@ -193,7 +196,8 @@ func (m *Model) ensureSelectionVisible() {
 		m.ensureValueVisible(m.selectedValue)
 		return
 	} else if m.selectedUsage >= 0 {
-		line = m.conditionUsageParameterLine(m.selectedUsage)
+		m.ensureUsageVisible(m.selectedUsage)
+		return
 	} else if m.selectedAddValue {
 		line = m.addConditionalValueLine()
 	}
@@ -225,7 +229,7 @@ func (m *Model) ensureSelectedBlockVisible() {
 		return
 	}
 	if m.selectedUsage >= 0 {
-		m.ensureSelectionVisible()
+		m.ensureUsageVisible(m.selectedUsage)
 		return
 	}
 	if m.selectedAddValue {
@@ -240,6 +244,21 @@ func (m *Model) ensureValueVisible(index int) {
 	}
 	start := m.valueConditionLine(index)
 	end := m.valueEndLine(index)
+	m.ensureBlockVisible(start, end)
+}
+
+// ensureUsageVisible adjusts scroll so a selected parameter and its value are
+// visible together, or pins the parameter name to the top when they cannot fit.
+func (m *Model) ensureUsageVisible(index int) {
+	if m.conditionData == nil || index < 0 || index >= len(m.conditionData.Condition.Usages) {
+		return
+	}
+	start := m.conditionUsageParameterLine(index)
+	end := m.conditionUsageEndLine(index)
+	m.ensureBlockVisible(start, end)
+}
+
+func (m *Model) ensureBlockVisible(start, end int) {
 	height := max(m.viewport.Height(), 1)
 	if end-start+1 > height {
 		m.viewport.SetYOffset(start)

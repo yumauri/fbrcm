@@ -19,6 +19,7 @@ type Model struct {
 	bridgeActive        bool
 	viewport            viewport.Model
 	data                *messages.ParameterViewData
+	groupData           *messages.GroupViewData
 	conditionData       *messages.ConditionViewData
 	activeField         fieldID
 	dropdownOpen        bool
@@ -95,7 +96,11 @@ func (m Model) ConditionData() *messages.ConditionViewData {
 	return m.conditionData
 }
 
+func (m Model) GroupData() *messages.GroupViewData { return m.groupData }
+
 func (m Model) IsCondition() bool { return m.conditionData != nil }
+
+func (m Model) IsGroup() bool { return m.groupData != nil }
 
 func (m Model) FieldActive() bool {
 	return m.activeField != fieldNone

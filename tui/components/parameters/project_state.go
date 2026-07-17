@@ -103,6 +103,8 @@ func (m *Model) updateProject(msg messages.ParametersLoadedMsg) tea.Cmd {
 	m.syncVisible()
 	if msg.SelectParamKey != "" {
 		m.selectParameter(msg.Project.ProjectID, msg.SelectGroupKey, msg.SelectParamKey)
+	} else if msg.SelectGroupKey != "" {
+		m.FocusGroup(msg.Project.ProjectID, msg.SelectGroupKey)
 	}
 	return tea.Batch(cmds...)
 }

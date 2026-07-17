@@ -11,6 +11,40 @@ func (m Model) selectedGroupKey() string {
 	return m.groupKey
 }
 
+func (m Model) groupFieldChanged(field fieldID) bool {
+	if m.groupData == nil {
+		return false
+	}
+	switch field {
+	case fieldName:
+		return strings.TrimSpace(m.nameInput.Value()) != m.groupData.Group.Key
+	case fieldDescription:
+		return m.descInput.Value() != m.groupData.Group.Description
+	default:
+		return false
+	}
+}
+
+func (m Model) groupHasChanges() bool {
+	return m.groupFieldChanged(fieldName) || m.groupFieldChanged(fieldDescription)
+}
+
+func (m Model) invalidGroupName() bool {
+	if m.groupData == nil {
+		return false
+	}
+	next := strings.TrimSpace(m.nameInput.Value())
+	if next == "" {
+		return true
+	}
+	for _, name := range m.groupData.GroupNames {
+		if name != m.groupData.Group.Key && name == next {
+			return true
+		}
+	}
+	return false
+}
+
 func (m Model) selectedType() string {
 	return m.typeValue
 }

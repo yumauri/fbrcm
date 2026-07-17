@@ -17,13 +17,13 @@ func TestDefinitionMutationsPreservePriorityAndReferences(t *testing.T) {
 			"flag": {ConditionalValues: map[string]firebase.RemoteConfigValue{"second": {Value: "yes"}}},
 		},
 	}
-	if err := Add(cfg, Definition{Name: "middle", Expression: " app.version == '2' ", TagColor: "green"}, 2); err != nil {
+	if err := Add(cfg, Definition{Name: "middle", Expression: " app.version == '2' ", Description: " Mobile users ", TagColor: "green"}, 2); err != nil {
 		t.Fatal(err)
 	}
 	if got := conditionNames(cfg); !slices.Equal(got, []string{"first", "middle", "second"}) {
 		t.Fatalf("after add = %v", got)
 	}
-	if cfg.Conditions[1].Expression != "app.version == '2'" || cfg.Conditions[1].TagColor != "GREEN" {
+	if cfg.Conditions[1].Expression != "app.version == '2'" || cfg.Conditions[1].Description != "Mobile users" || cfg.Conditions[1].TagColor != "GREEN" {
 		t.Fatalf("normalized condition = %#v", cfg.Conditions[1])
 	}
 	if err := Rename(cfg, "second", "renamed"); err != nil {
@@ -44,7 +44,7 @@ func TestEditDetailsAtomicallyUpdatesDefinitionPriorityAndReferences(t *testing.
 	cfg := &firebase.RemoteConfig{
 		Conditions: []firebase.RemoteConfigCondition{
 			{Name: "first", Expression: "true"},
-			{Name: "second", Expression: "false", TagColor: "BLUE"},
+			{Name: "second", Expression: "false", Description: "old", TagColor: "BLUE"},
 			{Name: "third", Expression: "true"},
 		},
 		Parameters: map[string]firebase.RemoteConfigParam{
@@ -52,11 +52,12 @@ func TestEditDetailsAtomicallyUpdatesDefinitionPriorityAndReferences(t *testing.
 		},
 	}
 	err := EditDetails(cfg, DetailsEdit{
-		Name:           "second",
-		NextName:       "renamed",
-		NextExpression: " app.version == '2' ",
-		NextTagColor:   "green",
-		NextPriority:   1,
+		Name:            "second",
+		NextName:        "renamed",
+		NextExpression:  " app.version == '2' ",
+		NextDescription: " Employees ",
+		NextTagColor:    "green",
+		NextPriority:    1,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +65,7 @@ func TestEditDetailsAtomicallyUpdatesDefinitionPriorityAndReferences(t *testing.
 	if got := conditionNames(cfg); !slices.Equal(got, []string{"renamed", "first", "third"}) {
 		t.Fatalf("condition order = %v", got)
 	}
-	if got := cfg.Conditions[0]; got.Expression != "app.version == '2'" || got.TagColor != "GREEN" {
+	if got := cfg.Conditions[0]; got.Expression != "app.version == '2'" || got.Description != "Employees" || got.TagColor != "GREEN" {
 		t.Fatalf("edited condition = %#v", got)
 	}
 	values := cfg.Parameters["flag"].ConditionalValues

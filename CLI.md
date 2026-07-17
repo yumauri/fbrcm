@@ -45,6 +45,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   └── --json
 │   ├── add <project> <name>
 │   │   ├── --expression <expr>  required
+│   │   ├── --description <text>
 │   │   ├── --color <color>
 │   │   ├── --priority <n>
 │   │   ├── --dry-run
@@ -52,6 +53,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   └── --yes, -y
 │   ├── edit <project> <condition>
 │   │   ├── --expression <expr>
+│   │   ├── --description <text>
+│   │   ├── --no-description
 │   │   ├── --color <color>
 │   │   ├── --no-color
 │   │   ├── --dry-run
@@ -119,6 +122,18 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --json
 │   ├── --all
 │   └── --update
+│
+├── groups
+│   ├── list
+│   │   ├── --project, -p <query> repeated
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --search <text>
+│   │   ├── --update
+│   │   └── --json
+│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--yes|-y]
+│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--yes|-y]
+│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y]
+│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y]
 │
 ├── help [command]
 │
@@ -521,6 +536,7 @@ Without `--draft`, mutations print the complete Remote Config diff, ask for conf
 
 ```text
 --expression <expr>   raw Firebase condition expression; required
+--description <text>  optional condition description
 --color <color>       Firebase display color
 --priority <n>        evaluation priority; zero/default appends last
 ```
@@ -529,11 +545,13 @@ Without `--draft`, mutations print the complete Remote Config diff, ask for conf
 
 ```text
 --expression <expr>   replace the raw Firebase condition expression
+--description <text>  replace the condition description
+--no-description      remove the condition description
 --color <color>       replace the Firebase display color
 --no-color            remove the display color
 ```
 
-`--color` and `--no-color` are mutually exclusive. Supported colors are `BLUE`, `BROWN`, `CYAN`, `DEEP_ORANGE`, `GREEN`, `INDIGO`, `LIME`, `ORANGE`, `PINK`, `PURPLE`, and `TEAL`; input is normalized case-insensitively.
+`--description` and `--no-description` are mutually exclusive, as are `--color` and `--no-color`. Supported colors are `BLUE`, `BROWN`, `CYAN`, `DEEP_ORANGE`, `GREEN`, `INDIGO`, `LIME`, `ORANGE`, `PINK`, `PURPLE`, and `TEAL`; input is normalized case-insensitively.
 
 `rename` updates the condition definition and every conditional-value reference to it. `move` inserts the complete condition at the requested 1-based priority and reports how many conditions and parameters may be affected by the priority change. `delete` removes the condition and its conditional values; parameters left without any value may also be removed, and the command reports that impact before confirmation.
 
@@ -548,6 +566,35 @@ Flags:
 ```
 
 Human output identifies the project and whether the validated source was `draft` or `firebase`.
+
+### `fbrcm groups list`
+
+`groups list` lists real Firebase parameter groups across the selected projects, including intentionally empty and description-only groups. It uses an unpublished draft when present and otherwise follows the same fresh/stale cache behavior as condition reads. Human output is a naturally sized table with project ID, name, parameter count, and description; the project column is omitted for one exact `--project` filter, matching `get`. On narrow terminals, the description is cropped with an ellipsis first, followed by project ID and group name only when necessary.
+
+List flags:
+
+```text
+-p, --project <query>  filter projects by name or ID; may be repeated
+-f, --filter <query>   filter group names; may be repeated
+--search <text>        search group names and descriptions
+--update               revalidate cached Remote Config before printing
+--json                 print structured JSON
+```
+
+### Group mutations
+
+```text
+fbrcm groups add <name> [--project|-p <query>] [--description <text>]
+fbrcm groups edit <group> [--project|-p <query>] (--description <text>|--no-description)
+fbrcm groups rename <group> <new-name> [--project|-p <query>]
+fbrcm groups delete <group> [--project|-p <query>]
+```
+
+`add` creates a group entry even when it has no parameters or description. `edit` replaces or explicitly clears its description while preserving its parameters. `rename` preserves both parameters and description. `delete` is an explicit group-level operation and removes the group together with all parameters it contains.
+
+All group commands support repeatable `--project|-p` filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured project in stable project-name/ID order. Named mutations skip projects that do not contain the group; `add` skips projects where it already exists.
+
+All group mutations also support `--dry-run`, `--draft`, and `--yes|-y`, with the same diff, confirmation, validation, ETag, draft-composition, and draft-conflict behavior as condition mutations. `--description` and `--no-description` are mutually exclusive.
 
 ### `fbrcm draft list`
 

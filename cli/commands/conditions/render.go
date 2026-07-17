@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"charm.land/lipgloss/v2/table"
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -21,7 +20,7 @@ func renderConditionsTable(entries []core.ConditionEntry) string {
 func renderConditionsTableAtWidth(entries []core.ConditionEntry, terminalWidth int) string {
 	headers := []string{"Priority", "Name", "Used By", "Expression"}
 	rows := make([][]string, 0, len(entries))
-	widths := headerWidths(headers)
+	widths := shared.HeaderWidths(headers)
 	for _, entry := range entries {
 		widths[0] = max(widths[0], lipgloss.Width(fmt.Sprintf("%d", entry.Priority)))
 		widths[1] = max(widths[1], lipgloss.Width(entry.Name))
@@ -30,7 +29,7 @@ func renderConditionsTableAtWidth(entries []core.ConditionEntry, terminalWidth i
 	}
 
 	if terminalWidth > 0 {
-		availableExpressionWidth := terminalWidth - tableWidth(widths[:3], len(headers))
+		availableExpressionWidth := terminalWidth - shared.TableWidth(widths[:3]) - 3
 		widths[3] = min(widths[3], max(lipgloss.Width(headers[3]), availableExpressionWidth))
 	}
 	for _, entry := range entries {
@@ -42,7 +41,7 @@ func renderConditionsTableAtWidth(entries []core.ConditionEntry, terminalWidth i
 		}
 		rows = append(rows, row)
 	}
-	return styledTable(headers, rows, widths, map[int]bool{0: true, 2: true}, func(row, col int, style lipgloss.Style) lipgloss.Style {
+	return shared.StyledTable(headers, rows, widths, map[int]bool{0: true, 2: true}, func(row, col int, style lipgloss.Style) lipgloss.Style {
 		if row >= 0 && row < len(entries) && col == 1 && !clistyles.NoColorEnabled() {
 			return style.Foreground(clistyles.ConditionLipglossColor(entries[row].TagColor))
 		}
@@ -82,13 +81,13 @@ func renderConditionDetailValue(value, tagColor string, circle bool) string {
 func renderUsagesTable(usages []core.ConditionUsage) string {
 	headers := []string{"Group", "Parameter", "Type", "Value"}
 	rows := make([][]string, 0, len(usages))
-	widths := headerWidths(headers)
+	widths := shared.HeaderWidths(headers)
 	for _, usage := range usages {
 		row := []string{usage.GroupLabel, usage.ParameterKey, displayValueType(usage.ValueType), usage.Value}
-		updateWidths(widths, row)
+		shared.UpdateTableWidths(widths, row)
 		rows = append(rows, row)
 	}
-	return styledTable(headers, rows, widths, nil, func(row, col int, style lipgloss.Style) lipgloss.Style {
+	return shared.StyledTable(headers, rows, widths, nil, func(row, col int, style lipgloss.Style) lipgloss.Style {
 		if clistyles.NoColorEnabled() || row < 0 || row >= len(usages) {
 			return style
 		}
@@ -108,56 +107,6 @@ func displayValueType(valueType string) string {
 		return "STRING"
 	}
 	return valueType
-}
-
-func styledTable(headers []string, rows [][]string, widths []int, rightAligned map[int]bool, customize func(row, col int, style lipgloss.Style) lipgloss.Style) string {
-	noColor := clistyles.NoColorEnabled()
-	styleFunc := func(row, col int) lipgloss.Style {
-		style := lipgloss.NewStyle().Padding(0, 1)
-		if rightAligned[col] {
-			style = style.AlignHorizontal(lipgloss.Right)
-		}
-		if noColor {
-			return style
-		}
-		if row == table.HeaderRow {
-			return style.Bold(true).Foreground(clistyles.PaletteSlateBright)
-		}
-		if row >= 0 && row%2 == 1 {
-			style = style.Background(clistyles.ColorRowStripe)
-		}
-		style = style.Foreground(clistyles.PaletteSlateDim)
-		return customize(row, col, style)
-	}
-
-	width := tableWidth(widths, len(headers))
-	tbl := table.New().Headers(headers...).Rows(rows...).Width(width).Border(lipgloss.NormalBorder()).BorderHeader(true).BorderRow(false).StyleFunc(styleFunc)
-	if !noColor {
-		tbl = tbl.BorderStyle(clistyles.BorderStyle(false))
-	}
-	return tbl.String()
-}
-
-func tableWidth(widths []int, columnCount int) int {
-	width := 3*columnCount + 1
-	for _, cellWidth := range widths {
-		width += cellWidth
-	}
-	return width
-}
-
-func headerWidths(headers []string) []int {
-	widths := make([]int, len(headers))
-	for i, header := range headers {
-		widths[i] = lipgloss.Width(header)
-	}
-	return widths
-}
-
-func updateWidths(widths []int, row []string) {
-	for i, cell := range row {
-		widths[i] = max(widths[i], lipgloss.Width(cell))
-	}
 }
 
 func emptyDash(value string) string {

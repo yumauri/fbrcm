@@ -2,6 +2,7 @@ package draft
 
 import (
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/groups"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
@@ -16,7 +17,7 @@ func DeleteParameter(groupKey, paramKey string) Mutation {
 func DeleteGroup(groupKey string) Mutation {
 	group := NormalizeGroupKey(groupKey)
 	return func(cfg *firebase.RemoteConfig) error {
-		return removeGroupSlot(cfg, group)
+		return groups.Delete(cfg, group)
 	}
 }
 
@@ -36,8 +37,12 @@ func RenameParameter(groupKey, paramKey, nextParamKey string) Mutation {
 
 func RenameGroup(groupKey, nextGroupKey string) Mutation {
 	return func(cfg *firebase.RemoteConfig) error {
-		return renameGroupSlot(cfg, NormalizeGroupKey(groupKey), NormalizeGroupKey(nextGroupKey))
+		return groups.Rename(cfg, NormalizeGroupKey(groupKey), NormalizeGroupKey(nextGroupKey))
 	}
+}
+
+func EditGroupDetails(edit groups.DetailsEdit) Mutation {
+	return func(cfg *firebase.RemoteConfig) error { return groups.EditDetails(cfg, edit) }
 }
 
 func MoveParameter(groupKey, paramKey, nextGroupKey string) Mutation {

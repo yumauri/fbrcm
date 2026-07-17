@@ -32,15 +32,17 @@ func newAddCommand(svc *core.Core) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			expression, _ := cmd.Flags().GetString("expression")
+			description, _ := cmd.Flags().GetString("description")
 			color, _ := cmd.Flags().GetString("color")
 			priority, _ := cmd.Flags().GetInt("priority")
-			definition := core.ConditionDefinition{Name: args[1], Expression: expression, TagColor: color}
+			definition := core.ConditionDefinition{Name: args[1], Expression: expression, Description: description, TagColor: color}
 			return runConditionMutation(cmd, svc, args[0], readMutationOptions(cmd), "add condition", "➕", false, func(cfg *firebase.RemoteConfig) error {
 				return coreconditions.Add(cfg, definition, priority)
 			})
 		},
 	}
 	cmd.Flags().String("expression", "", "Raw Firebase condition expression (required)")
+	cmd.Flags().String("description", "", "Condition description")
 	cmd.Flags().String("color", "", "Firebase display color")
 	cmd.Flags().Int("priority", 0, "Evaluation priority; defaults to last")
 	_ = cmd.MarkFlagRequired("expression")
@@ -51,13 +53,13 @@ func newAddCommand(svc *core.Core) *cobra.Command {
 func newEditCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit <project> <condition>",
-		Short: "Edit a condition expression or color",
+		Short: "Edit a condition expression, description, or color",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("expression") && !cmd.Flags().Changed("color") && !cmd.Flags().Changed("no-color") {
-				return fmt.Errorf("at least one of --expression, --color, or --no-color is required")
+			if !cmd.Flags().Changed("expression") && !cmd.Flags().Changed("description") && !cmd.Flags().Changed("no-description") && !cmd.Flags().Changed("color") && !cmd.Flags().Changed("no-color") {
+				return fmt.Errorf("at least one edit flag is required")
 			}
-			var expression, color *string
+			var expression, description, color *string
 			if cmd.Flags().Changed("expression") {
 				value, _ := cmd.Flags().GetString("expression")
 				expression = &value
@@ -66,19 +68,30 @@ func newEditCommand(svc *core.Core) *cobra.Command {
 				value, _ := cmd.Flags().GetString("color")
 				color = &value
 			}
+			if cmd.Flags().Changed("description") {
+				value, _ := cmd.Flags().GetString("description")
+				description = &value
+			}
+			if noDescription, _ := cmd.Flags().GetBool("no-description"); noDescription {
+				value := ""
+				description = &value
+			}
 			if noColor, _ := cmd.Flags().GetBool("no-color"); noColor {
 				value := ""
 				color = &value
 			}
 			return runNamedConditionMutation(cmd, svc, args[0], args[1], readMutationOptions(cmd), "edit condition", "✏️", false, func(cfg *firebase.RemoteConfig, name string) error {
-				return coreconditions.EditDefinition(cfg, name, core.ConditionEdit{Expression: expression, TagColor: color})
+				return coreconditions.EditDefinition(cfg, name, core.ConditionEdit{Expression: expression, Description: description, TagColor: color})
 			})
 		},
 	}
 	cmd.Flags().String("expression", "", "New raw Firebase condition expression")
+	cmd.Flags().String("description", "", "New condition description")
+	cmd.Flags().Bool("no-description", false, "Remove the condition description")
 	cmd.Flags().String("color", "", "New Firebase display color")
 	cmd.Flags().Bool("no-color", false, "Remove the display color")
 	cmd.MarkFlagsMutuallyExclusive("color", "no-color")
+	cmd.MarkFlagsMutuallyExclusive("description", "no-description")
 	addMutationFlags(cmd)
 	return cmd
 }

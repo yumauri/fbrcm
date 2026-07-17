@@ -91,6 +91,12 @@ type ParameterViewData struct {
 	SelectedValueIdx int
 }
 
+type GroupViewData struct {
+	Project    core.Project
+	Group      core.ParametersGroup
+	GroupNames []string
+}
+
 type ParameterGroupOption struct {
 	Key   string
 	Label string
@@ -98,6 +104,7 @@ type ParameterGroupOption struct {
 
 type ParameterSelectionChangedMsg struct {
 	Data        *ParameterViewData
+	GroupData   *GroupViewData
 	Activate    bool
 	ResetScroll bool
 }

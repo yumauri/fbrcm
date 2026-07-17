@@ -102,6 +102,26 @@ func TestConditionSelectionOpensReadOnlyDetailsAndReturnsToConditions(t *testing
 	}
 }
 
+func TestConditionProjectSelectionKeepsOpenDetails(t *testing.T) {
+	m := New(nil)
+	m.details = m.details.SetConditionData(&messages.ConditionViewData{
+		Project:   core.Project{ProjectID: "demo", Name: "Demo"},
+		Condition: core.ConditionEntry{Priority: 1, Name: "beta", Expression: "true"},
+	})
+	m.detailsVisible = true
+	m.setActive(panels.Conditions)
+
+	m.applyConditionSelection(messages.ConditionSelectionChangedMsg{ResetScroll: true})
+
+	data := m.details.ConditionData()
+	if !m.detailsVisible || !m.details.IsCondition() || data == nil || data.Condition.Name != "beta" {
+		t.Fatalf("condition project selection closed or replaced Details: visible=%v data=%#v", m.detailsVisible, data)
+	}
+	if m.active != panels.Conditions {
+		t.Fatalf("active panel = %v, want Conditions", m.active)
+	}
+}
+
 func TestConditionMouseClickDoesNotReachHiddenParametersPanel(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	m := viewTestModel(100, 30, panels.Conditions)

@@ -35,6 +35,17 @@ func TestFilterProjects(t *testing.T) {
 	}
 }
 
+func TestSingleExactFilter(t *testing.T) {
+	if !SingleExactFilter([]string{"=alpha"}) {
+		t.Fatal("single exact filter was not recognized")
+	}
+	for _, filters := range [][]string{{"alpha"}, {"=alpha", "=beta"}, {"", "  "}} {
+		if SingleExactFilter(filters) {
+			t.Fatalf("SingleExactFilter(%q) = true", filters)
+		}
+	}
+}
+
 func TestCompileExprAndMatchProjectByExpr(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		Conditions: []firebase.RemoteConfigCondition{{Name: "ios"}},

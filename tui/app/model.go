@@ -63,6 +63,7 @@ type Model struct {
 
 type pendingDetailsSelection struct {
 	data          *messages.ParameterViewData
+	groupData     *messages.GroupViewData
 	conditionData *messages.ConditionViewData
 	activate      bool
 }

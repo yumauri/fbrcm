@@ -54,6 +54,8 @@ func (m Model) conditionFieldChanged(field fieldID) bool {
 		return strings.TrimSpace(m.nameInput.Value()) != m.conditionData.Condition.Name
 	case fieldConditionColor:
 		return m.conditionColor != m.conditionData.Condition.TagColor
+	case fieldDescription:
+		return m.descInput.Value() != m.conditionData.Condition.Description
 	default:
 		return false
 	}
@@ -63,6 +65,7 @@ func (m Model) conditionHasChanges() bool {
 	return m.conditionFieldChanged(fieldConditionPriority) ||
 		m.conditionFieldChanged(fieldName) ||
 		m.conditionFieldChanged(fieldConditionColor) ||
+		m.conditionFieldChanged(fieldDescription) ||
 		(m.conditionData != nil && m.conditionExpression != m.conditionData.Condition.Expression) ||
 		len(m.conditionValueEdits()) > 0
 }

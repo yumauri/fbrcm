@@ -104,6 +104,28 @@ func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 	return m.parameterViewData(node.projectID, node.groupKey, node.paramKey, valueIdx)
 }
 
+func (m Model) currentGroupViewData() (*messages.GroupViewData, bool) {
+	if m.cursor < 0 || m.cursor >= len(m.visible) {
+		return nil, false
+	}
+	node := m.visible[m.cursor]
+	if node.kind != nodeGroup || node.transient || core.NormalizeRemoteConfigGroupKey(node.groupKey) == "" {
+		return nil, false
+	}
+	project := m.projectByID(node.projectID)
+	group := m.groupByKey(node.projectID, node.groupKey)
+	if project == nil || group == nil {
+		return nil, false
+	}
+	names := make([]string, 0, len(project.tree.Groups))
+	for _, candidate := range project.tree.Groups {
+		if core.NormalizeRemoteConfigGroupKey(candidate.Key) != "" {
+			names = append(names, candidate.Key)
+		}
+	}
+	return &messages.GroupViewData{Project: project.project, Group: *group, GroupNames: names}, true
+}
+
 func (m Model) parameterViewData(projectID, groupKey, paramKey string, valueIdx int) (*messages.ParameterViewData, bool) {
 	project := m.projectByID(projectID)
 	param := m.parameterByKey(projectID, groupKey, paramKey)
@@ -184,6 +206,11 @@ func (m Model) selectionChangedCmd(activate bool) tea.Cmd {
 	}
 	data, ok := m.currentParameterViewData()
 	if !ok {
+		if groupData, groupOK := m.currentGroupViewData(); groupOK {
+			return func() tea.Msg {
+				return messages.ParameterSelectionChangedMsg{GroupData: groupData, Activate: activate}
+			}
+		}
 		return func() tea.Msg {
 			return messages.ParameterSelectionChangedMsg{
 				ResetScroll: true,
@@ -238,6 +265,10 @@ func (m Model) CurrentGroupRef() (core.Project, string, string, bool) {
 		return core.Project{}, "", "", false
 	}
 	return project.project, node.groupKey, node.label, true
+}
+
+func (m Model) HasGroup(projectID, groupKey string) bool {
+	return m.groupByKey(projectID, groupKey) != nil
 }
 
 func (m Model) CurrentNewParameterTarget() (core.Project, string, string, bool) {

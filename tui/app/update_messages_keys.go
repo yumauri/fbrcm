@@ -317,9 +317,9 @@ func (m Model) updateParametersDeleteKey() (Model, tea.Cmd, bool) {
 	project, groupKey, groupLabel, ok := m.parameters.CurrentGroupRef()
 	if ok {
 		if m.parameters.HasDraft(project.ProjectID) {
-			return m, m.deleteGroupCmd(project, groupKey, false), true
+			return m, m.deleteGroupCmd(project, groupKey, false, false), true
 		}
-		m.openDeleteGroupDialog(project, groupKey, groupLabel)
+		m.openDeleteGroupDialog(project, groupKey, groupLabel, false)
 		return m, nil, true
 	}
 	project, groupKey, paramKey, ok := m.parameters.CurrentParameterRef()

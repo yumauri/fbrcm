@@ -51,6 +51,8 @@ github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkp
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/erikgeiser/promptkit v0.11.0 h1:GX/pGeF/V3e8ijAjQ1S6NxKbpk3sf2ucdJAP2GG4I7Y=
 github.com/erikgeiser/promptkit v0.11.0/go.mod h1:Xq4u5w2exkMMMqH/lBO+qUXQX6DoGp5lSplPFa7C0jQ=
+github.com/erikgeiser/promptkit v0.12.0 h1:QKWWmja6QhTlIQl5PZ+ysMFqZXcqtWypEagZpdcSmzA=
+github.com/erikgeiser/promptkit v0.12.0/go.mod h1:xsc+zUZrzxJmbfhCcPZM9sVXXsr2YF2khQh+vbYwxJU=
 github.com/expr-lang/expr v1.17.8 h1:W1loDTT+0PQf5YteHSTpju2qfUfNoBt4yw9+wOEU9VM=
 github.com/expr-lang/expr v1.17.8/go.mod h1:8/vRC7+7HBzESEqt5kKpYXxrxkr31SaO8r40VO/1IT4=
 github.com/go-logfmt/logfmt v0.6.1 h1:4hvbpePJKnIzH1B+8OR/JPbTx37NktoI9LE2QZBBkvE=

@@ -3,45 +3,10 @@ package draft
 import (
 	"fmt"
 	"maps"
-	"strings"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
-
-func removeGroupSlot(cfg *firebase.RemoteConfig, groupName string) error {
-	if groupName == "" {
-		return fmt.Errorf("default group cannot be removed")
-	}
-	if _, ok := cfg.ParameterGroups[groupName]; !ok {
-		return fmt.Errorf("group not found")
-	}
-	delete(cfg.ParameterGroups, groupName)
-	return nil
-}
-
-func renameGroupSlot(cfg *firebase.RemoteConfig, key, nextKey string) error {
-	nextKey = strings.TrimSpace(nextKey)
-	if key == "" {
-		return fmt.Errorf("default group cannot be renamed")
-	}
-	if nextKey == "" {
-		return fmt.Errorf("group name is empty")
-	}
-	if key == nextKey {
-		return fmt.Errorf("group not changed")
-	}
-	group, ok := cfg.ParameterGroups[key]
-	if !ok {
-		return fmt.Errorf("group not found")
-	}
-	if _, exists := cfg.ParameterGroups[nextKey]; exists {
-		return fmt.Errorf("group %q already exists", nextKey)
-	}
-	delete(cfg.ParameterGroups, key)
-	cfg.ParameterGroups[nextKey] = group
-	return nil
-}
 
 func moveGroupSlot(cfg *firebase.RemoteConfig, currentGroup, nextGroup string) error {
 	if currentGroup == nextGroup {
