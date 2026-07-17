@@ -42,7 +42,7 @@ func appView(content string, mouseMode tea.MouseMode) tea.View {
 }
 
 func (m Model) mouseMode() tea.MouseMode {
-	if m.active == panels.Logs {
+	if m.active == panels.Logs || m.helpPalette.IsOpen() {
 		return tea.MouseModeNone
 	}
 	return tea.MouseModeAllMotion
@@ -73,6 +73,10 @@ func (m Model) baseView() string {
 }
 
 func (m Model) popupWindowOpen() bool {
+	return m.helpPalette.IsOpen() || m.contextOverlayOpen()
+}
+
+func (m Model) contextOverlayOpen() bool {
 	return m.parameters.HistoryPickerOpen() ||
 		m.details.DropdownOpen() ||
 		m.dialog.IsOpen() ||
@@ -91,7 +95,20 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendInputLayers(layers)
 	layers = m.appendDialogLayers(layers)
 	layers = m.appendOfflineLayer(layers)
+	layers = m.appendHelpPaletteLayer(layers)
 	return layers
+}
+
+func (m Model) appendHelpPaletteLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.helpPalette.IsOpen() {
+		return layers
+	}
+	view := m.helpPaletteView()
+	return append(layers, lipgloss.NewLayer(view).
+		ID("help-palette").
+		X(max((m.width-lipgloss.Width(view))/2, 0)).
+		Y(max((m.height-lipgloss.Height(view))/2, 0)).
+		Z(100))
 }
 
 func (m Model) appendHistoryPickerLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {

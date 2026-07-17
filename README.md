@@ -81,9 +81,20 @@ History and version-chooser keys are configurable like all other TUI bindings:
 
 ```toml
 [keys.global]
+help = ["?"]
 focus_conditions = ["3"]
 focus_history = ["4"]
 focus_details = ["5"]
+
+[keys.help]
+cancel = ["esc"]
+submit = ["enter"]
+up = ["up", "ctrl+k"]
+down = ["down", "ctrl+j"]
+page_up = ["pgup"]
+page_down = ["pgdown"]
+home = ["home"]
+end = ["end"]
 
 [keys.conditions]
 rename = ["r"]
@@ -298,6 +309,8 @@ fbrcm conditions validate <project-id>
 Definition mutations print a Remote Config diff and offer publication or can be staged with `--draft`. Use `--dry-run` to preview without persisting state and `--yes` to skip confirmation. `conditions validate` validates the current draft, if present, or the published template with Firebase's validate-only API.
 
 In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish and `d`/`D` to discard project/all drafts. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
+
+Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, marks actions that are unavailable in the current context with a reason, and runs the selected available action with Enter. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 
 Pressing `q` quits immediately unless the open Details form has unsaved changes, in which case fbrcm asks before discarding them. `Ctrl+C` always force-quits.
 

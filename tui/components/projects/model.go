@@ -143,6 +143,11 @@ func (m Model) PreferredWidth() int {
 	return max(max(longest+3, headerWidth), 25)
 }
 
+// HasCurrentProject reports whether project actions have a current target.
+func (m Model) HasCurrentProject() bool {
+	return len(m.projects) > 0 && m.cursor >= 0 && m.cursor < len(m.projects)
+}
+
 func (m Model) listProjectsCmd() tea.Cmd {
 	return func() tea.Msg {
 		projects, source, err := m.svc.ListProjects(context.Background())

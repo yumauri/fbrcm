@@ -35,6 +35,7 @@ type Model struct {
 	logsMode        logsPanelMode
 	logsSaved       int
 	help            help.Model
+	helpPalette     helpPaletteModel
 	active          panels.ID
 	parametersTab   panels.ID
 	prevTop         panels.ID
@@ -119,6 +120,7 @@ func New(svc *core.Core) Model {
 		logs:          logs.New(svc),
 		logsHeight:    defaultLogsPanelHeight,
 		help:          newHelpModel(),
+		helpPalette:   newHelpPaletteModel(),
 		active:        panels.Projects,
 		parametersTab: panels.Parameters,
 		prevTop:       panels.Projects,

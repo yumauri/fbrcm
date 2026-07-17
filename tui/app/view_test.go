@@ -165,7 +165,7 @@ No logs yet.
 
 
 ──────────────────────────────────────────────────────────────────────────────────────────
-q quit • c collapse • enter select • space mark • o open • u update • ~/^///= filter`
+q quit • ? help • c collapse • enter select • space mark • o open • u update …`
 
 const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
@@ -190,7 +190,7 @@ No logs yet.
 
 
 ──────────────────────────────────────────────────────────────────────────────────────────
-q quit • c collapse • [/] level • -/_/=/+ resize`
+q quit • ? help • c collapse • [/] level • -/_/=/+ resize`
 
 const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │
@@ -215,7 +215,7 @@ No logs yet.
 
 
 ──────────────────────────────────────────────────────────────────────────────────────────
-q quit • z maximize • r rename • e edit • a new • c duplicate • m move •  /space  OFFLINE`
+q quit • ? help • z maximize • r rename • e edit • a new • c duplicate • m move … OFFLINE`
 
 func viewTestModel(width, height int, active panels.ID) Model {
 	m := New(nil)

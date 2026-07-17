@@ -10,6 +10,7 @@ func TestMatchesDefaultKeyMap(t *testing.T) {
 		want   bool
 	}{
 		{BlockGlobal, ActionQuit, "q", true},
+		{BlockGlobal, ActionHelp, "?", true},
 		{BlockGlobal, ActionQuit, "Q", false},
 		{BlockGlobal, ActionFocusConditions, "3", true},
 		{BlockGlobal, ActionFocusHistory, "4", true},

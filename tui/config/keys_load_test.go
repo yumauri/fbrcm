@@ -106,6 +106,17 @@ func TestDefaultKeyMapIncludesHistoryChangesToggle(t *testing.T) {
 	}
 }
 
+func TestDefaultKeyMapIncludesHelpPaletteBindings(t *testing.T) {
+	if got := DefaultKeyMap()[BlockGlobal][ActionHelp]; len(got) != 1 || got[0] != "?" {
+		t.Fatalf("help action = %v, want [?]", got)
+	}
+	for _, action := range []Action{ActionCancel, ActionSubmit, ActionUp, ActionDown, ActionPageUp, ActionPageDown, ActionHome, ActionEnd} {
+		if len(DefaultKeyMap()[BlockHelp][action]) == 0 {
+			t.Fatalf("help palette action %q has no default binding", action)
+		}
+	}
+}
+
 func TestConflictsReportsDisabledActions(t *testing.T) {
 	keys := Clone(DefaultKeyMap())
 	keys[BlockProjects][ActionRefresh] = []string{"enter"}

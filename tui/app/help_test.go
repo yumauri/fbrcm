@@ -18,27 +18,27 @@ func TestShortHelpDescriptions(t *testing.T) {
 		{
 			name: "keyboard capture",
 			keys: helpKeyMap{keyboardCapture: true},
-			want: []string{"quit", "close filter", "apply", "filter"},
+			want: []string{"quit", "help", "close filter", "apply", "filter"},
 		},
 		{
 			name: "projects expanded",
 			keys: helpKeyMap{active: panels.Projects},
-			want: []string{"quit", "collapse", "select", "mark", "open", "update", "filter"},
+			want: []string{"quit", "help", "collapse", "select", "mark", "open", "update", "filter"},
 		},
 		{
 			name: "projects collapsed",
 			keys: helpKeyMap{active: panels.Projects, projectsMode: projectsPanelModeCollapsed},
-			want: []string{"quit", "expand", "select", "mark", "open", "update", "filter"},
+			want: []string{"quit", "help", "expand", "select", "mark", "open", "update", "filter"},
 		},
 		{
 			name: "parameters",
 			keys: helpKeyMap{active: panels.Parameters},
-			want: []string{"quit", "maximize", "rename", "edit", "new", "duplicate", "move", "toggle", "delete", "publish", "discard", "copy", "update", "filter"},
+			want: []string{"quit", "help", "maximize", "rename", "edit", "new", "duplicate", "move", "toggle", "delete", "publish", "discard", "copy", "update", "filter"},
 		},
 		{
 			name: "conditions",
 			keys: helpKeyMap{active: panels.Conditions},
-			want: []string{"quit", "maximize", "rename", "expression", "color", "new", "priority", "delete", "publish", "discard", "details", "copy", "update", "filter"},
+			want: []string{"quit", "help", "maximize", "rename", "expression", "color", "new", "priority", "delete", "publish", "discard", "details", "copy", "update", "filter"},
 		},
 		{
 			name: "condition move",
@@ -48,22 +48,22 @@ func TestShortHelpDescriptions(t *testing.T) {
 		{
 			name: "condition details",
 			keys: helpKeyMap{active: panels.Details, conditionDetail: true},
-			want: []string{"quit", "close", "rename", "expression", "color", "priority", "delete", "copy", "copy expression"},
+			want: []string{"quit", "help", "close", "rename", "expression", "color", "priority", "delete", "copy", "copy expression"},
 		},
 		{
 			name: "logs expanded",
 			keys: helpKeyMap{active: panels.Logs},
-			want: []string{"quit", "collapse", "level", "resize"},
+			want: []string{"quit", "help", "collapse", "level", "resize"},
 		},
 		{
 			name: "logs collapsed",
 			keys: helpKeyMap{active: panels.Logs, logsMode: logsPanelModeCollapsed},
-			want: []string{"quit", "expand", "level", "resize"},
+			want: []string{"quit", "help", "expand", "level", "resize"},
 		},
 		{
 			name: "details",
 			keys: helpKeyMap{active: panels.Details},
-			want: []string{"quit", "close", "add conditional value", "rename", "edit", "move", "delete", "copy", "copy value"},
+			want: []string{"quit", "help", "close", "add conditional value", "rename", "edit", "move", "delete", "copy", "copy value"},
 		},
 	}
 
@@ -88,6 +88,22 @@ func TestCompoundHelpKeys(t *testing.T) {
 	}
 	if got := binding.Keys(); !slices.Equal(got, []string{"p", "P"}) {
 		t.Fatalf("keys = %v, want [p P]", got)
+	}
+}
+
+func TestFullHelpIncludesActionsOmittedFromFooter(t *testing.T) {
+	full := helpKeyMap{active: panels.Projects}.FullHelp()
+	if len(full) <= 1 {
+		t.Fatalf("full help groups = %d, want grouped actions", len(full))
+	}
+	var descriptions []string
+	for _, group := range full {
+		descriptions = append(descriptions, helpDescriptions(group)...)
+	}
+	for _, want := range []string{"focus logs", "collapse all", "blank line", "format"} {
+		if !slices.Contains(descriptions, want) {
+			t.Errorf("full help descriptions do not contain %q", want)
+		}
 	}
 }
 

@@ -40,6 +40,7 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 	}
 	common := []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, "quit"),
+		tuiconfig.Binding(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, "help"),
 	}
 
 	if k.keyboardCapture {
@@ -225,7 +226,24 @@ func multiBinding(desc string, refs ...helpRef) key.Binding {
 }
 
 func (k helpKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{k.ShortHelp()}
+	groups := make([][]key.Binding, 0, len(helpPaletteBlockOrder))
+	catalog := helpPaletteCatalog()
+	for _, block := range helpPaletteBlockOrder {
+		var bindings []key.Binding
+		for _, item := range catalog {
+			if item.block != block {
+				continue
+			}
+			binding := tuiconfig.Binding(item.block, item.action, strings.ToLower(item.title))
+			if binding.Enabled() {
+				bindings = append(bindings, binding)
+			}
+		}
+		if len(bindings) > 0 {
+			groups = append(groups, bindings)
+		}
+	}
+	return groups
 }
 
 func (m Model) helpView() string {

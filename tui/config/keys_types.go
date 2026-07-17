@@ -5,6 +5,7 @@ type Block string
 
 const (
 	BlockGlobal        Block = "global"
+	BlockHelp          Block = "help"
 	BlockFilter        Block = "filter"
 	BlockProjects      Block = "projects"
 	BlockParameters    Block = "parameters"
@@ -29,6 +30,7 @@ type Action string
 const (
 	ActionQuit      Action = "quit"
 	ActionForceQuit Action = "force_quit"
+	ActionHelp      Action = "help"
 
 	ActionFilterFuzzy      Action = "fuzzy"
 	ActionFilterStartsWith Action = "starts_with"

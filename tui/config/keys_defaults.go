@@ -6,6 +6,7 @@ func DefaultKeyMap() KeyMap {
 		BlockGlobal: {
 			ActionQuit:            {"q"},
 			ActionForceQuit:       {"ctrl+c"},
+			ActionHelp:            {"?"},
 			ActionFocusProjects:   {"1"},
 			ActionFocusParameters: {"2"},
 			ActionFocusConditions: {"3"},
@@ -13,6 +14,16 @@ func DefaultKeyMap() KeyMap {
 			ActionFocusDetails:    {"5"},
 			ActionFocusLogs:       {"0"},
 			ActionFocusNext:       {"tab"},
+		},
+		BlockHelp: {
+			ActionCancel:   {"esc"},
+			ActionSubmit:   {"enter"},
+			ActionUp:       {"up", "ctrl+k"},
+			ActionDown:     {"down", "ctrl+j"},
+			ActionPageUp:   {"pgup"},
+			ActionPageDown: {"pgdown"},
+			ActionHome:     {"home"},
+			ActionEnd:      {"end"},
 		},
 		BlockFilter: {
 			ActionFilterFuzzy:      {"~"},

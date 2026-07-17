@@ -1,8 +1,11 @@
 package app
 
 import (
+	"strings"
+
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/tui/components/minsize"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -10,6 +13,27 @@ import (
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
 		return m, tea.Quit
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, keyMsg.String()) && (m.helpPalette.IsOpen() || m.helpShortcutAvailable(keyMsg.String())) {
+		if m.helpPalette.IsOpen() {
+			m.helpPalette = m.helpPalette.Close()
+			return m, nil
+		}
+		var cmd tea.Cmd
+		m.helpPalette, cmd = m.helpPalette.Open()
+		return m, cmd
+	}
+	if m.helpPalette.IsOpen() {
+		if size, ok := msg.(tea.WindowSizeMsg); ok {
+			m.updateWindowSize(size)
+			if size.Width >= minsize.MinWidth && size.Height >= minsize.MinHeight {
+				actions := m.helpPalette.filtered(m.helpPaletteActions())
+				m.helpPalette.ensureVisible(len(actions), helpPaletteListHeight(size.Height))
+			}
+			return m.updateChildPanels(msg)
+		}
+		next, cmd, _ := m.updateHelpPalette(msg)
+		return next, cmd
 	}
 	if next, cmd, ok := m.updateOpenModal(msg); ok {
 		return next, cmd
@@ -22,6 +46,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m.updateChildPanels(msg)
+}
+
+func (m Model) helpShortcutAvailable(key string) bool {
+	return m.width >= minsize.MinWidth &&
+		m.height >= minsize.MinHeight &&
+		(strings.HasPrefix(key, "ctrl+") || m.helpPlainKeyAvailable())
+}
+
+func (m Model) helpPlainKeyAvailable() bool {
+	return !m.keyboardCaptured() &&
+		!m.jsonInput.IsOpen() &&
+		!m.numberInput.IsOpen() &&
+		!m.stringInput.IsOpen() &&
+		!m.moveParam.IsOpen() &&
+		!m.renameInput.IsOpen() &&
+		(m.active != panels.Details || !m.detailsVisible || !m.details.TextInputActive())
 }
 
 func (m *Model) closeDetailsIfOrphaned() {
