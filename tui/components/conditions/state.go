@@ -174,6 +174,30 @@ func (m Model) CurrentCondition() (*messages.ConditionViewData, bool) {
 	return m.currentData()
 }
 
+// Condition returns one condition without changing the Conditions panel cursor.
+func (m Model) Condition(projectID, name string) (*messages.ConditionViewData, bool) {
+	index, ok := m.projectIndex[projectID]
+	if !ok || m.projects[index].tree == nil {
+		return nil, false
+	}
+	names := make([]string, 0, len(m.projects[index].tree.Conditions))
+	var selected core.ConditionEntry
+	found := false
+	for _, condition := range m.projects[index].tree.Conditions {
+		names = append(names, condition.Name)
+		if condition.Name == name {
+			selected = condition
+			found = true
+		}
+	}
+	if !found {
+		return nil, false
+	}
+	return &messages.ConditionViewData{
+		Project: m.projects[index].project, Condition: selected, ConditionNames: names,
+	}, true
+}
+
 func (m Model) CurrentConditions() ([]core.ConditionEntry, bool) {
 	project, ok := m.CurrentProject()
 	if !ok {

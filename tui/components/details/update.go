@@ -44,6 +44,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 					m.refreshViewport()
 					return m, nil
 				}
+				if m.UsageSelected() || m.AddConditionalValueSelected() {
+					m.selectedUsage = -1
+					m.selectedAddValue = false
+					m.refreshViewport()
+					return m, nil
+				}
 			}
 		}
 		if m.activeField != fieldNone {
@@ -207,12 +213,25 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	if idx, ok := m.valueAt(mouse.X, mouse.Y); ok {
 		m.activeField = fieldNone
 		m.selectedValue = idx
+		m.selectedUsage = -1
+		m.selectedAddValue = false
 		m.nameInput.Blur()
 		m.descInput.Blur()
 		m.groupInput.Blur()
 		m.dropdownOpen = false
 		m.refreshViewport()
 		return m, func() tea.Msg { return messages.DetailsValueEditRequestedMsg{} }
+	}
+	if idx, ok := m.usageAt(mouse.X, mouse.Y); ok {
+		m.activeField = fieldNone
+		m.selectedValue = -1
+		m.selectedUsage = idx
+		m.selectedAddValue = false
+		m.nameInput.Blur()
+		m.priorityInput.Blur()
+		m.dropdownOpen = false
+		m.refreshViewport()
+		return m, nil
 	}
 	if m.addConditionalValueAt(mouse.X, mouse.Y) {
 		return m, func() tea.Msg { return messages.DetailsAddConditionalValueRequestedMsg{} }

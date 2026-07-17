@@ -2,15 +2,26 @@ package details
 
 import (
 	"charm.land/lipgloss/v2"
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/parameters"
 )
 
 // SelectedRawValue returns selected value raw content.
 func (m Model) SelectedRawValue() (string, bool) {
+	if m.UsageSelected() {
+		return m.conditionData.Condition.Usages[m.selectedUsage].RawValue, true
+	}
 	if !m.ValueSelected() {
 		return "", false
 	}
 	return m.data.Parameter.Values[m.selectedValue].RawValue, true
+}
+
+func (m Model) SelectedUsage() (core.ConditionUsage, bool) {
+	if !m.UsageSelected() {
+		return core.ConditionUsage{}, false
+	}
+	return m.conditionData.Condition.Usages[m.selectedUsage], true
 }
 
 // CurrentConditionalValueAnchor returns selected conditional value deletion target.

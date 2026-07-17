@@ -133,6 +133,32 @@ func (m Model) valueVisualHeight(value core.ParametersValue, width int) int {
 	return 1 + len(m.renderValueLines(value, max(width-4, 1))) + 1
 }
 
+func (m Model) conditionUsageParameterLine(index int) int {
+	if m.conditionData == nil {
+		return 0
+	}
+	width := max(m.width-5, 1)
+	condition := m.conditionData.Condition
+	line := 1 + len(wrappedLines(rcdisplay.FormatProject(m.conditionData.Project.Name, m.conditionData.Project.ProjectID), width)) + 1
+	line += 3 * 3 // priority, name, color
+	line += 1 + len(strings.Split(m.conditionExpression, "\n")) + 1
+	if condition.Description != "" {
+		line += 1 + len(wrappedLines(condition.Description, width)) + 1
+	}
+	line += 2 // Used by heading and spacer.
+	for usageIndex, usage := range condition.Usages {
+		if usageIndex == index {
+			return line
+		}
+		line += m.conditionUsageVisualHeight(usage, width)
+	}
+	return line
+}
+
+func (m Model) conditionUsageVisualHeight(usage core.ConditionUsage, width int) int {
+	return 1 + len(m.renderConditionUsageValueLines(usage, width)) + 1
+}
+
 func (m Model) dropdownCurrentLabel() string {
 	switch m.activeField {
 	case fieldGroup:

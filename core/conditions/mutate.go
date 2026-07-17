@@ -2,12 +2,15 @@ package conditions
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
+	rcvalue "github.com/yumauri/fbrcm/core/rc/value"
+	"github.com/yumauri/fbrcm/core/rootgroup"
 )
 
 const MaxNameLength = 100
@@ -177,7 +180,12 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	}
 
 	condition := cfg.Conditions[index]
-	if condition.Name == nextName && condition.Expression == nextExpression && condition.TagColor == nextColor && index+1 == edit.NextPriority {
+	definitionChanged := condition.Name != nextName || condition.Expression != nextExpression || condition.TagColor != nextColor || index+1 != edit.NextPriority
+	valuesChanged, err := editUsageValues(cfg, edit.Name, edit.ValueEdits)
+	if err != nil {
+		return err
+	}
+	if !definitionChanged && !valuesChanged {
 		return fmt.Errorf("condition not changed")
 	}
 	previousName := condition.Name
@@ -200,6 +208,52 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 		}
 	}
 	return nil
+}
+
+func editUsageValues(cfg *firebase.RemoteConfig, conditionName string, edits []UsageValueEdit) (bool, error) {
+	changed := false
+	slots := rcmutate.CollectParamSlots(cfg)
+	pending := make(map[string]rcmutate.Slot)
+	for _, edit := range edits {
+		groupKey := edit.GroupKey
+		if groupKey == rootgroup.TreeKey {
+			groupKey = rootgroup.WireKey
+		}
+		slotKey := rcmutate.SlotKey(groupKey, edit.ParameterKey)
+		slot, ok := pending[slotKey]
+		if !ok {
+			slot, ok = slots[slotKey]
+			if ok {
+				conditionalValues := make(map[string]firebase.RemoteConfigValue, len(slot.Param.ConditionalValues))
+				maps.Copy(conditionalValues, slot.Param.ConditionalValues)
+				slot.Param.ConditionalValues = conditionalValues
+			}
+		}
+		if !ok {
+			return false, fmt.Errorf("parameter %q not found", edit.ParameterKey)
+		}
+		value, ok := slot.Param.ConditionalValues[conditionName]
+		if !ok {
+			return false, fmt.Errorf("conditional value %q not found on parameter %q", conditionName, edit.ParameterKey)
+		}
+		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+			return false, fmt.Errorf("value editor supports only plain values")
+		}
+		if err := rcvalue.ValidateRawValueForType(edit.NextValue, slot.Param.ValueType); err != nil {
+			return false, err
+		}
+		if value.Value == edit.NextValue {
+			continue
+		}
+		value.Value = edit.NextValue
+		slot.Param.ConditionalValues[conditionName] = value
+		pending[slotKey] = slot
+		changed = true
+	}
+	for slotKey, slot := range pending {
+		rcmutate.SetParamSlot(cfg, rcmutate.SlotKeyParam(slotKey), slot)
+	}
+	return changed, nil
 }
 
 func Rename(cfg *firebase.RemoteConfig, name, nextName string) error {

@@ -61,8 +61,9 @@ type Model struct {
 }
 
 type pendingDetailsSelection struct {
-	data     *messages.ParameterViewData
-	activate bool
+	data          *messages.ParameterViewData
+	conditionData *messages.ConditionViewData
+	activate      bool
 }
 
 type duplicateSession struct {

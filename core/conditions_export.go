@@ -3,15 +3,16 @@ package core
 import "github.com/yumauri/fbrcm/core/conditions"
 
 type (
-	ConditionsTree        = conditions.Tree
-	ConditionEntry        = conditions.Entry
-	ConditionUsage        = conditions.Usage
-	ConditionParameterRef = conditions.ParameterRef
-	ConditionDeleteImpact = conditions.DeleteImpact
-	ConditionMoveImpact   = conditions.MoveImpact
-	ConditionDefinition   = conditions.Definition
-	ConditionEdit         = conditions.Edit
-	ConditionDetailsEdit  = conditions.DetailsEdit
+	ConditionsTree          = conditions.Tree
+	ConditionEntry          = conditions.Entry
+	ConditionUsage          = conditions.Usage
+	ConditionParameterRef   = conditions.ParameterRef
+	ConditionDeleteImpact   = conditions.DeleteImpact
+	ConditionMoveImpact     = conditions.MoveImpact
+	ConditionDefinition     = conditions.Definition
+	ConditionEdit           = conditions.Edit
+	ConditionDetailsEdit    = conditions.DetailsEdit
+	ConditionUsageValueEdit = conditions.UsageValueEdit
 )
 
 var ConditionDisplayColors = conditions.DisplayColors

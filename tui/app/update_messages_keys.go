@@ -18,7 +18,7 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 	}
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
-		if m.details.FieldActive() || m.details.ValueSelected() {
+		if m.details.FieldActive() || m.details.ValueSelected() || m.details.AddConditionalValueSelected() {
 			var cmd tea.Cmd
 			m.details, cmd = m.details.Update(msg)
 			return m, cmd, true
@@ -26,6 +26,14 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 		return m, m.requestCloseDetails(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionSubmit, k):
 		return m, m.submitDetailsForm(), true
+	case m.details.AddConditionalValueSelected() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
+		return m, m.openAddConditionalValue(), true
+	case m.details.AddConditionalValueSelected() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionRight, k):
+		return m, m.openAddConditionalValue(), true
+	case m.details.ValueSelected() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
+		if _, ok := m.details.CurrentConditionalValueAnchor(); ok {
+			return m, m.openSelectedValueConditionDetails(), true
+		}
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, k):
 		if m.details.ValueSelected() {
 			return m, m.openDetailsValueEditor(), true
@@ -61,7 +69,7 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 		return m, tea.Quit, true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
-		if m.details.FieldActive() {
+		if m.details.FieldActive() || m.details.UsageSelected() {
 			var cmd tea.Cmd
 			m.details, cmd = m.details.Update(msg)
 			return m, cmd, true
@@ -69,11 +77,16 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 		return m, m.requestCloseDetails(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionSubmit, k):
 		return m, m.submitDetailsForm(), true
+	case m.details.UsageSelected() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
+		return m, m.openSelectedUsageParameterDetails(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionRename, k):
 		var cmd tea.Cmd
 		m.details, cmd = m.details.ActivateName()
 		return m, cmd, true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, k):
+		if m.details.UsageSelected() {
+			return m, m.openDetailsValueEditor(), true
+		}
 		return m, m.openConditionExpressionInput(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionColor, k):
 		m.details = m.details.ActivateConditionColor()

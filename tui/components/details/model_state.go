@@ -28,6 +28,8 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 	m.groupLabel = rootgroup.Label
 	m.typeValue = "STRING"
 	m.selectedValue = -1
+	m.selectedUsage = -1
+	m.selectedAddValue = false
 	m.valuesInvalid = false
 	if m.data != nil {
 		m.originalParam = cloneParameterEntry(m.data.Parameter)
@@ -53,6 +55,7 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 	if m.data == nil {
 		m.originalParam = core.ParametersEntry{}
 	}
+	m.originalCondition = core.ConditionEntry{}
 	m.refreshViewport()
 	if m.data != nil && m.selectedValue < 0 && m.activeField == fieldNone {
 		m.viewport.GotoTop()
@@ -66,8 +69,11 @@ func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 	m.activeField = fieldNone
 	m.dropdownOpen = false
 	m.selectedValue = -1
+	m.selectedUsage = -1
+	m.selectedAddValue = false
 	m.valuesInvalid = false
 	m.originalParam = core.ParametersEntry{}
+	m.originalCondition = core.ConditionEntry{}
 	m.nameInput = newTextInput()
 	m.priorityInput = newTextInput()
 	m.groupInput = newGroupInput()
@@ -75,6 +81,7 @@ func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 	m.conditionColor = ""
 	m.conditionExpression = ""
 	if m.conditionData != nil {
+		m.originalCondition = cloneConditionEntry(m.conditionData.Condition)
 		m.nameInput.SetValue(m.conditionData.Condition.Name)
 		m.priorityInput.SetValue(strconv.Itoa(m.conditionData.Condition.Priority))
 		m.conditionColor = m.conditionData.Condition.TagColor
@@ -95,6 +102,13 @@ func (m Model) SetValuesInvalid(invalid bool) Model {
 }
 
 func (m Model) SetSelectedValue(nextRaw string) Model {
+	if m.UsageSelected() {
+		usage := &m.conditionData.Condition.Usages[m.selectedUsage]
+		usage.RawValue = nextRaw
+		usage.Value = rcdisplay.FormatRawValue(nextRaw, usage.ValueType)
+		m.refreshViewport()
+		return m
+	}
 	if !m.ValueSelected() {
 		return m
 	}
@@ -113,7 +127,7 @@ func (m Model) Dirty() bool {
 
 func (m Model) Invalid() bool {
 	if m.conditionData != nil {
-		return m.invalidConditionName() || m.invalidConditionPriority()
+		return m.invalidConditionName() || m.invalidConditionPriority() || m.invalidConditionValues()
 	}
 	return m.invalidName() || m.invalidValues()
 }
@@ -152,6 +166,7 @@ func (m Model) ConditionEdit() (core.ConditionDetailsEdit, bool) {
 		NextExpression: m.conditionExpression,
 		NextTagColor:   m.conditionColor,
 		NextPriority:   priority,
+		ValueEdits:     m.conditionValueEdits(),
 	}, true
 }
 
@@ -181,6 +196,7 @@ func (m Model) MarkSaved() Model {
 		m.conditionData.Condition.Expression = edit.NextExpression
 		m.conditionData.Condition.TagColor = edit.NextTagColor
 		m.conditionData.Condition.Priority = edit.NextPriority
+		m.originalCondition = cloneConditionEntry(m.conditionData.Condition)
 		m.activeField = fieldNone
 		m.refreshViewport()
 		return m
@@ -200,6 +216,7 @@ func (m Model) MarkSaved() Model {
 		m.data.Parameter.Values[i].ValueType = edit.NextValueType
 	}
 	m.originalParam = cloneParameterEntry(m.data.Parameter)
+	m.originalCondition = core.ConditionEntry{}
 	m.activeField = fieldNone
 	m.refreshViewport()
 	return m

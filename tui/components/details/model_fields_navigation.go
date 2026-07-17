@@ -16,14 +16,21 @@ func (m *Model) focusNextItem(delta int) {
 	m.dropdownIndex = 0
 	m.groupInput.Blur()
 	fields := m.formFields()
-	valueCount := 0
+	itemCount := 0
 	if m.data != nil {
-		valueCount = len(m.data.Parameter.Values)
+		itemCount = len(m.data.Parameter.Values)
+		if len(m.AvailableConditions()) > 0 {
+			itemCount++
+		}
+	} else if m.conditionData != nil {
+		itemCount = len(m.conditionData.Condition.Usages)
 	}
-	total := len(fields) + valueCount
+	total := len(fields) + itemCount
 	if total == 0 {
 		m.activeField = fieldNone
 		m.selectedValue = -1
+		m.selectedUsage = -1
+		m.selectedAddValue = false
 		return
 	}
 	idx := -1
@@ -36,16 +43,36 @@ func (m *Model) focusNextItem(delta int) {
 	if idx < 0 && m.selectedValue >= 0 {
 		idx = len(fields) + m.selectedValue
 	}
-	if idx < 0 && delta < 0 && valueCount > 0 {
+	if idx < 0 && m.selectedUsage >= 0 {
+		idx = len(fields) + m.selectedUsage
+	}
+	if idx < 0 && m.selectedAddValue {
+		idx = len(fields) + len(m.data.Parameter.Values)
+	}
+	if idx < 0 && delta < 0 && itemCount > 0 {
 		idx = total
 	}
 	idx = (idx + delta + total) % total
 	if idx < len(fields) {
 		m.activeField = fields[idx]
 		m.selectedValue = -1
+		m.selectedUsage = -1
+		m.selectedAddValue = false
 	} else {
 		m.activeField = fieldNone
-		m.selectedValue = idx - len(fields)
+		item := idx - len(fields)
+		m.selectedValue = -1
+		m.selectedUsage = -1
+		m.selectedAddValue = false
+		if m.data != nil {
+			if item < len(m.data.Parameter.Values) {
+				m.selectedValue = item
+			} else {
+				m.selectedAddValue = true
+			}
+		} else {
+			m.selectedUsage = item
+		}
 	}
 	if m.activeField == fieldName {
 		_ = m.nameInput.Focus()
@@ -72,6 +99,8 @@ func (m Model) formFields() []fieldID {
 func (m *Model) activateField(field fieldID) {
 	m.activeField = field
 	m.selectedValue = -1
+	m.selectedUsage = -1
+	m.selectedAddValue = false
 	m.dropdownOpen = false
 	m.dropdownIndex = 0
 	m.nameInput.Blur()
@@ -124,6 +153,18 @@ func (m Model) valueAt(_, y int) (int, bool) {
 	return 0, false
 }
 
+func (m Model) usageAt(_, y int) (int, bool) {
+	if m.conditionData == nil {
+		return 0, false
+	}
+	for index := range m.conditionData.Condition.Usages {
+		if y == m.y+1+m.conditionUsageParameterLine(index)-m.viewport.YOffset() {
+			return index, true
+		}
+	}
+	return 0, false
+}
+
 func (m *Model) positionCursorForClick(field fieldID, x, y int) {
 	contentX := m.x + 2
 	col := max(x-contentX, 0)
@@ -151,6 +192,10 @@ func (m *Model) ensureSelectionVisible() {
 	} else if m.selectedValue >= 0 {
 		m.ensureValueVisible(m.selectedValue)
 		return
+	} else if m.selectedUsage >= 0 {
+		line = m.conditionUsageParameterLine(m.selectedUsage)
+	} else if m.selectedAddValue {
+		line = m.addConditionalValueLine()
 	}
 	if line < 0 {
 		return
@@ -177,6 +222,14 @@ func (m *Model) ensureSelectedBlockVisible() {
 	}
 	if m.selectedValue >= 0 {
 		m.ensureValueVisible(m.selectedValue)
+		return
+	}
+	if m.selectedUsage >= 0 {
+		m.ensureSelectionVisible()
+		return
+	}
+	if m.selectedAddValue {
+		m.ensureSelectionVisible()
 	}
 }
 

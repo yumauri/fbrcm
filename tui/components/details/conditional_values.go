@@ -69,6 +69,7 @@ func (m Model) AddConditionalValue(name string) (Model, bool) {
 		}
 	}
 	m.activeField = fieldNone
+	m.selectedAddValue = false
 	m.refreshViewport()
 	return m, true
 }
@@ -86,6 +87,7 @@ func (m Model) RemoveAddedConditionalValue(name string) Model {
 		}
 		m.data.Parameter.Values = append(values[:index:index], values[index+1:]...)
 		m.selectedValue = -1
+		m.selectedAddValue = false
 		m.refreshViewport()
 		return m
 	}

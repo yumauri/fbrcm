@@ -218,14 +218,41 @@ func (m Model) copyDetailsPathCmd() tea.Cmd {
 
 // copyDetailsSelectedValueCmd copies selected details value.
 func (m Model) copyDetailsSelectedValueCmd() tea.Cmd {
+	value, ok := m.details.SelectedRawValue()
+	if ok {
+		return copyToClipboardCmd(value)
+	}
 	if data := m.details.ConditionData(); data != nil {
 		return copyToClipboardCmd(data.Condition.Expression)
 	}
-	value, ok := m.details.SelectedRawValue()
+	return nil
+}
+
+func (m *Model) openSelectedValueConditionDetails() tea.Cmd {
+	anchor, ok := m.details.CurrentConditionalValueAnchor()
 	if !ok {
 		return nil
 	}
-	return copyToClipboardCmd(value)
+	data, ok := m.conditions.Condition(anchor.Project.ProjectID, anchor.ValueLabel)
+	if !ok {
+		return nil
+	}
+	return m.handleConditionDetailsSelection(data)
+}
+
+func (m *Model) openSelectedUsageParameterDetails() tea.Cmd {
+	usage, ok := m.details.SelectedUsage()
+	condition := m.details.ConditionData()
+	if !ok || condition == nil {
+		return nil
+	}
+	data, ok := m.parameters.ParameterViewData(
+		condition.Project.ProjectID, usage.GroupKey, usage.ParameterKey, condition.Condition.Name,
+	)
+	if !ok {
+		return nil
+	}
+	return m.handleParameterSelection(messages.ParameterSelectionChangedMsg{Data: data, Activate: true})
 }
 
 func (m *Model) applyParameterSelection(msg messages.ParameterSelectionChangedMsg) {
@@ -249,6 +276,10 @@ func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedM
 	if !m.detailsVisible || !m.details.Dirty() {
 		m.applyParameterSelection(msg)
 		return nil
+	}
+	if m.details.IsCondition() {
+		m.pendingDetails = &pendingDetailsSelection{data: msg.Data, activate: msg.Activate}
+		return m.saveConditionDetailsForPending()
 	}
 
 	edit, ok := m.details.Edit()
@@ -274,14 +305,90 @@ func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedM
 	return nil
 }
 
+func (m *Model) handleConditionDetailsSelection(data *messages.ConditionViewData) tea.Cmd {
+	if data == nil {
+		return nil
+	}
+	if !m.detailsVisible || !m.details.Dirty() {
+		m.details = m.details.SetConditionData(data)
+		m.detailsVisible = true
+		m.setActive(panels.Details)
+		return nil
+	}
+	m.pendingDetails = &pendingDetailsSelection{conditionData: data, activate: true}
+	if m.details.IsCondition() {
+		return m.saveConditionDetailsForPending()
+	}
+	edit, ok := m.details.Edit()
+	if !ok {
+		m.applyPendingDetailsSelection()
+		return nil
+	}
+	current := m.details.Data()
+	if current == nil {
+		m.applyPendingDetailsSelection()
+		return nil
+	}
+	if m.details.Invalid() {
+		m.openInvalidDetailsDialog(current.Project, m.details.InvalidReasons(), false)
+		return nil
+	}
+	if m.parameters.HasDraft(current.Project.ProjectID) {
+		return m.editParameterDetailsCmd(current.Project, edit, false, false, false)
+	}
+	m.openEditDetailsDialog(current.Project, edit, false, false)
+	return nil
+}
+
+func (m *Model) saveConditionDetailsForPending() tea.Cmd {
+	edit, ok := m.details.ConditionEdit()
+	if !ok {
+		m.applyPendingDetailsSelection()
+		return nil
+	}
+	data := m.details.ConditionData()
+	if data == nil {
+		m.applyPendingDetailsSelection()
+		return nil
+	}
+	if m.details.Invalid() {
+		m.openInvalidDetailsDialog(data.Project, m.details.InvalidReasons(), false)
+		return nil
+	}
+	if m.parameters.HasDraft(data.Project.ProjectID) || m.conditions.HasDraft(data.Project.ProjectID) {
+		return m.conditionDetailsMutationCmd(data.Project, edit, false, false)
+	}
+	m.openConditionDetailsDialog(data.Project, edit, false)
+	return nil
+}
+
 func (m *Model) applyPendingDetailsSelection() {
 	if m.pendingDetails == nil {
 		return
 	}
 	pending := m.pendingDetails
 	m.pendingDetails = nil
-	m.applyParameterSelection(messages.ParameterSelectionChangedMsg{
-		Data:     pending.data,
-		Activate: pending.activate,
-	})
+	if pending.conditionData != nil {
+		data := pending.conditionData
+		if refreshed, ok := m.conditions.Condition(data.Project.ProjectID, data.Condition.Name); ok {
+			data = refreshed
+		}
+		m.details = m.details.SetConditionData(data)
+		m.detailsVisible = true
+		if pending.activate {
+			m.setActive(panels.Details)
+		}
+		return
+	}
+	data := pending.data
+	if data != nil {
+		valueLabel := ""
+		if data.SelectedValueIdx >= 0 && data.SelectedValueIdx < len(data.Parameter.Values) {
+			valueLabel = data.Parameter.Values[data.SelectedValueIdx].Label
+		}
+		if refreshed, ok := m.parameters.ParameterViewData(data.Project.ProjectID, data.GroupKey, data.Parameter.Key, valueLabel); ok {
+			data = refreshed
+		}
+	}
+	m.applyParameterSelection(messages.ParameterSelectionChangedMsg{Data: data, Activate: pending.activate})
 }

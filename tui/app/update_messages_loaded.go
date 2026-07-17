@@ -3,6 +3,7 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -10,6 +11,7 @@ import (
 func (m *Model) updateDetailsAfterParametersLoaded(msg messages.ParametersLoadedMsg) {
 	if msg.DetailsSaved {
 		m.clearTransientNewParameterAfterLoad(msg)
+		m.refreshPendingConditionUsages(msg.Tree)
 		if msg.CloseDetails {
 			m.pendingDetails = nil
 		} else if m.pendingDetails != nil {
@@ -24,6 +26,28 @@ func (m *Model) updateDetailsAfterParametersLoaded(msg messages.ParametersLoaded
 			m.details = m.details.SetData(data)
 		}
 	}
+}
+
+func (m *Model) refreshPendingConditionUsages(tree *core.ParametersTree) {
+	if m.pendingDetails == nil || m.pendingDetails.conditionData == nil || tree == nil {
+		return
+	}
+	data := *m.pendingDetails.conditionData
+	data.Condition.Usages = nil
+	for _, group := range tree.Groups {
+		for _, parameter := range group.Parameters {
+			for _, value := range parameter.Values {
+				if value.Label != data.Condition.Name {
+					continue
+				}
+				data.Condition.Usages = append(data.Condition.Usages, core.ConditionUsage{
+					GroupKey: group.Key, GroupLabel: group.Label, ParameterKey: parameter.Key,
+					Value: value.Value, RawValue: value.RawValue, ValueType: value.ValueType, Plain: value.Plain,
+				})
+			}
+		}
+	}
+	m.pendingDetails.conditionData = &data
 }
 
 func (m *Model) clearTransientNewParameterAfterLoad(msg messages.ParametersLoadedMsg) {

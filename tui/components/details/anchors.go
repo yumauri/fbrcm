@@ -9,6 +9,14 @@ import (
 )
 
 func (m Model) CurrentBoolValueAnchor() (parameters.BoolValueAnchor, bool) {
+	if usage, ok := m.currentSelectedPlainUsage("boolean"); ok {
+		x, y := m.conditionUsageEditorPosition()
+		return parameters.BoolValueAnchor{
+			Project: m.conditionData.Project, GroupKey: usage.GroupKey, ParamKey: usage.ParameterKey,
+			ValueLabel: m.conditionData.Condition.Name, Value: strings.EqualFold(strings.TrimSpace(usage.RawValue), "true"),
+			CurrentValue: usage.RawValue, X: x, Y: y,
+		}, true
+	}
 	value, ok := m.currentSelectedPlainValue("boolean")
 	if !ok {
 		return parameters.BoolValueAnchor{}, false
@@ -27,6 +35,15 @@ func (m Model) CurrentBoolValueAnchor() (parameters.BoolValueAnchor, bool) {
 }
 
 func (m Model) CurrentNumberValueAnchor() (parameters.NumberValueAnchor, bool) {
+	if usage, ok := m.currentSelectedPlainUsage("number"); ok {
+		currentValue := strings.TrimSpace(usage.RawValue)
+		x, y := m.conditionUsageEditorPosition()
+		return parameters.NumberValueAnchor{
+			Project: m.conditionData.Project, GroupKey: usage.GroupKey, ParamKey: usage.ParameterKey,
+			ValueLabel: m.conditionData.Condition.Name, CurrentValue: currentValue,
+			X: x, Y: y - 1, Width: max(lipgloss.Width(currentValue), 3), MaxWidth: max(m.width-5, 3),
+		}, true
+	}
 	value, ok := m.currentSelectedPlainValue("number")
 	if !ok {
 		return parameters.NumberValueAnchor{}, false
@@ -47,6 +64,16 @@ func (m Model) CurrentNumberValueAnchor() (parameters.NumberValueAnchor, bool) {
 }
 
 func (m Model) CurrentStringValueAnchor(_ int) (parameters.StringValueAnchor, bool) {
+	if usage, ok := m.currentSelectedPlainUsage("string"); ok {
+		x, y := m.conditionUsageEditorPosition()
+		width := max(m.width-(x-m.x)-2, 15)
+		return parameters.StringValueAnchor{
+			Project: m.conditionData.Project, GroupKey: usage.GroupKey, ParamKey: usage.ParameterKey,
+			ValueLabel: m.conditionData.Condition.Name, CurrentValue: usage.RawValue,
+			X: x, Y: y - 1, Width: width, MaxWidth: width + 2,
+			FullWidth: false, Expanded: strings.Contains(usage.RawValue, "\n"),
+		}, true
+	}
 	value, ok := m.currentSelectedPlainValue("string")
 	if !ok {
 		return parameters.StringValueAnchor{}, false
@@ -71,6 +98,12 @@ func (m Model) CurrentStringValueAnchor(_ int) (parameters.StringValueAnchor, bo
 }
 
 func (m Model) CurrentJSONValueAnchor() (parameters.JSONValueAnchor, bool) {
+	if usage, ok := m.currentSelectedPlainUsage("json"); ok {
+		return parameters.JSONValueAnchor{
+			Project: m.conditionData.Project, GroupKey: usage.GroupKey, ParamKey: usage.ParameterKey,
+			ValueLabel: m.conditionData.Condition.Name, CurrentValue: usage.RawValue,
+		}, true
+	}
 	value, ok := m.currentSelectedPlainValue("json")
 	if !ok {
 		return parameters.JSONValueAnchor{}, false
@@ -82,6 +115,17 @@ func (m Model) CurrentJSONValueAnchor() (parameters.JSONValueAnchor, bool) {
 		ValueLabel:   value.Label,
 		CurrentValue: value.RawValue,
 	}, true
+}
+
+func (m Model) currentSelectedPlainUsage(valueType string) (core.ConditionUsage, bool) {
+	if !m.UsageSelected() {
+		return core.ConditionUsage{}, false
+	}
+	usage := m.conditionData.Condition.Usages[m.selectedUsage]
+	if !usage.Plain || !strings.EqualFold(strings.TrimSpace(usage.ValueType), valueType) {
+		return core.ConditionUsage{}, false
+	}
+	return usage, true
 }
 
 func (m Model) currentSelectedPlainValue(valueType string) (core.ParametersValue, bool) {
@@ -104,5 +148,10 @@ func (m Model) currentSelectedPlainValue(valueType string) (core.ParametersValue
 
 func (m Model) valueEditorPosition() (int, int) {
 	line := m.valueConditionLine(m.selectedValue) + 1
+	return m.x + 3, m.y + 1 + line - m.viewport.YOffset()
+}
+
+func (m Model) conditionUsageEditorPosition() (int, int) {
+	line := m.conditionUsageParameterLine(m.selectedUsage) + 1
 	return m.x + 3, m.y + 1 + line - m.viewport.YOffset()
 }

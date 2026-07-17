@@ -48,6 +48,21 @@ func TestDetailsAddConditionalValueCancelRemovesTransientValue(t *testing.T) {
 	}
 }
 
+func TestSelectedAddConditionalValueOpensWithEnterAndRight(t *testing.T) {
+	keys := []tea.Key{{Code: tea.KeyEnter}, {Code: tea.KeyRight}}
+	for _, key := range keys {
+		m := conditionalValueDetailsTestModel()
+		m.details, _ = m.details.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
+		if !m.details.AddConditionalValueSelected() {
+			t.Fatalf("%v setup did not select Add conditional value", key.Code)
+		}
+		m, _, handled := m.updateKeyMessage(tea.KeyPressMsg(key))
+		if !handled || !m.moveParam.IsOpen() {
+			t.Fatalf("%v = handled:%v picker:%v, want true/true", key.Code, handled, m.moveParam.IsOpen())
+		}
+	}
+}
+
 func conditionalValueDetailsTestModel() Model {
 	m := viewTestModel(100, 32, panels.Details)
 	m.details = m.details.SetData(&messages.ParameterViewData{

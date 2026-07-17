@@ -97,25 +97,48 @@ func (m Model) currentParameterViewData() (*messages.ParameterViewData, bool) {
 	if node.transient {
 		return nil, false
 	}
-	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
-	if param == nil {
-		return nil, false
-	}
-
 	valueIdx := -1
 	if node.kind == nodeValue {
 		valueIdx = node.valueIdx
 	}
+	return m.parameterViewData(node.projectID, node.groupKey, node.paramKey, valueIdx)
+}
 
-	data := &messages.ParameterViewData{
-		Project:          project.project,
-		GroupKey:         group.Key,
-		GroupLabel:       group.Label,
-		Groups:           groups,
-		ParameterKeys:    paramKeys,
-		Conditions:       conditions,
-		Parameter:        *param,
-		SelectedValueIdx: valueIdx,
+func (m Model) parameterViewData(projectID, groupKey, paramKey string, valueIdx int) (*messages.ParameterViewData, bool) {
+	project := m.projectByID(projectID)
+	param := m.parameterByKey(projectID, groupKey, paramKey)
+	if project == nil || param == nil {
+		return nil, false
+	}
+	groupLabel := rootgroup.Label
+	canonicalGroupKey := groupKey
+	if group := m.groupByKey(projectID, groupKey); group != nil {
+		canonicalGroupKey = group.Key
+		groupLabel = group.Label
+	}
+	groups, paramKeys := parameterViewOptions(project)
+	conditions := parameterConditionOptions(project)
+	if len(groups) == 0 {
+		groups = []messages.ParameterGroupOption{{Key: rootgroup.TreeKey, Label: rootgroup.Label}}
+	}
+	return &messages.ParameterViewData{
+		Project: project.project, GroupKey: canonicalGroupKey, GroupLabel: groupLabel,
+		Groups: groups, ParameterKeys: paramKeys, Conditions: conditions,
+		Parameter: *param, SelectedValueIdx: valueIdx,
+	}, true
+}
+
+// ParameterViewData returns one parameter without moving the Parameters cursor.
+func (m Model) ParameterViewData(projectID, groupKey, paramKey, valueLabel string) (*messages.ParameterViewData, bool) {
+	data, ok := m.parameterViewData(projectID, groupKey, paramKey, -1)
+	if !ok {
+		return nil, false
+	}
+	for index, value := range data.Parameter.Values {
+		if value.Label == valueLabel {
+			data.SelectedValueIdx = index
+			break
+		}
 	}
 	return data, true
 }

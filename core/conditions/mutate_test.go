@@ -73,6 +73,71 @@ func TestEditDetailsAtomicallyUpdatesDefinitionPriorityAndReferences(t *testing.
 	}
 }
 
+func TestEditDetailsUpdatesConditionalUsageWithoutDefinitionChange(t *testing.T) {
+	cfg := &firebase.RemoteConfig{
+		Conditions: []firebase.RemoteConfigCondition{{Name: "staff", Expression: "true", TagColor: "GREEN"}},
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"enabled": {
+				ValueType: "BOOLEAN",
+				ConditionalValues: map[string]firebase.RemoteConfigValue{
+					"staff": {Value: "true"},
+				},
+			},
+		},
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"checkout": {
+				Parameters: map[string]firebase.RemoteConfigParam{
+					"limit": {
+						ValueType: "NUMBER",
+						ConditionalValues: map[string]firebase.RemoteConfigValue{
+							"staff": {Value: "1"},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := EditDetails(cfg, DetailsEdit{
+		Name: "staff", NextName: "staff", NextExpression: "true", NextTagColor: "GREEN", NextPriority: 1,
+		ValueEdits: []UsageValueEdit{
+			{GroupKey: "__default__", ParameterKey: "enabled", NextValue: "false"},
+			{GroupKey: "checkout", ParameterKey: "limit", NextValue: "2"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Parameters["enabled"].ConditionalValues["staff"].Value; got != "false" {
+		t.Fatalf("root conditional value = %q, want false", got)
+	}
+	if got := cfg.ParameterGroups["checkout"].Parameters["limit"].ConditionalValues["staff"].Value; got != "2" {
+		t.Fatalf("group conditional value = %q, want 2", got)
+	}
+}
+
+func TestEditDetailsRejectsInvalidUsageValueAtomically(t *testing.T) {
+	cfg := &firebase.RemoteConfig{
+		Conditions: []firebase.RemoteConfigCondition{{Name: "staff", Expression: "true"}},
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"enabled": {ValueType: "BOOLEAN", ConditionalValues: map[string]firebase.RemoteConfigValue{"staff": {Value: "true"}}},
+			"limit":   {ValueType: "NUMBER", ConditionalValues: map[string]firebase.RemoteConfigValue{"staff": {Value: "1"}}},
+		},
+	}
+	err := EditDetails(cfg, DetailsEdit{
+		Name: "staff", NextName: "staff", NextExpression: "true", NextPriority: 1,
+		ValueEdits: []UsageValueEdit{
+			{ParameterKey: "enabled", NextValue: "false"},
+			{ParameterKey: "limit", NextValue: "invalid"},
+		},
+	})
+	if err == nil {
+		t.Fatal("EditDetails accepted invalid number")
+	}
+	if got := cfg.Parameters["enabled"].ConditionalValues["staff"].Value; got != "true" {
+		t.Fatalf("first value changed after later validation error: %q", got)
+	}
+}
+
 func TestDeleteConditionCleansValuesAndPreservesEmptyGroup(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		Conditions: []firebase.RemoteConfigCondition{{Name: "remove", Expression: "true"}},

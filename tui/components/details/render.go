@@ -73,7 +73,13 @@ func (m Model) renderContentLines() []string {
 		lines = append(lines, "No values.")
 	}
 	if len(m.AvailableConditions()) > 0 {
-		lines = append(lines, parameterKeyStyle.Render("  "+addConditionalValueLabel))
+		label := "  " + addConditionalValueLabel
+		if m.AddConditionalValueSelected() {
+			label = selectedValueStyle.Render("▸ " + addConditionalValueLabel)
+		} else {
+			label = parameterKeyStyle.Render(label)
+		}
+		lines = append(lines, label)
 	}
 
 	return padLines(lines, width)
@@ -92,13 +98,18 @@ func (m Model) renderConditionContentLines(width int) []string {
 	if condition.Description != "" {
 		lines = appendStyledField(lines, width, "Description", condition.Description, styles.PanelText)
 	}
-	lines = append(lines, labelStyle.Render("Used by "+rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")), "")
+	usedBy := "Used by " + rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")
+	lines = append(lines, fieldTitle(usedBy, len(m.conditionValueEdits()) > 0, m.invalidConditionValues()), "")
 	if len(condition.Usages) == 0 {
 		lines = append(lines, styles.PanelMuted.Italic(true).Render("No parameters use this condition."))
 		return padLines(lines, width)
 	}
-	for _, usage := range condition.Usages {
-		path := groupValueStyle.Render(usage.GroupLabel) + labelStyle.Render(" / ") + parameterKeyStyle.Render(usage.ParameterKey)
+	for index, usage := range condition.Usages {
+		parameter := parameterKeyStyle.Render(usage.ParameterKey)
+		if m.UsageSelected() && index == m.selectedUsage {
+			parameter = selectedValueStyle.Render(usage.ParameterKey)
+		}
+		path := groupValueStyle.Render(usage.GroupLabel) + labelStyle.Render(" / ") + parameter
 		lines = append(lines, ansi.Truncate(path, width, ""))
 		lines = append(lines, m.renderConditionUsageValueLines(usage, width)...)
 		lines = append(lines, "")
@@ -209,9 +220,14 @@ func cloneConditionViewData(data *messages.ConditionViewData) *messages.Conditio
 		return nil
 	}
 	next := *data
-	next.Condition.Usages = append([]core.ConditionUsage(nil), data.Condition.Usages...)
+	next.Condition = cloneConditionEntry(data.Condition)
 	next.ConditionNames = append([]string(nil), data.ConditionNames...)
 	return &next
+}
+
+func cloneConditionEntry(condition core.ConditionEntry) core.ConditionEntry {
+	condition.Usages = append([]core.ConditionUsage(nil), condition.Usages...)
+	return condition
 }
 
 func parameterType(param core.ParametersEntry) string {

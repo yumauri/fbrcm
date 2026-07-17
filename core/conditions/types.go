@@ -30,6 +30,13 @@ type DetailsEdit struct {
 	NextExpression string
 	NextTagColor   string
 	NextPriority   int
+	ValueEdits     []UsageValueEdit
+}
+
+type UsageValueEdit struct {
+	GroupKey     string
+	ParameterKey string
+	NextValue    string
 }
 
 type Usage struct {

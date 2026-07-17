@@ -33,8 +33,11 @@ type Model struct {
 	conditionColor      string
 	conditionExpression string
 	selectedValue       int
+	selectedUsage       int
+	selectedAddValue    bool
 	valuesInvalid       bool
 	originalParam       core.ParametersEntry
+	originalCondition   core.ConditionEntry
 }
 
 func New() Model {
@@ -105,4 +108,12 @@ func (m Model) TextInputActive() bool {
 
 func (m Model) ValueSelected() bool {
 	return m.activeField == fieldNone && m.selectedValue >= 0 && m.data != nil && m.selectedValue < len(m.data.Parameter.Values)
+}
+
+func (m Model) UsageSelected() bool {
+	return m.activeField == fieldNone && m.selectedUsage >= 0 && m.conditionData != nil && m.selectedUsage < len(m.conditionData.Condition.Usages)
+}
+
+func (m Model) AddConditionalValueSelected() bool {
+	return m.activeField == fieldNone && m.selectedAddValue && m.data != nil && len(m.AvailableConditions()) > 0
 }

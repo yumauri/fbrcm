@@ -3,6 +3,8 @@ package details
 import (
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/testutil"
@@ -128,6 +130,21 @@ func TestAddConditionalValuePreservesPriorityAndProducesEdit(t *testing.T) {
 	next = next.RemoveAddedConditionalValue("staff")
 	if len(next.data.Parameter.Values) != 3 || next.Dirty() {
 		t.Fatalf("cancelled values = %+v, dirty=%v; want original clean form", next.data.Parameter.Values, next.Dirty())
+	}
+}
+
+func TestAddConditionalValueParticipatesInArrowNavigation(t *testing.T) {
+	data := parityViewData()
+	data.Conditions = []core.ParametersCondition{{Name: "staff", Color: "GREEN"}}
+	m := New().SetBounds(0, 0, 60, 24).SetActive(true).SetData(data)
+
+	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
+	if !m.AddConditionalValueSelected() {
+		t.Fatal("Up from no selection did not select Add conditional value")
+	}
+	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyDown}))
+	if m.AddConditionalValueSelected() || m.activeField != fieldGroup {
+		t.Fatalf("Down after Add selection = add:%v field:%v, want Group", m.AddConditionalValueSelected(), m.activeField)
 	}
 }
 

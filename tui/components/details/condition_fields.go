@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	rcvalue "github.com/yumauri/fbrcm/core/rc/value"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -62,7 +63,43 @@ func (m Model) conditionHasChanges() bool {
 	return m.conditionFieldChanged(fieldConditionPriority) ||
 		m.conditionFieldChanged(fieldName) ||
 		m.conditionFieldChanged(fieldConditionColor) ||
-		(m.conditionData != nil && m.conditionExpression != m.conditionData.Condition.Expression)
+		(m.conditionData != nil && m.conditionExpression != m.conditionData.Condition.Expression) ||
+		len(m.conditionValueEdits()) > 0
+}
+
+func (m Model) conditionValueEdits() []core.ConditionUsageValueEdit {
+	if m.conditionData == nil {
+		return nil
+	}
+	original := make(map[string]string, len(m.originalCondition.Usages))
+	for _, usage := range m.originalCondition.Usages {
+		original[usage.GroupKey+"\x00"+usage.ParameterKey] = usage.RawValue
+	}
+	edits := make([]core.ConditionUsageValueEdit, 0)
+	for _, usage := range m.conditionData.Condition.Usages {
+		if original[usage.GroupKey+"\x00"+usage.ParameterKey] == usage.RawValue {
+			continue
+		}
+		edits = append(edits, core.ConditionUsageValueEdit{
+			GroupKey: usage.GroupKey, ParameterKey: usage.ParameterKey, NextValue: usage.RawValue,
+		})
+	}
+	return edits
+}
+
+func (m Model) invalidConditionValues() bool {
+	if m.valuesInvalid {
+		return true
+	}
+	if m.conditionData == nil {
+		return false
+	}
+	for _, usage := range m.conditionData.Condition.Usages {
+		if usage.Plain && !rcvalue.ValidRawValueForType(usage.RawValue, usage.ValueType) {
+			return true
+		}
+	}
+	return false
 }
 
 func (m Model) invalidConditionName() bool {
@@ -106,6 +143,9 @@ func (m Model) conditionInvalidReasons() []string {
 		} else {
 			reasons = append(reasons, "Condition name is invalid or already exists in this project.")
 		}
+	}
+	if m.invalidConditionValues() {
+		reasons = append(reasons, "One or more conditional values are invalid for their parameter type.")
 	}
 	return reasons
 }

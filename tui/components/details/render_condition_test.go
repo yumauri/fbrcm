@@ -70,6 +70,38 @@ func TestConditionDetailsUsesGroupAndTypedValueStyles(t *testing.T) {
 	}
 }
 
+func TestConditionUsagesParticipateInNavigationAndStageValueEdits(t *testing.T) {
+	m := conditionDetailsTestModel()
+	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
+	if !m.UsageSelected() {
+		t.Fatal("Up from no selection did not select the last condition usage")
+	}
+	usage, _ := m.SelectedUsage()
+	if usage.ParameterKey != "payload" {
+		t.Fatalf("selected usage = %q, want payload", usage.ParameterKey)
+	}
+	if _, ok := m.CurrentJSONValueAnchor(); !ok {
+		t.Fatal("selected JSON usage did not expose the JSON editor anchor")
+	}
+	m = m.SetSelectedValue(`{"enabled":false}`)
+	edit, ok := m.ConditionEdit()
+	if !ok || len(edit.ValueEdits) != 1 || edit.ValueEdits[0].ParameterKey != "payload" || edit.ValueEdits[0].NextValue != `{"enabled":false}` {
+		t.Fatalf("ConditionEdit = %+v, ok=%v; want payload JSON value edit", edit, ok)
+	}
+}
+
+func TestConditionUsageSelectionStylesOnlyParameterName(t *testing.T) {
+	m := conditionDetailsTestModel()
+	m.selectedUsage = 0
+	lines := strings.Join(m.renderContentLines(), "\n")
+	if !strings.Contains(lines, groupValueStyle.Render("checkout")+labelStyle.Render(" / ")+selectedValueStyle.Render("enabled")) {
+		t.Fatalf("selected usage does not preserve group/separator styles:\n%s", lines)
+	}
+	if strings.Contains(lines, selectedValueStyle.Render("checkout")) {
+		t.Fatalf("selection style covers group name:\n%s", lines)
+	}
+}
+
 func TestConditionDetailsFieldsStageOneAtomicEdit(t *testing.T) {
 	m := conditionDetailsTestModel()
 	m.conditionData.ConditionNames = []string{"staff", "beta"}
