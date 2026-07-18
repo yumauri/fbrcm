@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
 )
 
 // ListAuth lists configured auth identities.
@@ -21,6 +22,9 @@ func (s *Core) ListAuth() ([]config.AuthEntry, string, error) {
 // AddOAuthAuth adds or replaces OAuth auth identity.
 func (s *Core) AddOAuthAuth(authID, label string, secret []byte) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	if err := firebase.ValidateOAuthClientSecret(secret); err != nil {
 		return config.AuthEntry{}, err
 	}
 	authFile, err := config.LoadAuthOrEmpty()
@@ -66,6 +70,9 @@ func (s *Core) AddOAuthAuth(authID, label string, secret []byte) (config.AuthEnt
 // AddServiceAccountAuth adds or replaces service account auth identity.
 func (s *Core) AddServiceAccountAuth(authID, label string, key []byte) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	if err := firebase.ValidateServiceAccountKey(key); err != nil {
 		return config.AuthEntry{}, err
 	}
 	authFile, err := config.LoadAuthOrEmpty()

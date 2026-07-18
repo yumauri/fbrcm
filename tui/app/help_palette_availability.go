@@ -63,6 +63,14 @@ func (m Model) helpPaletteActionAvailability(item helpPaletteAction) (bool, stri
 
 func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	switch action {
+	case tuiconfig.ActionAccounts:
+		if m.contextOverlayOpen() {
+			return false, "close the current dialog or editor first"
+		}
+		if m.keyboardCaptured() {
+			return false, "finish or close the current filter first"
+		}
+		return true, ""
 	case tuiconfig.ActionHelp:
 		return true, ""
 	case tuiconfig.ActionForceQuit:

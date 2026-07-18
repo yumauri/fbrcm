@@ -24,6 +24,9 @@ func (m Model) View() tea.View {
 	if m.width < minsize.MinWidth || m.height < minsize.MinHeight {
 		return appView(rootStyle.Render(minsize.View(m.width, m.height)), tea.MouseModeNone)
 	}
+	if m.setup.IsOpen() {
+		return appView(rootStyle.Render(m.setup.View(m.width, m.height)), tea.MouseModeNone)
+	}
 
 	body := m.baseView()
 	layers := m.overlayLayers(body)

@@ -19,6 +19,26 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
+type oauthTerminalOutputKey struct{}
+
+// WithOAuthTerminalOutput controls whether the desktop OAuth flow writes its
+// authorization URL and status to stderr. It defaults to enabled for CLI
+// callers; full-screen TUI callers disable it to avoid corrupting rendering.
+func WithOAuthTerminalOutput(ctx context.Context, enabled bool) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, oauthTerminalOutputKey{}, enabled)
+}
+
+func oauthTerminalOutputEnabled(ctx context.Context) bool {
+	if ctx == nil {
+		return true
+	}
+	enabled, configured := ctx.Value(oauthTerminalOutputKey{}).(bool)
+	return !configured || enabled
+}
+
 // Create HTTP client configured with OAuth2 credentials
 func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, autoOpen bool) (*http.Client, error) {
 	logger := corelog.For("firebase")
@@ -125,7 +145,7 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 		return nil, err
 	}
 	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(shutdownCtx)
 	}()
@@ -142,19 +162,28 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	authURL := oauthCfg.AuthCodeURL(state, authCodeOpts...)
 	logger.Info("oauth authorization url ready", "url", redactedURLStringValue(authURL))
 
-	fmt.Fprintln(os.Stderr, "Open this URL in your browser to authorize fbrcm:")
-	fmt.Fprintln(os.Stderr, authURL)
+	terminalOutput := oauthTerminalOutputEnabled(ctx)
+	if terminalOutput {
+		fmt.Fprintln(os.Stderr, "Open this URL in your browser to authorize fbrcm:")
+		fmt.Fprintln(os.Stderr, authURL)
+	}
 	if autoOpen {
 		if err := browser.OpenURL(authURL); err != nil {
 			logger.Warn("open browser automatically failed", "err", err)
-			fmt.Fprintf(os.Stderr, "Could not open browser automatically: %v\n", err)
+			if terminalOutput {
+				fmt.Fprintf(os.Stderr, "Could not open browser automatically: %v\n", err)
+			}
 		}
 	} else {
 		logger.Info("browser auto-open disabled")
 	}
-	fmt.Fprintln(os.Stderr, "Waiting for OAuth callback on local loopback server...")
+	if terminalOutput {
+		fmt.Fprintln(os.Stderr, "Waiting for OAuth callback on local loopback server...")
+	}
 	logger.Info("waiting for oauth callback")
 
+	timer := time.NewTimer(2 * time.Minute)
+	defer timer.Stop()
 	select {
 	case code := <-codeCh:
 		logger.Info("oauth callback received; exchanging code")
@@ -172,7 +201,10 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	case err := <-errCh:
 		logger.Error("oauth callback failed", "err", err)
 		return nil, err
-	case <-time.After(2 * time.Minute):
+	case <-ctx.Done():
+		logger.Info("oauth authorization canceled", "err", ctx.Err())
+		return nil, fmt.Errorf("OAuth authorization canceled: %w", ctx.Err())
+	case <-timer.C:
 		logger.Error("oauth callback timed out")
 		return nil, fmt.Errorf("timed out waiting for OAuth callback")
 	}

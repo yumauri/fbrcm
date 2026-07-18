@@ -20,6 +20,7 @@ type Model struct {
 	allProjects []core.Project
 	projects    []core.Project
 	source      string
+	notice      string
 	err         error
 	loading     bool
 	spinner     spinner.Model
@@ -102,6 +103,13 @@ func (m Model) SetCollapsed(collapsed bool) Model {
 	if collapsed {
 		m.filter.Blur()
 	}
+	return m
+}
+
+// SetNotice sets a non-project status line shown above the project list.
+func (m Model) SetNotice(notice string) Model {
+	m.notice = notice
+	m.syncViewport()
 	return m
 }
 

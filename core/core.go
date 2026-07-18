@@ -126,13 +126,17 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	if err != nil {
 		return err
 	}
-	fb, err := firebase.NewServiceForAuth(s.ctx, auth, !noOpen)
+	serviceCtx := s.ctx
+	if ctx != nil {
+		serviceCtx = ctx
+	}
+	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, !noOpen)
 	if err != nil {
 		logger.Error("login failed", "err", err)
 		return err
 	}
 	s.firebaseMu.Lock()
-	s.firebase[authID] = fb
+	s.firebase[firebaseClientKey(authID)] = fb
 	s.firebaseMu.Unlock()
 	logger.Info("login ready")
 	return nil

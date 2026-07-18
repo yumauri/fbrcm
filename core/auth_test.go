@@ -52,7 +52,7 @@ func TestAddGCloudAuthAndAuthPaths(t *testing.T) {
 func TestAddOAuthAuthWritesSecretAndListAuth(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 
-	entry, err := svc.AddOAuthAuth("oauth", "OAuth", []byte(`{"installed":{"client_id":"x"}}`))
+	entry, err := svc.AddOAuthAuth("oauth", "OAuth", validOAuthClientSecret())
 	if err != nil {
 		t.Fatalf("AddOAuthAuth = %v", err)
 	}
@@ -128,4 +128,23 @@ func TestAddOAuthAuthRejectsInvalidAuthID(t *testing.T) {
 	if err == nil {
 		t.Fatal("AddOAuthAuth invalid id = nil, want error")
 	}
+}
+
+func TestAddOAuthAuthRejectsInvalidSecretWithoutPersistingIdentity(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+
+	if _, err := svc.AddOAuthAuth("oauth", "OAuth", []byte(`{"installed":{}}`)); err == nil {
+		t.Fatal("AddOAuthAuth invalid secret = nil, want error")
+	}
+	entries, _, err := svc.ListAuth()
+	if err != nil {
+		t.Fatalf("ListAuth = %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("entries = %+v, want no persisted invalid identity", entries)
+	}
+}
+
+func validOAuthClientSecret() []byte {
+	return []byte(`{"installed":{"client_id":"client-id","client_secret":"client-secret","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","redirect_uris":["http://localhost"]}}`)
 }

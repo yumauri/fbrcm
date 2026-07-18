@@ -11,7 +11,7 @@ Run `fbrcm` without arguments to open the interactive TUI. Run `fbrcm <command>`
 
 - Go 1.26 or newer
 - Google account with access to the Firebase or Google Cloud projects you want to manage
-- OAuth Desktop Client JSON from Google Cloud Console
+- One supported Google credential source: an OAuth Desktop Client JSON, a service account JSON key, or existing gcloud Application Default Credentials
 - Access to these Google APIs for the target projects:
   - Cloud Resource Manager API, used to list projects
   - Firebase Remote Config API, used to read, validate, publish, and list Remote Config versions
@@ -82,6 +82,7 @@ History and version-chooser keys are configurable like all other TUI bindings:
 ```toml
 [keys.global]
 help = ["?"]
+accounts = ["A"]
 focus_conditions = ["3"]
 focus_history = ["4"]
 focus_details = ["5"]
@@ -135,6 +136,12 @@ submit = ["enter"]
 ## First Setup
 
 `fbrcm` supports three Google auth methods: OAuth desktop login, service account keys, and gcloud Application Default Credentials (ADC).
+
+Run `fbrcm` without arguments to complete setup in the TUI. When the active profile has no authentication and no cached projects, the TUI opens a guided authentication screen instead of the workspace. It can import OAuth or service-account JSON, validate existing gcloud ADC, complete OAuth browser login, and discover projects without an `fbrcm` CLI command.
+
+Press `A` from the workspace, or run **Accounts and profiles** from the `?` action palette, to switch or create a profile, add another identity, or validate/sign in again. If credentials are valid but return no projects, the TUI offers retry, another identity, or an empty workspace. Existing cached projects can still open without configured authentication.
+
+OAuth authorization and project discovery remain cancellable with `Esc`. Canceling OAuth returns to the selected JSON file so a removed or otherwise unusable client can be replaced without restarting the TUI.
 
 ### OAuth Desktop Login
 

@@ -31,6 +31,7 @@ const (
 	ActionQuit      Action = "quit"
 	ActionForceQuit Action = "force_quit"
 	ActionHelp      Action = "help"
+	ActionAccounts  Action = "accounts"
 
 	ActionFilterFuzzy      Action = "fuzzy"
 	ActionFilterStartsWith Action = "starts_with"

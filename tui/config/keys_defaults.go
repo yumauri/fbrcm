@@ -7,6 +7,7 @@ func DefaultKeyMap() KeyMap {
 			ActionQuit:            {"q"},
 			ActionForceQuit:       {"ctrl+c"},
 			ActionHelp:            {"?"},
+			ActionAccounts:        {"A"},
 			ActionFocusProjects:   {"1"},
 			ActionFocusParameters: {"2"},
 			ActionFocusConditions: {"3"},

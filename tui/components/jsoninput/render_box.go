@@ -3,10 +3,9 @@ package jsoninput
 import (
 	"strings"
 
-	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -57,19 +56,12 @@ func jsonContentHeight(screenH int) int {
 }
 
 func jsonHelpText(width int) string {
-	m := help.New()
-	m.ShortSeparator = " • "
-	m.Styles.ShortKey = styles.FilterText
-	m.Styles.ShortDesc = styles.PanelMuted
-	m.Styles.ShortSeparator = styles.PanelMuted
-	m.Styles.Ellipsis = styles.PanelMuted
-	m.SetWidth(width)
-	return m.ShortHelpView([]key.Binding{
+	return viewutil.ShortHelpView(width,
 		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionSave, "save"),
 		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionFormat, "format"),
 		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionCancel, "cancel"),
 		tuiconfig.Binding(tuiconfig.BlockJSONInput, tuiconfig.ActionCopyValue, "copy"),
-	})
+	)
 }
 
 func renderHelpFooter(text string, width int) string {

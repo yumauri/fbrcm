@@ -23,6 +23,12 @@ func (m *Model) contentLines() []string {
 	var lineHighlights [][]int
 	var projectStarts []int
 	var projectEnds []int
+	if m.notice != "" {
+		lines = append(lines, m.notice, "")
+		lineKinds = append(lineKinds, lineKindMeta, lineKindProjectSpacer)
+		lineProjects = append(lineProjects, -1, -1)
+		lineHighlights = append(lineHighlights, nil, nil)
+	}
 
 	if m.err != nil && len(m.projects) == 0 {
 		lines = append(lines, fmt.Sprintf("Load failed: %v", m.err))
@@ -32,6 +38,8 @@ func (m *Model) contentLines() []string {
 	} else if len(m.projects) == 0 {
 		if m.loading {
 			lines = append(lines, "Loading projects...")
+		} else if len(m.allProjects) == 0 && m.filter.Value() == "" {
+			lines = append(lines, "No projects configured")
 		} else {
 			lines = append(lines, "No matching projects")
 		}

@@ -1,11 +1,14 @@
 package moveparam
 
 import (
+	"strings"
+
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/lipgloss/v2"
+
+	"github.com/yumauri/fbrcm/tui/components/inputstyles"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
-	"strings"
 )
 
 var (
@@ -105,25 +108,11 @@ func (m Model) layout() (indent, optionWidth int) {
 	return lipgloss.Width(m.label) + 1, optionWidth
 }
 
-func moveInputStyles() textinput.Styles {
-	s := textinput.DefaultDarkStyles()
-	value, placeholder := styles.PanelText, styles.PanelMuted
-	s.Focused.Text = value
-	s.Focused.Prompt = value
-	s.Focused.Placeholder = placeholder
-	s.Focused.Suggestion = value
-	s.Blurred.Text = value
-	s.Blurred.Prompt = value
-	s.Blurred.Placeholder = placeholder
-	s.Blurred.Suggestion = value
-	s.Cursor.Color = styles.PaletteYellow
-	return s
-}
 func newInput() textinput.Model {
 	input := textinput.New()
 	input.Prompt = ""
 	input.Placeholder = "New group"
-	input.SetStyles(moveInputStyles())
+	input.SetStyles(inputstyles.InlineListTextInput())
 	input.Blur()
 	return input
 }

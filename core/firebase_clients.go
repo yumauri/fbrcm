@@ -19,8 +19,9 @@ func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) 
 }
 
 func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*firebase.Service, error) {
+	clientKey := firebaseClientKey(authID)
 	s.firebaseMu.Lock()
-	if fb, ok := s.firebase[authID]; ok {
+	if fb, ok := s.firebase[clientKey]; ok {
 		s.firebaseMu.Unlock()
 		return fb, nil
 	}
@@ -31,9 +32,9 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 		serviceCtx = ctx
 	}
 
-	result, err, _ := s.firebaseInit.Do(authID, func() (any, error) {
+	result, err, _ := s.firebaseInit.Do(clientKey, func() (any, error) {
 		s.firebaseMu.Lock()
-		if fb, ok := s.firebase[authID]; ok {
+		if fb, ok := s.firebase[clientKey]; ok {
 			s.firebaseMu.Unlock()
 			return fb, nil
 		}
@@ -48,7 +49,7 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 			return nil, err
 		}
 		s.firebaseMu.Lock()
-		s.firebase[authID] = fb
+		s.firebase[clientKey] = fb
 		s.firebaseMu.Unlock()
 		return fb, nil
 	})
@@ -75,7 +76,7 @@ func (s *Core) authEntry(authID string) (config.AuthEntry, error) {
 
 func (s *Core) dropFirebaseService(authID string) {
 	s.firebaseMu.Lock()
-	delete(s.firebase, authID)
+	delete(s.firebase, firebaseClientKey(authID))
 	s.firebaseMu.Unlock()
 }
 
@@ -83,8 +84,12 @@ func (s *Core) dropFirebaseService(authID string) {
 // It is intended for tests that stub Firebase HTTP responses.
 func (s *Core) InjectFirebaseService(authID string, fb *firebase.Service) {
 	s.firebaseMu.Lock()
-	s.firebase[authID] = fb
+	s.firebase[firebaseClientKey(authID)] = fb
 	s.firebaseMu.Unlock()
+}
+
+func firebaseClientKey(authID string) string {
+	return config.GetActiveProfileName() + "\x00" + authID
 }
 
 func removeAuthFiles(auth config.AuthEntry) error {

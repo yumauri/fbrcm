@@ -16,6 +16,7 @@ import (
 	"github.com/yumauri/fbrcm/tui/components/parameters"
 	"github.com/yumauri/fbrcm/tui/components/projects"
 	renameinput "github.com/yumauri/fbrcm/tui/components/renameinput"
+	"github.com/yumauri/fbrcm/tui/components/setup"
 	stringinput "github.com/yumauri/fbrcm/tui/components/stringinput"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -36,6 +37,7 @@ type Model struct {
 	logsSaved       int
 	help            help.Model
 	helpPalette     helpPaletteModel
+	setup           setup.Model
 	active          panels.ID
 	parametersTab   panels.ID
 	prevTop         panels.ID
@@ -122,6 +124,7 @@ func New(svc *core.Core) Model {
 		logsHeight:    defaultLogsPanelHeight,
 		help:          newHelpModel(),
 		helpPalette:   newHelpPaletteModel(),
+		setup:         setup.New(svc),
 		active:        panels.Projects,
 		parametersTab: panels.Parameters,
 		prevTop:       panels.Projects,
@@ -133,7 +136,7 @@ func New(svc *core.Core) Model {
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		m.projects.Init(),
+		m.setup.Init(),
 		m.parameters.Init(),
 		m.conditions.Init(),
 		m.details.Init(),

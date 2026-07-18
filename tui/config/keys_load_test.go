@@ -117,6 +117,12 @@ func TestDefaultKeyMapIncludesHelpPaletteBindings(t *testing.T) {
 	}
 }
 
+func TestDefaultKeyMapIncludesAccountsBinding(t *testing.T) {
+	if got := DefaultKeyMap()[BlockGlobal][ActionAccounts]; len(got) != 1 || got[0] != "A" {
+		t.Fatalf("accounts action = %v, want [A]", got)
+	}
+}
+
 func TestConflictsReportsDisabledActions(t *testing.T) {
 	keys := Clone(DefaultKeyMap())
 	keys[BlockProjects][ActionRefresh] = []string{"enter"}

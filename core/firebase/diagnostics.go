@@ -29,6 +29,24 @@ type AuthDiagnostic struct {
 	CredentialWarning string    `json:"credential_warning,omitempty"`
 }
 
+// ValidateOAuthClientSecret checks that data is a Google OAuth client
+// configuration before it is persisted by an auth-management surface.
+func ValidateOAuthClientSecret(data []byte) error {
+	if _, err := google.ConfigFromJSON(data, cloudPlatformScope); err != nil {
+		return fmt.Errorf("parse OAuth client secret: %w", err)
+	}
+	return nil
+}
+
+// ValidateServiceAccountKey checks that data is a Google service account key
+// before it is persisted by an auth-management surface.
+func ValidateServiceAccountKey(data []byte) error {
+	if _, err := google.JWTConfigFromJSON(data, cloudPlatformScope); err != nil {
+		return fmt.Errorf("parse service account key: %w", err)
+	}
+	return nil
+}
+
 // InspectAuth validates local credential and token files without contacting
 // Google or starting an authorization flow.
 func InspectAuth(auth config.AuthEntry) (AuthDiagnostic, error) {

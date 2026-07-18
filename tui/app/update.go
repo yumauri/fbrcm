@@ -6,13 +6,49 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/tui/components/minsize"
+	"github.com/yumauri/fbrcm/tui/components/setup"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
+	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
 		return m, tea.Quit
+	}
+	if ready, ok := msg.(setup.WorkspaceReadyMsg); ok {
+		var cmds []tea.Cmd
+		if ready.Reset {
+			cmds = appendCmd(cmds, m.resetWorkspaceForProfile())
+		}
+		m.setup = m.setup.Close()
+		notice := ""
+		if ready.CachedOnly {
+			notice = "Cached only · press A to add authentication"
+		}
+		m.projects = m.projects.SetNotice(notice)
+		var cmd tea.Cmd
+		m.projects, cmd = m.projects.Update(messages.ProjectsLoadedMsg{
+			Projects: ready.Projects,
+			Source:   ready.Source,
+		})
+		cmds = appendCmd(cmds, cmd)
+		if m.width > 0 && m.height > 0 {
+			m.applyLayout()
+		}
+		return m, tea.Batch(cmds...)
+	}
+	if _, ok := msg.(setup.CanceledMsg); ok {
+		m.setup = m.setup.Close()
+		return m, nil
+	}
+	if m.setup.IsOpen() {
+		if size, ok := msg.(tea.WindowSizeMsg); ok {
+			m.updateWindowSize(size)
+		}
+		var cmd tea.Cmd
+		m.setup, cmd = m.setup.Update(msg)
+		return m, cmd
 	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, keyMsg.String()) && (m.helpPalette.IsOpen() || m.helpShortcutAvailable(keyMsg.String())) {
 		if m.helpPalette.IsOpen() {

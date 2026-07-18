@@ -127,6 +127,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 	}
 	if block == tuiconfig.BlockGlobal {
 		switch action {
+		case tuiconfig.ActionAccounts:
+			return "Accounts and profiles"
 		case tuiconfig.ActionHelp:
 			return "Open full help"
 		case tuiconfig.ActionForceQuit:

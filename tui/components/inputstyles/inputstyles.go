@@ -26,6 +26,24 @@ func TextInput() textinput.Styles {
 	return inputStyles
 }
 
+// InlineListTextInput returns the text input styling used for editable rows
+// embedded alongside selectable list options.
+func InlineListTextInput() textinput.Styles {
+	inputStyles := textinput.DefaultDarkStyles()
+	valueStyle := styles.PanelText
+	placeholderStyle := styles.PanelMuted
+	inputStyles.Focused.Text = valueStyle
+	inputStyles.Focused.Prompt = valueStyle
+	inputStyles.Focused.Placeholder = placeholderStyle
+	inputStyles.Focused.Suggestion = valueStyle
+	inputStyles.Blurred.Text = valueStyle
+	inputStyles.Blurred.Prompt = valueStyle
+	inputStyles.Blurred.Placeholder = placeholderStyle
+	inputStyles.Blurred.Suggestion = valueStyle
+	inputStyles.Cursor.Color = styles.PaletteYellow
+	return inputStyles
+}
+
 // Textarea returns the shared multi-line textarea styling.
 func Textarea() textarea.Styles {
 	s := textarea.DefaultStyles(true)
