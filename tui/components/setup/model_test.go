@@ -142,6 +142,47 @@ func TestProfilesCanCreateAndSwitchWithoutCLI(t *testing.T) {
 	}
 }
 
+func TestProfileOverridePinsInteractiveProfileSelection(t *testing.T) {
+	m := checkingTestModel(false)
+	state := core.StartupState{
+		Profile:         "default",
+		ProfileOverride: "default",
+		Profiles:        []string{"default", "work"},
+		Auth:            []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}},
+	}
+	m, _ = m.Update(inspectedMsg{state: state})
+	m, _ = m.Update(keyText("p"))
+	if m.mode != modeProfiles || m.profileOverride != "default" {
+		t.Fatalf("mode=%v override=%q, want pinned profiles", m.mode, m.profileOverride)
+	}
+	view := ansi.Strip(m.View(90, 28))
+	if !strings.Contains(view, "pinned by FBRCM_PROFILE") || strings.Contains(view, "New profile") {
+		t.Fatalf("pinned profile view is misleading:\n%s", view)
+	}
+
+	previousCursor := m.cursor
+	m, cmd := m.Update(key(tea.KeyDown))
+	if cmd != nil || m.cursor != previousCursor || m.mode != modeProfiles {
+		t.Fatalf("pinned selection moved: cursor=%d mode=%v cmd=%v", m.cursor, m.mode, cmd)
+	}
+	m, cmd = m.Update(key(tea.KeyEnter))
+	if cmd != nil || m.mode != modeAccounts {
+		t.Fatalf("pinned enter = mode:%v cmd:%v, want accounts", m.mode, cmd)
+	}
+}
+
+func TestSetupQEmitsGuardedQuitRequest(t *testing.T) {
+	m := checkingTestModel(false)
+	m.mode = modeAccounts
+	_, cmd := m.Update(keyText("q"))
+	if cmd == nil {
+		t.Fatal("setup q returned nil command")
+	}
+	if _, ok := cmd().(QuitRequestedMsg); !ok {
+		t.Fatalf("setup q message = %T, want QuitRequestedMsg", cmd())
+	}
+}
+
 func TestNoProjectsOffersRecoveryAndEmptyWorkspace(t *testing.T) {
 	m := checkingTestModel(true)
 	m.mode = modeDiscovering

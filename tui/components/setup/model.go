@@ -68,32 +68,37 @@ type WorkspaceReadyMsg struct {
 // workspace. Mandatory first-run setup cannot emit this message.
 type CanceledMsg struct{}
 
+// QuitRequestedMsg asks the application to run its normal guarded quit flow.
+// Ctrl+C remains the unconditional force-quit path.
+type QuitRequestedMsg struct{}
+
 // Model is the interactive authentication and project-discovery setup gate.
 type Model struct {
 	svc *core.Core
 
-	mode       mode
-	initial    bool
-	mandatory  bool
-	profile    string
-	profiles   []string
-	profileNew bool
-	profileTo  string
-	auth       []config.AuthEntry
-	defaultID  string
-	method     authMethod
-	cursor     int
-	error      error
-	failure    failureStage
-	authID     string
-	syncAuthID string
-	filePath   string
-	loginBack  mode
-	loginStop  context.CancelFunc
-	loginID    uint64
-	syncBack   mode
-	syncStop   context.CancelFunc
-	syncID     uint64
+	mode            mode
+	initial         bool
+	mandatory       bool
+	profile         string
+	profileOverride string
+	profiles        []string
+	profileNew      bool
+	profileTo       string
+	auth            []config.AuthEntry
+	defaultID       string
+	method          authMethod
+	cursor          int
+	error           error
+	failure         failureStage
+	authID          string
+	syncAuthID      string
+	filePath        string
+	loginBack       mode
+	loginStop       context.CancelFunc
+	loginID         uint64
+	syncBack        mode
+	syncStop        context.CancelFunc
+	syncID          uint64
 
 	filepicker filepicker.Model
 	identity   textinput.Model

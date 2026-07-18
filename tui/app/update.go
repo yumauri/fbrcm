@@ -42,6 +42,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.setup = m.setup.Close()
 		return m, nil
 	}
+	if _, ok := msg.(setup.QuitRequestedMsg); ok {
+		m.setup = m.setup.Close()
+		return m, m.requestQuit()
+	}
 	if m.setup.IsOpen() {
 		if size, ok := msg.(tea.WindowSizeMsg); ok {
 			m.updateWindowSize(size)

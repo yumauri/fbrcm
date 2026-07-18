@@ -365,7 +365,7 @@ Flags:
     --profile   use an existing profile for this invocation without changing the active profile
 ```
 
-`--profile` defaults from `FBRCM_PROFILE`. It applies to every CLI subcommand. `FBRCM_PROFILE` also selects the profile when starting the TUI with no arguments.
+`--profile` defaults from `FBRCM_PROFILE`. It applies to every CLI subcommand. `FBRCM_PROFILE` also selects and pins the profile when starting the TUI with no arguments; restart without it to create or switch profiles interactively.
 
 ### `fbrcm add <parameter>`
 

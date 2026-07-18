@@ -137,6 +137,10 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) {
+		if m.details.Dirty() {
+			m.openAccountsBlockedByDirtyDetailsDialog()
+			return m, nil, true
+		}
 		var cmd tea.Cmd
 		m.setup, cmd = m.setup.Open()
 		return m, cmd, true

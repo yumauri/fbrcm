@@ -24,3 +24,15 @@ func (m *Model) requestQuit() tea.Cmd {
 	})
 	return nil
 }
+
+func (m *Model) openAccountsBlockedByDirtyDetailsDialog() {
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title: "Unsaved Details",
+		Body: []string{
+			"Save or discard the open Details changes before managing accounts or profiles.",
+		},
+		Buttons: []dialogcmp.Button{
+			{Label: "Keep Editing", Variant: dialogcmp.ButtonVariantAccent},
+		},
+	})
+}

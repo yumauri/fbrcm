@@ -65,6 +65,7 @@ func (m Model) updateInspected(msg inspectedMsg) (Model, tea.Cmd) {
 		return m, nil
 	}
 	m.profile = msg.state.Profile
+	m.profileOverride = msg.state.ProfileOverride
 	m.profiles = append([]string(nil), msg.state.Profiles...)
 	m.auth = append([]config.AuthEntry(nil), msg.state.Auth...)
 	m.defaultID = msg.state.DefaultAuthID
@@ -203,7 +204,7 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.updateErrorKey(k)
 	case modeChecking, modeAdding, modeSwitching:
 		if k == "q" && m.mandatory {
-			return m, tea.Quit
+			return m, requestQuitCmd()
 		}
 	}
 	return m, nil
@@ -235,7 +236,7 @@ func (m Model) updateAccountsKey(k string) (Model, tea.Cmd) {
 			return m, func() tea.Msg { return CanceledMsg{} }
 		}
 	case "q":
-		return m, tea.Quit
+		return m, requestQuitCmd()
 	}
 	return m, nil
 }
@@ -268,12 +269,23 @@ func (m Model) updateMethodsKey(k string) (Model, tea.Cmd) {
 			return m, func() tea.Msg { return CanceledMsg{} }
 		}
 	case "q":
-		return m, tea.Quit
+		return m, requestQuitCmd()
 	}
 	return m, nil
 }
 
 func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
+	if m.profileOverride != "" {
+		switch k {
+		case "esc", "enter":
+			m.profileIn.Blur()
+			return m.returnFromProfiles()
+		case "q":
+			return m, requestQuitCmd()
+		default:
+			return m, nil
+		}
+	}
 	switch k {
 	case "up", "k":
 		return m, m.moveProfileCursor(-1)
@@ -298,7 +310,7 @@ func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 		return m.returnFromProfiles()
 	case "q":
 		if !m.profileInputSelected() {
-			return m, tea.Quit
+			return m, requestQuitCmd()
 		}
 	}
 	if m.profileInputSelected() {
@@ -347,6 +359,9 @@ func (m *Model) openProfiles() tea.Cmd {
 	m.profileIn.SetValue("")
 	m.profileIn.Err = nil
 	m.profileIn.Blur()
+	if m.profileOverride != "" {
+		return nil
+	}
 	if m.profileInputSelected() {
 		return m.profileIn.Focus()
 	}
@@ -354,7 +369,7 @@ func (m *Model) openProfiles() tea.Cmd {
 }
 
 func (m Model) profileInputSelected() bool {
-	return m.cursor == len(m.profiles)
+	return m.profileOverride == "" && m.cursor == len(m.profiles)
 }
 
 func (m *Model) moveProfileCursor(delta int) tea.Cmd {
@@ -445,7 +460,7 @@ func (m Model) updateAuthenticatingKey(k string) (Model, tea.Cmd) {
 		return m, clearScreenCmd()
 	case "q":
 		m.cancelLogin()
-		return m, tea.Quit
+		return m, requestQuitCmd()
 	}
 	return m, nil
 }
@@ -460,7 +475,7 @@ func (m Model) updateDiscoveringKey(k string) (Model, tea.Cmd) {
 		return m, clearScreenCmd()
 	case "q":
 		m.cancelSync()
-		return m, tea.Quit
+		return m, requestQuitCmd()
 	}
 	return m, nil
 }
@@ -485,7 +500,7 @@ func (m Model) updateNoProjectsKey(k string) (Model, tea.Cmd) {
 			return m, func() tea.Msg { return WorkspaceReadyMsg{Source: "firebase", Reset: reset} }
 		}
 	case "q":
-		return m, tea.Quit
+		return m, requestQuitCmd()
 	}
 	return m, nil
 }
@@ -550,9 +565,13 @@ func (m Model) updateErrorKey(k string) (Model, tea.Cmd) {
 		m.error = nil
 		m.failure = failureNone
 	case "q":
-		return m, tea.Quit
+		return m, requestQuitCmd()
 	}
 	return m, nil
+}
+
+func requestQuitCmd() tea.Cmd {
+	return func() tea.Msg { return QuitRequestedMsg{} }
 }
 
 func (m *Model) moveCursor(delta, count int) {

@@ -11,11 +11,12 @@ import (
 // workspace and showing interactive setup. It deliberately performs no
 // network requests and never starts an authentication flow.
 type StartupState struct {
-	Profile       string
-	Profiles      []string
-	Auth          []config.AuthEntry
-	DefaultAuthID string
-	Projects      []Project
+	Profile         string
+	ProfileOverride string
+	Profiles        []string
+	Auth            []config.AuthEntry
+	DefaultAuthID   string
+	Projects        []Project
 }
 
 // InspectStartupState reads the active profile's auth registry and projects
@@ -38,12 +39,14 @@ func (s *Core) InspectStartupState() (StartupState, error) {
 		projects = nil
 	}
 
+	profileOverride, _ := config.GetProfileOverride()
 	return StartupState{
-		Profile:       config.GetActiveProfileName(),
-		Profiles:      profiles,
-		Auth:          auth,
-		DefaultAuthID: defaultAuthID,
-		Projects:      append([]Project(nil), projects...),
+		Profile:         config.GetActiveProfileName(),
+		ProfileOverride: profileOverride,
+		Profiles:        profiles,
+		Auth:            auth,
+		DefaultAuthID:   defaultAuthID,
+		Projects:        append([]Project(nil), projects...),
 	}, nil
 }
 

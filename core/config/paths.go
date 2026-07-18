@@ -81,6 +81,13 @@ func selectedProfileOverride() (string, bool) {
 	return env.LookupTrimmed(env.Profile)
 }
 
+// GetProfileOverride reports the profile pinned for this process by an
+// explicit override or FBRCM_PROFILE. The persisted active profile is not an
+// override.
+func GetProfileOverride() (string, bool) {
+	return selectedProfileOverride()
+}
+
 // Get the path to the config root directory
 func GetConfigRootDirPath() string {
 	return resolveConfigDir()

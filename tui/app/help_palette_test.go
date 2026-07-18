@@ -9,8 +9,10 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
+	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -234,6 +236,34 @@ func TestHelpPaletteDoesNotRunDisabledAction(t *testing.T) {
 	next, cmd, _ := m.runHelpPaletteAction(actions, helpPaletteListHeight(m.height))
 	if cmd != nil || !next.helpPalette.IsOpen() {
 		t.Fatalf("disabled action ran: cmd:%v open:%v", cmd != nil, next.helpPalette.IsOpen())
+	}
+}
+
+func TestHelpPaletteRecognizesGroupDetailsActions(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Details)
+	m.details = m.details.SetGroupData(&messages.GroupViewData{
+		Project: core.Project{Name: "Demo", ProjectID: "demo"},
+		Group:   core.ParametersGroup{Key: "checkout", Description: "Checkout flags"},
+	})
+	m.detailsVisible = true
+	m.setActive(panels.Details)
+
+	actions := m.helpPaletteActions()
+	availability := make(map[tuiconfig.Action]helpPaletteAction)
+	for _, item := range actions {
+		if item.block == tuiconfig.BlockDetails {
+			availability[item.action] = item
+		}
+	}
+	for _, action := range []tuiconfig.Action{tuiconfig.ActionClose, tuiconfig.ActionSubmit, tuiconfig.ActionRename, tuiconfig.ActionDelete, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath} {
+		if item := availability[action]; !item.enabled {
+			t.Errorf("group Details action %s disabled: %s", action, item.reason)
+		}
+	}
+	for _, action := range []tuiconfig.Action{tuiconfig.ActionNew, tuiconfig.ActionEditValue, tuiconfig.ActionMove, tuiconfig.ActionColor, tuiconfig.ActionCopyValue} {
+		if item := availability[action]; item.enabled || !strings.Contains(item.reason, "parameter groups") {
+			t.Errorf("group-only invalid action %s = enabled:%v reason:%q", action, item.enabled, item.reason)
+		}
 	}
 }
 

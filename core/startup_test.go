@@ -62,6 +62,22 @@ func TestInspectStartupStateReturnsCachedState(t *testing.T) {
 	}
 }
 
+func TestInspectStartupStateReportsProfileOverride(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	if err := config.SetProfileOverride(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = config.SetProfileOverride("") })
+
+	state, err := svc.InspectStartupState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Profile != config.DefaultProfileName || state.ProfileOverride != config.DefaultProfileName {
+		t.Fatalf("state profile=%q override=%q", state.Profile, state.ProfileOverride)
+	}
+}
+
 func TestInspectStartupStateRejectsCorruptProjectsCache(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	path := config.GetProjectsFilePath()

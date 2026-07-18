@@ -32,6 +32,10 @@ func TestDoctorReportsAllLocalChecksWhileOffline(t *testing.T) {
 	if statuses["network"] != DoctorWarn {
 		t.Fatalf("network status = %q, want warn", statuses["network"])
 	}
+	projectsCheck := doctorCheckByID(t, report, "projects-config")
+	if !strings.Contains(projectsCheck.Detail, "fbrcm projects update") || strings.Contains(projectsCheck.Detail, "projects sync") {
+		t.Fatalf("projects remediation = %q", projectsCheck.Detail)
+	}
 	if !report.Failed() {
 		t.Fatal("report with missing auth config should fail")
 	}

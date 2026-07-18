@@ -135,8 +135,12 @@ func (m Model) methodsLines(width int) []string {
 }
 
 func (m Model) accountsLines(width int) []string {
+	profileLabel := m.profileOrDefault()
+	if m.profileOverride != "" {
+		profileLabel += "  ·  pinned by FBRCM_PROFILE"
+	}
 	lines := []string{
-		cardMutedStyle.Render("Profile: ") + cardTextStyle.Render(m.profileOrDefault()),
+		cardMutedStyle.Render("Profile: ") + cardTextStyle.Render(profileLabel),
 		"",
 		"Configured authentication:",
 		"",
@@ -166,6 +170,25 @@ func (m Model) profilesLines(width int) []string {
 	lines := []string{
 		"Profiles keep authentication, projects, caches, and drafts separate.",
 		"",
+	}
+	if m.profileOverride != "" {
+		lines = append(lines,
+			cardMutedStyle.Render("Profile selection is pinned by FBRCM_PROFILE for this process."),
+			cardMutedStyle.Render("Restart fbrcm without it to create or switch profiles."),
+			"",
+		)
+		for _, profile := range m.profiles {
+			label := profile
+			if profile == m.profile {
+				label += "  ·  active  ·  pinned"
+			}
+			lines = append(lines, "  "+label)
+		}
+		lines = append(lines, "", setupHelp(width,
+			[2]string{"enter/esc", "back"},
+			[2]string{"q", "quit"},
+		))
+		return lines
 	}
 	for index, profile := range m.profiles {
 		label := profile

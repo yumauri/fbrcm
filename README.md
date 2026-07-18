@@ -141,6 +141,8 @@ Run `fbrcm` without arguments to complete setup in the TUI. When the active prof
 
 Press `A` from the workspace, or run **Accounts and profiles** from the `?` action palette, to switch or create a profile, add another identity, or validate/sign in again. If credentials are valid but return no projects, the TUI offers retry, another identity, or an empty workspace. Existing cached projects can still open without configured authentication.
 
+When `FBRCM_PROFILE` selects the TUI profile for the current process, Accounts and profiles shows that profile as pinned. Restart without the variable to create or switch profiles interactively.
+
 OAuth authorization and project discovery remain cancellable with `Esc`. Canceling OAuth returns to the selected JSON file so a removed or otherwise unusable client can be replaced without restarting the TUI.
 
 ### OAuth Desktop Login
@@ -320,6 +322,8 @@ In the TUI, press `3` by default to open the Conditions tab. The default actions
 Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, marks actions that are unavailable in the current context with a reason, and runs the selected available action with Enter. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 
 Pressing `q` quits immediately unless the open Details form has unsaved changes, in which case fbrcm asks before discarding them. `Ctrl+C` always force-quits.
+
+Accounts and profiles cannot open while the Details form has unsaved changes. Save or discard the form first so a profile transition cannot lose local edits.
 
 Check local setup, credentials, connectivity, APIs, permissions, and cache writability:
 

@@ -21,6 +21,7 @@ type helpKeyMap struct {
 	logsMode        logsPanelMode
 	detailsVisible  bool
 	conditionDetail bool
+	groupDetail     bool
 	conditionMove   bool
 }
 
@@ -61,6 +62,9 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 	case panels.Details:
 		if k.conditionDetail {
 			return append(common, conditionDetailsHelp()...)
+		}
+		if k.groupDetail {
+			return append(common, groupDetailsHelp()...)
 		}
 		return append(common, detailsHelp()...)
 	default:
@@ -105,6 +109,15 @@ func conditionDetailsHelp() []key.Binding {
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionDelete, "delete"),
 		compoundBinding(ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyName), ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath), "copy"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, "copy expression"),
+	}
+}
+
+func groupDetailsHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionClose, "close"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionRename, "rename"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionDelete, "delete"),
+		compoundBinding(ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyName), ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath), "copy"),
 	}
 }
 
@@ -260,6 +273,7 @@ func (m Model) helpView() string {
 		logsMode:        m.logsMode,
 		detailsVisible:  m.detailsVisible,
 		conditionDetail: m.details.IsCondition(),
+		groupDetail:     m.details.IsGroup(),
 		conditionMove:   m.conditions.MoveActive(),
 	})
 

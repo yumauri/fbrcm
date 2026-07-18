@@ -104,7 +104,7 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 	projects, projectsErr := config.LoadProjects()
 	if projectsErr != nil {
 		if errors.Is(projectsErr, os.ErrNotExist) || errors.Is(projectsErr, config.ErrEmptyProjectsFile) {
-			report.add("projects-config", DoctorWarn, "Projects config", "not cached; run `fbrcm projects sync`")
+			report.add("projects-config", DoctorWarn, "Projects config", "not cached; run `fbrcm projects update`")
 		} else {
 			report.add("projects-config", DoctorFail, "Projects config", projectsErr.Error())
 		}

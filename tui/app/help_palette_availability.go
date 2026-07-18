@@ -64,6 +64,9 @@ func (m Model) helpPaletteActionAvailability(item helpPaletteAction) (bool, stri
 func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	switch action {
 	case tuiconfig.ActionAccounts:
+		if m.details.Dirty() {
+			return false, "save or discard the open Details changes first"
+		}
 		if m.contextOverlayOpen() {
 			return false, "close the current dialog or editor first"
 		}
@@ -308,11 +311,29 @@ func (m Model) conditionsHelpActionAvailability(action tuiconfig.Action) (bool, 
 }
 
 func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, string) {
-	if !m.detailsVisible || (m.details.Data() == nil && m.details.ConditionData() == nil) {
+	if !m.detailsVisible || (m.details.Data() == nil && m.details.ConditionData() == nil && m.details.GroupData() == nil) {
 		return false, "details panel has no selected item"
 	}
-	if action == tuiconfig.ActionNew && m.details.IsCondition() {
-		return false, "conditional values can only be added to parameters"
+	if m.details.IsGroup() {
+		switch action {
+		case tuiconfig.ActionClose, tuiconfig.ActionSubmit, tuiconfig.ActionRename,
+			tuiconfig.ActionDelete, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
+			return true, ""
+		default:
+			return false, "parameter groups do not support this Details action"
+		}
+	}
+	if m.details.IsCondition() {
+		if action == tuiconfig.ActionNew {
+			return false, "conditional values can only be added to parameters"
+		}
+		return true, ""
+	}
+	if action == tuiconfig.ActionColor {
+		return false, "colors can only be edited for conditions"
+	}
+	if action == tuiconfig.ActionEditValue && !m.details.ValueSelected() {
+		return false, "no parameter value is selected"
 	}
 	if action == tuiconfig.ActionCopyValue && !m.details.ValueSelected() && !m.details.UsageSelected() {
 		return false, "no value or usage is selected"
