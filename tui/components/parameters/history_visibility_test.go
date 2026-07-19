@@ -1,6 +1,8 @@
 package parameters
 
 import (
+	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -113,6 +115,144 @@ func TestHistoryLoadDefersVerificationAndPreservesInflightRequest(t *testing.T) 
 	m.invalidateHistoryIfVersionChanged(project.ProjectID)
 	if !m.histories[project.ProjectID].loading {
 		t.Fatal("in-flight history load was invalidated")
+	}
+}
+
+func TestHistoryLoadMarksNAVersionUnavailableWithoutRequest(t *testing.T) {
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	m := New(nil)
+	m.history = true
+	m.projects = []projectState{{project: project, tree: &core.ParametersTree{Version: "NA"}, cacheVersion: "NA"}}
+	m.projectIndex[project.ProjectID] = 0
+
+	m, cmd := m.LoadHistory()
+	if cmd != nil {
+		t.Fatal("NA version started a history request")
+	}
+	state := m.histories[project.ProjectID]
+	if !state.unavailable || state.loading || state.err != nil {
+		t.Fatalf("NA history state = %#v, want unavailable", state)
+	}
+
+	m.projects[0].tree.Version = "1"
+	m.projects[0].cacheVersion = "1"
+	m.invalidateHistoryIfVersionChanged(project.ProjectID)
+	if _, ok := m.histories[project.ProjectID]; ok {
+		t.Fatal("NA history state was not invalidated after a version became available")
+	}
+}
+
+func TestHistoryProjectStatusIsRightAligned(t *testing.T) {
+	project := core.Project{ProjectID: "mercato-mobile-9eac5", Name: "Mercato Mobile"}
+	tree := &core.ParametersTree{Version: "NA"}
+	tests := []struct {
+		name  string
+		state historyState
+		label string
+	}{
+		{name: "unavailable", state: historyState{unavailable: true}, label: "history unavailable"},
+		{name: "error", state: historyState{err: errors.New("failed")}, label: "history error"},
+	}
+	for _, width := range []int{38, 100} {
+		for _, tt := range tests {
+			t.Run(tt.name+"/width="+fmt.Sprint(width), func(t *testing.T) {
+				m := New(nil).SetBounds(0, 0, width, 10)
+				m.history = true
+				m.projects = []projectState{{project: project, tree: tree}}
+				m.projectIndex[project.ProjectID] = 0
+				m.histories[project.ProjectID] = tt.state
+				m.syncVisible()
+
+				line := ansi.Strip(m.renderHistoryProjectNode(m.visible[0], &m.projects[0], false, false))
+				if got, want := lipgloss.Width(line), m.viewportWidth(); got != want {
+					t.Fatalf("line width = %d, want %d: %q", got, want, line)
+				}
+				if got, want := strings.Index(line, tt.label), m.viewportWidth()-lipgloss.Width(tt.label); got != want {
+					t.Fatalf("status starts at %d, want %d: %q", got, want, line)
+				}
+				if width == 100 {
+					identity := project.Name + " " + project.ProjectID
+					if !strings.HasPrefix(line, identity) {
+						t.Fatalf("project identity cropped from wide status row: %q", line)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestSelectedHistoryProjectNameIsBold(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	tree := historyTestTree("parameter_name")
+	tests := []struct {
+		name  string
+		state historyState
+	}{
+		{name: "unavailable", state: historyState{currentVersion: "NA", unavailable: true}},
+		{name: "loaded", state: buildHistoryState(historyState{
+			previous: tree, current: tree, previousVersion: "1", currentVersion: "2",
+		})},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := New(nil).SetBounds(0, 0, 100, 10)
+			m.history = true
+			m.projects = []projectState{{project: project, tree: tree}}
+			m.projectIndex[project.ProjectID] = 0
+			m.histories[project.ProjectID] = tt.state
+			m.syncVisible()
+
+			nameStyle, _ := projectIdentityStyles(true, false)
+			if !nameStyle.GetBold() {
+				t.Fatal("selected project-name style is not bold")
+			}
+			line := m.renderNode(m.visible[0], true)
+			if renderedName := nameStyle.Render(project.Name); !strings.Contains(line, renderedName) {
+				t.Fatalf("final selected history project row does not preserve bold name style: %q", line)
+			}
+		})
+	}
+}
+
+func TestHistoryUnavailableHasNoTreePlaceholder(t *testing.T) {
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	m := New(nil).SetBounds(0, 0, 80, 10)
+	m.history = true
+	m.projects = []projectState{{project: project, tree: &core.ParametersTree{Version: "NA"}}}
+	m.projectIndex[project.ProjectID] = 0
+	m.histories[project.ProjectID] = historyState{currentVersion: "NA", unavailable: true}
+	m.syncVisible()
+
+	if len(m.visible) != 1 || m.visible[0].kind != nodeProject {
+		t.Fatalf("unavailable history nodes = %#v, want only the project row", m.visible)
+	}
+	view := ansi.Strip(m.View(false))
+	for _, unwanted := range []string{"No parameters", "╰╌"} {
+		if strings.Contains(view, unwanted) {
+			t.Fatalf("unavailable history view contains dangling tree content %q: %q", unwanted, view)
+		}
+	}
+}
+
+func TestHistoryFirstOpenHasNoTreePlaceholderBeforeLoadStarts(t *testing.T) {
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	m := New(nil).SetBounds(0, 0, 80, 10)
+	m.projects = []projectState{{project: project, tree: &core.ParametersTree{Version: "NA"}}}
+	m.projectIndex[project.ProjectID] = 0
+	m = m.SetHistory(true)
+
+	if _, ok := m.histories[project.ProjectID]; ok {
+		t.Fatal("test setup unexpectedly created history state before loading")
+	}
+	if len(m.visible) != 1 || m.visible[0].kind != nodeProject {
+		t.Fatalf("first-open history nodes = %#v, want only the project row", m.visible)
+	}
+	view := ansi.Strip(m.View(false))
+	for _, unwanted := range []string{"No parameters", "╰╌"} {
+		if strings.Contains(view, unwanted) {
+			t.Fatalf("first-open history view contains dangling tree content %q: %q", unwanted, view)
+		}
 	}
 }
 

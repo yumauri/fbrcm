@@ -2,7 +2,6 @@ package parameters
 
 import (
 	"context"
-	"fmt"
 	"image/color"
 	"reflect"
 	"slices"
@@ -18,7 +17,6 @@ import (
 	"github.com/yumauri/fbrcm/core/strfold"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/messages"
-	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 type historyColumns struct {
@@ -71,11 +69,11 @@ func (m Model) renderHistoryGridLine(line string, selected bool, kind visibleNod
 	width := m.viewportWidth()
 	line = viewutil.PadRight(ansi.Truncate(line, width, ""), width)
 	fullSelection := selected && kind != nodeValue
+	if fullSelection && kind == nodeProject {
+		return line
+	}
 	if fullSelection {
 		selection := parameterSelectionStyle()
-		if kind == nodeProject {
-			selection = styles.TreeProjectSelectionStyle()
-		}
 		if kind == nodeGroup {
 			selection = groupSelectionStyle()
 		}
@@ -279,7 +277,7 @@ func (m Model) loadHistoryCmd(project core.Project, preferred historyPairSelecti
 			return messages.HistoryLoadedMsg{Project: project, Err: err}
 		}
 		if len(list.Versions) < 2 {
-			return messages.HistoryLoadedMsg{Project: project, Err: fmt.Errorf("project %s has fewer than two Remote Config versions", project.ProjectID)}
+			return messages.HistoryLoadedMsg{Project: project, Versions: list.Versions, Unavailable: true}
 		}
 		if hasPreferred && historyVersionIndex(list.Versions, preferred.previous) >= 0 && historyVersionIndex(list.Versions, preferred.current) >= 0 {
 			return m.loadHistoryPair(project, preferred.previous, preferred.current, list.Versions)
@@ -332,7 +330,10 @@ func (m *Model) updateHistory(msg messages.HistoryLoadedMsg) {
 		previous: msg.PreviousTree, current: msg.CurrentTree,
 		previousVersion: msg.PreviousVersion, currentVersion: msg.CurrentVersion,
 		previousPublished: msg.PreviousPublished, currentPublished: msg.CurrentPublished, err: msg.Err,
-		versions: versions, pairs: pairs,
+		unavailable: msg.Unavailable, versions: versions, pairs: pairs,
+	}
+	if state.unavailable && state.currentVersion == "" && len(versions) > 0 {
+		state.currentVersion = versions[0].VersionNumber
 	}
 	if msg.Err != nil && old.current != nil {
 		old.err, old.loading = msg.Err, false
@@ -351,7 +352,7 @@ func historyPairKey(left, right string) string { return left + "\x00" + right }
 
 func (m *Model) invalidateHistoryIfVersionChanged(projectID string) {
 	history, ok := m.histories[projectID]
-	if !ok || history.loading || len(history.versions) == 0 {
+	if !ok || history.loading {
 		return
 	}
 	idx, ok := m.projectIndex[projectID]
@@ -362,6 +363,17 @@ func (m *Model) invalidateHistoryIfVersionChanged(projectID string) {
 	desired := project.cacheVersion
 	if desired == "" && project.tree != nil {
 		desired = project.tree.Version
+	}
+	if history.unavailable {
+		if desired == "" || desired == history.currentVersion {
+			return
+		}
+		delete(m.histories, projectID)
+		m.syncVisible()
+		return
+	}
+	if len(history.versions) == 0 {
+		return
 	}
 	if desired == "" || desired == history.versions[0].VersionNumber {
 		return

@@ -46,6 +46,7 @@ type historyState struct {
 	previousPublished, currentPublished string
 	err                                 error
 	loading                             bool
+	unavailable                         bool
 	versions                            []core.RemoteConfigVersionEntry
 	pairs                               map[string]historyPairData
 	counts                              historyChangeCounts
@@ -213,7 +214,11 @@ func (m Model) LoadHistory() (Model, tea.Cmd) {
 			continue
 		}
 		state, ok := m.histories[project.project.ProjectID]
-		if ok && (state.loading || state.current != nil || state.err != nil) {
+		if project.cacheVersion == "NA" || (project.tree != nil && project.tree.Version == "NA") {
+			m.histories[project.project.ProjectID] = historyState{currentVersion: "NA", unavailable: true}
+			continue
+		}
+		if ok && (state.loading || state.current != nil || state.err != nil || state.unavailable) {
 			continue
 		}
 		state.loading = true

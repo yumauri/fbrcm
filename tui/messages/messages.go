@@ -52,6 +52,7 @@ type HistoryLoadedMsg struct {
 	PreviousVersion, CurrentVersion     string
 	PreviousPublished, CurrentPublished string
 	Versions                            []core.RemoteConfigVersionEntry
+	Unavailable                         bool
 	Err                                 error
 }
 

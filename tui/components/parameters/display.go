@@ -16,8 +16,13 @@ func (m Model) buildVisible() []visibleNode {
 	filtering := query != ""
 	for _, project := range m.projects {
 		tree := project.tree
+		historyStatusOnly := false
 		if m.history {
-			tree = m.historyTree(project.project.ProjectID, tree)
+			history := m.histories[project.project.ProjectID]
+			historyStatusOnly = history.current == nil
+			if !historyStatusOnly {
+				tree = m.historyTree(project.project.ProjectID, tree)
+			}
 		}
 		nodes = append(nodes, visibleNode{
 			kind:      nodeProject,
@@ -25,6 +30,9 @@ func (m Model) buildVisible() []visibleNode {
 			label:     rcdisplay.FormatProject(project.project.Name, project.project.ProjectID),
 			expanded:  true,
 		})
+		if historyStatusOnly {
+			continue
+		}
 
 		if project.loading {
 			nodes = append(nodes, visibleNode{

@@ -28,21 +28,7 @@ func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) st
 
 	name := viewutil.TruncatePlain(project.project.Name, leftLimit)
 	id := viewutil.TruncatePlain(project.project.ProjectID, max(leftLimit-lipgloss.Width(name)-1, 0))
-	nameStyle := styles.TreeProjectName
-	idStyle := styles.TreeProjectID
-	if underlined {
-		nameStyle = nameStyle.Underline(true)
-		idStyle = idStyle.Underline(true)
-	}
-	if selected {
-		if styles.NoColorEnabled() {
-			nameStyle = lipgloss.NewStyle().Bold(true).Reverse(true)
-			idStyle = lipgloss.NewStyle().Bold(true).Reverse(true)
-		} else {
-			nameStyle = nameStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
-			idStyle = idStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
-		}
-	}
+	nameStyle, idStyle := projectIdentityStyles(selected, underlined)
 	left := nameStyle.Render(name)
 	if id != "" {
 		separator := " "
@@ -83,65 +69,92 @@ func (m Model) renderProjectNode(node visibleNode, selected, underlined bool) st
 
 func (m Model) renderHistoryProjectNode(node visibleNode, project *projectState, selected, underlined bool) string {
 	width := m.viewportWidth()
-	if m.historyStacked() {
-		history := m.histories[node.projectID]
-		meta := ""
-		if history.loading {
-			meta = "loading history…"
-		} else if history.err != nil {
-			meta = "history error"
-		} else if history.previousVersion != "" {
-			meta = "v" + history.previousVersion + " → v" + history.currentVersion
+	history := m.histories[node.projectID]
+	stacked := m.historyStacked()
+	meta := ""
+	switch {
+	case history.loading:
+		meta = "loading history…"
+	case history.unavailable:
+		meta = "history unavailable"
+	case history.err != nil:
+		meta = "history error"
+	case stacked && history.previousVersion != "":
+		meta = "v" + history.previousVersion + " → v" + history.currentVersion
+	}
+	if stacked || history.previousVersion == "" {
+		leftLimit := max(width-lipgloss.Width(meta)-1, 1)
+		name := viewutil.TruncatePlain(project.project.Name, leftLimit)
+		id := viewutil.TruncatePlain(project.project.ProjectID, max(leftLimit-lipgloss.Width(name)-1, 0))
+		nameStyle, idStyle := projectIdentityStyles(selected, underlined)
+		left := nameStyle.Render(name)
+		if id != "" {
+			separator := " "
+			if selected {
+				separator = idStyle.Render(separator)
+			}
+			left += separator + idStyle.Render(id)
 		}
-		name := project.project.Name + " " + project.project.ProjectID
-		name = viewutil.TruncatePlain(name, max(width-lipgloss.Width(meta)-1, 1))
-		nameStyle := styles.TreeProjectName
-		if underlined {
-			nameStyle = nameStyle.Underline(true)
-		}
-		line := nameStyle.Render(name) + strings.Repeat(" ", max(width-lipgloss.Width(name)-lipgloss.Width(meta), 1)) + projectMetaStyle.Render(meta)
-		line = viewutil.PadRight(line, width)
+		gap := max(width-lipgloss.Width(left)-lipgloss.Width(meta), 1)
 		if selected {
-			return styles.TreeProjectSelectionStyle().Render(line)
+			selection := styles.TreeProjectSelectionStyle()
+			line := left + selection.Render(strings.Repeat(" ", gap)+meta)
+			return styles.FillSelectedLine(line, width, selection)
 		}
+		line := left + projectMetaStyle.Render(strings.Repeat(" ", gap)+meta)
+		line = viewutil.PadRight(line, width)
 		return line
 	}
 	columns := m.historyColumnLayout()
 	name := viewutil.TruncatePlain(project.project.Name, columns.leftBorder)
 	id := viewutil.TruncatePlain(project.project.ProjectID, max(columns.leftBorder-lipgloss.Width(name)-1, 0))
+	nameStyle, idStyle := projectIdentityStyles(selected, underlined)
+	left := nameStyle.Render(name)
+	if id != "" {
+		separator := " "
+		if selected {
+			separator = idStyle.Render(separator)
+		}
+		left += separator + idStyle.Render(id)
+	}
+	leftPadding := strings.Repeat(" ", max(columns.leftBorder-lipgloss.Width(left), 0))
+	if selected {
+		left += styles.TreeProjectSelectionStyle().Render(leftPadding)
+	} else {
+		left += leftPadding
+	}
+
+	previous := "  v" + history.previousVersion + " " + history.previousPublished
+	current := "  v" + history.currentVersion + " " + history.currentPublished
+	previous = viewutil.TruncatePlain(previous, columns.leftWidth)
+	current = viewutil.TruncatePlain(current, columns.rightWidth)
+	previousCell := previous + strings.Repeat(" ", max(columns.leftWidth-lipgloss.Width(previous), 0))
+	currentCell := current + strings.Repeat(" ", max(columns.rightWidth-lipgloss.Width(current), 0))
+	if selected {
+		selection := styles.TreeProjectSelectionStyle()
+		line := left + selection.Render(" "+previousCell+" "+currentCell)
+		return styles.FillSelectedLine(line, width, selection)
+	}
+	line := left + " " + projectMetaStyle.Render(previousCell) + " " + projectMetaStyle.Render(currentCell)
+	line = viewutil.PadRight(line, width)
+	return line
+}
+
+func projectIdentityStyles(selected, underlined bool) (lipgloss.Style, lipgloss.Style) {
 	nameStyle := styles.TreeProjectName
 	idStyle := styles.TreeProjectID
 	if underlined {
 		nameStyle = nameStyle.Underline(true)
 		idStyle = idStyle.Underline(true)
 	}
-	left := nameStyle.Render(name)
-	if id != "" {
-		left += " " + idStyle.Render(id)
+	if !selected {
+		return nameStyle, idStyle
 	}
-	left = viewutil.PadRight(left, columns.leftBorder)
-
-	history := m.histories[node.projectID]
-	previous, current := "", ""
-	switch {
-	case history.loading:
-		previous = "loading history…"
-	case history.err != nil:
-		previous = "history error"
-	case history.previousVersion != "":
-		previous = "  v" + history.previousVersion + " " + history.previousPublished
-		current = "  v" + history.currentVersion + " " + history.currentPublished
+	if styles.NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true).Reverse(true), lipgloss.NewStyle().Bold(true).Reverse(true)
 	}
-	previous = viewutil.TruncatePlain(previous, columns.leftWidth)
-	current = viewutil.TruncatePlain(current, columns.rightWidth)
-	previousCell := previous + strings.Repeat(" ", max(columns.leftWidth-lipgloss.Width(previous), 0))
-	currentCell := current + strings.Repeat(" ", max(columns.rightWidth-lipgloss.Width(current), 0))
-	line := left + " " + projectMetaStyle.Render(previousCell) + " " + projectMetaStyle.Render(currentCell)
-	line = viewutil.PadRight(line, width)
-	if selected {
-		return styles.TreeProjectSelectionStyle().Render(line)
-	}
-	return line
+	return nameStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright),
+		idStyle.Background(styles.PaletteError).Foreground(styles.PaletteSlateBright)
 }
 
 func (m Model) renderGroupNode(node visibleNode, selected, underlined bool) string {
