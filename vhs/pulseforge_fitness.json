@@ -2,32 +2,27 @@
   "conditions": [
     {
       "name": "new_year_challenge",
-      "expression": "device.dateTime >= dateTime('2026-01-01T00:00:00Z') && device.dateTime < dateTime('2026-02-01T00:00:00Z')",
-      "description": "January challenge season",
+      "expression": "percent <= 25",
       "tagColor": "GREEN"
     },
     {
       "name": "premium_users",
-      "expression": "app.userProperty['plan'].exactlyMatches(['premium','family'])",
-      "description": "Premium subscribers",
+      "expression": "percent <= 30",
       "tagColor": "BLUE"
     },
     {
       "name": "wear_os_users",
-      "expression": "device.os == 'android' && app.userProperty['wearable'].exactlyMatches(['wear_os'])",
-      "description": "Wear OS connected users",
+      "expression": "device.os == 'android' && percent <= 40",
       "tagColor": "PURPLE"
     },
     {
       "name": "low_activity_users",
-      "expression": "app.userProperty['weekly_workouts'] <= 1",
-      "description": "Users with low recent activity",
+      "expression": "device.os == 'ios' && percent <= 10",
       "tagColor": "ORANGE"
     },
     {
       "name": "ios_rollout_50",
       "expression": "device.os == 'ios' && percent <= 50",
-      "description": "iOS half rollout",
       "tagColor": "CYAN"
     }
   ],

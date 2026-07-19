@@ -38,12 +38,13 @@ func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID strin
 		return err
 	}
 
-	if _, err := firebase.ParseRemoteConfig(raw); err != nil {
+	updateRaw, err := firebase.PrepareRemoteConfigUpdate(raw)
+	if err != nil {
 		logger.Error("remote config validation payload decode failed", "project_id", projectID, "err", err)
 		return fmt.Errorf("decode remote config: %w", err)
 	}
 
-	if err := fb.ValidateRemoteConfig(ctx, projectID, raw, etag); err != nil {
+	if err := fb.ValidateRemoteConfig(ctx, projectID, updateRaw, etag); err != nil {
 		logger.Error("firebase remote config validation failed", "project_id", projectID, "err", err)
 		return fmt.Errorf("firebase error: %w", err)
 	}
@@ -60,12 +61,13 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 		return nil, "", err
 	}
 
-	if _, err := firebase.ParseRemoteConfig(raw); err != nil {
+	updateRaw, err := firebase.PrepareRemoteConfigUpdate(raw)
+	if err != nil {
 		logger.Error("remote config publish payload decode failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("decode remote config: %w", err)
 	}
 
-	updatedRaw, nextETag, err := fb.UpdateRemoteConfig(ctx, projectID, raw, etag)
+	updatedRaw, nextETag, err := fb.UpdateRemoteConfig(ctx, projectID, updateRaw, etag)
 	if err != nil {
 		logger.Error("firebase remote config publish failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("firebase error: %w", err)

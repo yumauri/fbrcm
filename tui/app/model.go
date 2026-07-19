@@ -15,6 +15,7 @@ import (
 	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
 	numberinput "github.com/yumauri/fbrcm/tui/components/numberinput"
 	"github.com/yumauri/fbrcm/tui/components/parameters"
+	"github.com/yumauri/fbrcm/tui/components/projectio"
 	"github.com/yumauri/fbrcm/tui/components/projects"
 	renameinput "github.com/yumauri/fbrcm/tui/components/renameinput"
 	"github.com/yumauri/fbrcm/tui/components/setup"
@@ -52,6 +53,7 @@ type Model struct {
 	moveParam       moveparam.Model
 	authPicker      authpicker.Model
 	renameInput     renameinput.Model
+	projectIO       projectio.Model
 	dialogQueue     []pendingDialog
 	duplicate       *duplicateSession
 	newParameter    *newParameterSession
@@ -61,6 +63,8 @@ type Model struct {
 	conditionalAdd  *conditionalValueAddSession
 	authBind        *authBindingSession
 	profileRename   *profileRenameSession
+	projectImport   *core.ProjectImportPlan
+	projectExport   *projectExportSession
 	valueEditSource panels.ID
 	authCount       int
 
@@ -135,6 +139,7 @@ func New(svc *core.Core) Model {
 		moveParam:     moveparam.New(),
 		authPicker:    authpicker.New(),
 		renameInput:   renameinput.New(),
+		projectIO:     projectio.New(),
 		details:       details.New(),
 		logs:          logs.New(svc),
 		logsHeight:    defaultLogsPanelHeight,

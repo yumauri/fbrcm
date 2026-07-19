@@ -153,7 +153,16 @@ func (m Model) PreferredWidth() int {
 
 // HasCurrentProject reports whether project actions have a current target.
 func (m Model) HasCurrentProject() bool {
-	return len(m.projects) > 0 && m.cursor >= 0 && m.cursor < len(m.projects)
+	_, ok := m.CurrentProject()
+	return ok
+}
+
+// CurrentProject returns the project under the Projects panel cursor.
+func (m Model) CurrentProject() (core.Project, bool) {
+	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
+		return core.Project{}, false
+	}
+	return m.projects[m.cursor], true
 }
 
 // ActionTargets returns marked projects, or the current project when nothing
@@ -162,10 +171,11 @@ func (m Model) ActionTargets() []core.Project {
 	if selected := m.selectedProjects(); len(selected) > 0 {
 		return selected
 	}
-	if !m.HasCurrentProject() {
+	project, ok := m.CurrentProject()
+	if !ok {
 		return nil
 	}
-	return []core.Project{m.projects[m.cursor]}
+	return []core.Project{project}
 }
 
 // ApplyProjectUpdates replaces matching cached project values and notifies

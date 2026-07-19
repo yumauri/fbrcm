@@ -39,7 +39,7 @@ func TestReadImportOptionsMergeResolveValidation(t *testing.T) {
 	cmd.Flags().String("expr", "", "")
 	cmd.Flags().String("search", "", "")
 	cmd.Flags().Bool("remove-all-conditions", false, "")
-	cmd.Flags().Bool("remove-project-specific-conditions", false, "")
+	cmd.Flags().Bool("keep-portable-conditions-only", false, "")
 	cmd.Flags().Bool("merge", false, "")
 	cmd.Flags().Bool("override", false, "")
 	cmd.Flags().String("merge-resolve", "", "")
@@ -71,6 +71,12 @@ func TestChooseImportStrategyFlags(t *testing.T) {
 	merge, err := chooseImportStrategy(importOptions{merge: true})
 	if err != nil || merge != importStrategyMerge {
 		t.Fatalf("merge strategy = %q err=%v", merge, err)
+	}
+}
+
+func TestImportConditionCountLine(t *testing.T) {
+	if got := importConditionCountLine(5, 2); got != "Import conditions: 2 kept · 3 removed" {
+		t.Fatalf("condition count line = %q", got)
 	}
 }
 

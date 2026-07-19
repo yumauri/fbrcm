@@ -44,6 +44,8 @@ func DefaultKeyMap() KeyMap {
 			ActionOpen:       {"o"},
 			ActionMark:       {"space"},
 			ActionBindAuth:   {"b"},
+			ActionImport:     {"i"},
+			ActionExport:     {"e"},
 			ActionUp:         {"up", "k"},
 			ActionDown:       {"down", "j"},
 			ActionPageUp:     {"pgup", "h"},

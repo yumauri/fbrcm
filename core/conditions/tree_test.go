@@ -13,7 +13,7 @@ func TestBuildTreePreservesConditionPriorityAndBuildsUsage(t *testing.T) {
 		Version: firebase.RemoteConfigVersion{VersionNumber: "42"},
 		Conditions: []firebase.RemoteConfigCondition{
 			{Name: "beta", Expression: "app.version > '2'", TagColor: "BLUE"},
-			{Name: "staff", Expression: "user in staff", Description: " Employees "},
+			{Name: "staff", Expression: "user in staff"},
 		},
 		Parameters: map[string]firebase.RemoteConfigParam{
 			"welcome": {ValueType: "STRING", ConditionalValues: map[string]firebase.RemoteConfigValue{
@@ -35,9 +35,6 @@ func TestBuildTreePreservesConditionPriorityAndBuildsUsage(t *testing.T) {
 	}
 	if tree.Conditions[0].Priority != 1 || tree.Conditions[1].Priority != 2 {
 		t.Fatalf("priorities = %d, %d", tree.Conditions[0].Priority, tree.Conditions[1].Priority)
-	}
-	if tree.Conditions[1].Description != "Employees" {
-		t.Fatalf("trimmed description = %q", tree.Conditions[1].Description)
 	}
 	staffUsage := tree.Conditions[1].Usages
 	if len(staffUsage) != 1 || staffUsage[0].GroupKey != rootgroup.TreeKey || staffUsage[0].ParameterKey != "welcome" {

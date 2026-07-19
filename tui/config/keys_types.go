@@ -60,6 +60,8 @@ const (
 	ActionOpen       Action = "open"
 	ActionMark       Action = "mark"
 	ActionBindAuth   Action = "bind_auth"
+	ActionImport     Action = "import"
+	ActionExport     Action = "export"
 
 	ActionToggleMaximize   Action = "toggle_maximize"
 	ActionRename           Action = "rename"

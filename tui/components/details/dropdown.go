@@ -72,10 +72,6 @@ func (m Model) fieldValueLine(field fieldID) int {
 			}
 			line += 3
 		}
-		line += 1 + len(strings.Split(m.conditionExpression, "\n")) + 1
-		if field == fieldDescription {
-			return line + 1
-		}
 		return 0
 	}
 	if m.groupData != nil {
@@ -158,7 +154,6 @@ func (m Model) conditionUsageParameterLine(index int) int {
 	line := 1 + len(wrappedLines(rcdisplay.FormatProject(m.conditionData.Project.Name, m.conditionData.Project.ProjectID), width)) + 1
 	line += 3 * 3 // priority, name, color
 	line += 1 + len(strings.Split(m.conditionExpression, "\n")) + 1
-	line += 1 + m.descriptionVisualHeight() + 1
 	line += 2 // Used by heading and spacer.
 	for usageIndex, usage := range condition.Usages {
 		if usageIndex == index {

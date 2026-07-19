@@ -19,11 +19,10 @@ func conditionDetailsTestModel() Model {
 	return New().SetBounds(0, 0, 60, 40).SetActive(true).SetConditionData(&messages.ConditionViewData{
 		Project: core.Project{Name: "Demo", ProjectID: "demo"},
 		Condition: core.ConditionEntry{
-			Priority:    1,
-			Name:        "staff",
-			Description: "Employee rollout",
-			TagColor:    "GREEN",
-			Expression:  "true",
+			Priority:   1,
+			Name:       "staff",
+			TagColor:   "GREEN",
+			Expression: "true",
 			Usages: []core.ConditionUsage{
 				{GroupLabel: "checkout", ParameterKey: "enabled", ValueType: "BOOLEAN", Value: "true", RawValue: "true", Plain: true},
 				{GroupLabel: "(root)", ParameterKey: "payload", ValueType: "JSON", Value: `{"enabled":true,"limit":2}`, RawValue: `{"enabled":true,"limit":2}`, Plain: true},
@@ -110,14 +109,13 @@ func TestConditionDetailsFieldsStageOneAtomicEdit(t *testing.T) {
 	m.priorityInput.SetValue("2")
 	m.nameInput.SetValue("employees")
 	m.conditionColor = "PURPLE"
-	m.descInput.SetValue("Updated audience")
 	m = m.SetConditionExpression("app.version > '2'")
 
 	edit, ok := m.ConditionEdit()
 	if !ok {
 		t.Fatal("ConditionEdit reported no changes")
 	}
-	if edit.Name != "staff" || edit.NextName != "employees" || edit.NextPriority != 2 || edit.NextTagColor != "PURPLE" || edit.NextExpression != "app.version > '2'" || edit.NextDescription != "Updated audience" {
+	if edit.Name != "staff" || edit.NextName != "employees" || edit.NextPriority != 2 || edit.NextTagColor != "PURPLE" || edit.NextExpression != "app.version > '2'" {
 		t.Fatalf("ConditionEdit = %#v", edit)
 	}
 	if m.Invalid() {
@@ -160,7 +158,6 @@ func TestConditionDetailsFieldsActivateFromMouse(t *testing.T) {
 		{name: "priority", field: fieldConditionPriority},
 		{name: "name", field: fieldName},
 		{name: "color", field: fieldConditionColor, wantDropdown: true},
-		{name: "description", field: fieldDescription},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

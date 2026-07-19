@@ -35,10 +35,9 @@ func buildConditions(remoteConfig *firebase.RemoteConfig) []Condition {
 	conditions := make([]Condition, 0, len(remoteConfig.Conditions))
 	for _, condition := range remoteConfig.Conditions {
 		conditions = append(conditions, Condition{
-			Name:        condition.Name,
-			Expression:  condition.Expression,
-			Description: strings.TrimSpace(condition.Description),
-			Color:       condition.TagColor,
+			Name:       condition.Name,
+			Expression: condition.Expression,
+			Color:      condition.TagColor,
 		})
 	}
 	return conditions

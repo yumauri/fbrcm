@@ -3,15 +3,23 @@ package dialog
 import (
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/tui/components/buttonbar"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
-type ButtonVariant int
+type ButtonVariant = buttonbar.Variant
 
 const (
-	ButtonVariantNeutral ButtonVariant = iota
-	ButtonVariantDanger
-	ButtonVariantAccent
+	ButtonVariantNeutral = buttonbar.VariantNeutral
+	ButtonVariantDanger  = buttonbar.VariantDanger
+	ButtonVariantAccent  = buttonbar.VariantAccent
+)
+
+type Tone int
+
+const (
+	ToneDefault Tone = iota
+	ToneSuccess
 )
 
 type Button struct {
@@ -24,6 +32,7 @@ type Config struct {
 	Title   string
 	Body    []string
 	Buttons []Button
+	Tone    Tone
 }
 
 type Model struct {
@@ -36,6 +45,7 @@ type Model struct {
 	title      string
 	body       []string
 	buttons    []Button
+	tone       Tone
 	selected   int
 	scroll     int
 	open       bool
@@ -70,6 +80,7 @@ func (m Model) Open(cfg Config) Model {
 	m.title = cfg.Title
 	m.body = append([]string(nil), cfg.Body...)
 	m.buttons = append([]Button(nil), cfg.Buttons...)
+	m.tone = cfg.Tone
 	m.selected = 0
 	m.scroll = 0
 	m.positioned = false
@@ -84,6 +95,7 @@ func (m Model) Close() Model {
 	m.title = ""
 	m.body = nil
 	m.buttons = nil
+	m.tone = ToneDefault
 	m.selected = 0
 	m.scroll = 0
 	m.positioned = false

@@ -2,32 +2,27 @@
   "conditions": [
     {
       "name": "enterprise_accounts",
-      "expression": "app.userProperty['account_plan'].exactlyMatches(['enterprise','strategic'])",
-      "description": "Enterprise customer accounts",
+      "expression": "percent <= 10",
       "tagColor": "BLUE"
     },
     {
       "name": "incident_mode",
-      "expression": "app.userProperty['workspace_state'].exactlyMatches(['incident'])",
-      "description": "Workspaces in active incident",
-      "tagColor": "RED"
+      "expression": "percent <= 5",
+      "tagColor": "DEEP_ORANGE"
     },
     {
       "name": "eu_region",
       "expression": "device.country in ['de','fr','nl','se','ie']",
-      "description": "EU users",
       "tagColor": "GREEN"
     },
     {
       "name": "new_dashboard_rollout_20",
       "expression": "percent <= 20",
-      "description": "New dashboard rollout",
       "tagColor": "PURPLE"
     },
     {
       "name": "admins",
-      "expression": "app.userProperty['role'].exactlyMatches(['admin','owner'])",
-      "description": "Workspace admins and owners",
+      "expression": "percent <= 3",
       "tagColor": "ORANGE"
     }
   ],

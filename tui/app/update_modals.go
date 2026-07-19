@@ -1,8 +1,25 @@
 package app
 
-import tea "charm.land/bubbletea/v2"
+import (
+	tea "charm.land/bubbletea/v2"
+
+	"github.com/yumauri/fbrcm/tui/components/projectio"
+)
 
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
+	if m.projectIO.IsOpen() {
+		switch msg.(type) {
+		case projectio.ImportPlanRequestedMsg, projectio.ExportRequestedMsg, projectImportPlanLoadedMsg:
+			return m, nil, false
+		}
+		if size, ok := msg.(tea.WindowSizeMsg); ok {
+			m.updateWindowSize(size)
+			return m, nil, true
+		}
+		var cmd tea.Cmd
+		m.projectIO, cmd = m.projectIO.Update(msg)
+		return m, cmd, true
+	}
 	if m.parameters.HistoryPickerOpen() {
 		switch msg.(type) {
 		case tea.KeyMsg:

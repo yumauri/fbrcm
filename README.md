@@ -90,6 +90,8 @@ focus_details = ["5"]
 
 [keys.projects]
 bind_auth = ["b"]
+import = ["i"]
+export = ["e"]
 
 [keys.help]
 cancel = ["esc"]
@@ -146,6 +148,10 @@ Run `fbrcm` without arguments to complete setup in the TUI. When the active prof
 Press `Ctrl+A` from the workspace to open Accounts or `Ctrl+P` to open Profiles. Both open as a popup over the workspace; `Tab`, `Shift+Tab`, and the left/right arrows switch between their border tabs. Accounts can add, validate, and purge identities and show how many cached projects use each one. Profiles can create, switch, rename, and purge profiles. Press `?` to open Actions over either tab and access the active tab's operations. If credentials are valid but return no projects, the TUI offers retry, another identity, or an empty workspace. Existing cached projects can still open without configured authentication.
 
 In the Projects panel, press `b` to bind the current project, or all marked projects, to another configured identity.
+
+Press `i` to import Remote Config JSON into the project under the Projects-panel cursor. Marked projects control what is shown in Parameters but do not change the import target. The import wizard accepts raw Remote Config or an fbrcm cache file, supports merge or replacement, group and parameter filters, rich search, expressions, condition cleanup, and per-conflict resolution. It always shows the resulting diff. A new import can be saved as a draft or published immediately; when a draft already exists, the import updates that draft and leaves publication to the normal `p` action.
+
+Press `e` to export the project under the Projects-panel cursor, also independently of marked projects. When a draft exists, choose between the published Remote Config and the local draft, then enter a destination path. Exports use the same stable JSON normalization and private file permissions as `fbrcm project export`; existing files require explicit overwrite confirmation.
 
 When `FBRCM_PROFILE` selects the TUI profile for the current process, Profiles shows that profile as pinned. Restart without the variable to create, switch, rename, or purge profiles interactively.
 
@@ -476,7 +482,7 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 - Import Remote Config JSON
 - Merge imported config into current project config
 - Override current config with imported config
-- Remove project-specific conditions during import
+- Keep only portable conditions during cross-project import, with kept/removed counts
 - Add, update, rename, move, duplicate, and delete parameters
 - Display empty parameter groups and remove groups explicitly with the TUI delete action
 - Stage, inspect, diff, safely publish, recover, and discard local drafts

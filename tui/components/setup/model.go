@@ -14,6 +14,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -392,11 +393,5 @@ func (m Model) selectedAccountID() string {
 }
 
 func selectedLine(value string, selected bool) string {
-	if !selected {
-		return value
-	}
-	if styles.NoColorEnabled() {
-		return lipgloss.NewStyle().Bold(true).Reverse(true).Render(value)
-	}
-	return lipgloss.NewStyle().Bold(true).Foreground(styles.PaletteYellow).Background(styles.PaletteBlueDeep).Render(value)
+	return viewutil.SelectionText(value, selected)
 }

@@ -6,17 +6,16 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/yumauri/fbrcm/tui/components/buttonbar"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 var (
-	borderStyle       = lipgloss.NewStyle().Foreground(styles.PaletteError)
-	titleStyle        = lipgloss.NewStyle().Bold(true).Foreground(styles.PaletteSlateBright)
-	bodyStyle         = lipgloss.NewStyle().Foreground(styles.PaletteSlateBright)
-	buttonStyle       = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteSlateDark).Foreground(styles.PaletteSlateBright).Padding(0, 1)
-	publishFocusStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteError).Foreground(styles.PaletteError).Bold(true).Padding(0, 1)
-	blueFocusStyle    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteBlueBright).Foreground(styles.PaletteBlueBright).Bold(true).Padding(0, 1)
+	defaultBorderStyle = lipgloss.NewStyle().Foreground(styles.PaletteError)
+	successBorderStyle = lipgloss.NewStyle().Foreground(styles.PaletteSuccess)
+	titleStyle         = lipgloss.NewStyle().Bold(true).Foreground(styles.PaletteSlateBright)
+	bodyStyle          = lipgloss.NewStyle().Foreground(styles.PaletteSlateBright)
 )
 
 func (m Model) View() string {
@@ -26,11 +25,12 @@ func (m Model) View() string {
 
 	contentWidth := m.contentWidth()
 	bodyHeight := m.bodyHeight()
+	body := m.bodyLines()
 	lines := make([]string, 0, bodyHeight+4)
 
-	start := min(m.scroll, len(m.body))
-	end := min(start+bodyHeight, len(m.body))
-	for _, line := range m.body[start:end] {
+	start := min(m.scroll, len(body))
+	end := min(start+bodyHeight, len(body))
+	for _, line := range body[start:end] {
 		lines = append(lines, fitBodyLine(line, contentWidth))
 	}
 	for len(lines) < bodyHeight {
@@ -39,7 +39,14 @@ func (m Model) View() string {
 	lines = append(lines, strings.Repeat(" ", contentWidth))
 	lines = append(lines, renderBlockAlignedRight(m.renderButtons(), contentWidth)...)
 
-	return renderFrame(m.title, lines, contentWidth, m.scrollbar(), bodyHeight)
+	return renderFrame(m.title, lines, contentWidth, m.scrollbar(), bodyHeight, m.borderStyle())
+}
+
+func (m Model) borderStyle() lipgloss.Style {
+	if m.tone == ToneSuccess {
+		return successBorderStyle
+	}
+	return defaultBorderStyle
 }
 
 func (m Model) Position() (int, int) {
@@ -48,40 +55,15 @@ func (m Model) Position() (int, int) {
 }
 
 func (m Model) renderButtons() string {
-	return lipgloss.JoinHorizontal(lipgloss.Top, appendInterleavedSpaces(m.renderedButtons())...)
+	return m.buttonBar().View()
 }
 
-func (m Model) renderedButtons() []string {
-	out := make([]string, 0, len(m.buttons))
-	for i, button := range m.buttons {
-		label := button.Label
-		style := buttonStyle
-		if i == m.selected {
-			if styles.NoColorEnabled() {
-				label = lipgloss.NewStyle().Bold(true).Reverse(true).Render(button.Label)
-			} else if button.Variant == ButtonVariantDanger {
-				style = publishFocusStyle
-			} else {
-				style = blueFocusStyle
-			}
-		}
-		out = append(out, style.Render(label))
+func (m Model) buttonBar() buttonbar.Model {
+	buttons := make([]buttonbar.Button, 0, len(m.buttons))
+	for _, button := range m.buttons {
+		buttons = append(buttons, buttonbar.Button{Label: button.Label, Variant: button.Variant})
 	}
-	return out
-}
-
-func appendInterleavedSpaces(items []string) []string {
-	if len(items) <= 1 {
-		return items
-	}
-	out := make([]string, 0, len(items)*2-1)
-	for i, item := range items {
-		if i > 0 {
-			out = append(out, " ")
-		}
-		out = append(out, item)
-	}
-	return out
+	return buttonbar.New(buttons).SetSelected(m.selected).SetFocused(true)
 }
 
 type scrollbarState struct {
@@ -90,9 +72,9 @@ type scrollbarState struct {
 	thumbEnd   int
 }
 
-func renderFrame(title string, body []string, contentWidth int, scrollbar scrollbarState, bodyHeight int) string {
+func renderFrame(title string, body []string, contentWidth int, scrollbar scrollbarState, bodyHeight int, borderStyle lipgloss.Style) string {
 	frameWidth := contentWidth + 5
-	top := renderTopBorder(title, frameWidth)
+	top := renderTopBorder(title, frameWidth, borderStyle)
 	lines := []string{" " + top + " ", " " + borderStyle.Render("│  ") + strings.Repeat(" ", contentWidth) + borderStyle.Render(" │") + " "}
 	for i, line := range body {
 		rightEdge := borderStyle.Render("│")
@@ -105,7 +87,7 @@ func renderFrame(title string, body []string, contentWidth int, scrollbar scroll
 	return strings.Join(lines, "\n")
 }
 
-func renderTopBorder(title string, frameWidth int) string {
+func renderTopBorder(title string, frameWidth int, borderStyle lipgloss.Style) string {
 	titleText := viewutil.TruncatePlain(" "+title+" ", max(frameWidth-6, 0))
 	left := borderStyle.Render("╭─")
 	right := borderStyle.Render("─╮")
@@ -116,6 +98,23 @@ func renderTopBorder(title string, frameWidth int) string {
 func fitBodyLine(line string, width int) string {
 	line = ansi.Truncate(line, width, "")
 	return padToWidth(bodyStyle.Render(line), width)
+}
+
+func (m Model) bodyLines() []string {
+	width := m.contentWidth()
+	lines := make([]string, 0, len(m.body))
+	for _, raw := range m.body {
+		raw = strings.ReplaceAll(raw, "\r\n", "\n")
+		for logical := range strings.SplitSeq(raw, "\n") {
+			if logical == "" {
+				lines = append(lines, "")
+				continue
+			}
+			wrapped := ansi.Hardwrap(logical, width, true)
+			lines = append(lines, strings.Split(wrapped, "\n")...)
+		}
+	}
+	return lines
 }
 
 func alignRight(line string, width int) string {

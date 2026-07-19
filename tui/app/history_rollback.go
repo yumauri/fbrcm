@@ -157,6 +157,7 @@ func (m Model) updateHistoryRollbackCompleted(msg messages.HistoryRollbackComple
 	m.historyRollback = nil
 	m.dialog = m.dialog.Close()
 	title := "Rollback Complete"
+	tone := dialogcmp.ToneSuccess
 	body := []string{
 		"Project: " + dialogProjectNameStyle.Render(msg.Project.Name) + " (" + msg.Project.ProjectID + ")",
 		"",
@@ -164,9 +165,10 @@ func (m Model) updateHistoryRollbackCompleted(msg messages.HistoryRollbackComple
 	}
 	if msg.Err != nil {
 		title = "Rollback Completed with Warning"
+		tone = dialogcmp.ToneDefault
 		body = append(body, "", msg.Err.Error())
 	}
-	m.dialog = m.dialog.Open(dialogcmp.Config{Title: title, Body: body, Buttons: []dialogcmp.Button{{Label: "Close", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()}}})
+	m.dialog = m.dialog.Open(dialogcmp.Config{Title: title, Body: body, Buttons: []dialogcmp.Button{{Label: "Close", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()}}, Tone: tone})
 	m.parameters = m.parameters.PreferNextHistoryPair(msg.Project.ProjectID, msg.Result.SourceVersion, msg.Result.PublishedVersion)
 
 	var loadErr error

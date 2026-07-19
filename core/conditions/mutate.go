@@ -3,7 +3,6 @@ package conditions
 import (
 	"fmt"
 	"maps"
-	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -15,31 +14,17 @@ import (
 
 const MaxNameLength = 100
 
-var DisplayColors = []string{
-	"BLUE",
-	"BROWN",
-	"CYAN",
-	"DEEP_ORANGE",
-	"GREEN",
-	"INDIGO",
-	"LIME",
-	"ORANGE",
-	"PINK",
-	"PURPLE",
-	"TEAL",
-}
+var DisplayColors = append([]string(nil), firebase.ConditionDisplayColors...)
 
 type Definition struct {
-	Name        string
-	Expression  string
-	Description string
-	TagColor    string
+	Name       string
+	Expression string
+	TagColor   string
 }
 
 type Edit struct {
-	Expression  *string
-	Description *string
-	TagColor    *string
+	Expression *string
+	TagColor   *string
 }
 
 func NormalizeName(name string) (string, error) {
@@ -62,14 +47,7 @@ func NormalizeExpression(expression string) (string, error) {
 }
 
 func NormalizeTagColor(color string) (string, error) {
-	color = strings.ToUpper(strings.TrimSpace(color))
-	if color == "" || color == "CONDITION_DISPLAY_COLOR_UNSPECIFIED" {
-		return "", nil
-	}
-	if slices.Contains(DisplayColors, color) {
-		return color, nil
-	}
-	return "", fmt.Errorf("unsupported condition color %q (allowed: %s)", color, strings.Join(DisplayColors, ", "))
+	return firebase.NormalizeConditionTagColor(color)
 }
 
 // ResolveName returns the canonical condition name using exact, then
@@ -116,7 +94,7 @@ func Add(cfg *firebase.RemoteConfig, definition Definition, priority int) error 
 	if priority < 1 || priority > len(cfg.Conditions)+1 {
 		return fmt.Errorf("condition priority must be between 1 and %d", len(cfg.Conditions)+1)
 	}
-	condition := firebase.RemoteConfigCondition{Name: name, Expression: expression, Description: strings.TrimSpace(definition.Description), TagColor: color}
+	condition := firebase.RemoteConfigCondition{Name: name, Expression: expression, TagColor: color}
 	index := priority - 1
 	cfg.Conditions = append(cfg.Conditions, firebase.RemoteConfigCondition{})
 	copy(cfg.Conditions[index+1:], cfg.Conditions[index:])
@@ -136,9 +114,6 @@ func EditDefinition(cfg *firebase.RemoteConfig, name string, edit Edit) error {
 			return err
 		}
 		condition.Expression = expression
-	}
-	if edit.Description != nil {
-		condition.Description = strings.TrimSpace(*edit.Description)
 	}
 	if edit.TagColor != nil {
 		color, err := NormalizeTagColor(*edit.TagColor)
@@ -175,7 +150,6 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	if err != nil {
 		return err
 	}
-	nextDescription := strings.TrimSpace(edit.NextDescription)
 	if edit.NextPriority < 1 || edit.NextPriority > len(cfg.Conditions) {
 		return fmt.Errorf("condition priority must be between 1 and %d", len(cfg.Conditions))
 	}
@@ -186,7 +160,7 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	}
 
 	condition := cfg.Conditions[index]
-	definitionChanged := condition.Name != nextName || condition.Expression != nextExpression || condition.Description != nextDescription || condition.TagColor != nextColor || index+1 != edit.NextPriority
+	definitionChanged := condition.Name != nextName || condition.Expression != nextExpression || condition.TagColor != nextColor || index+1 != edit.NextPriority
 	valuesChanged, err := editUsageValues(cfg, edit.Name, edit.ValueEdits)
 	if err != nil {
 		return err
@@ -197,7 +171,6 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	previousName := condition.Name
 	condition.Name = nextName
 	condition.Expression = nextExpression
-	condition.Description = nextDescription
 	condition.TagColor = nextColor
 
 	target := edit.NextPriority - 1

@@ -68,7 +68,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 	}
 	addReadFlags(cmd)
 	cmd.Flags().StringArrayP("filter", "f", nil, "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated")
-	cmd.Flags().String("search", "", "Search condition names, expressions, and descriptions")
+	cmd.Flags().String("search", "", "Search condition names and expressions")
 	return cmd
 }
 
@@ -159,7 +159,7 @@ func filterEntries(entries []core.ConditionEntry, rawFilters []string, search st
 			continue
 		}
 		if search != "" {
-			haystack := strings.ToLower(entry.Name + "\n" + entry.Expression + "\n" + entry.Description)
+			haystack := strings.ToLower(entry.Name + "\n" + entry.Expression)
 			if !strings.Contains(haystack, search) {
 				continue
 			}

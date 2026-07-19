@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-func (m Model) maxScroll() int { return max(len(m.body)-m.bodyHeight(), 0) }
+func (m Model) maxScroll() int { return max(len(m.bodyLines())-m.bodyHeight(), 0) }
 
 func (m Model) scrollbar() scrollbarState {
-	contentHeight, totalLines := m.bodyHeight(), len(m.body)
+	contentHeight, totalLines := m.bodyHeight(), len(m.bodyLines())
 	if contentHeight <= 0 || totalLines <= contentHeight {
 		return scrollbarState{}
 	}
@@ -19,7 +19,7 @@ func (m Model) scrollbar() scrollbarState {
 	return scrollbarState{visible: true, thumbStart: thumbStart, thumbEnd: min(thumbStart+thumbHeight-1, contentHeight-1)}
 }
 
-func (m Model) bodyHeight() int { return max(min(max(m.height-10, 3), len(m.body)), 1) }
+func (m Model) bodyHeight() int { return max(min(max(m.height-10, 3), len(m.bodyLines())), 1) }
 
 func (m Model) contentWidth() int {
 	width := len([]rune(m.title))
@@ -32,7 +32,7 @@ func (m Model) contentWidth() int {
 
 func (m Model) boxGeometry() (x, y, width, height int) {
 	contentWidth, bodyHeight := m.contentWidth(), m.bodyHeight()
-	width, height = contentWidth+6, bodyHeight+m.buttonHeight()+4
+	width, height = contentWidth+7, bodyHeight+m.buttonHeight()+4
 	if m.positioned {
 		x = clamp(m.manualX, m.x, max(m.x+m.width-width, m.x))
 		y = clamp(m.manualY, m.y, max(m.y+m.height-height, m.y))
@@ -69,20 +69,10 @@ func (m Model) buttonIndexAt(x, y int) (int, bool) {
 	if len(buttonLines) == 0 {
 		return -1, false
 	}
-	buttonX := boxX + 3 + max(contentWidth-printableWidth(buttonLines[0]), 0)
+	buttonX := boxX + 4 + max(contentWidth-printableWidth(buttonLines[0]), 0)
 	buttonY := boxY + bodyHeight + 3
 	if y < buttonY || y >= buttonY+len(buttonLines) {
 		return -1, false
 	}
-	for i, button := range m.renderedButtons() {
-		w, h := printableWidth(button), lipgloss.Height(button)
-		if x >= buttonX && x < buttonX+w && y >= buttonY && y < buttonY+h {
-			return i, true
-		}
-		buttonX += w
-		if i < len(m.buttons)-1 {
-			buttonX++
-		}
-	}
-	return -1, false
+	return m.buttonBar().IndexAt(x-buttonX, y-buttonY)
 }

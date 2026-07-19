@@ -2,33 +2,28 @@
   "conditions": [
     {
       "name": "employees",
-      "expression": "app.userProperty['staff'].exactlyMatches(['true'])",
-      "description": "Internal staff devices",
+      "expression": "percent <= 5",
       "tagColor": "BLUE"
     },
     {
       "name": "kyc_pending",
-      "expression": "app.userProperty['kyc_status'].exactlyMatches(['pending'])",
-      "description": "Users currently completing KYC",
+      "expression": "device.os == 'android' && percent <= 35",
       "tagColor": "ORANGE"
     },
     {
       "name": "uk_open_banking",
       "expression": "device.country in ['gb']",
-      "description": "UK users eligible for open banking flows",
       "tagColor": "GREEN"
     },
     {
       "name": "android_beta_10",
       "expression": "device.os == 'android' && percent <= 10",
-      "description": "Android beta cohort",
       "tagColor": "PURPLE"
     },
     {
       "name": "high_risk_session",
-      "expression": "app.userProperty['risk_band'].exactlyMatches(['high','review'])",
-      "description": "Sessions flagged by risk engine",
-      "tagColor": "RED"
+      "expression": "device.country in ['us','gb','de'] && percent <= 15",
+      "tagColor": "DEEP_ORANGE"
     }
   ],
   "parameters": {},

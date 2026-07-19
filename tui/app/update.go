@@ -129,6 +129,7 @@ func (m Model) helpPlainKeyAvailable() bool {
 		!m.moveParam.IsOpen() &&
 		!m.authPicker.IsOpen() &&
 		!m.renameInput.IsOpen() &&
+		!m.projectIO.IsOpen() &&
 		(m.active != panels.Details || !m.detailsVisible || !m.details.TextInputActive())
 }
 
@@ -167,6 +168,7 @@ func (m *Model) applyLayout() {
 	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
 	m.dialog = m.dialog.SetBounds(0, 0, m.width, m.height)
 	m.authPicker = m.authPicker.SetBounds(0, 0, m.width, m.height)
+	m.projectIO = m.projectIO.SetBounds(0, 0, m.width, m.height)
 	detailsWidth := m.detailsWidthForLayout(layout)
 	m.details = m.details.SetBounds(layout.bottomWidth-detailsWidth, 0, detailsWidth, layout.topHeight)
 	m.logs = m.logs.SetBounds(0, layout.topHeight, layout.bottomWidth, layout.bottomHeight)

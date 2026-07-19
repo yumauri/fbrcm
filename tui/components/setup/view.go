@@ -328,13 +328,9 @@ func (m Model) fileLines(width int) []string {
 		hints = append(hints, [2]string{"o", "OAuth clients"})
 	}
 	hints = append(hints, [2]string{"esc", "back"})
-	lines = append(lines, indentLines(m.filepicker.View(), 1), setupHelp(width, hints...))
+	picker := strings.TrimRight(m.filepicker.View(), "\n")
+	lines = append(lines, viewutil.IndentLines(picker, 1), "", setupHelp(width, hints...))
 	return lines
-}
-
-func indentLines(value string, width int) string {
-	padding := strings.Repeat(" ", max(width, 0))
-	return padding + strings.ReplaceAll(value, "\n", "\n"+padding)
 }
 
 func (m Model) workingLines(message string) []string {
@@ -394,7 +390,7 @@ func setupHelp(width int, items ...[2]string) string {
 }
 
 func setupListLine(value string, selected bool) string {
-	return "  " + selectedLine(value, selected)
+	return viewutil.SelectorLine(value, selected)
 }
 
 func (m Model) profileOrDefault() string {

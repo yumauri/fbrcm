@@ -89,11 +89,11 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 	shared.AddDryRunFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	cmd.Flags().Bool("remove-all-conditions", false, "Remove all conditions and conditional values from imported config")
-	cmd.Flags().Bool("remove-project-specific-conditions", false, "Remove project specific conditions and their usages from imported config")
+	cmd.Flags().Bool("keep-portable-conditions-only", false, "Keep only portable conditions and remove destination-specific usages")
 	cmd.Flags().Bool("merge", false, "Merge imported config into current project config")
 	cmd.Flags().Bool("override", false, "Replace current project config with imported config")
 	cmd.Flags().String("merge-resolve", "", "Conflict resolution for merge: current or import")
-	cmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "remove-project-specific-conditions")
+	cmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "keep-portable-conditions-only")
 	cmd.MarkFlagsMutuallyExclusive("merge", "override")
 	return cmd
 }

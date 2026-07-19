@@ -88,7 +88,7 @@ func (m *Model) focusNextItem(delta int) {
 
 func (m Model) formFields() []fieldID {
 	if m.conditionData != nil {
-		return []fieldID{fieldConditionPriority, fieldName, fieldConditionColor, fieldDescription}
+		return []fieldID{fieldConditionPriority, fieldName, fieldConditionColor}
 	}
 	if m.groupData != nil {
 		return []fieldID{fieldName, fieldDescription}

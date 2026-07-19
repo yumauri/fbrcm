@@ -11,10 +11,9 @@ type Tree struct {
 }
 
 type Condition struct {
-	Name        string
-	Expression  string
-	Description string
-	Color       string
+	Name       string
+	Expression string
+	Color      string
 }
 
 type Group struct {

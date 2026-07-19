@@ -2,32 +2,27 @@
   "conditions": [
     {
       "name": "living_room_devices",
-      "expression": "app.userProperty['device_class'].exactlyMatches(['tv','console'])",
-      "description": "TV and console sessions",
+      "expression": "device.os == 'android' && percent <= 40",
       "tagColor": "BLUE"
     },
     {
       "name": "sports_market_us",
-      "expression": "device.country in ['us'] && app.userProperty['sports_fan'].exactlyMatches(['true'])",
-      "description": "US sports fans",
+      "expression": "device.country in ['us'] && percent <= 35",
       "tagColor": "GREEN"
     },
     {
       "name": "kids_profile",
-      "expression": "app.userProperty['profile_type'].exactlyMatches(['kids'])",
-      "description": "Kids profile active",
+      "expression": "percent <= 20",
       "tagColor": "ORANGE"
     },
     {
       "name": "low_bandwidth",
-      "expression": "app.userProperty['bandwidth_band'].exactlyMatches(['low'])",
-      "description": "Low bandwidth sessions",
-      "tagColor": "RED"
+      "expression": "device.country in ['in','br','id']",
+      "tagColor": "DEEP_ORANGE"
     },
     {
       "name": "new_player_rollout_15",
       "expression": "percent <= 15",
-      "description": "New player stack rollout",
       "tagColor": "PURPLE"
     }
   ],

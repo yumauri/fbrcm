@@ -146,12 +146,9 @@ func RenderConflictChoiceValue(value any) string {
 }
 
 func formatConditionSummary(condition firebase.RemoteConfigCondition) string {
-	parts := make([]string, 0, 3)
+	parts := make([]string, 0, 2)
 	if strings.TrimSpace(condition.Expression) != "" {
 		parts = append(parts, condition.Expression)
-	}
-	if strings.TrimSpace(condition.Description) != "" {
-		parts = append(parts, "desc="+condition.Description)
 	}
 	if strings.TrimSpace(condition.TagColor) != "" {
 		parts = append(parts, "color="+condition.TagColor)

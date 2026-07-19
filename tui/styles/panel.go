@@ -21,6 +21,7 @@ var (
 	PaletteSlateDim    = corestyles.ColorSlateDim
 	PaletteSlateDark   = corestyles.ColorSlateDark
 	PaletteError       = corestyles.ColorError
+	PaletteSuccess     = corestyles.ColorConditionGreen
 
 	PanelBorderInactive = lipgloss.NewStyle().
 				Foreground(PaletteSlateDark)

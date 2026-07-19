@@ -65,6 +65,44 @@ func (m *Model) selectOnlyCurrent() {
 	m.syncViewport()
 }
 
+// SelectOnly replaces the current project selection and moves the cursor to
+// the selected project. It returns the standard selection notification used by
+// downstream panels.
+func (m *Model) SelectOnly(projectID string) tea.Cmd {
+	found := false
+	for _, project := range m.allProjects {
+		if project.ProjectID == projectID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil
+	}
+
+	m.selected = map[string]struct{}{projectID: {}}
+	visible := false
+	for i, project := range m.projects {
+		if project.ProjectID == projectID {
+			m.cursor = i
+			visible = true
+			break
+		}
+	}
+	if !visible {
+		m.filter.ClearAndBlur()
+		m.applyFilter()
+		for i, project := range m.projects {
+			if project.ProjectID == projectID {
+				m.cursor = i
+				break
+			}
+		}
+	}
+	m.syncViewport()
+	return m.selectionChangedCmd()
+}
+
 func (m *Model) selectionChangedCmd() tea.Cmd {
 	projects := m.selectedProjects()
 	return func() tea.Msg {

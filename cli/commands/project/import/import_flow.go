@@ -14,6 +14,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/rc/importer"
 )
 
 // Run executes the project import command pipeline.
@@ -51,28 +52,25 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if raw == nil {
 		return nil
 	}
-	if !json.Valid(raw) {
-		return fmt.Errorf("remote config input is not valid json")
-	}
-
-	remoteConfigRaw, err := rc.ExtractRemoteConfigJSON(raw)
+	source, err := importer.ParseSource(raw)
 	if err != nil {
 		return err
 	}
-
-	importCfg, err := firebase.ParseCloneRemoteConfig(remoteConfigRaw)
-	if err != nil {
-		return fmt.Errorf("decode remote config: %w", err)
-	}
-	importCfg.Version = firebase.RemoteConfigVersion{}
+	importCfg := source.Config
+	sourceConditionCount := len(importCfg.Conditions)
 
 	if err := transformImportConfig(project, importCfg, opts); err != nil {
-		var missingErr *missingImportGroupsError
-		if errors.As(err, &missingErr) && len(missingErr.available) > 0 {
-			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), renderGroupsTable(missingErr.available))
+		var missingErr *importer.MissingGroupsError
+		if errors.As(err, &missingErr) && len(missingErr.Available) > 0 {
+			groups := make([]groupSummary, 0, len(missingErr.Available))
+			for _, group := range missingErr.Available {
+				groups = append(groups, groupSummary{Name: group.Name, Parameters: group.Parameters})
+			}
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), renderGroupsTable(groups))
 		}
 		return err
 	}
+	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), importConditionCountLine(sourceConditionCount, len(importCfg.Conditions)))
 
 	var currentRaw json.RawMessage
 	var currentETag string
@@ -166,6 +164,10 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	return nil
 }
 
+func importConditionCountLine(sourceCount, keptCount int) string {
+	return fmt.Sprintf("Import conditions: %d kept · %d removed", keptCount, max(sourceCount-keptCount, 0))
+}
+
 func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	var opts importOptions
 	var err error
@@ -191,7 +193,7 @@ func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	if err != nil {
 		return opts, err
 	}
-	opts.removeProjectSpecificConditions, err = cmd.Flags().GetBool("remove-project-specific-conditions")
+	opts.keepPortableConditionsOnly, err = cmd.Flags().GetBool("keep-portable-conditions-only")
 	if err != nil {
 		return opts, err
 	}

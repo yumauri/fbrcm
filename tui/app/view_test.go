@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -146,6 +147,14 @@ func TestAccountsPopupOverlaysWorkspace(t *testing.T) {
 	}
 	if m.View().MouseMode != tea.MouseModeNone {
 		t.Fatalf("popup mouse mode = %v, want none", m.View().MouseMode)
+	}
+}
+
+func TestDialogEnablesMouseWhenLogsWereActive(t *testing.T) {
+	m := viewTestModel(100, 30, panels.Logs)
+	m.openErrorDialog("Import Failed", core.Project{Name: "Demo", ProjectID: "demo"}, "validation failed")
+	if got := m.View().MouseMode; got != tea.MouseModeAllMotion {
+		t.Fatalf("dialog mouse mode = %v, want all motion", got)
 	}
 }
 

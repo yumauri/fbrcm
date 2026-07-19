@@ -23,12 +23,11 @@ func BuildTree(remoteConfig *firebase.RemoteConfig, cachedAt time.Time, etag str
 	byName := make(map[string]int, len(remoteConfig.Conditions))
 	for i, condition := range remoteConfig.Conditions {
 		tree.Conditions[i] = Entry{
-			Priority:    i + 1,
-			Name:        condition.Name,
-			Expression:  condition.Expression,
-			Description: strings.TrimSpace(condition.Description),
-			TagColor:    condition.TagColor,
-			Usages:      []Usage{},
+			Priority:   i + 1,
+			Name:       condition.Name,
+			Expression: condition.Expression,
+			TagColor:   condition.TagColor,
+			Usages:     []Usage{},
 		}
 		byName[condition.Name] = i
 	}

@@ -14,24 +14,22 @@ type Tree struct {
 }
 
 type Entry struct {
-	Priority    int     `json:"priority"`
-	Name        string  `json:"name"`
-	Expression  string  `json:"expression"`
-	Description string  `json:"description,omitempty"`
-	TagColor    string  `json:"tag_color,omitempty"`
-	Usages      []Usage `json:"usages"`
+	Priority   int     `json:"priority"`
+	Name       string  `json:"name"`
+	Expression string  `json:"expression"`
+	TagColor   string  `json:"tag_color,omitempty"`
+	Usages     []Usage `json:"usages"`
 }
 
 // DetailsEdit describes an atomic edit of a condition definition and its
 // evaluation priority.
 type DetailsEdit struct {
-	Name            string
-	NextName        string
-	NextExpression  string
-	NextDescription string
-	NextTagColor    string
-	NextPriority    int
-	ValueEdits      []UsageValueEdit
+	Name           string
+	NextName       string
+	NextExpression string
+	NextTagColor   string
+	NextPriority   int
+	ValueEdits     []UsageValueEdit
 }
 
 type UsageValueEdit struct {

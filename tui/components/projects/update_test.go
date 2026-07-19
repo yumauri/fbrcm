@@ -136,6 +136,39 @@ func TestActionTargetsUsesMarkedProjectsOrCurrentProject(t *testing.T) {
 	}
 }
 
+func TestCurrentProjectIgnoresMarkedProjects(t *testing.T) {
+	m := loadedProjectsModel()
+	m.selected["alpha"] = struct{}{}
+	m.selected["gamma"] = struct{}{}
+	m.cursor = 1
+
+	project, ok := m.CurrentProject()
+	if !ok || project.ProjectID != "beta" {
+		t.Fatalf("current project = %+v ok=%v, want beta", project, ok)
+	}
+}
+
+func TestSelectOnlyReplacesSelectionAndMovesCursor(t *testing.T) {
+	m := loadedProjectsModel()
+	m.selected["alpha"] = struct{}{}
+	m.selected["gamma"] = struct{}{}
+
+	cmd := m.SelectOnly("beta")
+	if cmd == nil {
+		t.Fatal("selection command is nil")
+	}
+	if m.cursor != 1 {
+		t.Fatalf("cursor = %d, want beta at 1", m.cursor)
+	}
+	if got := m.ActionTargets(); len(got) != 1 || got[0].ProjectID != "beta" {
+		t.Fatalf("action targets = %+v, want only beta", got)
+	}
+	selection, ok := cmd().(messages.ProjectsSelectionChangedMsg)
+	if !ok || len(selection.Projects) != 1 || selection.Projects[0].ProjectID != "beta" {
+		t.Fatalf("selection message = %#v, want only beta", selection)
+	}
+}
+
 func TestApplyProjectUpdatesRefreshesProjectAndSelectedPayload(t *testing.T) {
 	m := loadedProjectsModel()
 	m.selected["alpha"] = struct{}{}

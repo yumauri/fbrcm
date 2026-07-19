@@ -116,7 +116,7 @@ func conditionMatches(condition core.ConditionEntry, query string, mode filter.M
 	if query == "" {
 		return true
 	}
-	for _, value := range []string{condition.Name, condition.Expression, condition.Description} {
+	for _, value := range []string{condition.Name, condition.Expression} {
 		if matched, _ := filter.Match(value, query, mode); matched {
 			return true
 		}

@@ -88,7 +88,6 @@ func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 		m.priorityInput.SetValue(strconv.Itoa(m.conditionData.Condition.Priority))
 		m.conditionColor = m.conditionData.Condition.TagColor
 		m.conditionExpression = m.conditionData.Condition.Expression
-		m.descInput.SetValue(m.conditionData.Condition.Description)
 	}
 	m.refreshViewport()
 	m.viewport.GotoTop()
@@ -210,13 +209,12 @@ func (m Model) ConditionEdit() (core.ConditionDetailsEdit, bool) {
 	}
 	priority, _ := strconv.Atoi(strings.TrimSpace(m.priorityInput.Value()))
 	return core.ConditionDetailsEdit{
-		Name:            m.conditionData.Condition.Name,
-		NextName:        strings.TrimSpace(m.nameInput.Value()),
-		NextExpression:  m.conditionExpression,
-		NextDescription: m.descInput.Value(),
-		NextTagColor:    m.conditionColor,
-		NextPriority:    priority,
-		ValueEdits:      m.conditionValueEdits(),
+		Name:           m.conditionData.Condition.Name,
+		NextName:       strings.TrimSpace(m.nameInput.Value()),
+		NextExpression: m.conditionExpression,
+		NextTagColor:   m.conditionColor,
+		NextPriority:   priority,
+		ValueEdits:     m.conditionValueEdits(),
 	}, true
 }
 
@@ -256,7 +254,6 @@ func (m Model) MarkSaved() Model {
 		}
 		m.conditionData.Condition.Name = edit.NextName
 		m.conditionData.Condition.Expression = edit.NextExpression
-		m.conditionData.Condition.Description = edit.NextDescription
 		m.conditionData.Condition.TagColor = edit.NextTagColor
 		m.conditionData.Condition.Priority = edit.NextPriority
 		m.originalCondition = cloneConditionEntry(m.conditionData.Condition)

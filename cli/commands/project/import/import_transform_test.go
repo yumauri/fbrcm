@@ -7,7 +7,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
-func TestTransformImportConfigRemovesProjectSpecificConditions(t *testing.T) {
+func TestTransformImportConfigKeepsPortableConditionsOnly(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		Conditions: []firebase.RemoteConfigCondition{
 			{Name: "keep", Expression: `app.version == "1.0"`},
@@ -51,7 +51,7 @@ func TestTransformImportConfigRemovesProjectSpecificConditions(t *testing.T) {
 	}
 
 	err := transformImportConfig(core.Project{ProjectID: "test-project"}, cfg, importOptions{
-		removeProjectSpecificConditions: true,
+		keepPortableConditionsOnly: true,
 	})
 	if err != nil {
 		t.Fatalf("transformImportConfig returned error: %v", err)

@@ -10,7 +10,7 @@ import (
 func TestFilterEntriesSupportsGetStylePrefixes(t *testing.T) {
 	entries := []core.ConditionEntry{
 		{Name: "production", Expression: "platform == 'android'"},
-		{Name: "preview", Description: "Internal rollout"},
+		{Name: "preview", Expression: "internal rollout"},
 		{Name: "staff"},
 	}
 

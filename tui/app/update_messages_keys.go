@@ -240,6 +240,10 @@ func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 	switch {
 	case m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionBindAuth, k):
 		return m, m.openProjectAuthPicker(), true
+	case m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionImport, k):
+		return m.openProjectImport()
+	case m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionExport, k):
+		return m.openProjectExport()
 	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDelete, k)) ||
 		(m.active == panels.Details && tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k)):
 		return m.updateDeleteKey()

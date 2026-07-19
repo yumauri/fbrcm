@@ -108,7 +108,6 @@ func (m Model) renderConditionContentLines(width int) []string {
 	lines = appendEditableField(lines, width, "Name", m.renderConditionNameField(), m.conditionFieldChanged(fieldName), m.invalidConditionName())
 	lines = appendEditableField(lines, width, "Color", m.renderConditionColorField(), m.conditionFieldChanged(fieldConditionColor), false)
 	lines = appendEditableField(lines, width, "Expression", styles.PanelText.Render(m.conditionExpression), m.conditionExpression != condition.Expression, false)
-	lines = appendEditableField(lines, width, "Description", m.renderDescriptionField(), m.conditionFieldChanged(fieldDescription), false)
 	usedBy := "Used by " + rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")
 	lines = append(lines, fieldTitle(usedBy, len(m.conditionValueEdits()) > 0, m.invalidConditionValues()), "")
 	if len(condition.Usages) == 0 {

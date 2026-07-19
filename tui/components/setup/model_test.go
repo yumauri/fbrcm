@@ -11,6 +11,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
@@ -333,12 +334,18 @@ func TestCredentialFilePickerSeparatesIdentityAndIndentsPicker(t *testing.T) {
 		if got := ansi.Strip(lines[pickerIndex]); got == "" {
 			t.Fatalf("method %v file picker rendered an empty row", method)
 		}
-		if got := ansi.Strip(lines[pickerIndex+1]); got == "" {
-			t.Fatalf("method %v retains blank line after file picker", method)
+		if got := ansi.Strip(lines[pickerIndex+1]); got != "" {
+			t.Fatalf("method %v line after file picker = %q, want one blank", method, got)
+		}
+		if got := ansi.Strip(lines[pickerIndex+2]); got == "" {
+			t.Fatalf("method %v help after file picker is empty", method)
+		}
+		if got := lines[pickerIndex]; strings.HasSuffix(got, "\n ") {
+			t.Fatalf("method %v file picker retains a trailing empty line: %q", method, got)
 		}
 
 	}
-	if got, want := indentLines("first\nsecond", 1), " first\n second"; got != want {
+	if got, want := viewutil.IndentLines("first\nsecond", 1), " first\n second"; got != want {
 		t.Fatalf("indented file picker = %q, want %q", got, want)
 	}
 }

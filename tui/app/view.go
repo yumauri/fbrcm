@@ -45,7 +45,13 @@ func appView(content string, mouseMode tea.MouseMode) tea.View {
 }
 
 func (m Model) mouseMode() tea.MouseMode {
-	if m.active == panels.Logs || m.helpPalette.IsOpen() || m.setup.IsOpen() {
+	if m.helpPalette.IsOpen() || m.setup.IsOpen() {
+		return tea.MouseModeNone
+	}
+	if m.dialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
+		return tea.MouseModeAllMotion
+	}
+	if m.active == panels.Logs {
 		return tea.MouseModeNone
 	}
 	return tea.MouseModeAllMotion
@@ -90,7 +96,8 @@ func (m Model) contextOverlayOpen() bool {
 		m.stringInput.IsOpen() ||
 		m.moveParam.IsOpen() ||
 		m.authPicker.IsOpen() ||
-		m.renameInput.IsOpen()
+		m.renameInput.IsOpen() ||
+		m.projectIO.IsOpen()
 }
 
 func (m Model) overlayLayers(body string) []*lipgloss.Layer {
@@ -99,9 +106,26 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendHistoryPickerLayer(layers)
 	layers = m.appendInputLayers(layers)
 	layers = m.appendDialogLayers(layers)
+	layers = m.appendProjectIOLayer(layers)
 	layers = m.appendSetupLayer(layers)
 	layers = m.appendOfflineLayer(layers)
 	layers = m.appendHelpPaletteLayer(layers)
+	return layers
+}
+
+func (m Model) appendProjectIOLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.projectIO.IsOpen() {
+		return layers
+	}
+	view := m.projectIO.View()
+	x, y := m.projectIO.Position()
+	layers = append(layers, lipgloss.NewLayer(view).ID("project-io").X(x).Y(y).Z(5))
+	if m.projectIO.OptionSelectorOpen() {
+		listX, listY := m.projectIO.OptionSelectorListPosition()
+		layers = append(layers, lipgloss.NewLayer(m.projectIO.OptionSelectorListView()).ID("project-io-option-list").X(listX).Y(listY).Z(6))
+		headerX, headerY := m.projectIO.OptionSelectorPosition()
+		layers = append(layers, lipgloss.NewLayer(m.projectIO.OptionSelectorHeaderView()).ID("project-io-option-header").X(headerX).Y(headerY).Z(7))
+	}
 	return layers
 }
 

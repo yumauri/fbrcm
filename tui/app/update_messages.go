@@ -3,6 +3,7 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/tui/components/projectio"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -10,6 +11,35 @@ import (
 
 func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	switch msg := msg.(type) {
+	case projectio.ImportPlanRequestedMsg:
+		return m, m.prepareProjectImportCmd(msg), true
+
+	case projectImportPlanLoadedMsg:
+		return m.updateProjectImportPlan(msg)
+
+	case projectImportCompletedMsg:
+		return m.updateProjectImportCompleted(msg)
+
+	case projectio.ExportRequestedMsg:
+		return m.handleProjectExportRequest(msg)
+
+	case projectExportOverwriteMsg:
+		if m.projectExport == nil {
+			return m, nil, true
+		}
+		return m, m.exportProjectCmd(*m.projectExport), true
+
+	case projectExportBackMsg:
+		if m.projectExport == nil {
+			return m, nil, true
+		}
+		var cmd tea.Cmd
+		m.projectIO, cmd = m.projectIO.OpenExportPath(m.projectExport.project, m.projectExport.path, m.projectExport.draft)
+		return m, cmd, true
+
+	case projectExportCompletedMsg:
+		return m.updateProjectExportCompleted(msg)
+
 	case messages.HistoryRollbackRequestedMsg:
 		return m.beginHistoryRollback(msg)
 

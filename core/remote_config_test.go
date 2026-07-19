@@ -57,6 +57,35 @@ func TestValidateRemoteConfigWithETag(t *testing.T) {
 	}
 }
 
+func TestValidateRemoteConfigWithETagNormalizesUpdatePayload(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	payload := []byte(`{"conditions":[{"name":"staff","expression":"true","tagColor":"deep_orange"}],"version":{"versionNumber":"7"}}`)
+	var uploaded []byte
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			var err error
+			uploaded, err = io.ReadAll(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			return jsonResponse(http.StatusOK, `{}`, `"etag-1"`), nil
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	if err := svc.ValidateRemoteConfigWithETag(context.Background(), "demo", payload, "etag-1"); err != nil {
+		t.Fatalf("ValidateRemoteConfigWithETag = %v", err)
+	}
+	if strings.Contains(string(uploaded), "version") {
+		t.Fatalf("uploaded payload retains read-only version metadata: %s", uploaded)
+	}
+	if !strings.Contains(string(uploaded), `"tagColor":"DEEP_ORANGE"`) {
+		t.Fatalf("uploaded payload does not normalize tagColor: %s", uploaded)
+	}
+}
+
 func TestPublishRemoteConfigWithETagDryRunSkipsCache(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	seedAuthAndProject(t, svc, "main", "demo")

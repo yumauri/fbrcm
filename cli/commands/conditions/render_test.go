@@ -51,10 +51,10 @@ func TestRenderConditionsTableCropsExpressionToTerminalWidth(t *testing.T) {
 func TestRenderConditionDetailsShowsUsageTable(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	got := renderConditionDetails(core.ConditionEntry{
-		Priority: 2, Name: "staff", Expression: "user in staff", Description: "Employees",
+		Priority: 2, Name: "staff", Expression: "user in staff",
 		Usages: []core.ConditionUsage{{GroupLabel: "(root)", ParameterKey: "welcome", ValueType: "STRING", Value: "Hello"}},
 	})
-	for _, want := range []string{"Priority: 2", "Name: staff", "Color: —", "Description: Employees", "Used by: 1 parameter", "(root)", "welcome", "STRING", "Hello"} {
+	for _, want := range []string{"Priority: 2", "Name: staff", "Color: —", "Expression: user in staff", "Used by: 1 parameter", "(root)", "welcome", "STRING", "Hello"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("details missing %q:\n%s", want, got)
 		}

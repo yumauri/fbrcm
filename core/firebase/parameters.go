@@ -21,10 +21,23 @@ type RemoteConfig struct {
 }
 
 type RemoteConfigCondition struct {
-	Name        string `json:"name,omitempty"`
-	Expression  string `json:"expression,omitempty"`
-	Description string `json:"description,omitempty"`
-	TagColor    string `json:"tagColor,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Expression string `json:"expression,omitempty"`
+	TagColor   string `json:"tagColor,omitempty"`
+}
+
+// UnmarshalJSON rejects fields outside Firebase's condition schema instead of
+// silently discarding unsupported condition metadata.
+func (c *RemoteConfigCondition) UnmarshalJSON(data []byte) error {
+	type wireCondition RemoteConfigCondition
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	var decoded wireCondition
+	if err := decoder.Decode(&decoded); err != nil {
+		return fmt.Errorf("decode condition: %w", err)
+	}
+	*c = RemoteConfigCondition(decoded)
+	return nil
 }
 
 type RemoteConfigGroup struct {

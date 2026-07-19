@@ -2,33 +2,28 @@
   "conditions": [
     {
       "name": "ios_us_high_value",
-      "expression": "device.os == 'ios' && device.country in ['us'] && app.userProperty['lifetime_value'] >= 250",
-      "description": "US iOS customers with high lifetime value",
+      "expression": "device.os == 'ios' && device.country in ['us'] && percent <= 20",
       "tagColor": "BLUE"
     },
     {
       "name": "android_eu_sale",
       "expression": "device.os == 'android' && device.country in ['de','fr','nl','es','it']",
-      "description": "Android shoppers in core EU markets",
       "tagColor": "GREEN"
     },
     {
       "name": "holiday_rollout_25",
       "expression": "percent <= 25",
-      "description": "Limited holiday experience rollout",
       "tagColor": "PURPLE"
     },
     {
       "name": "new_customers",
-      "expression": "app.userProperty['orders_count'] == 0",
-      "description": "Customers without completed orders",
+      "expression": "device.os == 'android' && percent <= 30",
       "tagColor": "ORANGE"
     },
     {
       "name": "loyalty_members",
-      "expression": "app.userProperty['loyalty_tier'].exactlyMatches(['gold','platinum'])",
-      "description": "Gold and platinum loyalty members",
-      "tagColor": "RED"
+      "expression": "device.country in ['us','ca','gb'] && percent <= 40",
+      "tagColor": "DEEP_ORANGE"
     }
   ],
   "parameters": {},

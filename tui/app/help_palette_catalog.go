@@ -131,6 +131,10 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Mark or unmark project"
 		case tuiconfig.ActionBindAuth:
 			return "Bind authentication"
+		case tuiconfig.ActionImport:
+			return "Import Remote Config"
+		case tuiconfig.ActionExport:
+			return "Export Remote Config"
 		}
 	}
 	if block == tuiconfig.BlockParameters {

@@ -1,22 +1,20 @@
 package importpkg
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core/rc/importer"
 )
 
 type importOptions struct {
-	groups                          []string
-	paramFilters                    []string
-	search                          shared.ParameterSearch
-	expr                            string
-	removeAllConditions             bool
-	removeProjectSpecificConditions bool
-	merge                           bool
-	override                        bool
-	mergeResolve                    string
+	groups                     []string
+	paramFilters               []string
+	search                     shared.ParameterSearch
+	expr                       string
+	removeAllConditions        bool
+	keepPortableConditionsOnly bool
+	merge                      bool
+	override                   bool
+	mergeResolve               string
 }
 
 type importStrategy string
@@ -42,18 +40,28 @@ func (c mergeChoice) String() string {
 	return c.label
 }
 
-type missingImportGroupsError struct {
-	missing   []string
-	available []groupSummary
-}
-
-func (e *missingImportGroupsError) Error() string {
-	if len(e.available) > 0 {
-		available := make([]string, 0, len(e.available))
-		for _, group := range e.available {
-			available = append(available, group.Name)
-		}
-		return fmt.Sprintf("requested groups not found in import: %s; available groups: %s", strings.Join(e.missing, ", "), strings.Join(available, ", "))
+func (o importOptions) plannerOptions() importer.Options {
+	policy := importer.ConditionPolicyKeep
+	if o.removeAllConditions {
+		policy = importer.ConditionPolicyRemoveAll
+	} else if o.keepPortableConditionsOnly {
+		policy = importer.ConditionPolicyKeepPortableOnly
 	}
-	return fmt.Sprintf("requested groups not found in import: %s", strings.Join(e.missing, ", "))
+	strategy := importer.StrategyMerge
+	if o.override {
+		strategy = importer.StrategyReplace
+	}
+	resolution := importer.ResolutionCurrent
+	if o.mergeResolve == string(conflictResolutionImport) {
+		resolution = importer.ResolutionImport
+	}
+	return importer.Options{
+		Groups:            append([]string(nil), o.groups...),
+		Filters:           append([]string(nil), o.paramFilters...),
+		Search:            o.search.Raw,
+		Expr:              o.expr,
+		Strategy:          strategy,
+		ConditionPolicy:   policy,
+		DefaultResolution: resolution,
+	}
 }

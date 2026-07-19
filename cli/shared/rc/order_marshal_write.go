@@ -28,7 +28,7 @@ func writeConditions(buf *bytes.Buffer, conditions []firebase.RemoteConfigCondit
 }
 
 func writeCondition(buf *bytes.Buffer, condition firebase.RemoteConfigCondition, indent int) {
-	entries := make([]objectEntry, 0, 4)
+	entries := make([]objectEntry, 0, 3)
 	if condition.Name != "" {
 		value := condition.Name
 		entries = append(entries, objectEntry{key: "name", writeValue: func() { writeJSONString(buf, value) }})
@@ -36,10 +36,6 @@ func writeCondition(buf *bytes.Buffer, condition firebase.RemoteConfigCondition,
 	if condition.Expression != "" {
 		value := condition.Expression
 		entries = append(entries, objectEntry{key: "expression", writeValue: func() { writeJSONString(buf, value) }})
-	}
-	if condition.Description != "" {
-		value := condition.Description
-		entries = append(entries, objectEntry{key: "description", writeValue: func() { writeJSONString(buf, value) }})
 	}
 	if condition.TagColor != "" {
 		value := condition.TagColor

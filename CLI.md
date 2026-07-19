@@ -45,7 +45,6 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   └── --json
 │   ├── add <project> <name>
 │   │   ├── --expression <expr>  required
-│   │   ├── --description <text>
 │   │   ├── --color <color>
 │   │   ├── --priority <n>
 │   │   ├── --dry-run
@@ -53,8 +52,6 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   └── --yes, -y
 │   ├── edit <project> <condition>
 │   │   ├── --expression <expr>
-│   │   ├── --description <text>
-│   │   ├── --no-description
 │   │   ├── --color <color>
 │   │   ├── --no-color
 │   │   ├── --dry-run
@@ -165,7 +162,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │       ├── --dry-run
 │       ├── --draft
 │       ├── --remove-all-conditions
-│       ├── --remove-project-specific-conditions
+│       ├── --keep-portable-conditions-only
 │       ├── --merge
 │       ├── --override
 │       └── --merge-resolve current|import
@@ -490,7 +487,7 @@ Flags:
 
 ```text
 -f, --filter <query>   filter condition names; may be repeated
---search <text>        case-insensitive substring search across name, expression, and description
+--search <text>        case-insensitive substring search across name and expression
 --update               revalidate cached Remote Config before printing
 --json                 print structured JSON
 ```
@@ -510,7 +507,7 @@ Flags:
 --json     print structured JSON
 ```
 
-Human output includes priority, color-styled name and color, expression, optional description, a pluralized usage count, and a typed-value table. JSON output includes project/version/source context and the complete condition usage model.
+Human output includes priority, color-styled name and color, expression, a pluralized usage count, and a typed-value table. JSON output includes project/version/source context and the complete condition usage model.
 
 ### Condition mutations
 
@@ -538,7 +535,6 @@ Without `--draft`, mutations print the complete Remote Config diff, ask for conf
 
 ```text
 --expression <expr>   raw Firebase condition expression; required
---description <text>  optional condition description
 --color <color>       Firebase display color
 --priority <n>        evaluation priority; zero/default appends last
 ```
@@ -547,13 +543,11 @@ Without `--draft`, mutations print the complete Remote Config diff, ask for conf
 
 ```text
 --expression <expr>   replace the raw Firebase condition expression
---description <text>  replace the condition description
---no-description      remove the condition description
 --color <color>       replace the Firebase display color
 --no-color            remove the display color
 ```
 
-`--description` and `--no-description` are mutually exclusive, as are `--color` and `--no-color`. Supported colors are `BLUE`, `BROWN`, `CYAN`, `DEEP_ORANGE`, `GREEN`, `INDIGO`, `LIME`, `ORANGE`, `PINK`, `PURPLE`, and `TEAL`; input is normalized case-insensitively.
+`--color` and `--no-color` are mutually exclusive. Supported colors are `BLUE`, `BROWN`, `CYAN`, `DEEP_ORANGE`, `GREEN`, `INDIGO`, `LIME`, `ORANGE`, `PINK`, `PURPLE`, and `TEAL`; input is normalized case-insensitively. Imported condition objects accept only Firebase's `name`, `expression`, and `tagColor` fields; unsupported fields are rejected.
 
 `rename` updates the condition definition and every conditional-value reference to it. `move` inserts the complete condition at the requested 1-based priority and reports how many conditions and parameters may be affected by the priority change. `delete` removes the condition and its conditional values; parameters left without any value may also be removed, and the command reports that impact before confirmation.
 
@@ -731,7 +725,7 @@ Flags:
 --dry-run                                preview without writing local or Firebase state
 --draft                                  save the import as a local draft
 --remove-all-conditions                  remove all conditions and conditional values
---remove-project-specific-conditions     remove project-specific conditions and their usages
+--keep-portable-conditions-only          keep portable conditions and remove destination-specific usages
 --merge                                  merge import into current config
 --override                               replace current config with import
 --merge-resolve current|import           auto-resolve merge conflicts
@@ -740,7 +734,7 @@ Flags:
 Mutual exclusions:
 
 ```text
---remove-all-conditions with --remove-project-specific-conditions
+--remove-all-conditions with --keep-portable-conditions-only
 --merge with --override
 ```
 
@@ -748,7 +742,7 @@ Mutual exclusions:
 
 If current config is empty, import replaces it. If current config has content and neither `--merge` nor `--override` is set, command prompts for strategy. Merge adds missing conditions, groups, and parameters. Conflicting condition, group description, or parameter values prompt unless `--merge-resolve` is set.
 
-After import transform, unused conditions and unknown condition references are removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
+After import transform, the CLI reports how many source conditions are kept and removed. `--keep-portable-conditions-only` removes conditions tied to destination-specific resources such as Analytics audiences or user properties, experiments, Firebase App IDs, custom signals, and installation IDs. Unused conditions and unknown condition references are also removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
 
 ### Remote Config version history
 
