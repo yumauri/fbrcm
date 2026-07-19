@@ -84,15 +84,23 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 func Execute(s *core.Core, version, commit, date string) {
 	corelog.For("cli").Debug("register cli commands")
 	rootCmd := newRootCommand(s, version, commit, date)
-	if err := rootCmd.Execute(); err != nil {
-		exitCode := 1
-		var exitErr *shared.ExitError
-		if errors.As(err, &exitErr) && exitErr.Code > 0 {
-			exitCode = exitErr.Code
-		}
+	executedCmd, err := rootCmd.ExecuteC()
+	if err != nil {
+		exitCode := commandExitCode(executedCmd, err, os.Args[1:]...)
 		if err.Error() != "" {
 			corelog.For("cli").Error("cli command failed", "err", err)
 		}
 		os.Exit(exitCode)
 	}
+}
+
+func commandExitCode(cmd *cobra.Command, err error, args ...string) int {
+	var exitErr *shared.ExitError
+	if errors.As(err, &exitErr) && exitErr.Code > 0 {
+		return exitErr.Code
+	}
+	if shared.DiffExitCodeRequested(cmd, args) {
+		return 2
+	}
+	return 1
 }

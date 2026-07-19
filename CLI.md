@@ -190,7 +190,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --parameters
 │   │   ├── --conditions
 │   │   ├── --cached
-│   │   └── --json
+│   │   ├── --json
+│   │   └── --exit-code
 │   ├── export <project> <version>
 │   │   ├── --to <path>
 │   │   └── --cached
@@ -224,7 +225,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --parameters
 │   │   ├── --conditions
 │   │   ├── --cached
-│   │   └── --json
+│   │   ├── --json
+│   │   └── --exit-code
 │   ├── promote <source-project> <target-project>
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --group <name>        repeated
@@ -657,7 +659,7 @@ Flags:
 
 `--parameters` and `--conditions` are mutually exclusive. Condition ordering changes are included in human and JSON diffs.
 
-Without `--exit-code`, both differences and no differences return success. With it, exit statuses follow diff conventions: `0` no differences, `1` differences, `2` invalid draft, conflict, or operational error.
+Without `--exit-code`, both differences and no differences return success. With it, exit statuses follow diff conventions: `0` no differences, `1` differences, `2` any comparison, invocation, profile, or output error. The status describes the filtered result when selection flags are present.
 
 ### `fbrcm draft publish [project...]`
 
@@ -827,9 +829,12 @@ Flags:
 --conditions           include only condition differences
 --cached               require both exact local snapshots and perform no Firebase requests
 --json                 print structured diff JSON
+--exit-code            return 1 for differences and 2 for errors
 ```
 
-`--parameters` and `--conditions` are mutually exclusive. Default output reuses the conditions, group descriptions, parameters, and summary diff format used by `projects diff`. JSON output contains `project`, `from_version`, `to_version`, and `diff`.
+`--parameters` and `--conditions` are mutually exclusive. Default output reuses the conditions, group descriptions, parameters, and summary diff format used by `projects diff`. JSON output contains `project`, `from_version`, `to_version`, `changed`, and `diff`.
+
+Without `--exit-code`, both differences and no differences return success. With it, exit statuses are `0` for no differences, `1` for differences, and `2` for any error. The status and JSON `changed` value describe the filtered result.
 
 ### `fbrcm versions export <project> <version>`
 
@@ -892,7 +897,7 @@ Flags:
 --json      print a structured operation result
 ```
 
-Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, and `changed`. Human previews are written separately from JSON data so stdout remains machine-readable.
+Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, and `changed`, including no-op results where `changed` is `false`. Human previews are written separately from JSON data so stdout remains machine-readable.
 
 ### `fbrcm projects list`
 
@@ -926,7 +931,7 @@ Flags:
 
 Compares Remote Config between two projects. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Both arguments use shared positional project resolution.
 
-By default, command fetches live Remote Config for both projects. Use `--cached` to compare local parameter cache entries instead.
+By default, command fetches live Remote Config for both projects. Use `--cached` to require the local projects registry and compare local parameter cache entries without contacting Firebase. Stale cache entries are compared as stored; a missing registry or Remote Config entry is an error.
 
 Flags:
 
@@ -939,9 +944,12 @@ Flags:
 --conditions           include only condition differences
 --cached               compare cached Remote Config snapshots
 --json                 print structured diff JSON
+--exit-code            return 1 for differences and 2 for errors
 ```
 
-Default output is a terminal diff grouped by conditions, group descriptions, and parameters. JSON output includes source project, target project, summary counts, and structured change records.
+Default output is a terminal diff grouped by conditions, group descriptions, and parameters. JSON output includes source project, target project, top-level `changed`, summary counts, and structured change records.
+
+Without `--exit-code`, both differences and no differences return success. With it, exit statuses are `0` for no differences, `1` for differences, and `2` for any error. The status and JSON `changed` value describe the filtered result.
 
 ### `fbrcm projects promote <source-project> <target-project>`
 
@@ -969,6 +977,8 @@ Flags:
 -y, --yes              skip final publish confirmation
 --json                 print promotion result JSON
 ```
+
+Promotion JSON includes `changed`, which reports whether the selected result contains changes independently of whether it was a dry run or was published.
 
 Non-interactive promote requires explicit selection intent: `--all`, `--filter`, `--group`, `--expr`, or `--search`. Command reloads the target before publishing, validates with Firebase, publishes using the latest target ETag, and retries if the target changes during promotion.
 

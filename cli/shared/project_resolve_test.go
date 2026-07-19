@@ -1,10 +1,16 @@
 package shared
 
 import (
+	"bytes"
 	"slices"
 	"testing"
+	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/env"
 )
 
 func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
@@ -39,5 +45,26 @@ func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 				t.Fatalf("matchProjectsForArg(%q) = %#v, want %#v", tt.query, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestResolveCachedProjectArgUsesLocalRegistry(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, root+"/config")
+	t.Setenv(env.CacheDir, root+"/cache")
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", AuthID: "main"}}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	cmd := &cobra.Command{Use: "diff"}
+	cmd.SetOut(&bytes.Buffer{})
+	project, err := ResolveCachedProjectArg(cmd, "demo")
+	if err != nil {
+		t.Fatalf("resolve cached project = %v", err)
+	}
+	if project.ProjectID != "demo" {
+		t.Fatalf("cached project = %#v", project)
 	}
 }

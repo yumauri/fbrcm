@@ -42,14 +42,15 @@ func newDiffCommand(svc *core.Core) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := readCompareOptions(cmd)
 			if err != nil {
-				return err
+				return shared.DiffCommandError(cmd, err)
 			}
-			return runProjectsDiff(cmd, svc, args[0], args[1], opts)
+			return shared.DiffCommandError(cmd, runProjectsDiff(cmd, svc, args[0], args[1], opts))
 		},
 	}
 	addCompareSelectionFlags(cmd)
 	cmd.Flags().Bool("cached", false, "Use cached Remote Config instead of live Firebase fetch")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
+	shared.AddDiffExitCodeFlag(cmd)
 	return cmd
 }
 
@@ -165,15 +166,23 @@ func runProjectsDiff(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuer
 	}
 	result := filterDiffResult(source, sourceCfg, target, targetCfg, rcdiff.CompareRemoteConfigs(targetCfg, sourceCfg), opts)
 	if opts.JSON {
-		return shared.WriteJSON(cmd, compareJSON(source, target, result))
-	}
-	if !result.HasChanges() {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		if err := shared.WriteJSON(cmd, compareJSON(source, target, result)); err != nil {
+			return err
+		}
+		if result.HasChanges() {
+			return shared.DiffFoundError(cmd)
+		}
 		return nil
 	}
+	if !result.HasChanges() {
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		return err
+	}
 	text, _ := rcdiff.RenderResult(result)
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), text)
-	return nil
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), text); err != nil {
+		return err
+	}
+	return shared.DiffFoundError(cmd)
 }
 
 func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, opts compareOptions) error {
@@ -238,11 +247,17 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 }
 
 func loadCompareConfigs(ctx context.Context, cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, cached bool) (core.Project, core.Project, *firebase.RemoteConfig, *firebase.RemoteConfig, error) {
-	source, err := shared.ResolveProjectArg(ctx, cmd, svc, sourceQuery)
+	resolveProject := func(query string) (core.Project, error) {
+		if cached {
+			return shared.ResolveCachedProjectArg(cmd, query)
+		}
+		return shared.ResolveProjectArg(ctx, cmd, svc, query)
+	}
+	source, err := resolveProject(sourceQuery)
 	if err != nil {
 		return core.Project{}, core.Project{}, nil, nil, err
 	}
-	target, err := shared.ResolveProjectArg(ctx, cmd, svc, targetQuery)
+	target, err := resolveProject(targetQuery)
 	if err != nil {
 		return core.Project{}, core.Project{}, nil, nil, err
 	}
@@ -261,9 +276,12 @@ func loadCompareConfigs(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 
 func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, cached bool) (*firebase.RemoteConfig, error) {
 	if cached {
-		cache, _, err := svc.GetParameters(ctx, projectID, false)
+		cache, _, err := svc.InspectParametersCache(projectID)
 		if err != nil {
 			return nil, err
+		}
+		if cache == nil {
+			return nil, fmt.Errorf("parameters cache not found for project %s", projectID)
 		}
 		return firebase.ParseCloneRemoteConfig(cache.RemoteConfig)
 	}
@@ -548,7 +566,7 @@ func compareJSON(source, target core.Project, result rcdiff.Result) any {
 	return map[string]any{
 		"source_project": source.ProjectID,
 		"target_project": target.ProjectID,
-		"has_changes":    result.HasChanges(),
+		"changed":        result.HasChanges(),
 		"summary": map[string]rcdiff.Summary{
 			"conditions":         result.ConditionSummary(),
 			"parameters":         result.ParameterSummary(),
@@ -562,6 +580,7 @@ func promoteJSON(source, target core.Project, opts compareOptions, published boo
 	return map[string]any{
 		"source_project": source.ProjectID,
 		"target_project": target.ProjectID,
+		"changed":        result.HasChanges(),
 		"dry_run":        opts.DryRun,
 		"published":      published,
 		"selected":       len(applied),

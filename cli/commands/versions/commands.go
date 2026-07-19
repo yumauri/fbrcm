@@ -113,31 +113,7 @@ type versionDiffOptions struct {
 
 func newVersionsDiffCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "diff <project> <from> [<to>]", Short: "Compare two Remote Config versions", Args: cobra.RangeArgs(2, 3), RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := resolveVersionProject(cmd, svc, args[0])
-		if err != nil {
-			return err
-		}
-		to := "current"
-		if len(args) == 3 {
-			to = args[2]
-		}
-		opts := readVersionDiffOptions(cmd)
-		fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(context.Background(), project.ProjectID, args[1], to, opts.cached)
-		if err != nil {
-			return err
-		}
-		result := filterVersionDiff(project, rcdiff.CompareRemoteConfigs(fromCfg.Config, toCfg.Config), fromCfg.Config, toCfg.Config, opts)
-		if opts.json {
-			return shared.WriteJSON(cmd, map[string]any{"project": project, "from_version": fromCfg.Version.VersionNumber, "to_version": toCfg.Version.VersionNumber, "diff": result})
-		}
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s (%s): version %s → version %s\n", project.Name, project.ProjectID, fromCfg.Version.VersionNumber, toCfg.Version.VersionNumber)
-		text, changed := rcdiff.RenderResult(result)
-		if !changed {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
-			return nil
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), text)
-		return nil
+		return shared.DiffCommandError(cmd, runVersionsDiff(cmd, svc, args))
 	}}
 	addVersionDiffFlags(cmd)
 	return cmd
@@ -151,7 +127,47 @@ func addVersionDiffFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("conditions", false, "Include only condition changes")
 	cmd.Flags().Bool("cached", false, "Require local snapshots and do not contact Firebase")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
+	shared.AddDiffExitCodeFlag(cmd)
 	cmd.MarkFlagsMutuallyExclusive("parameters", "conditions")
+}
+
+func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
+	project, err := resolveVersionProject(cmd, svc, args[0])
+	if err != nil {
+		return err
+	}
+	to := "current"
+	if len(args) == 3 {
+		to = args[2]
+	}
+	opts := readVersionDiffOptions(cmd)
+	fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(context.Background(), project.ProjectID, args[1], to, opts.cached)
+	if err != nil {
+		return err
+	}
+	result := filterVersionDiff(project, rcdiff.CompareRemoteConfigs(fromCfg.Config, toCfg.Config), fromCfg.Config, toCfg.Config, opts)
+	changed := result.HasChanges()
+	if opts.json {
+		if err := shared.WriteJSON(cmd, map[string]any{"project": project, "from_version": fromCfg.Version.VersionNumber, "to_version": toCfg.Version.VersionNumber, "changed": changed, "diff": result}); err != nil {
+			return err
+		}
+		if changed {
+			return shared.DiffFoundError(cmd)
+		}
+		return nil
+	}
+	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s (%s): version %s → version %s\n", project.Name, project.ProjectID, fromCfg.Version.VersionNumber, toCfg.Version.VersionNumber); err != nil {
+		return err
+	}
+	text, changed := rcdiff.RenderResult(result)
+	if !changed {
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		return err
+	}
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), text); err != nil {
+		return err
+	}
+	return shared.DiffFoundError(cmd)
 }
 func readVersionDiffOptions(cmd *cobra.Command) versionDiffOptions {
 	o := versionDiffOptions{}
@@ -272,6 +288,7 @@ func newVersionsRollbackCommand(svc *core.Core, restore bool) *cobra.Command {
 func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector string, restore bool) error {
 	ctx := context.Background()
 	dry, _ := cmd.Flags().GetBool("dry-run")
+	jsonOut, _ := cmd.Flags().GetBool("json")
 	if dry {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -293,15 +310,20 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 		return err
 	}
 	if current.Version.VersionNumber == target.Version.VersionNumber {
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "version %s is already current; no operation performed\n", target.Version.VersionNumber)
-		return nil
+		if jsonOut {
+			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", dry, false))
+		}
+		_, err := fmt.Fprintf(cmd.OutOrStdout(), "version %s is already current; no operation performed\n", target.Version.VersionNumber)
+		return err
 	}
 	diffText, changed := rc.RenderRemoteConfigDiff(current.Config, target.Config)
 	if !changed {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
-		return nil
+		if jsonOut {
+			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", dry, false))
+		}
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		return err
 	}
-	jsonOut, _ := cmd.Flags().GetBool("json")
 	if !jsonOut {
 		op := "Rollback"
 		note := "Rollback publishes the selected historical template as a new Remote Config version."
@@ -326,7 +348,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 				return err
 			}
 		}
-		result := map[string]any{"project_id": project.ProjectID, "operation": map[bool]string{true: "restore", false: "rollback"}[restore], "previous_version": current.Version.VersionNumber, "source_version": target.Version.VersionNumber, "published_version": nil, "dry_run": true, "changed": true}
+		result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", true, true)
 		if jsonOut {
 			return shared.WriteJSON(cmd, result)
 		}
@@ -352,10 +374,26 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 		}
 		return err
 	}
-	payload := map[string]any{"project_id": project.ProjectID, "operation": map[bool]string{true: "restore", false: "rollback"}[restore], "previous_version": result.PreviousVersion, "source_version": result.SourceVersion, "published_version": result.PublishedVersion, "dry_run": false, "changed": true}
+	payload := versionPublishJSON(project.ProjectID, restore, result.PreviousVersion, result.SourceVersion, result.PublishedVersion, false, true)
 	if jsonOut {
 		return shared.WriteJSON(cmd, payload)
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s v%s → v%s, using v%s\n", map[bool]string{true: "♻️ restored", false: "⏪ rolled back"}[restore], project.ProjectID, result.PreviousVersion, result.PublishedVersion, result.SourceVersion)
 	return nil
+}
+
+func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, dryRun, changed bool) map[string]any {
+	var published any
+	if publishedVersion != "" {
+		published = publishedVersion
+	}
+	return map[string]any{
+		"project_id":        projectID,
+		"operation":         map[bool]string{true: "restore", false: "rollback"}[restore],
+		"previous_version":  previousVersion,
+		"source_version":    sourceVersion,
+		"published_version": published,
+		"dry_run":           dryRun,
+		"changed":           changed,
+	}
 }

@@ -129,7 +129,7 @@ type diffOptions struct {
 
 func newDiffCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "diff <project>", Short: "Compare a draft with its base or current Remote Config", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		return diffCommandError(cmd, runDiff(cmd, svc, args[0]))
+		return shared.DiffCommandError(cmd, runDiff(cmd, svc, args[0]))
 	}}
 	cmd.Flags().String("against", "base", "Comparison target: base or current")
 	cmd.Flags().Bool("cached", false, "Use the latest local snapshot and do not contact Firebase")
@@ -139,7 +139,7 @@ func newDiffCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("parameters", false, "Include only parameter and group description changes")
 	cmd.Flags().Bool("conditions", false, "Include only condition changes")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
-	cmd.Flags().Bool("exit-code", false, "Return 1 when differences exist and 2 on errors")
+	shared.AddDiffExitCodeFlag(cmd)
 	cmd.MarkFlagsMutuallyExclusive("parameters", "conditions")
 	return cmd
 }
@@ -197,44 +197,25 @@ func runDiff(cmd *cobra.Command, svc *core.Core, query string) error {
 	result := filterDiff(project, rcdiff.CompareRemoteConfigs(fromCfg, toCfg), fromCfg, toCfg, opts)
 	if opts.json {
 		if err := shared.WriteJSON(cmd, map[string]any{"project": project, "against": opts.against, "base_version": stored.BaseVersion, "current_version": currentVersion, "changed": result.HasChanges(), "diff": result}); err != nil {
-			return diffCommandError(cmd, err)
+			return err
 		}
 		if result.HasChanges() {
-			return diffFoundError(cmd)
+			return shared.DiffFoundError(cmd)
 		}
 		return nil
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s (%s): %s → draft\n", project.Name, projectID, opts.against)
-	text, changed := rcdiff.RenderResult(result)
-	if !changed {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
-		return nil
-	}
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), text)
-	return diffFoundError(cmd)
-}
-
-func diffFoundError(cmd *cobra.Command) error {
-	exitCode, _ := cmd.Flags().GetBool("exit-code")
-	if exitCode {
-		return shared.WithExitCode(nil, 1)
-	}
-	return nil
-}
-
-func diffCommandError(cmd *cobra.Command, err error) error {
-	if err == nil {
-		return nil
-	}
-	var exitErr *shared.ExitError
-	if errors.As(err, &exitErr) {
+	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s (%s): %s → draft\n", project.Name, projectID, opts.against); err != nil {
 		return err
 	}
-	exitCode, _ := cmd.Flags().GetBool("exit-code")
-	if exitCode {
-		return shared.WithExitCode(err, 2)
+	text, changed := rcdiff.RenderResult(result)
+	if !changed {
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		return err
 	}
-	return err
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), text); err != nil {
+		return err
+	}
+	return shared.DiffFoundError(cmd)
 }
 
 func newPublishCommand(svc *core.Core) *cobra.Command {

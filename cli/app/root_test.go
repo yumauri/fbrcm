@@ -2,6 +2,8 @@ package app
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -10,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 )
@@ -70,6 +73,54 @@ func TestRootCommandDefinesProfileOverride(t *testing.T) {
 	}
 	if !strings.Contains(flag.Usage, "FBRCM_PROFILE") || !strings.Contains(flag.Usage, "without changing") {
 		t.Fatalf("profile usage = %q", flag.Usage)
+	}
+}
+
+func TestCommandExitCodeHonorsDiffContract(t *testing.T) {
+	cmd := &cobra.Command{Use: "diff"}
+	shared.AddDiffExitCodeFlag(cmd)
+	original := fmt.Errorf("failed")
+	if got := commandExitCode(cmd, original); got != 1 {
+		t.Fatalf("default error exit code = %d, want 1", got)
+	}
+	if err := cmd.Flags().Set("exit-code", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if got := commandExitCode(cmd, original); got != 2 {
+		t.Fatalf("diff operational error exit code = %d, want 2", got)
+	}
+	explicit := shared.WithExitCode(nil, 1)
+	if got := commandExitCode(cmd, explicit); got != 1 {
+		t.Fatalf("diff found exit code = %d, want 1", got)
+	}
+	var exitErr *shared.ExitError
+	if !errors.As(explicit, &exitErr) {
+		t.Fatalf("explicit error = %#v", explicit)
+	}
+}
+
+func TestCommandExitCodeCoversPreRunDiffErrors(t *testing.T) {
+	root := &cobra.Command{Use: "fbrcm"}
+	diff := &cobra.Command{Use: "diff <left> <right>", Args: cobra.ExactArgs(2), RunE: func(*cobra.Command, []string) error { return nil }}
+	shared.AddDiffExitCodeFlag(diff)
+	root.AddCommand(diff)
+	root.SetOut(&bytes.Buffer{})
+	root.SetErr(&bytes.Buffer{})
+	root.SetArgs([]string{"diff", "--exit-code"})
+	executed, err := root.ExecuteC()
+	if err == nil {
+		t.Fatal("argument error is nil")
+	}
+	if got := commandExitCode(executed, err); got != 2 {
+		t.Fatalf("argument error exit code = %d, want 2", got)
+	}
+}
+
+func TestCommandExitCodeFindsExitFlagAfterUnknownFlag(t *testing.T) {
+	cmd := &cobra.Command{Use: "diff"}
+	shared.AddDiffExitCodeFlag(cmd)
+	if got := commandExitCode(cmd, fmt.Errorf("unknown flag"), "diff", "--bad-flag", "--exit-code"); got != 2 {
+		t.Fatalf("unknown flag exit code = %d, want 2", got)
 	}
 }
 

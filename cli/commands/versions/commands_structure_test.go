@@ -19,7 +19,7 @@ func TestNewCommandStructure(t *testing.T) {
 	if show.Flags().Lookup("config") != nil {
 		t.Fatal("versions show still exposes removed --config flag")
 	}
-	for _, flag := range []string{"filter", "search", "group", "expr", "parameters", "conditions", "cached", "json"} {
+	for _, flag := range []string{"filter", "search", "group", "expr", "parameters", "conditions", "cached", "json", "exit-code"} {
 		cmdtest.AssertNestedFlag(t, cmd, []string{"diff"}, flag)
 	}
 	for _, name := range []string{"rollback", "restore"} {

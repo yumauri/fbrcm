@@ -15,7 +15,7 @@ func TestNewCommandStructure(t *testing.T) {
 	for _, flag := range []string{"json", "filter", "expr", "url", "auth"} {
 		cmdtest.AssertFlag(t, cmd, "update", flag)
 	}
-	for _, flag := range []string{"filter", "group", "expr", "search", "parameters", "conditions", "cached", "json"} {
+	for _, flag := range []string{"filter", "group", "expr", "search", "parameters", "conditions", "cached", "json", "exit-code"} {
 		cmdtest.AssertFlag(t, cmd, "diff", flag)
 	}
 	for _, flag := range []string{"filter", "group", "expr", "search", "parameters", "conditions", "interactive", "all", "prune", "dry-run", "yes", "json"} {

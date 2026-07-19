@@ -11,6 +11,7 @@ import (
 
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/filter"
 )
 
@@ -19,7 +20,20 @@ func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 	if err != nil {
 		return core.Project{}, err
 	}
+	return resolveProjectArg(cmd, projects, query)
+}
 
+// ResolveCachedProjectArg resolves a project using only the local projects
+// registry. It never attempts project discovery.
+func ResolveCachedProjectArg(cmd *cobra.Command, query string) (core.Project, error) {
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectArg(cmd, projects, query)
+}
+
+func resolveProjectArg(cmd *cobra.Command, projects []core.Project, query string) (core.Project, error) {
 	matches := matchProjectsForArg(projects, query)
 
 	switch len(matches) {
@@ -27,11 +41,15 @@ func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 		return matches[0], nil
 	case 0:
 		if len(projects) > 0 {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(projects))
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(projects)); err != nil {
+				return core.Project{}, err
+			}
 		}
 		return core.Project{}, fmt.Errorf("no project matches %q", query)
 	default:
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches))
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches)); err != nil {
+			return core.Project{}, err
+		}
 		return core.Project{}, fmt.Errorf("several projects match %q", query)
 	}
 }
