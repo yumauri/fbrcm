@@ -18,7 +18,7 @@ func TestBindProjectsAuthMatchesAndPersists(t *testing.T) {
 		t.Fatalf("AddGCloudAuth = %v", err)
 	}
 	projects := []config.Project{
-		{Name: "Alpha App", ProjectID: "alpha", AuthID: "old"},
+		{Name: "Alpha App", ProjectID: "alpha", AuthID: "old", DiscoveredBy: []string{"old"}},
 		{Name: "Beta App", ProjectID: "beta", AuthID: "old"},
 	}
 	if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
@@ -35,6 +35,9 @@ func TestBindProjectsAuthMatchesAndPersists(t *testing.T) {
 	if matched[0].AuthID != "main" {
 		t.Fatalf("AuthID = %q, want main", matched[0].AuthID)
 	}
+	if got := strings.Join(matched[0].DiscoveredBy, ","); got != "old" {
+		t.Fatalf("DiscoveredBy = %q, want observed identities unchanged", got)
+	}
 
 	project, err := svc.ProjectByID("alpha")
 	if err != nil {
@@ -42,6 +45,9 @@ func TestBindProjectsAuthMatchesAndPersists(t *testing.T) {
 	}
 	if project.AuthID != "main" {
 		t.Fatalf("persisted AuthID = %q, want main", project.AuthID)
+	}
+	if got := strings.Join(project.DiscoveredBy, ","); got != "old" {
+		t.Fatalf("persisted DiscoveredBy = %q, want observed identities unchanged", got)
 	}
 }
 
@@ -57,6 +63,35 @@ func TestBindProjectsAuthRequiresConfiguredAuth(t *testing.T) {
 	_, err := svc.BindProjectsAuth(nil, "missing")
 	if err == nil || !strings.Contains(err.Error(), `auth "missing" is not configured`) {
 		t.Fatalf("BindProjectsAuth = %v, want missing auth error", err)
+	}
+}
+
+func TestBindProjectIDsAuthUsesExactProjectIDs(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	if _, err := svc.AddGCloudAuth("main", "Main"); err != nil {
+		t.Fatalf("AddGCloudAuth = %v", err)
+	}
+	projects := []config.Project{
+		{Name: "Other", ProjectID: "alpha", AuthID: "old"},
+		{Name: "alpha", ProjectID: "beta", AuthID: "old"},
+	}
+	if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
+		t.Fatalf("SaveProjects = %v", err)
+	}
+
+	matched, err := svc.BindProjectIDsAuth([]string{"alpha"}, "main")
+	if err != nil {
+		t.Fatalf("BindProjectIDsAuth = %v", err)
+	}
+	if len(matched) != 1 || matched[0].ProjectID != "alpha" {
+		t.Fatalf("matched = %+v, want exact project ID alpha", matched)
+	}
+	beta, err := svc.ProjectByID("beta")
+	if err != nil {
+		t.Fatalf("ProjectByID beta = %v", err)
+	}
+	if beta.AuthID != "old" {
+		t.Fatalf("project named alpha was rebound to %q, want old", beta.AuthID)
 	}
 }
 

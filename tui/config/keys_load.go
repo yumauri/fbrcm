@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"slices"
 
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 )
@@ -17,7 +18,7 @@ func Load() (State, error) {
 		}
 		cfg = &coreconfig.AppConfig{}
 	}
-	changed := false
+	changed := migrateAdminShortcuts(cfg.Keys)
 	if cfg.PowerlineGlyphs == nil {
 		enabled := true
 		cfg.PowerlineGlyphs = &enabled
@@ -38,6 +39,33 @@ func Load() (State, error) {
 	active = validate(merged)
 	logConflicts(active)
 	return Current(), nil
+}
+
+// migrateAdminShortcuts updates generated defaults from releases that predate
+// the chorded Accounts and Profiles shortcuts.
+func migrateAdminShortcuts(configured map[string]map[string][]string) bool {
+	global := configured[string(BlockGlobal)]
+	if global == nil {
+		return false
+	}
+
+	changed := false
+	if slices.Equal(global[string(ActionAccounts)], []string{"A"}) {
+		global[string(ActionAccounts)] = []string{"ctrl+a"}
+		changed = true
+	}
+	if slices.Equal(global[string(ActionProfiles)], []string{"P"}) {
+		global[string(ActionProfiles)] = []string{"ctrl+p"}
+		changed = true
+	}
+	for _, block := range []Block{BlockParameters, BlockConditions} {
+		actions := configured[string(block)]
+		if actions != nil && slices.Equal(actions[string(ActionPublishAll)], []string{"ctrl+p"}) {
+			actions[string(ActionPublishAll)] = []string{"P"}
+			changed = true
+		}
+	}
+	return changed
 }
 
 // PowerlineGlyphsEnabled reports whether private-use Powerline separators

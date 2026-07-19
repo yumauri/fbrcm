@@ -19,6 +19,8 @@ type helpPaletteAction struct {
 
 var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockGlobal,
+	tuiconfig.BlockAccounts,
+	tuiconfig.BlockProfiles,
 	tuiconfig.BlockProjects,
 	tuiconfig.BlockParameters,
 	tuiconfig.BlockConditions,
@@ -34,6 +36,7 @@ var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockNumberInput,
 	tuiconfig.BlockStringInput,
 	tuiconfig.BlockMoveInput,
+	tuiconfig.BlockAuthPicker,
 	tuiconfig.BlockRenameInput,
 	tuiconfig.BlockHelp,
 }
@@ -65,6 +68,10 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 	switch block {
 	case tuiconfig.BlockGlobal:
 		return "Global"
+	case tuiconfig.BlockAccounts:
+		return "Accounts panel"
+	case tuiconfig.BlockProfiles:
+		return "Profiles panel"
 	case tuiconfig.BlockProjects:
 		return "Projects panel"
 	case tuiconfig.BlockParameters:
@@ -95,6 +102,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 		return "String editor"
 	case tuiconfig.BlockMoveInput:
 		return "Move editor"
+	case tuiconfig.BlockAuthPicker:
+		return "Authentication picker"
 	case tuiconfig.BlockRenameInput:
 		return "Rename editor"
 	case tuiconfig.BlockHelp:
@@ -105,6 +114,36 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 }
 
 func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) string {
+	if block == tuiconfig.BlockAccounts {
+		switch action {
+		case tuiconfig.ActionCancel:
+			return "Close Accounts"
+		case tuiconfig.ActionSubmit:
+			return "Validate or add authentication"
+		case tuiconfig.ActionDelete:
+			return "Purge authentication"
+		case tuiconfig.ActionUp:
+			return "Select previous authentication"
+		case tuiconfig.ActionDown:
+			return "Select next authentication"
+		}
+	}
+	if block == tuiconfig.BlockProfiles {
+		switch action {
+		case tuiconfig.ActionCancel:
+			return "Close Profiles"
+		case tuiconfig.ActionSubmit:
+			return "Switch or create profile"
+		case tuiconfig.ActionRename:
+			return "Rename profile"
+		case tuiconfig.ActionDelete:
+			return "Purge profile"
+		case tuiconfig.ActionUp:
+			return "Select previous profile"
+		case tuiconfig.ActionDown:
+			return "Select next profile"
+		}
+	}
 	if block == tuiconfig.BlockFilter {
 		switch action {
 		case tuiconfig.ActionFilterFuzzy:
@@ -128,7 +167,9 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 	if block == tuiconfig.BlockGlobal {
 		switch action {
 		case tuiconfig.ActionAccounts:
-			return "Accounts and profiles"
+			return "Open accounts"
+		case tuiconfig.ActionProfiles:
+			return "Open profiles"
 		case tuiconfig.ActionHelp:
 			return "Open full help"
 		case tuiconfig.ActionForceQuit:
@@ -169,6 +210,9 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 	}
 	if block == tuiconfig.BlockConditions && action == tuiconfig.ActionEdit {
 		return "Edit expression"
+	}
+	if block == tuiconfig.BlockProjects && action == tuiconfig.ActionBindAuth {
+		return "Bind authentication"
 	}
 	if block == tuiconfig.BlockDetails && action == tuiconfig.ActionEditValue {
 		return "Edit selected value"

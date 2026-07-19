@@ -136,13 +136,18 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
-	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) {
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) ||
+		tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
 		if m.details.Dirty() {
 			m.openAccountsBlockedByDirtyDetailsDialog()
 			return m, nil, true
 		}
 		var cmd tea.Cmd
-		m.setup, cmd = m.setup.Open()
+		if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
+			m.setup, cmd = m.setup.OpenProfiles()
+		} else {
+			m.setup, cmd = m.setup.OpenAccounts()
+		}
 		return m, cmd, true
 	}
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k) {
@@ -233,6 +238,8 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 
 func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 	switch {
+	case m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionBindAuth, k):
+		return m, m.openProjectAuthPicker(), true
 	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDelete, k)) ||
 		(m.active == panels.Details && tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k)):
 		return m.updateDeleteKey()

@@ -26,6 +26,9 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case messages.HistoryRollbackCompletedMsg:
 		return m.updateHistoryRollbackCompleted(msg)
 
+	case projectAuthBoundMsg:
+		return m.updateProjectAuthBound(msg)
+
 	case messages.KeyboardCaptureMsg:
 		if msg.Enabled {
 			m.capture = m.active

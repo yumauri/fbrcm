@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -25,18 +26,34 @@ func (m Model) View(width, height int) string {
 	if !m.IsOpen() || width <= 0 || height <= 0 {
 		return ""
 	}
+	card := m.PopupViewWithFocus(width, height, true)
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, card)
+}
+
+// PopupView renders the setup card without a terminal-sized background.
+func (m Model) PopupView(width, height int) string {
+	return m.PopupViewWithFocus(width, height, true)
+}
+
+// PopupViewWithFocus renders the setup card and controls whether its active
+// tab receives the selected-title background.
+func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
+	if !m.IsOpen() || width <= 0 || height <= 0 {
+		return ""
+	}
 	contentWidth := min(max(width-12, 48), 72)
 	var title string
 	var lines []string
+	tabs := false
 	switch m.mode {
 	case modeChecking:
 		title = "Starting fbrcm"
 		lines = m.workingLines("Checking profile, authentication, and project cache…")
 	case modeAccounts:
-		title = "Accounts & profiles"
+		tabs = true
 		lines = m.accountsLines(contentWidth)
 	case modeProfiles:
-		title = "Profiles"
+		tabs = true
 		lines = m.profilesLines(contentWidth)
 	case modeMethods:
 		title = "Authenticate"
@@ -78,6 +95,12 @@ func (m Model) View(width, height int) string {
 	case modeSwitching:
 		title = "Switch profile"
 		lines = m.workingLines("Switching to profile " + m.profileTo + "…")
+	case modePurgingAuth:
+		title = "Purge authentication"
+		lines = m.workingLines("Purging authentication " + m.authID + "…")
+	case modePurgingProfile:
+		title = "Purge profile"
+		lines = m.workingLines("Purging profile " + m.profileFrom + "…")
 	case modeNoProjects:
 		title = "No projects found"
 		lines = m.noProjectsLines(contentWidth)
@@ -86,8 +109,10 @@ func (m Model) View(width, height int) string {
 		lines = m.errorLines(contentWidth)
 	}
 
-	card := renderSetupPanel(title, lines, contentWidth)
-	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, card)
+	if tabs {
+		return renderSetupTabsPanel(m.mode == modeAccounts, focused, lines, contentWidth)
+	}
+	return renderSetupPanel(title, lines, contentWidth)
 }
 
 func renderSetupPanel(title string, body []string, innerWidth int) string {
@@ -108,6 +133,33 @@ func renderSetupPanel(title string, body []string, innerWidth int) string {
 	return strings.Join(lines, "\n")
 }
 
+func renderSetupTabsPanel(accountsSelected, focused bool, body []string, innerWidth int) string {
+	accountKey, accountTitle := setupTabTitle(tuiconfig.ActionAccounts, "A", "Accounts")
+	profileKey, profileTitle := setupTabTitle(tuiconfig.ActionProfiles, "P", "Profiles")
+	accounts, accountsWidth := styles.PanelHeaderTab(accountKey, accountTitle, accountsSelected, focused, max(innerWidth-1, 0))
+	profiles, profilesWidth := styles.PanelHeaderTab(profileKey, profileTitle, !accountsSelected, focused, max(innerWidth-accountsWidth-3, 0))
+	fill := max(innerWidth-accountsWidth-profilesWidth-3, 0)
+	lines := []string{cardBorderStyle.Render("╭─") + accounts + cardBorderStyle.Render("──") + profiles + cardBorderStyle.Render(strings.Repeat("─", fill)+"╮")}
+	for line := range strings.SplitSeq(strings.Join(body, "\n"), "\n") {
+		line = ansi.Truncate(line, innerWidth, "")
+		line += strings.Repeat(" ", max(innerWidth-lipgloss.Width(line), 0))
+		lines = append(lines, cardBorderStyle.Render("│")+line+cardBorderStyle.Render("│"))
+	}
+	lines = append(lines, cardBorderStyle.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
+	return strings.Join(lines, "\n")
+}
+
+func setupTabTitle(action tuiconfig.Action, defaultKey, title string) (string, string) {
+	keys := tuiconfig.Keys(tuiconfig.BlockGlobal, action)
+	if len(keys) == 0 {
+		return "", title
+	}
+	if keys[0] == defaultKey {
+		return defaultKey, strings.TrimPrefix(title, defaultKey)
+	}
+	return tuiconfig.KeyHint(keys[0]), title
+}
+
 func (m Model) methodsLines(width int) []string {
 	lines := []string{
 		"Connect Google credentials to discover your Firebase projects.",
@@ -126,7 +178,7 @@ func (m Model) methodsLines(width int) []string {
 		setupHelp(width,
 			[2]string{"↑/↓", "select"},
 			[2]string{"enter", "continue"},
-			[2]string{"p", "profiles"},
+			[2]string{tuiconfig.Label(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles), "profiles"},
 			[2]string{"esc", "back"},
 			[2]string{"q", "quit"},
 		),
@@ -150,19 +202,30 @@ func (m Model) accountsLines(width int) []string {
 		if entry.ID == m.defaultID {
 			label += "  ·  default"
 		}
+		if count := m.boundProjects(entry.ID); count == 1 {
+			label += "  ·  1 project"
+		} else if count > 1 {
+			label += fmt.Sprintf("  ·  %d projects", count)
+		} else {
+			label += "  ·  unused"
+		}
 		lines = append(lines, setupListLine(label, m.cursor == index))
 	}
 	lines = append(lines,
-		setupListLine("+ Add authentication", m.cursor == len(m.auth)),
+		setupListLine("+ add authentication", m.cursor == len(m.auth)),
 		"",
 		setupHelp(width,
 			[2]string{"↑/↓", "select"},
 			[2]string{"enter", "validate/sign in"},
-			[2]string{"p", "profiles"},
+			[2]string{"x", "purge"},
+			[2]string{"tab/→", "profiles"},
 			[2]string{"esc", "workspace"},
 			[2]string{"q", "quit"},
 		),
 	)
+	if m.error != nil {
+		lines = append(lines[:len(lines)-1], cardErrorStyle.Render(m.error.Error()), "", lines[len(lines)-1])
+	}
 	return lines
 }
 
@@ -185,7 +248,8 @@ func (m Model) profilesLines(width int) []string {
 			lines = append(lines, "  "+label)
 		}
 		lines = append(lines, "", setupHelp(width,
-			[2]string{"enter/esc", "back"},
+			[2]string{"tab/←", "accounts"},
+			[2]string{"esc", "workspace"},
 			[2]string{"q", "quit"},
 		))
 		return lines
@@ -206,12 +270,18 @@ func (m Model) profilesLines(width int) []string {
 	hints := [][2]string{
 		{"↑/↓", "select"},
 		{"enter", "switch/create"},
-		{"esc", "back"},
+		{"r", "rename"},
+		{"x", "purge"},
+		{"tab/←", "accounts"},
+		{"esc", "workspace"},
 	}
 	if !m.profileInputSelected() {
 		hints = append(hints, [2]string{"q", "quit"})
 	}
 	lines = append(lines, "", setupHelp(width, hints...))
+	if m.error != nil {
+		lines = append(lines[:len(lines)-1], cardErrorStyle.Render(m.error.Error()), "", lines[len(lines)-1])
+	}
 	return lines
 }
 

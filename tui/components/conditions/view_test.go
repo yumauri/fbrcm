@@ -28,10 +28,11 @@ func TestViewShowsConditionsInPriorityOrder(t *testing.T) {
 	m.projectIndex = map[string]int{"demo": 0}
 	m.syncVisible()
 	got := m.ViewWithBorder(true, true)
-	if !strings.Contains(got, "³Conditions") || !strings.Contains(got, "zebra") || !strings.Contains(got, "alpha") {
+	plain := ansi.Strip(got)
+	if !strings.Contains(plain, "³Conditions") || !strings.Contains(plain, "zebra") || !strings.Contains(plain, "alpha") {
 		t.Fatalf("conditions view missing content:\n%s", got)
 	}
-	if strings.Index(got, "zebra") > strings.Index(got, "alpha") {
+	if strings.Index(plain, "zebra") > strings.Index(plain, "alpha") {
 		t.Fatalf("conditions are not in priority order:\n%s", got)
 	}
 }

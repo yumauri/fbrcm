@@ -14,6 +14,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -31,6 +32,8 @@ const (
 	modeAuthenticating
 	modeDiscovering
 	modeSwitching
+	modePurgingAuth
+	modePurgingProfile
 	modeNoProjects
 	modeError
 )
@@ -72,6 +75,48 @@ type CanceledMsg struct{}
 // Ctrl+C remains the unconditional force-quit path.
 type QuitRequestedMsg struct{}
 
+// AuthPurgeRequestedMsg asks the application to open its shared confirmation
+// dialog above the Accounts panel.
+type AuthPurgeRequestedMsg struct {
+	AuthID        string
+	BoundProjects int
+}
+
+// AuthPurgeConfirmedMsg resumes an authentication purge after confirmation.
+type AuthPurgeConfirmedMsg struct{ AuthID string }
+
+// ProfileRenameRequestedMsg asks the application to open its shared inline
+// rename editor over the selected Profiles row.
+type ProfileRenameRequestedMsg struct{ Profile string }
+
+// ProfilePurgeRequestedMsg asks the application to open its shared
+// confirmation dialog above the Profiles panel.
+type ProfilePurgeRequestedMsg struct {
+	Profile    string
+	ConfigPath string
+	CachePath  string
+}
+
+// ProfilePurgeConfirmedMsg resumes a profile purge after confirmation.
+type ProfilePurgeConfirmedMsg struct{ Profile string }
+
+// ErrorRequestedMsg asks the application to display a standard one-button
+// error dialog above the management popup.
+type ErrorRequestedMsg struct {
+	Title string
+	Body  []string
+}
+
+// ProfileRenameAnchor locates the selected profile row in terminal
+// coordinates for the application's shared inline rename editor.
+type ProfileRenameAnchor struct {
+	X        int
+	Y        int
+	Width    int
+	MaxWidth int
+	Profile  string
+}
+
 // Model is the interactive authentication and project-discovery setup gate.
 type Model struct {
 	svc *core.Core
@@ -84,8 +129,11 @@ type Model struct {
 	profiles        []string
 	profileNew      bool
 	profileTo       string
+	profileFrom     string
 	auth            []config.AuthEntry
+	projects        []core.Project
 	defaultID       string
+	requestedMode   mode
 	method          authMethod
 	cursor          int
 	error           error
@@ -130,12 +178,11 @@ func New(svc *core.Core) Model {
 	identity.Blur()
 	profileIn := textinput.New()
 	profileIn.Prompt = ""
-	profileIn.Placeholder = "New profile"
+	profileIn.Placeholder = "new profile"
 	profileIn.CharLimit = 64
 	profileIn.SetStyles(inputstyles.InlineListTextInput())
 	profileIn.SetWidth(36)
 	profileIn.Blur()
-
 	spin := spinner.New(spinner.WithSpinner(spinner.Line))
 	spin.Style = styles.SecondaryTitleSpinner
 
@@ -164,7 +211,13 @@ func (m Model) Init() tea.Cmd {
 }
 
 // Open reopens authentication management from an existing workspace.
-func (m Model) Open() (Model, tea.Cmd) {
+func (m Model) Open() (Model, tea.Cmd) { return m.OpenAccounts() }
+
+func (m Model) OpenAccounts() (Model, tea.Cmd) { return m.openManagement(modeAccounts) }
+
+func (m Model) OpenProfiles() (Model, tea.Cmd) { return m.openManagement(modeProfiles) }
+
+func (m Model) openManagement(target mode) (Model, tea.Cmd) {
 	if m.svc == nil {
 		return m, nil
 	}
@@ -172,6 +225,7 @@ func (m Model) Open() (Model, tea.Cmd) {
 	m.initial = false
 	m.mandatory = false
 	m.profileNew = false
+	m.requestedMode = target
 	m.cursor = 0
 	m.error = nil
 	m.failure = failureNone
@@ -192,6 +246,91 @@ func (m Model) Close() Model {
 
 // IsOpen reports whether setup currently replaces the normal workspace.
 func (m Model) IsOpen() bool { return m.mode != modeHidden }
+
+// IsPopup reports whether setup was opened from an existing workspace.
+func (m Model) IsPopup() bool { return m.IsOpen() && !m.mandatory }
+
+// HelpBlock identifies the active management tab for the Actions palette.
+// Text-entry and confirmation modes deliberately do not expose panel actions.
+func (m Model) HelpBlock() (tuiconfig.Block, bool) {
+	switch m.mode {
+	case modeAccounts:
+		return tuiconfig.BlockAccounts, true
+	case modeProfiles:
+		return tuiconfig.BlockProfiles, !m.profileInputSelected()
+	default:
+		return "", false
+	}
+}
+
+// HelpActionAvailability reports whether a management action can run in the
+// current row context.
+func (m Model) HelpActionAvailability(block tuiconfig.Block, action tuiconfig.Action) (bool, string) {
+	active, ok := m.HelpBlock()
+	if !ok || active != block {
+		return false, "management panel is not active"
+	}
+	switch block {
+	case tuiconfig.BlockAccounts:
+		if action == tuiconfig.ActionDelete && m.selectedAccountID() == "" {
+			return false, "select a configured authentication identity"
+		}
+	case tuiconfig.BlockProfiles:
+		if m.profileOverride != "" && action != tuiconfig.ActionCancel {
+			return false, "profile selection is pinned by FBRCM_PROFILE"
+		}
+		selected := m.selectedProfile()
+		switch action {
+		case tuiconfig.ActionSubmit:
+			if selected == m.profile {
+				return false, "the selected profile is already active"
+			}
+		case tuiconfig.ActionRename:
+			if selected == "" {
+				return false, "select an existing profile"
+			}
+		case tuiconfig.ActionDelete:
+			if selected == "" {
+				return false, "select an existing profile"
+			}
+			if selected == m.profile {
+				return false, "the active profile cannot be purged"
+			}
+		}
+	}
+	return true, ""
+}
+
+// AuthCount returns the identities observed by the latest local inspection.
+func (m Model) AuthCount() int { return len(m.auth) }
+
+// ProfileRenamePosition returns the selected profile row in terminal
+// coordinates. It deliberately mirrors the Profiles popup layout so the
+// shared rename input covers the existing row in place.
+func (m Model) ProfileRenamePosition(width, height int) (ProfileRenameAnchor, bool) {
+	profile := m.selectedProfile()
+	if m.mode != modeProfiles || m.profileOverride != "" || profile == "" || width <= 0 || height <= 0 {
+		return ProfileRenameAnchor{}, false
+	}
+	contentWidth := min(max(width-12, 48), 72)
+	popup := m.PopupView(width, height)
+	popupX := max((width-lipgloss.Width(popup))/2, 0)
+	popupY := max((height-lipgloss.Height(popup))/2, 0)
+	return ProfileRenameAnchor{
+		X:        popupX + 1,
+		Y:        popupY + 2 + m.cursor,
+		Width:    max(lipgloss.Width(profile), 1),
+		MaxWidth: max(contentWidth-3, 1),
+		Profile:  profile,
+	}, true
+}
+
+func (m Model) selectedProfile() string {
+	if m.cursor < 0 || m.cursor >= len(m.profiles) {
+		return ""
+	}
+	return m.profiles[m.cursor]
+}
 
 func (m Model) methodName() string {
 	switch m.method {

@@ -8,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/tui/components/setup"
 	"github.com/yumauri/fbrcm/tui/panels"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
@@ -96,7 +97,7 @@ func TestPopupWindowDimsBasePanelBorders(t *testing.T) {
 	wantTop := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		m.projects.ViewWithBorder(false, false),
-		m.parameters.ViewWithBorder(true, false),
+		m.parameters.ViewWithBorder(false, false),
 	)
 	want := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -125,6 +126,38 @@ func TestPopupWindowDimsBasePanelBorders(t *testing.T) {
 	)
 	if got := m.baseView(); got != want {
 		t.Fatal("base view does not restore only the focused panel border after popup closes")
+	}
+}
+
+func TestAccountsPopupOverlaysWorkspace(t *testing.T) {
+	svc := newRenameTestService(t)
+	m := viewTestModel(90, 24, panels.Projects)
+	m.svc = svc
+	m.setup = setup.New(svc)
+	var cmd tea.Cmd
+	m.setup, cmd = m.setup.OpenAccounts()
+	if cmd == nil || !m.setup.IsPopup() {
+		t.Fatalf("OpenAccounts = cmd:%v popup:%v", cmd != nil, m.setup.IsPopup())
+	}
+
+	view := testutil.NormalizeViewSnapshot(m.View().Content)
+	if !strings.Contains(view, "¹Projects") || !strings.Contains(view, "Starting fbrcm") {
+		t.Fatalf("popup did not retain workspace beneath setup:\n%s", view)
+	}
+	if m.View().MouseMode != tea.MouseModeNone {
+		t.Fatalf("popup mouse mode = %v, want none", m.View().MouseMode)
+	}
+}
+
+func TestGlobalProfilesShortcutOpensPopupDirectly(t *testing.T) {
+	svc := newRenameTestService(t)
+	m := viewTestModel(90, 24, panels.Projects)
+	m.svc = svc
+	m.setup = setup.New(svc)
+
+	next, cmd, handled := m.updateGlobalKeyMessage("ctrl+p")
+	if !handled || cmd == nil || !next.setup.IsPopup() {
+		t.Fatalf("global ctrl+p = handled:%v cmd:%v popup:%v", handled, cmd != nil, next.setup.IsPopup())
 	}
 }
 

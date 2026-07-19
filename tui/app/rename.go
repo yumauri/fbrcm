@@ -45,6 +45,9 @@ func (m *Model) closeRenameInput() {
 }
 
 func (m *Model) submitRenameInput() tea.Cmd {
+	if m.profileRename != nil {
+		return m.submitProfileRenameInput()
+	}
 	if m.conditionEdit != nil && (m.conditionEdit.mode == conditionAddName || m.conditionEdit.mode == conditionRename) {
 		return m.submitConditionRenameInput()
 	}
@@ -148,6 +151,11 @@ func (m *Model) closeRenameIfOrphaned() {
 }
 
 func (m *Model) cancelRenameInput() {
+	if m.profileRename != nil {
+		m.profileRename = nil
+		m.closeRenameInput()
+		return
+	}
 	if m.conditionEdit != nil && (m.conditionEdit.mode == conditionAddName || m.conditionEdit.mode == conditionRename) {
 		m.conditionEdit = nil
 		m.closeRenameInput()

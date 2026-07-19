@@ -127,7 +127,13 @@ func PanelHeaderTab(key, title string, selected, focused bool, maxWidth int) (st
 		return "", width
 	}
 	if selected && focused {
-		return TitleStyle(true).Render(text), width
+		if key == "" || !strings.Contains(text, key) {
+			return TitleStyle(true).Render(text), width
+		}
+		before, after, _ := strings.Cut(text, key)
+		selectionStyle := TitleStyle(true)
+		keyStyle := FilterText.Background(selectionStyle.GetBackground())
+		return selectionStyle.Render(before) + keyStyle.Render(key) + selectionStyle.Render(after), width
 	}
 	if !strings.Contains(text, key) {
 		if selected {

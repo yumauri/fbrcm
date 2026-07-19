@@ -5,6 +5,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/tui/components/authpicker"
 	boolpicker "github.com/yumauri/fbrcm/tui/components/boolpicker"
 	"github.com/yumauri/fbrcm/tui/components/conditions"
 	"github.com/yumauri/fbrcm/tui/components/details"
@@ -49,6 +50,7 @@ type Model struct {
 	numberInput     numberinput.Model
 	stringInput     stringinput.Model
 	moveParam       moveparam.Model
+	authPicker      authpicker.Model
 	renameInput     renameinput.Model
 	dialogQueue     []pendingDialog
 	duplicate       *duplicateSession
@@ -57,7 +59,10 @@ type Model struct {
 	historyRollback *historyRollbackSession
 	conditionEdit   *conditionEditSession
 	conditionalAdd  *conditionalValueAddSession
+	authBind        *authBindingSession
+	profileRename   *profileRenameSession
 	valueEditSource panels.ID
+	authCount       int
 
 	width  int
 	height int
@@ -106,7 +111,17 @@ type conditionalValueAddSession struct {
 	condition string
 }
 
+type profileRenameSession struct {
+	profile string
+}
+
 func New(svc *core.Core) Model {
+	authCount := 0
+	if svc != nil {
+		if entries, _, err := svc.ListAuth(); err == nil {
+			authCount = len(entries)
+		}
+	}
 	m := Model{
 		svc:           svc,
 		projects:      projects.New(svc),
@@ -118,6 +133,7 @@ func New(svc *core.Core) Model {
 		numberInput:   numberinput.New(),
 		stringInput:   stringinput.New(),
 		moveParam:     moveparam.New(),
+		authPicker:    authpicker.New(),
 		renameInput:   renameinput.New(),
 		details:       details.New(),
 		logs:          logs.New(svc),
@@ -125,6 +141,7 @@ func New(svc *core.Core) Model {
 		help:          newHelpModel(),
 		helpPalette:   newHelpPaletteModel(),
 		setup:         setup.New(svc),
+		authCount:     authCount,
 		active:        panels.Projects,
 		parametersTab: panels.Parameters,
 		prevTop:       panels.Projects,

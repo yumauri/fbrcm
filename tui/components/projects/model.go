@@ -156,6 +156,42 @@ func (m Model) HasCurrentProject() bool {
 	return len(m.projects) > 0 && m.cursor >= 0 && m.cursor < len(m.projects)
 }
 
+// ActionTargets returns marked projects, or the current project when nothing
+// is marked. Project-level batch actions share this targeting convention.
+func (m Model) ActionTargets() []core.Project {
+	if selected := m.selectedProjects(); len(selected) > 0 {
+		return selected
+	}
+	if !m.HasCurrentProject() {
+		return nil
+	}
+	return []core.Project{m.projects[m.cursor]}
+}
+
+// ApplyProjectUpdates replaces matching cached project values and notifies
+// downstream panels when their selected projects changed.
+func (m *Model) ApplyProjectUpdates(updates []core.Project) tea.Cmd {
+	byID := make(map[string]core.Project, len(updates))
+	for _, project := range updates {
+		byID[project.ProjectID] = project
+	}
+	for i := range m.allProjects {
+		if project, ok := byID[m.allProjects[i].ProjectID]; ok {
+			m.allProjects[i] = project
+		}
+	}
+	for i := range m.projects {
+		if project, ok := byID[m.projects[i].ProjectID]; ok {
+			m.projects[i] = project
+		}
+	}
+	m.syncViewport()
+	if len(m.selected) == 0 {
+		return nil
+	}
+	return m.selectionChangedCmd()
+}
+
 func (m Model) listProjectsCmd() tea.Cmd {
 	return func() tea.Msg {
 		projects, source, err := m.svc.ListProjects(context.Background())

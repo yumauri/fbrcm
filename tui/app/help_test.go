@@ -22,13 +22,13 @@ func TestShortHelpDescriptions(t *testing.T) {
 		},
 		{
 			name: "projects expanded",
-			keys: helpKeyMap{active: panels.Projects},
-			want: []string{"quit", "help", "collapse", "select", "mark", "open", "update", "filter"},
+			keys: helpKeyMap{active: panels.Projects, canBindAuth: true},
+			want: []string{"quit", "help", "collapse", "select", "mark", "bind auth", "open", "update", "filter"},
 		},
 		{
 			name: "projects collapsed",
-			keys: helpKeyMap{active: panels.Projects, projectsMode: projectsPanelModeCollapsed},
-			want: []string{"quit", "help", "expand", "select", "mark", "open", "update", "filter"},
+			keys: helpKeyMap{active: panels.Projects, projectsMode: projectsPanelModeCollapsed, canBindAuth: true},
+			want: []string{"quit", "help", "expand", "select", "mark", "bind auth", "open", "update", "filter"},
 		},
 		{
 			name: "parameters",
@@ -78,6 +78,13 @@ func TestShortHelpDescriptions(t *testing.T) {
 				t.Fatalf("descriptions = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestProjectHelpOmitsBindAuthenticationWithoutMultipleIdentities(t *testing.T) {
+	got := helpDescriptions(helpKeyMap{active: panels.Projects}.ShortHelp())
+	if slices.Contains(got, "bind auth") {
+		t.Fatalf("single-auth project help includes bind action: %v", got)
 	}
 }
 

@@ -16,5 +16,6 @@ func (m *Model) closeOverlays() {
 	m.closeNumberInput()
 	m.closeStringInput()
 	m.closeMoveParam()
+	m.closeAuthPicker()
 	m.closeRenameInput()
 }

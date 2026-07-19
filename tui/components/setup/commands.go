@@ -42,6 +42,10 @@ type externalOpenedMsg struct{ err error }
 
 type profileSwitchedMsg struct{ err error }
 
+type authPurgedMsg struct{ err error }
+
+type profilePurgedMsg struct{ err error }
+
 func (m Model) inspectCmd() tea.Cmd {
 	return func() tea.Msg {
 		state, err := m.svc.InspectStartupState()
@@ -142,6 +146,19 @@ func (m Model) switchProfileCmd() tea.Cmd {
 	return func() tea.Msg {
 		return profileSwitchedMsg{err: m.svc.SwitchProfile(profile)}
 	}
+}
+
+func (m Model) purgeAuthCmd() tea.Cmd {
+	authID := m.authID
+	return func() tea.Msg {
+		_, _, err := m.svc.PurgeAuth(authID)
+		return authPurgedMsg{err: err}
+	}
+}
+
+func (m Model) purgeProfileCmd() tea.Cmd {
+	profile := m.profileFrom
+	return func() tea.Msg { return profilePurgedMsg{err: config.PurgeProfile(profile)} }
 }
 
 func clearScreenCmd() tea.Cmd {

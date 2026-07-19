@@ -15,7 +15,6 @@ import (
 
 var (
 	helpPaletteBorderStyle   = lipgloss.NewStyle().Foreground(styles.PaletteBlueBright)
-	helpPaletteTitleStyle    = styles.PanelText.Bold(true)
 	helpPaletteGroupStyle    = styles.FilterText.Bold(true)
 	helpPaletteDisabledStyle = styles.PanelMuted.Italic(true)
 )
@@ -36,7 +35,7 @@ func (m Model) helpPaletteView() string {
 	search += strings.Repeat(" ", max(innerWidth-lipgloss.Width(search)-lipgloss.Width(count)-1, 0))
 	search += styles.PanelMuted.Render(count + " ")
 
-	lines := []string{helpPaletteTopBorder(" Actions ", innerWidth), helpPaletteLine(search, innerWidth), helpPaletteSeparator(innerWidth)}
+	lines := []string{helpPaletteTopBorder(innerWidth), helpPaletteLine(search, innerWidth), helpPaletteSeparator(innerWidth)}
 	lines = append(lines, m.helpPaletteActionLines(actions, listHeight, innerWidth)...)
 	lines = append(lines, helpPaletteSeparator(innerWidth))
 	status := "Type to search; Enter runs the selected action"
@@ -123,10 +122,14 @@ func renderHelpPaletteAction(item helpPaletteAction, group string, selected bool
 		styles.FilterText.Render(keys)
 }
 
-func helpPaletteTopBorder(title string, width int) string {
-	title = viewutil.TruncatePlain(title, max(width-4, 0))
-	fill := max(width-lipgloss.Width(title)-1, 0)
-	return helpPaletteBorderStyle.Render("╭─") + helpPaletteTitleStyle.Render(title) + helpPaletteBorderStyle.Render(strings.Repeat("─", fill)+"╮")
+func helpPaletteTopBorder(width int) string {
+	hint := tuiconfig.ActionKeyHint(tuiconfig.BlockGlobal, tuiconfig.ActionHelp)
+	if len([]rune(hint)) > 1 {
+		hint += " "
+	}
+	title, titleWidth := styles.PanelHeaderTab(hint, "Actions", true, true, max(width-1, 0))
+	fill := max(width-titleWidth-1, 0)
+	return helpPaletteBorderStyle.Render("╭─") + title + helpPaletteBorderStyle.Render(strings.Repeat("─", fill)+"╮")
 }
 
 func helpPaletteSeparator(width int) string {

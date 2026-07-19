@@ -21,10 +21,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if ready.Reset {
 			cmds = appendCmd(cmds, m.resetWorkspaceForProfile())
 		}
+		m.authCount = m.setup.AuthCount()
 		m.setup = m.setup.Close()
 		notice := ""
 		if ready.CachedOnly {
-			notice = "Cached only · press A to add authentication"
+			notice = "Cached only · press " + tuiconfig.Label(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts) + " to add authentication"
 		}
 		m.projects = m.projects.SetNotice(notice)
 		var cmd tea.Cmd
@@ -39,6 +40,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 	if _, ok := msg.(setup.CanceledMsg); ok {
+		m.authCount = m.setup.AuthCount()
 		m.setup = m.setup.Close()
 		return m, nil
 	}
@@ -46,13 +48,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.setup = m.setup.Close()
 		return m, m.requestQuit()
 	}
-	if m.setup.IsOpen() {
-		if size, ok := msg.(tea.WindowSizeMsg); ok {
-			m.updateWindowSize(size)
-		}
-		var cmd tea.Cmd
-		m.setup, cmd = m.setup.Update(msg)
-		return m, cmd
+	switch msg := msg.(type) {
+	case setup.AuthPurgeRequestedMsg:
+		m.openAuthPurgeDialog(msg)
+		return m, nil
+	case setup.ProfilePurgeRequestedMsg:
+		m.openProfilePurgeDialog(msg)
+		return m, nil
+	case setup.ProfileRenameRequestedMsg:
+		return m, m.openProfileRenameInput(msg)
+	case setup.ErrorRequestedMsg:
+		m.openSetupErrorDialog(msg)
+		return m, nil
+	case profileRenameCompletedMsg:
+		return m.updateProfileRenameCompleted(msg)
 	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, keyMsg.String()) && (m.helpPalette.IsOpen() || m.helpShortcutAvailable(keyMsg.String())) {
 		if m.helpPalette.IsOpen() {
@@ -78,7 +87,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if next, cmd, ok := m.updateOpenModal(msg); ok {
 		return next, cmd
 	}
-
+	if m.setup.IsOpen() {
+		if size, ok := msg.(tea.WindowSizeMsg); ok {
+			m.updateWindowSize(size)
+		}
+		var cmd tea.Cmd
+		m.setup, cmd = m.setup.Update(msg)
+		return m, cmd
+	}
 	next, cmd, ok := m.updateAppMessage(msg)
 	m = next
 	if ok {
@@ -89,7 +105,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) helpShortcutAvailable(key string) bool {
-	return m.width >= minsize.MinWidth &&
+	setupAvailable := !m.setup.IsOpen()
+	if m.setup.IsOpen() {
+		_, setupAvailable = m.setup.HelpBlock()
+	}
+	return setupAvailable &&
+		m.width >= minsize.MinWidth &&
 		m.height >= minsize.MinHeight &&
 		(strings.HasPrefix(key, "ctrl+") || m.helpPlainKeyAvailable())
 }
@@ -100,6 +121,7 @@ func (m Model) helpPlainKeyAvailable() bool {
 		!m.numberInput.IsOpen() &&
 		!m.stringInput.IsOpen() &&
 		!m.moveParam.IsOpen() &&
+		!m.authPicker.IsOpen() &&
 		!m.renameInput.IsOpen() &&
 		(m.active != panels.Details || !m.detailsVisible || !m.details.TextInputActive())
 }
@@ -138,6 +160,7 @@ func (m *Model) applyLayout() {
 	m.parameters = m.parameters.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
 	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
 	m.dialog = m.dialog.SetBounds(0, 0, m.width, m.height)
+	m.authPicker = m.authPicker.SetBounds(0, 0, m.width, m.height)
 	detailsWidth := m.detailsWidthForLayout(layout)
 	m.details = m.details.SetBounds(layout.bottomWidth-detailsWidth, 0, detailsWidth, layout.topHeight)
 	m.logs = m.logs.SetBounds(0, layout.topHeight, layout.bottomWidth, layout.bottomHeight)

@@ -122,6 +122,39 @@ func TestProjectsMouseWheelMovesCursor(t *testing.T) {
 	}
 }
 
+func TestActionTargetsUsesMarkedProjectsOrCurrentProject(t *testing.T) {
+	m := loadedProjectsModel()
+	m.cursor = 1
+	if got := m.ActionTargets(); len(got) != 1 || got[0].ProjectID != "beta" {
+		t.Fatalf("unmarked targets = %+v, want current beta", got)
+	}
+	m.selected["alpha"] = struct{}{}
+	m.selected["gamma"] = struct{}{}
+	got := m.ActionTargets()
+	if len(got) != 2 || got[0].ProjectID != "alpha" || got[1].ProjectID != "gamma" {
+		t.Fatalf("marked targets = %+v, want alpha and gamma", got)
+	}
+}
+
+func TestApplyProjectUpdatesRefreshesProjectAndSelectedPayload(t *testing.T) {
+	m := loadedProjectsModel()
+	m.selected["alpha"] = struct{}{}
+	cmd := m.ApplyProjectUpdates([]core.Project{{Name: "Alpha Project", ProjectID: "alpha", AuthID: "work"}})
+	if got := m.allProjects[0].AuthID; got != "work" {
+		t.Fatalf("allProjects auth = %q, want work", got)
+	}
+	if got := m.projects[0].AuthID; got != "work" {
+		t.Fatalf("visible projects auth = %q, want work", got)
+	}
+	if cmd == nil {
+		t.Fatal("selected project update did not notify downstream panels")
+	}
+	selection := findMsg[messages.ProjectsSelectionChangedMsg](runBatch(t, cmd))
+	if len(selection.Projects) != 1 || selection.Projects[0].AuthID != "work" {
+		t.Fatalf("selection update = %+v, want rebound alpha", selection.Projects)
+	}
+}
+
 func loadedProjectsModel() Model {
 	m := New(nil).SetBounds(0, 0, 32, 12).SetActive(true)
 	m, _ = m.Update(messages.ProjectsLoadedMsg{

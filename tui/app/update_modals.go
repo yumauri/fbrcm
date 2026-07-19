@@ -16,6 +16,9 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 	if m.conditions.MoveActive() {
 		return m.updateConditionMove(msg)
 	}
+	if m.authPicker.IsOpen() {
+		return m.updateAuthPicker(msg)
+	}
 	if m.dialog.IsOpen() {
 		return m.updateDialog(msg)
 	}

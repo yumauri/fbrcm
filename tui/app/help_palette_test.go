@@ -11,6 +11,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
+	"github.com/yumauri/fbrcm/tui/components/setup"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -74,6 +75,98 @@ func TestHelpKeyRemainsTextInsideEditor(t *testing.T) {
 	}
 }
 
+func TestHelpPaletteOpensOverAccountsAndProfilesWithActiveActions(t *testing.T) {
+	svc := newRenameTestService(t)
+	if _, err := svc.AddGCloudAuth("main", "main"); err != nil {
+		t.Fatalf("AddGCloudAuth = %v", err)
+	}
+	m := viewTestModel(90, 24, panels.Projects)
+	m.svc = svc
+	m.setup = setup.New(svc)
+	var cmd tea.Cmd
+	m.setup, cmd = m.setup.OpenAccounts()
+	m = finishSetupInspection(t, m, cmd)
+
+	next, _ := m.Update(keyPress('?'))
+	m = next.(Model)
+	if !m.helpPalette.IsOpen() || !m.setup.IsOpen() {
+		t.Fatalf("Actions over Accounts = actions:%v setup:%v", m.helpPalette.IsOpen(), m.setup.IsOpen())
+	}
+	groups := helpPaletteGroups(m.helpPaletteActions())
+	if len(groups) < 2 || groups[0] != "Accounts panel" || groups[1] != "Global" {
+		t.Fatalf("Accounts action groups = %v", groups)
+	}
+	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionQuit); !enabled || reason != "" {
+		t.Fatalf("Accounts quit availability = %v, %q", enabled, reason)
+	}
+	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionProfiles); !enabled || reason != "" {
+		t.Fatalf("Accounts to Profiles availability = %v, %q", enabled, reason)
+	}
+	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionAccounts); enabled || !strings.Contains(reason, "already active") {
+		t.Fatalf("active Accounts availability = %v, %q", enabled, reason)
+	}
+	view := ansi.Strip(m.View().Content)
+	for _, want := range []string{"ˀActions", "Accounts panel", "Purge authentication"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("Actions over Accounts missing %q:\n%s", want, view)
+		}
+	}
+
+	next, _ = m.Update(keyPress('?'))
+	m = next.(Model)
+	next, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: 'p', Mod: tea.ModCtrl}))
+	m = next.(Model)
+	next, _ = m.Update(keyPress('?'))
+	m = next.(Model)
+	groups = helpPaletteGroups(m.helpPaletteActions())
+	if len(groups) < 2 || groups[0] != "Profiles panel" || groups[1] != "Global" {
+		t.Fatalf("Profiles action groups = %v", groups)
+	}
+	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionQuit); !enabled || reason != "" {
+		t.Fatalf("Profiles quit availability = %v, %q", enabled, reason)
+	}
+	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionAccounts); !enabled || reason != "" {
+		t.Fatalf("Profiles to Accounts availability = %v, %q", enabled, reason)
+	}
+	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionProfiles); enabled || !strings.Contains(reason, "already active") {
+		t.Fatalf("active Profiles availability = %v, %q", enabled, reason)
+	}
+	if view = ansi.Strip(m.helpPaletteView()); !strings.Contains(view, "Rename profile") || !strings.Contains(view, "Purge profile") {
+		t.Fatalf("Profiles actions missing:\n%s", view)
+	}
+}
+
+func TestActionsTitleUsesConfiguredSuperscriptHintAndSelectedBackground(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Projects)
+	m.helpPalette, _ = m.helpPalette.Open()
+	view := m.helpPaletteView()
+	selection := styles.TitleStyle(true)
+	key := styles.FilterText.Background(selection.GetBackground()).Render("ˀ")
+	if !strings.Contains(view, key) {
+		t.Fatalf("Actions title does not render selected configured hint: %q", view)
+	}
+}
+
+func finishSetupInspection(t *testing.T, m Model, cmd tea.Cmd) Model {
+	t.Helper()
+	if cmd == nil {
+		t.Fatal("setup inspection command is nil")
+	}
+	msg := cmd()
+	batch, ok := msg.(tea.BatchMsg)
+	if !ok {
+		t.Fatalf("setup command = %T, want tea.BatchMsg", msg)
+	}
+	for _, item := range batch {
+		if item == nil {
+			continue
+		}
+		next, _ := m.Update(item())
+		m = next.(Model)
+	}
+	return m
+}
+
 func TestHelpPaletteOrdersActivePanelThenGlobalThenAlphabetically(t *testing.T) {
 	m := viewTestModel(90, 24, panels.Parameters)
 	groups := helpPaletteGroups(m.helpPaletteActions())
@@ -125,6 +218,7 @@ func TestHelpPaletteUsesSelectionWithoutMarkerOrBodyPadding(t *testing.T) {
 	}
 
 	m := viewTestModel(90, 24, panels.Projects)
+	m.authCount = 2
 	m.helpPalette, _ = m.helpPalette.Open()
 	view := ansi.Strip(m.helpPaletteView())
 	if strings.Contains(view, "Search: ") {

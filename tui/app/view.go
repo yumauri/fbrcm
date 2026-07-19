@@ -24,7 +24,7 @@ func (m Model) View() tea.View {
 	if m.width < minsize.MinWidth || m.height < minsize.MinHeight {
 		return appView(rootStyle.Render(minsize.View(m.width, m.height)), tea.MouseModeNone)
 	}
-	if m.setup.IsOpen() {
+	if m.setup.IsOpen() && !m.setup.IsPopup() {
 		return appView(rootStyle.Render(m.setup.View(m.width, m.height)), tea.MouseModeNone)
 	}
 
@@ -45,7 +45,7 @@ func appView(content string, mouseMode tea.MouseMode) tea.View {
 }
 
 func (m Model) mouseMode() tea.MouseMode {
-	if m.active == panels.Logs || m.helpPalette.IsOpen() {
+	if m.active == panels.Logs || m.helpPalette.IsOpen() || m.setup.IsOpen() {
 		return tea.MouseModeNone
 	}
 	return tea.MouseModeAllMotion
@@ -53,10 +53,10 @@ func (m Model) mouseMode() tea.MouseMode {
 
 func (m Model) baseView() string {
 	popupOpen := m.popupWindowOpen()
-	projectsActive := m.active == panels.Projects
-	parametersActive := m.active == panels.Parameters || m.active == panels.History
-	conditionsActive := m.active == panels.Conditions
-	logsActive := m.active == panels.Logs
+	projectsActive := m.active == panels.Projects && !popupOpen
+	parametersActive := (m.active == panels.Parameters || m.active == panels.History) && !popupOpen
+	conditionsActive := m.active == panels.Conditions && !popupOpen
+	logsActive := m.active == panels.Logs && !popupOpen
 	rightPanel := m.parameters.ViewWithBorder(parametersActive, parametersActive && !popupOpen)
 	if m.selectedParametersTab() == panels.Conditions {
 		rightPanel = m.conditions.ViewWithBorder(conditionsActive, conditionsActive && !popupOpen)
@@ -80,7 +80,8 @@ func (m Model) popupWindowOpen() bool {
 }
 
 func (m Model) contextOverlayOpen() bool {
-	return m.parameters.HistoryPickerOpen() ||
+	return (m.setup.IsOpen() && m.setup.IsPopup()) ||
+		m.parameters.HistoryPickerOpen() ||
 		m.details.DropdownOpen() ||
 		m.dialog.IsOpen() ||
 		m.boolPicker.IsOpen() ||
@@ -88,6 +89,7 @@ func (m Model) contextOverlayOpen() bool {
 		m.numberInput.IsOpen() ||
 		m.stringInput.IsOpen() ||
 		m.moveParam.IsOpen() ||
+		m.authPicker.IsOpen() ||
 		m.renameInput.IsOpen()
 }
 
@@ -97,9 +99,23 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendHistoryPickerLayer(layers)
 	layers = m.appendInputLayers(layers)
 	layers = m.appendDialogLayers(layers)
+	layers = m.appendSetupLayer(layers)
 	layers = m.appendOfflineLayer(layers)
 	layers = m.appendHelpPaletteLayer(layers)
 	return layers
+}
+
+func (m Model) appendSetupLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.setup.IsOpen() || !m.setup.IsPopup() {
+		return layers
+	}
+	focused := !m.helpPalette.IsOpen() && !m.dialog.IsOpen() && !m.renameInput.IsOpen()
+	view := m.setup.PopupViewWithFocus(m.width, m.height, focused)
+	return append(layers, lipgloss.NewLayer(view).
+		ID("accounts-profiles").
+		X(max((m.width-lipgloss.Width(view))/2, 0)).
+		Y(max((m.height-lipgloss.Height(view))/2, 0)).
+		Z(50))
 }
 
 func (m Model) appendHelpPaletteLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
@@ -162,9 +178,17 @@ func (m Model) appendInputLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 		x, y := m.moveParam.Position()
 		layers = append(layers, lipgloss.NewLayer(m.moveParam.HeaderView()).ID("move-header").X(x).Y(y).Z(3))
 	}
+	if m.authPicker.IsOpen() {
+		x, y := m.authPicker.Position()
+		layers = append(layers, lipgloss.NewLayer(m.authPicker.View()).ID("auth-picker").X(x).Y(y).Z(4))
+	}
 	if m.renameInput.IsOpen() {
 		x, y := m.renameInput.Position()
-		layers = append(layers, lipgloss.NewLayer(m.renameInput.View()).ID("rename").X(x).Y(y).Z(3))
+		z := 3
+		if m.setup.IsOpen() && m.setup.IsPopup() {
+			z = 60
+		}
+		layers = append(layers, lipgloss.NewLayer(m.renameInput.View()).ID("rename").X(x).Y(y).Z(z))
 	}
 	return layers
 }
@@ -173,7 +197,11 @@ func (m Model) appendDialogLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if m.dialog.IsOpen() {
 		dialog := m.dialog.View()
 		x, y := m.dialog.Position()
-		layers = append(layers, lipgloss.NewLayer(dialog).ID("dialog").X(x).Y(y).Z(4))
+		z := 4
+		if m.setup.IsOpen() && m.setup.IsPopup() {
+			z = 60
+		}
+		layers = append(layers, lipgloss.NewLayer(dialog).ID("dialog").X(x).Y(y).Z(z))
 	}
 	return layers
 }

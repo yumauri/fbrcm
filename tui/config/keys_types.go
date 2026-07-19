@@ -21,6 +21,9 @@ const (
 	BlockNumberInput   Block = "number_input"
 	BlockStringInput   Block = "string_input"
 	BlockMoveInput     Block = "move_input"
+	BlockAuthPicker    Block = "auth_picker"
+	BlockAccounts      Block = "accounts"
+	BlockProfiles      Block = "profiles"
 	BlockRenameInput   Block = "rename_input"
 )
 
@@ -32,6 +35,7 @@ const (
 	ActionForceQuit Action = "force_quit"
 	ActionHelp      Action = "help"
 	ActionAccounts  Action = "accounts"
+	ActionProfiles  Action = "profiles"
 
 	ActionFilterFuzzy      Action = "fuzzy"
 	ActionFilterStartsWith Action = "starts_with"
@@ -55,6 +59,7 @@ const (
 	ActionSelect     Action = "select"
 	ActionOpen       Action = "open"
 	ActionMark       Action = "mark"
+	ActionBindAuth   Action = "bind_auth"
 
 	ActionToggleMaximize   Action = "toggle_maximize"
 	ActionRename           Action = "rename"

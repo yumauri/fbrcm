@@ -73,6 +73,54 @@ func TestLoadMergesAndPersistsMissingKeys(t *testing.T) {
 	}
 }
 
+func TestLoadMigratesGeneratedAdministrationShortcuts(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	configured := toConfigMap(DefaultKeyMap())
+	delete(configured[string(BlockGlobal)], string(ActionProfiles))
+	configured[string(BlockGlobal)][string(ActionAccounts)] = []string{"A"}
+	configured[string(BlockParameters)][string(ActionPublishAll)] = []string{"P"}
+	configured[string(BlockConditions)][string(ActionPublishAll)] = []string{"P"}
+	if err := config.SaveAppConfig(&config.AppConfig{Keys: configured}); err != nil {
+		t.Fatalf("SaveAppConfig = %v", err)
+	}
+
+	state, err := Load()
+	if err != nil {
+		t.Fatalf("Load = %v", err)
+	}
+	if !state.Matches(BlockGlobal, ActionAccounts, "ctrl+a") {
+		t.Fatal("global ctrl+a did not activate Accounts after migration")
+	}
+	if !state.Matches(BlockGlobal, ActionProfiles, "ctrl+p") {
+		t.Fatal("global ctrl+p did not activate Profiles after migration")
+	}
+	for _, block := range []Block{BlockParameters, BlockConditions} {
+		if !state.Matches(block, ActionPublishAll, "P") {
+			t.Fatalf("%s publish all did not retain P", block)
+		}
+	}
+}
+
+func TestMigrateAdminShortcutsPreservesCustomizedBindings(t *testing.T) {
+	configured := map[string]map[string][]string{
+		string(BlockGlobal): {
+			string(ActionAccounts): {"alt+a"},
+			string(ActionProfiles): {"alt+p"},
+		},
+		string(BlockParameters): {
+			string(ActionPublishAll): {"P"},
+		},
+	}
+	if migrateAdminShortcuts(configured) {
+		t.Fatal("migration changed customized administration shortcuts")
+	}
+	if got := configured[string(BlockParameters)][string(ActionPublishAll)]; len(got) != 1 || got[0] != "P" {
+		t.Fatalf("customized publish all binding = %v, want [P]", got)
+	}
+}
+
 func TestLoadRespectsDisabledPowerlineGlyphs(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
@@ -118,8 +166,17 @@ func TestDefaultKeyMapIncludesHelpPaletteBindings(t *testing.T) {
 }
 
 func TestDefaultKeyMapIncludesAccountsBinding(t *testing.T) {
-	if got := DefaultKeyMap()[BlockGlobal][ActionAccounts]; len(got) != 1 || got[0] != "A" {
-		t.Fatalf("accounts action = %v, want [A]", got)
+	if got := DefaultKeyMap()[BlockGlobal][ActionAccounts]; len(got) != 1 || got[0] != "ctrl+a" {
+		t.Fatalf("accounts action = %v, want [ctrl+a]", got)
+	}
+}
+
+func TestDefaultKeyMapIncludesProfilesAndProjectAuthBindings(t *testing.T) {
+	if got := DefaultKeyMap()[BlockGlobal][ActionProfiles]; len(got) != 1 || got[0] != "ctrl+p" {
+		t.Fatalf("profiles action = %v, want [ctrl+p]", got)
+	}
+	if got := DefaultKeyMap()[BlockProjects][ActionBindAuth]; len(got) != 1 || got[0] != "b" {
+		t.Fatalf("project auth action = %v, want [b]", got)
 	}
 }
 

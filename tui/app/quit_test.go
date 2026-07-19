@@ -65,7 +65,7 @@ func TestDirtyDetailsBlocksAccountsAndSetupQuitUsesGuard(t *testing.T) {
 	m.details, _ = m.details.Update(tea.KeyPressMsg(tea.Key{Code: 'x', Text: "x"}))
 	m.details = m.details.DeactivateField()
 
-	m, cmd, handled := m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'A', Text: "A"}))
+	m, cmd, handled := m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'a', Mod: tea.ModCtrl}))
 	if !handled || cmd != nil || !m.dialog.IsOpen() || m.setup.IsOpen() {
 		t.Fatalf("dirty accounts = handled:%v cmd:%v dialog:%v setup:%v", handled, cmd != nil, m.dialog.IsOpen(), m.setup.IsOpen())
 	}

@@ -120,7 +120,7 @@ func TestProfilesCanCreateAndSwitchWithoutCLI(t *testing.T) {
 		Auth:     []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}},
 	}
 	m, _ = m.Update(inspectedMsg{state: state})
-	m, _ = m.Update(keyText("p"))
+	m, _ = m.Update(keyText("ctrl+p"))
 	if m.mode != modeProfiles || m.cursor != 0 {
 		t.Fatalf("mode=%v cursor=%d, want profiles on default", m.mode, m.cursor)
 	}
@@ -151,12 +151,12 @@ func TestProfileOverridePinsInteractiveProfileSelection(t *testing.T) {
 		Auth:            []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}},
 	}
 	m, _ = m.Update(inspectedMsg{state: state})
-	m, _ = m.Update(keyText("p"))
+	m, _ = m.Update(keyText("ctrl+p"))
 	if m.mode != modeProfiles || m.profileOverride != "default" {
 		t.Fatalf("mode=%v override=%q, want pinned profiles", m.mode, m.profileOverride)
 	}
 	view := ansi.Strip(m.View(90, 28))
-	if !strings.Contains(view, "pinned by FBRCM_PROFILE") || strings.Contains(view, "New profile") {
+	if !strings.Contains(view, "pinned by FBRCM_PROFILE") || strings.Contains(view, "new profile") {
 		t.Fatalf("pinned profile view is misleading:\n%s", view)
 	}
 
@@ -166,8 +166,8 @@ func TestProfileOverridePinsInteractiveProfileSelection(t *testing.T) {
 		t.Fatalf("pinned selection moved: cursor=%d mode=%v cmd=%v", m.cursor, m.mode, cmd)
 	}
 	m, cmd = m.Update(key(tea.KeyEnter))
-	if cmd != nil || m.mode != modeAccounts {
-		t.Fatalf("pinned enter = mode:%v cmd:%v, want accounts", m.mode, cmd)
+	if cmd != nil || m.mode != modeProfiles {
+		t.Fatalf("pinned enter = mode:%v cmd:%v, want unchanged profiles", m.mode, cmd)
 	}
 }
 
@@ -261,8 +261,8 @@ func TestAuthenticateAndProfileListRowsUseTwoColumnInset(t *testing.T) {
 			t.Fatalf("profile row %d inset = %q, want exactly two spaces", index, got)
 		}
 	}
-	if view := ansi.Strip(strings.Join(profileLines, "\n")); strings.Contains(view, "+ New profile") || !strings.Contains(view, "  New profile") {
-		t.Fatalf("profiles do not render an inline New profile row:\n%s", view)
+	if view := ansi.Strip(strings.Join(profileLines, "\n")); strings.Contains(view, "+ new profile") || !strings.Contains(view, "  new profile") {
+		t.Fatalf("profiles do not render an inline new profile row:\n%s", view)
 	}
 }
 
@@ -281,7 +281,7 @@ func TestAccountsUseOneContinuousInsetList(t *testing.T) {
 			t.Fatalf("account row %d inset = %q, want exactly two spaces", index, got)
 		}
 	}
-	if got := ansi.Strip(lines[6]); got != "  + Add authentication" {
+	if got := ansi.Strip(lines[6]); got != "  + add authentication" {
 		t.Fatalf("add authentication row = %q", got)
 	}
 }
@@ -370,6 +370,112 @@ func TestSetupPanelUsesBorderHeaderWithoutContentPadding(t *testing.T) {
 	}
 	if !strings.HasPrefix(lines[3], "│OAuth desktop login") {
 		t.Fatalf("selection row retains inset padding: %q", lines[3])
+	}
+}
+
+func TestAccountsAndProfilesTabsRenderInBorder(t *testing.T) {
+	rendered := renderSetupTabsPanel(true, true, []string{"body"}, 48)
+	for _, key := range []string{"ˆᵃ", "ˆᵖ"} {
+		if !strings.Contains(rendered, key) {
+			t.Fatalf("default tab key %q does not use key-hint color", key)
+		}
+	}
+	view := ansi.Strip(rendered)
+	first, _, _ := strings.Cut(view, "\n")
+	if !strings.HasPrefix(first, "╭─ ˆᵃAccounts ── ˆᵖProfiles ") || !strings.HasSuffix(first, "╮") {
+		t.Fatalf("tabs are not rendered in the top border: %q", first)
+	}
+	selection := styles.TitleStyle(true)
+	selectedKey := styles.FilterText.Background(selection.GetBackground()).Render("ˆᵃ")
+	if !strings.Contains(rendered, selectedKey) {
+		t.Fatal("active Accounts tab does not use selected background with key color")
+	}
+	unfocused := renderSetupTabsPanel(true, false, []string{"body"}, 48)
+	if unfocused == rendered {
+		t.Fatal("Accounts tab remains selected while Actions owns focus")
+	}
+}
+
+func TestAccountsAndProfilesSwitchWithConfiguredKeysTabAndArrows(t *testing.T) {
+	state := core.StartupState{
+		Profile:  "default",
+		Profiles: []string{"default", "work"},
+		Auth:     []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}},
+	}
+	for _, openProfilesKey := range []string{"ctrl+p", "tab", "right", "left"} {
+		m := checkingTestModel(false)
+		m, _ = m.Update(inspectedMsg{state: state})
+		m, _ = m.Update(keyText(openProfilesKey))
+		if m.mode != modeProfiles {
+			t.Fatalf("Accounts key %q left mode=%v, want Profiles", openProfilesKey, m.mode)
+		}
+	}
+	for _, openAccountsKey := range []string{"ctrl+a", "tab", "right", "left"} {
+		m := checkingTestModel(false)
+		m, _ = m.Update(inspectedMsg{state: state})
+		m, _ = m.Update(keyText("ctrl+p"))
+		m, _ = m.Update(keyText(openAccountsKey))
+		if m.mode != modeAccounts {
+			t.Fatalf("Profiles key %q left mode=%v, want Accounts", openAccountsKey, m.mode)
+		}
+	}
+}
+
+func TestOpenProfilesHonorsRequestedTabAfterInspection(t *testing.T) {
+	m := checkingTestModel(false)
+	m.requestedMode = modeProfiles
+	m, _ = m.Update(inspectedMsg{state: core.StartupState{
+		Profile:  "work",
+		Profiles: []string{"default", "work"},
+	}})
+	if m.mode != modeProfiles || m.cursor != 1 {
+		t.Fatalf("mode=%v cursor=%d, want Profiles focused on work", m.mode, m.cursor)
+	}
+}
+
+func TestAccountPurgeWarnsWhenProjectsAreBound(t *testing.T) {
+	m := checkingTestModel(false)
+	m.mode = modeAccounts
+	m.auth = []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}}
+	m.projects = []core.Project{{ProjectID: "one", AuthID: "main"}, {ProjectID: "two", AuthID: "main"}}
+
+	m, cmd := m.Update(keyText("x"))
+	if m.mode != modeAccounts || cmd == nil {
+		t.Fatalf("mode=%v cmd=%v, want Accounts plus purge request", m.mode, cmd != nil)
+	}
+	request, ok := cmd().(AuthPurgeRequestedMsg)
+	if !ok || request.AuthID != "main" || request.BoundProjects != 2 {
+		t.Fatalf("purge request = %#v, want main with two bound projects", request)
+	}
+}
+
+func TestProfilesOfferRenameAndProtectActiveProfileFromPurge(t *testing.T) {
+	m := checkingTestModel(false)
+	m.mode = modeProfiles
+	m.profile = "default"
+	m.profiles = []string{"default", "work"}
+	m.cursor = 1
+
+	m, cmd := m.Update(keyText("r"))
+	request, ok := cmd().(ProfileRenameRequestedMsg)
+	if m.mode != modeProfiles || !ok || request.Profile != "work" {
+		t.Fatalf("rename request = mode:%v request:%#v", m.mode, request)
+	}
+	m.cursor = 0
+	m, cmd = m.Update(keyText("x"))
+	errorRequest, ok := cmd().(ErrorRequestedMsg)
+	if m.mode != modeProfiles || !ok || !strings.Contains(strings.Join(errorRequest.Body, " "), "is active") {
+		t.Fatalf("active purge = mode:%v request:%#v", m.mode, errorRequest)
+	}
+}
+
+func TestConfirmedProfilePurgeKeepsManagementInPopup(t *testing.T) {
+	m := checkingTestModel(false)
+	m.mode = modeProfiles
+
+	m, cmd := m.Update(ProfilePurgeConfirmedMsg{Profile: "old"})
+	if cmd == nil || m.mode != modePurgingProfile || m.profileFrom != "old" || m.mandatory {
+		t.Fatalf("purge confirmation = cmd:%v mode:%v profile:%q mandatory:%v", cmd != nil, m.mode, m.profileFrom, m.mandatory)
 	}
 }
 

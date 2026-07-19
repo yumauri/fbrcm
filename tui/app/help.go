@@ -23,6 +23,7 @@ type helpKeyMap struct {
 	conditionDetail bool
 	groupDetail     bool
 	conditionMove   bool
+	canBindAuth     bool
 }
 
 func newHelpModel() help.Model {
@@ -146,14 +147,19 @@ func (k helpKeyMap) projectsHelp() []key.Binding {
 	if k.projectsMode == projectsPanelModeCollapsed {
 		modeLabel = "expand"
 	}
-	return []key.Binding{
+	bindings := []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, modeLabel),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionSelect, "select"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMark, "mark"),
+	}
+	if k.canBindAuth {
+		bindings = append(bindings, tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionBindAuth, "bind auth"))
+	}
+	return append(bindings,
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionOpen, "open"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionRefresh, "update"),
 		filterBinding(),
-	}
+	)
 }
 
 func parametersHelp() []key.Binding {
@@ -275,6 +281,7 @@ func (m Model) helpView() string {
 		conditionDetail: m.details.IsCondition(),
 		groupDetail:     m.details.IsGroup(),
 		conditionMove:   m.conditions.MoveActive(),
+		canBindAuth:     m.authCount > 1,
 	})
 
 	return lipgloss.NewStyle().

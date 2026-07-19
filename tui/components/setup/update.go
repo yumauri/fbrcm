@@ -8,7 +8,9 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -23,6 +25,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.updateProjectsSynced(msg)
 	case profileSwitchedMsg:
 		return m.updateProfileSwitched(msg)
+	case authPurgedMsg:
+		return m.updateAuthPurged(msg)
+	case profilePurgedMsg:
+		return m.updateProfilePurged(msg)
+	case AuthPurgeConfirmedMsg:
+		m.authID = msg.AuthID
+		m.mode = modePurgingAuth
+		return m, tea.Batch(m.purgeAuthCmd(), m.spinner.Tick)
+	case ProfilePurgeConfirmedMsg:
+		m.profileFrom = msg.Profile
+		m.mode = modePurgingProfile
+		return m, tea.Batch(m.purgeProfileCmd(), m.spinner.Tick)
 	case externalOpenedMsg:
 		if msg.err != nil {
 			m.setFailure(failureOpen, fmt.Errorf("open OAuth client page: %w", msg.err))
@@ -68,6 +82,7 @@ func (m Model) updateInspected(msg inspectedMsg) (Model, tea.Cmd) {
 	m.profileOverride = msg.state.ProfileOverride
 	m.profiles = append([]string(nil), msg.state.Profiles...)
 	m.auth = append([]config.AuthEntry(nil), msg.state.Auth...)
+	m.projects = append([]core.Project(nil), msg.state.Projects...)
 	m.defaultID = msg.state.DefaultAuthID
 	m.error = nil
 	m.failure = failureNone
@@ -75,10 +90,12 @@ func (m Model) updateInspected(msg inspectedMsg) (Model, tea.Cmd) {
 
 	if !m.initial {
 		m.mandatory = false
-		if len(m.auth) == 0 {
-			m.mode = modeMethods
-		} else {
+		m.mode = m.requestedMode
+		if m.mode != modeProfiles {
 			m.mode = modeAccounts
+		}
+		if m.mode == modeProfiles {
+			m.cursor = m.currentProfileIndex()
 		}
 		return m, nil
 	}
@@ -178,6 +195,34 @@ func (m Model) updateProfileSwitched(msg profileSwitchedMsg) (Model, tea.Cmd) {
 	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
 }
 
+func (m Model) updateAuthPurged(msg authPurgedMsg) (Model, tea.Cmd) {
+	if msg.err != nil {
+		m.error = fmt.Errorf("purge authentication %s: %w", m.authID, msg.err)
+		m.mode = modeAccounts
+		return m, nil
+	}
+	m.initial = false
+	m.mandatory = false
+	m.requestedMode = modeAccounts
+	m.mode = modeChecking
+	m.error = nil
+	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
+}
+
+func (m Model) updateProfilePurged(msg profilePurgedMsg) (Model, tea.Cmd) {
+	if msg.err != nil {
+		m.error = fmt.Errorf("purge profile %s: %w", m.profileFrom, msg.err)
+		m.mode = modeProfiles
+		return m, nil
+	}
+	m.initial = false
+	m.mandatory = false
+	m.requestedMode = modeProfiles
+	m.mode = modeChecking
+	m.error = nil
+	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
+}
+
 func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 	k := msg.String()
 	if k == "ctrl+c" {
@@ -202,7 +247,7 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.updateNoProjectsKey(k)
 	case modeError:
 		return m.updateErrorKey(k)
-	case modeChecking, modeAdding, modeSwitching:
+	case modeChecking, modeAdding, modeSwitching, modePurgingAuth, modePurgingProfile:
 		if k == "q" && m.mandatory {
 			return m, requestQuitCmd()
 		}
@@ -211,14 +256,15 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) updateAccountsKey(k string) (Model, tea.Cmd) {
-	switch k {
-	case "p":
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) || k == "left" || k == "right" || k == "tab" || k == "shift+tab" {
 		return m, m.openProfiles()
-	case "up", "k":
+	}
+	switch {
+	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionUp, k):
 		m.moveCursor(-1, len(m.auth)+1)
-	case "down", "j":
+	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionDown, k):
 		m.moveCursor(1, len(m.auth)+1)
-	case "enter":
+	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionSubmit, k):
 		if m.cursor == len(m.auth) {
 			m.mode = modeMethods
 			m.cursor = 0
@@ -231,20 +277,28 @@ func (m Model) updateAccountsKey(k string) (Model, tea.Cmd) {
 		m.mode = modeAuthenticating
 		loginCmd := m.startLogin(modeAccounts)
 		return m, tea.Batch(loginCmd, m.spinner.Tick)
-	case "esc":
+	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionDelete, k):
+		if authID := m.selectedAccountID(); authID != "" {
+			count := m.boundProjects(authID)
+			return m, func() tea.Msg {
+				return AuthPurgeRequestedMsg{AuthID: authID, BoundProjects: count}
+			}
+		}
+	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionCancel, k):
 		if !m.mandatory {
 			return m, func() tea.Msg { return CanceledMsg{} }
 		}
-	case "q":
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 		return m, requestQuitCmd()
 	}
 	return m, nil
 }
 
 func (m Model) updateMethodsKey(k string) (Model, tea.Cmd) {
-	switch k {
-	case "p":
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
 		return m, m.openProfiles()
+	}
+	switch k {
 	case "up", "k":
 		m.moveCursor(-1, 3)
 	case "down", "j":
@@ -275,23 +329,32 @@ func (m Model) updateMethodsKey(k string) (Model, tea.Cmd) {
 }
 
 func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
+	if !m.profileInputSelected() && (tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) || k == "left" || k == "right" || k == "tab" || k == "shift+tab") {
+		m.profileIn.Blur()
+		m.mode = modeAccounts
+		m.cursor = 0
+		return m, nil
+	}
 	if m.profileOverride != "" {
-		switch k {
-		case "esc", "enter":
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionCancel, k):
 			m.profileIn.Blur()
+			if !m.mandatory {
+				return m, func() tea.Msg { return CanceledMsg{} }
+			}
 			return m.returnFromProfiles()
-		case "q":
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 			return m, requestQuitCmd()
 		default:
 			return m, nil
 		}
 	}
-	switch k {
-	case "up", "k":
+	switch {
+	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionUp, k):
 		return m, m.moveProfileCursor(-1)
-	case "down", "j":
+	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionDown, k):
 		return m, m.moveProfileCursor(1)
-	case "enter":
+	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionSubmit, k):
 		if m.profileInputSelected() {
 			return m.submitNewProfile()
 		}
@@ -300,15 +363,28 @@ func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 		}
 		selected := m.profiles[m.cursor]
 		if selected == m.profile {
-			return m.returnFromProfiles()
+			return m, nil
 		}
 		m.profileTo = selected
 		m.mode = modeSwitching
 		return m, tea.Batch(m.switchProfileCmd(), m.spinner.Tick)
-	case "esc":
+	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionCancel, k):
 		m.profileIn.Blur()
+		if !m.mandatory {
+			return m, func() tea.Msg { return CanceledMsg{} }
+		}
 		return m.returnFromProfiles()
-	case "q":
+	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionRename, k):
+		if !m.profileInputSelected() {
+			if selected := m.selectedProfile(); selected != "" {
+				return m, func() tea.Msg { return ProfileRenameRequestedMsg{Profile: selected} }
+			}
+		}
+	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionDelete, k):
+		if !m.profileInputSelected() {
+			return m.requestProfilePurge()
+		}
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 		if !m.profileInputSelected() {
 			return m, requestQuitCmd()
 		}
@@ -340,6 +416,32 @@ func (m Model) submitNewProfile() (Model, tea.Cmd) {
 	m.profileTo = value
 	m.mode = modeSwitching
 	return m, tea.Batch(m.switchProfileCmd(), m.spinner.Tick)
+}
+
+func (m Model) requestProfilePurge() (Model, tea.Cmd) {
+	if m.profileOverride != "" || m.profileInputSelected() || m.cursor < 0 || m.cursor >= len(m.profiles) {
+		return m, nil
+	}
+	selected := m.profiles[m.cursor]
+	if selected == m.profile {
+		return m, func() tea.Msg {
+			return ErrorRequestedMsg{
+				Title: "Cannot Purge Active Profile",
+				Body:  []string{fmt.Sprintf("Profile %q is active.", selected), "", "Switch to another profile before purging it."},
+			}
+		}
+	}
+	configPath, err := config.GetProfileConfigDirPath(selected)
+	if err != nil {
+		return m, func() tea.Msg { return ErrorRequestedMsg{Title: "Purge Profile Failed", Body: []string{err.Error()}} }
+	}
+	cachePath, err := config.GetProfileCacheDirPath(selected)
+	if err != nil {
+		return m, func() tea.Msg { return ErrorRequestedMsg{Title: "Purge Profile Failed", Body: []string{err.Error()}} }
+	}
+	return m, func() tea.Msg {
+		return ProfilePurgeRequestedMsg{Profile: selected, ConfigPath: configPath, CachePath: cachePath}
+	}
 }
 
 func (m Model) returnFromProfiles() (Model, tea.Cmd) {
@@ -590,7 +692,7 @@ func (m *Model) setFailure(stage failureStage, err error) {
 
 func (m Model) working() bool {
 	switch m.mode {
-	case modeChecking, modeAdding, modeAuthenticating, modeDiscovering, modeSwitching:
+	case modeChecking, modeAdding, modeAuthenticating, modeDiscovering, modeSwitching, modePurgingAuth, modePurgingProfile:
 		return true
 	default:
 		return false
@@ -598,10 +700,24 @@ func (m Model) working() bool {
 }
 
 func (m Model) currentProfileIndex() int {
+	return m.profileIndex(m.profile)
+}
+
+func (m Model) profileIndex(name string) int {
 	for index, profile := range m.profiles {
-		if profile == m.profile {
+		if profile == name {
 			return index
 		}
 	}
 	return 0
+}
+
+func (m Model) boundProjects(authID string) int {
+	count := 0
+	for _, project := range m.projects {
+		if project.AuthID == authID {
+			count++
+		}
+	}
+	return count
 }

@@ -51,6 +51,9 @@ func (m Model) helpPaletteActionAvailability(item helpPaletteAction) (bool, stri
 	if item.block == tuiconfig.BlockGlobal {
 		return m.globalHelpActionAvailability(item.action)
 	}
+	if item.block == tuiconfig.BlockAccounts || item.block == tuiconfig.BlockProfiles {
+		return m.setup.HelpActionAvailability(item.block, item.action)
+	}
 	if item.block == tuiconfig.BlockFilter {
 		return m.filterHelpActionAvailability(item.action)
 	}
@@ -63,7 +66,19 @@ func (m Model) helpPaletteActionAvailability(item helpPaletteAction) (bool, stri
 
 func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	switch action {
-	case tuiconfig.ActionAccounts:
+	case tuiconfig.ActionAccounts, tuiconfig.ActionProfiles:
+		if m.setup.IsOpen() {
+			if active, ok := m.setup.HelpBlock(); ok {
+				target := tuiconfig.BlockAccounts
+				if action == tuiconfig.ActionProfiles {
+					target = tuiconfig.BlockProfiles
+				}
+				if active == target {
+					return false, helpPaletteBlockTitle(target) + " is already active"
+				}
+				return true, ""
+			}
+		}
 		if m.details.Dirty() {
 			return false, "save or discard the open Details changes first"
 		}
@@ -78,6 +93,12 @@ func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, stri
 		return true, ""
 	case tuiconfig.ActionForceQuit:
 		return true, ""
+	case tuiconfig.ActionQuit:
+		if m.setup.IsOpen() {
+			if _, ok := m.setup.HelpBlock(); ok {
+				return true, ""
+			}
+		}
 	case tuiconfig.ActionFocusDetails:
 		if !m.detailsVisible {
 			return false, "details panel is not open"
@@ -115,12 +136,19 @@ func (m Model) filterHelpActionAvailability(action tuiconfig.Action) (bool, stri
 
 func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 	switch {
+	case m.setup.IsOpen():
+		if block, ok := m.setup.HelpBlock(); ok {
+			return block, ""
+		}
+		return "", "account or profile workflow is active"
 	case m.keyboardCaptured():
 		return tuiconfig.BlockFilter, "panel filter has keyboard focus"
 	case m.parameters.HistoryPickerOpen():
 		return tuiconfig.BlockHistoryPicker, "history version picker is open"
 	case m.conditions.MoveActive(), m.moveParam.IsOpen():
 		return tuiconfig.BlockMoveInput, "move editor is open"
+	case m.authPicker.IsOpen():
+		return tuiconfig.BlockAuthPicker, "authentication picker is open"
 	case m.dialog.IsOpen():
 		return tuiconfig.BlockDialog, "confirmation dialog is open"
 	case m.boolPicker.IsOpen():
@@ -171,7 +199,7 @@ func isOverlayHelpBlock(block tuiconfig.Block) bool {
 	switch block {
 	case tuiconfig.BlockHistoryPicker, tuiconfig.BlockDetailsForm, tuiconfig.BlockDialog,
 		tuiconfig.BlockBoolInput, tuiconfig.BlockJSONInput, tuiconfig.BlockNumberInput,
-		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockRenameInput:
+		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockAuthPicker, tuiconfig.BlockRenameInput:
 		return true
 	default:
 		return false
@@ -181,6 +209,9 @@ func isOverlayHelpBlock(block tuiconfig.Block) bool {
 func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tuiconfig.Action) (bool, string) {
 	switch block {
 	case tuiconfig.BlockProjects:
+		if action == tuiconfig.ActionBindAuth && m.authCount <= 1 {
+			return false, "at least two authentication identities are required"
+		}
 		if action == tuiconfig.ActionRefresh || action == tuiconfig.ActionToggleMode {
 			return true, ""
 		}

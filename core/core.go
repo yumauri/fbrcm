@@ -62,6 +62,24 @@ func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
 
 // BindProjectsAuth binds matched projects to auth id.
 func (s *Core) BindProjectsAuth(filters []string, authID string) ([]Project, error) {
+	return s.bindProjectsAuth(authID, func(project Project) bool {
+		return matchProjectFilter(project, filters)
+	})
+}
+
+// BindProjectIDsAuth binds exact cached project IDs to an auth identity.
+func (s *Core) BindProjectIDsAuth(projectIDs []string, authID string) ([]Project, error) {
+	ids := make(map[string]struct{}, len(projectIDs))
+	for _, projectID := range projectIDs {
+		ids[projectID] = struct{}{}
+	}
+	return s.bindProjectsAuth(authID, func(project Project) bool {
+		_, ok := ids[project.ProjectID]
+		return ok
+	})
+}
+
+func (s *Core) bindProjectsAuth(authID string, match func(Project) bool) ([]Project, error) {
 	if _, err := s.authEntry(authID); err != nil {
 		return nil, err
 	}
@@ -71,9 +89,8 @@ func (s *Core) BindProjectsAuth(filters []string, authID string) ([]Project, err
 	}
 	matched := make([]Project, 0)
 	for i := range projects {
-		if matchProjectFilter(projects[i], filters) {
+		if match(projects[i]) {
 			projects[i].AuthID = authID
-			projects[i].DiscoveredBy = appendUnique(projects[i].DiscoveredBy, authID)
 			matched = append(matched, projects[i])
 		}
 	}

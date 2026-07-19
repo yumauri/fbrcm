@@ -74,21 +74,38 @@ func ActionKeyHint(block Block, action Action) string {
 	return KeyHint(keys[0])
 }
 
-// KeyHint renders single-character keys as superscripts for panel titles.
-// Named and chorded keys remain unchanged so the hint always identifies the
-// configured binding.
+// KeyHint renders compact panel-title hints. Single-character keys use
+// superscripts, and Ctrl plus a single character uses a modifier circumflex
+// followed by the same superscript (for example, ctrl+t becomes ˆᵗ).
 func KeyHint(key string) string {
-	runes := []rune(key)
-	if len(runes) != 1 {
+	if suffix, ok := strings.CutPrefix(key, "ctrl+"); ok {
+		if hint, ok := superscriptHint(suffix); ok {
+			return "ˆ" + hint
+		}
 		return key
 	}
-	if hint, ok := superscriptKeyHints[unicode.ToLower(runes[0])]; ok {
+	if hint, ok := superscriptHint(key); ok {
 		return hint
 	}
 	return key
 }
 
+func superscriptHint(key string) (string, bool) {
+	runes := []rune(key)
+	if len(runes) != 1 {
+		return "", false
+	}
+	if hint, ok := superscriptKeyHints[runes[0]]; ok {
+		return hint, true
+	}
+	if hint, ok := superscriptKeyHints[unicode.ToLower(runes[0])]; ok {
+		return hint, true
+	}
+	return "", false
+}
+
 var superscriptKeyHints = map[rune]string{
+	'?': "ˀ",
 	'0': "⁰", '1': "¹", '2': "²", '3': "³", '4': "⁴",
 	'5': "⁵", '6': "⁶", '7': "⁷", '8': "⁸", '9': "⁹",
 	'a': "ᵃ", 'b': "ᵇ", 'c': "ᶜ", 'd': "ᵈ", 'e': "ᵉ",
@@ -96,6 +113,10 @@ var superscriptKeyHints = map[rune]string{
 	'k': "ᵏ", 'l': "ˡ", 'm': "ᵐ", 'n': "ⁿ", 'o': "ᵒ",
 	'p': "ᵖ", 'r': "ʳ", 's': "ˢ", 't': "ᵗ", 'u': "ᵘ",
 	'v': "ᵛ", 'w': "ʷ", 'x': "ˣ", 'y': "ʸ", 'z': "ᶻ",
+	'A': "ᴬ", 'B': "ᴮ", 'D': "ᴰ", 'E': "ᴱ", 'G': "ᴳ",
+	'H': "ᴴ", 'I': "ᴵ", 'J': "ᴶ", 'K': "ᴷ", 'L': "ᴸ",
+	'M': "ᴹ", 'N': "ᴺ", 'O': "ᴼ", 'P': "ᴾ", 'R': "ᴿ",
+	'T': "ᵀ", 'U': "ᵁ", 'V': "ⱽ", 'W': "ᵂ",
 }
 
 // FilterModeForKey returns filter mode configured for key.
