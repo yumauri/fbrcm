@@ -4,8 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	charmlog "charm.land/log/v2"
 
+	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
 
@@ -29,5 +31,16 @@ func TestRenderLogsPanelWithBody(t *testing.T) {
 func TestLevelLabel(t *testing.T) {
 	if got := levelLabel(charmlog.ErrorLevel); got != "ERROR" {
 		t.Fatalf("levelLabel = %q", got)
+	}
+}
+
+func TestIsBackgroundMessage(t *testing.T) {
+	for _, msg := range []tea.Msg{messages.LogLineMsg{Line: "line"}, statusFlashTickMsg{}} {
+		if !IsBackgroundMessage(msg) {
+			t.Fatalf("IsBackgroundMessage(%T) = false", msg)
+		}
+	}
+	if IsBackgroundMessage(tea.KeyPressMsg(tea.Key{Code: 'j'})) {
+		t.Fatal("key press classified as a background logs message")
 	}
 }

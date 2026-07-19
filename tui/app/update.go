@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	logscmp "github.com/yumauri/fbrcm/tui/components/logs"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
@@ -15,6 +16,11 @@ import (
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
 		return m, tea.Quit
+	}
+	if logscmp.IsBackgroundMessage(msg) {
+		var cmd tea.Cmd
+		m.logs, cmd = m.logs.Update(msg)
+		return m, cmd
 	}
 	if ready, ok := msg.(setup.WorkspaceReadyMsg); ok {
 		var cmds []tea.Cmd

@@ -55,6 +55,23 @@ func TestHelpKeyOpensAndClosesPalette(t *testing.T) {
 	}
 }
 
+func TestHelpPaletteKeepsLogSubscriptionAlive(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Projects)
+	m.helpPalette, _ = m.helpPalette.Open()
+
+	next, cmd := m.Update(messages.LogLineMsg{Line: "background log while actions are open"})
+	m = next.(Model)
+	if !m.helpPalette.IsOpen() {
+		t.Fatal("background log closed the Actions palette")
+	}
+	if cmd == nil {
+		t.Fatal("background log did not schedule the next subscription read")
+	}
+	if view := ansi.Strip(m.logs.View(false)); !strings.Contains(view, "background log while actions are open") {
+		t.Fatalf("Logs panel did not receive background line:\n%s", view)
+	}
+}
+
 func TestHelpKeyRemainsTextInsideEditor(t *testing.T) {
 	m := viewTestModel(90, 24, panels.Parameters)
 	m.renameInput, _ = m.renameInput.Open(0, 0, 4, 20, "name")
@@ -197,7 +214,7 @@ func TestHelpPaletteSearchShowsDisabledContextReason(t *testing.T) {
 	if !strings.Contains(view, "Parameters panel") || !strings.Contains(view, "Collapse all") {
 		t.Fatalf("filtered palette does not show matching grouped action:\n%s", view)
 	}
-	if !strings.Contains(view, "focus the Parameters panel first") {
+	if !strings.Contains(view, "Unavailable: focus the Parameters panel") {
 		t.Fatalf("disabled palette action has no context explanation:\n%s", view)
 	}
 	if lipgloss.Width(m.helpPaletteView()) > m.width {
@@ -224,8 +241,111 @@ func TestHelpPaletteUsesSelectionWithoutMarkerOrBodyPadding(t *testing.T) {
 	if strings.Contains(view, "Search: ") {
 		t.Fatalf("palette search retains redundant prefix:\n%s", view)
 	}
-	if !strings.Contains(view, "│Unavailable: no project is selected") || strings.Contains(view, "│ Unavailable:") {
-		t.Fatalf("palette status retains left padding:\n%s", view)
+	if !strings.Contains(view, "│Bind authentication in the projects panel. Unavailable: no project is selected") || strings.Contains(view, "│ Bind authentication") {
+		t.Fatalf("palette status does not show the selected action description flush left:\n%s", view)
+	}
+}
+
+func TestHelpPaletteUsesUnderstandableSearchableActionMetadata(t *testing.T) {
+	catalog := helpPaletteCatalog()
+	for _, item := range catalog {
+		if strings.TrimSpace(item.description) == "" {
+			t.Errorf("%s.%s has no description", item.block, item.action)
+		}
+		if slices.Contains([]string{"First", "Last", "Home", "End", "Up", "Down"}, item.title) {
+			t.Errorf("%s.%s has ambiguous title %q", item.block, item.action, item.title)
+		}
+	}
+
+	search := newHelpPaletteModel()
+	search.input.SetValue("update")
+	updateTitles := make([]string, 0)
+	for _, item := range search.filtered(catalog) {
+		updateTitles = append(updateTitles, item.title)
+	}
+	for _, want := range []string{"Update projects", "Update current project", "Update all projects"} {
+		if !slices.Contains(updateTitles, want) {
+			t.Errorf("update search titles = %v, missing %q", updateTitles, want)
+		}
+	}
+
+	search.input.SetValue("reload")
+	reloadTitles := make([]string, 0)
+	for _, item := range search.filtered(catalog) {
+		reloadTitles = append(reloadTitles, item.title)
+	}
+	for _, want := range []string{"Update current project", "Update all projects"} {
+		if !slices.Contains(reloadTitles, want) {
+			t.Errorf("reload alias search titles = %v, missing %q", reloadTitles, want)
+		}
+	}
+}
+
+func TestSharedFooterActionsAppearInTheActivePaletteGroup(t *testing.T) {
+	tests := []struct {
+		panel   panels.ID
+		query   string
+		actions []tuiconfig.Action
+		group   string
+	}{
+		{panel: panels.Conditions, query: "update", actions: []tuiconfig.Action{tuiconfig.ActionReload, tuiconfig.ActionReloadAll}, group: "Conditions panel"},
+		{panel: panels.History, query: "maximize", actions: []tuiconfig.Action{tuiconfig.ActionToggleMaximize}, group: "History panel"},
+	}
+	for _, tt := range tests {
+		m := viewTestModel(90, 24, tt.panel)
+		m.helpPalette.input.SetValue(tt.query)
+		byAction := make(map[tuiconfig.Action]helpPaletteAction)
+		for _, item := range m.helpPalette.filtered(m.helpPaletteActions()) {
+			byAction[item.action] = item
+		}
+		for _, action := range tt.actions {
+			item, ok := byAction[action]
+			if !ok {
+				t.Errorf("panel %v search %q has no %s action", tt.panel, tt.query, action)
+				continue
+			}
+			if item.group != tt.group || strings.Contains(item.reason, "focus the Parameters panel") {
+				t.Errorf("%s action = group:%q reason:%q, want active group %q", action, item.group, item.reason, tt.group)
+			}
+		}
+	}
+}
+
+func TestShortHelpTermsFindTheirPaletteActions(t *testing.T) {
+	catalog := helpPaletteCatalog()
+	for i := range catalog {
+		catalog[i].keys = tuiconfig.Keys(catalog[i].block, catalog[i].action)
+	}
+	contexts := []helpKeyMap{
+		{keyboardCapture: true},
+		{active: panels.Projects, canBindAuth: true},
+		{active: panels.Projects, projectsMode: projectsPanelModeCollapsed, canBindAuth: true},
+		{active: panels.Parameters},
+		{active: panels.Conditions},
+		{active: panels.History},
+		{active: panels.Logs},
+		{active: panels.Logs, logsMode: logsPanelModeCollapsed},
+		{active: panels.Details},
+		{active: panels.Details, conditionDetail: true},
+		{active: panels.Details, groupDetail: true},
+		{active: panels.Conditions, conditionMove: true},
+	}
+	for _, context := range contexts {
+		for _, binding := range context.ShortHelp() {
+			query := binding.Help().Desc
+			search := newHelpPaletteModel()
+			search.input.SetValue(query)
+			found := false
+			for _, item := range search.filtered(catalog) {
+				if slices.ContainsFunc(binding.Keys(), func(key string) bool { return slices.Contains(item.keys, key) }) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("footer term %q with keys %v finds no matching Actions entry", query, binding.Keys())
+			}
+		}
 	}
 }
 
@@ -323,8 +443,8 @@ func TestHelpPaletteDoesNotRunDisabledAction(t *testing.T) {
 	m.helpPalette, _ = m.helpPalette.Open()
 	m.helpPalette.input.SetValue("collapse all")
 	actions := m.helpPalette.filtered(m.helpPaletteActions())
-	if len(actions) != 1 || actions[0].enabled {
-		t.Fatalf("filtered actions = %+v, want one disabled action", actions)
+	if len(actions) == 0 || actions[0].action != tuiconfig.ActionCollapseAll || actions[0].enabled {
+		t.Fatalf("first filtered action = %+v, want disabled Collapse all", actions)
 	}
 
 	next, cmd, _ := m.runHelpPaletteAction(actions, helpPaletteListHeight(m.height))

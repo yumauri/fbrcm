@@ -56,14 +56,61 @@ func (m helpPaletteModel) filtered(actions []helpPaletteAction) []helpPaletteAct
 	if query == "" {
 		return actions
 	}
-	out := make([]helpPaletteAction, 0, len(actions))
+	exactPhrase := make([]helpPaletteAction, 0)
+	exactTerms := make([]helpPaletteAction, 0)
+	fuzzy := make([]helpPaletteAction, 0)
 	for _, item := range actions {
-		haystack := strings.Join([]string{item.group, item.title, strings.Join(item.keys, " ")}, " ")
-		if matched, _ := corefilter.Match(haystack, query, corefilter.ModeFuzzy); matched {
-			out = append(out, item)
+		switch helpPaletteActionMatchRank(item, query) {
+		case 0:
+			exactPhrase = append(exactPhrase, item)
+		case 1:
+			exactTerms = append(exactTerms, item)
+		case 2:
+			fuzzy = append(fuzzy, item)
 		}
 	}
-	return out
+	out := append(exactPhrase, exactTerms...)
+	return append(out, fuzzy...)
+}
+
+func helpPaletteActionMatchRank(item helpPaletteAction, query string) int {
+	fields := []string{item.group, item.title, item.description, string(item.action), strings.Join(item.keys, " ")}
+	lowerQuery := strings.ToLower(query)
+	for _, field := range fields {
+		if strings.Contains(strings.ToLower(field), lowerQuery) {
+			return 0
+		}
+	}
+	exactTerms := true
+	for term := range strings.FieldsSeq(lowerQuery) {
+		matchedTerm := false
+		for _, field := range fields {
+			if strings.Contains(strings.ToLower(field), term) {
+				matchedTerm = true
+				break
+			}
+		}
+		if !matchedTerm {
+			exactTerms = false
+			break
+		}
+	}
+	if exactTerms {
+		return 1
+	}
+	for term := range strings.FieldsSeq(query) {
+		matchedTerm := false
+		for _, field := range fields {
+			if matched, _ := corefilter.Match(field, term, corefilter.ModeFuzzy); matched {
+				matchedTerm = true
+				break
+			}
+		}
+		if !matchedTerm {
+			return -1
+		}
+	}
+	return 2
 }
 
 func (m *helpPaletteModel) move(delta, count, height int) {

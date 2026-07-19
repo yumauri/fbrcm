@@ -38,9 +38,13 @@ func (m Model) helpPaletteView() string {
 	lines := []string{helpPaletteTopBorder(innerWidth), helpPaletteLine(search, innerWidth), helpPaletteSeparator(innerWidth)}
 	lines = append(lines, m.helpPaletteActionLines(actions, listHeight, innerWidth)...)
 	lines = append(lines, helpPaletteSeparator(innerWidth))
-	status := "Type to search; Enter runs the selected action"
-	if len(actions) > 0 && m.helpPalette.cursor >= 0 && m.helpPalette.cursor < len(actions) && !actions[m.helpPalette.cursor].enabled {
-		status = "Unavailable: " + actions[m.helpPalette.cursor].reason
+	status := "Select an action to see what it does"
+	if len(actions) > 0 && m.helpPalette.cursor >= 0 && m.helpPalette.cursor < len(actions) {
+		selected := actions[m.helpPalette.cursor]
+		status = selected.description
+		if !selected.enabled {
+			status += " Unavailable: " + selected.reason
+		}
 	}
 	lines = append(lines, helpPaletteLine(styles.PanelMuted.Render(status), innerWidth))
 	footer := m.helpPaletteFooter(innerWidth)

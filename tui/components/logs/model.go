@@ -65,6 +65,18 @@ func (m Model) Init() tea.Cmd {
 	return waitForLogCmd(m.sub)
 }
 
+// IsBackgroundMessage reports messages that must reach the logs model even
+// while another component has exclusive input focus. LogLineMsg also advances
+// the subscription by scheduling the next channel read.
+func IsBackgroundMessage(msg tea.Msg) bool {
+	switch msg.(type) {
+	case messages.LogLineMsg, statusFlashTickMsg:
+		return true
+	default:
+		return false
+	}
+}
+
 func (m Model) SetBounds(x, y, width, height int) Model {
 	if m.x == x && m.y == y && m.width == width && m.height == height {
 		return m

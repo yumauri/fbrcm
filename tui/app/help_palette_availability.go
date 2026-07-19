@@ -11,18 +11,21 @@ import (
 
 func (m Model) helpPaletteActions() []helpPaletteAction {
 	actions := helpPaletteCatalog()
+	active, _ := m.activeHelpBlock()
 	for i := range actions {
 		actions[i].keys = tuiconfig.Keys(actions[i].block, actions[i].action)
+		if sharedHelpActionAvailableIn(actions[i], active) {
+			actions[i].group = helpPaletteBlockTitle(active)
+		}
 		actions[i].enabled, actions[i].reason = m.helpPaletteActionAvailability(actions[i])
 		if len(actions[i].keys) == 0 {
 			actions[i].enabled = false
 			actions[i].reason = "shortcut is unbound or has a key conflict"
 		}
 	}
-	active, _ := m.activeHelpBlock()
 	slices.SortStableFunc(actions, func(left, right helpPaletteAction) int {
-		leftRank := helpPaletteGroupRank(left.block, active)
-		rightRank := helpPaletteGroupRank(right.block, active)
+		leftRank := helpPaletteGroupRank(left, active)
+		rightRank := helpPaletteGroupRank(right, active)
 		if leftRank != rightRank {
 			return leftRank - rightRank
 		}
@@ -34,11 +37,11 @@ func (m Model) helpPaletteActions() []helpPaletteAction {
 	return actions
 }
 
-func helpPaletteGroupRank(block, active tuiconfig.Block) int {
-	if active != "" && block == active {
+func helpPaletteGroupRank(item helpPaletteAction, active tuiconfig.Block) int {
+	if active != "" && item.group == helpPaletteBlockTitle(active) {
 		return 0
 	}
-	if block == tuiconfig.BlockGlobal {
+	if item.block == tuiconfig.BlockGlobal {
 		return 1
 	}
 	return 2
@@ -59,9 +62,47 @@ func (m Model) helpPaletteActionAvailability(item helpPaletteAction) (bool, stri
 	}
 
 	if active, reason := m.activeHelpBlock(); item.block != active {
+		if sharedHelpActionAvailableIn(item, active) {
+			return m.sharedHelpActionAvailability(active, item.action)
+		}
 		return false, reasonForInactiveHelpBlock(item.block, active, reason)
 	}
 	return m.contextualHelpActionAvailability(item.block, item.action)
+}
+
+func sharedHelpActionAvailableIn(item helpPaletteAction, active tuiconfig.Block) bool {
+	if item.block != tuiconfig.BlockParameters {
+		return false
+	}
+	switch active {
+	case tuiconfig.BlockConditions:
+		switch item.action {
+		case tuiconfig.ActionToggleMaximize, tuiconfig.ActionReload, tuiconfig.ActionReloadAll:
+			return true
+		}
+	case tuiconfig.BlockHistory:
+		switch item.action {
+		case tuiconfig.ActionToggleMaximize, tuiconfig.ActionToggle, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
+			return true
+		}
+	}
+	return false
+}
+
+func (m Model) sharedHelpActionAvailability(active tuiconfig.Block, action tuiconfig.Action) (bool, string) {
+	if active == tuiconfig.BlockHistory {
+		return m.parametersHelpActionAvailability(action)
+	}
+	if action == tuiconfig.ActionToggleMaximize {
+		return true, ""
+	}
+	if _, ok := m.conditions.CurrentProject(); !ok {
+		if action == tuiconfig.ActionReloadAll {
+			return false, "no projects are selected"
+		}
+		return false, "no project is selected"
+	}
+	return true, ""
 }
 
 func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, string) {

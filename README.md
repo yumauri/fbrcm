@@ -325,7 +325,7 @@ Definition mutations print a Remote Config diff and offer publication or can be 
 
 In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish one/all drafts and `d`/`D` to discard one/all drafts. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
 
-Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, marks actions that are unavailable in the current context with a reason, and runs the selected available action with Enter. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
+Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, explains the selected action below the list, marks unavailable actions with a reason, and runs the selected available action with Enter. Search matches action names, explanations, shortcut keys, and technical aliases such as `reload`. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 
 Pressing `q` quits immediately unless the open Details form has unsaved changes, in which case fbrcm asks before discarding them. `Ctrl+C` always force-quits.
 
