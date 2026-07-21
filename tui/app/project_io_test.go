@@ -136,10 +136,10 @@ func TestDefaultsExistingDestinationRequiresConfirmationAndBackRestoresForm(t *t
 	if !handled || cmd != nil || next.projectIO.IsOpen() || !next.dialog.IsOpen() {
 		t.Fatalf("existing destination handled=%v cmd=%v io=%v dialog=%v", handled, cmd != nil, next.projectIO.IsOpen(), next.dialog.IsOpen())
 	}
-	if next.projectDefaults == nil || next.projectDefaults.format != firebase.DefaultsFormatXML {
+	if next.projectDefaults == nil || next.projectDefaults.format != firebase.DefaultsFormatXML || next.projectDefaults.path != destination {
 		t.Fatalf("defaults session = %#v", next.projectDefaults)
 	}
-	if view := ansi.Strip(next.dialog.View()); !strings.Contains(view, "Overwrite Defaults?") || !strings.Contains(view, "defaults.xml") {
+	if view := ansi.Strip(next.dialog.View()); !strings.Contains(view, "Overwrite Defaults?") || !strings.Contains(view, "A file already exists at:") {
 		t.Fatalf("overwrite dialog missing destination:\n%s", view)
 	}
 
@@ -148,8 +148,16 @@ func TestDefaultsExistingDestinationRequiresConfirmationAndBackRestoresForm(t *t
 	if !handled || focusCmd == nil || !next.projectIO.IsOpen() || next.projectIO.Mode() != projectio.ModeDefaults {
 		t.Fatalf("back handled=%v cmd=%v io=%v mode=%v", handled, focusCmd != nil, next.projectIO.IsOpen(), next.projectIO.Mode())
 	}
-	if view := ansi.Strip(next.projectIO.View()); !strings.Contains(view, "defaults.xml") || !strings.Contains(view, "Format: xml") {
+	if view := ansi.Strip(next.projectIO.View()); !strings.Contains(view, "Destination:") || !strings.Contains(view, "Format: xml") {
 		t.Fatalf("restored defaults form missing state:\n%s", view)
+	}
+	_, submitCmd := next.projectIO.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	if submitCmd == nil {
+		t.Fatal("restored defaults form did not submit")
+	}
+	request, ok := submitCmd().(projectio.DefaultsRequestedMsg)
+	if !ok || request.Path != destination || request.Format != firebase.DefaultsFormatXML {
+		t.Fatalf("restored defaults request = %#v", request)
 	}
 }
 
