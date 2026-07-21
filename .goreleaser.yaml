@@ -59,6 +59,20 @@ homebrew_casks:
     homepage: "https://github.com/yumauri/fbrcm"
     description: "Firebase Remote Config Management"
     license: MIT
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/fbrcm"]
+          end
+    generate_completions_from_executable:
+      args:
+        - completion
+      shell_parameter_format: cobra
+      shells:
+        - bash
+        - zsh
+        - fish
 
 scoops:
   - repository:
