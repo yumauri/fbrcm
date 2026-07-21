@@ -1,6 +1,9 @@
 package firebase
 
 import (
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +30,40 @@ func TestInitOfflineModeFromEnv(t *testing.T) {
 	t.Cleanup(func() { SetOfflineMode(false) })
 	if !IsOffline() {
 		t.Fatal("InitOfflineMode with env should enable offline mode")
+	}
+}
+
+func TestInitOfflineModeFromConnectivityProbe(t *testing.T) {
+	t.Cleanup(func() { SetOfflineMode(false) })
+
+	t.Run("online", func(t *testing.T) {
+		initOfflineMode("", false, func() error { return nil })
+		if IsOffline() {
+			t.Fatal("successful connectivity probe enabled offline mode")
+		}
+	})
+
+	t.Run("offline", func(t *testing.T) {
+		initOfflineMode("", false, func() error { return errors.New("unreachable") })
+		if !IsOffline() {
+			t.Fatal("failed connectivity probe did not enable offline mode")
+		}
+	})
+}
+
+func TestProbeConnectivityUsesHTTPHead(t *testing.T) {
+	var method string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		method = r.Method
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(server.Close)
+
+	if err := probeConnectivity(t.Context(), server.Client(), server.URL); err != nil {
+		t.Fatalf("probeConnectivity = %v", err)
+	}
+	if method != http.MethodHead {
+		t.Fatalf("probe method = %q, want HEAD", method)
 	}
 }
 

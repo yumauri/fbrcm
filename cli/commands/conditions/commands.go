@@ -50,16 +50,12 @@ func newListCommand(svc *core.Core) *cobra.Command {
 			}
 			filters, _ := cmd.Flags().GetStringArray("filter")
 			search, _ := cmd.Flags().GetString("search")
+			rawExpr, _ := cmd.Flags().GetString("expr")
 			entries := filterEntries(loaded.Tree.Conditions, filters, search)
+			entries = filterEntriesByExpr(loaded.Project, entries, rawExpr)
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{
-					"project":    loaded.Project,
-					"version":    loaded.Version,
-					"source":     loaded.Source,
-					"has_draft":  loaded.HasDraft,
-					"conditions": entries,
-				})
+				return shared.WriteJSON(cmd, entries)
 			}
 			printContext(cmd, loaded)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderConditionsTable(entries))
@@ -69,6 +65,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 	addReadFlags(cmd)
 	cmd.Flags().StringArrayP("filter", "f", nil, "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("search", "", "Search condition names and expressions")
+	cmd.Flags().String("expr", "", "Filter conditions by expr-lang expression")
 	return cmd
 }
 
@@ -165,6 +162,21 @@ func filterEntries(entries []core.ConditionEntry, rawFilters []string, search st
 			}
 		}
 		out = append(out, entry)
+	}
+	return out
+}
+
+func filterEntriesByExpr(project core.Project, entries []core.ConditionEntry, rawExpr string) []core.ConditionEntry {
+	compiled, ok := shared.CompileExpr(rawExpr, project.ProjectID)
+	if !ok {
+		return nil
+	}
+	out := make([]core.ConditionEntry, 0, len(entries))
+	for _, entry := range entries {
+		match, ok := shared.MatchConditionByCompiledExpr(compiled, project, entry)
+		if ok && match {
+			out = append(out, entry)
+		}
 	}
 	return out
 }

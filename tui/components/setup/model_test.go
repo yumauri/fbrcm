@@ -361,7 +361,7 @@ func TestOAuthClientShortcutUsesHelpKeyStyle(t *testing.T) {
 	}
 }
 
-func TestSetupPanelUsesBorderHeaderWithoutContentPadding(t *testing.T) {
+func TestSetupPanelUsesStandardPopupPadding(t *testing.T) {
 	view := ansi.Strip(renderSetupPanel("Authenticate", []string{
 		"Connect Google credentials.",
 		"",
@@ -372,11 +372,14 @@ func TestSetupPanelUsesBorderHeaderWithoutContentPadding(t *testing.T) {
 	if !strings.HasPrefix(lines[0], "╭─ Authenticate ") || !strings.HasSuffix(lines[0], "╮") {
 		t.Fatalf("title is not rendered in the top border: %q", lines[0])
 	}
-	if !strings.HasPrefix(lines[1], "│Connect Google credentials.") {
-		t.Fatalf("first content row retains inset padding: %q", lines[1])
+	if lines[1] != "│                                           │" {
+		t.Fatalf("top popup padding row = %q", lines[1])
 	}
-	if !strings.HasPrefix(lines[3], "│OAuth desktop login") {
-		t.Fatalf("selection row retains inset padding: %q", lines[3])
+	if !strings.HasPrefix(lines[2], "│  Connect Google credentials.") {
+		t.Fatalf("first content row lacks standard inset padding: %q", lines[2])
+	}
+	if !strings.HasPrefix(lines[4], "│  OAuth desktop login") {
+		t.Fatalf("selection row lacks standard inset padding: %q", lines[4])
 	}
 }
 
@@ -440,7 +443,7 @@ func TestOpenProfilesHonorsRequestedTabAfterInspection(t *testing.T) {
 	}
 }
 
-func TestAccountPurgeWarnsWhenProjectsAreBound(t *testing.T) {
+func TestAccountDeleteWarnsWhenProjectsAreBound(t *testing.T) {
 	m := checkingTestModel(false)
 	m.mode = modeAccounts
 	m.auth = []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}}
@@ -448,15 +451,15 @@ func TestAccountPurgeWarnsWhenProjectsAreBound(t *testing.T) {
 
 	m, cmd := m.Update(keyText("x"))
 	if m.mode != modeAccounts || cmd == nil {
-		t.Fatalf("mode=%v cmd=%v, want Accounts plus purge request", m.mode, cmd != nil)
+		t.Fatalf("mode=%v cmd=%v, want Accounts plus delete request", m.mode, cmd != nil)
 	}
-	request, ok := cmd().(AuthPurgeRequestedMsg)
+	request, ok := cmd().(AuthDeleteRequestedMsg)
 	if !ok || request.AuthID != "main" || request.BoundProjects != 2 {
-		t.Fatalf("purge request = %#v, want main with two bound projects", request)
+		t.Fatalf("delete request = %#v, want main with two bound projects", request)
 	}
 }
 
-func TestProfilesOfferRenameAndProtectActiveProfileFromPurge(t *testing.T) {
+func TestProfilesOfferRenameAndProtectActiveProfileFromDelete(t *testing.T) {
 	m := checkingTestModel(false)
 	m.mode = modeProfiles
 	m.profile = "default"
@@ -472,17 +475,17 @@ func TestProfilesOfferRenameAndProtectActiveProfileFromPurge(t *testing.T) {
 	m, cmd = m.Update(keyText("x"))
 	errorRequest, ok := cmd().(ErrorRequestedMsg)
 	if m.mode != modeProfiles || !ok || !strings.Contains(strings.Join(errorRequest.Body, " "), "is active") {
-		t.Fatalf("active purge = mode:%v request:%#v", m.mode, errorRequest)
+		t.Fatalf("active delete = mode:%v request:%#v", m.mode, errorRequest)
 	}
 }
 
-func TestConfirmedProfilePurgeKeepsManagementInPopup(t *testing.T) {
+func TestConfirmedProfileDeleteKeepsManagementInPopup(t *testing.T) {
 	m := checkingTestModel(false)
 	m.mode = modeProfiles
 
-	m, cmd := m.Update(ProfilePurgeConfirmedMsg{Profile: "old"})
-	if cmd == nil || m.mode != modePurgingProfile || m.profileFrom != "old" || m.mandatory {
-		t.Fatalf("purge confirmation = cmd:%v mode:%v profile:%q mandatory:%v", cmd != nil, m.mode, m.profileFrom, m.mandatory)
+	m, cmd := m.Update(ProfileDeleteConfirmedMsg{Profile: "old"})
+	if cmd == nil || m.mode != modeDeletingProfile || m.profileFrom != "old" || m.mandatory {
+		t.Fatalf("delete confirmation = cmd:%v mode:%v profile:%q mandatory:%v", cmd != nil, m.mode, m.profileFrom, m.mandatory)
 	}
 }
 

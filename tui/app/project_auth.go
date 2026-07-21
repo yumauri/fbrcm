@@ -9,6 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/authpicker"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -22,6 +23,9 @@ type projectAuthBoundMsg struct {
 }
 
 func (m *Model) openProjectAuthPicker() tea.Cmd {
+	if !m.projects.AuthBindingAvailable() {
+		return nil
+	}
 	targets := m.projects.ActionTargets()
 	if len(targets) == 0 {
 		return nil
@@ -39,23 +43,25 @@ func (m *Model) openProjectAuthPicker() tea.Cmd {
 	currentID := targets[0].AuthID
 	sameCurrent := true
 	options := make([]authpicker.Option, 0, len(entries))
-	for index, entry := range entries {
-		verified := 0
+	for _, entry := range entries {
+		discoveredEveryTarget := true
 		for _, project := range targets {
-			if slices.Contains(project.DiscoveredBy, entry.ID) {
-				verified++
+			if !slices.Contains(project.DiscoveredBy, entry.ID) {
+				discoveredEveryTarget = false
+				break
 			}
 		}
-		detail := authTypeName(entry.Type)
-		if verified == len(targets) {
-			detail += "  ·  verified"
-		} else {
-			detail += fmt.Sprintf("  ·  verified %d/%d", verified, len(targets))
+		if !discoveredEveryTarget {
+			continue
 		}
+		detail := authTypeName(entry.Type)
 		options = append(options, authpicker.Option{Key: entry.ID, Label: entry.ID, Detail: detail})
 		if entry.ID == currentID {
-			selected = index
+			selected = len(options) - 1
 		}
+	}
+	if len(options) < 2 {
+		return nil
 	}
 	for _, project := range targets[1:] {
 		if project.AuthID != currentID {
@@ -69,11 +75,11 @@ func (m *Model) openProjectAuthPicker() tea.Cmd {
 
 	body := make([]string, 0, len(targets)+1)
 	if len(targets) == 1 {
-		body = append(body, "Project: "+targets[0].ProjectID)
+		body = append(body, viewutil.ProjectLine(targets[0]))
 	} else {
 		body = append(body, fmt.Sprintf("Projects (%d):", len(targets)))
 		for _, project := range targets {
-			body = append(body, "  "+project.ProjectID)
+			body = append(body, "  "+viewutil.ProjectReference(project))
 		}
 	}
 	m.closeOverlays()
@@ -90,14 +96,34 @@ func (m Model) updateAuthPicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 		case tuiconfig.Matches(tuiconfig.BlockAuthPicker, tuiconfig.ActionCancel, k):
 			m.closeAuthPicker()
 		case tuiconfig.Matches(tuiconfig.BlockAuthPicker, tuiconfig.ActionSubmit, k):
+			if m.authPicker.SelectedButton() == 1 {
+				m.closeAuthPicker()
+				return m, nil, true
+			}
 			return m, m.submitAuthBinding(), true
+		case tuiconfig.Matches(tuiconfig.BlockAuthPicker, tuiconfig.ActionPrev, k):
+			m.authPicker.MoveButton(-1)
+		case tuiconfig.Matches(tuiconfig.BlockAuthPicker, tuiconfig.ActionNext, k):
+			m.authPicker.MoveButton(1)
 		case tuiconfig.Matches(tuiconfig.BlockAuthPicker, tuiconfig.ActionUp, k):
 			m.authPicker.Move(-1)
 		case tuiconfig.Matches(tuiconfig.BlockAuthPicker, tuiconfig.ActionDown, k):
 			m.authPicker.Move(1)
 		}
 		return m, nil, true
-	case tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button != tea.MouseLeft || !m.authPicker.SelectButtonAt(msg.Mouse().X, msg.Mouse().Y) {
+			return m, nil, true
+		}
+		if m.authPicker.SelectedButton() == 1 {
+			m.closeAuthPicker()
+			return m, nil, true
+		}
+		return m, m.submitAuthBinding(), true
+	case tea.MouseMotionMsg:
+		m.authPicker.SelectButtonAt(msg.Mouse().X, msg.Mouse().Y)
+		return m, nil, true
+	case tea.MouseWheelMsg, tea.MouseReleaseMsg:
 		return m, nil, true
 	}
 	return m, nil, false

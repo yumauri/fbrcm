@@ -259,6 +259,16 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 		if !m.projects.HasCurrentProject() {
 			return false, "no project is selected"
 		}
+		if action == tuiconfig.ActionBindAuth && !m.projects.AuthBindingAvailable() {
+			return false, "at least two authentication identities must discover every selected project"
+		}
+		if !m.projects.CurrentProjectEnabled() {
+			switch action {
+			case tuiconfig.ActionSelect, tuiconfig.ActionMark, tuiconfig.ActionOpen,
+				tuiconfig.ActionImport, tuiconfig.ActionExport, tuiconfig.ActionDefaults:
+				return false, "project is disabled"
+			}
+		}
 	case tuiconfig.BlockParameters:
 		return m.parametersHelpActionAvailability(action)
 	case tuiconfig.BlockConditions:

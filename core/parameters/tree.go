@@ -23,11 +23,12 @@ func BuildTree(remoteConfig *firebase.RemoteConfig, cachedAt time.Time, etag str
 	}
 
 	return &Tree{
-		Version:    remoteConfig.Version.VersionNumber,
-		CachedAt:   cachedAt,
-		ETag:       etag,
-		Conditions: buildConditions(remoteConfig),
-		Groups:     buildGroups(remoteConfig),
+		Version:      remoteConfig.Version.VersionNumber,
+		CachedAt:     cachedAt,
+		ETag:         etag,
+		Conditions:   buildConditions(remoteConfig),
+		Groups:       buildGroups(remoteConfig),
+		remoteConfig: remoteConfig,
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 	if m.projectIO.IsOpen() {
 		switch msg.(type) {
-		case projectio.ImportPlanRequestedMsg, projectio.ExportRequestedMsg, projectImportPlanLoadedMsg:
+		case projectio.ImportPlanRequestedMsg, projectio.ExportRequestedMsg, projectio.DefaultsRequestedMsg, projectImportPlanLoadedMsg:
 			return m, nil, false
 		}
 		if size, ok := msg.(tea.WindowSizeMsg); ok {

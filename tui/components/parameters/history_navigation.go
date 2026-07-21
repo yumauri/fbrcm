@@ -414,7 +414,7 @@ func (m Model) HistoryPickerView() string {
 	state := m.histories[m.versionPicker.projectID]
 	geometry := m.historyPickerGeometry()
 	w, h := geometry.width, geometry.height
-	inner, rows := max(w-4, 0), max(h-6, 0)
+	inner, rows := max(w-2-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 0), max(h-6-viewutil.PopupPaddingTop, 0)
 	cursor := m.versionPicker.rightCursor
 	if m.versionPicker.left {
 		cursor = m.versionPicker.leftCursor
@@ -422,10 +422,13 @@ func (m Model) HistoryPickerView() string {
 	start := max(min(cursor-rows/2, len(state.versions)-rows), 0)
 	tabTop, tabContent, bodyTop := renderHistoryPickerTabs(geometry, m.versionPicker.left, m.historyPickerUnderlyingLine(geometry))
 	lines := []string{tabTop, tabContent, bodyTop}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine("", inner)+styles.PanelBorderActive.Render("│"))
+	}
 	versionWidth, publishedWidth, authorWidth := historyPickerColumnWidths(state.versions, inner)
 	header := pickerVersionTableRow("", "Published", "Author", "", versionWidth, publishedWidth, authorWidth)
 	header = centerHistoryPickerLine(styles.PanelMuted.Bold(true).Render(header), inner)
-	lines = append(lines, styles.PanelBorderActive.Render("│ ")+header+styles.PanelBorderActive.Render(" │"))
+	lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(header, inner)+styles.PanelBorderActive.Render("│"))
 	low, high := historyPickerBounds(len(state.versions), m.versionPicker.leftCursor, m.versionPicker.rightCursor, m.versionPicker.left)
 	for i := range rows {
 		index := start + i
@@ -447,9 +450,9 @@ func (m Model) HistoryPickerView() string {
 			table = historyPickerRowArrows(table, leftPicked, rightPicked, m.versionPicker.left, !m.versionPicker.left)
 			line = centerHistoryPickerLine(table, inner)
 		}
-		lines = append(lines, styles.PanelBorderActive.Render("│ ")+viewutil.PadRight(line, inner)+styles.PanelBorderActive.Render(" │"))
+		lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(line, inner)+styles.PanelBorderActive.Render("│"))
 	}
-	lines = append(lines, styles.PanelBorderActive.Render("│ ")+historyPickerHintView(inner)+styles.PanelBorderActive.Render(" │"))
+	lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(historyPickerHintView(inner), inner)+styles.PanelBorderActive.Render("│"))
 	lines = append(lines, styles.PanelBorderActive.Render("╰"+strings.Repeat("─", max(w-2, 0))+"╯"))
 	return strings.Join(lines, "\n")
 }

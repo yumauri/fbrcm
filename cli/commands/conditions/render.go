@@ -56,10 +56,6 @@ func renderConditionDetails(entry core.ConditionEntry) string {
 	fmt.Fprintf(&b, "Color: %s\n", renderConditionDetailValue(emptyDash(entry.TagColor), entry.TagColor, true))
 	fmt.Fprintf(&b, "Expression: %s\n", entry.Expression)
 	fmt.Fprintf(&b, "Used by: %s\n", rcdisplay.FormatCount(len(entry.Usages), "parameter", "parameters"))
-	if len(entry.Usages) == 0 {
-		b.WriteString("\nNo parameters use this condition.")
-		return b.String()
-	}
 	b.WriteString("\n")
 	b.WriteString(renderUsagesTable(entry.Usages))
 	return b.String()

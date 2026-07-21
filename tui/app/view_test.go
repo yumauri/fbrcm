@@ -207,7 +207,7 @@ No logs yet.
 
 
 ──────────────────────────────────────────────────────────────────────────────────────────
-q quit • ? help • c collapse • enter select • space mark • o open • u update …`
+q quit • ? help • c collapse • enter select • space mark • x delete • o open • u update …`
 
 const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
  Loading projects...    ││Select project in Projects panel.                              │

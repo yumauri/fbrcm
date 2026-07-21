@@ -17,6 +17,14 @@ import (
 	"github.com/yumauri/fbrcm/core/rc/importer"
 )
 
+type importResult struct {
+	ProjectID string `json:"project_id"`
+	Status    string `json:"status"`
+	Changed   bool   `json:"changed"`
+	Draft     bool   `json:"draft"`
+	DryRun    bool   `json:"dry_run"`
+}
+
 // Run executes the project import command pipeline.
 func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	opts, err := readImportOptions(cmd)
@@ -31,6 +39,15 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if err != nil {
 		return err
 	}
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return err
+	}
+	jsonOut, err := cmd.Flags().GetBool("json")
+	if err != nil {
+		return err
+	}
+	result := importResult{ProjectID: project.ProjectID, Draft: draftMode, DryRun: dryRun}
 	ctx := context.Background()
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
@@ -50,7 +67,8 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return err
 	}
 	if raw == nil {
-		return nil
+		result.Status = "canceled"
+		return writeImportResult(cmd, jsonOut, result)
 	}
 	source, err := importer.ParseSource(raw)
 	if err != nil {
@@ -61,7 +79,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 
 	if err := transformImportConfig(project, importCfg, opts); err != nil {
 		var missingErr *importer.MissingGroupsError
-		if errors.As(err, &missingErr) && len(missingErr.Available) > 0 {
+		if !jsonOut && errors.As(err, &missingErr) && len(missingErr.Available) > 0 {
 			groups := make([]groupSummary, 0, len(missingErr.Available))
 			for _, group := range missingErr.Available {
 				groups = append(groups, groupSummary{Name: group.Name, Parameters: group.Parameters})
@@ -70,7 +88,9 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		}
 		return err
 	}
-	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), importConditionCountLine(sourceConditionCount, len(importCfg.Conditions)))
+	if !jsonOut {
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), importConditionCountLine(sourceConditionCount, len(importCfg.Conditions)))
+	}
 
 	var currentRaw json.RawMessage
 	var currentETag string
@@ -117,31 +137,39 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 
 	diffText, hasChanges := rc.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	if !hasChanges {
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
-		return nil
+		result.Status = "unchanged"
+		return writeImportResult(cmd, jsonOut, result)
 	}
+	result.Changed = true
 	if !draftMode {
 		if err := svc.ValidateRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
 			return err
 		}
 	}
 
-	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+	if !jsonOut {
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+	}
 
 	action := "Publish Remote Config changes to"
 	if draftMode {
 		action = "Save Remote Config draft for"
 	}
-	confirm := shared.NewConfirmation(
-		fmt.Sprintf("%s %s?", action, project.ProjectID),
-		shared.ConfirmationOptions{},
-	)
-	ok, err := confirm.RunPrompt()
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
+	if !yes {
+		confirm := shared.NewConfirmation(
+			fmt.Sprintf("%s %s?", action, project.ProjectID),
+			shared.ConfirmationOptions{},
+		)
+		confirm.Input = cmd.InOrStdin()
+		confirm.Output = cmd.ErrOrStderr()
+		ok, err := confirm.RunPrompt()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			result.Status = "canceled"
+			return writeImportResult(cmd, jsonOut, result)
+		}
 	}
 	if draftMode {
 		if !dryRun {
@@ -149,18 +177,35 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 				return err
 			}
 		}
-		status := "drafted"
+		result.Status = "drafted"
 		if dryRun {
-			status = "would draft"
+			result.Status = "would-draft"
 		}
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📝 %s: %s\n", status, project.ProjectID)
-		return nil
+		return writeImportResult(cmd, jsonOut, result)
 	}
 
 	if _, _, err := svc.PublishRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📥 imported: %s\n", project.ProjectID)
+	result.Status = "imported"
+	if dryRun {
+		result.Status = "would-import"
+	}
+	return writeImportResult(cmd, jsonOut, result)
+}
+
+func writeImportResult(cmd *cobra.Command, jsonOut bool, result importResult) error {
+	if jsonOut {
+		return shared.WriteJSON(cmd, result)
+	}
+	switch result.Status {
+	case "unchanged":
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
+	case "drafted", "would-draft":
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📝 %s: %s\n", strings.ReplaceAll(result.Status, "-", " "), result.ProjectID)
+	case "imported", "would-import":
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📥 %s: %s\n", strings.ReplaceAll(result.Status, "-", " "), result.ProjectID)
+	}
 	return nil
 }
 
@@ -235,7 +280,7 @@ func buildFinalImportConfig(cmd *cobra.Command, currentCfg, importCfg *firebase.
 		return firebase.CloneRemoteConfig(importCfg)
 	}
 
-	strategy, err := chooseImportStrategy(opts)
+	strategy, err := chooseImportStrategy(cmd, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +291,7 @@ func buildFinalImportConfig(cmd *cobra.Command, currentCfg, importCfg *firebase.
 	return mergeRemoteConfigs(cmd, currentCfg, importCfg, opts)
 }
 
-func chooseImportStrategy(opts importOptions) (importStrategy, error) {
+func chooseImportStrategy(cmd *cobra.Command, opts importOptions) (importStrategy, error) {
 	switch {
 	case opts.override:
 		return importStrategyOverride, nil
@@ -281,6 +326,8 @@ func chooseImportStrategy(opts importOptions) (importStrategy, error) {
 		prompt.UnselectedChoiceStyle = styleImportStrategyUnselectedChoice
 		prompt.FinalChoiceStyle = styleImportStrategyFinalChoice
 		prompt.ExtendedTemplateFuncs["SelectedMarker"] = styleImportStrategySelectedMarker
+		prompt.Input = cmd.InOrStdin()
+		prompt.Output = cmd.ErrOrStderr()
 		choice, err := prompt.RunPrompt()
 		if err != nil {
 			return "", err

@@ -22,7 +22,7 @@ func New() *cobra.Command {
 			return nil
 		},
 	}
-	profileCmd.AddCommand(newListCommand(), newSwitchCommand(), newRenameCommand(), newPathCommand(), newPurgeCommand())
+	profileCmd.AddCommand(newListCommand(), newSwitchCommand(), newRenameCommand(), newPathCommand(), newDeleteCommand())
 	return profileCmd
 }
 
@@ -94,13 +94,13 @@ func newPathCommand() *cobra.Command {
 	return cmd
 }
 
-func newPurgeCommand() *cobra.Command {
+func newDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "purge <profile>",
+		Use:   "delete <profile>",
 		Short: "Delete profile config and cache directories",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return purgeProfile(cmd, args[0])
+			return deleteProfile(cmd, args[0])
 		},
 	}
 	shared.AddYesFlag(cmd, "Skip confirmation dialog")
@@ -131,12 +131,12 @@ func printProfilePaths(cmd *cobra.Command, profileName string) error {
 	return nil
 }
 
-func purgeProfile(cmd *cobra.Command, profileName string) error {
+func deleteProfile(cmd *cobra.Command, profileName string) error {
 	configPath, cachePath, err := profilePaths(profileName)
 	if err != nil {
 		return err
 	}
-	if err := config.EnsureProfileCanPurge(profileName); err != nil {
+	if err := config.EnsureProfileCanDelete(profileName); err != nil {
 		return err
 	}
 	yes, err := cmd.Flags().GetBool("yes")
@@ -156,10 +156,10 @@ func purgeProfile(cmd *cobra.Command, profileName string) error {
 			return nil
 		}
 	}
-	if err := config.PurgeProfile(profileName); err != nil {
+	if err := config.DeleteProfile(profileName); err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged profile: %s\n", profileName)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 deleted profile: %s\n", profileName)
 	return nil
 }
 

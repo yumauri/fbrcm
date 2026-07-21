@@ -1,12 +1,52 @@
 package core
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/yumauri/fbrcm/core/config"
 )
+
+func TestLoadRequiredAuthMissingIncludesSetupGuidance(t *testing.T) {
+	_ = setupCoreTestEnv(t)
+
+	_, err := loadRequiredAuth()
+	if err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("loadRequiredAuth missing = %v, want ErrNotExist", err)
+	}
+	if !strings.HasPrefix(err.Error(), "read auth config:") || !strings.Contains(err.Error(), "\n\n"+authSetupHint) {
+		t.Fatalf("loadRequiredAuth missing = %q, want original error followed by setup guidance", err)
+	}
+}
+
+func TestLoadRequiredAuthEmptyIncludesSetupGuidance(t *testing.T) {
+	_ = setupCoreTestEnv(t)
+	if err := config.SaveAuth(&config.AuthFile{Version: config.AuthConfigVersion}); err != nil {
+		t.Fatalf("SaveAuth empty = %v", err)
+	}
+
+	_, err := loadRequiredAuth()
+	if err == nil || err.Error() != "no auth identities configured\n\n"+authSetupHint {
+		t.Fatalf("loadRequiredAuth empty = %q, want setup guidance", err)
+	}
+}
+
+func TestLoadRequiredAuthCorruptKeepsOriginalError(t *testing.T) {
+	_ = setupCoreTestEnv(t)
+	if err := os.WriteFile(config.GetAuthFilePath(), []byte("{"), config.PrivateFileMode); err != nil {
+		t.Fatalf("write corrupt auth config = %v", err)
+	}
+
+	_, err := loadRequiredAuth()
+	if err == nil || !strings.Contains(err.Error(), "decode auth config") {
+		t.Fatalf("loadRequiredAuth corrupt = %v, want decode error", err)
+	}
+	if strings.Contains(err.Error(), authSetupHint) {
+		t.Fatalf("loadRequiredAuth corrupt = %q, want no setup guidance", err)
+	}
+}
 
 func TestListAuthEmpty(t *testing.T) {
 	svc := setupCoreTestEnv(t)
@@ -77,18 +117,18 @@ func TestAddOAuthAuthWritesSecretAndListAuth(t *testing.T) {
 	}
 }
 
-func TestPurgeAuthRemovesRegistryEntry(t *testing.T) {
+func TestDeleteAuthRemovesRegistryEntry(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	if _, err := svc.AddGCloudAuth("main", "Main"); err != nil {
 		t.Fatalf("AddGCloudAuth = %v", err)
 	}
 
-	auth, _, err := svc.PurgeAuth("main")
+	auth, _, err := svc.DeleteAuth("main")
 	if err != nil {
-		t.Fatalf("PurgeAuth = %v", err)
+		t.Fatalf("DeleteAuth = %v", err)
 	}
 	if auth.ID != "main" {
-		t.Fatalf("purged auth = %+v, want main", auth)
+		t.Fatalf("deleted auth = %+v, want main", auth)
 	}
 
 	entries, _, err := svc.ListAuth()
@@ -96,28 +136,28 @@ func TestPurgeAuthRemovesRegistryEntry(t *testing.T) {
 		t.Fatalf("ListAuth = %v", err)
 	}
 	if len(entries) != 0 {
-		t.Fatalf("entries after purge = %+v, want empty", entries)
+		t.Fatalf("entries after delete = %+v, want empty", entries)
 	}
 }
 
-func TestPurgeAuthMissing(t *testing.T) {
+func TestDeleteAuthMissing(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	if err := config.SaveAuth(&config.AuthFile{Version: config.AuthConfigVersion}); err != nil {
 		t.Fatalf("SaveAuth empty = %v", err)
 	}
 
-	_, _, err := svc.PurgeAuth("missing")
+	_, _, err := svc.DeleteAuth("missing")
 	if err == nil || !strings.Contains(err.Error(), `auth "missing" is not configured`) {
-		t.Fatalf("PurgeAuth = %v, want not configured error", err)
+		t.Fatalf("DeleteAuth = %v, want not configured error", err)
 	}
 }
 
-func TestPurgeAuthMissingWithoutAuthFile(t *testing.T) {
+func TestDeleteAuthMissingWithoutAuthFile(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 
-	_, _, err := svc.PurgeAuth("missing")
+	_, _, err := svc.DeleteAuth("missing")
 	if err == nil || !strings.Contains(err.Error(), `auth "missing" is not configured`) {
-		t.Fatalf("PurgeAuth = %v, want not configured error", err)
+		t.Fatalf("DeleteAuth = %v, want not configured error", err)
 	}
 }
 

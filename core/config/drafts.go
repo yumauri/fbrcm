@@ -151,7 +151,7 @@ func ListDraftProjectIDs() ([]string, error) {
 	return ids, nil
 }
 
-func PurgeDrafts() error {
+func DiscardAllDrafts() error {
 	path := GetDraftsDirPath()
 	logger := corelog.For("config")
 	logger.Debug("remove drafts dir", "path", path)

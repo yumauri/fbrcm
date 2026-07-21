@@ -8,7 +8,9 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -33,11 +35,15 @@ func (m Model) View() string {
 	case phaseImportConflicts:
 		title, body = "Import Remote Config · Resolve Conflicts", m.importConflictLines(inner)
 	case phaseImportWorking:
-		title, body = "Import Remote Config · Preparing", []string{projectLine(m.project), "", "Preparing import preview…", "", helpLine("esc", "cancel")}
+		title, body = "Import Remote Config · Preparing", []string{viewutil.ProjectLine(m.project), "", "Preparing import preview…", "", helpLine("esc", "cancel")}
 	case phaseExportSource:
 		title, body = "Export Remote Config · Source", m.exportSourceLines()
 	case phaseExportPath:
 		title, body = "Export Remote Config · Destination", m.exportPathLines()
+	case phaseDefaultsFormat:
+		title, body = "Download Application Defaults · Format", m.defaultsFormatLines()
+	case phaseDefaultsPath:
+		title, body = "Download Application Defaults · Destination", m.defaultsPathLines()
 	}
 	return renderCard(title, body, inner)
 }
@@ -50,7 +56,7 @@ func (m Model) importFileBaseLines(width int) []string {
 	lines := []string{
 		"Choose a Remote Config JSON file.",
 		"",
-		projectLine(m.project),
+		viewutil.ProjectLine(m.project),
 		"",
 		viewutil.IndentLines(strings.TrimRight(m.picker.View(), "\n"), 1),
 	}
@@ -70,9 +76,14 @@ func (m Model) importOptionBaseLines(width int) []string {
 		typeName = "fbrcm cache"
 	}
 	lines := []string{
-		projectLine(m.project),
+		viewutil.ProjectLine(m.project),
 		styles.PanelMuted.Render("File: ") + styles.PanelText.Render(m.sourcePath),
-		styles.PanelMuted.Render("Source: ") + styles.PanelText.Render(fmt.Sprintf("%s · %d parameters · %d groups · %d conditions", typeName, m.summary.Parameters(), m.summary.Groups, m.summary.Conditions)),
+		styles.PanelMuted.Render("Source: ") + styles.PanelText.Render(strings.Join([]string{
+			typeName,
+			rcdisplay.FormatCount(m.summary.Parameters(), "parameter", "parameters"),
+			rcdisplay.FormatCount(m.summary.Groups, "group", "groups"),
+			rcdisplay.FormatCount(m.summary.Conditions, "condition", "conditions"),
+		}, " · ")),
 		"",
 		styles.PanelMuted.Render("Comma-separate groups and filters; leave optional fields blank for the full file."),
 		"",
@@ -115,7 +126,7 @@ func (m Model) conditionPolicyLabel(policy core.ProjectConditionPolicy) string {
 }
 
 func (m Model) importConflictLines(width int) []string {
-	lines := []string{projectLine(m.project), "", fmt.Sprintf("%d merge conflicts. Choose the value for each item.", len(m.conflicts)), ""}
+	lines := []string{viewutil.ProjectLine(m.project), "", rcdisplay.FormatCount(len(m.conflicts), "merge conflict", "merge conflicts") + ". Choose the value for each item.", ""}
 	rows := min(len(m.conflicts), max(m.height-15, 4))
 	start := max(min(m.conflictCursor-rows+1, len(m.conflicts)-rows), 0)
 	for index := start; index < min(start+rows, len(m.conflicts)); index++ {
@@ -142,7 +153,7 @@ func (m Model) exportSourceLines() []string {
 
 func (m Model) exportSourceBaseLines() []string {
 	rows := []string{"Published Remote Config", "Local draft"}
-	lines := []string{projectLine(m.project), "", "Choose which Remote Config to export:", ""}
+	lines := []string{viewutil.ProjectLine(m.project), "", "Choose which Remote Config to export:", ""}
 	for index, row := range rows {
 		selected := index == 1 && m.exportDraft || index == 0 && !m.exportDraft
 		lines = append(lines, viewutil.SelectorLine(row, selected))
@@ -159,28 +170,61 @@ func (m Model) exportPathBaseLines() []string {
 	if m.exportDraft {
 		source = "local draft"
 	}
-	lines := []string{projectLine(m.project), styles.PanelMuted.Render("Source: ") + styles.PanelText.Render(source), "", "Destination:", "  " + m.pathInput.View()}
+	lines := []string{viewutil.ProjectLine(m.project), styles.PanelMuted.Render("Source: ") + styles.PanelText.Render(source), "", "Destination:", "  " + m.pathInput.View()}
 	if m.errorText != "" {
 		lines = append(lines, "", ioError.Render(m.errorText))
 	}
 	return lines
 }
 
-func projectLine(project core.Project) string {
-	return styles.PanelMuted.Render("Project: ") + styles.PanelText.Render(project.Name+" ("+project.ProjectID+")")
+func (m Model) defaultsFormatLines() []string {
+	return m.appendActionButtons(m.defaultsFormatBaseLines(), m.contentWidth())
+}
+
+func (m Model) defaultsFormatBaseLines() []string {
+	labels := map[firebase.DefaultsFormat]string{
+		firebase.DefaultsFormatJSON:  "JSON · Web",
+		firebase.DefaultsFormatXML:   "XML · Android",
+		firebase.DefaultsFormatPlist: "plist · Apple",
+	}
+	lines := []string{viewutil.ProjectLine(m.project), "", "Choose the application defaults format:", ""}
+	for _, format := range defaultsFormats() {
+		lines = append(lines, viewutil.SelectorLine(labels[format], format == m.defaultsFormat))
+	}
+	return lines
+}
+
+func (m Model) defaultsPathLines() []string {
+	return m.appendActionButtons(m.defaultsPathBaseLines(), m.contentWidth())
+}
+
+func (m Model) defaultsPathBaseLines() []string {
+	lines := []string{
+		viewutil.ProjectLine(m.project),
+		styles.PanelMuted.Render("Format: ") + styles.PanelText.Render(strings.ToLower(string(m.defaultsFormat))),
+		"",
+		"Destination:",
+		"  " + m.pathInput.View(),
+	}
+	if m.errorText != "" {
+		lines = append(lines, "", ioError.Render(m.errorText))
+	}
+	return lines
 }
 
 func renderCard(title string, body []string, inner int) string {
-	renderedTitle, titleWidth := styles.PanelHeaderTitle("", title, true, max(inner-1, 0))
-	lines := []string{ioBorder.Render("╭─") + renderedTitle + ioBorder.Render(strings.Repeat("─", max(inner-titleWidth-1, 0))+"╮")}
+	frameInner := viewutil.PopupInnerWidth(inner)
+	renderedTitle, titleWidth := styles.PanelHeaderTitle("", title, true, max(frameInner-1, 0))
+	lines := []string{ioBorder.Render("╭─") + renderedTitle + ioBorder.Render(strings.Repeat("─", max(frameInner-titleWidth-1, 0))+"╮")}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, ioBorder.Render("│")+viewutil.PopupContentLine("", inner)+ioBorder.Render("│"))
+	}
 	for _, raw := range body {
 		for line := range strings.SplitSeq(raw, "\n") {
-			line = ansi.Truncate(line, inner, "")
-			line = viewutil.PadRight(line, inner)
-			lines = append(lines, ioBorder.Render("│")+line+ioBorder.Render("│"))
+			lines = append(lines, ioBorder.Render("│")+viewutil.PopupContentLine(line, inner)+ioBorder.Render("│"))
 		}
 	}
-	lines = append(lines, ioBorder.Render("╰"+strings.Repeat("─", inner)+"╯"))
+	lines = append(lines, ioBorder.Render("╰"+strings.Repeat("─", frameInner)+"╯"))
 	return strings.Join(lines, "\n")
 }
 
@@ -189,10 +233,10 @@ func (m Model) appendActionButtons(lines []string, inner int) []string {
 	if buttons == "" {
 		return lines
 	}
-	leftPadding := strings.Repeat(" ", max(inner-viewWidth(buttons)-1, 0))
+	leftPadding := strings.Repeat(" ", max(inner-viewWidth(buttons), 0))
 	rendered := strings.Split(buttons, "\n")
 	for i := range rendered {
-		rendered[i] = leftPadding + rendered[i] + " "
+		rendered[i] = leftPadding + rendered[i]
 	}
 	return append(lines, "", strings.Join(rendered, "\n"))
 }
@@ -218,19 +262,23 @@ func (m Model) actionButtonOrigin() (int, int) {
 		base = m.exportSourceBaseLines()
 	case phaseExportPath:
 		base = m.exportPathBaseLines()
+	case phaseDefaultsFormat:
+		base = m.defaultsFormatBaseLines()
+	case phaseDefaultsPath:
+		base = m.defaultsPathBaseLines()
 	default:
 		return 0, 0
 	}
 	cardX, cardY := m.Position()
 	buttons := m.actionButtons().View()
-	return cardX + 1 + max(inner-viewWidth(buttons)-1, 0), cardY + 2 + physicalLines(base)
+	return cardX + 1 + viewutil.PopupPaddingLeft + max(inner-viewWidth(buttons), 0), cardY + 2 + viewutil.PopupPaddingTop + physicalLines(base)
 }
 
 func (m Model) optionSelectorAnchor(row int) (int, int) {
 	cardX, cardY := m.Position()
 	const optionRowsStart = 6
-	rowY := cardY + 1 + optionRowsStart + row
-	return cardX + 1, rowY - 1
+	rowY := cardY + 1 + viewutil.PopupPaddingTop + optionRowsStart + row
+	return cardX + 1 + viewutil.PopupPaddingLeft, rowY - 1
 }
 
 func (m Model) contentWidth() int {
@@ -242,10 +290,10 @@ func (m Model) contentWidth() int {
 	natural := lipgloss.Width(" " + title + " ")
 	for _, raw := range m.importFileBaseLines(maximum) {
 		for line := range strings.SplitSeq(raw, "\n") {
-			natural = max(natural, viewWidth(line)+1)
+			natural = max(natural, viewWidth(line))
 		}
 	}
-	natural = max(natural, viewWidth(m.actionButtons().View())+1)
+	natural = max(natural, viewWidth(m.actionButtons().View()))
 	return min(max(natural, 1), maximum)
 }
 

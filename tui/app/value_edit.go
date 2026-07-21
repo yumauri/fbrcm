@@ -36,7 +36,7 @@ func (m Model) valueEditDialogBody(project core.Project, preview previewValueEdi
 	}
 
 	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		"Edit value or draft changes?",
 		"",

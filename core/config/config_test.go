@@ -96,6 +96,41 @@ func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 }
 
+func TestDecodeAppConfigStrictRejectsUnknownFields(t *testing.T) {
+	_, err := DecodeAppConfig([]byte("powerline_glyphs = true\nunknown = true\n"), true)
+	if err == nil || !strings.Contains(err.Error(), "unknown") {
+		t.Fatalf("DecodeAppConfig strict error = %v, want unknown field", err)
+	}
+
+	cfg, err := DecodeAppConfig([]byte("powerline_glyphs = true\nunknown = true\n"), false)
+	if err != nil {
+		t.Fatalf("DecodeAppConfig non-strict = %v", err)
+	}
+	if cfg.PowerlineGlyphs == nil || !*cfg.PowerlineGlyphs {
+		t.Fatalf("decoded config = %+v", cfg)
+	}
+}
+
+func TestSaveAppConfigAtomicallyReplacesPrivateFile(t *testing.T) {
+	setupTestDirs(t)
+	enabled := true
+	if err := SaveAppConfig(&AppConfig{PowerlineGlyphs: &enabled}); err != nil {
+		t.Fatal(err)
+	}
+	disabled := false
+	if err := SaveAppConfig(&AppConfig{PowerlineGlyphs: &disabled}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := LoadAppConfigStrict()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.PowerlineGlyphs == nil || *loaded.PowerlineGlyphs {
+		t.Fatalf("replaced config = %+v", loaded)
+	}
+	assertFileMode(t, GetGlobalConfigFilePath(), PrivateFileMode)
+}
+
 func TestSwitchProfileWritesConfigToml(t *testing.T) {
 	setupTestDirs(t)
 
@@ -205,6 +240,7 @@ func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 		Name:      "Demo",
 		ProjectID: "demo",
 		AuthID:    "main",
+		Disabled:  true,
 	}}
 	if err := SaveProjects(projects, time.Now()); err != nil {
 		t.Fatalf("SaveProjects returned error: %v", err)
@@ -215,7 +251,7 @@ func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadProjects returned error: %v", err)
 	}
-	if len(loaded) != 1 || loaded[0].ProjectID != "demo" {
+	if len(loaded) != 1 || loaded[0].ProjectID != "demo" || !loaded[0].Disabled {
 		t.Fatalf("LoadProjects = %+v, want demo project", loaded)
 	}
 }
@@ -630,19 +666,19 @@ func TestRenameProfileRejectsExistingTarget(t *testing.T) {
 	}
 }
 
-func TestPurgeProfileRejectsActiveProfile(t *testing.T) {
+func TestDeleteProfileRejectsActiveProfile(t *testing.T) {
 	setupTestDirs(t)
 	if err := SwitchProfile("keep"); err != nil {
 		t.Fatalf("SwitchProfile keep = %v", err)
 	}
 
-	err := PurgeProfile("keep")
-	if err == nil || !strings.Contains(err.Error(), "cannot purge active profile") {
-		t.Fatalf("PurgeProfile active = %v, want rejection", err)
+	err := DeleteProfile("keep")
+	if err == nil || !strings.Contains(err.Error(), "cannot delete active profile") {
+		t.Fatalf("DeleteProfile active = %v, want rejection", err)
 	}
 }
 
-func TestPurgeProfileRemovesInactiveProfile(t *testing.T) {
+func TestDeleteProfileRemovesInactiveProfile(t *testing.T) {
 	setupTestDirs(t)
 	if err := SwitchProfile("active"); err != nil {
 		t.Fatalf("SwitchProfile active = %v", err)
@@ -654,8 +690,8 @@ func TestPurgeProfileRemovesInactiveProfile(t *testing.T) {
 		t.Fatalf("SwitchProfile active again = %v", err)
 	}
 
-	if err := PurgeProfile("temp"); err != nil {
-		t.Fatalf("PurgeProfile temp = %v", err)
+	if err := DeleteProfile("temp"); err != nil {
+		t.Fatalf("DeleteProfile temp = %v", err)
 	}
 	profiles, err := ListProfiles()
 	if err != nil {

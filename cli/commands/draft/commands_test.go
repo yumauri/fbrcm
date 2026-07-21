@@ -50,6 +50,19 @@ func TestPathCommand(t *testing.T) {
 	}
 }
 
+func TestBatchJSONOutputsAreArrays(t *testing.T) {
+	setupCommandTest(t)
+
+	for _, args := range [][]string{
+		{"publish", "--all", "--yes", "--json"},
+		{"discard", "--all", "--yes", "--json"},
+	} {
+		if got := strings.TrimSpace(executeCommand(t, args...)); got != "[]" {
+			t.Fatalf("%v output = %q, want []", args, got)
+		}
+	}
+}
+
 func TestDiffExitCodeAndCorruptDraftRecovery(t *testing.T) {
 	setupCommandTest(t)
 	base := commandRemoteConfig("1", "old")
@@ -128,6 +141,21 @@ func TestRenderListTablePlainText(t *testing.T) {
 		if !strings.Contains(output, want) {
 			t.Fatalf("renderList = %q, want substring %q", output, want)
 		}
+	}
+}
+
+func TestRenderListEmptyTablePlainText(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+
+	output := renderList(nil)
+
+	for _, want := range []string{"┌", "Project ID", "Project", "Base", "Updated", "Changes", "Status"} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("empty renderList = %q, want substring %q", output, want)
+		}
+	}
+	if strings.Contains(output, "No drafts") {
+		t.Fatalf("empty renderList uses special empty-state message: %q", output)
 	}
 }
 

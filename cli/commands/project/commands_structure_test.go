@@ -8,9 +8,15 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmd := New(nil)
-	cmdtest.AssertSubcommands(t, cmd, "export", "import")
+	cmdtest.AssertSubcommands(t, cmd, "show", "open", "export", "import", "defaults")
+	cmdtest.AssertFlag(t, cmd, "show", "update")
+	cmdtest.AssertFlag(t, cmd, "show", "json")
 	cmdtest.AssertFlag(t, cmd, "export", "to")
-	for _, flag := range []string{"from", "group", "filter", "expr", "search", "dry-run", "draft", "remove-all-conditions", "keep-portable-conditions-only", "merge", "override", "merge-resolve"} {
+	cmdtest.AssertFlag(t, cmd, "export", "yes")
+	for _, flag := range []string{"format", "to", "yes"} {
+		cmdtest.AssertFlag(t, cmd, "defaults", flag)
+	}
+	for _, flag := range []string{"from", "group", "filter", "expr", "search", "dry-run", "draft", "remove-all-conditions", "keep-portable-conditions-only", "merge", "override", "merge-resolve", "yes", "json"} {
 		cmdtest.AssertFlag(t, cmd, "import", flag)
 	}
 	importCmd, _, err := cmd.Find([]string{"import"})

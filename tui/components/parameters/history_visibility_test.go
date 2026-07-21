@@ -425,8 +425,11 @@ func TestHistoryVersionPickerRendersAuthorsAlignedInsideCompleteBorder(t *testin
 		t.Fatal("right inactive tab does not have a bottom border")
 	}
 
-	header := ansi.Strip(lines[3])
-	row := ansi.Strip(lines[4])
+	if got := strings.Trim(ansi.Strip(lines[3]), "│ "); got != "" {
+		t.Fatalf("history picker top padding row = %q, want blank", got)
+	}
+	header := ansi.Strip(lines[4])
+	row := ansi.Strip(lines[5])
 	for column, value := range map[string]string{"Published": "2026-07-13", "Author": "alice@example.com"} {
 		if strings.Index(header, column) != strings.Index(row, value) {
 			t.Fatalf("%s column is not aligned:\n%s\n%s", column, header, row)

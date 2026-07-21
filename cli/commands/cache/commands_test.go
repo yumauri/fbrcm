@@ -56,7 +56,7 @@ func TestCachePathJSON(t *testing.T) {
 	}
 }
 
-func TestCachePurgeWithYes(t *testing.T) {
+func TestCacheClearWithYes(t *testing.T) {
 	setupCacheTest(t)
 	if err := config.SaveParametersCache("demo", &config.ParametersCache{
 		RemoteConfig: []byte(`{"version":{"versionNumber":"1"}}`),
@@ -69,38 +69,38 @@ func TestCachePurgeWithYes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	purgeCmd, _, err := New().Find([]string{"purge"})
+	clearCmd, _, err := New().Find([]string{"clear"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := purgeCmd.Flags().Set("yes", "true"); err != nil {
+	if err := clearCmd.Flags().Set("yes", "true"); err != nil {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	purgeCmd.SetOut(&out)
-	if err := purgeCmd.RunE(purgeCmd, nil); err != nil {
-		t.Fatalf("cache purge = %v", err)
+	clearCmd.SetOut(&out)
+	if err := clearCmd.RunE(clearCmd, nil); err != nil {
+		t.Fatalf("cache clear = %v", err)
 	}
-	if !strings.Contains(out.String(), "purged caches") {
+	if !strings.Contains(out.String(), "cleared caches") {
 		t.Fatalf("output = %q", out.String())
 	}
 	if _, err := config.LoadDraft("demo"); err != nil {
-		t.Fatalf("cache purge removed draft: %v", err)
+		t.Fatalf("cache clear removed draft: %v", err)
 	}
 }
 
-func TestCachePurgeEmptyDoesNotPrompt(t *testing.T) {
+func TestCacheClearEmptyDoesNotPrompt(t *testing.T) {
 	setupCacheTest(t)
-	purgeCmd, _, err := New().Find([]string{"purge"})
+	clearCmd, _, err := New().Find([]string{"clear"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	purgeCmd.SetOut(&out)
-	if err := purgeCmd.RunE(purgeCmd, nil); err != nil {
-		t.Fatalf("empty cache purge = %v", err)
+	clearCmd.SetOut(&out)
+	if err := clearCmd.RunE(clearCmd, nil); err != nil {
+		t.Fatalf("empty cache clear = %v", err)
 	}
-	if !strings.Contains(out.String(), "Nothing to purge") {
+	if !strings.Contains(out.String(), "Nothing to clear") {
 		t.Fatalf("output = %q", out.String())
 	}
 }

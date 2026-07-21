@@ -18,15 +18,15 @@ func Load() (State, error) {
 		}
 		cfg = &coreconfig.AppConfig{}
 	}
-	changed := migrateAdminShortcuts(cfg.Keys)
+	changed := MigrateAdminShortcuts(cfg.Keys)
 	if cfg.PowerlineGlyphs == nil {
 		enabled := true
 		cfg.PowerlineGlyphs = &enabled
 		changed = true
 	}
 	powerlineGlyphs = *cfg.PowerlineGlyphs
-	merged := merge(DefaultKeyMap(), cfg.Keys)
-	nextConfig := toConfigMap(merged)
+	merged := Merge(DefaultKeyMap(), cfg.Keys)
+	nextConfig := ToConfigMap(merged)
 	if !reflect.DeepEqual(cfg.Keys, nextConfig) {
 		cfg.Keys = nextConfig
 		changed = true
@@ -44,6 +44,11 @@ func Load() (State, error) {
 // migrateAdminShortcuts updates generated defaults from releases that predate
 // the chorded Accounts and Profiles shortcuts.
 func migrateAdminShortcuts(configured map[string]map[string][]string) bool {
+	return MigrateAdminShortcuts(configured)
+}
+
+// MigrateAdminShortcuts updates recognized legacy generated bindings in place.
+func MigrateAdminShortcuts(configured map[string]map[string][]string) bool {
 	global := configured[string(BlockGlobal)]
 	if global == nil {
 		return false
@@ -73,6 +78,11 @@ func migrateAdminShortcuts(configured map[string]map[string][]string) bool {
 func PowerlineGlyphsEnabled() bool { return powerlineGlyphs }
 
 func merge(defaults KeyMap, configured map[string]map[string][]string) KeyMap {
+	return Merge(defaults, configured)
+}
+
+// Merge applies configured bindings over a complete default key map.
+func Merge(defaults KeyMap, configured map[string]map[string][]string) KeyMap {
 	out := Clone(defaults)
 	for blockName, actions := range configured {
 		block := Block(blockName)
@@ -111,11 +121,28 @@ func cleanKeys(keys []string) []string {
 }
 
 func toConfigMap(m KeyMap) map[string]map[string][]string {
+	return ToConfigMap(m)
+}
+
+// ToConfigMap converts a typed key map to its persisted representation.
+func ToConfigMap(m KeyMap) map[string]map[string][]string {
 	out := make(map[string]map[string][]string, len(m))
 	for block, actions := range m {
 		out[string(block)] = make(map[string][]string, len(actions))
 		for action, keys := range actions {
 			out[string(block)][string(action)] = append([]string(nil), keys...)
+		}
+	}
+	return out
+}
+
+// CloneConfigMap returns a deep copy of a persisted keybinding map.
+func CloneConfigMap(configured map[string]map[string][]string) map[string]map[string][]string {
+	out := make(map[string]map[string][]string, len(configured))
+	for block, actions := range configured {
+		out[block] = make(map[string][]string, len(actions))
+		for action, keys := range actions {
+			out[block][action] = append([]string(nil), keys...)
 		}
 	}
 	return out

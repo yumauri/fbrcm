@@ -73,17 +73,21 @@ type scrollbarState struct {
 }
 
 func renderFrame(title string, body []string, contentWidth int, scrollbar scrollbarState, bodyHeight int, borderStyle lipgloss.Style) string {
-	frameWidth := contentWidth + 5
+	innerWidth := viewutil.PopupInnerWidth(contentWidth)
+	frameWidth := innerWidth + 2
 	top := renderTopBorder(title, frameWidth, borderStyle)
-	lines := []string{" " + top + " ", " " + borderStyle.Render("│  ") + strings.Repeat(" ", contentWidth) + borderStyle.Render(" │") + " "}
+	lines := []string{" " + top + " "}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, " "+borderStyle.Render("│")+viewutil.PopupContentLine("", contentWidth)+borderStyle.Render("│")+" ")
+	}
 	for i, line := range body {
 		rightEdge := borderStyle.Render("│")
 		if scrollbar.visible && i < bodyHeight && i >= scrollbar.thumbStart && i <= scrollbar.thumbEnd {
 			rightEdge = styles.ScrollbarThumb.Render("█")
 		}
-		lines = append(lines, " "+borderStyle.Render("│  ")+padToWidth(line, contentWidth)+borderStyle.Render(" ")+rightEdge+" ")
+		lines = append(lines, " "+borderStyle.Render("│")+viewutil.PopupContentLine(line, contentWidth)+rightEdge+" ")
 	}
-	lines = append(lines, " "+borderStyle.Render("╰"+strings.Repeat("─", contentWidth+3)+"╯")+" ")
+	lines = append(lines, " "+borderStyle.Render("╰"+strings.Repeat("─", innerWidth)+"╯")+" ")
 	return strings.Join(lines, "\n")
 }
 

@@ -12,6 +12,7 @@ const (
 	NoColor       = "NO_COLOR"
 	ConfigDir     = "FBRCM_CONFIG_DIR"
 	CacheDir      = "FBRCM_CACHE_DIR"
+	Editor        = "FBRCM_EDITOR"
 	XDGConfigHome = "XDG_CONFIG_HOME"
 )
 

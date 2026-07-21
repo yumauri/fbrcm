@@ -17,6 +17,7 @@ func buildExpressionEnv(projectID, projectName string, cfg *firebase.RemoteConfi
 		Name:         name,
 		Group:        groupValueForExpr(group),
 		Conditionals: map[string]any{},
+		Usages:       []conditionUsageEnv{},
 	}
 	if cfg == nil {
 		return env
@@ -64,6 +65,7 @@ func expressionEnvTemplate() expressionEnv {
 		Groups:       []string{},
 		Parameters:   map[string]parameterEnv{},
 		Conditionals: map[string]any{},
+		Usages:       []conditionUsageEnv{},
 	}
 }
 

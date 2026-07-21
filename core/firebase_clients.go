@@ -15,6 +15,9 @@ func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) 
 	if err != nil {
 		return nil, err
 	}
+	if project.Disabled {
+		return nil, fmt.Errorf("project %q is disabled; run projects update to rediscover it", projectID)
+	}
 	return s.firebaseServiceForAuth(ctx, project.AuthID)
 }
 
@@ -63,13 +66,13 @@ func (s *Core) authEntry(authID string) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
 		return config.AuthEntry{}, err
 	}
-	authFile, err := config.LoadAuth()
+	authFile, err := loadAuthWithSetupHint()
 	if err != nil {
 		return config.AuthEntry{}, err
 	}
 	auth, ok := authFile.FindAuth(authID)
 	if !ok {
-		return config.AuthEntry{}, fmt.Errorf("auth %q is not configured", authID)
+		return config.AuthEntry{}, authNotConfiguredError(authFile, authID)
 	}
 	return auth, nil
 }

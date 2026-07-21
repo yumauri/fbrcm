@@ -13,12 +13,14 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/components/projectio"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-func TestProjectImportAndExportActionsOpenForOneTarget(t *testing.T) {
+func TestProjectIOActionsOpenForOneTarget(t *testing.T) {
 	svc := newRenameTestService(t)
 	project := core.Project{Name: "Demo", ProjectID: "demo"}
 	m := New(svc)
@@ -36,6 +38,32 @@ func TestProjectImportAndExportActionsOpenForOneTarget(t *testing.T) {
 	if !handled || !next.projectIO.IsOpen() || next.projectIO.Mode() != projectio.ModeExport {
 		t.Fatalf("export action handled=%v open=%v mode=%v", handled, next.projectIO.IsOpen(), next.projectIO.Mode())
 	}
+	next.projectIO = next.projectIO.Close()
+	next, _, handled = next.updateGlobalPanelActionKey("d")
+	if !handled || !next.projectIO.IsOpen() || next.projectIO.Mode() != projectio.ModeDefaults {
+		t.Fatalf("defaults action handled=%v open=%v mode=%v", handled, next.projectIO.IsOpen(), next.projectIO.Mode())
+	}
+}
+
+func TestProjectIOActionsIgnoreDisabledProject(t *testing.T) {
+	m := New(newRenameTestService(t))
+	m.projects, _ = m.projects.Update(messages.ProjectsLoadedMsg{Projects: []core.Project{{
+		Name: "Disabled", ProjectID: "disabled", Disabled: true,
+	}}})
+	m.setActive(panels.Projects)
+
+	for _, action := range []struct {
+		key    string
+		action tuiconfig.Action
+	}{{"i", tuiconfig.ActionImport}, {"e", tuiconfig.ActionExport}, {"d", tuiconfig.ActionDefaults}} {
+		next, cmd, handled := m.updateGlobalPanelActionKey(action.key)
+		if !handled || cmd != nil || next.projectIO.IsOpen() || next.dialog.IsOpen() {
+			t.Fatalf("disabled action %q handled=%v cmd=%v io=%v dialog=%v", action.key, handled, cmd != nil, next.projectIO.IsOpen(), next.dialog.IsOpen())
+		}
+		if enabled, reason := next.contextualHelpActionAvailability(tuiconfig.BlockProjects, action.action); enabled || reason != "project is disabled" {
+			t.Fatalf("disabled action %q availability = %v, %q", action.key, enabled, reason)
+		}
+	}
 }
 
 func TestProjectIOActionsUseCursorProjectRegardlessOfMarkedProjects(t *testing.T) {
@@ -50,7 +78,7 @@ func TestProjectIOActionsUseCursorProjectRegardlessOfMarkedProjects(t *testing.T
 	m.setActive(panels.Projects)
 	m.applyLayout()
 
-	for _, action := range []string{"i", "e"} {
+	for _, action := range []string{"i", "e", "d"} {
 		next, _, handled := m.updateGlobalPanelActionKey(action)
 		if !handled || !next.projectIO.IsOpen() || next.dialog.IsOpen() {
 			t.Fatalf("action %q handled=%v io=%v dialog=%v", action, handled, next.projectIO.IsOpen(), next.dialog.IsOpen())
@@ -87,6 +115,41 @@ func TestExportProjectCmdWritesNormalizedDraft(t *testing.T) {
 	info, err := os.Stat(path)
 	if err != nil || info.Mode().Perm() != 0o600 {
 		t.Fatalf("export mode = %v err=%v", info.Mode().Perm(), err)
+	}
+}
+
+func TestDefaultsExistingDestinationRequiresConfirmationAndBackRestoresForm(t *testing.T) {
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	destination := filepath.Join(t.TempDir(), "defaults.xml")
+	if err := os.WriteFile(destination, []byte("existing"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	m := viewTestModel(100, 30, panels.Projects)
+	m.svc = newRenameTestService(t)
+	m.projectIO, _ = m.projectIO.OpenDefaultsPath(project, destination, firebase.DefaultsFormatXML)
+
+	next, cmd, handled := m.handleProjectDefaultsRequest(projectio.DefaultsRequestedMsg{
+		Project: project,
+		Path:    destination,
+		Format:  firebase.DefaultsFormatXML,
+	})
+	if !handled || cmd != nil || next.projectIO.IsOpen() || !next.dialog.IsOpen() {
+		t.Fatalf("existing destination handled=%v cmd=%v io=%v dialog=%v", handled, cmd != nil, next.projectIO.IsOpen(), next.dialog.IsOpen())
+	}
+	if next.projectDefaults == nil || next.projectDefaults.format != firebase.DefaultsFormatXML {
+		t.Fatalf("defaults session = %#v", next.projectDefaults)
+	}
+	if view := ansi.Strip(next.dialog.View()); !strings.Contains(view, "Overwrite Defaults?") || !strings.Contains(view, "defaults.xml") {
+		t.Fatalf("overwrite dialog missing destination:\n%s", view)
+	}
+
+	next.dialog = next.dialog.Close()
+	next, focusCmd, handled := next.updateAppMessage(projectDefaultsBackMsg{})
+	if !handled || focusCmd == nil || !next.projectIO.IsOpen() || next.projectIO.Mode() != projectio.ModeDefaults {
+		t.Fatalf("back handled=%v cmd=%v io=%v mode=%v", handled, focusCmd != nil, next.projectIO.IsOpen(), next.projectIO.Mode())
+	}
+	if view := ansi.Strip(next.projectIO.View()); !strings.Contains(view, "defaults.xml") || !strings.Contains(view, "Format: xml") {
+		t.Fatalf("restored defaults form missing state:\n%s", view)
 	}
 }
 

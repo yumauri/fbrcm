@@ -68,6 +68,19 @@ func TestCompileExprAndMatchProjectByExpr(t *testing.T) {
 	}
 }
 
+func TestMatchConditionByCompiledExpr(t *testing.T) {
+	compiled, ok := CompileExpr(`usage_count == 0 && priority == 1`, "demo")
+	if !ok || compiled == nil {
+		t.Fatal("CompileExpr failed")
+	}
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	entry := core.ConditionEntry{Name: "unused", Priority: 1}
+	match, ok := MatchConditionByCompiledExpr(compiled, project, entry)
+	if !ok || !match {
+		t.Fatalf("MatchConditionByCompiledExpr = %v/%v", match, ok)
+	}
+}
+
 func TestHighlightFilters(t *testing.T) {
 	filters := ParseFilters([]string{"feat"})
 	got := HighlightFilters("feature_login", filters)

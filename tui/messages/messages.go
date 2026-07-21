@@ -2,6 +2,7 @@ package messages
 
 import (
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
@@ -9,6 +10,10 @@ type ProjectsLoadedMsg struct {
 	Projects []core.Project
 	Source   string
 	Err      error
+}
+
+type ProjectExpressionConfigsLoadedMsg struct {
+	Configs map[string]*firebase.RemoteConfig
 }
 
 type ProjectsSelectionChangedMsg struct {

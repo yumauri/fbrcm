@@ -1,6 +1,12 @@
 package authpicker
 
-import "charm.land/lipgloss/v2"
+import (
+	"strings"
+
+	"charm.land/lipgloss/v2"
+
+	"github.com/yumauri/fbrcm/tui/components/buttonbar"
+)
 
 type Option struct {
 	Key    string
@@ -17,9 +23,12 @@ type Model struct {
 	cursor        int
 	scroll        int
 	open          bool
+	buttons       buttonbar.Model
 }
 
-func New() Model { return Model{} }
+func New() Model {
+	return Model{buttons: newButtonBar()}
+}
 
 func (m Model) SetBounds(x, y, width, height int) Model {
 	m.x, m.y, m.width, m.height = x, y, width, height
@@ -34,6 +43,7 @@ func (m Model) Open(title string, body []string, options []Option, selected int)
 	m.cursor = min(max(selected, 0), max(len(options)-1, 0))
 	m.scroll = 0
 	m.open = true
+	m.buttons = newButtonBar()
 	m.ensureVisible()
 	return m
 }
@@ -45,6 +55,7 @@ func (m Model) Close() Model {
 	m.cursor = 0
 	m.scroll = 0
 	m.open = false
+	m.buttons = newButtonBar()
 	return m
 }
 
@@ -63,6 +74,23 @@ func (m *Model) Move(delta int) {
 	}
 	m.cursor = (m.cursor + delta + len(m.options)) % len(m.options)
 	m.ensureVisible()
+}
+
+func (m *Model) MoveButton(delta int) {
+	m.buttons.Move(delta)
+}
+
+func (m Model) SelectedButton() int {
+	return m.buttons.Selected()
+}
+
+func (m *Model) SelectButtonAt(x, y int) bool {
+	index, ok := m.buttonIndexAt(x, y)
+	if !ok {
+		return false
+	}
+	m.buttons = m.buttons.SetSelected(index)
+	return true
 }
 
 func (m Model) Position() (int, int) {
@@ -86,21 +114,60 @@ func (m *Model) ensureVisible() {
 }
 
 func (m Model) boxSize() (int, int) {
-	contentWidth := lipgloss.Width(m.title)
+	contentWidth := 0
 	for _, line := range m.body {
 		contentWidth = max(contentWidth, lipgloss.Width(line))
 	}
 	for _, option := range m.options {
-		line := option.Label
-		if option.Detail != "" {
-			line += "  ·  " + option.Detail
-		}
-		contentWidth = max(contentWidth, lipgloss.Width(line))
+		contentWidth = max(contentWidth, lipgloss.Width(optionLine(option)))
 	}
-	contentWidth = min(max(contentWidth, 32), max(m.width-8, 1))
+	contentWidth = max(contentWidth, lipgloss.Width(m.buttons.View()))
+	contentWidth = max(contentWidth, lipgloss.Width(m.title)+2)
+	contentWidth = min(contentWidth, max(m.width-7, 1))
+	bodyHeight := len(m.body) + max(m.visibleRows(), 1)
 	extra := 0
 	if len(m.body) > 0 {
-		extra = len(m.body) + 1
+		extra = 1
 	}
-	return contentWidth + 4, m.visibleRows() + 5 + extra
+	bodyHeight += extra
+	return contentWidth + 7, bodyHeight + lipgloss.Height(m.buttons.View()) + 4
+}
+
+func (m Model) contentWidth() int {
+	width, _ := m.boxSize()
+	return max(width-7, 1)
+}
+
+func (m Model) bodyHeight() int {
+	height := len(m.body) + max(m.visibleRows(), 1)
+	if len(m.body) > 0 {
+		height++
+	}
+	return height
+}
+
+func (m Model) buttonIndexAt(x, y int) (int, bool) {
+	boxX, boxY := m.Position()
+	buttons := m.buttons.View()
+	buttonLines := strings.Split(buttons, "\n")
+	buttonX := boxX + 4 + max(m.contentWidth()-lipgloss.Width(buttonLines[0]), 0)
+	buttonY := boxY + m.bodyHeight() + 3
+	if y < buttonY || y >= buttonY+len(buttonLines) {
+		return -1, false
+	}
+	return m.buttons.IndexAt(x-buttonX, y-buttonY)
+}
+
+func newButtonBar() buttonbar.Model {
+	return buttonbar.New([]buttonbar.Button{
+		{Label: "Bind", Variant: buttonbar.VariantAccent},
+		{Label: "Cancel", Variant: buttonbar.VariantNeutral},
+	}).SetFocused(true)
+}
+
+func optionLine(option Option) string {
+	if option.Detail == "" {
+		return option.Label
+	}
+	return option.Label + " · " + option.Detail
 }

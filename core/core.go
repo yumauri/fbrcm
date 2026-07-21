@@ -13,6 +13,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 )
 
 type Core struct {
@@ -60,8 +61,21 @@ func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
 	return nil, "", fmt.Errorf("read projects cache: %w", loadErr)
 }
 
-// BindProjectsAuth binds matched projects to auth id.
-func (s *Core) BindProjectsAuth(filters []string, authID string) ([]Project, error) {
+// ProjectAuthBindingFailure describes a selected project that the requested
+// auth identity did not discover.
+type ProjectAuthBindingFailure struct {
+	Project Project
+	Reason  string
+}
+
+// ProjectAuthBindingResult summarizes a batch auth binding operation.
+type ProjectAuthBindingResult struct {
+	Bound   []Project
+	Skipped []ProjectAuthBindingFailure
+}
+
+// BindProjectsAuth binds matched projects that were discovered by auth id.
+func (s *Core) BindProjectsAuth(filters []string, authID string) (ProjectAuthBindingResult, error) {
 	return s.bindProjectsAuth(authID, func(project Project) bool {
 		return matchProjectFilter(project, filters)
 	})
@@ -73,34 +87,57 @@ func (s *Core) BindProjectIDsAuth(projectIDs []string, authID string) ([]Project
 	for _, projectID := range projectIDs {
 		ids[projectID] = struct{}{}
 	}
-	return s.bindProjectsAuth(authID, func(project Project) bool {
+	result, err := s.bindProjectsAuth(authID, func(project Project) bool {
 		_, ok := ids[project.ProjectID]
 		return ok
 	})
-}
-
-func (s *Core) bindProjectsAuth(authID string, match func(Project) bool) ([]Project, error) {
-	if _, err := s.authEntry(authID); err != nil {
-		return nil, err
-	}
-	projects, err := config.LoadProjects()
 	if err != nil {
 		return nil, err
 	}
-	matched := make([]Project, 0)
+	if len(result.Skipped) > 0 {
+		return result.Bound, fmt.Errorf("auth %q did not discover %s", authID, rcdisplay.FormatCount(len(result.Skipped), "selected project", "selected projects"))
+	}
+	return result.Bound, nil
+}
+
+func (s *Core) bindProjectsAuth(authID string, match func(Project) bool) (ProjectAuthBindingResult, error) {
+	if _, err := s.authEntry(authID); err != nil {
+		return ProjectAuthBindingResult{}, err
+	}
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return ProjectAuthBindingResult{}, err
+	}
+	result := ProjectAuthBindingResult{
+		Bound:   make([]Project, 0),
+		Skipped: make([]ProjectAuthBindingFailure, 0),
+	}
+	matched := 0
 	for i := range projects {
-		if match(projects[i]) {
-			projects[i].AuthID = authID
-			matched = append(matched, projects[i])
+		if !match(projects[i]) {
+			continue
+		}
+		matched++
+		if !contains(projects[i].DiscoveredBy, authID) {
+			result.Skipped = append(result.Skipped, ProjectAuthBindingFailure{
+				Project: projects[i],
+				Reason:  fmt.Sprintf("project was not discovered by auth %q", authID),
+			})
+			continue
+		}
+		projects[i].AuthID = authID
+		projects[i].Disabled = false
+		result.Bound = append(result.Bound, projects[i])
+	}
+	if matched == 0 {
+		return ProjectAuthBindingResult{}, fmt.Errorf("no projects matched")
+	}
+	if len(result.Bound) > 0 {
+		if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
+			return ProjectAuthBindingResult{}, err
 		}
 	}
-	if len(matched) == 0 {
-		return nil, fmt.Errorf("no projects matched")
-	}
-	if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
-		return nil, err
-	}
-	return matched, nil
+	return result, nil
 }
 
 // ProjectByID gets project by id.
@@ -159,23 +196,81 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	return nil
 }
 
-func (s *Core) PurgeProjects() error {
+func (s *Core) ResetProjects() error {
 	logger := corelog.For("core")
-	logger.Info("purge projects cache requested")
-	if err := config.PurgeProjects(); err != nil {
-		logger.Error("purge projects cache failed", "err", err)
-		return fmt.Errorf("purge projects cache: %w", err)
+	logger.Info("reset projects registry requested")
+	if err := config.ResetProjects(); err != nil {
+		logger.Error("reset projects registry failed", "err", err)
+		return fmt.Errorf("reset projects registry: %w", err)
 	}
 
-	logger.Info("purged projects cache")
+	logger.Info("reset projects registry")
 	return nil
+}
+
+// DeleteProjectIDs removes projects and all of their local Remote Config
+// caches, version snapshots, and drafts. It never creates or calls a Firebase
+// client.
+func (s *Core) DeleteProjectIDs(projectIDs []string) ([]Project, error) {
+	ids := make(map[string]struct{}, len(projectIDs))
+	for _, projectID := range projectIDs {
+		if projectID != "" {
+			ids[projectID] = struct{}{}
+		}
+	}
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("no projects matched")
+	}
+
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return nil, err
+	}
+	remaining := make([]Project, 0, len(projects))
+	deleted := make([]Project, 0, len(ids))
+	for _, project := range projects {
+		if _, ok := ids[project.ProjectID]; ok {
+			deleted = append(deleted, project)
+			continue
+		}
+		remaining = append(remaining, project)
+	}
+	if len(deleted) == 0 {
+		return nil, fmt.Errorf("no projects matched")
+	}
+	if len(deleted) != len(ids) {
+		return nil, fmt.Errorf("projects config does not contain %s", rcdisplay.FormatCount(len(ids)-len(deleted), "selected project", "selected projects"))
+	}
+
+	logger := corelog.For("core")
+	logger.Info("delete local projects requested", "count", len(deleted))
+	for _, project := range deleted {
+		if err := config.DeleteParametersCacheForProject(project.ProjectID); err != nil {
+			return nil, fmt.Errorf("delete caches for project %s: %w", project.ProjectID, err)
+		}
+		if err := config.DeleteDraft(project.ProjectID); err != nil {
+			return nil, fmt.Errorf("delete draft for project %s: %w", project.ProjectID, err)
+		}
+	}
+	if err := config.SaveProjects(remaining, time.Now().UTC()); err != nil {
+		return nil, fmt.Errorf("save projects after delete: %w", err)
+	}
+
+	logger.Info("deleted local projects", "count", len(deleted))
+	return deleted, nil
 }
 
 func (s *Core) syncProjects(ctx context.Context, onlyAuthID string) ([]Project, error) {
 	logger := corelog.For("core")
 	logger.Info("syncing projects from firebase")
 
-	authFile, err := config.LoadAuth()
+	var authFile *config.AuthFile
+	var err error
+	if onlyAuthID == "" {
+		authFile, err = loadRequiredAuth()
+	} else {
+		authFile, err = loadAuthWithSetupHint()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +279,7 @@ func (s *Core) syncProjects(ctx context.Context, onlyAuthID string) ([]Project, 
 	if onlyAuthID != "" {
 		auth, ok := authFile.FindAuth(onlyAuthID)
 		if !ok {
-			return nil, fmt.Errorf("auth %q is not configured", onlyAuthID)
+			return nil, authNotConfiguredError(authFile, onlyAuthID)
 		}
 		authEntries = []config.AuthEntry{auth}
 	}

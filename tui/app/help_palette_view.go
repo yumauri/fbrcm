@@ -1,13 +1,12 @@
 package app
 
 import (
-	"fmt"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -26,18 +25,22 @@ func (m Model) helpPaletteView() string {
 	actions := m.helpPalette.filtered(m.helpPaletteActions())
 	listHeight := helpPaletteListHeight(m.height)
 	boxWidth := min(max(m.width-8, 56), 100)
-	innerWidth := max(boxWidth-2, 1)
+	contentWidth := max(boxWidth-2-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 1)
 
 	input := m.helpPalette.input
-	count := fmt.Sprintf("%d actions", len(actions))
-	input.SetWidth(max(innerWidth-lipgloss.Width(count)-1, 1))
+	count := rcdisplay.FormatCount(len(actions), "action", "actions")
+	input.SetWidth(max(contentWidth-lipgloss.Width(count)-1, 1))
 	search := input.View()
-	search += strings.Repeat(" ", max(innerWidth-lipgloss.Width(search)-lipgloss.Width(count)-1, 0))
+	search += strings.Repeat(" ", max(contentWidth-lipgloss.Width(search)-lipgloss.Width(count)-1, 0))
 	search += styles.PanelMuted.Render(count + " ")
 
-	lines := []string{helpPaletteTopBorder(innerWidth), helpPaletteLine(search, innerWidth), helpPaletteSeparator(innerWidth)}
-	lines = append(lines, m.helpPaletteActionLines(actions, listHeight, innerWidth)...)
-	lines = append(lines, helpPaletteSeparator(innerWidth))
+	lines := []string{helpPaletteTopBorder(contentWidth)}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, helpPaletteLine("", contentWidth))
+	}
+	lines = append(lines, helpPaletteLine(search, contentWidth), helpPaletteSeparator(contentWidth))
+	lines = append(lines, m.helpPaletteActionLines(actions, listHeight, contentWidth)...)
+	lines = append(lines, helpPaletteSeparator(contentWidth))
 	status := "Select an action to see what it does"
 	if len(actions) > 0 && m.helpPalette.cursor >= 0 && m.helpPalette.cursor < len(actions) {
 		selected := actions[m.helpPalette.cursor]
@@ -46,9 +49,9 @@ func (m Model) helpPaletteView() string {
 			status += " Unavailable: " + selected.reason
 		}
 	}
-	lines = append(lines, helpPaletteLine(styles.PanelMuted.Render(status), innerWidth))
-	footer := m.helpPaletteFooter(innerWidth)
-	lines = append(lines, helpPaletteLine(footer, innerWidth), helpPaletteBottomBorder(innerWidth))
+	lines = append(lines, helpPaletteLine(styles.PanelMuted.Render(status), contentWidth))
+	footer := m.helpPaletteFooter(contentWidth)
+	lines = append(lines, helpPaletteLine(footer, contentWidth), helpPaletteBottomBorder(contentWidth))
 	return strings.Join(lines, "\n")
 }
 
@@ -127,25 +130,24 @@ func renderHelpPaletteAction(item helpPaletteAction, group string, selected bool
 }
 
 func helpPaletteTopBorder(width int) string {
+	frameInner := viewutil.PopupInnerWidth(width)
 	hint := tuiconfig.ActionKeyHint(tuiconfig.BlockGlobal, tuiconfig.ActionHelp)
 	if len([]rune(hint)) > 1 {
 		hint += " "
 	}
-	title, titleWidth := styles.PanelHeaderTab(hint, "Actions", true, true, max(width-1, 0))
-	fill := max(width-titleWidth-1, 0)
+	title, titleWidth := styles.PanelHeaderTab(hint, "Actions", true, true, max(frameInner-1, 0))
+	fill := max(frameInner-titleWidth-1, 0)
 	return helpPaletteBorderStyle.Render("╭─") + title + helpPaletteBorderStyle.Render(strings.Repeat("─", fill)+"╮")
 }
 
 func helpPaletteSeparator(width int) string {
-	return helpPaletteBorderStyle.Render("├" + strings.Repeat("─", width) + "┤")
+	return helpPaletteBorderStyle.Render("├" + strings.Repeat("─", viewutil.PopupInnerWidth(width)) + "┤")
 }
 
 func helpPaletteBottomBorder(width int) string {
-	return helpPaletteBorderStyle.Render("╰" + strings.Repeat("─", width) + "╯")
+	return helpPaletteBorderStyle.Render("╰" + strings.Repeat("─", viewutil.PopupInnerWidth(width)) + "╯")
 }
 
 func helpPaletteLine(content string, width int) string {
-	content = ansi.Truncate(content, width, "")
-	content += strings.Repeat(" ", max(width-lipgloss.Width(content), 0))
-	return helpPaletteBorderStyle.Render("│") + content + helpPaletteBorderStyle.Render("│")
+	return helpPaletteBorderStyle.Render("│") + viewutil.PopupContentLine(content, width) + helpPaletteBorderStyle.Render("│")
 }

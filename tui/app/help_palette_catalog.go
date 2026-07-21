@@ -129,12 +129,16 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Open project in Firebase"
 		case tuiconfig.ActionMark:
 			return "Mark or unmark project"
+		case tuiconfig.ActionDelete:
+			return "Delete local project"
 		case tuiconfig.ActionBindAuth:
 			return "Bind authentication"
 		case tuiconfig.ActionImport:
 			return "Import Remote Config"
 		case tuiconfig.ActionExport:
 			return "Export Remote Config"
+		case tuiconfig.ActionDefaults:
+			return "Download application defaults"
 		}
 	}
 	if block == tuiconfig.BlockParameters {
@@ -214,7 +218,7 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 		case tuiconfig.ActionSubmit:
 			return "Validate or add authentication"
 		case tuiconfig.ActionDelete:
-			return "Purge authentication"
+			return "Delete authentication"
 		case tuiconfig.ActionUp:
 			return "Select previous authentication"
 		case tuiconfig.ActionDown:
@@ -230,7 +234,7 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 		case tuiconfig.ActionRename:
 			return "Rename profile"
 		case tuiconfig.ActionDelete:
-			return "Purge profile"
+			return "Delete profile"
 		case tuiconfig.ActionUp:
 			return "Select previous profile"
 		case tuiconfig.ActionDown:
@@ -247,6 +251,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Start contains filter"
 		case tuiconfig.ActionFilterExact:
 			return "Start exact filter"
+		case tuiconfig.ActionFilterExpression:
+			return "Start expression filter"
 		case tuiconfig.ActionFilterApply:
 			return "Apply filter"
 		case tuiconfig.ActionFilterCancel:

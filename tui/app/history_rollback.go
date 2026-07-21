@@ -90,7 +90,7 @@ func (m Model) updateHistoryRollbackPreview(msg messages.HistoryRollbackPreviewL
 func (m *Model) openHistoryRollbackConfirmation(msg messages.HistoryRollbackPreviewLoadedMsg) {
 	target := msg.Target.Version
 	body := []string{
-		"Project: " + dialogProjectNameStyle.Render(msg.Project.Name) + " (" + msg.Project.ProjectID + ")",
+		dialogProjectLine(msg.Project),
 		"",
 		"Current: " + rollbackVersionDescription(msg.Current.Version),
 		"Target:  " + rollbackVersionDescription(target),
@@ -159,7 +159,7 @@ func (m Model) updateHistoryRollbackCompleted(msg messages.HistoryRollbackComple
 	title := "Rollback Complete"
 	tone := dialogcmp.ToneSuccess
 	body := []string{
-		"Project: " + dialogProjectNameStyle.Render(msg.Project.Name) + " (" + msg.Project.ProjectID + ")",
+		dialogProjectLine(msg.Project),
 		"",
 		fmt.Sprintf("Published v%s using v%s; previous current version was v%s.", msg.Result.PublishedVersion, msg.Result.SourceVersion, msg.Result.PreviousVersion),
 	}
@@ -187,7 +187,7 @@ func (m Model) updateHistoryRollbackCompleted(msg messages.HistoryRollbackComple
 
 func (m *Model) openHistoryRollbackProgress(title string, project core.Project, version string) {
 	m.dialog = m.dialog.Open(dialogcmp.Config{Title: title, Body: []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		"Target version: v" + version,
 		"",
@@ -204,7 +204,7 @@ func (m *Model) openHistoryRollbackFailure(title, text string) {
 		project = m.historyRollback.request.Project
 	}
 	m.dialog = m.dialog.Open(dialogcmp.Config{Title: title, Body: []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		text,
 	}, Buttons: []dialogcmp.Button{{Label: "Back", Variant: dialogcmp.ButtonVariantAccent, OnPress: historyRollbackCanceledCmd()}}})

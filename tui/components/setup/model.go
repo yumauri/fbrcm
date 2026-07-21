@@ -33,8 +33,8 @@ const (
 	modeAuthenticating
 	modeDiscovering
 	modeSwitching
-	modePurgingAuth
-	modePurgingProfile
+	modeDeletingAuth
+	modeDeletingProfile
 	modeNoProjects
 	modeError
 )
@@ -76,30 +76,30 @@ type CanceledMsg struct{}
 // Ctrl+C remains the unconditional force-quit path.
 type QuitRequestedMsg struct{}
 
-// AuthPurgeRequestedMsg asks the application to open its shared confirmation
+// AuthDeleteRequestedMsg asks the application to open its shared confirmation
 // dialog above the Accounts panel.
-type AuthPurgeRequestedMsg struct {
+type AuthDeleteRequestedMsg struct {
 	AuthID        string
 	BoundProjects int
 }
 
-// AuthPurgeConfirmedMsg resumes an authentication purge after confirmation.
-type AuthPurgeConfirmedMsg struct{ AuthID string }
+// AuthDeleteConfirmedMsg resumes authentication deletion after confirmation.
+type AuthDeleteConfirmedMsg struct{ AuthID string }
 
 // ProfileRenameRequestedMsg asks the application to open its shared inline
 // rename editor over the selected Profiles row.
 type ProfileRenameRequestedMsg struct{ Profile string }
 
-// ProfilePurgeRequestedMsg asks the application to open its shared
+// ProfileDeleteRequestedMsg asks the application to open its shared
 // confirmation dialog above the Profiles panel.
-type ProfilePurgeRequestedMsg struct {
+type ProfileDeleteRequestedMsg struct {
 	Profile    string
 	ConfigPath string
 	CachePath  string
 }
 
-// ProfilePurgeConfirmedMsg resumes a profile purge after confirmation.
-type ProfilePurgeConfirmedMsg struct{ Profile string }
+// ProfileDeleteConfirmedMsg resumes profile deletion after confirmation.
+type ProfileDeleteConfirmedMsg struct{ Profile string }
 
 // ErrorRequestedMsg asks the application to display a standard one-button
 // error dialog above the management popup.
@@ -295,7 +295,7 @@ func (m Model) HelpActionAvailability(block tuiconfig.Block, action tuiconfig.Ac
 				return false, "select an existing profile"
 			}
 			if selected == m.profile {
-				return false, "the active profile cannot be purged"
+				return false, "the active profile cannot be deleted"
 			}
 		}
 	}
@@ -313,13 +313,13 @@ func (m Model) ProfileRenamePosition(width, height int) (ProfileRenameAnchor, bo
 	if m.mode != modeProfiles || m.profileOverride != "" || profile == "" || width <= 0 || height <= 0 {
 		return ProfileRenameAnchor{}, false
 	}
-	contentWidth := min(max(width-12, 48), 72)
+	contentWidth := min(max(width-15, 45), 69)
 	popup := m.PopupView(width, height)
 	popupX := max((width-lipgloss.Width(popup))/2, 0)
 	popupY := max((height-lipgloss.Height(popup))/2, 0)
 	return ProfileRenameAnchor{
-		X:        popupX + 1,
-		Y:        popupY + 2 + m.cursor,
+		X:        popupX + 1 + viewutil.PopupPaddingLeft,
+		Y:        popupY + 2 + viewutil.PopupPaddingTop + m.cursor,
 		Width:    max(lipgloss.Width(profile), 1),
 		MaxWidth: max(contentWidth-3, 1),
 		Profile:  profile,

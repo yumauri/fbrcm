@@ -1,6 +1,10 @@
 package parameters
 
-import "time"
+import (
+	"time"
+
+	"github.com/yumauri/fbrcm/core/firebase"
+)
 
 type Tree struct {
 	Version    string
@@ -8,6 +12,16 @@ type Tree struct {
 	ETag       string
 	Conditions []Condition
 	Groups     []Group
+
+	remoteConfig *firebase.RemoteConfig
+}
+
+// RemoteConfig returns the source config used to build the read-only tree.
+func (t *Tree) RemoteConfig() *firebase.RemoteConfig {
+	if t == nil {
+		return nil
+	}
+	return t.remoteConfig
 }
 
 type Condition struct {

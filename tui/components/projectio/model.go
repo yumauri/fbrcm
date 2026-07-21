@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/importer"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
 	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
@@ -22,6 +23,7 @@ const (
 	ModeNone Mode = iota
 	ModeImport
 	ModeExport
+	ModeDefaults
 )
 
 type phase int
@@ -34,6 +36,8 @@ const (
 	phaseImportWorking
 	phaseExportSource
 	phaseExportPath
+	phaseDefaultsFormat
+	phaseDefaultsPath
 )
 
 type ImportPlanRequestedMsg struct {
@@ -47,6 +51,12 @@ type ExportRequestedMsg struct {
 	Project core.Project
 	Path    string
 	Draft   bool
+}
+
+type DefaultsRequestedMsg struct {
+	Project core.Project
+	Path    string
+	Format  firebase.DefaultsFormat
 }
 
 type optionSelectorKind int
@@ -73,6 +83,7 @@ type Model struct {
 	strategy            core.ProjectImportStrategy
 	conditionPolicy     core.ProjectConditionPolicy
 	exportDraft         bool
+	defaultsFormat      firebase.DefaultsFormat
 	sourceRaw           []byte
 	sourcePath          string
 	summary             importer.Summary
@@ -113,6 +124,7 @@ func New() Model {
 		optionSelector:  moveparam.New(),
 		strategy:        core.ProjectImportMerge,
 		conditionPolicy: core.ProjectImportKeepConditions,
+		defaultsFormat:  firebase.DefaultsFormatJSON,
 	}
 }
 
@@ -160,6 +172,21 @@ func (m Model) OpenExportPath(project core.Project, path string, draft bool) (Mo
 	return m, m.pathInput.Focus()
 }
 
+func (m Model) OpenDefaults(project core.Project) (Model, tea.Cmd) {
+	m = m.reset()
+	m.mode, m.phase, m.project = ModeDefaults, phaseDefaultsFormat, project
+	return m, nil
+}
+
+func (m Model) OpenDefaultsPath(project core.Project, path string, format firebase.DefaultsFormat) (Model, tea.Cmd) {
+	m = m.reset()
+	m.mode, m.phase, m.project = ModeDefaults, phaseDefaultsPath, project
+	m.defaultsFormat = format
+	m.pathInput.SetValue(path)
+	m.pathInput.CursorEnd()
+	return m, m.pathInput.Focus()
+}
+
 func (m Model) reset() Model {
 	m.mode, m.phase = ModeNone, phaseClosed
 	m.project = core.Project{}
@@ -176,6 +203,7 @@ func (m Model) reset() Model {
 	m.optionSelector = m.optionSelector.Close()
 	m.optionSelectorKind = optionSelectorNone
 	m.exportDraft = false
+	m.defaultsFormat = firebase.DefaultsFormatJSON
 	m.strategy = core.ProjectImportMerge
 	m.conditionPolicy = core.ProjectImportKeepConditions
 	m.errorText = ""
@@ -248,6 +276,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.updateExportSource(msg)
 	case phaseExportPath:
 		return m.updateExportPath(msg)
+	case phaseDefaultsFormat:
+		return m.updateDefaultsFormat(msg)
+	case phaseDefaultsPath:
+		return m.updateDefaultsPath(msg)
 	default:
 		return m, nil
 	}
@@ -422,6 +454,81 @@ func (m Model) submitExportPath() (Model, tea.Cmd) {
 		return m, nil
 	}
 	return m, func() tea.Msg { return ExportRequestedMsg{Project: m.project, Path: path, Draft: m.exportDraft} }
+}
+
+func (m Model) updateDefaultsFormat(msg tea.Msg) (Model, tea.Cmd) {
+	key, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return m, nil
+	}
+	if m.buttonsFocused {
+		return m.updateFocusedActionButtons(key.String())
+	}
+	switch key.String() {
+	case "up", "left":
+		m.moveDefaultsFormat(-1)
+	case "down", "right", "space":
+		m.moveDefaultsFormat(1)
+	case "tab":
+		m.focusActionButtons()
+	case "enter":
+		return m.activateActionButton(0)
+	}
+	return m, nil
+}
+
+func (m Model) updateDefaultsPath(msg tea.Msg) (Model, tea.Cmd) {
+	if key, ok := msg.(tea.KeyMsg); ok {
+		if m.buttonsFocused {
+			return m.updateFocusedActionButtons(key.String())
+		}
+		switch key.String() {
+		case "tab":
+			m.focusActionButtons()
+			return m, nil
+		case "enter":
+			return m.submitDefaultsPath()
+		}
+	}
+	var cmd tea.Cmd
+	m.pathInput, cmd = m.pathInput.Update(msg)
+	return m, cmd
+}
+
+func (m *Model) moveDefaultsFormat(delta int) {
+	formats := defaultsFormats()
+	index := 0
+	for i, format := range formats {
+		if format == m.defaultsFormat {
+			index = i
+			break
+		}
+	}
+	m.defaultsFormat = formats[(index+delta+len(formats))%len(formats)]
+}
+
+func (m Model) submitDefaultsPath() (Model, tea.Cmd) {
+	path := strings.TrimSpace(m.pathInput.Value())
+	if path == "" {
+		m.errorText = "destination path is empty"
+		return m, nil
+	}
+	return m, func() tea.Msg {
+		return DefaultsRequestedMsg{Project: m.project, Path: path, Format: m.defaultsFormat}
+	}
+}
+
+func defaultsFormats() []firebase.DefaultsFormat {
+	return []firebase.DefaultsFormat{
+		firebase.DefaultsFormatJSON,
+		firebase.DefaultsFormatXML,
+		firebase.DefaultsFormatPlist,
+	}
+}
+
+func defaultsPath(projectID string, format firebase.DefaultsFormat) string {
+	extension := strings.ToLower(string(format))
+	return filepath.Join(".", projectID+"-remote-config-defaults."+extension)
 }
 
 const (

@@ -11,6 +11,7 @@ import (
 	"github.com/expr-lang/expr/vm"
 	exprruntime "github.com/expr-lang/expr/vm/runtime"
 
+	"github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rootgroup"
 )
@@ -31,6 +32,11 @@ type expressionEnv struct {
 	Default      any                     `expr:"default"`
 	Value        anyValue                `expr:"value"`
 	Conditionals map[string]any          `expr:"conditionals"`
+	Priority     int                     `expr:"priority"`
+	Expression   string                  `expr:"expression"`
+	Color        string                  `expr:"color"`
+	UsageCount   int                     `expr:"usage_count"`
+	Usages       []conditionUsageEnv     `expr:"usages"`
 }
 
 type parameterEnv struct {
@@ -38,6 +44,13 @@ type parameterEnv struct {
 	Default      any            `expr:"default"`
 	Value        anyValue       `expr:"value"`
 	Conditionals map[string]any `expr:"conditionals"`
+}
+
+type conditionUsageEnv struct {
+	Group     string `expr:"group"`
+	Parameter string `expr:"parameter"`
+	Value     any    `expr:"value"`
+	ValueType string `expr:"value_type"`
 }
 
 type rootGroup struct{}
@@ -114,6 +127,28 @@ func (e *Expression) MatchParameter(projectID, projectName string, cfg *firebase
 			if param, ok := groupCfg.Parameters[name]; ok {
 				env = applyParameterScope(env, param)
 			}
+		}
+	}
+	return e.match(env)
+}
+
+func (e *Expression) MatchCondition(projectID, projectName string, entry conditions.Entry) (bool, error) {
+	env := buildExpressionEnv(projectID, projectName, nil, entry.Name, "")
+	env.Priority = entry.Priority
+	env.Expression = entry.Expression
+	env.Color = entry.TagColor
+	env.UsageCount = len(entry.Usages)
+	env.Usages = make([]conditionUsageEnv, len(entry.Usages))
+	for i, usage := range entry.Usages {
+		value := any(usage.Value)
+		if usage.Plain {
+			value = remoteConfigValueForExpr(firebase.RemoteConfigValue{Value: usage.RawValue}, usage.ValueType)
+		}
+		env.Usages[i] = conditionUsageEnv{
+			Group:     usage.GroupLabel,
+			Parameter: usage.ParameterKey,
+			Value:     value,
+			ValueType: usage.ValueType,
 		}
 	}
 	return e.match(env)

@@ -317,7 +317,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		results = append(results, result)
 	}
 	if jsonOut {
-		if err := shared.WriteJSON(cmd, map[string]any{"results": results}); err != nil {
+		if err := shared.WriteJSON(cmd, results); err != nil {
 			return err
 		}
 	} else {
@@ -388,7 +388,7 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 		results = append(results, map[string]any{"project_id": projectID, "status": "discarded", "base_version": baseVersion})
 	}
 	if jsonOut {
-		return shared.WriteJSON(cmd, map[string]any{"results": results})
+		return shared.WriteJSON(cmd, results)
 	}
 	for _, result := range results {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", result["status"], result["project_id"])

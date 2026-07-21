@@ -37,6 +37,28 @@ func TestExportRemoteConfig(t *testing.T) {
 	assertRemoteConfigVersion(t, raw, "7")
 }
 
+func TestDownloadRemoteConfigDefaults(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	const body = `{"flag":"on"}`
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Query().Get("format") != "JSON" {
+			t.Fatalf("format = %q", req.URL.Query().Get("format"))
+		}
+		return jsonResponse(http.StatusOK, body, ""), nil
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	defaults, err := svc.DownloadRemoteConfigDefaults(context.Background(), "demo", firebase.DefaultsFormatJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(defaults) != body {
+		t.Fatalf("defaults = %s, want %s", defaults, body)
+	}
+}
+
 func TestValidateRemoteConfigWithETag(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	seedAuthAndProject(t, svc, "main", "demo")

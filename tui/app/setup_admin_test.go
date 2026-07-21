@@ -12,31 +12,31 @@ import (
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-func TestAccountPurgeUsesSharedDialogAboveManagementPopup(t *testing.T) {
+func TestAccountDeleteUsesSharedDialogAboveManagementPopup(t *testing.T) {
 	m := openAccountsForAdminTest(t)
 
 	next, cmd := m.Update(keyPress('x'))
 	m = next.(Model)
 	if cmd == nil {
-		t.Fatal("purge did not request confirmation")
+		t.Fatal("delete did not request confirmation")
 	}
 	next, _ = m.Update(cmd())
 	m = next.(Model)
 	if !m.dialog.IsOpen() || !m.setup.IsOpen() {
-		t.Fatalf("purge overlay = dialog:%v setup:%v", m.dialog.IsOpen(), m.setup.IsOpen())
+		t.Fatalf("delete overlay = dialog:%v setup:%v", m.dialog.IsOpen(), m.setup.IsOpen())
 	}
 	if setupView := ansi.Strip(m.setup.PopupViewWithFocus(m.width, m.height, false)); !strings.Contains(setupView, "Accounts") || !strings.Contains(setupView, "Profiles") {
 		t.Fatalf("management popup changed while dialog opened:\n%s", setupView)
 	}
 	view := ansi.Strip(m.View().Content)
-	for _, want := range []string{"Purge Authentication?", "Purge", "Cancel"} {
+	for _, want := range []string{"Delete Authentication?", "Delete", "Cancel"} {
 		if !strings.Contains(view, want) {
-			t.Fatalf("purge overlay missing %q:\n%s", want, view)
+			t.Fatalf("delete overlay missing %q:\n%s", want, view)
 		}
 	}
 }
 
-func TestActiveProfilePurgeUsesSingleButtonErrorDialog(t *testing.T) {
+func TestActiveProfileDeleteUsesSingleButtonErrorDialog(t *testing.T) {
 	m := openAccountsForAdminTest(t)
 	m = updateAdminTestMessage(t, m, tea.KeyPressMsg(tea.Key{Code: 'p', Mod: tea.ModCtrl}))
 	m = updateAdminTestMessage(t, m, keyPress('x'))
@@ -45,7 +45,7 @@ func TestActiveProfilePurgeUsesSingleButtonErrorDialog(t *testing.T) {
 		t.Fatalf("active-profile error = dialog:%v setup:%v", m.dialog.IsOpen(), m.setup.IsOpen())
 	}
 	view := ansi.Strip(m.dialog.View())
-	for _, want := range []string{"Cannot Purge Active Profile", "is active", "Close"} {
+	for _, want := range []string{"Cannot Delete Active Profile", "is active", "Close"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("active-profile dialog missing %q:\n%s", want, view)
 		}

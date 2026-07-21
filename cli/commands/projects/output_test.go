@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
@@ -18,6 +19,7 @@ func TestProjectsJSONCopiesFieldsAndAddsURL(t *testing.T) {
 			State:         "ACTIVE",
 			ETag:          "etag",
 			AuthID:        "auth-main",
+			Disabled:      true,
 			DiscoveredBy:  []string{"auth-main"},
 			UpdatedAt:     "2026-06-14T09:10:11Z",
 			SyncedAt:      "2026-06-14T10:11:12Z",
@@ -29,7 +31,7 @@ func TestProjectsJSONCopiesFieldsAndAddsURL(t *testing.T) {
 		t.Fatalf("projectsJSON length = %d, want 1", len(got))
 	}
 	row := got[0]
-	if row.Project != "Project A" || row.ProjectID != "project-a" || row.Number != "123" || row.AuthID != "auth-main" {
+	if row.Project != "Project A" || row.ProjectID != "project-a" || row.Number != "123" || row.AuthID != "auth-main" || !row.Disabled {
 		t.Fatalf("project row = %#v, want Project A/project-a/123/auth-main", row)
 	}
 	if row.URL != firebase.RemoteConfigConsoleURL("project-a") {
@@ -41,15 +43,15 @@ func TestProjectsJSONCopiesFieldsAndAddsURL(t *testing.T) {
 	}
 }
 
-func TestHumanDateTime(t *testing.T) {
-	if got := humanDateTime(""); got != "" {
-		t.Fatalf("humanDateTime(empty) = %q, want empty", got)
+func TestFormatDateTime(t *testing.T) {
+	if got := shared.FormatDateTime(""); got != "" {
+		t.Fatalf("FormatDateTime(empty) = %q, want empty", got)
 	}
-	if got := humanDateTime("not-a-date"); got != "not-a-date" {
-		t.Fatalf("humanDateTime(invalid) = %q, want original", got)
+	if got := shared.FormatDateTime("not-a-date"); got != "not-a-date" {
+		t.Fatalf("FormatDateTime(invalid) = %q, want original", got)
 	}
-	if got := humanDateTime("2026-06-14T09:10:11Z"); !strings.Contains(got, "2026-06-14") || !strings.HasSuffix(got, ":10:11") {
-		t.Fatalf("humanDateTime(valid) = %q, want formatted local date/time", got)
+	if got := shared.FormatDateTime("2026-06-14T09:10:11Z"); !strings.Contains(got, "2026-06-14") || !strings.HasSuffix(got, ":10:11") {
+		t.Fatalf("FormatDateTime(valid) = %q, want formatted local date/time", got)
 	}
 }
 
@@ -65,10 +67,10 @@ func TestRenderProjectsTablePlainText(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 
 	table := renderProjectsTable([]core.Project{
-		{Name: "Project A", ProjectID: "project-a", ProjectNumber: "123", AuthID: "auth-main", UpdatedAt: "2026-06-14T09:10:11Z", SyncedAt: "bad-date"},
+		{Name: "Project A", ProjectID: "project-a", ProjectNumber: "123", AuthID: "auth-main", Disabled: true, UpdatedAt: "2026-06-14T09:10:11Z", SyncedAt: "bad-date"},
 	}, nil, true)
 
-	for _, want := range []string{"Project", "Project ID", "Project A", "project-a", "123", "auth-main", "bad-date", firebase.RemoteConfigConsoleURL("project-a")} {
+	for _, want := range []string{"Project", "Project ID", "Project A", "project-a", "123", "auth-main (disabled)", "bad-date", firebase.RemoteConfigConsoleURL("project-a")} {
 		if !strings.Contains(table, want) {
 			t.Fatalf("renderProjectsTable = %q, want substring %q", table, want)
 		}

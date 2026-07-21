@@ -3,9 +3,11 @@ package auth
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -41,8 +43,26 @@ func TestAuthListEmptyJSON(t *testing.T) {
 	if err := listCmd.RunE(listCmd, nil); err != nil {
 		t.Fatalf("auth list = %v", err)
 	}
-	if !strings.Contains(out.String(), `"auth"`) {
-		t.Fatalf("output = %q", out.String())
+	if got := strings.TrimSpace(out.String()); got != "[]" {
+		t.Fatalf("empty auth JSON = %q, want []", got)
+	}
+}
+
+func TestAuthListJSONMarksDefaultIdentity(t *testing.T) {
+	entries := []config.AuthEntry{
+		{ID: "main", Type: config.AuthTypeGCloud, Label: "Main"},
+		{ID: "work", Type: config.AuthTypeOAuth, Label: "Work"},
+	}
+	raw, err := json.Marshal(newAuthListItems(entries, "work"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []authListItem
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatalf("decode auth list JSON: %v", err)
+	}
+	if len(got) != 2 || got[0].Default || !got[1].Default {
+		t.Fatalf("auth list JSON = %#v", got)
 	}
 }
 
@@ -89,6 +109,74 @@ func TestAuthPathCommand(t *testing.T) {
 		t.Fatalf("auth path = %v", err)
 	}
 	if !strings.Contains(out.String(), "auth-config.json") {
+		t.Fatalf("output = %q", out.String())
+	}
+}
+
+func TestAuthBindDefaultsToAllAndSkipsInaccessibleProjects(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	for _, authID := range []string{"old", "main"} {
+		if _, err := svc.AddGCloudAuth(authID, authID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	projects := []config.Project{
+		{Name: "Allowed", ProjectID: "allowed", AuthID: "old", DiscoveredBy: []string{"old", "main"}},
+		{Name: "Denied", ProjectID: "denied", AuthID: "old", DiscoveredBy: []string{"old"}},
+	}
+	if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := newBindCommand(svc)
+	if err := cmd.Flags().Set("auth", "main"); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("auth bind = %v", err)
+	}
+	if !strings.Contains(out.String(), "bound: allowed -> main") || !strings.Contains(out.String(), "Summary: 1 bound, 1 skipped") {
+		t.Fatalf("output = %q", out.String())
+	}
+	denied, err := svc.ProjectByID("denied")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if denied.AuthID != "old" {
+		t.Fatalf("denied auth = %q, want old", denied.AuthID)
+	}
+}
+
+func TestAuthBindProjectFlagUsesModePrefixedFiltering(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	for _, authID := range []string{"old", "main"} {
+		if _, err := svc.AddGCloudAuth(authID, authID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	projects := []config.Project{
+		{Name: "Alpha App", ProjectID: "alpha", AuthID: "old", DiscoveredBy: []string{"main", "old"}},
+		{Name: "Beta App", ProjectID: "beta", AuthID: "old", DiscoveredBy: []string{"main", "old"}},
+	}
+	if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := newBindCommand(svc)
+	if err := cmd.Flags().Set("auth", "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("project", "=alpha"); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("auth bind = %v", err)
+	}
+	if strings.Contains(out.String(), "beta") || !strings.Contains(out.String(), "Summary: 1 bound, 0 skipped") {
 		t.Fatalf("output = %q", out.String())
 	}
 }

@@ -40,6 +40,32 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case projectExportCompletedMsg:
 		return m.updateProjectExportCompleted(msg)
 
+	case projectio.DefaultsRequestedMsg:
+		return m.handleProjectDefaultsRequest(msg)
+
+	case projectDefaultsOverwriteMsg:
+		if m.projectDefaults == nil {
+			return m, nil, true
+		}
+		session := *m.projectDefaults
+		session.overwrite = true
+		return m, m.downloadProjectDefaultsCmd(session), true
+
+	case projectDefaultsBackMsg:
+		if m.projectDefaults == nil {
+			return m, nil, true
+		}
+		var cmd tea.Cmd
+		m.projectIO, cmd = m.projectIO.OpenDefaultsPath(
+			m.projectDefaults.project,
+			m.projectDefaults.path,
+			m.projectDefaults.format,
+		)
+		return m, cmd, true
+
+	case projectDefaultsCompletedMsg:
+		return m.updateProjectDefaultsCompleted(msg)
+
 	case messages.HistoryRollbackRequestedMsg:
 		return m.beginHistoryRollback(msg)
 
@@ -58,6 +84,9 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 
 	case projectAuthBoundMsg:
 		return m.updateProjectAuthBound(msg)
+
+	case projectsDeletedMsg:
+		return m.updateProjectsDeleted(msg)
 
 	case messages.KeyboardCaptureMsg:
 		if msg.Enabled {

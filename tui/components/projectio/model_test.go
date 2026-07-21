@@ -10,6 +10,8 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 )
 
 func TestImportOptionsAndConflictResolution(t *testing.T) {
@@ -60,13 +62,48 @@ func TestExportPathProducesRequest(t *testing.T) {
 	}
 }
 
+func TestDefaultsFormatAndPathProduceRequest(t *testing.T) {
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	m, _ := New().SetBounds(0, 0, 90, 24).OpenDefaults(project)
+	if m.Mode() != ModeDefaults {
+		t.Fatalf("mode = %v, want defaults", m.Mode())
+	}
+	view := ansi.Strip(m.View())
+	for _, want := range []string{"Download Application Defaults · Format", "JSON · Web", "XML · Android", "plist · Apple"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("format view missing %q:\n%s", want, view)
+		}
+	}
+
+	m, _ = m.Update(key("down"))
+	m, _ = m.Update(key("enter"))
+	if m.phase != phaseDefaultsPath {
+		t.Fatalf("phase = %v, want defaults path", m.phase)
+	}
+	if got := m.pathInput.Value(); got != "demo-remote-config-defaults.xml" {
+		t.Fatalf("default path = %q", got)
+	}
+	m.pathInput.SetValue("android.xml")
+	m, cmd := m.Update(key("enter"))
+	if cmd == nil {
+		t.Fatal("defaults command is nil")
+	}
+	request, ok := cmd().(DefaultsRequestedMsg)
+	if !ok || request.Project.ProjectID != "demo" || request.Path != "android.xml" || request.Format != firebase.DefaultsFormatXML {
+		t.Fatalf("defaults request = %#v", request)
+	}
+	if !m.IsOpen() {
+		t.Fatal("model closed before request was handled")
+	}
+}
+
 func TestOptionsViewIdentifiesProjectAndSource(t *testing.T) {
 	m, _ := New().SetBounds(0, 0, 100, 30).OpenImport(core.Project{Name: "Demo", ProjectID: "demo"})
 	m.phase = phaseImportOptions
 	m.sourcePath = "/tmp/config.json"
 	m.summary = core.ProjectImportSummary{RootParameters: 2, Groups: 1, Conditions: 5, NonPortableConditions: 3}
-	view := m.View()
-	for _, want := range []string{"Demo (demo)", "/tmp/config.json", "2 parameters", "Keep all conditions (5 kept)", "Review Changes", "Cancel"} {
+	view := ansi.Strip(m.View())
+	for _, want := range []string{"Demo (demo)", "/tmp/config.json", "2 parameters", "1 group", "5 conditions", "Keep all conditions (5 kept)", "Review Changes", "Cancel"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("view missing %q:\n%s", want, view)
 		}
@@ -116,6 +153,10 @@ func TestFeatureSelectorsUseProfileSelectorStyle(t *testing.T) {
 	m, _ = New().SetBounds(0, 0, 100, 30).OpenExport(project, true)
 	sources := m.exportSourceLines()
 	assertSelectorRows(t, sources[4:6])
+
+	m, _ = New().SetBounds(0, 0, 100, 30).OpenDefaults(project)
+	formats := m.defaultsFormatLines()
+	assertSelectorRows(t, formats[4:7])
 }
 
 func assertSelectorRows(t *testing.T, rows []string) {
@@ -206,6 +247,8 @@ func TestAffectedStepsRenderClickableButtons(t *testing.T) {
 		{name: "import options cancel", model: importOptionsTestModel(project), label: "Cancel"},
 		{name: "export source cancel", model: exportSourceTestModel(project), label: "Cancel"},
 		{name: "export path cancel", model: exportPathTestModel(project), label: "Cancel"},
+		{name: "defaults format cancel", model: defaultsFormatTestModel(project), label: "Cancel"},
+		{name: "defaults path cancel", model: defaultsPathTestModel(project), label: "Cancel"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -259,8 +302,8 @@ func TestOptionSelectorsKeepClosedRowAlignmentAndOpenWithRightArrow(t *testing.T
 			m.optionCursor = test.row
 			base := ansi.Strip(m.importOptionBaseLines(m.contentWidth())[6+test.row])
 			cardX, _ := m.Position()
-			closedLabelX := cardX + 1 + strings.Index(base, test.label)
-			closedValueX := cardX + 1 + strings.Index(base, test.value)
+			closedLabelX := cardX + 1 + viewutil.PopupPaddingLeft + strings.Index(base, test.label)
+			closedValueX := cardX + 1 + viewutil.PopupPaddingLeft + strings.Index(base, test.value)
 
 			m, _ = m.Update(key("right"))
 			if !m.OptionSelectorOpen() {
@@ -318,6 +361,8 @@ func TestActionButtonsKeepOneCellRightPadding(t *testing.T) {
 		importOptionsTestModel(core.Project{ProjectID: "demo"}),
 		exportSourceTestModel(core.Project{ProjectID: "demo"}),
 		exportPathTestModel(core.Project{ProjectID: "demo"}),
+		defaultsFormatTestModel(core.Project{ProjectID: "demo"}),
+		defaultsPathTestModel(core.Project{ProjectID: "demo"}),
 	}
 	for _, m := range models {
 		label := m.actionButtons().View()
@@ -350,6 +395,16 @@ func exportSourceTestModel(project core.Project) Model {
 
 func exportPathTestModel(project core.Project) Model {
 	m, _ := New().SetBounds(0, 0, 100, 30).OpenExport(project, false)
+	return m
+}
+
+func defaultsFormatTestModel(project core.Project) Model {
+	m, _ := New().SetBounds(0, 0, 100, 30).OpenDefaults(project)
+	return m
+}
+
+func defaultsPathTestModel(project core.Project) Model {
+	m, _ := New().SetBounds(0, 0, 100, 30).OpenDefaultsPath(project, "defaults.json", firebase.DefaultsFormatJSON)
 	return m
 }
 

@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/cli/shared/fileoutput"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	"github.com/yumauri/fbrcm/tui/components/projectio"
 	"github.com/yumauri/fbrcm/tui/messages"
@@ -42,10 +46,28 @@ type projectExportCompletedMsg struct {
 type projectExportOverwriteMsg struct{}
 type projectExportBackMsg struct{}
 
+type projectDefaultsSession struct {
+	project   core.Project
+	path      string
+	format    firebase.DefaultsFormat
+	overwrite bool
+}
+
+type projectDefaultsCompletedMsg struct {
+	session projectDefaultsSession
+	err     error
+}
+
+type projectDefaultsOverwriteMsg struct{}
+type projectDefaultsBackMsg struct{}
+
 func (m Model) openProjectImport() (Model, tea.Cmd, bool) {
 	project, ok := m.projects.CurrentProject()
 	if !ok {
 		m.openErrorDialog("Import Unavailable", core.Project{}, "No project is selected under the Projects panel cursor.")
+		return m, nil, true
+	}
+	if project.Disabled {
 		return m, nil, true
 	}
 	if m.svc == nil {
@@ -63,6 +85,9 @@ func (m Model) openProjectExport() (Model, tea.Cmd, bool) {
 		m.openErrorDialog("Export Unavailable", core.Project{}, "No project is selected under the Projects panel cursor.")
 		return m, nil, true
 	}
+	if project.Disabled {
+		return m, nil, true
+	}
 	if m.svc == nil {
 		m.openErrorDialog("Export Unavailable", project, "Firebase service is unavailable.")
 		return m, nil, true
@@ -74,6 +99,24 @@ func (m Model) openProjectExport() (Model, tea.Cmd, bool) {
 	}
 	var cmd tea.Cmd
 	m.projectIO, cmd = m.projectIO.OpenExport(project, hasDraft)
+	return m, cmd, true
+}
+
+func (m Model) openProjectDefaults() (Model, tea.Cmd, bool) {
+	project, ok := m.projects.CurrentProject()
+	if !ok {
+		m.openErrorDialog("Defaults Unavailable", core.Project{}, "No project is selected under the Projects panel cursor.")
+		return m, nil, true
+	}
+	if project.Disabled {
+		return m, nil, true
+	}
+	if m.svc == nil {
+		m.openErrorDialog("Defaults Unavailable", project, "Firebase service is unavailable.")
+		return m, nil, true
+	}
+	var cmd tea.Cmd
+	m.projectIO, cmd = m.projectIO.OpenDefaults(project)
 	return m, cmd, true
 }
 
@@ -117,7 +160,7 @@ func (m *Model) openProjectImportNoChanges(plan *core.ProjectImportPlan) {
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: "Import Has No Changes",
 		Body: []string{
-			"Project: " + dialogProjectNameStyle.Render(plan.Project.Name) + " (" + plan.Project.ProjectID + ")",
+			dialogProjectLine(plan.Project),
 			"",
 			"The selected import produces no Remote Config changes.",
 		},
@@ -131,10 +174,12 @@ func (m *Model) openProjectImportReview(plan *core.ProjectImportPlan) {
 		strategy = "Replace entire config"
 	}
 	body := []string{
-		"Project: " + dialogProjectNameStyle.Render(plan.Project.Name) + " (" + plan.Project.ProjectID + ")",
+		dialogProjectLine(plan.Project),
 		"",
 		"File: " + plan.SourcePath,
-		fmt.Sprintf("Source: %d parameters · %d groups · %d conditions", plan.Summary.Parameters(), plan.Summary.Groups, plan.Summary.Conditions),
+		"Source: " + rcdisplay.FormatCount(plan.Summary.Parameters(), "parameter", "parameters") +
+			" · " + rcdisplay.FormatCount(plan.Summary.Groups, "group", "groups") +
+			" · " + rcdisplay.FormatCount(plan.Summary.Conditions, "condition", "conditions"),
 		"Strategy: " + strategy,
 		fmt.Sprintf("Conflicts: %d", len(plan.Conflicts)),
 		"",
@@ -187,7 +232,7 @@ func (m Model) updateProjectImportCompleted(msg projectImportCompletedMsg) (Mode
 		Title: "Import Complete",
 		Tone:  dialogcmp.ToneSuccess,
 		Body: []string{
-			"Project: " + dialogProjectNameStyle.Render(msg.plan.Project.Name) + " (" + msg.plan.Project.ProjectID + ")",
+			dialogProjectLine(msg.plan.Project),
 			"",
 			status,
 		},
@@ -223,7 +268,7 @@ func (m *Model) openProjectExportOverwrite(session projectExportSession) {
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: "Overwrite Export?",
 		Body: []string{
-			"Project: " + dialogProjectNameStyle.Render(session.project.Name) + " (" + session.project.ProjectID + ")",
+			dialogProjectLine(session.project),
 			"",
 			"A file already exists at:",
 			session.path,
@@ -272,9 +317,91 @@ func (m Model) updateProjectExportCompleted(msg projectExportCompletedMsg) (Mode
 		Title: "Export Complete",
 		Tone:  dialogcmp.ToneSuccess,
 		Body: []string{
-			"Project: " + dialogProjectNameStyle.Render(msg.session.project.Name) + " (" + msg.session.project.ProjectID + ")",
+			dialogProjectLine(msg.session.project),
 			"",
 			source + " exported to:",
+			msg.session.path,
+		},
+		Buttons: []dialogcmp.Button{
+			{Label: "Copy Path", Variant: dialogcmp.ButtonVariantAccent, OnPress: copyToClipboardCmd(msg.session.path)},
+			{Label: "Close", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
+		},
+	})
+	return m, nil, true
+}
+
+func (m Model) handleProjectDefaultsRequest(request projectio.DefaultsRequestedMsg) (Model, tea.Cmd, bool) {
+	path, err := filepath.Abs(request.Path)
+	if err != nil {
+		m.projectIO = m.projectIO.SetError(err)
+		return m, nil, true
+	}
+	session := projectDefaultsSession{project: request.Project, path: path, format: request.Format}
+	m.projectDefaults = &session
+	if _, statErr := os.Stat(path); statErr == nil {
+		m.projectIO = m.projectIO.Close()
+		m.openProjectDefaultsOverwrite(session)
+		return m, nil, true
+	} else if !os.IsNotExist(statErr) {
+		m.projectIO = m.projectIO.SetError(statErr)
+		return m, nil, true
+	}
+	m.projectIO = m.projectIO.Close()
+	return m, m.downloadProjectDefaultsCmd(session), true
+}
+
+func (m *Model) openProjectDefaultsOverwrite(session projectDefaultsSession) {
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title: "Overwrite Defaults?",
+		Body: []string{
+			dialogProjectLine(session.project),
+			"",
+			"A file already exists at:",
+			session.path,
+			"",
+			"Overwrite it with the downloaded application defaults?",
+		},
+		Buttons: []dialogcmp.Button{
+			{Label: "Overwrite", Variant: dialogcmp.ButtonVariantDanger, OnPress: func() tea.Msg { return projectDefaultsOverwriteMsg{} }},
+			{Label: "Back", Variant: dialogcmp.ButtonVariantAccent, OnPress: func() tea.Msg { return projectDefaultsBackMsg{} }},
+		},
+	})
+}
+
+func (m Model) downloadProjectDefaultsCmd(session projectDefaultsSession) tea.Cmd {
+	return func() tea.Msg {
+		defaults, err := m.svc.DownloadRemoteConfigDefaults(context.Background(), session.project.ProjectID, session.format)
+		if err == nil {
+			if session.overwrite {
+				err = fileoutput.Write(session.path, defaults)
+			} else {
+				err = fileoutput.Create(session.path, defaults)
+			}
+		}
+		return projectDefaultsCompletedMsg{session: session, err: err}
+	}
+}
+
+func (m Model) updateProjectDefaultsCompleted(msg projectDefaultsCompletedMsg) (Model, tea.Cmd, bool) {
+	if msg.err != nil {
+		corelog.For("tui.defaults").Error(
+			"application defaults download failed",
+			"project_id", msg.session.project.ProjectID,
+			"format", msg.session.format,
+			"path", msg.session.path,
+			"err", msg.err,
+		)
+		m.openErrorDialog("Defaults Download Failed", msg.session.project, msg.err.Error())
+		return m, nil, true
+	}
+	m.projectDefaults = nil
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title: "Defaults Downloaded",
+		Tone:  dialogcmp.ToneSuccess,
+		Body: []string{
+			dialogProjectLine(msg.session.project),
+			"",
+			strings.ToLower(string(msg.session.format)) + " application defaults downloaded to:",
 			msg.session.path,
 		},
 		Buttons: []dialogcmp.Button{

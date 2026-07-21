@@ -9,6 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 )
 
 func New(svc *core.Core) *cobra.Command {
@@ -16,8 +17,83 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "projects",
 		Short: "Manage Firebase projects for Remote Config",
 	}
-	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newDiffCommand(svc), newPromoteCommand(svc), newPathCommand(), newPurgeCommand(svc))
+	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newForgetCommand(svc), newDiffCommand(svc), newPromoteCommand(svc), newPathCommand(), newResetCommand(svc))
 	return projectsCmd
+}
+
+func newForgetCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "forget",
+		Short: "Forget locally tracked projects and delete their local data",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			projects, err := config.LoadProjects()
+			if err != nil {
+				return err
+			}
+			filters, err := cmd.Flags().GetStringArray("filter")
+			if err != nil {
+				return err
+			}
+			projects = shared.FilterProjects(projects, filters)
+			rawExpr, err := cmd.Flags().GetString("expr")
+			if err != nil {
+				return err
+			}
+			projects, err = shared.FilterProjectsByCachedExpr(svc, projects, rawExpr)
+			if err != nil {
+				return err
+			}
+			if len(projects) == 0 {
+				return fmt.Errorf("no projects matched")
+			}
+
+			yes, err := cmd.Flags().GetBool("yes")
+			if err != nil {
+				return err
+			}
+			if !yes {
+				confirm := shared.NewConfirmation(
+					projectForgetConfirmationPrompt(len(projects)),
+					shared.ConfirmationOptions{
+						Destructive: true,
+						Notes:       []shared.ConfirmationNote{{Text: "Firebase projects will not be deleted."}},
+					},
+				)
+				ok, err := confirm.RunPrompt()
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return nil
+				}
+			}
+
+			projectIDs := make([]string, 0, len(projects))
+			for _, project := range projects {
+				projectIDs = append(projectIDs, project.ProjectID)
+			}
+			deleted, err := svc.DeleteProjectIDs(projectIDs)
+			if err != nil {
+				return err
+			}
+			for _, project := range deleted {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 forgot project: %s (%s)\n", project.Name, project.ProjectID)
+			}
+			return nil
+		},
+	}
+	shared.AddProjectListFilterFlag(cmd)
+	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression using local cache only")
+	shared.AddYesFlag(cmd, "Skip confirmation dialog")
+	return cmd
+}
+
+func projectForgetConfirmationPrompt(count int) string {
+	return fmt.Sprintf(
+		"Forget %s and delete all associated local caches, versions, and drafts?",
+		rcdisplay.FormatCount(count, "project", "projects"),
+	)
 }
 
 func newListCommand(svc *core.Core) *cobra.Command {
@@ -110,10 +186,10 @@ func newPathCommand() *cobra.Command {
 	return cmd
 }
 
-func newPurgeCommand(svc *core.Core) *cobra.Command {
+func newResetCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "purge",
-		Short: "Delete cached projects config file",
+		Use:   "reset",
+		Short: "Reset the cached projects registry",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
@@ -121,8 +197,11 @@ func newPurgeCommand(svc *core.Core) *cobra.Command {
 			}
 			if !yes {
 				confirm := shared.NewConfirmation(
-					fmt.Sprintf("Delete cached projects config file %s?", config.GetProjectsFilePath()),
-					shared.ConfirmationOptions{Destructive: true},
+					fmt.Sprintf("Reset cached projects registry by deleting %s?", config.GetProjectsFilePath()),
+					shared.ConfirmationOptions{
+						Destructive: true,
+						Notes:       []shared.ConfirmationNote{{Text: "Remote Config snapshots, cached versions, and drafts will not be deleted."}},
+					},
 				)
 				ok, err := confirm.RunPrompt()
 				if err != nil {
@@ -133,11 +212,11 @@ func newPurgeCommand(svc *core.Core) *cobra.Command {
 				}
 			}
 
-			if err := svc.PurgeProjects(); err != nil {
+			if err := svc.ResetProjects(); err != nil {
 				return err
 			}
 
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged: %s\n", config.GetProjectsFilePath())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 reset projects registry: %s\n", config.GetProjectsFilePath())
 			return nil
 		},
 	}

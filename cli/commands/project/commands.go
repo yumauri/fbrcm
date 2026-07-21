@@ -10,6 +10,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/browser"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -17,10 +18,25 @@ import (
 func New(svc *core.Core) *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:   "project",
-		Short: "Export and import project Remote Config",
+		Short: "Manage individual project Remote Config",
 	}
-	projectCmd.AddCommand(newExportCommand(svc), newImportCommand(svc))
+	projectCmd.AddCommand(newShowCommand(svc), newOpenCommand(svc, browser.OpenURL), newExportCommand(svc), newImportCommand(svc), newDefaultsCommand(svc))
 	return projectCmd
+}
+
+func newOpenCommand(svc *core.Core, openURL func(string) error) *cobra.Command {
+	return &cobra.Command{
+		Use:   "open <project>",
+		Short: "Open project Remote Config in the Firebase console",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			project, err := shared.ResolveProjectArg(context.Background(), cmd, svc, args[0])
+			if err != nil {
+				return err
+			}
+			return openURL(firebase.RemoteConfigConsoleURL(project.ProjectID))
+		},
+	}
 }
 
 func newExportCommand(svc *core.Core) *cobra.Command {
@@ -34,12 +50,24 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 
-			raw, _, err := svc.ExportRemoteConfig(context.Background(), project.ProjectID)
+			toPath, err := cmd.Flags().GetString("to")
 			if err != nil {
 				return err
 			}
+			yes, err := cmd.Flags().GetBool("yes")
+			if err != nil {
+				return err
+			}
+			overwrite := false
+			if toPath != "" {
+				var proceed bool
+				overwrite, proceed, err = shared.ConfirmFileOverwrite(cmd, toPath, yes)
+				if err != nil || !proceed {
+					return err
+				}
+			}
 
-			toPath, err := cmd.Flags().GetString("to")
+			raw, _, err := svc.ExportRemoteConfig(context.Background(), project.ProjectID)
 			if err != nil {
 				return err
 			}
@@ -49,7 +77,11 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 
-			if err := rc.WriteRemoteConfigFile(toPath, raw); err != nil {
+			write := rc.CreateRemoteConfigFile
+			if overwrite {
+				write = rc.WriteRemoteConfigFile
+			}
+			if err := write(toPath, raw); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported: %s\n", toPath)
@@ -57,6 +89,7 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 		},
 	}
 	cmd.Flags().String("to", "", "Write Remote Config JSON to file path")
+	shared.AddYesFlag(cmd, "Overwrite an existing destination without confirmation")
 	return cmd
 }
 
@@ -93,6 +126,8 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("merge", false, "Merge imported config into current project config")
 	cmd.Flags().Bool("override", false, "Replace current project config with imported config")
 	cmd.Flags().String("merge-resolve", "", "Conflict resolution for merge: current or import")
+	shared.AddYesFlag(cmd, "Skip final import confirmation")
+	cmd.Flags().Bool("json", false, "Print import result as JSON")
 	cmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "keep-portable-conditions-only")
 	cmd.MarkFlagsMutuallyExclusive("merge", "override")
 	return cmd

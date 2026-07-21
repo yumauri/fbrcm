@@ -10,6 +10,50 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
+const authSetupHint = "Set up authentication by running `fbrcm` for guided setup, or see `fbrcm auth add --help` for CLI options."
+
+type authSetupRequiredError struct {
+	cause error
+}
+
+func (e authSetupRequiredError) Error() string {
+	return e.cause.Error() + "\n\n" + authSetupHint
+}
+
+func (e authSetupRequiredError) Unwrap() error {
+	return e.cause
+}
+
+func loadAuthWithSetupHint() (*config.AuthFile, error) {
+	authFile, err := config.LoadAuth()
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, authSetupRequiredError{cause: err}
+		}
+		return nil, err
+	}
+	return authFile, nil
+}
+
+func loadRequiredAuth() (*config.AuthFile, error) {
+	authFile, err := loadAuthWithSetupHint()
+	if err != nil {
+		return nil, err
+	}
+	if len(authFile.Auth) == 0 {
+		return nil, authSetupRequiredError{cause: errors.New("no auth identities configured")}
+	}
+	return authFile, nil
+}
+
+func authNotConfiguredError(authFile *config.AuthFile, authID string) error {
+	err := fmt.Errorf("auth %q is not configured", authID)
+	if len(authFile.Auth) == 0 {
+		return authSetupRequiredError{cause: err}
+	}
+	return err
+}
+
 // ListAuth lists configured auth identities.
 func (s *Core) ListAuth() ([]config.AuthEntry, string, error) {
 	auth, err := config.LoadAuthOrEmpty()
@@ -145,8 +189,8 @@ func (s *Core) AuthPaths(authID string) (config.AuthEntry, AuthPaths, error) {
 	return auth, paths, nil
 }
 
-// PurgeAuth removes auth identity files and registry entry.
-func (s *Core) PurgeAuth(authID string) (config.AuthEntry, AuthPaths, error) {
+// DeleteAuth removes an auth identity's files and registry entry.
+func (s *Core) DeleteAuth(authID string) (config.AuthEntry, AuthPaths, error) {
 	authFile, err := config.LoadAuthOrEmpty()
 	if err != nil {
 		return config.AuthEntry{}, AuthPaths{}, err

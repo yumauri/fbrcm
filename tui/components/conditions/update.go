@@ -64,10 +64,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			break
 		}
 		k := msg.String()
-		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
-			cmd := m.filter.Activate(mode)
+		if !m.filter.ExpressionFocused() && tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterExpression, k) {
+			cmd := m.filter.ActivateExpression()
 			m.syncVisible()
 			return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true), m.selectionChangedCmd(false))
+		}
+		if !m.filter.ExpressionFocused() {
+			if mode, ok := tuiconfig.FilterModeForKey(k); ok {
+				cmd := m.filter.Activate(mode)
+				m.syncVisible()
+				return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true), m.selectionChangedCmd(false))
+			}
 		}
 		if m.filter.Focused() {
 			switch {

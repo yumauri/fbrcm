@@ -16,6 +16,7 @@ import (
 	deletecmd "github.com/yumauri/fbrcm/cli/commands/delete"
 	doctorcmd "github.com/yumauri/fbrcm/cli/commands/doctor"
 	draftcmd "github.com/yumauri/fbrcm/cli/commands/draft"
+	duplicatecmd "github.com/yumauri/fbrcm/cli/commands/duplicate"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
 	groupscmd "github.com/yumauri/fbrcm/cli/commands/groups"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
@@ -27,6 +28,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
+	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
@@ -36,11 +38,22 @@ func isProfileCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "profile" || strings.HasPrefix(cmd.CommandPath(), "fbrcm profile")
 }
 
+func isConfigCommand(cmd *cobra.Command) bool {
+	return cmd.Name() == "config" || strings.HasPrefix(cmd.CommandPath(), "fbrcm config")
+}
+
 func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
+	return newRootCommandWithOfflineInit(s, version, commit, date, firebase.InitOfflineMode)
+}
+
+func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, initOfflineMode func()) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "fbrcm",
 		Short: "Firebase Remote Config manager",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() == "help" || isConfigCommand(cmd) {
+				return nil
+			}
 			profileName, err := cmd.Flags().GetString("profile")
 			if err != nil {
 				return err
@@ -48,12 +61,14 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 			if err := config.SetProfileOverride(profileName); err != nil {
 				return fmt.Errorf("select profile: %w", err)
 			}
-			if isProfileCommand(cmd) || cmd.Name() == "doctor" || cmd.Name() == "help" {
+			if isProfileCommand(cmd) || cmd.Name() == "doctor" {
+				initOfflineMode()
 				return nil
 			}
 			if err := config.EnsureActiveProfile(); err != nil {
 				return fmt.Errorf("ensure active profile: %w", err)
 			}
+			initOfflineMode()
 			return nil
 		},
 	}
@@ -70,6 +85,7 @@ func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	rootCmd.AddCommand(deletecmd.New(s))
 	rootCmd.AddCommand(doctorcmd.New(s))
 	rootCmd.AddCommand(draftcmd.New(s))
+	rootCmd.AddCommand(duplicatecmd.New(s))
 	rootCmd.AddCommand(getcmd.New(s))
 	rootCmd.AddCommand(groupscmd.New(s))
 	rootCmd.AddCommand(profilecmd.New())

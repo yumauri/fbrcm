@@ -409,7 +409,7 @@ func (m Model) renderParameterValueWithBase(value core.ParametersValue, selected
 
 func (m Model) renderHighlightedParameterKey(text string, baseStyle lipgloss.Style, selected bool) string {
 	query := m.filter.Value()
-	if query == "" {
+	if query == "" || m.filter.ExpressionMode() {
 		return baseStyle.Render(text)
 	}
 

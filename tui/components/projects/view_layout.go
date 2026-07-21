@@ -37,9 +37,9 @@ func (m *Model) moveCursor(delta int) {
 	m.syncViewport()
 }
 
-func (m *Model) toggleCurrentSelection() {
-	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
-		return
+func (m *Model) toggleCurrentSelection() bool {
+	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) || m.projects[m.cursor].Disabled {
+		return false
 	}
 
 	projectID := m.projects[m.cursor].ProjectID
@@ -50,11 +50,12 @@ func (m *Model) toggleCurrentSelection() {
 	}
 
 	m.syncViewport()
+	return true
 }
 
-func (m *Model) selectOnlyCurrent() {
-	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
-		return
+func (m *Model) selectOnlyCurrent() bool {
+	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) || m.projects[m.cursor].Disabled {
+		return false
 	}
 
 	projectID := m.projects[m.cursor].ProjectID
@@ -63,6 +64,7 @@ func (m *Model) selectOnlyCurrent() {
 	}
 
 	m.syncViewport()
+	return true
 }
 
 // SelectOnly replaces the current project selection and moves the cursor to
@@ -72,6 +74,9 @@ func (m *Model) SelectOnly(projectID string) tea.Cmd {
 	found := false
 	for _, project := range m.allProjects {
 		if project.ProjectID == projectID {
+			if project.Disabled {
+				return nil
+			}
 			found = true
 			break
 		}
@@ -119,12 +124,25 @@ func (m Model) selectedProjects() []core.Project {
 
 	projects := make([]core.Project, 0, len(m.selected))
 	for _, project := range m.allProjects {
-		if _, ok := m.selected[project.ProjectID]; ok {
+		if _, ok := m.selected[project.ProjectID]; ok && !project.Disabled {
 			projects = append(projects, project)
 		}
 	}
 
 	return projects
+}
+
+func (m *Model) dropDisabledSelections() bool {
+	changed := false
+	for _, project := range m.allProjects {
+		if project.Disabled {
+			if _, selected := m.selected[project.ProjectID]; selected {
+				delete(m.selected, project.ProjectID)
+				changed = true
+			}
+		}
+	}
+	return changed
 }
 
 func (m *Model) ensureCursorVisible() {

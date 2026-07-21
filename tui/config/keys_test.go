@@ -17,6 +17,7 @@ func TestMatchesDefaultKeyMap(t *testing.T) {
 		{BlockGlobal, ActionFocusDetails, "5", true},
 		{BlockConditions, ActionColor, "c", true},
 		{BlockFilter, ActionFilterFuzzy, "~", true},
+		{BlockFilter, ActionFilterExpression, ":", true},
 		{BlockParameters, ActionPublish, "p", true},
 		{BlockJSONInput, ActionSave, "ctrl+s", true},
 		{BlockJSONInput, ActionSave, "ctrl+enter", true},

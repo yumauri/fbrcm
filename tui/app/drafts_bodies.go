@@ -24,7 +24,7 @@ func (m Model) deleteDialogBody(project core.Project, groupKey, paramKey string)
 
 	diffText, hasChanges := rcdiff.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		"Delete parameter or draft changes?",
 	}
@@ -51,7 +51,7 @@ func (m Model) deleteGroupDialogBody(project core.Project, groupKey string) ([]s
 
 	diffText, hasChanges := rcdiff.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		"Delete group or draft changes?",
 	}
@@ -79,7 +79,7 @@ func (m Model) deleteConditionalValueDialogBody(project core.Project, groupKey, 
 
 	diffText, hasChanges := rcdiff.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		"Delete conditional value or draft changes?",
 	}
@@ -112,7 +112,7 @@ func (m Model) draftDialogBody(project core.Project, mode dialogMode) ([]string,
 	}
 
 	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 	}
 	if mode == dialogModePublishDraft {
@@ -152,7 +152,7 @@ func (m Model) previewDialogBody(project core.Project, prompt, unchangedErr stri
 	}
 
 	lines := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		prompt,
 		"",

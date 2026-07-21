@@ -9,6 +9,19 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 )
 
+type authListItem struct {
+	config.AuthEntry
+	Default bool `json:"default"`
+}
+
+func newAuthListItems(entries []config.AuthEntry, defaultAuthID string) []authListItem {
+	items := make([]authListItem, len(entries))
+	for i, entry := range entries {
+		items[i] = authListItem{AuthEntry: entry, Default: entry.ID == defaultAuthID}
+	}
+	return items
+}
+
 func renderAuthTable(entries []config.AuthEntry, defaultAuthID string) string {
 	rows := make([][]string, 0, len(entries))
 	idWidth := lipgloss.Width("Auth")

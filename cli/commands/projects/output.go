@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image/color"
 	"strings"
-	"time"
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
@@ -83,21 +82,21 @@ func renderProjectsTable(projects []core.Project, highlightFilters []shared.Quer
 
 		projectCell := renderHighlightedText(project.Name, clistyles.PanelText, nameHighlights, rowBG)
 		idCell := renderHighlightedText(project.ProjectID, clistyles.PanelMuted, idHighlights, rowBG)
-		updatedAt := humanDateTime(project.UpdatedAt)
-		syncedAt := humanDateTime(project.SyncedAt)
+		updatedAt := shared.FormatDateTime(project.UpdatedAt)
+		syncedAt := shared.FormatDateTime(project.SyncedAt)
 
 		row := []string{
 			projectCell,
 			idCell,
 			project.ProjectNumber,
-			project.AuthID,
+			projectAuthLabel(project),
 			updatedAt,
 			syncedAt,
 		}
 		projectWidth = max(projectWidth, lipgloss.Width(project.Name))
 		idWidth = max(idWidth, lipgloss.Width(project.ProjectID))
 		numberWidth = max(numberWidth, lipgloss.Width(project.ProjectNumber))
-		authWidth = max(authWidth, lipgloss.Width(project.AuthID))
+		authWidth = max(authWidth, lipgloss.Width(projectAuthLabel(project)))
 		updatedAtWidth = max(updatedAtWidth, lipgloss.Width(updatedAt))
 		syncedAtWidth = max(syncedAtWidth, lipgloss.Width(syncedAt))
 		if withURL {
@@ -153,36 +152,19 @@ func renderProjectsTable(projects []core.Project, highlightFilters []shared.Quer
 	return tbl.String()
 }
 
-type projectJSON struct {
-	Project      string   `json:"project"`
-	ProjectID    string   `json:"project_id"`
-	Number       string   `json:"number,omitempty"`
-	State        string   `json:"state,omitempty"`
-	ETag         string   `json:"etag,omitempty"`
-	AuthID       string   `json:"auth_id"`
-	DiscoveredBy []string `json:"discovered_by,omitempty"`
-	UpdatedAt    string   `json:"updated_at,omitempty"`
-	SyncedAt     string   `json:"synced_at,omitempty"`
-	URL          string   `json:"url,omitempty"`
+func projectAuthLabel(project core.Project) string {
+	if project.Disabled {
+		return project.AuthID + " (disabled)"
+	}
+	return project.AuthID
 }
+
+type projectJSON = shared.ProjectJSON
 
 func projectsJSON(projects []core.Project, withURL bool) []projectJSON {
 	out := make([]projectJSON, len(projects))
 	for i, project := range projects {
-		out[i] = projectJSON{
-			Project:      project.Name,
-			ProjectID:    project.ProjectID,
-			Number:       project.ProjectNumber,
-			State:        project.State,
-			ETag:         project.ETag,
-			AuthID:       project.AuthID,
-			DiscoveredBy: append([]string(nil), project.DiscoveredBy...),
-			UpdatedAt:    project.UpdatedAt,
-			SyncedAt:     project.SyncedAt,
-		}
-		if withURL {
-			out[i].URL = firebase.RemoteConfigConsoleURL(project.ProjectID)
-		}
+		out[i] = shared.NewProjectJSON(project, withURL)
 	}
 	return out
 }
@@ -224,17 +206,4 @@ func applyBackground(style lipgloss.Style, bg color.Color) lipgloss.Style {
 		return style
 	}
 	return style.Background(bg)
-}
-
-func humanDateTime(value string) string {
-	if value == "" {
-		return ""
-	}
-
-	t, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return value
-	}
-
-	return t.Local().Format("2006-01-02 15:04:05")
 }

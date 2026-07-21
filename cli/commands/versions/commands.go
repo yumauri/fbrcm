@@ -53,7 +53,7 @@ func newVersionsListCommand(svc *core.Core) *cobra.Command {
 		}
 		jsonOut, _ := cmd.Flags().GetBool("json")
 		if jsonOut {
-			return shared.WriteJSON(cmd, map[string]any{"project": project, "versions": result.Versions, "next_page_token": result.NextPageToken})
+			return shared.WriteJSON(cmd, versionListJSON(result))
 		}
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\n\n", project.Name, project.ProjectID)
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderVersionsTable(result.Versions, cached))
@@ -68,6 +68,12 @@ func newVersionsListCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("json", false, "Print versions as JSON")
 	cmd.MarkFlagsMutuallyExclusive("all", "limit")
 	return cmd
+}
+
+func versionListJSON(result core.RemoteConfigVersionList) []core.RemoteConfigVersionEntry {
+	items := make([]core.RemoteConfigVersionEntry, len(result.Versions))
+	copy(items, result.Versions)
+	return items
 }
 
 func timeFlag(cmd *cobra.Command, name string) (time.Time, error) {
@@ -249,18 +255,31 @@ func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 		if err != nil {
 			return err
 		}
+		to, _ := cmd.Flags().GetString("to")
+		yes, _ := cmd.Flags().GetBool("yes")
+		overwrite := false
+		if to != "" {
+			var proceed bool
+			overwrite, proceed, err = shared.ConfirmFileOverwrite(cmd, to, yes)
+			if err != nil || !proceed {
+				return err
+			}
+		}
 		cached, _ := cmd.Flags().GetBool("cached")
 		resolved, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, args[1], cached)
 		if err != nil {
 			return err
 		}
-		to, _ := cmd.Flags().GetString("to")
 		if to == "" {
 			body := rc.TrimTrailingLineBreaks(rc.NormalizeExportJSON(resolved.Cache.RemoteConfig))
 			_, err = cmd.OutOrStdout().Write(body)
 			return err
 		}
-		if err := rc.WriteRemoteConfigFile(to, resolved.Cache.RemoteConfig); err != nil {
+		write := rc.CreateRemoteConfigFile
+		if overwrite {
+			write = rc.WriteRemoteConfigFile
+		}
+		if err := write(to, resolved.Cache.RemoteConfig); err != nil {
 			return err
 		}
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported version %s: %s\n", resolved.Version.VersionNumber, to)
@@ -268,6 +287,7 @@ func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 	}}
 	cmd.Flags().String("to", "", "Write Remote Config JSON to file path")
 	cmd.Flags().Bool("cached", false, "Require a local snapshot and do not contact Firebase")
+	shared.AddYesFlag(cmd, "Overwrite an existing destination without confirmation")
 	return cmd
 }
 

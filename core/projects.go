@@ -31,17 +31,27 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 	for _, project := range existing {
 		byID[project.ProjectID] = project
 	}
+	incomingIDs := make(map[string]struct{}, len(incoming))
+	for _, project := range incoming {
+		incomingIDs[project.ProjectID] = struct{}{}
+	}
 
 	updatedAt := now.Format(time.RFC3339)
 	mergedByID := make(map[string]config.Project, len(existing)+len(incoming))
-	if onlyAuthID != "" {
-		for _, project := range existing {
-			mergedByID[project.ProjectID] = project
-		}
+	for _, project := range existing {
+		mergedByID[project.ProjectID] = project
 	}
 	for _, project := range incoming {
 		if previous, ok := byID[project.ProjectID]; ok {
-			project.AuthID = chooseProjectAuth(previous.AuthID, project.DiscoveredBy, defaultAuthID, authIDs)
+			if onlyAuthID != "" {
+				project.DiscoveredBy = appendUnique(previous.DiscoveredBy, onlyAuthID)
+			}
+			previousAuthID := previous.AuthID
+			if previous.Disabled {
+				previousAuthID = ""
+			}
+			project.AuthID = chooseProjectAuth(previousAuthID, project.DiscoveredBy, defaultAuthID, authIDs)
+			project.Disabled = false
 			if sameProject(previous, project) {
 				project.SyncedAt = previous.SyncedAt
 			} else {
@@ -49,6 +59,32 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 			}
 		} else {
 			project.AuthID = chooseProjectAuth("", project.DiscoveredBy, defaultAuthID, authIDs)
+			project.SyncedAt = updatedAt
+		}
+		mergedByID[project.ProjectID] = project
+	}
+
+	for _, previous := range existing {
+		if _, found := incomingIDs[previous.ProjectID]; found {
+			continue
+		}
+		project := previous
+		if onlyAuthID == "" {
+			project.DiscoveredBy = nil
+			project.Disabled = true
+		} else {
+			project.DiscoveredBy = removeValue(project.DiscoveredBy, onlyAuthID)
+			if project.AuthID == onlyAuthID {
+				replacementAuthID := chooseProjectAuth("", project.DiscoveredBy, defaultAuthID, authIDs)
+				if replacementAuthID == "" {
+					project.Disabled = true
+				} else {
+					project.AuthID = replacementAuthID
+					project.Disabled = false
+				}
+			}
+		}
+		if !sameProject(previous, project) {
 			project.SyncedAt = updatedAt
 		}
 		mergedByID[project.ProjectID] = project
@@ -64,6 +100,7 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 
 func sameProject(left, right config.Project) bool {
 	authSame := left.AuthID == right.AuthID &&
+		left.Disabled == right.Disabled &&
 		strings.Join(left.DiscoveredBy, "\x00") == strings.Join(right.DiscoveredBy, "\x00")
 	if left.ETag != "" && right.ETag != "" {
 		return left.ETag == right.ETag && authSame
@@ -76,6 +113,16 @@ func sameProject(left, right config.Project) bool {
 		left.ProjectNumber == right.ProjectNumber &&
 		left.State == right.State &&
 		authSame
+}
+
+func removeValue(values []string, value string) []string {
+	out := make([]string, 0, len(values))
+	for _, item := range values {
+		if item != value {
+			out = append(out, item)
+		}
+	}
+	return out
 }
 
 func chooseProjectAuth(previous string, discovered []string, defaultAuthID string, authIDs []string) string {

@@ -1,8 +1,10 @@
 package firebase
 
 import (
+	"context"
 	"errors"
-	"net"
+	"fmt"
+	"net/http"
 	"os"
 	"sync/atomic"
 	"time"
@@ -12,7 +14,7 @@ import (
 )
 
 const (
-	offlineProbeAddress = "firebaseremoteconfig.googleapis.com:443"
+	offlineProbeURL     = "https://firebaseremoteconfig.googleapis.com/"
 	offlineProbeTimeout = 2 * time.Second
 )
 
@@ -21,24 +23,48 @@ var ErrOffline = errors.New("offline mode: request suppressed")
 
 var offlineEnabled atomic.Bool
 
-// InitOfflineMode initializes offline mode from env or a startup connectivity probe.
+// InitOfflineMode initializes offline mode from env or a connectivity probe.
 func InitOfflineMode() {
+	raw, envSet := os.LookupEnv(env.Offline)
+	initOfflineMode(raw, envSet, defaultConnectivityProbe)
+}
+
+func initOfflineMode(raw string, envSet bool, probe func() error) {
 	logger := corelog.For("firebase.offline")
-	if raw, ok := os.LookupEnv(env.Offline); ok {
+	if envSet {
 		offlineEnabled.Store(true)
 		logger.Warn("offline mode enabled by environment", "env", env.Offline, "value", raw)
 		return
 	}
 
-	conn, err := net.DialTimeout("tcp", offlineProbeAddress, offlineProbeTimeout)
-	if err != nil {
+	if err := probe(); err != nil {
 		offlineEnabled.Store(true)
-		logger.Warn("offline mode enabled after connectivity check failed", "address", offlineProbeAddress, "timeout", offlineProbeTimeout.String(), "err", err)
+		logger.Warn("offline mode enabled after connectivity check failed", "url", offlineProbeURL, "timeout", offlineProbeTimeout.String(), "err", err)
 		return
 	}
-	_ = conn.Close()
 	offlineEnabled.Store(false)
-	logger.Debug("connectivity check passed", "address", offlineProbeAddress)
+	logger.Debug("connectivity check passed", "url", offlineProbeURL)
+}
+
+func defaultConnectivityProbe() error {
+	ctx, cancel := context.WithTimeout(context.Background(), offlineProbeTimeout)
+	defer cancel()
+
+	client := &http.Client{Transport: http.DefaultTransport}
+	return probeConnectivity(ctx, client, offlineProbeURL)
+}
+
+func probeConnectivity(ctx context.Context, client *http.Client, endpoint string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, endpoint, nil)
+	if err != nil {
+		return fmt.Errorf("create connectivity request: %w", err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("send connectivity request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return nil
 }
 
 // IsOffline returns true when network requests must be suppressed.

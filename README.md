@@ -71,13 +71,25 @@ go build -o fbrcm .
 
 ## TUI Configuration
 
-The TUI stores its global settings in `config.toml` under the fbrcm config directory. Powerline separators are enabled by default; disable them to use standard Unicode arrows when the terminal font does not include Powerline glyphs:
+The TUI stores its global settings in `config.toml` under the fbrcm config directory. Use the local-only `config` commands to inspect, validate, update, reset, or edit it without requiring a profile or network connection:
+
+```sh
+fbrcm config show
+fbrcm config set powerline_glyphs false
+fbrcm config set keys.projects.refresh u ctrl+r
+fbrcm config validate
+fbrcm config edit
+```
+
+`config edit` uses `--editor`, `FBRCM_EDITOR`, `VISUAL`, or `EDITOR`, in that order. Editor commands may include arguments, so GUI editors should be configured to wait, for example `FBRCM_EDITOR="code --wait"`. If an edited file is invalid, fbrcm leaves the original untouched and reports the preserved staged file path.
+
+Powerline separators are enabled by default; disable them to use standard Unicode arrows when the terminal font does not include Powerline glyphs:
 
 ```toml
 powerline_glyphs = false
 ```
 
-History and version-chooser keys are configurable like all other TUI bindings:
+Filter, history, and version-chooser keys are configurable like all other TUI bindings:
 
 ```toml
 [keys.global]
@@ -92,6 +104,7 @@ focus_details = ["5"]
 bind_auth = ["b"]
 import = ["i"]
 export = ["e"]
+defaults = ["d"]
 
 [keys.help]
 cancel = ["esc"]
@@ -102,6 +115,13 @@ page_up = ["pgup"]
 page_down = ["pgdown"]
 home = ["home"]
 end = ["end"]
+
+[keys.filter]
+fuzzy = ["~"]
+starts_with = ["^"]
+includes = ["/"]
+exact = ["="]
+expression = [":"]
 
 [keys.conditions]
 rename = ["r"]
@@ -145,15 +165,18 @@ submit = ["enter"]
 
 Run `fbrcm` without arguments to complete setup in the TUI. When the active profile has no authentication and no cached projects, the TUI opens a guided authentication screen instead of the workspace. It can import OAuth or service-account JSON, validate existing gcloud ADC, complete OAuth browser login, and discover projects without an `fbrcm` CLI command.
 
-Press `Ctrl+A` from the workspace to open Accounts or `Ctrl+P` to open Profiles. Both open as a popup over the workspace; `Tab`, `Shift+Tab`, and the left/right arrows switch between their border tabs. Accounts can add, validate, and purge identities and show how many cached projects use each one. Profiles can create, switch, rename, and purge profiles. Press `?` to open Actions over either tab and access the active tab's operations. If credentials are valid but return no projects, the TUI offers retry, another identity, or an empty workspace. Existing cached projects can still open without configured authentication.
+Press `Ctrl+A` from the workspace to open Accounts or `Ctrl+P` to open Profiles. Both open as a popup over the workspace; `Tab`, `Shift+Tab`, and the left/right arrows switch between their border tabs. Accounts can add, validate, and delete identities and show how many cached projects use each one. Profiles can create, switch, rename, and delete profiles. Press `?` to open Actions over either tab and access the active tab's operations. If credentials are valid but return no projects, the TUI offers retry, another identity, or an empty workspace. Existing cached projects can still open without configured authentication.
 
 In the Projects panel, press `b` to bind the current project, or all marked projects, to another configured identity.
+Press `x` to remove the current project, or all marked projects, from the active profile together with its local cached configs, versions, and draft; Firebase is not changed.
 
 Press `i` to import Remote Config JSON into the project under the Projects-panel cursor. Marked projects control what is shown in Parameters but do not change the import target. The import wizard accepts raw Remote Config or an fbrcm cache file, supports merge or replacement, group and parameter filters, rich search, expressions, condition cleanup, and per-conflict resolution. It always shows the resulting diff. A new import can be saved as a draft or published immediately; when a draft already exists, the import updates that draft and leaves publication to the normal `p` action.
 
 Press `e` to export the project under the Projects-panel cursor, also independently of marked projects. When a draft exists, choose between the published Remote Config and the local draft, then enter a destination path. Exports use the same stable JSON normalization and private file permissions as `fbrcm project export`; existing files require explicit overwrite confirmation.
 
-When `FBRCM_PROFILE` selects the TUI profile for the current process, Profiles shows that profile as pinned. Restart without the variable to create, switch, rename, or purge profiles interactively.
+Press `d` to download application defaults for the project under the Projects-panel cursor. Choose JSON for Web, XML for Android, or plist for Apple, then enter a destination path. New files use private permissions, and existing files require explicit overwrite confirmation.
+
+When `FBRCM_PROFILE` selects the TUI profile for the current process, Profiles shows that profile as pinned. Restart without the variable to create, switch, rename, or delete profiles interactively.
 
 OAuth authorization and project discovery remain cancellable with `Esc`. Canceling OAuth returns to the selected JSON file so a removed or otherwise unusable client can be replaced without restarting the TUI.
 
@@ -237,7 +260,7 @@ fbrcm draft path
 Delete auth files:
 
 ```sh
-fbrcm auth purge default
+fbrcm auth delete default
 ```
 
 ## Environment Variables
@@ -249,8 +272,15 @@ fbrcm auth purge default
 | `FBRCM_PROFILE` | Application | Selects an existing profile for the current process without changing the persisted active profile. The root `--profile <name>` flag takes precedence; otherwise fbrcm uses the persisted active profile. |
 | `FBRCM_CONFIG_DIR` | Application | Overrides the config root directory. Takes precedence over `XDG_CONFIG_HOME` and the user-home fallback. |
 | `FBRCM_CACHE_DIR` | Application | Overrides the cache root directory. Takes precedence over the operating system's user cache directory. |
-| `FBRCM_OFFLINE` | Application | Enables offline mode when the variable is defined, including when its value is empty or `0`. When it is unset, fbrcm performs a startup connectivity probe and may enable offline mode automatically if the probe fails. |
+| `FBRCM_OFFLINE` | Application | Enables offline mode when the variable is defined, including when its value is empty or `0`. When it is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before starting the TUI or executing a network-capable CLI command and may enable offline mode automatically if the probe fails. Help, version, and `config` commands skip the probe. |
 | `FBRCM_LOG_LEVEL` | Application | Sets the log threshold to `debug`, `info`, `warn`, `error`, `fatal`, or `silent` (case-insensitive). The default is `info`; an invalid value logs a warning and uses the default. |
+| `FBRCM_EDITOR` | Config editor | Selects the command used by `fbrcm config edit`. The `--editor` flag takes precedence; otherwise resolution continues through `VISUAL`, `EDITOR`, and the platform default. Arguments are supported. |
+| `VISUAL` | Config editor | Selects the editor when neither `--editor` nor `FBRCM_EDITOR` is set. Takes precedence over `EDITOR`. |
+| `EDITOR` | Config editor | Selects the editor when `--editor`, `FBRCM_EDITOR`, and `VISUAL` are unset. The fallback is `vi` on Unix-like systems and `notepad.exe` on Windows. |
+| `SHELL` | Config editor (Unix-like systems) | Runs editor commands that include arguments. Defaults to `/bin/sh` when unset. |
+| `HTTPS_PROXY` / `https_proxy` | Networking | Configures the proxy for HTTPS requests, including the startup Firebase connectivity probe. |
+| `HTTP_PROXY` / `http_proxy` | Networking | Configures the proxy for HTTP requests through Go's standard HTTP transport. |
+| `NO_PROXY` / `no_proxy` | Networking | Comma-separated hosts, domains, and optional ports that bypass the configured HTTP or HTTPS proxy. |
 | `NO_COLOR` | Application | Disables ANSI color in CLI tables, logs, prompts, and the TUI when set to a non-empty value. |
 | `COLUMNS` | Application | Supplies terminal width as a positive integer for human-readable CLI output. An invalid value is ignored; fbrcm then detects stdout width and falls back to 80 columns when detection is unavailable. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Google authentication | Points to an Application Default Credentials JSON file for `gcloud` auth identities and diagnostics. When unset, Google's default credential chain and the platform's well-known ADC file are used. |
@@ -333,6 +363,8 @@ In the TUI, press `3` by default to open the Conditions tab. The default actions
 
 Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, explains the selected action below the list, marks unavailable actions with a reason, and runs the selected available action with Enter. Search matches action names, explanations, shortcut keys, and technical aliases such as `reload`. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 
+Projects, Parameters, History, and Conditions support expression filtering with `:` in addition to the `~`, `^`, `/`, and `=` text-filter modes. The expression uses the context for the active panel described in [EXPR.md](EXPR.md); History uses parameter context against the newer value, or the older value for a removed parameter. Results update whenever the input forms a valid expression. While an edit is temporarily invalid, the expression is shown in red, a single-line compiler diagnostic is overlaid on the panel's bottom border without changing its height, and the last valid results remain visible.
+
 Pressing `q` quits immediately unless the open Details form has unsaved changes, in which case fbrcm asks before discarding them. `Ctrl+C` always force-quits.
 
 Accounts and Profiles cannot open while the Details form has unsaved changes. Save or discard the form first so a profile transition cannot lose local edits.
@@ -348,7 +380,20 @@ Export one project Remote Config:
 
 ```sh
 fbrcm project export <project-id> --to remote-config.json
+fbrcm project export <project-id> --to remote-config.json --yes
 ```
+
+File exports ask before replacing an existing destination. Use `--yes` for an intentional non-interactive overwrite.
+
+Download application defaults from the active Remote Config template:
+
+```sh
+fbrcm project defaults <project-id> --format json --to remote_config_defaults.json
+fbrcm project defaults <project-id> --format xml --to remote_config_defaults.xml
+fbrcm project defaults <project-id> --format plist --to RemoteConfigDefaults.plist
+```
+
+Without `--to`, the raw defaults payload is written to stdout. Existing destinations require confirmation or `--yes`.
 
 Inspect and recover Remote Config version history:
 
@@ -360,7 +405,7 @@ fbrcm versions rollback <project-id> 138 --dry-run
 fbrcm versions rollback <project-id> 138
 ```
 
-Firebase version history is authoritative, but Firebase retains at most 300 versions and may remove inactive versions older than 90 days. `fbrcm` keeps immutable templates it has encountered until the cache is purged. A cached version that Firebase no longer retains can be republished with:
+Firebase version history is authoritative, but Firebase retains at most 300 versions and may remove inactive versions older than 90 days. `fbrcm` keeps immutable templates it has encountered until the cache is cleared. A cached version that Firebase no longer retains can be republished with:
 
 ```sh
 fbrcm versions restore <project-id> 37 --dry-run
@@ -376,6 +421,7 @@ fbrcm project import <project-id> --from remote-config.json --dry-run
 fbrcm project import <project-id> --from remote-config.json --merge
 fbrcm project import <project-id> --from remote-config.json --override
 fbrcm project import <project-id> --from remote-config.json --search rollout --dry-run
+fbrcm project import <project-id> --from remote-config.json --merge --yes --json
 ```
 
 Add parameter:
@@ -383,6 +429,13 @@ Add parameter:
 ```sh
 fbrcm add new_parameter --project my-project --string "value" --description "Used by app startup"
 fbrcm add feature_enabled --project my-project --boolean true --dry-run
+```
+
+Duplicate a complete parameter, including its group, description, type, default value, and conditional values:
+
+```sh
+fbrcm duplicate existing_parameter copied_parameter --project my-project --dry-run
+fbrcm duplicate existing_parameter copied_parameter --project '^prod' --expr 'project.id contains "android"' --yes
 ```
 
 Update parameter:
@@ -405,6 +458,7 @@ Stage changes in profile-scoped local drafts instead of publishing immediately:
 
 ```sh
 fbrcm add new_flag --project my-project --boolean true --draft
+fbrcm duplicate existing_parameter copied_parameter --project my-project --draft --yes
 fbrcm update existing_parameter --project my-project --string "new value" --draft --yes
 fbrcm delete old_parameter --project my-project --draft --yes
 fbrcm project import <project-id> --from remote-config.json --merge --draft
@@ -428,13 +482,13 @@ Manage caches:
 
 ```sh
 fbrcm cache list
-fbrcm cache purge
-fbrcm projects purge
+fbrcm cache clear
+fbrcm projects reset
 ```
 
 ## Profiles
 
-Profiles let you keep separate OAuth clients, project caches, drafts, and token caches. The TUI Profiles tab supports creating, switching, renaming, and purging profiles; purging is limited to inactive profiles and confirms the affected config and cache paths first.
+Profiles let you keep separate OAuth clients, project caches, drafts, and token caches. The TUI Profiles tab supports creating, switching, renaming, and deleting profiles; deletion is limited to inactive profiles and confirms the affected config and cache paths first.
 
 ```sh
 fbrcm profile
@@ -479,6 +533,7 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 - Add, edit, rename, reorder, delete, validate, list, and inspect conditions and their parameter/value usage
 - Filter projects and parameters
 - Export Remote Config JSON
+- Download application defaults as JSON, Android XML, or Apple plist
 - Import Remote Config JSON
 - Merge imported config into current project config
 - Override current config with imported config
@@ -492,10 +547,10 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 
 ## Safety Notes
 
-Use `--dry-run` before imports, updates, adds, deletes, draft publishes, rollbacks, and restores when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
+Use `--dry-run` before imports, updates, additions, duplications, deletions, draft publishes, rollbacks, and restores when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
 
-Purging the Remote Config cache deletes every locally retained immutable version. Versions no longer retained by Firebase may then be permanently unavailable.
+Clearing the Remote Config cache deletes every locally retained immutable version. Versions no longer retained by Firebase may then be permanently unavailable.
 
-Drafts are managed separately from cached snapshots. `fbrcm cache purge` does not delete drafts; use `fbrcm draft discard` explicitly.
+Drafts are managed separately from cached snapshots. `fbrcm cache clear` does not delete drafts; use `fbrcm draft discard` explicitly.
 
 Keep `client-secret.json`, `token.json`, and service-account key files private. They grant access through Google account or service account permissions.

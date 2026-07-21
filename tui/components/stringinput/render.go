@@ -16,7 +16,7 @@ import (
 var singleBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteBlueBright)
 
 func (m Model) renderExpandedArea() string {
-	width := max(m.screenW-6, 4)
+	width := stringPopupContentWidth(m.screenW)
 	height := stringContentHeight(m.screenH)
 	cursorLine := m.area.Line()
 	lineInfo := m.area.LineInfo()
@@ -75,11 +75,15 @@ func (m Model) renderExpandedArea() string {
 func (m Model) renderExpandedBox() string {
 	borderStyle := styles.BorderStyle(true)
 	body := strings.Split(m.renderExpandedArea(), "\n")
-	innerWidth := max(m.screenW-6, 4)
+	contentWidth := stringPopupContentWidth(m.screenW)
+	innerWidth := viewutil.PopupInnerWidth(contentWidth)
 	contentHeight := stringContentHeight(m.screenH)
 	scrollbar := expandedScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
 	lines := []string{borderStyle.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, borderStyle.Render("│")+viewutil.PopupContentLine("", contentWidth)+borderStyle.Render("│"))
+	}
 	for i := range contentHeight {
 		line := ""
 		if i < len(body) {
@@ -89,12 +93,9 @@ func (m Model) renderExpandedBox() string {
 		if scrollbar.visible && i >= scrollbar.thumbStart && i <= scrollbar.thumbEnd {
 			rightEdge = styles.ScrollbarThumb.Render("█")
 		}
-		if line == "" {
-			line = strings.Repeat(" ", innerWidth)
-		}
-		lines = append(lines, borderStyle.Render("│")+line+rightEdge)
+		lines = append(lines, borderStyle.Render("│")+viewutil.PopupContentLine(line, contentWidth)+rightEdge)
 	}
-	lines = append(lines, borderStyle.Render("│")+renderHelpFooter(stringHelpText(innerWidth), innerWidth)+borderStyle.Render("│"))
+	lines = append(lines, borderStyle.Render("│")+viewutil.PopupContentLine(renderHelpFooter(stringHelpText(contentWidth), contentWidth), contentWidth)+borderStyle.Render("│"))
 	lines = append(lines, borderStyle.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
 	return strings.Join(lines, "\n")
 }

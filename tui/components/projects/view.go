@@ -48,8 +48,11 @@ func (m *Model) contentLines() []string {
 		lineHighlights = append(lineHighlights, nil)
 	} else {
 		for i, project := range m.projects {
-			_, nameHighlights := filter.Match(project.Name, m.filter.Value(), m.filter.Mode())
-			_, idHighlights := filter.Match(project.ProjectID, m.filter.Value(), m.filter.Mode())
+			var nameHighlights, idHighlights []int
+			if !m.filter.ExpressionMode() {
+				_, nameHighlights = filter.Match(project.Name, m.filter.Value(), m.filter.Mode())
+				_, idHighlights = filter.Match(project.ProjectID, m.filter.Value(), m.filter.Mode())
+			}
 			idHighlights = offsetIndices(idHighlights, 1)
 
 			projectStarts = append(projectStarts, len(lines))
@@ -57,7 +60,11 @@ func (m *Model) contentLines() []string {
 			lineKinds = append(lineKinds, lineKindProjectName)
 			lineProjects = append(lineProjects, i)
 			lineHighlights = append(lineHighlights, nameHighlights)
-			lines = append(lines, " "+project.ProjectID)
+			projectID := " " + project.ProjectID
+			if project.Disabled {
+				projectID += " · disabled"
+			}
+			lines = append(lines, projectID)
 			lineKinds = append(lineKinds, lineKindProjectID)
 			lineProjects = append(lineProjects, i)
 			lineHighlights = append(lineHighlights, idHighlights)
@@ -90,7 +97,7 @@ func (m Model) ViewWithBorder(active, borderActive bool) string {
 	if m.collapsed {
 		return renderCollapsedPanel(m.height, active, borderActive)
 	}
-	return renderPanel(
+	panel := renderPanel(
 		m.viewport.View(),
 		m.width,
 		m.height,
@@ -100,6 +107,7 @@ func (m Model) ViewWithBorder(active, borderActive bool) string {
 		m.secondaryTitle(),
 		m.filter.View(m.width, active, len(m.projects)),
 	)
+	return m.filter.OverlayExpressionError(panel, 0)
 }
 
 func (m *Model) applyFilter() {
@@ -111,6 +119,17 @@ func (m *Model) applyFilter() {
 	query := m.filter.Value()
 	m.projects = m.projects[:0]
 	for _, project := range m.allProjects {
+		if m.filter.ExpressionMode() {
+			cfg, ok := m.expressionConfigs[project.ProjectID]
+			if m.expressionConfigsReady && !ok {
+				continue
+			}
+			matched, err := m.filter.CompiledExpression().MatchProject(project.ProjectID, project.Name, cfg)
+			if err == nil && matched {
+				m.projects = append(m.projects, project)
+			}
+			continue
+		}
 		nameMatch, _ := filter.Match(project.Name, query, m.filter.Mode())
 		idMatch, _ := filter.Match(project.ProjectID, query, m.filter.Mode())
 		if nameMatch || idMatch {

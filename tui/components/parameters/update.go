@@ -57,10 +57,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return next, cmd
 			}
 		}
-		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
-			cmd := m.filter.Activate(mode)
+		if !m.filter.ExpressionFocused() && tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterExpression, k) {
+			cmd := m.filter.ActivateExpression()
 			m.applyFilter()
 			return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true), m.selectionChangedCmd(false))
+		}
+		if !m.filter.ExpressionFocused() {
+			if mode, ok := tuiconfig.FilterModeForKey(k); ok {
+				cmd := m.filter.Activate(mode)
+				m.applyFilter()
+				return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true), m.selectionChangedCmd(false))
+			}
 		}
 
 		if m.filter.Focused() {
@@ -155,7 +162,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			break
 		}
 		if m.isMouseOnFilter(msg.Mouse()) {
-			cmd := m.filter.Activate(m.filter.Mode())
+			cmd := m.filter.Focus()
 			return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true))
 		}
 		if m.filter.Focused() {

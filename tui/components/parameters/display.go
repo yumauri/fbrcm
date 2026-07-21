@@ -73,7 +73,7 @@ func (m Model) buildVisible() []visibleNode {
 			}
 			matchedParams := group.Parameters
 			if filtering {
-				matchedParams = matchedParameters(group.Parameters, query, m.filter.Mode())
+				matchedParams = m.matchedParameters(project, tree, group)
 				created := m.transientNew
 				hasTransientNew := created != nil &&
 					created.projectID == project.project.ProjectID &&
@@ -110,7 +110,7 @@ func (m Model) buildVisible() []visibleNode {
 					dup.projectID == project.project.ProjectID &&
 					dup.groupKey == group.Key &&
 					dup.afterParamKey == param.Key &&
-					(!filtering || matchedDuplicate(dup.label, query, m.filter.Mode())) {
+					(!filtering || m.filter.ExpressionMode() || matchedDuplicate(dup.label, query, m.filter.Mode())) {
 					nodes = append(nodes, visibleNode{
 						kind:      nodeParameter,
 						projectID: project.project.ProjectID,
@@ -188,7 +188,6 @@ func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
 	changedGroups := make(map[string]int)
 	changedProjects := make(map[string]bool)
 	statusProjects := make(map[string]bool)
-	query := m.filter.Value()
 	for _, project := range m.projects {
 		// Project rows remain as navigation anchors even when the active filters
 		// remove every group and parameter beneath them. History version actions
@@ -208,7 +207,7 @@ func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
 			continue
 		}
 		for _, group := range tree.Groups {
-			params := matchedParameters(group.Parameters, query, m.filter.Mode())
+			params := m.matchedParameters(project, tree, group)
 			for _, param := range params {
 				if !isVisibleHistoryChange(state.paramKinds[historyParamKey(group.Key, param.Key)]) {
 					continue
@@ -297,6 +296,47 @@ func matchedParameters(params []core.ParametersEntry, query string, mode filter.
 		}
 	}
 	return out
+}
+
+func (m Model) matchedParameters(project projectState, tree *core.ParametersTree, group core.ParametersGroup) []core.ParametersEntry {
+	query := m.filter.Value()
+	if query == "" {
+		return group.Parameters
+	}
+	if !m.filter.ExpressionMode() {
+		return matchedParameters(group.Parameters, query, m.filter.Mode())
+	}
+
+	out := make([]core.ParametersEntry, 0, len(group.Parameters))
+	for _, param := range group.Parameters {
+		expressionTree := m.parameterExpressionTree(project.project.ProjectID, tree, group.Key, param.Key)
+		matched, err := m.filter.CompiledExpression().MatchParameter(
+			project.project.ProjectID,
+			project.project.Name,
+			expressionTree.RemoteConfig(),
+			param.Key,
+			group.Label,
+		)
+		if err == nil && matched {
+			out = append(out, param)
+		}
+	}
+	return out
+}
+
+func (m Model) parameterExpressionTree(projectID string, fallback *core.ParametersTree, groupKey, paramKey string) *core.ParametersTree {
+	if !m.history {
+		return fallback
+	}
+	state := m.histories[projectID]
+	key := historyParamKey(groupKey, paramKey)
+	if state.currentParams[key] != nil {
+		return state.current
+	}
+	if state.previousParams[key] != nil {
+		return state.previous
+	}
+	return fallback
 }
 
 func matchedDuplicate(label, query string, mode filter.Mode) bool {

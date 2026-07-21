@@ -68,6 +68,9 @@ func TestLoadMergesAndPersistsMissingKeys(t *testing.T) {
 	if _, ok := cfg.Keys[string(BlockHistoryPicker)]; !ok {
 		t.Fatalf("config keys = %+v, want history picker block persisted", cfg.Keys)
 	}
+	if got := cfg.Keys[string(BlockFilter)][string(ActionFilterExpression)]; len(got) != 1 || got[0] != ":" {
+		t.Fatalf("expression filter keys = %v, want [:]", got)
+	}
 	if cfg.PowerlineGlyphs == nil || !*cfg.PowerlineGlyphs {
 		t.Fatalf("powerline_glyphs = %v, want default true", cfg.PowerlineGlyphs)
 	}
@@ -177,6 +180,12 @@ func TestDefaultKeyMapIncludesProfilesAndProjectAuthBindings(t *testing.T) {
 	}
 	if got := DefaultKeyMap()[BlockProjects][ActionBindAuth]; len(got) != 1 || got[0] != "b" {
 		t.Fatalf("project auth action = %v, want [b]", got)
+	}
+}
+
+func TestDefaultKeyMapIncludesProjectDefaultsBinding(t *testing.T) {
+	if got := DefaultKeyMap()[BlockProjects][ActionDefaults]; len(got) != 1 || got[0] != "d" {
+		t.Fatalf("projects defaults keys = %v, want [d]", got)
 	}
 }
 

@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 )
@@ -36,7 +38,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if len(first.Commands()) != len(second.Commands()) {
 		t.Fatalf("command counts differ: %d vs %d", len(first.Commands()), len(second.Commands()))
 	}
-	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "get", "groups", "profile", "project", "projects", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "duplicate", "get", "groups", "profile", "project", "projects", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -60,7 +62,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{15, 15, 15}) {
+	if !reflect.DeepEqual(counts, []int{16, 16, 16}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }
@@ -73,6 +75,66 @@ func TestRootCommandDefinesProfileOverride(t *testing.T) {
 	}
 	if !strings.Contains(flag.Usage, "FBRCM_PROFILE") || !strings.Contains(flag.Usage, "without changing") {
 		t.Fatalf("profile usage = %q", flag.Usage)
+	}
+}
+
+func TestRootCommandSkipsConnectivityProbeForHelpAndVersion(t *testing.T) {
+	for _, args := range [][]string{{"--help"}, {"help"}, {"--version"}} {
+		t.Run(strings.Join(args, "_"), func(t *testing.T) {
+			calls := 0
+			cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+			cmd.SetOut(&bytes.Buffer{})
+			cmd.SetErr(&bytes.Buffer{})
+			cmd.SetArgs(args)
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("execute %v: %v", args, err)
+			}
+			if calls != 0 {
+				t.Fatalf("connectivity probe calls for %v = %d, want 0", args, calls)
+			}
+		})
+	}
+}
+
+func TestRootCommandTreatsConfigAsLocalRecoverySurface(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "../invalid")
+
+	calls := 0
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"config", "show", "powerline_glyphs"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute config: %v", err)
+	}
+	if calls != 0 {
+		t.Fatalf("connectivity probe calls = %d, want 0", calls)
+	}
+}
+
+func TestRootCommandProbesBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "")
+	if err := config.SetProfileOverride(""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = config.SetProfileOverride("") })
+
+	calls := 0
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"profile"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute profile: %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("connectivity probe calls = %d, want 1", calls)
 	}
 }
 
@@ -139,7 +201,7 @@ func TestRootProfileFlagSelectsWithoutSwitching(t *testing.T) {
 		}
 	}
 
-	cmd := newRootCommand(nil, "1.2.3", "abc123", "2026-06-14")
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() {})
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&out)
@@ -156,6 +218,41 @@ func TestRootProfileFlagSelectsWithoutSwitching(t *testing.T) {
 	}
 	if appConfig.Profile != "active" {
 		t.Fatalf("persisted profile = %q, want active", appConfig.Profile)
+	}
+}
+
+func TestRootCommandShowsAuthSetupGuidanceBeforeUsage(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "")
+	if err := config.SetProfileOverride(""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = config.SetProfileOverride("") })
+	if err := config.SwitchProfile("test"); err != nil {
+		t.Fatal(err)
+	}
+	svc, err := core.NewService(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := newRootCommandWithOfflineInit(svc, "1.2.3", "abc123", "2026-06-14", func() {})
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
+	cmd.SetArgs([]string{"projects", "list"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("projects list without auth = nil, want error")
+	}
+
+	got := output.String()
+	errorAt := strings.Index(got, "Error: read auth config:")
+	hintAt := strings.Index(got, "Set up authentication by running `fbrcm` for guided setup")
+	usageAt := strings.Index(got, "Usage:\n  fbrcm projects list")
+	if errorAt < 0 || hintAt < 0 || usageAt < 0 || errorAt >= hintAt || hintAt >= usageAt {
+		t.Fatalf("projects list output does not show auth setup guidance between error and usage:\n%s", got)
 	}
 }
 

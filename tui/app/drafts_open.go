@@ -10,7 +10,7 @@ func (m *Model) openDeleteDialog(project core.Project, groupKey, paramKey string
 	body, ok := m.deleteDialogBody(project, groupKey, paramKey)
 	if !ok {
 		body = []string{
-			"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+			dialogProjectLine(project),
 			"",
 			"Delete parameter or draft changes?",
 			"",
@@ -32,7 +32,7 @@ func (m *Model) openDeleteGroupDialog(project core.Project, groupKey, groupLabel
 	body, ok := m.deleteGroupDialogBody(project, groupKey)
 	if !ok {
 		body = []string{
-			"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+			dialogProjectLine(project),
 			"",
 			"Delete group or draft changes?",
 			"",
@@ -216,7 +216,7 @@ func (m *Model) openEditGroupDetailsDialog(project core.Project, edit core.Group
 
 func (m *Model) openInvalidDetailsDialog(project core.Project, reasons []string, closeDetails bool) {
 	body := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		"Details form is invalid.",
 		"",
@@ -238,7 +238,7 @@ func (m *Model) openInvalidDetailsDialog(project core.Project, reasons []string,
 
 func (m *Model) openErrorDialog(title string, project core.Project, errText string) {
 	body := []string{
-		"Project: " + dialogProjectNameStyle.Render(project.Name) + " (" + project.ProjectID + ")",
+		dialogProjectLine(project),
 		"",
 		errText,
 	}

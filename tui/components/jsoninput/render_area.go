@@ -41,7 +41,7 @@ func (m Model) renderArea() string {
 		offset += len([]rune(line)) + 1
 	}
 	gutter := lineNumberGutter(len(lines))
-	contentWidth := max(max(m.screenW-6, 4)-gutter, 1)
+	contentWidth := max(jsonPopupContentWidth(m.screenW)-gutter, 1)
 
 	visual := make([]visualLine, 0, len(lines))
 	for i, line := range lines {

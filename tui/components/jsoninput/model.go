@@ -105,7 +105,7 @@ func (m Model) View() string {
 }
 
 func (m *Model) resize() {
-	innerWidth := max(m.screenW-6, 4)
+	innerWidth := jsonPopupContentWidth(m.screenW)
 	innerHeight := jsonContentHeight(m.screenH)
 	gutter := lineNumberGutter(m.area.LineCount())
 	m.area.SetWidth(max(innerWidth-gutter, 1))

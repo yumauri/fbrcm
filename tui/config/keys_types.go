@@ -41,6 +41,7 @@ const (
 	ActionFilterStartsWith Action = "starts_with"
 	ActionFilterIncludes   Action = "includes"
 	ActionFilterExact      Action = "exact"
+	ActionFilterExpression Action = "expression"
 	ActionFilterApply      Action = "apply"
 	ActionFilterCancel     Action = "cancel"
 	ActionFilterUp         Action = "up"
@@ -62,6 +63,7 @@ const (
 	ActionBindAuth   Action = "bind_auth"
 	ActionImport     Action = "import"
 	ActionExport     Action = "export"
+	ActionDefaults   Action = "defaults"
 
 	ActionToggleMaximize   Action = "toggle_maximize"
 	ActionRename           Action = "rename"

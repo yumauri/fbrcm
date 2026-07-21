@@ -29,6 +29,23 @@ func (s *Core) ExportRemoteConfig(ctx context.Context, projectID string) (json.R
 	return raw, etag, nil
 }
 
+// DownloadRemoteConfigDefaults downloads application defaults for a project.
+func (s *Core) DownloadRemoteConfigDefaults(ctx context.Context, projectID string, format firebase.DefaultsFormat) ([]byte, error) {
+	logger := corelog.For("core")
+	logger.Info("download remote config defaults requested", "project_id", projectID, "format", format)
+
+	fb, err := s.firebaseServiceForProject(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defaults, err := fb.DownloadRemoteConfigDefaults(ctx, projectID, format)
+	if err != nil {
+		logger.Error("firebase remote config defaults download failed", "project_id", projectID, "format", format, "err", err)
+		return nil, fmt.Errorf("firebase error: %w", err)
+	}
+	return defaults, nil
+}
+
 func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID string, raw json.RawMessage, etag string) error {
 	logger := corelog.For("core")
 	logger.Info("validate remote config with etag requested", "project_id", projectID, "etag", etag)

@@ -33,6 +33,16 @@ func (m Model) actionButtons() buttonbar.Model {
 			{Label: "Export", Variant: buttonbar.VariantAccent},
 			{Label: "Cancel", Variant: buttonbar.VariantAccent},
 		}
+	case phaseDefaultsFormat:
+		buttons = []buttonbar.Button{
+			{Label: "Continue", Variant: buttonbar.VariantAccent},
+			{Label: "Cancel", Variant: buttonbar.VariantAccent},
+		}
+	case phaseDefaultsPath:
+		buttons = []buttonbar.Button{
+			{Label: "Download", Variant: buttonbar.VariantAccent},
+			{Label: "Cancel", Variant: buttonbar.VariantAccent},
+		}
 	}
 	return buttonbar.New(buttons).SetSelected(m.buttonCursor).SetFocused(m.buttonsFocused)
 }
@@ -87,6 +97,14 @@ func (m Model) activateActionButton(index int) (Model, tea.Cmd) {
 		return m, m.pathInput.Focus()
 	case phaseExportPath:
 		return m.submitExportPath()
+	case phaseDefaultsFormat:
+		m.phase = phaseDefaultsPath
+		m.buttonsFocused = false
+		m.pathInput.SetValue(defaultsPath(m.project.ProjectID, m.defaultsFormat))
+		m.pathInput.CursorEnd()
+		return m, m.pathInput.Focus()
+	case phaseDefaultsPath:
+		return m.submitDefaultsPath()
 	default:
 		return m, nil
 	}

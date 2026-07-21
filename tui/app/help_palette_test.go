@@ -123,7 +123,7 @@ func TestHelpPaletteOpensOverAccountsAndProfilesWithActiveActions(t *testing.T) 
 		t.Fatalf("active Accounts availability = %v, %q", enabled, reason)
 	}
 	view := ansi.Strip(m.View().Content)
-	for _, want := range []string{"ˀActions", "Accounts panel", "Purge authentication"} {
+	for _, want := range []string{"ˀActions", "Accounts panel", "Delete authentication"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("Actions over Accounts missing %q:\n%s", want, view)
 		}
@@ -148,7 +148,7 @@ func TestHelpPaletteOpensOverAccountsAndProfilesWithActiveActions(t *testing.T) 
 	if enabled, reason := m.globalHelpActionAvailability(tuiconfig.ActionProfiles); enabled || !strings.Contains(reason, "already active") {
 		t.Fatalf("active Profiles availability = %v, %q", enabled, reason)
 	}
-	if view = ansi.Strip(m.helpPaletteView()); !strings.Contains(view, "Rename profile") || !strings.Contains(view, "Purge profile") {
+	if view = ansi.Strip(m.helpPaletteView()); !strings.Contains(view, "Rename profile") || !strings.Contains(view, "Delete profile") {
 		t.Fatalf("Profiles actions missing:\n%s", view)
 	}
 }
@@ -222,7 +222,7 @@ func TestHelpPaletteSearchShowsDisabledContextReason(t *testing.T) {
 	}
 }
 
-func TestHelpPaletteUsesSelectionWithoutMarkerOrBodyPadding(t *testing.T) {
+func TestHelpPaletteUsesSelectionWithoutMarkerAndStandardPopupPadding(t *testing.T) {
 	item := helpPaletteAction{
 		group:   "Projects panel",
 		title:   "Select",
@@ -241,8 +241,8 @@ func TestHelpPaletteUsesSelectionWithoutMarkerOrBodyPadding(t *testing.T) {
 	if strings.Contains(view, "Search: ") {
 		t.Fatalf("palette search retains redundant prefix:\n%s", view)
 	}
-	if !strings.Contains(view, "│Bind authentication in the projects panel. Unavailable: no project is selected") || strings.Contains(view, "│ Bind authentication") {
-		t.Fatalf("palette status does not show the selected action description flush left:\n%s", view)
+	if !strings.Contains(view, "│  Bind authentication in the projects panel. Unavailable:") {
+		t.Fatalf("palette status does not use the standard popup inset:\n%s", view)
 	}
 }
 

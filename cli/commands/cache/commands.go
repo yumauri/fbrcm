@@ -15,7 +15,7 @@ func New() *cobra.Command {
 		Use:   "cache",
 		Short: "Manage cached Remote Config snapshots",
 	}
-	cacheCmd.AddCommand(newPathCommand(), newPurgeCommand(), newListCommand())
+	cacheCmd.AddCommand(newPathCommand(), newClearCommand(), newListCommand())
 	return cacheCmd
 }
 
@@ -42,10 +42,10 @@ func newPathCommand() *cobra.Command {
 	return cmd
 }
 
-func newPurgeCommand() *cobra.Command {
+func newClearCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "purge",
-		Short: "Delete cached Remote Config snapshots",
+		Use:   "clear",
+		Short: "Clear cached Remote Config snapshots",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
@@ -57,7 +57,7 @@ func newPurgeCommand() *cobra.Command {
 				return err
 			}
 			if len(entries) == 0 {
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 Nothing to purge")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 Nothing to clear")
 				return nil
 			}
 			var snapshotCount int
@@ -81,10 +81,10 @@ func newPurgeCommand() *cobra.Command {
 				deleteCaches = ok
 			}
 			if deleteCaches {
-				if err := config.PurgeParametersCache(); err != nil {
+				if err := config.ClearParametersCache(); err != nil {
 					return err
 				}
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged caches: %s\n", config.GetParametersCacheDirPath())
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 cleared caches: %s\n", config.GetParametersCacheDirPath())
 			}
 
 			return nil

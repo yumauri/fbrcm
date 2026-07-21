@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,5 +28,24 @@ func TestWriteRemoteConfigFileNormalizesExportJSON(t *testing.T) {
 	}
 	if !strings.Contains(got, `"<tag> & more"`) {
 		t.Fatalf("output did not normalize JSON escapes: %s", got)
+	}
+}
+
+func TestCreateRemoteConfigFileDoesNotOverwriteExistingFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "remote-config.json")
+	if err := os.WriteFile(path, []byte("original"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	err := rc.CreateRemoteConfigFile(path, []byte(`{"parameters":{}}`))
+	if err == nil || !errors.Is(err, os.ErrExist) {
+		t.Fatalf("CreateRemoteConfigFile error = %v, want file exists", err)
+	}
+	data, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(data) != "original" {
+		t.Fatalf("existing file = %q, want original", data)
 	}
 }

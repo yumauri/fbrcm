@@ -55,11 +55,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.requestQuit()
 	}
 	switch msg := msg.(type) {
-	case setup.AuthPurgeRequestedMsg:
-		m.openAuthPurgeDialog(msg)
+	case setup.AuthDeleteRequestedMsg:
+		m.openAuthDeleteDialog(msg)
 		return m, nil
-	case setup.ProfilePurgeRequestedMsg:
-		m.openProfilePurgeDialog(msg)
+	case setup.ProfileDeleteRequestedMsg:
+		m.openProfileDeleteDialog(msg)
 		return m, nil
 	case setup.ProfileRenameRequestedMsg:
 		return m, m.openProfileRenameInput(msg)

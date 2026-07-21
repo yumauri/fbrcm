@@ -13,11 +13,15 @@ import (
 func (m Model) renderBox() string {
 	border := borderStyle(m.Valid())
 	body := strings.Split(m.renderArea(), "\n")
-	innerWidth := max(m.screenW-6, 4)
+	contentWidth := jsonPopupContentWidth(m.screenW)
+	innerWidth := viewutil.PopupInnerWidth(contentWidth)
 	contentHeight := jsonContentHeight(m.screenH)
 	scrollbar := expandedScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
 	lines := []string{border.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, border.Render("│")+viewutil.PopupContentLine("", contentWidth)+border.Render("│"))
+	}
 	for i := range contentHeight {
 		line := ""
 		if i < len(body) {
@@ -27,12 +31,9 @@ func (m Model) renderBox() string {
 		if scrollbar.visible && i >= scrollbar.thumbStart && i <= scrollbar.thumbEnd {
 			rightEdge = styles.ScrollbarThumb.Render("█")
 		}
-		if line == "" {
-			line = strings.Repeat(" ", innerWidth)
-		}
-		lines = append(lines, border.Render("│")+line+rightEdge)
+		lines = append(lines, border.Render("│")+viewutil.PopupContentLine(line, contentWidth)+rightEdge)
 	}
-	lines = append(lines, border.Render("│")+renderHelpFooter(jsonHelpText(innerWidth), innerWidth)+border.Render("│"))
+	lines = append(lines, border.Render("│")+viewutil.PopupContentLine(renderHelpFooter(jsonHelpText(contentWidth), contentWidth), contentWidth)+border.Render("│"))
 	lines = append(lines, border.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
 	return strings.Join(lines, "\n")
 }
@@ -43,7 +44,7 @@ func (m Model) visualLineCount() int {
 		return 1
 	}
 	gutter := lineNumberGutter(len(lines))
-	contentWidth := max(max(m.screenW-6, 4)-gutter, 1)
+	contentWidth := max(jsonPopupContentWidth(m.screenW)-gutter, 1)
 	count := 0
 	for _, line := range lines {
 		count += len(wrapPlainLine(line, contentWidth))
@@ -51,8 +52,12 @@ func (m Model) visualLineCount() int {
 	return max(count, 1)
 }
 
+func jsonPopupContentWidth(screenW int) int {
+	return max(max(screenW-6, 4)-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 1)
+}
+
 func jsonContentHeight(screenH int) int {
-	return max(screenH-7, 3)
+	return max(screenH-7-viewutil.PopupPaddingTop, 3)
 }
 
 func jsonHelpText(width int) string {

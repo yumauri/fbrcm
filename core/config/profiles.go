@@ -98,8 +98,8 @@ func GetProfileCacheDirPath(name string) (string, error) {
 	return profileCacheDir(name), nil
 }
 
-func PurgeProfile(name string) error {
-	if err := EnsureProfileCanPurge(name); err != nil {
+func DeleteProfile(name string) error {
+	if err := EnsureProfileCanDelete(name); err != nil {
 		return err
 	}
 	if err := os.RemoveAll(profileConfigDir(name)); err != nil {
@@ -108,11 +108,11 @@ func PurgeProfile(name string) error {
 	if err := os.RemoveAll(profileCacheDir(name)); err != nil {
 		return fmt.Errorf("remove profile cache dir: %w", err)
 	}
-	corelog.For("config").Info("profile purged", "profile", name, "config_dir", profileConfigDir(name), "cache_dir", profileCacheDir(name))
+	corelog.For("config").Info("profile deleted", "profile", name, "config_dir", profileConfigDir(name), "cache_dir", profileCacheDir(name))
 	return nil
 }
 
-func EnsureProfileCanPurge(name string) error {
+func EnsureProfileCanDelete(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
 	}
@@ -121,8 +121,8 @@ func EnsureProfileCanPurge(name string) error {
 		return err
 	}
 	if active == name {
-		err := fmt.Errorf("cannot purge active profile %q", name)
-		corelog.For("config").Error("active profile purge rejected", "profile", name, "err", err)
+		err := fmt.Errorf("cannot delete active profile %q", name)
+		corelog.For("config").Error("active profile deletion rejected", "profile", name, "err", err)
 		return err
 	}
 	if !profileConfigDirExists(name) {
@@ -274,6 +274,11 @@ func profileCacheDir(name string) string {
 
 func profileConfigDirExists(name string) bool {
 	return dirExists(profileConfigDir(name))
+}
+
+// ProfileExists reports whether a profile config directory exists.
+func ProfileExists(name string) bool {
+	return profileConfigDirExists(name)
 }
 
 func dirExists(path string) bool {

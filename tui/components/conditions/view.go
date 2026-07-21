@@ -21,7 +21,8 @@ func (m Model) ViewWithBorder(active, borderActive bool) string {
 	}
 	footer := m.filter.View(max(m.width-1, 1), active, m.conditionCount())
 	body := m.bodyLines()
-	return renderPanel(body, footer, m.width, m.height, active, borderActive)
+	panel := renderPanel(body, footer, m.width, m.height, active, borderActive)
+	return m.filter.OverlayExpressionError(panel, 1)
 }
 
 func (m Model) bodyLines() []string {

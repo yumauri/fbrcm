@@ -65,6 +65,7 @@ type Model struct {
 	profileRename   *profileRenameSession
 	projectImport   *core.ProjectImportPlan
 	projectExport   *projectExportSession
+	projectDefaults *projectDefaultsSession
 	valueEditSource panels.ID
 	authCount       int
 

@@ -1,13 +1,17 @@
 package projects
 
 import (
+	"reflect"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
+	"github.com/yumauri/fbrcm/tui/styles"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
 
@@ -78,6 +82,55 @@ func TestProjectsMarkChangesSelectionWithoutChangingPanel(t *testing.T) {
 	}
 }
 
+func TestDisabledProjectIgnoresSelectionMarkAndOpen(t *testing.T) {
+	m := disabledProjectsModel()
+	for _, key := range []tea.KeyPressMsg{keyPress(tea.KeyEnter), keyPress(tea.KeySpace), keyPress('o')} {
+		next, cmd := m.Update(key)
+		if cmd != nil {
+			t.Fatalf("disabled action %q returned command", key.String())
+		}
+		if len(next.selected) != 0 {
+			t.Fatalf("disabled action %q selected projects = %#v", key.String(), next.selected)
+		}
+	}
+	if cmd := m.SelectOnly("alpha"); cmd != nil || len(m.selected) != 0 {
+		t.Fatalf("SelectOnly disabled project = cmd:%v selected:%#v", cmd != nil, m.selected)
+	}
+}
+
+func TestDisabledProjectUsesInactiveTabColorAndCompactSeparator(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := disabledProjectsModel()
+	if got, want := m.projectStateStyle(0).GetForeground(), styles.PanelTitleInactiveTab.GetForeground(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("disabled foreground = %#v, want inactive tab %#v", got, want)
+	}
+	m.cursor = 1
+	m.syncViewport()
+	rendered := m.View(true)
+	for _, rune := range []string{"A", "a"} {
+		if !strings.Contains(rendered, styles.PanelTitleInactiveTab.Render(rune)) {
+			t.Fatalf("disabled project rune %q does not use inactive tab style", rune)
+		}
+	}
+	view := ansi.Strip(rendered)
+	if !strings.Contains(view, "alpha · disabled") || strings.Contains(view, "alpha  · disabled") {
+		t.Fatalf("disabled project separator is not compact:\n%s", view)
+	}
+}
+
+func TestProjectBecomingDisabledIsUnselected(t *testing.T) {
+	m := loadedProjectsModel()
+	m.selected["alpha"] = struct{}{}
+	cmd := m.ApplyProjectUpdates([]core.Project{{Name: "Alpha Project", ProjectID: "alpha", Disabled: true}})
+	if cmd == nil || len(m.selected) != 0 {
+		t.Fatalf("disabled update = cmd:%v selected:%#v, want cleared selection notification", cmd != nil, m.selected)
+	}
+	selection, ok := cmd().(messages.ProjectsSelectionChangedMsg)
+	if !ok || len(selection.Projects) != 0 {
+		t.Fatalf("disabled selection update = %#v, want empty project selection", selection)
+	}
+}
+
 func TestProjectsFilterApplySelectsCurrentAndReleasesKeyboard(t *testing.T) {
 	m := loadedProjectsModel()
 	m, cmd := m.Update(keyText("/"))
@@ -136,6 +189,25 @@ func TestActionTargetsUsesMarkedProjectsOrCurrentProject(t *testing.T) {
 	}
 }
 
+func TestAuthBindingRequiresTwoCommonIdentitiesAndEnabledTargets(t *testing.T) {
+	m := loadedProjectsModel()
+	m.projects[0].DiscoveredBy = []string{"main"}
+	m.allProjects[0].DiscoveredBy = []string{"main"}
+	if m.AuthBindingAvailable() {
+		t.Fatal("single discovered identity enabled auth binding")
+	}
+	m.projects[0].DiscoveredBy = []string{"main", "work"}
+	m.allProjects[0].DiscoveredBy = []string{"main", "work"}
+	if !m.AuthBindingAvailable() {
+		t.Fatal("two discovered identities did not enable auth binding")
+	}
+	m.projects[0].Disabled = true
+	m.allProjects[0].Disabled = true
+	if m.AuthBindingAvailable() {
+		t.Fatal("disabled project enabled auth binding")
+	}
+}
+
 func TestCurrentProjectIgnoresMarkedProjects(t *testing.T) {
 	m := loadedProjectsModel()
 	m.selected["alpha"] = struct{}{}
@@ -188,6 +260,26 @@ func TestApplyProjectUpdatesRefreshesProjectAndSelectedPayload(t *testing.T) {
 	}
 }
 
+func TestRemoveProjectsRemovesVisibleAndSelectedProjects(t *testing.T) {
+	m := loadedProjectsModel()
+	m.selected["alpha"] = struct{}{}
+	m.selected["beta"] = struct{}{}
+	cmd := m.RemoveProjects([]core.Project{{ProjectID: "alpha"}, {ProjectID: "gamma"}})
+	if len(m.allProjects) != 1 || m.allProjects[0].ProjectID != "beta" {
+		t.Fatalf("allProjects = %+v, want beta", m.allProjects)
+	}
+	if len(m.projects) != 1 || m.projects[0].ProjectID != "beta" {
+		t.Fatalf("visible projects = %+v, want beta", m.projects)
+	}
+	if cmd == nil {
+		t.Fatal("selected project removal did not notify downstream panels")
+	}
+	selection := findMsg[messages.ProjectsSelectionChangedMsg](runBatch(t, cmd))
+	if len(selection.Projects) != 1 || selection.Projects[0].ProjectID != "beta" {
+		t.Fatalf("selection = %+v, want beta", selection.Projects)
+	}
+}
+
 func loadedProjectsModel() Model {
 	m := New(nil).SetBounds(0, 0, 32, 12).SetActive(true)
 	m, _ = m.Update(messages.ProjectsLoadedMsg{
@@ -195,6 +287,18 @@ func loadedProjectsModel() Model {
 			{Name: "Alpha Project", ProjectID: "alpha"},
 			{Name: "Beta Project", ProjectID: "beta"},
 			{Name: "Gamma Project", ProjectID: "gamma"},
+		},
+		Source: "cache",
+	})
+	return m
+}
+
+func disabledProjectsModel() Model {
+	m := New(nil).SetBounds(0, 0, 32, 12).SetActive(true)
+	m, _ = m.Update(messages.ProjectsLoadedMsg{
+		Projects: []core.Project{
+			{Name: "Alpha Project", ProjectID: "alpha", Disabled: true},
+			{Name: "Beta Project", ProjectID: "beta"},
 		},
 		Source: "cache",
 	})

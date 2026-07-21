@@ -23,10 +23,15 @@ fbrcm [--help] [--version] [--profile <name>]
 ├── cache
 │   ├── list [--json]
 │   ├── path [--json]
-│   └── purge [--yes|-y]
+│   └── clear [--yes|-y]
 │
 ├── config
-│   └── path [--json]
+│   ├── path [--json]
+│   ├── show [key] [--json]
+│   ├── set <key> <value>... [--json]
+│   ├── reset [key] [--yes|-y] [--json]
+│   ├── validate [--json]
+│   └── edit [--editor <command>]
 │
 ├── completion
 │   ├── bash [--no-descriptions]
@@ -38,6 +43,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── list <project>
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --search <text>
+│   │   ├── --expr <expr>
 │   │   ├── --update
 │   │   └── --json
 │   ├── show <project> <condition>
@@ -111,6 +117,13 @@ fbrcm [--help] [--version] [--profile <name>]
 │       ├── --yes, -y
 │       └── --json
 │
+├── duplicate <source> <target>
+│   ├── --project, -p <query>  repeated
+│   ├── --expr <expr>
+│   ├── --dry-run
+│   ├── --draft
+│   └── --yes, -y
+│
 ├── get [parameter]
 │   ├── --project, -p <query>  repeated
 │   ├── --filter, -f <query>   repeated
@@ -141,18 +154,21 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── add gcloud <auth-id> [--label <label>]
 │   ├── login <auth-id> [--noopen]
 │   ├── path <auth-id> [--json]
-│   ├── purge <auth-id> [--yes|-y]
-│   └── bind <project-query> --auth <auth-id>
+│   ├── delete <auth-id> [--yes|-y]
+│   └── bind --auth <auth-id> [--project|-p <query>]...
 │
 ├── profile
 │   ├── list [--json]
 │   ├── path <profile> [--json]
-│   ├── purge <profile> [--yes|-y]
+│   ├── delete <profile> [--yes|-y]
 │   ├── rename <old-name> <new-name>
 │   └── switch <name>
 │
 ├── project
-│   ├── export <project> [--to <path>]
+│   ├── show <project> [--update] [--json]
+│   ├── open <project>
+│   ├── defaults <project> [--format json|xml|plist] [--to <path>] [--yes|-y]
+│   ├── export <project> [--to <path>] [--yes|-y]
 │   └── import <project>
 │       ├── --from <path>
 │       ├── --group <name>        repeated
@@ -165,7 +181,9 @@ fbrcm [--help] [--version] [--profile <name>]
 │       ├── --keep-portable-conditions-only
 │       ├── --merge
 │       ├── --override
-│       └── --merge-resolve current|import
+│       ├── --merge-resolve current|import
+│       ├── --yes, -y
+│       └── --json
 │
 ├── versions
 │   ├── list <project>
@@ -191,7 +209,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   └── --exit-code
 │   ├── export <project> <version>
 │   │   ├── --to <path>
-│   │   └── --cached
+│   │   ├── --cached
+│   │   └── --yes, -y
 │   ├── rollback <project> <version>
 │   │   ├── --dry-run
 │   │   ├── --yes, -y
@@ -214,6 +233,10 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --json
 │   │   ├── --url
 │   │   └── --auth <auth-id>
+│   ├── forget
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --expr <expr>
+│   │   └── --yes, -y
 │   ├── diff <source-project> <target-project>
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --group <name>        repeated
@@ -238,7 +261,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --yes, -y
 │   │   └── --json
 │   ├── path [--json]
-│   └── purge [--yes|-y]
+│   └── reset [--yes|-y]
 │
 └── update [parameter]
     ├── --project, -p <query>  repeated
@@ -266,9 +289,13 @@ fbrcm [--help] [--version] [--profile <name>]
 
 All commands support `--help`. Root also supports `--version`.
 
-Most commands require a selected profile. `profile`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
+When `FBRCM_OFFLINE` is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before executing a network-capable CLI command and automatically enables offline mode if the probe fails. Help, version, and all `config` commands skip this probe. The probe and other standard HTTP requests honor `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`, including their lowercase forms. Defining `FBRCM_OFFLINE`, including with an empty value or `0`, enables offline mode without probing.
+
+Most commands require a selected profile. `profile`, `config`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable. Config commands ignore the per-process profile override because they manage the global file, including its persisted active-profile field.
 
 Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
+
+Human-readable collection output always renders its normal table, including when there are no rows. An empty result therefore contains the table headers rather than a special empty-state message. A command whose primary JSON result is a collection always emits a top-level array and uses `[]` when empty. Singular resources and single-operation reports remain JSON objects.
 
 Auth identities, project cache, parameter cache, and drafts are profile-scoped. Project cache stores known projects plus their selected `auth_id`. Default storage lives under user config/cache directories. Override roots with:
 
@@ -322,12 +349,20 @@ project import
 versions diff
 ```
 
+Condition-context commands:
+
+```text
+conditions list
+```
+
 Project-context commands:
 
 ```text
 projects list
 projects update
+projects forget
 add
+duplicate
 ```
 
 ### Stdin Remote Config Mode
@@ -344,9 +379,9 @@ add
 
 Drafts are profile-scoped, self-contained records. Each record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and a draft format version. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
 
-`add`, `update`, `delete`, `project import`, and the condition mutation commands accept `--draft`. In draft mode they apply changes on top of an existing project draft or create a new draft from freshly revalidated Remote Config. They do not validate or publish to Firebase. Combining `--draft` with `--dry-run` previews the change without writing either draft or Firebase state.
+`add`, `duplicate`, `update`, `delete`, `project import`, and the condition mutation commands accept `--draft`. In draft mode they apply changes on top of an existing project draft or create a new draft from freshly revalidated Remote Config. They do not validate or publish to Firebase. Combining `--draft` with `--dry-run` previews the change without writing either draft or Firebase state.
 
-Immediate Remote Config writes refuse to proceed when the target has an unpublished draft. This guard applies to add, update, delete, condition mutations, project import, version rollback/restore, and project promotion. Resolve the draft with `draft publish` or `draft discard`, or add the intended mutation to it with `--draft`.
+Immediate Remote Config writes refuse to proceed when the target has an unpublished draft. This guard applies to add, duplicate, update, delete, condition mutations, project import, version rollback/restore, and project promotion. Resolve the draft with `draft publish` or `draft discard`, or add the intended mutation to it with `--draft`.
 
 Draft publish always fetches current Firebase state, performs a three-way merge from base, draft, and current, validates using the current ETag, and publishes only the exact candidate that was previewed. Conflicts preserve the local draft. Successfully published or already-applied drafts are removed locally. A publish that succeeds remotely but cannot remove its local record reports `published-cleanup-failed`; rerunning recognizes the already-applied content and retries cleanup without creating another version.
 
@@ -395,6 +430,24 @@ Remote mode loads projects, filters them, adds parameter where it does not alrea
 With `--draft`, the same mutation is stored locally on top of any existing draft. Without `--draft`, the command refuses projects that already have unpublished drafts.
 
 Stdin mode reads Remote Config JSON from stdin, adds parameter to that JSON, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field.
+
+### `fbrcm duplicate <source> <target>`
+
+Duplicates one complete Remote Config parameter in every matched project. The copy preserves the source group, description, value type, default value, conditional values, and condition references. Source lookup is exact and case-insensitive. A project without the source parameter is skipped; an ambiguous source or an existing target name is an error. Target collision checks are also case-insensitive and never overwrite an existing parameter.
+
+Flags:
+
+```text
+-p, --project <query>   filter target projects; may be repeated
+--expr <expr>           filter target projects with project context
+--dry-run               preview without writing local or Firebase state
+--draft                 save changes to local drafts instead of publishing
+-y, --yes               print diff and duplicate without confirmation
+```
+
+Remote mode prints the complete Remote Config diff and prompts before each duplicate unless `--yes` is set. It validates and publishes with ETag conflict handling. Project filters are applied before the project-context expression, matching `add` behavior.
+
+With `--draft`, duplication composes onto each existing draft and remains local. Without `--draft`, all selected projects are checked for drafts before the first publish. The command does not use stdin transformation mode.
 
 ### `fbrcm get [parameter]`
 
@@ -488,13 +541,14 @@ Flags:
 ```text
 -f, --filter <query>   filter condition names; may be repeated
 --search <text>        case-insensitive substring search across name and expression
+--expr <expr>          filter using condition expression context
 --update               revalidate cached Remote Config before printing
 --json                 print structured JSON
 ```
 
-Condition filters use the shared mode prefixes described under Filter Queries. Repeated filters are ORed. `--search` is ANDed with the filters.
+Condition filters use the shared mode prefixes described under Filter Queries. Repeated filters are ORed. `--filter`, `--search`, and `--expr` are ANDed together. See [EXPR.md](/Users/vic/Dev/pets/fbrcm/EXPR.md) for condition context fields and examples.
 
-Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Long expressions are cropped with an ellipsis. JSON output includes `project`, `version`, `source`, `has_draft`, and `conditions`.
+Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Long expressions are cropped with an ellipsis. JSON output is a plain array of condition objects without repeated project/version/source context.
 
 ### `fbrcm conditions show <project> <condition>`
 
@@ -672,7 +726,7 @@ For each project, the command fetches current Firebase state, merges local inten
 
 If current Firebase state already contains the effective draft changes, no new version is created and the draft is removed as `already-applied`. Batch mode continues after independent project failures and returns nonzero if any item failed.
 
-JSON output is an object with a `results` array. Results include project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, and `published-cleanup-failed`. Prompts and human diffs are kept off JSON stdout.
+JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, and `published-cleanup-failed`. Prompts and human diffs are kept off JSON stdout.
 
 ### `fbrcm draft discard [project...]`
 
@@ -688,6 +742,27 @@ Flags:
 
 Human mode prints the local `base → draft` diff before confirmation. Invalid drafts warn that preview is unavailable but can still be explicitly discarded. Naming a nonexistent draft is an error; `--all` with no drafts is a successful no-op.
 
+JSON output is an array containing one status result per selected project.
+
+### `fbrcm project show <project>`
+
+Shows cached project metadata, the selected auth identity used for project operations, and every configured auth identity that discovered the project during synchronization. `<project>` uses the shared positional project resolution described above.
+
+Flags:
+
+```text
+--update   synchronize projects with every configured auth identity before printing
+--json     print the project using the same JSON contract as `projects list --json`, including its Firebase Console URL
+```
+
+Without `--update`, auth access reflects the latest cached project synchronization.
+
+The status is `disabled` when the latest project synchronization could not find the project through its assigned auth identity or any replacement identity. Disabled projects remain cached and visible, but live Firebase operations are blocked until a later update rediscovers and automatically rebinds them.
+
+### `fbrcm project open <project>`
+
+Opens the project's Remote Config page in the Firebase console. `<project>` uses the shared positional project resolution described above.
+
 ### `fbrcm project export <project>`
 
 Exports one project's Remote Config JSON. `<project>` uses the shared positional project resolution described above.
@@ -696,9 +771,24 @@ Flags:
 
 ```text
 --to <path>   write JSON to file; default prints JSON to stdout
+--yes, -y     overwrite an existing destination without confirmation
 ```
 
-Export normalizes JSON by unescaping `<`, `>`, `&`, trimming trailing line breaks, and ordering numeric conditional value keys before non-numeric keys.
+Export normalizes JSON by unescaping `<`, `>`, `&`, trimming trailing line breaks, and ordering numeric conditional value keys before non-numeric keys. When `--to` names an existing file, export asks before replacing it unless `--yes` is set. A destination created after the initial check is not overwritten without authorization.
+
+### `fbrcm project defaults <project>`
+
+Downloads the active client-side Remote Config parameter defaults directly from Firebase. `<project>` uses the shared positional project resolution described above. JSON is suitable for web applications, XML for Android, and plist for Apple applications.
+
+Flags:
+
+```text
+--format json|xml|plist   output format; default json; case-insensitive
+--to <path>               write defaults to a private file; default prints the raw response to stdout
+--yes, -y                 overwrite an existing destination without confirmation
+```
+
+The downloaded payload contains parameter keys and their backend default values rather than the complete Remote Config template. Output bytes are preserved as returned by Firebase. When `--to` names an existing file, the command asks before downloading or replacing it unless `--yes` is set. A destination created after the initial check is not overwritten without authorization.
 
 ### `fbrcm project import <project>`
 
@@ -729,6 +819,8 @@ Flags:
 --merge                                  merge import into current config
 --override                               replace current config with import
 --merge-resolve current|import           auto-resolve merge conflicts
+--yes, -y                                skip final import confirmation
+--json                                   print the import result as JSON
 ```
 
 Mutual exclusions:
@@ -740,9 +832,11 @@ Mutual exclusions:
 
 `--merge-resolve` requires `--merge`. Valid values are `current` and `import`.
 
-If current config is empty, import replaces it. If current config has content and neither `--merge` nor `--override` is set, command prompts for strategy. Merge adds missing conditions, groups, and parameters. Conflicting condition, group description, or parameter values prompt unless `--merge-resolve` is set.
+If current config is empty, import replaces it. If current config has content and neither `--merge` nor `--override` is set, command prompts for strategy. Merge adds missing conditions, groups, and parameters. Conflicting condition, group description, or parameter values prompt unless `--merge-resolve` is set. `--yes` skips only the final confirmation; automated imports should also specify `--merge` or `--override` and, when needed, `--merge-resolve`.
 
 After import transform, the CLI reports how many source conditions are kept and removed. `--keep-portable-conditions-only` removes conditions tied to destination-specific resources such as Analytics audiences or user properties, experiments, Firebase App IDs, custom signals, and installation IDs. Unused conditions and unknown condition references are also removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
+
+JSON output is one object containing `project_id`, `status`, `changed`, `draft`, and `dry_run`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, or `canceled`. JSON mode suppresses human condition summaries and diffs but does not imply `--yes` or choose an import strategy.
 
 ### Remote Config version history
 
@@ -793,7 +887,7 @@ Human live output includes version number, current marker, publication time, upd
 
 In cached mode, `--since` and `--until` apply to the local cache time because authoritative publication metadata may be unavailable.
 
-JSON output is an object containing `project`, `versions`, and optional `next_page_token`. Each version includes Firebase metadata plus `current`, `cached`, and available local cache fields.
+JSON output is a plain array of version objects without project or pagination metadata. Each element includes Firebase metadata, `current`, `cached`, and available local cache fields.
 
 ### `fbrcm versions show <project> <version>`
 
@@ -839,9 +933,10 @@ Flags:
 ```text
 --to <path>   write normalized JSON to a private file; default prints JSON to stdout
 --cached      require the exact local snapshot and perform no Firebase request
+--yes, -y     overwrite an existing destination without confirmation
 ```
 
-Normalization matches `project export`.
+Normalization and overwrite protection match `project export`.
 
 ### `fbrcm versions rollback <project> <version>`
 
@@ -921,6 +1016,20 @@ Flags:
 --auth <auth-id>       sync projects for one auth identity
 ```
 
+Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project JSON includes a `disabled` boolean; human project listings mark disabled identities in the Auth column.
+
+### `fbrcm projects forget`
+
+Forgets matching locally tracked projects and deletes their cached Remote Config snapshots, cached versions, and drafts. It never deletes Firebase projects or otherwise reads from or writes to Firebase. With no filter or expression, every configured project is selected. The expression uses the same project context as `projects list`, but evaluates against local Remote Config cache only; project-only expressions work even when that cache is missing.
+
+Flags:
+
+```text
+-f, --filter <query>   filter projects; may be repeated
+--expr <expr>          filter projects with project context using local cache only
+-y, --yes              skip confirmation
+```
+
 ### `fbrcm projects diff <source-project> <target-project>`
 
 Compares Remote Config between two projects. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Both arguments use shared positional project resolution.
@@ -986,9 +1095,9 @@ Flags:
 --json   print {"path": "..."}
 ```
 
-### `fbrcm projects purge`
+### `fbrcm projects reset`
 
-Deletes cached projects config file.
+Resets the locally cached projects registry by deleting its rebuildable config file. Project Remote Config snapshots, cached versions, and drafts are not deleted.
 
 Flags:
 
@@ -1009,9 +1118,11 @@ Human-readable output uses the narrowest table and column widths that fit all co
 Flags:
 
 ```text
---json                 print the complete report as JSON
+--json                 print diagnostic checks as JSON
 --timeout <duration>   optional positive time limit for the complete diagnostic run
 ```
+
+JSON output is an array of checks. Every element includes the report-level profile, config directory, cache directory, and offline state.
 
 ### `fbrcm cache list`
 
@@ -1035,7 +1146,7 @@ Flags:
 --json   print {"path": "..."}
 ```
 
-### `fbrcm cache purge`
+### `fbrcm cache clear`
 
 Deletes all locally cached immutable Remote Config versions. The confirmation reports snapshot count, total size, and project count, and warns that versions no longer retained by Firebase may be permanently lost. Drafts are never deleted by this command.
 
@@ -1057,15 +1168,85 @@ Flags:
 --json   print {"path": "..."}
 ```
 
+All `config` subcommands are local operations. They neither initialize a profile nor run the startup connectivity probe.
+
+### `fbrcm config show [key]`
+
+Shows the effective global configuration after applying built-in defaults and keybinding migration. With no key, human output is TOML and includes the complete effective key map. Supported keys are `profile`, `powerline_glyphs`, `keys`, `keys.<block>`, and `keys.<block>.<action>`. A selected scalar prints as plain text; a selected keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
+
+Flags:
+
+```text
+--json   print structured JSON
+```
+
+Full JSON output has `path`, `exists`, and `config` fields. Selected-key JSON has `key`, `value`, and `source`; `source` is `configured`, `default`, or `migrated`. A missing config file is not created.
+
+### `fbrcm config set <key> <value>...`
+
+Sets a typed preference and atomically replaces the global config file with private permissions. Supported forms are:
+
+```text
+powerline_glyphs true|false
+keys.<block>.<action> <key>...
+```
+
+The active `profile` is read-only here; use `fbrcm profile switch <name>`. The complete candidate configuration is validated before writing, including unknown blocks/actions, empty or duplicate bindings, unsupported key names, and conflicts with configured or default actions. Failed validation leaves the file unchanged.
+
+Flags:
+
+```text
+--json   print {"key": "...", "previous": ..., "value": ..., "changed": true|false}
+```
+
+### `fbrcm config reset [key]`
+
+Resets a preference to its built-in default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or `keys.<block>.<action>`. With no key, it resets all preferences while preserving the persisted active profile. A changed reset asks for confirmation; Yes is selected by default. Writes are validated and atomic.
+
+Flags:
+
+```text
+-y, --yes   reset without confirmation
+    --json  print {"key": "...", "status": "reset|unchanged|canceled", "changed": true|false}
+```
+
+### `fbrcm config validate`
+
+Strictly validates TOML structure, profile references, and the complete effective key map. It reports all keybinding diagnostics in stable order. A missing file is valid because built-in defaults apply. Invalid configuration returns exit status 1; operational failures also return nonzero.
+
+Flags:
+
+```text
+--json   print {"path": "...", "exists": true|false, "valid": true|false, "errors": [...], "warnings": [...]}
+```
+
+Each diagnostic contains `severity`, `code`, `key`, and `message`.
+
+### `fbrcm config edit`
+
+Opens a staged copy of the global config in an editor. After the editor exits, fbrcm strictly validates the staged file and atomically replaces the original only when it is valid. If editing or validation fails, the original remains unchanged and the staged file path is preserved for recovery. When the config file does not exist, the editor starts with the complete default configuration.
+
+Editor resolution order is `--editor`, `FBRCM_EDITOR`, `VISUAL`, `EDITOR`, then `vi` on Unix-like systems or `notepad.exe` on Windows. Commands may include arguments; GUI editors generally need their wait flag, for example `--editor "code --wait"`.
+
+Flags:
+
+```text
+--editor <command>   override the editor command
+```
+
 ### `fbrcm auth list`
 
 Lists configured auth identities.
+
+When a command needs Firebase access but the active profile has no configured auth identity, the error includes setup guidance. Run `fbrcm` for guided setup, or use `fbrcm auth add --help` to see the CLI authentication options.
 
 Flags:
 
 ```text
 --json   print auth identities as JSON
 ```
+
+JSON output is an array. Every identity includes a `default` boolean; exactly the configured default identity has `default: true`.
 
 ### `fbrcm auth add oauth <auth-id>`
 
@@ -1135,7 +1316,7 @@ Flags:
 --json   print paths as JSON
 ```
 
-### `fbrcm auth purge <auth-id>`
+### `fbrcm auth delete <auth-id>`
 
 Deletes an auth identity and its client secret/token files.
 
@@ -1145,15 +1326,18 @@ Flags:
 -y, --yes   skip confirmation dialogs
 ```
 
-### `fbrcm auth bind <project-query>`
+### `fbrcm auth bind`
 
-Binds matching cached projects to an auth identity.
+Binds cached projects to an auth identity. Without `--project`, every cached project is selected. Repeated project filters are ORed and use the same mode-prefixed name/project-ID matching as `get --project` and `projects list --filter`.
 
 Flags:
 
 ```text
---auth <auth-id>   auth identity to bind
+--auth <auth-id>          auth identity to bind
+-p, --project <query>     filter projects; may be repeated
 ```
+
+A project is rebound only when the target identity discovered it during project synchronization. Inaccessible projects are skipped, logged individually as errors, and counted in the final bound/skipped summary; they do not fail the rest of the batch.
 
 ### `fbrcm profile`
 
@@ -1187,9 +1371,9 @@ Flags:
 --json   print [{"path": "..."}, {"path": "..."}]
 ```
 
-### `fbrcm profile purge <profile>`
+### `fbrcm profile delete <profile>`
 
-Deletes profile config and cache directories. Confirmation defaults to yes. Active profile cannot be purged.
+Deletes profile config and cache directories. Confirmation defaults to yes. The active profile cannot be deleted.
 
 Flags:
 

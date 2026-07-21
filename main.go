@@ -25,7 +25,9 @@ func main() {
 		mode = corelog.ModeTUI
 	}
 	corelog.Init(mode)
-	firebase.InitOfflineMode()
+	if mode == corelog.ModeTUI {
+		firebase.InitOfflineMode()
+	}
 
 	svc, err := core.NewService(context.Background())
 	if err != nil {

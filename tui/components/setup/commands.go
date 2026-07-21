@@ -42,9 +42,9 @@ type externalOpenedMsg struct{ err error }
 
 type profileSwitchedMsg struct{ err error }
 
-type authPurgedMsg struct{ err error }
+type authDeletedMsg struct{ err error }
 
-type profilePurgedMsg struct{ err error }
+type profileDeletedMsg struct{ err error }
 
 func (m Model) inspectCmd() tea.Cmd {
 	return func() tea.Msg {
@@ -148,17 +148,17 @@ func (m Model) switchProfileCmd() tea.Cmd {
 	}
 }
 
-func (m Model) purgeAuthCmd() tea.Cmd {
+func (m Model) deleteAuthCmd() tea.Cmd {
 	authID := m.authID
 	return func() tea.Msg {
-		_, _, err := m.svc.PurgeAuth(authID)
-		return authPurgedMsg{err: err}
+		_, _, err := m.svc.DeleteAuth(authID)
+		return authDeletedMsg{err: err}
 	}
 }
 
-func (m Model) purgeProfileCmd() tea.Cmd {
+func (m Model) deleteProfileCmd() tea.Cmd {
 	profile := m.profileFrom
-	return func() tea.Msg { return profilePurgedMsg{err: config.PurgeProfile(profile)} }
+	return func() tea.Msg { return profileDeletedMsg{err: config.DeleteProfile(profile)} }
 }
 
 func clearScreenCmd() tea.Cmd {

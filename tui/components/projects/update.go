@@ -1,6 +1,7 @@
 package projects
 
 import (
+	"maps"
 	"time"
 
 	"charm.land/bubbles/v2/spinner"
@@ -19,7 +20,27 @@ const doubleClickWindow = 400 * time.Millisecond
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.ProjectsLoadedMsg:
-		m.updateLoaded(msg)
+		return m, m.updateLoaded(msg)
+	case messages.ProjectExpressionConfigsLoadedMsg:
+		m.expressionConfigs = msg.Configs
+		maps.Copy(m.expressionConfigs, m.expressionOverrides)
+		m.expressionConfigsReady = true
+		m.applyFilter()
+		m.syncViewport()
+		return m, nil
+	case messages.ParametersLoadedMsg:
+		if msg.Err == nil && msg.Tree != nil {
+			cfg := msg.Tree.RemoteConfig()
+			m.expressionOverrides[msg.Project.ProjectID] = cfg
+			if m.expressionConfigsReady {
+				m.expressionConfigs[msg.Project.ProjectID] = cfg
+				if m.filter.ExpressionMode() {
+					m.applyFilter()
+					m.syncViewport()
+				}
+			}
+		}
+		return m, nil
 
 	case spinner.TickMsg:
 		return m.updateSpinner(msg)
@@ -42,13 +63,24 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) updateLoaded(msg messages.ProjectsLoadedMsg) {
+func (m *Model) updateLoaded(msg messages.ProjectsLoadedMsg) tea.Cmd {
 	m.allProjects = msg.Projects
 	m.source = msg.Source
 	m.err = msg.Err
 	m.loading = false
+	m.expressionConfigs = make(map[string]*firebase.RemoteConfig)
+	m.expressionConfigsReady = false
+	selectionChanged := m.dropDisabledSelections()
 	m.applyFilter()
 	m.syncViewport()
+	var cmds []tea.Cmd
+	if selectionChanged {
+		cmds = append(cmds, m.selectionChangedCmd())
+	}
+	if m.filter.ExpressionMode() {
+		cmds = append(cmds, m.loadExpressionConfigsCmd())
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m Model) updateSpinner(msg spinner.TickMsg) (Model, tea.Cmd) {
@@ -70,11 +102,23 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 	}
 
 	k := msg.String()
-	if mode, ok := tuiconfig.FilterModeForKey(k); ok {
-		cmd := m.filter.Activate(mode)
+	if !m.filter.ExpressionFocused() && tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterExpression, k) {
+		cmd := m.filter.ActivateExpression()
 		m.applyFilter()
 		m.syncViewport()
-		return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true))
+		cmds := []tea.Cmd{cmd, messages.KeyboardCaptureCmd(true)}
+		if !m.expressionConfigsReady {
+			cmds = append(cmds, m.loadExpressionConfigsCmd())
+		}
+		return m, tea.Batch(cmds...)
+	}
+	if !m.filter.ExpressionFocused() {
+		if mode, ok := tuiconfig.FilterModeForKey(k); ok {
+			cmd := m.filter.Activate(mode)
+			m.applyFilter()
+			m.syncViewport()
+			return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true))
+		}
 	}
 	if m.filter.Focused() {
 		return m.updateFilterKey(msg, k)
@@ -86,7 +130,9 @@ func (m Model) updateFilterKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterApply, k):
 		m.filter.Blur()
-		m.selectOnlyCurrent()
+		if !m.selectOnlyCurrent() {
+			return m, messages.KeyboardCaptureCmd(false)
+		}
 		m.refreshViewport()
 		return m, tea.Batch(m.selectionChangedCmd(), messages.KeyboardCaptureCmd(false), setActivePanelCmd(panels.Parameters))
 	case tuiconfig.Matches(tuiconfig.BlockFilter, tuiconfig.ActionFilterCancel, k):
@@ -123,12 +169,16 @@ func (m Model) updateProjectKey(k string) (Model, tea.Cmd) {
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionPageUp, k):
 		m.pageUp()
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionSelect, k):
-		m.selectOnlyCurrent()
+		if !m.selectOnlyCurrent() {
+			return m, nil
+		}
 		return m, tea.Batch(m.selectionChangedCmd(), setActivePanelCmd(panels.Parameters))
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionOpen, k):
 		return m, m.openCurrentProjectCmd()
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionMark, k):
-		m.toggleCurrentSelection()
+		if !m.toggleCurrentSelection() {
+			return m, nil
+		}
 		return m, m.selectionChangedCmd()
 	}
 	return m, nil
@@ -148,7 +198,7 @@ func (m Model) updateMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 		return m.updateOutsideMouseClick()
 	}
 	if m.isMouseOnFilter(msg.Mouse()) {
-		cmd := m.filter.Activate(m.filter.Mode())
+		cmd := m.filter.Focus()
 		return m, tea.Batch(cmd, messages.KeyboardCaptureCmd(true))
 	}
 	if m.filter.Focused() {
@@ -171,8 +221,10 @@ func (m Model) updateFilteredMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) 
 		m.cursor = index
 		m.syncViewport()
 		if msg.Mouse().Button == tea.MouseLeft && m.isDoubleClick(index) {
-			m.selectOnlyCurrent()
-			return m, tea.Batch(m.selectionChangedCmd(), messages.KeyboardCaptureCmd(false))
+			if m.selectOnlyCurrent() {
+				return m, tea.Batch(m.selectionChangedCmd(), messages.KeyboardCaptureCmd(false))
+			}
+			return m, messages.KeyboardCaptureCmd(false)
 		}
 		m.rememberClick(index)
 	}
@@ -184,8 +236,10 @@ func (m Model) updateProjectMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 		m.cursor = index
 		m.syncViewport()
 		if msg.Mouse().Button == tea.MouseLeft && m.isDoubleClick(index) {
-			m.selectOnlyCurrent()
-			return m, m.selectionChangedCmd()
+			if m.selectOnlyCurrent() {
+				return m, m.selectionChangedCmd()
+			}
+			return m, nil
 		}
 		m.rememberClick(index)
 	}
@@ -239,6 +293,9 @@ func (m Model) openCurrentProjectCmd() tea.Cmd {
 	}
 
 	project := m.projects[m.cursor]
+	if project.Disabled {
+		return nil
+	}
 	url := firebase.RemoteConfigConsoleURL(project.ProjectID)
 	return func() tea.Msg {
 		logger := corelog.For("tui.projects")

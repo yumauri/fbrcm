@@ -134,6 +134,35 @@ func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.P
 	return filtered, nil
 }
 
+// FilterProjectsByCachedExpr evaluates project expressions using only locally
+// stored Remote Config. A missing cache supplies an empty config context, so
+// expressions over project fields remain usable without contacting Firebase.
+func FilterProjectsByCachedExpr(svc *core.Core, projects []core.Project, rawExpr string) ([]core.Project, error) {
+	rawExpr = strings.TrimSpace(rawExpr)
+	if rawExpr == "" {
+		return projects, nil
+	}
+
+	compiled, ok := CompileExpr(rawExpr, "")
+	if !ok {
+		return nil, nil
+	}
+
+	filtered := make([]core.Project, 0, len(projects))
+	for _, project := range projects {
+		cfg, err := loadCachedProjectExprConfig(svc, project)
+		if err != nil {
+			corelog.For("filter").Error("cached project expression context load failed; skipping project", "project_id", project.ProjectID, "expr", rawExpr, "err", err)
+			continue
+		}
+		match, ok := MatchProjectByCompiledExpr(compiled, project, cfg)
+		if ok && match {
+			filtered = append(filtered, project)
+		}
+	}
+	return filtered, nil
+}
+
 func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExpr string) bool {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
@@ -197,6 +226,20 @@ func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Proj
 	return match, true
 }
 
+func MatchConditionByCompiledExpr(compiled *filter.Expression, project core.Project, entry core.ConditionEntry) (bool, bool) {
+	if compiled == nil {
+		return true, true
+	}
+
+	match, err := compiled.MatchCondition(project.ProjectID, project.Name, entry)
+	if err != nil {
+		corelog.For("filter").Error("condition expression evaluation failed; skipping condition", "project_id", project.ProjectID, "condition", entry.Name, "err", err)
+		return false, false
+	}
+
+	return match, true
+}
+
 func loadProjectExprConfig(ctx context.Context, svc *core.Core, project core.Project) (*firebase.RemoteConfig, error) {
 	cache, _, err := svc.GetParameters(ctx, project.ProjectID, false)
 	if err != nil {
@@ -208,4 +251,8 @@ func loadProjectExprConfig(ctx context.Context, svc *core.Core, project core.Pro
 		return nil, fmt.Errorf("decode remote config: %w", err)
 	}
 	return cfg, nil
+}
+
+func loadCachedProjectExprConfig(svc *core.Core, project core.Project) (*firebase.RemoteConfig, error) {
+	return svc.LoadCachedRemoteConfig(project.ProjectID)
 }

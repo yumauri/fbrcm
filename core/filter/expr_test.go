@@ -3,6 +3,7 @@ package filter
 import (
 	"testing"
 
+	"github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -144,6 +145,51 @@ func TestMatchParameter(t *testing.T) {
 			}
 			if got != tc.want {
 				t.Fatalf("expr %q (param %q group %q) = %v, want %v", tc.expr, tc.param, tc.group, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestMatchCondition(t *testing.T) {
+	entry := conditions.Entry{
+		Priority:   2,
+		Name:       "beta",
+		Expression: "app.version > '2'",
+		TagColor:   "BLUE",
+		Usages: []conditions.Usage{
+			{GroupLabel: "checkout", ParameterKey: "button_enabled", RawValue: "true", Value: "true", ValueType: "BOOLEAN", Plain: true},
+			{GroupLabel: "(root)", ParameterKey: "welcome", RawValue: "hello", Value: "hello", ValueType: "STRING", Plain: true},
+		},
+	}
+	cases := []struct {
+		name string
+		expr string
+		want bool
+	}{
+		{name: "project id", expr: `project_id == "demo-prod"`, want: true},
+		{name: "name", expr: `name == "beta"`, want: true},
+		{name: "priority", expr: `priority <= 2`, want: true},
+		{name: "expression", expr: `expression contains "app.version"`, want: true},
+		{name: "color", expr: `color == "BLUE"`, want: true},
+		{name: "usage count", expr: `usage_count == 2`, want: true},
+		{name: "usage length", expr: `len(usages) == 2`, want: true},
+		{name: "usage group", expr: `any(usages, #.group == "checkout")`, want: true},
+		{name: "usage parameter", expr: `any(usages, #.parameter startsWith "button")`, want: true},
+		{name: "typed usage value", expr: `any(usages, #.value == true)`, want: true},
+		{name: "usage value type", expr: `any(usages, #.value_type == "NUMBER")`, want: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			compiled, err := CompileExpression(tc.expr)
+			if err != nil {
+				t.Fatalf("compile %q: %v", tc.expr, err)
+			}
+			got, err := compiled.MatchCondition("demo-prod", "Demo Prod", entry)
+			if err != nil {
+				t.Fatalf("match %q: %v", tc.expr, err)
+			}
+			if got != tc.want {
+				t.Fatalf("expr %q = %v, want %v", tc.expr, got, tc.want)
 			}
 		})
 	}

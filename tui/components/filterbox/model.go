@@ -7,6 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
@@ -14,8 +15,13 @@ import (
 )
 
 type Model struct {
-	mode  filter.Mode
-	input textinput.Model
+	mode            filter.Mode
+	expression      bool
+	textValue       string
+	expressionValue string
+	compiled        *filter.Expression
+	expressionErr   error
+	input           textinput.Model
 }
 
 func New() Model {
@@ -32,6 +38,22 @@ func New() Model {
 
 func (m Model) Mode() filter.Mode {
 	return m.mode
+}
+
+func (m Model) ExpressionMode() bool {
+	return m.expression
+}
+
+func (m Model) ExpressionFocused() bool {
+	return m.expression && m.Focused()
+}
+
+func (m Model) CompiledExpression() *filter.Expression {
+	return m.compiled
+}
+
+func (m Model) ExpressionValid() bool {
+	return !m.expression || m.expressionErr == nil
 }
 
 func (m Model) Value() string {
@@ -54,7 +76,29 @@ func (m Model) Height() int {
 }
 
 func (m *Model) Activate(mode filter.Mode) tea.Cmd {
+	if m.expression {
+		m.expressionValue = m.input.Value()
+		m.input.SetValue(m.textValue)
+		m.expression = false
+	}
 	m.mode = mode
+	m.applyInputStyle()
+	m.input.CursorEnd()
+	return m.input.Focus()
+}
+
+func (m *Model) ActivateExpression() tea.Cmd {
+	if !m.expression {
+		m.textValue = m.input.Value()
+		m.input.SetValue(m.expressionValue)
+		m.expression = true
+	}
+	m.validateExpression()
+	m.input.CursorEnd()
+	return m.input.Focus()
+}
+
+func (m *Model) Focus() tea.Cmd {
 	m.input.CursorEnd()
 	return m.input.Focus()
 }
@@ -65,6 +109,14 @@ func (m *Model) Blur() {
 
 func (m *Model) ClearAndBlur() {
 	m.input.SetValue("")
+	if m.expression {
+		m.expressionValue = ""
+		m.compiled = nil
+		m.expressionErr = nil
+	} else {
+		m.textValue = ""
+	}
+	m.applyInputStyle()
 	m.input.Blur()
 }
 
@@ -77,16 +129,48 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.PasteMsg:
 		m.input.SetValue(msg.Content)
 		m.input.CursorEnd()
+		m.valueChanged()
 		return m, nil
 	case tea.ClipboardMsg:
 		m.input.SetValue(msg.Content)
 		m.input.CursorEnd()
+		m.valueChanged()
 		return m, nil
 	}
 
 	var cmd tea.Cmd
 	m.input, cmd = m.input.Update(msg)
+	m.valueChanged()
 	return m, cmd
+}
+
+func (m *Model) valueChanged() {
+	if m.expression {
+		m.expressionValue = m.input.Value()
+		m.validateExpression()
+		return
+	}
+	m.textValue = m.input.Value()
+}
+
+func (m *Model) validateExpression() {
+	compiled, err := filter.CompileExpression(m.input.Value())
+	m.expressionErr = err
+	if err == nil {
+		m.compiled = compiled
+	}
+	m.applyInputStyle()
+}
+
+func (m *Model) applyInputStyle() {
+	inputStyle := inputstyles.TextInput()
+	if m.expression && m.expressionErr != nil {
+		errorStyle := lipgloss.NewStyle().Foreground(styles.PaletteError)
+		inputStyle.Focused.Text = errorStyle
+		inputStyle.Blurred.Text = errorStyle
+		inputStyle.Cursor.Color = styles.PaletteError
+	}
+	m.input.SetStyles(inputStyle)
 }
 
 func (m Model) View(width int, active bool, count int) []string {
@@ -108,12 +192,46 @@ func (m Model) View(width int, active bool, count int) []string {
 		borderStyle.Render(strings.Repeat("─", rightWidth)) +
 		borderStyle.Render("┤")
 
-	content := textStyle.Render(m.mode.Label()+" ") + m.input.View()
+	label := m.mode.Label()
+	if m.expression {
+		label = ":"
+	}
+	content := textStyle.Render(label+" ") + m.input.View()
 	content = truncateStyled(content, innerWidth)
 	content += strings.Repeat(" ", max(innerWidth-lipgloss.Width(content), 0))
 	content += borderStyle.Render("│")
 
 	return []string{separator, content}
+}
+
+// OverlayExpressionError composites the expression diagnostic over an already
+// rendered panel's bottom border without changing the filter or panel height.
+// leftInset is the number of cells before the filter label in the panel.
+func (m Model) OverlayExpressionError(panel string, leftInset int) string {
+	if panel == "" || !m.expression || m.expressionErr == nil {
+		return panel
+	}
+
+	width := lipgloss.Width(panel)
+	height := lipgloss.Height(panel)
+	x := max(leftInset, 0) + 2
+	available := max(width-x-1, 0)
+	if height == 0 || available == 0 {
+		return panel
+	}
+
+	message := "Expression error: " + firstLine(m.expressionErr.Error())
+	message = ansi.Truncate(message, available, "…")
+	message = lipgloss.NewStyle().Foreground(styles.PaletteError).Render(message)
+	return lipgloss.NewCompositor(
+		lipgloss.NewLayer(panel).ID("filter-panel"),
+		lipgloss.NewLayer(message).ID("filter-expression-error").X(x).Y(height-1).Z(1),
+	).Render()
+}
+
+func firstLine(value string) string {
+	line, _, _ := strings.Cut(value, "\n")
+	return strings.TrimSpace(line)
 }
 
 func truncateStyled(value string, width int) string {

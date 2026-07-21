@@ -10,6 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
@@ -17,24 +18,27 @@ import (
 type Model struct {
 	svc *core.Core
 
-	allProjects []core.Project
-	projects    []core.Project
-	source      string
-	notice      string
-	err         error
-	loading     bool
-	spinner     spinner.Model
-	viewport    viewport.Model
-	filter      filterbox.Model
-	active      bool
-	collapsed   bool
-	x           int
-	y           int
-	width       int
-	height      int
-	cursor      int
-	selected    map[string]struct{}
-	lastClick   struct {
+	allProjects            []core.Project
+	projects               []core.Project
+	source                 string
+	notice                 string
+	err                    error
+	loading                bool
+	spinner                spinner.Model
+	viewport               viewport.Model
+	filter                 filterbox.Model
+	expressionConfigs      map[string]*firebase.RemoteConfig
+	expressionOverrides    map[string]*firebase.RemoteConfig
+	expressionConfigsReady bool
+	active                 bool
+	collapsed              bool
+	x                      int
+	y                      int
+	width                  int
+	height                 int
+	cursor                 int
+	selected               map[string]struct{}
+	lastClick              struct {
 		project int
 		at      time.Time
 	}
@@ -54,10 +58,12 @@ func New(svc *core.Core) Model {
 	)
 	vp.SoftWrap = false
 	return Model{
-		svc:      svc,
-		viewport: vp,
-		filter:   filterbox.New(),
-		loading:  true,
+		svc:                 svc,
+		viewport:            vp,
+		filter:              filterbox.New(),
+		expressionConfigs:   make(map[string]*firebase.RemoteConfig),
+		expressionOverrides: make(map[string]*firebase.RemoteConfig),
+		loading:             true,
 		spinner: spinner.New(
 			spinner.WithSpinner(spinner.Line),
 		),
@@ -140,7 +146,11 @@ func (m Model) PreferredWidth() int {
 	longest := lipgloss.Width(key + panelTitleLabel)
 	for _, project := range m.allProjects {
 		longest = max(longest, lipgloss.Width(project.Name))
-		longest = max(longest, lipgloss.Width(" "+project.ProjectID))
+		projectID := " " + project.ProjectID
+		if project.Disabled {
+			projectID += " · disabled"
+		}
+		longest = max(longest, lipgloss.Width(projectID))
 	}
 
 	mainTitleWidth := lipgloss.Width(" " + key + panelTitleLabel + " ")
@@ -165,6 +175,13 @@ func (m Model) CurrentProject() (core.Project, bool) {
 	return m.projects[m.cursor], true
 }
 
+// CurrentProjectEnabled reports whether the project under the cursor can be
+// used by project actions that require Firebase access.
+func (m Model) CurrentProjectEnabled() bool {
+	project, ok := m.CurrentProject()
+	return ok && !project.Disabled
+}
+
 // ActionTargets returns marked projects, or the current project when nothing
 // is marked. Project-level batch actions share this targeting convention.
 func (m Model) ActionTargets() []core.Project {
@@ -176,6 +193,34 @@ func (m Model) ActionTargets() []core.Project {
 		return nil
 	}
 	return []core.Project{project}
+}
+
+// AuthBindingAvailable reports whether every action target is enabled and at
+// least two auth identities discovered every target.
+func (m Model) AuthBindingAvailable() bool {
+	targets := m.ActionTargets()
+	if len(targets) == 0 {
+		return false
+	}
+	common := make(map[string]struct{}, len(targets[0].DiscoveredBy))
+	for _, authID := range targets[0].DiscoveredBy {
+		common[authID] = struct{}{}
+	}
+	for _, project := range targets {
+		if project.Disabled {
+			return false
+		}
+		discovered := make(map[string]struct{}, len(project.DiscoveredBy))
+		for _, authID := range project.DiscoveredBy {
+			discovered[authID] = struct{}{}
+		}
+		for authID := range common {
+			if _, ok := discovered[authID]; !ok {
+				delete(common, authID)
+			}
+		}
+	}
+	return len(common) >= 2
 }
 
 // ApplyProjectUpdates replaces matching cached project values and notifies
@@ -195,11 +240,45 @@ func (m *Model) ApplyProjectUpdates(updates []core.Project) tea.Cmd {
 			m.projects[i] = project
 		}
 	}
+	selectionChanged := m.dropDisabledSelections()
 	m.syncViewport()
-	if len(m.selected) == 0 {
+	if len(m.selected) == 0 && !selectionChanged {
 		return nil
 	}
 	return m.selectionChangedCmd()
+}
+
+// RemoveProjects deletes matching projects from the panel and notifies
+// downstream panels when a selected project was removed.
+func (m *Model) RemoveProjects(projects []core.Project) tea.Cmd {
+	ids := make(map[string]struct{}, len(projects))
+	for _, project := range projects {
+		ids[project.ProjectID] = struct{}{}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	selectionChanged := false
+	for projectID := range ids {
+		if _, ok := m.selected[projectID]; ok {
+			delete(m.selected, projectID)
+			selectionChanged = true
+		}
+	}
+	remaining := make([]core.Project, 0, len(m.allProjects))
+	for _, project := range m.allProjects {
+		if _, deleted := ids[project.ProjectID]; !deleted {
+			remaining = append(remaining, project)
+		}
+	}
+	m.allProjects = remaining
+	m.applyFilter()
+	m.syncViewport()
+	if selectionChanged {
+		return m.selectionChangedCmd()
+	}
+	return nil
 }
 
 func (m Model) listProjectsCmd() tea.Cmd {
@@ -210,6 +289,21 @@ func (m Model) listProjectsCmd() tea.Cmd {
 			Source:   source,
 			Err:      err,
 		}
+	}
+}
+
+func (m Model) loadExpressionConfigsCmd() tea.Cmd {
+	projects := append([]core.Project(nil), m.allProjects...)
+	return func() tea.Msg {
+		configs := make(map[string]*firebase.RemoteConfig, len(projects))
+		for _, project := range projects {
+			cfg, err := m.svc.LoadCachedRemoteConfig(project.ProjectID)
+			if err != nil {
+				continue
+			}
+			configs[project.ProjectID] = cfg
+		}
+		return messages.ProjectExpressionConfigsLoadedMsg{Configs: configs}
 	}
 }
 

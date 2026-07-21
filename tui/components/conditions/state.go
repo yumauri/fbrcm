@@ -69,7 +69,6 @@ func (m *Model) syncVisible() {
 	selected := m.currentIdentity()
 	m.visible = m.visible[:0]
 	query := m.filter.Value()
-	mode := m.filter.Mode()
 	for projectIndex, project := range m.projects {
 		if projectIndex > 0 {
 			m.visible = append(m.visible, visibleNode{kind: nodeGap, conditionIndex: -1})
@@ -79,7 +78,12 @@ func (m *Model) syncVisible() {
 			continue
 		}
 		for i, condition := range project.tree.Conditions {
-			if !conditionMatches(condition, query, mode) {
+			if m.filter.ExpressionMode() {
+				matched, err := m.filter.CompiledExpression().MatchCondition(project.project.ProjectID, project.project.Name, condition)
+				if err != nil || !matched {
+					continue
+				}
+			} else if !conditionMatches(condition, query, m.filter.Mode()) {
 				continue
 			}
 			m.visible = append(m.visible, visibleNode{kind: nodeCondition, projectID: project.project.ProjectID, conditionIndex: i, conditionName: condition.Name})

@@ -9,6 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 // New constructs auth command.
@@ -17,7 +18,7 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "auth",
 		Short: "Manage auth identities",
 	}
-	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newPurgeCommand(svc), newBindCommand(svc))
+	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newDeleteCommand(svc), newBindCommand(svc))
 	return authCmd
 }
 
@@ -35,7 +36,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{"default_auth_id": defaultAuthID, "auth": entries})
+				return shared.WriteJSON(cmd, newAuthListItems(entries, defaultAuthID))
 			}
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderAuthTable(entries, defaultAuthID))
 			return nil
@@ -211,10 +212,10 @@ func newPathCommand(svc *core.Core) *cobra.Command {
 	return cmd
 }
 
-func newPurgeCommand(svc *core.Core) *cobra.Command {
+func newDeleteCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "purge <auth-id>",
-		Short: "Delete auth identity files",
+		Use:   "delete <auth-id>",
+		Short: "Delete an auth identity and its files",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			yes, err := cmd.Flags().GetBool("yes")
@@ -234,13 +235,13 @@ func newPurgeCommand(svc *core.Core) *cobra.Command {
 					return nil
 				}
 			}
-			auth, paths, err := svc.PurgeAuth(args[0])
+			auth, paths, err := svc.DeleteAuth(args[0])
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged auth: %s\n", auth.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 deleted auth: %s\n", auth.ID)
 			for _, path := range authPathLines(auth, paths) {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 purged: %s\n", path)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 deleted: %s\n", path)
 			}
 			return nil
 		},
@@ -251,10 +252,10 @@ func newPurgeCommand(svc *core.Core) *cobra.Command {
 
 func newBindCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "bind <project-query>",
+		Use:   "bind",
 		Short: "Bind projects to auth identity",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			authID, err := cmd.Flags().GetString("auth")
 			if err != nil {
 				return err
@@ -262,16 +263,26 @@ func newBindCommand(svc *core.Core) *cobra.Command {
 			if authID == "" {
 				return fmt.Errorf("--auth is required")
 			}
-			projects, err := svc.BindProjectsAuth([]string{args[0]}, authID)
+			filters, err := cmd.Flags().GetStringArray("project")
 			if err != nil {
 				return err
 			}
-			for _, project := range projects {
+			result, err := svc.BindProjectsAuth(filters, authID)
+			if err != nil {
+				return err
+			}
+			for _, project := range result.Bound {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔗 bound: %s -> %s\n", project.ProjectID, authID)
 			}
+			logger := corelog.For("auth")
+			for _, skipped := range result.Skipped {
+				logger.Error("project auth bind skipped", "project_id", skipped.Project.ProjectID, "auth_id", authID, "err", skipped.Reason)
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Summary: %d bound, %d skipped\n", len(result.Bound), len(result.Skipped))
 			return nil
 		},
 	}
 	cmd.Flags().String("auth", "", "Auth id to bind")
+	shared.AddProjectFilterFlag(cmd)
 	return cmd
 }

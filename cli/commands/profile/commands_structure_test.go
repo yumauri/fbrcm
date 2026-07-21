@@ -8,8 +8,8 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmd := New()
-	cmdtest.AssertSubcommands(t, cmd, "list", "switch", "rename", "path", "purge")
+	cmdtest.AssertSubcommands(t, cmd, "list", "switch", "rename", "path", "delete")
 	cmdtest.AssertFlag(t, cmd, "list", "json")
 	cmdtest.AssertFlag(t, cmd, "path", "json")
-	cmdtest.AssertFlag(t, cmd, "purge", "yes")
+	cmdtest.AssertFlag(t, cmd, "delete", "yes")
 }

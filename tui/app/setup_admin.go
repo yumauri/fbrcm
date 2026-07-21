@@ -7,13 +7,14 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core/config"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 )
 
 type profileRenameCompletedMsg struct{ err error }
 
-func (m *Model) openAuthPurgeDialog(request setup.AuthPurgeRequestedMsg) {
+func (m *Model) openAuthDeleteDialog(request setup.AuthDeleteRequestedMsg) {
 	body := []string{
 		"Authentication: " + dialogParameterNameStyle.Render(request.AuthID),
 		"",
@@ -23,25 +24,25 @@ func (m *Model) openAuthPurgeDialog(request setup.AuthPurgeRequestedMsg) {
 	if request.BoundProjects > 0 {
 		body = append(body,
 			"",
-			fmt.Sprintf("%d cached project(s) are bound to this identity.", request.BoundProjects),
+			fmt.Sprintf("This identity is bound to %s.", rcdisplay.FormatCount(request.BoundProjects, "cached project", "cached projects")),
 			"They will require rebinding before Firebase operations can continue.",
 		)
 	}
 	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Purge Authentication?",
+		Title: "Delete Authentication?",
 		Body:  body,
 		Buttons: []dialogcmp.Button{
-			{Label: "Purge", Variant: dialogcmp.ButtonVariantDanger, OnPress: func() tea.Msg {
-				return setup.AuthPurgeConfirmedMsg{AuthID: request.AuthID}
+			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: func() tea.Msg {
+				return setup.AuthDeleteConfirmedMsg{AuthID: request.AuthID}
 			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		},
 	})
 }
 
-func (m *Model) openProfilePurgeDialog(request setup.ProfilePurgeRequestedMsg) {
+func (m *Model) openProfileDeleteDialog(request setup.ProfileDeleteRequestedMsg) {
 	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Purge Profile?",
+		Title: "Delete Profile?",
 		Body: []string{
 			"Profile: " + dialogParameterNameStyle.Render(request.Profile),
 			"",
@@ -50,8 +51,8 @@ func (m *Model) openProfilePurgeDialog(request setup.ProfilePurgeRequestedMsg) {
 			request.CachePath,
 		},
 		Buttons: []dialogcmp.Button{
-			{Label: "Purge", Variant: dialogcmp.ButtonVariantDanger, OnPress: func() tea.Msg {
-				return setup.ProfilePurgeConfirmedMsg{Profile: request.Profile}
+			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: func() tea.Msg {
+				return setup.ProfileDeleteConfirmedMsg{Profile: request.Profile}
 			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		},

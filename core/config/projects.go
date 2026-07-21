@@ -31,6 +31,7 @@ type Project struct {
 	UpdatedAt     string `json:"updated_at,omitempty"`
 	SyncedAt      string `json:"synced_at,omitempty"`
 	AuthID        string `json:"auth_id"`
+	Disabled      bool   `json:"disabled,omitempty"`
 	// DiscoveredBy stores auth identities that discovered Project.
 	DiscoveredBy []string `json:"discovered_by,omitempty"`
 }
@@ -108,8 +109,8 @@ func SaveProjects(projects []Project, updatedAt time.Time) error {
 	return nil
 }
 
-// Delete saved projects config file if it exists.
-func PurgeProjects() error {
+// ResetProjects deletes the saved projects registry file if it exists.
+func ResetProjects() error {
 	path := GetProjectsFilePath()
 	logger := corelog.For("config")
 	logger.Debug("remove projects config", "path", path)

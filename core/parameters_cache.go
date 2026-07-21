@@ -42,6 +42,19 @@ func (s *Core) InspectParametersCache(projectID string) (*ParametersCache, Param
 	return cache, ParametersCacheStale, nil
 }
 
+// LoadCachedRemoteConfig loads a project's locally cached Remote Config.
+// A missing cache returns a nil config without an error.
+func (s *Core) LoadCachedRemoteConfig(projectID string) (*firebase.RemoteConfig, error) {
+	cache, state, err := s.InspectParametersCache(projectID)
+	if err != nil {
+		return nil, err
+	}
+	if state == ParametersCacheMissing || cache == nil {
+		return nil, nil
+	}
+	return firebase.ParseRemoteConfig(cache.RemoteConfig)
+}
+
 func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Debug("get parameters requested", "project_id", projectID, "force", force)

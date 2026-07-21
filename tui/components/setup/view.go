@@ -8,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -41,7 +42,7 @@ func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
 	if !m.IsOpen() || width <= 0 || height <= 0 {
 		return ""
 	}
-	contentWidth := min(max(width-12, 48), 72)
+	contentWidth := min(max(width-15, 45), 69)
 	var title string
 	var lines []string
 	tabs := false
@@ -95,12 +96,12 @@ func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
 	case modeSwitching:
 		title = "Switch profile"
 		lines = m.workingLines("Switching to profile " + m.profileTo + "…")
-	case modePurgingAuth:
-		title = "Purge authentication"
-		lines = m.workingLines("Purging authentication " + m.authID + "…")
-	case modePurgingProfile:
-		title = "Purge profile"
-		lines = m.workingLines("Purging profile " + m.profileFrom + "…")
+	case modeDeletingAuth:
+		title = "Delete authentication"
+		lines = m.workingLines("Deleting authentication " + m.authID + "…")
+	case modeDeletingProfile:
+		title = "Delete profile"
+		lines = m.workingLines("Deleting profile " + m.profileFrom + "…")
 	case modeNoProjects:
 		title = "No projects found"
 		lines = m.noProjectsLines(contentWidth)
@@ -116,36 +117,40 @@ func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
 }
 
 func renderSetupPanel(title string, body []string, innerWidth int) string {
-	titleRendered, titleWidth := styles.PanelHeaderTitle("", title, true, max(innerWidth-1, 0))
-	topFillWidth := max(innerWidth-titleWidth-1, 0)
+	frameInner := viewutil.PopupInnerWidth(innerWidth)
+	titleRendered, titleWidth := styles.PanelHeaderTitle("", title, true, max(frameInner-1, 0))
+	topFillWidth := max(frameInner-titleWidth-1, 0)
 	lines := []string{
 		cardBorderStyle.Render("╭─") +
 			titleRendered +
 			cardBorderStyle.Render(strings.Repeat("─", topFillWidth)+"╮"),
 	}
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, cardBorderStyle.Render("│")+viewutil.PopupContentLine("", innerWidth)+cardBorderStyle.Render("│"))
+	}
 
 	for line := range strings.SplitSeq(strings.Join(body, "\n"), "\n") {
-		line = ansi.Truncate(line, innerWidth, "")
-		line += strings.Repeat(" ", max(innerWidth-lipgloss.Width(line), 0))
-		lines = append(lines, cardBorderStyle.Render("│")+line+cardBorderStyle.Render("│"))
+		lines = append(lines, cardBorderStyle.Render("│")+viewutil.PopupContentLine(line, innerWidth)+cardBorderStyle.Render("│"))
 	}
-	lines = append(lines, cardBorderStyle.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
+	lines = append(lines, cardBorderStyle.Render("╰"+strings.Repeat("─", frameInner)+"╯"))
 	return strings.Join(lines, "\n")
 }
 
 func renderSetupTabsPanel(accountsSelected, focused bool, body []string, innerWidth int) string {
+	frameInner := viewutil.PopupInnerWidth(innerWidth)
 	accountKey, accountTitle := setupTabTitle(tuiconfig.ActionAccounts, "A", "Accounts")
 	profileKey, profileTitle := setupTabTitle(tuiconfig.ActionProfiles, "P", "Profiles")
-	accounts, accountsWidth := styles.PanelHeaderTab(accountKey, accountTitle, accountsSelected, focused, max(innerWidth-1, 0))
-	profiles, profilesWidth := styles.PanelHeaderTab(profileKey, profileTitle, !accountsSelected, focused, max(innerWidth-accountsWidth-3, 0))
-	fill := max(innerWidth-accountsWidth-profilesWidth-3, 0)
+	accounts, accountsWidth := styles.PanelHeaderTab(accountKey, accountTitle, accountsSelected, focused, max(frameInner-1, 0))
+	profiles, profilesWidth := styles.PanelHeaderTab(profileKey, profileTitle, !accountsSelected, focused, max(frameInner-accountsWidth-3, 0))
+	fill := max(frameInner-accountsWidth-profilesWidth-3, 0)
 	lines := []string{cardBorderStyle.Render("╭─") + accounts + cardBorderStyle.Render("──") + profiles + cardBorderStyle.Render(strings.Repeat("─", fill)+"╮")}
-	for line := range strings.SplitSeq(strings.Join(body, "\n"), "\n") {
-		line = ansi.Truncate(line, innerWidth, "")
-		line += strings.Repeat(" ", max(innerWidth-lipgloss.Width(line), 0))
-		lines = append(lines, cardBorderStyle.Render("│")+line+cardBorderStyle.Render("│"))
+	for range viewutil.PopupPaddingTop {
+		lines = append(lines, cardBorderStyle.Render("│")+viewutil.PopupContentLine("", innerWidth)+cardBorderStyle.Render("│"))
 	}
-	lines = append(lines, cardBorderStyle.Render("╰"+strings.Repeat("─", innerWidth)+"╯"))
+	for line := range strings.SplitSeq(strings.Join(body, "\n"), "\n") {
+		lines = append(lines, cardBorderStyle.Render("│")+viewutil.PopupContentLine(line, innerWidth)+cardBorderStyle.Render("│"))
+	}
+	lines = append(lines, cardBorderStyle.Render("╰"+strings.Repeat("─", frameInner)+"╯"))
 	return strings.Join(lines, "\n")
 }
 
@@ -202,10 +207,8 @@ func (m Model) accountsLines(width int) []string {
 		if entry.ID == m.defaultID {
 			label += "  ·  default"
 		}
-		if count := m.boundProjects(entry.ID); count == 1 {
-			label += "  ·  1 project"
-		} else if count > 1 {
-			label += fmt.Sprintf("  ·  %d projects", count)
+		if count := m.boundProjects(entry.ID); count > 0 {
+			label += "  ·  " + rcdisplay.FormatCount(count, "project", "projects")
 		} else {
 			label += "  ·  unused"
 		}
@@ -217,7 +220,7 @@ func (m Model) accountsLines(width int) []string {
 		setupHelp(width,
 			[2]string{"↑/↓", "select"},
 			[2]string{"enter", "validate/sign in"},
-			[2]string{"x", "purge"},
+			[2]string{"x", "delete"},
 			[2]string{"tab/→", "profiles"},
 			[2]string{"esc", "workspace"},
 			[2]string{"q", "quit"},
@@ -271,7 +274,7 @@ func (m Model) profilesLines(width int) []string {
 		{"↑/↓", "select"},
 		{"enter", "switch/create"},
 		{"r", "rename"},
-		{"x", "purge"},
+		{"x", "delete"},
 		{"tab/←", "accounts"},
 		{"esc", "workspace"},
 	}

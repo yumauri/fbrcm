@@ -25,7 +25,8 @@ func (m Model) ViewWithBorder(active, borderActive bool) string {
 	}
 	lines = append(lines, bodyLines...)
 	borders := []int(nil)
-	return renderPanel(lines, m.width, m.height, active, borderActive, m.history, m.historyModeLabels(), borders, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()))
+	panel := renderPanel(lines, m.width, m.height, active, borderActive, m.history, m.historyModeLabels(), borders, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()))
+	return m.filter.OverlayExpressionError(panel, 1)
 }
 
 func (m Model) renderBody() []string {

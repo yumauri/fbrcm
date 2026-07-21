@@ -50,7 +50,7 @@ func newCommand(runDoctor doctorFunc, notifyContext notifyContextFunc) *cobra.Co
 				return err
 			}
 			if jsonOut {
-				if err := shared.WriteJSON(cmd, report); err != nil {
+				if err := shared.WriteJSON(cmd, newDoctorListItems(report)); err != nil {
 					return err
 				}
 			} else {
@@ -67,4 +67,26 @@ func newCommand(runDoctor doctorFunc, notifyContext notifyContextFunc) *cobra.Co
 	cmd.Flags().Bool("json", false, "Print diagnostics as JSON")
 	cmd.Flags().Duration("timeout", 0, "Optional maximum time for the complete diagnostic run")
 	return cmd
+}
+
+type doctorListItem struct {
+	Profile   string `json:"profile"`
+	ConfigDir string `json:"config_dir"`
+	CacheDir  string `json:"cache_dir"`
+	Offline   bool   `json:"offline"`
+	core.DoctorCheck
+}
+
+func newDoctorListItems(report core.DoctorReport) []doctorListItem {
+	items := make([]doctorListItem, len(report.Checks))
+	for i, check := range report.Checks {
+		items[i] = doctorListItem{
+			Profile:     report.Profile,
+			ConfigDir:   report.ConfigDir,
+			CacheDir:    report.CacheDir,
+			Offline:     report.Offline,
+			DoctorCheck: check,
+		}
+	}
+	return items
 }

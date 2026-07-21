@@ -25,6 +25,12 @@
 - Update `CLI.md` in the same change whenever the CLI interface surface changes, including commands, subcommands, positional arguments, flags, defaults, output contracts, confirmations, or other user-visible behavior.
 - Keep both the command tree and the detailed command sections synchronized with the implemented Cobra command structure and its tests.
 
+## User-visible wording
+
+- Use grammatically correct singular and plural forms in all CLI, TUI, error, log, and documentation text. Never display shortcuts such as `project(s)`.
+- Use the shared `core/rc/display.FormatCount` helper for counted nouns, and ensure the surrounding verbs, pronouns, and sentence structure are also correct for both singular and plural counts.
+- When adding or changing counted text, search for related wording across the repository and add regression coverage for both singular and plural output where practical.
+
 ## Remote Config groups
 
 - Preserve empty and description-only parameter groups across all parameter mutations, filtering, condition cleanup, drafts, imports, merges, and promotions.

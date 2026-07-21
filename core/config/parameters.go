@@ -145,6 +145,52 @@ func ListParametersCacheSnapshotsForProject(projectID string) ([]ParametersCache
 	return out, nil
 }
 
+// DeleteParametersCacheForProject removes the current Remote Config cache and
+// every version snapshot stored for one project.
+func DeleteParametersCacheForProject(projectID string) error {
+	paths := []string{GetParametersCachePath(projectID)}
+	dir := GetParametersCacheDirPath()
+	entries, err := os.ReadDir(dir)
+	if err != nil && !isNotExist(err) {
+		return fmt.Errorf("read cache dir: %w", err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		cachedProjectID, _, ok := parseParametersCacheSnapshotName(entry.Name())
+		if ok && cachedProjectID == projectID {
+			paths = append(paths, filepath.Join(dir, entry.Name()))
+		}
+	}
+
+	paths = uniqueStrings(paths)
+
+	logger := corelog.For("config")
+	for _, path := range paths {
+		logger.Debug("remove project parameters cache", "project_id", projectID, "path", path)
+		if err := os.Remove(path); err != nil && !isNotExist(err) {
+			logger.Error("remove project parameters cache failed", "project_id", projectID, "path", path, "err", err)
+			return fmt.Errorf("remove parameters cache %s: %w", path, err)
+		}
+	}
+	logger.Info("project parameters cache removed", "project_id", projectID, "files", len(paths))
+	return nil
+}
+
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	unique := make([]string, 0, len(values))
+	for _, value := range values {
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		unique = append(unique, value)
+	}
+	return unique
+}
+
 func ListParametersCacheSnapshots() ([]ParametersCacheSnapshot, error) {
 	dir := GetParametersCacheDirPath()
 	files, err := os.ReadDir(dir)
@@ -350,7 +396,7 @@ func (c *ParametersCache) IsFresh(now time.Time) bool {
 	return now.Sub(c.CachedAt) < ParametersCacheTTL
 }
 
-func PurgeParametersCache() error {
+func ClearParametersCache() error {
 	path := GetParametersCacheDirPath()
 	logger := corelog.For("config")
 	logger.Debug("remove parameters cache dir", "path", path)

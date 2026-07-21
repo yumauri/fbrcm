@@ -68,6 +68,8 @@ func resolveConflict(cmd *cobra.Command, opts importOptions, label string, curre
 	prompt.SelectedChoiceStyle = styleConflictSelectedChoice
 	prompt.UnselectedChoiceStyle = styleConflictUnselectedChoice
 	prompt.FinalChoiceStyle = styleConflictFinalChoice
+	prompt.Input = cmd.InOrStdin()
+	prompt.Output = cmd.ErrOrStderr()
 	choice, err := prompt.RunPrompt()
 	if err != nil {
 		return "", err

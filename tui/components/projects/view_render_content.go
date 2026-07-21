@@ -57,7 +57,13 @@ func (m Model) renderContentLine(index int, line string, width int) string {
 func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int, base lipgloss.Style) string {
 	state := m.projectStateStyle(projectIndex)
 	normal := base.Inherit(state)
-	highlight := normal.Foreground(styles.PaletteYellow)
+	if m.projects[projectIndex].Disabled {
+		normal = normal.Foreground(styles.PanelTitleInactiveTab.GetForeground())
+	}
+	highlight := normal
+	if !m.projects[projectIndex].Disabled {
+		highlight = normal.Foreground(styles.PaletteYellow)
+	}
 	highlighted := indicesSet(nil)
 	if lineIndex >= 0 && lineIndex < len(m.lineHighlights) {
 		highlighted = indicesSet(m.lineHighlights[lineIndex])
@@ -83,7 +89,11 @@ func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int
 
 func (m Model) projectStateStyle(index int) lipgloss.Style {
 	_, selected := m.selected[m.projects[index].ProjectID]
-	return styles.ProjectStateStyle(index == m.cursor, selected)
+	style := styles.ProjectStateStyle(index == m.cursor, selected)
+	if m.projects[index].Disabled {
+		style = style.Foreground(styles.PanelTitleInactiveTab.GetForeground())
+	}
+	return style
 }
 
 func (m Model) secondaryTitle() secondaryTitleState {

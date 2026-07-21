@@ -25,18 +25,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		return m.updateProjectsSynced(msg)
 	case profileSwitchedMsg:
 		return m.updateProfileSwitched(msg)
-	case authPurgedMsg:
-		return m.updateAuthPurged(msg)
-	case profilePurgedMsg:
-		return m.updateProfilePurged(msg)
-	case AuthPurgeConfirmedMsg:
+	case authDeletedMsg:
+		return m.updateAuthDeleted(msg)
+	case profileDeletedMsg:
+		return m.updateProfileDeleted(msg)
+	case AuthDeleteConfirmedMsg:
 		m.authID = msg.AuthID
-		m.mode = modePurgingAuth
-		return m, tea.Batch(m.purgeAuthCmd(), m.spinner.Tick)
-	case ProfilePurgeConfirmedMsg:
+		m.mode = modeDeletingAuth
+		return m, tea.Batch(m.deleteAuthCmd(), m.spinner.Tick)
+	case ProfileDeleteConfirmedMsg:
 		m.profileFrom = msg.Profile
-		m.mode = modePurgingProfile
-		return m, tea.Batch(m.purgeProfileCmd(), m.spinner.Tick)
+		m.mode = modeDeletingProfile
+		return m, tea.Batch(m.deleteProfileCmd(), m.spinner.Tick)
 	case externalOpenedMsg:
 		if msg.err != nil {
 			m.setFailure(failureOpen, fmt.Errorf("open OAuth client page: %w", msg.err))
@@ -195,9 +195,9 @@ func (m Model) updateProfileSwitched(msg profileSwitchedMsg) (Model, tea.Cmd) {
 	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
 }
 
-func (m Model) updateAuthPurged(msg authPurgedMsg) (Model, tea.Cmd) {
+func (m Model) updateAuthDeleted(msg authDeletedMsg) (Model, tea.Cmd) {
 	if msg.err != nil {
-		m.error = fmt.Errorf("purge authentication %s: %w", m.authID, msg.err)
+		m.error = fmt.Errorf("delete authentication %s: %w", m.authID, msg.err)
 		m.mode = modeAccounts
 		return m, nil
 	}
@@ -209,9 +209,9 @@ func (m Model) updateAuthPurged(msg authPurgedMsg) (Model, tea.Cmd) {
 	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
 }
 
-func (m Model) updateProfilePurged(msg profilePurgedMsg) (Model, tea.Cmd) {
+func (m Model) updateProfileDeleted(msg profileDeletedMsg) (Model, tea.Cmd) {
 	if msg.err != nil {
-		m.error = fmt.Errorf("purge profile %s: %w", m.profileFrom, msg.err)
+		m.error = fmt.Errorf("delete profile %s: %w", m.profileFrom, msg.err)
 		m.mode = modeProfiles
 		return m, nil
 	}
@@ -247,7 +247,7 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.updateNoProjectsKey(k)
 	case modeError:
 		return m.updateErrorKey(k)
-	case modeChecking, modeAdding, modeSwitching, modePurgingAuth, modePurgingProfile:
+	case modeChecking, modeAdding, modeSwitching, modeDeletingAuth, modeDeletingProfile:
 		if k == "q" && m.mandatory {
 			return m, requestQuitCmd()
 		}
@@ -281,7 +281,7 @@ func (m Model) updateAccountsKey(k string) (Model, tea.Cmd) {
 		if authID := m.selectedAccountID(); authID != "" {
 			count := m.boundProjects(authID)
 			return m, func() tea.Msg {
-				return AuthPurgeRequestedMsg{AuthID: authID, BoundProjects: count}
+				return AuthDeleteRequestedMsg{AuthID: authID, BoundProjects: count}
 			}
 		}
 	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionCancel, k):
@@ -382,7 +382,7 @@ func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 		}
 	case tuiconfig.Matches(tuiconfig.BlockProfiles, tuiconfig.ActionDelete, k):
 		if !m.profileInputSelected() {
-			return m.requestProfilePurge()
+			return m.requestProfileDelete()
 		}
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
 		if !m.profileInputSelected() {
@@ -418,7 +418,7 @@ func (m Model) submitNewProfile() (Model, tea.Cmd) {
 	return m, tea.Batch(m.switchProfileCmd(), m.spinner.Tick)
 }
 
-func (m Model) requestProfilePurge() (Model, tea.Cmd) {
+func (m Model) requestProfileDelete() (Model, tea.Cmd) {
 	if m.profileOverride != "" || m.profileInputSelected() || m.cursor < 0 || m.cursor >= len(m.profiles) {
 		return m, nil
 	}
@@ -426,21 +426,21 @@ func (m Model) requestProfilePurge() (Model, tea.Cmd) {
 	if selected == m.profile {
 		return m, func() tea.Msg {
 			return ErrorRequestedMsg{
-				Title: "Cannot Purge Active Profile",
-				Body:  []string{fmt.Sprintf("Profile %q is active.", selected), "", "Switch to another profile before purging it."},
+				Title: "Cannot Delete Active Profile",
+				Body:  []string{fmt.Sprintf("Profile %q is active.", selected), "", "Switch to another profile before deleting it."},
 			}
 		}
 	}
 	configPath, err := config.GetProfileConfigDirPath(selected)
 	if err != nil {
-		return m, func() tea.Msg { return ErrorRequestedMsg{Title: "Purge Profile Failed", Body: []string{err.Error()}} }
+		return m, func() tea.Msg { return ErrorRequestedMsg{Title: "Delete Profile Failed", Body: []string{err.Error()}} }
 	}
 	cachePath, err := config.GetProfileCacheDirPath(selected)
 	if err != nil {
-		return m, func() tea.Msg { return ErrorRequestedMsg{Title: "Purge Profile Failed", Body: []string{err.Error()}} }
+		return m, func() tea.Msg { return ErrorRequestedMsg{Title: "Delete Profile Failed", Body: []string{err.Error()}} }
 	}
 	return m, func() tea.Msg {
-		return ProfilePurgeRequestedMsg{Profile: selected, ConfigPath: configPath, CachePath: cachePath}
+		return ProfileDeleteRequestedMsg{Profile: selected, ConfigPath: configPath, CachePath: cachePath}
 	}
 }
 
@@ -692,7 +692,7 @@ func (m *Model) setFailure(stage failureStage, err error) {
 
 func (m Model) working() bool {
 	switch m.mode {
-	case modeChecking, modeAdding, modeAuthenticating, modeDiscovering, modeSwitching, modePurgingAuth, modePurgingProfile:
+	case modeChecking, modeAdding, modeAuthenticating, modeDiscovering, modeSwitching, modeDeletingAuth, modeDeletingProfile:
 		return true
 	default:
 		return false

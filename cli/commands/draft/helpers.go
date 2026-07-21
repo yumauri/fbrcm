@@ -76,10 +76,6 @@ func loadItems(rawFilters []string) ([]listItem, error) {
 }
 
 func renderList(items []listItem) string {
-	if len(items) == 0 {
-		return "🤷 No drafts"
-	}
-
 	noColor := clistyles.NoColorEnabled()
 	headers := []string{"Project ID", "Project", "Base", "Updated", "Changes", "Status"}
 	widths := make([]int, len(headers))

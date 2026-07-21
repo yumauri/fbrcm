@@ -6,16 +6,17 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-var (
-	dialogParameterNameStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.PaletteBlueBright)
-	dialogProjectNameStyle   = lipgloss.NewStyle().Bold(true).Foreground(styles.PaletteError)
-)
+var dialogParameterNameStyle = lipgloss.NewStyle().Bold(true).Foreground(styles.PaletteBlueBright)
 
 type dialogBodyFunc func() ([]string, error)
+
+func dialogProjectLine(project core.Project) string { return viewutil.ProjectLine(project) }
 
 func (m *Model) closeDialog() {
 	if !m.dialog.IsOpen() {

@@ -47,12 +47,34 @@ func TestDoctorJSONPrintsCompleteReportBeforeFailureExit(t *testing.T) {
 	if !errors.As(err, &exitErr) || exitErr.Code != 1 {
 		t.Fatalf("doctor error = %#v, want exit code 1", err)
 	}
-	var report core.DoctorReport
-	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+	var items []doctorListItem
+	if err := json.Unmarshal(out.Bytes(), &items); err != nil {
 		t.Fatalf("decode output: %v\n%s", err, out.String())
 	}
-	if report.Profile != config.DefaultProfileName || len(report.Checks) == 0 || !report.Failed() {
-		t.Fatalf("report = %+v", report)
+	if len(items) == 0 || items[0].Profile != config.DefaultProfileName {
+		t.Fatalf("doctor items = %+v", items)
+	}
+	foundFailure := false
+	for _, item := range items {
+		foundFailure = foundFailure || item.Status == core.DoctorFail
+	}
+	if !foundFailure {
+		t.Fatalf("doctor items have no failed check: %+v", items)
+	}
+}
+
+func TestDoctorEmptyJSONIsArray(t *testing.T) {
+	cmd := newCommand(func(context.Context) core.DoctorReport {
+		return core.DoctorReport{Profile: "default"}
+	}, passthroughNotifyContext)
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetArgs([]string{"--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("doctor = %v", err)
+	}
+	if got := strings.TrimSpace(out.String()); got != "[]" {
+		t.Fatalf("empty doctor JSON = %q, want []", got)
 	}
 }
 

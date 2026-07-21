@@ -151,6 +151,7 @@ func (k helpKeyMap) projectsHelp() []key.Binding {
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, modeLabel),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionSelect, "select"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMark, "mark"),
+		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionDelete, "delete"),
 	}
 	if k.canBindAuth {
 		bindings = append(bindings, tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionBindAuth, "bind auth"))
@@ -211,6 +212,7 @@ func filterBinding() key.Binding {
 		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterStartsWith),
 		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterIncludes),
 		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterExact),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterExpression),
 	)
 }
 

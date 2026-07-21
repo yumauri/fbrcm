@@ -61,6 +61,20 @@ func TestRenderConditionDetailsShowsUsageTable(t *testing.T) {
 	}
 }
 
+func TestRenderConditionDetailsShowsEmptyUsageTable(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	got := renderConditionDetails(core.ConditionEntry{Name: "staff", Expression: "true"})
+
+	for _, want := range []string{"Used by: 0 parameters", "Group", "Parameter", "Type", "Value"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("empty condition details missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "No parameters use this condition") {
+		t.Fatalf("condition details uses special empty-state message:\n%s", got)
+	}
+}
+
 func TestRenderConditionDetailsColorsNameAndCircleLabel(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	got := renderConditionDetails(core.ConditionEntry{Name: "staff", TagColor: "GREEN", Expression: "true"})

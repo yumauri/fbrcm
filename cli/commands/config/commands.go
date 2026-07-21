@@ -14,7 +14,7 @@ func New() *cobra.Command {
 		Use:   "config",
 		Short: "Manage global config file",
 	}
-	configCmd.AddCommand(newPathCommand())
+	configCmd.AddCommand(newPathCommand(), newShowCommand(), newSetCommand(), newResetCommand(), newValidateCommand(), newEditCommand(runEditor))
 	return configCmd
 }
 

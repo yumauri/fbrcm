@@ -1,6 +1,6 @@
 # Expression Filtering
 
-`fbrcm` supports `--expr` on several commands for advanced filtering. Expressions are powered by [expr-lang](https://expr-lang.org/docs/language-definition), with extra `fbrcm` context and helper functions for Firebase Remote Config.
+`fbrcm` supports `--expr` on several commands and `:` expression mode in the TUI Projects, Parameters, History, and Conditions panels. Expressions are powered by [expr-lang](https://expr-lang.org/docs/language-definition), with extra `fbrcm` context and helper functions for Firebase Remote Config.
 
 Use expressions when name filters are not enough:
 
@@ -9,6 +9,8 @@ fbrcm get --expr 'value == true'
 fbrcm get --expr 'value > 10'
 fbrcm get --expr 'value | jq(.enabled == true)'
 ```
+
+In the TUI, press `:` while one of the supported panels is active and type the expression without a prefix. A temporarily invalid expression is shown in red with a single-line compiler diagnostic overlaid on the panel's bottom border while the panel retains the last valid result. The diagnostic does not change the filter or panel height. Text filters and expression filters use separate remembered input values.
 
 ## Language Overview
 
@@ -54,12 +56,15 @@ fbrcm get --expr '...'
 fbrcm delete --expr '...'
 fbrcm update --expr '...'
 fbrcm project import --expr '...'
+fbrcm conditions list <project> --expr '...'
 fbrcm projects list --expr '...'
 fbrcm projects update --expr '...'
 fbrcm add --expr '...'
 ```
 
-Commands use one of two expression contexts: parameter context or project context.
+Commands use one of three expression contexts: parameter, condition, or project context.
+
+The TUI Projects panel uses project context, Parameters and History use parameter context, and Conditions uses condition context. History evaluates the newer parameter state, or the older state when a parameter was removed.
 
 ## Parameter Context
 
@@ -120,6 +125,43 @@ Exact conditional values:
 ```sh
 fbrcm get --expr 'conditionals["cond_a"] == true'
 fbrcm get --expr 'conditionals["cond_b"] > 50'
+```
+
+## Condition Context
+
+Condition context is used by:
+
+```sh
+fbrcm conditions list <project> --expr '...'
+```
+
+The expression is evaluated once per condition. A matching expression keeps the condition in the human or JSON list. `--expr` is ANDed with `--filter` and `--search` when they are also present.
+
+Available fields:
+
+| Field | Meaning |
+| --- | --- |
+| `project_id` | Firebase project id. |
+| `project` | Firebase project display name. |
+| `name` | Current condition name. |
+| `priority` | One-based Firebase evaluation priority. |
+| `expression` | Raw Firebase condition expression. |
+| `color` | Firebase condition tag color, or an empty string. |
+| `usage_count` | Number of parameter conditional values using the condition. |
+| `usages` | List of usages. Each item has `group`, `parameter`, `value`, and `value_type`. |
+
+Root-level parameter usages have `group == "(root)"`. Plain BOOLEAN and NUMBER usage values are typed like parameter context values; STRING and JSON values remain strings. Firebase in-app-default, personalization, and rollout values use their display markers.
+
+Examples:
+
+```sh
+fbrcm conditions list demo --expr 'usage_count == 0'
+fbrcm conditions list demo --expr 'priority <= 5'
+fbrcm conditions list demo --expr 'color == "RED"'
+fbrcm conditions list demo --expr 'expression contains "app.version"'
+fbrcm conditions list demo --expr 'any(usages, #.group == "(root)")'
+fbrcm conditions list demo --expr 'any(usages, #.parameter startsWith "legacy_")'
+fbrcm conditions list demo --expr 'any(usages, #.value_type == "BOOLEAN" && #.value == true)'
 ```
 
 ## Project Context
