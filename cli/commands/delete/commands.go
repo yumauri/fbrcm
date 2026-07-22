@@ -78,12 +78,9 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, opts deleteOptions) err
 		}
 		return len(deleted), finalCfg, nil
 	})
-	if err != nil {
-		return err
-	}
-
 	logDeleteTotals("remote", deleteTotals{modifiedProjects: totals.ModifiedProjects, deletedParams: totals.ChangedParams})
-	return nil
+	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "🗑️")
+	return err
 }
 
 func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr string, search shared.ParameterSearch) error {

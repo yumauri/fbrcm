@@ -46,11 +46,14 @@ func (s *Core) inspectParametersCacheOrError(projectID string) (*ParametersCache
 
 func (s *Core) mutateDraft(ctx context.Context, projectID string, publish bool, spec draft.MutationSpec) (*ParametersCache, *ParametersTree, bool, error) {
 	result, hasDraftBefore, err := draft.Mutate(ctx, s.draftDeps(), projectID, publish, spec)
-	if err != nil {
+	if err != nil && result == nil {
 		return nil, nil, hasDraftBefore, err
 	}
-	tree, err := s.treeFromMutateResult(result)
-	return result.Cache, tree, result.HasDraft, err
+	tree, treeErr := s.treeFromMutateResult(result)
+	if err != nil {
+		return result.Cache, tree, result.HasDraft, err
+	}
+	return result.Cache, tree, result.HasDraft, treeErr
 }
 
 func (s *Core) previewDraft(projectID string, spec draft.MutationSpec) (*ParametersCache, json.RawMessage, error) {

@@ -83,6 +83,8 @@ func (m *Model) openDraftDialog(project core.Project, mode dialogMode, queue []p
 		if len(queue) > 0 {
 			next := queue[0]
 			m.openDraftDialog(next.project, next.mode, queue[1:])
+		} else {
+			m.dialogQueue = nil
 		}
 		return
 	}

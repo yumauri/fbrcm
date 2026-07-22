@@ -11,6 +11,22 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
+// RemoteConfigPublishedCacheError reports that Firebase accepted a Remote
+// Config publish, but the returned config could not be persisted locally.
+// RemoteConfig and ETag describe the successfully published remote state.
+type RemoteConfigPublishedCacheError struct {
+	ProjectID    string
+	RemoteConfig json.RawMessage
+	ETag         string
+	Err          error
+}
+
+func (e *RemoteConfigPublishedCacheError) Error() string {
+	return fmt.Sprintf("remote config was published for %s but the local cache update failed: %v", e.ProjectID, e.Err)
+}
+
+func (e *RemoteConfigPublishedCacheError) Unwrap() error { return e.Err }
+
 func (s *Core) ExportRemoteConfig(ctx context.Context, projectID string) (json.RawMessage, string, error) {
 	logger := corelog.For("core")
 	logger.Info("export remote config requested", "project_id", projectID)
@@ -101,7 +117,12 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 	}
 	if err := config.SaveParametersCache(projectID, cache); err != nil {
 		logger.Error("save parameters cache after publish failed", "project_id", projectID, "etag", nextETag, "err", err)
-		return nil, "", fmt.Errorf("save parameters cache: %w", err)
+		return updatedRaw, nextETag, &RemoteConfigPublishedCacheError{
+			ProjectID:    projectID,
+			RemoteConfig: updatedRaw,
+			ETag:         nextETag,
+			Err:          err,
+		}
 	}
 
 	return updatedRaw, nextETag, nil

@@ -214,7 +214,7 @@ func (m Model) updateProjectImportCompleted(msg projectImportCompletedMsg) (Mode
 	if msg.plan == nil {
 		return m, nil, true
 	}
-	if msg.err != nil {
+	if msg.err != nil && (msg.result == nil || !msg.result.Published) {
 		corelog.For("tui.import").Error("project import failed", "project_id", msg.plan.Project.ProjectID, "err", msg.err)
 		m.openErrorDialog("Import Failed", msg.plan.Project, msg.err.Error())
 		return m, nil, true
@@ -228,14 +228,20 @@ func (m Model) updateProjectImportCompleted(msg projectImportCompletedMsg) (Mode
 		source = "firebase"
 		hasDraft = false
 	}
+	title := "Import Complete"
+	tone := dialogcmp.ToneSuccess
+	if msg.err != nil {
+		title = "Import Completed with Warning"
+		tone = dialogcmp.ToneDefault
+	}
+	body := []string{dialogProjectLine(msg.plan.Project), "", status}
+	if msg.err != nil {
+		body = append(body, "", msg.err.Error())
+	}
 	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Import Complete",
-		Tone:  dialogcmp.ToneSuccess,
-		Body: []string{
-			dialogProjectLine(msg.plan.Project),
-			"",
-			status,
-		},
+		Title:   title,
+		Tone:    tone,
+		Body:    body,
 		Buttons: []dialogcmp.Button{{Label: "Close", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()}},
 	})
 	selectionCmd := m.projects.SelectOnly(msg.plan.Project.ProjectID)

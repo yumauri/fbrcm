@@ -11,6 +11,22 @@ import (
 
 func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	switch msg := msg.(type) {
+	case draftPublishPreparedMsg:
+		return m.updateDraftPublishPrepared(msg)
+
+	case draftPublishDecisionMsg:
+		return m.updateDraftPublishDecision(msg)
+
+	case draftPublishExecutedMsg:
+		return m.updateDraftPublishExecuted(msg)
+
+	case draftPublishRetryMsg:
+		return m.retryDraftPublishFailures()
+
+	case draftPublishClosedMsg:
+		m.draftPublish = nil
+		return m, nil, true
+
 	case projectio.ImportPlanRequestedMsg:
 		return m, m.prepareProjectImportCmd(msg), true
 
@@ -221,7 +237,7 @@ func (m *Model) updateParametersLoadedMessage(msg messages.ParametersLoadedMsg) 
 	if !m.dialog.IsOpen() && len(m.dialogQueue) > 0 {
 		next := m.dialogQueue[0]
 		m.dialogQueue = m.dialogQueue[1:]
-		m.openDraftDialog(next.project, next.mode, nil)
+		m.openDraftDialog(next.project, next.mode, m.dialogQueue)
 	}
 	m.closeRenameIfOrphaned()
 	m.closeBoolPickerIfOrphaned()

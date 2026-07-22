@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -139,13 +140,20 @@ func (s *Core) ExecuteProjectImport(ctx context.Context, plan *ProjectImportPlan
 		if err := s.ValidateRemoteConfigWithETag(ctx, plan.Project.ProjectID, plan.PublishRaw, latest.ETag); err != nil {
 			return nil, err
 		}
-		updatedRaw, nextETag, err := s.PublishRemoteConfigWithETag(ctx, plan.Project.ProjectID, plan.PublishRaw, latest.ETag)
-		if err != nil {
-			return nil, err
+		updatedRaw, nextETag, publishErr := s.PublishRemoteConfigWithETag(ctx, plan.Project.ProjectID, plan.PublishRaw, latest.ETag)
+		if publishErr != nil && (len(updatedRaw) == 0 || nextETag == "") {
+			return nil, publishErr
+		}
+		if len(updatedRaw) == 0 || nextETag == "" {
+			return nil, fmt.Errorf("published remote config response is incomplete")
 		}
 		cache := &ParametersCache{ETag: nextETag, CachedAt: time.Now().UTC(), RemoteConfig: updatedRaw}
-		tree, err := s.BuildParametersTree(cache)
-		return &ProjectImportResult{Cache: cache, Tree: tree, Raw: updatedRaw, Published: true}, err
+		tree, treeErr := s.BuildParametersTree(cache)
+		result := &ProjectImportResult{Cache: cache, Tree: tree, Raw: updatedRaw, Published: true}
+		if publishErr != nil || treeErr != nil {
+			return result, errors.Join(publishErr, treeErr)
+		}
+		return result, nil
 	}
 
 	record, hasDraft, err := s.LoadDraftRecord(plan.Project.ProjectID)

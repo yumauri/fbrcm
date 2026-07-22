@@ -245,10 +245,12 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 		}, nil
 	}
 	projects := []core.Project{project}
+	var totals sharedrc.RemoteMutationTotals
 	if opts.Draft {
-		_, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, operation, plan)
+		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, operation, plan)
 	} else {
-		_, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
+		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
 	}
+	sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], emoji)
 	return err
 }

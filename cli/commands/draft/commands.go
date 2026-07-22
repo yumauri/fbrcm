@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -254,6 +255,9 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if dry {
 		ctx = firebase.WithDryRun(ctx)
 	}
+	if len(ids) > 1 && !dry {
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: drafts are published independently for each project. Failures do not roll back projects already published.")
+	}
 	results := make([]publishResult, 0, len(ids))
 	failed := false
 	for _, projectID := range ids {
@@ -292,10 +296,27 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		cache, _, publishErr := svc.ExecuteDraftPublish(ctx, projectID, plan)
 		if publishErr != nil {
 			var cleanupErr *core.DraftPublishedCleanupError
+			var cacheErr *core.RemoteConfigPublishedCacheError
 			if errors.As(publishErr, &cleanupErr) && cache != nil {
 				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
 				result.Status = "published-cleanup-failed"
 				result.PublishedVersion = publishedCfg.Version.VersionNumber
+				result.Error = publishErr.Error()
+				results = append(results, result)
+				failed = true
+				continue
+			}
+			if errors.As(publishErr, &cacheErr) && cache != nil {
+				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
+				result.Status = "published-cache-failed"
+				result.PublishedVersion = publishedCfg.Version.VersionNumber
+				result.Error = publishErr.Error()
+				results = append(results, result)
+				failed = true
+				continue
+			}
+			if rc.IsRemoteConfigConflict(publishErr) {
+				result.Status = "conflict"
 				result.Error = publishErr.Error()
 				results = append(results, result)
 				failed = true
@@ -321,12 +342,45 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			return err
 		}
 	} else {
+		if len(results) > 0 {
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Results:")
+		}
 		for _, result := range results {
 			if result.Error != "" {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s: %s\n", result.ProjectID, result.Error)
 				continue
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", result.Status, result.ProjectID)
+		}
+	}
+	var retryIDs []string
+	for _, result := range results {
+		if result.Error != "" && result.Status != "published-cleanup-failed" && result.Status != "published-cache-failed" {
+			retryIDs = append(retryIDs, result.ProjectID)
+		}
+	}
+	if !jsonOut && len(retryIDs) > 0 {
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Retry failed drafts:\n  fbrcm draft publish %s\n", strings.Join(retryIDs, " "))
+	}
+	if !jsonOut {
+		var cacheFailed, cleanupFailed []string
+		for _, result := range results {
+			switch result.Status {
+			case "published-cache-failed":
+				cacheFailed = append(cacheFailed, result.ProjectID)
+			case "published-cleanup-failed":
+				cleanupFailed = append(cleanupFailed, result.ProjectID)
+			}
+		}
+		if len(cacheFailed) > 0 {
+			filters := make([]string, 0, len(cacheFailed))
+			for _, id := range cacheFailed {
+				filters = append(filters, fmt.Sprintf("-p '=%s'", id))
+			}
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Firebase was updated, but local caches are stale. Refresh them with:\n  fbrcm get --update %s\n", strings.Join(filters, " "))
+		}
+		if len(cleanupFailed) > 0 {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Firebase was updated, but draft cleanup failed. Safely retry cleanup with:\n  fbrcm draft publish %s\n", strings.Join(cleanupFailed, " "))
 		}
 	}
 	if failed {
@@ -389,6 +443,9 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 	}
 	if jsonOut {
 		return shared.WriteJSON(cmd, results)
+	}
+	if len(results) > 0 {
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Results:")
 	}
 	for _, result := range results {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", result["status"], result["project_id"])

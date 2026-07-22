@@ -3,8 +3,11 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -165,6 +168,42 @@ func TestPublishRemoteConfigWithETagWritesVersionedCache(t *testing.T) {
 	}
 	if cache.ETag != `"etag-2"` {
 		t.Fatalf("etag = %q, want etag-2", cache.ETag)
+	}
+}
+
+func TestPublishRemoteConfigWithETagReportsRemoteSuccessWhenCacheWriteFails(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+
+	payload := remoteConfigRaw("2", map[string]string{"flag": "published"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodPut && !strings.Contains(req.URL.RawQuery, "validateOnly") {
+				return jsonResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+			}
+			return nil, io.EOF
+		}),
+	})
+	injectFirebaseService(t, svc, "main", client)
+
+	blocked := config.GetParametersCacheDirPath()
+	if err := os.MkdirAll(filepath.Dir(blocked), 0o755); err != nil {
+		t.Fatalf("MkdirAll = %v", err)
+	}
+	if err := os.WriteFile(blocked, []byte("not a directory"), 0o600); err != nil {
+		t.Fatalf("WriteFile = %v", err)
+	}
+
+	raw, etag, err := svc.PublishRemoteConfigWithETag(context.Background(), "demo", payload, "etag-1")
+	var cacheErr *RemoteConfigPublishedCacheError
+	if !errors.As(err, &cacheErr) {
+		t.Fatalf("error = %v, want RemoteConfigPublishedCacheError", err)
+	}
+	if string(raw) != string(payload) || etag != `"etag-2"` {
+		t.Fatalf("published response = %s/%q, want payload/etag-2", raw, etag)
+	}
+	if string(cacheErr.RemoteConfig) != string(payload) || cacheErr.ETag != `"etag-2"` {
+		t.Fatalf("typed outcome = %s/%q, want payload/etag-2", cacheErr.RemoteConfig, cacheErr.ETag)
 	}
 }
 

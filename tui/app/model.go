@@ -66,6 +66,7 @@ type Model struct {
 	projectImport   *core.ProjectImportPlan
 	projectExport   *projectExportSession
 	projectDefaults *projectDefaultsSession
+	draftPublish    *draftPublishBatch
 	valueEditSource panels.ID
 	authCount       int
 

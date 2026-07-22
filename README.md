@@ -359,7 +359,7 @@ fbrcm conditions validate <project-id>
 
 Definition mutations print a Remote Config diff and offer publication or can be staged with `--draft`. Use `--dry-run` to preview without persisting state and `--yes` to skip confirmation. `conditions validate` validates the current draft, if present, or the published template with Firebase's validate-only API.
 
-In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish one/all drafts and `d`/`D` to discard one/all drafts. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
+In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish one/all drafts and `d`/`D` to discard one/all drafts. Draft publication prepares each candidate against fresh Firebase state, reviews that exact candidate, publishes approved projects independently, and finishes with per-project results plus a Retry Failed action. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
 
 Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, explains the selected action below the list, marks unavailable actions with a reason, and runs the selected available action with Enter. Search matches action names, explanations, shortcut keys, and technical aliases such as `reload`. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 
@@ -476,7 +476,7 @@ fbrcm draft publish <project-id>
 fbrcm draft discard <project-id>
 ```
 
-Publishing rebases local draft changes onto the latest Firebase Remote Config and refuses conflicting changes. `draft publish --all` and `draft discard --all` process every draft in the active profile. Other CLI write commands refuse to publish over a project with an unresolved draft.
+Publishing rebases local draft changes onto the latest Firebase Remote Config and refuses conflicting changes. `draft publish --all` and `draft discard --all` process every draft in the active profile. Multi-project publication is non-atomic: each project is attempted independently, all outcomes are collected into a final `Results:` block after logging, failed drafts are preserved, and the command returns nonzero after mixed success. Other CLI write commands refuse to publish over a project with an unresolved draft while continuing with other selected projects.
 
 Manage caches:
 

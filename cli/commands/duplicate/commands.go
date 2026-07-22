@@ -125,11 +125,9 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 	} else {
 		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, "duplicate", "📋", plan)
 	}
-	if err != nil {
-		return err
-	}
 	corelog.For("duplicate").Info("total", "projects", totals.ModifiedProjects, "parameters", totals.ChangedParams)
-	return nil
+	sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "📋")
+	return err
 }
 
 func duplicateProject(cmd *cobra.Command, project core.Project, current *firebase.RemoteConfig, source, target string, yes bool) (bool, *firebase.RemoteConfig, error) {

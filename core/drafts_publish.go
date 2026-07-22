@@ -9,11 +9,14 @@ import (
 
 func (s *Core) PublishDraft(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, error) {
 	cache, _, err := draft.PublishExistingDraft(ctx, s.draftDeps(), projectID)
-	if err != nil {
+	if err != nil && cache == nil {
 		return nil, nil, err
 	}
-	tree, err := s.BuildParametersTree(cache)
-	return cache, tree, err
+	tree, treeErr := s.BuildParametersTree(cache)
+	if err != nil {
+		return cache, tree, err
+	}
+	return cache, tree, treeErr
 }
 
 func (s *Core) DiscardDraft(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, error) {

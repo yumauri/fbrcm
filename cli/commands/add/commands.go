@@ -177,12 +177,9 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	} else {
 		totals, err = rc.RunRemotePublishLoop(ctx, cmd, svc, projects, "add", "➕", plan)
 	}
-	if err != nil {
-		return err
-	}
-
 	logAddTotals("remote", addTotals{modifiedProjects: totals.ModifiedProjects, addedParams: totals.ChangedParams})
-	return nil
+	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "➕")
+	return err
 }
 
 func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec addValueSpec, projectExpr string) error {

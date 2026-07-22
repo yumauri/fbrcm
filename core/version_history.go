@@ -319,9 +319,9 @@ func (s *Core) RestoreRemoteConfigVersion(ctx context.Context, projectID, source
 	if err := s.ValidateRemoteConfigWithETag(ctx, projectID, raw, etag); err != nil {
 		return VersionPublishResult{}, err
 	}
-	publishedRaw, nextETag, err := s.PublishRemoteConfigWithETag(ctx, projectID, raw, etag)
-	if err != nil {
-		return VersionPublishResult{}, err
+	publishedRaw, nextETag, publishErr := s.PublishRemoteConfigWithETag(ctx, projectID, raw, etag)
+	if publishErr != nil && (len(publishedRaw) == 0 || nextETag == "") {
+		return VersionPublishResult{}, publishErr
 	}
 	if firebase.IsDryRun(ctx) {
 		return VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion}, nil
@@ -330,7 +330,8 @@ func (s *Core) RestoreRemoteConfigVersion(ctx context.Context, projectID, source
 	if err != nil {
 		return VersionPublishResult{}, err
 	}
-	return VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion, PublishedVersion: published.Version.VersionNumber, RemoteConfig: publishedRaw, ETag: nextETag}, nil
+	result := VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion, PublishedVersion: published.Version.VersionNumber, RemoteConfig: publishedRaw, ETag: nextETag}
+	return result, publishErr
 }
 
 func (s *Core) resolveVersionSelector(ctx context.Context, projectID, selector string, cachedOnly bool) (string, error) {

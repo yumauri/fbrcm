@@ -383,6 +383,10 @@ Drafts are profile-scoped, self-contained records. Each record stores the workin
 
 Immediate Remote Config writes refuse to proceed when the target has an unpublished draft. This guard applies to add, duplicate, update, delete, condition mutations, project import, version rollback/restore, and project promotion. Resolve the draft with `draft publish` or `draft discard`, or add the intended mutation to it with `--draft`.
 
+Multi-project Remote Config publication is non-atomic: Firebase accepts a separate validated write for each project. Commands process every selected project even when an independent project fails, collect one outcome per project, and print the complete `Results:` block after operation logging has finished. They return nonzero after the batch if any project failed. Successful projects are not rolled back. Conflicts are reported for a fresh explicit retry instead of silently recalculating and publishing a different candidate. Failed-project output includes exact `-p '=project-id'` filters for retrying only projects that were not published.
+
+If Firebase accepts a publish but the returned state cannot be saved locally, the outcome is reported as `published-cache-failed`, not as an unpublished project. Refresh that project's cache instead of blindly retrying the mutation. For coordinated changes, `--draft` provides reviewable and recoverable intent, but publishing those drafts is still non-atomic across projects.
+
 Draft publish always fetches current Firebase state, performs a three-way merge from base, draft, and current, validates using the current ETag, and publishes only the exact candidate that was previewed. Conflicts preserve the local draft. Successfully published or already-applied drafts are removed locally. A publish that succeeds remotely but cannot remove its local record reports `published-cleanup-failed`; rerunning recognizes the already-applied content and retries cleanup without creating another version.
 
 ## Commands
@@ -445,9 +449,9 @@ Flags:
 -y, --yes               print diff and duplicate without confirmation
 ```
 
-Remote mode prints the complete Remote Config diff and prompts before each duplicate unless `--yes` is set. It validates and publishes with ETag conflict handling. Project filters are applied before the project-context expression, matching `add` behavior.
+Remote mode prints the complete Remote Config diff and prompts before each duplicate unless `--yes` is set. It validates and publishes each project independently. A conflict fails that project without suppressing later projects, and the final command status is nonzero when any project fails. Project filters are applied before the project-context expression, matching `add` behavior.
 
-With `--draft`, duplication composes onto each existing draft and remains local. Without `--draft`, all selected projects are checked for drafts before the first publish. The command does not use stdin transformation mode.
+With `--draft`, duplication composes onto each existing draft and remains local. Without `--draft`, a project with an unpublished draft fails independently while other selected projects continue. The command does not use stdin transformation mode.
 
 ### `fbrcm get [parameter]`
 
@@ -504,9 +508,9 @@ At most one value flag may be used. `--condition` requires a value flag and reso
 
 Conditional value assignment and removal edit only `conditionalValues`; they keep the parameter, default value, description, group, and all conditions themselves.
 
-Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes with ETag conflict handling.
+Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes each project independently, reports every outcome, continues after project-scoped failures, and returns nonzero if any project failed.
 
-With `--draft`, mutations compose onto each existing draft and remain local. Without `--draft`, all selected projects are checked for drafts before the first publish, preventing a partially published batch.
+With `--draft`, mutations compose onto each existing draft and remain local. Without `--draft`, publication is best-effort and non-atomic; failures do not roll back earlier projects or prevent later independent projects from being attempted.
 
 Stdin mode reads Remote Config JSON from stdin, updates matching parameters, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. It does not prompt.
 
@@ -526,9 +530,9 @@ Flags:
 -y, --yes               print diff and delete without confirmation
 ```
 
-Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes with ETag conflict handling.
+Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes each project independently, reports every outcome, continues after project-scoped failures, and returns nonzero if any project failed.
 
-With `--draft`, deletions are saved locally on top of any existing draft. Without `--draft`, all selected projects are checked for drafts before the first publish.
+With `--draft`, deletions are saved locally on top of any existing draft. Without `--draft`, a project with an unpublished draft fails independently while other selected projects continue.
 
 Stdin mode reads Remote Config JSON from stdin, deletes matching parameters, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. It does not prompt.
 
@@ -722,11 +726,11 @@ Flags:
 --json         print structured results
 ```
 
-For each project, the command fetches current Firebase state, merges local intent onto it, displays `current → candidate`, and asks for confirmation. It then validates and publishes that candidate with the fetched ETag. A remote change after preview is rejected by ETag protection rather than silently producing a different candidate. Conflicts and validation failures preserve the draft.
+For each project, the command fetches current Firebase state, merges local intent onto it, displays `current → candidate`, and asks for confirmation. It then validates and publishes that exact candidate with the fetched ETag. A remote change after preview is reported as a conflict rather than silently producing a different candidate. Conflicts and validation failures preserve the draft.
 
-If current Firebase state already contains the effective draft changes, no new version is created and the draft is removed as `already-applied`. Batch mode continues after independent project failures and returns nonzero if any item failed.
+If current Firebase state already contains the effective draft changes, no new version is created and the draft is removed as `already-applied`. Batch mode is non-atomic, continues after independent project failures, prints its collected results together at the end followed by a targeted retry command, and returns nonzero if any item failed.
 
-JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, and `published-cleanup-failed`. Prompts and human diffs are kept off JSON stdout.
+JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, `conflict`, `published-cache-failed`, and `published-cleanup-failed`. Prompts, warnings, retry hints, and human diffs are kept off JSON stdout.
 
 ### `fbrcm draft discard [project...]`
 

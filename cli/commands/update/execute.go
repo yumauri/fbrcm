@@ -17,11 +17,9 @@ func runUpdateRemote(cmd *cobra.Command, svc *core.Core, opts updateOptions) err
 		}
 		return len(updated), finalCfg, nil
 	})
-	if err != nil {
-		return err
-	}
 	logUpdateTotals("remote", updateTotals{modifiedProjects: totals.ModifiedProjects, updatedParams: totals.ChangedParams})
-	return nil
+	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "✏️")
+	return err
 }
 
 func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramExpr string, search shared.ParameterSearch, spec updateSpec) error {

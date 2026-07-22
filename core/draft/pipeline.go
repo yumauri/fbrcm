@@ -124,24 +124,40 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 				return nil, hasDraft, err
 			}
 		}
-		updatedRaw, nextETag, err := deps.PublishRemoteConfigWithETag(ctx, projectID, finalRaw, cache.ETag)
-		if err != nil {
+		updatedRaw, nextETag, publishErr := deps.PublishRemoteConfigWithETag(ctx, projectID, finalRaw, cache.ETag)
+		if publishErr != nil && (len(updatedRaw) == 0 || nextETag == "") {
+			return nil, hasDraft, publishErr
+		}
+		if len(updatedRaw) == 0 || nextETag == "" {
+			err := fmt.Errorf("published remote config response is incomplete")
 			return nil, hasDraft, err
 		}
-		if err := Delete(projectID); err != nil {
-			logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
+		var cleanupErr error
+		if publishErr == nil {
+			if err := Delete(projectID); err != nil {
+				logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
+				cleanupErr = &PublishedCleanupError{Err: err}
+			}
 		}
 		updatedCache := &config.ParametersCache{
 			ETag:         nextETag,
 			CachedAt:     time.Now().UTC(),
 			RemoteConfig: updatedRaw,
 		}
-		return &MutateResult{
+		result := &MutateResult{
 			Cache:     updatedCache,
 			FinalRaw:  updatedRaw,
-			HasDraft:  false,
+			HasDraft:  publishErr != nil && hasDraft,
 			Published: true,
-		}, false, nil
+		}
+		if publishErr != nil {
+			return result, result.HasDraft, publishErr
+		}
+		if cleanupErr != nil {
+			result.HasDraft = hasDraft
+			return result, hasDraft, cleanupErr
+		}
+		return result, false, nil
 	}
 
 	if err := SaveWithBase(projectID, cache, finalRaw); err != nil {
@@ -229,14 +245,20 @@ func ExecutePublish(ctx context.Context, deps Deps, projectID string, plan *Publ
 		return &config.ParametersCache{ETag: plan.Latest.ETag, CachedAt: plan.Latest.CachedAt, RemoteConfig: plan.Candidate}, plan.Candidate, nil
 	}
 
-	updatedRaw, nextETag, err := deps.PublishRemoteConfigWithETag(ctx, projectID, plan.Candidate, plan.Latest.ETag)
-	if err != nil {
-		return nil, nil, err
+	updatedRaw, nextETag, publishErr := deps.PublishRemoteConfigWithETag(ctx, projectID, plan.Candidate, plan.Latest.ETag)
+	if publishErr != nil && (len(updatedRaw) == 0 || nextETag == "") {
+		return nil, nil, publishErr
+	}
+	if len(updatedRaw) == 0 || nextETag == "" {
+		return nil, nil, fmt.Errorf("published remote config response is incomplete")
 	}
 	updatedCache := &config.ParametersCache{
 		ETag:         nextETag,
 		CachedAt:     time.Now().UTC(),
 		RemoteConfig: updatedRaw,
+	}
+	if publishErr != nil {
+		return updatedCache, updatedRaw, publishErr
 	}
 	if err := Delete(projectID); err != nil {
 		logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)

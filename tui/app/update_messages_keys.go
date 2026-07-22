@@ -3,6 +3,7 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/core"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -394,6 +395,9 @@ func (m Model) openCurrentDraftDialog(mode dialogMode) (Model, tea.Cmd, bool) {
 		project, ok = m.conditions.CurrentProject()
 	}
 	if ok && m.parameters.HasDraft(project.ProjectID) {
+		if mode == dialogModePublishDraft {
+			return m.beginDraftPublishBatch([]core.Project{project})
+		}
 		m.openDraftDialog(project, mode, nil)
 		return m, nil, true
 	}
@@ -407,6 +411,9 @@ func (m Model) openDraftDialogs(mode dialogMode) (Model, tea.Cmd, bool) {
 	projects := m.parameters.DraftProjects()
 	if len(projects) == 0 {
 		return m, nil, false
+	}
+	if mode == dialogModePublishDraft {
+		return m.beginDraftPublishBatch(projects)
 	}
 	queue := make([]pendingDialog, 0, len(projects)-1)
 	for _, project := range projects[1:] {
