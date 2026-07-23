@@ -220,6 +220,22 @@ func TestCurrentProjectIgnoresMarkedProjects(t *testing.T) {
 	}
 }
 
+func TestCurrentProjectScreenRowTracksCursor(t *testing.T) {
+	m := loadedProjectsModel()
+	row, ok := m.CurrentProjectScreenRow()
+	if !ok || row != 1 {
+		t.Fatalf("first project row = %d, %v; want 1, true", row, ok)
+	}
+	m, _ = m.Update(keyPress(tea.KeyDown))
+	row, ok = m.CurrentProjectScreenRow()
+	if !ok || row != 4 {
+		t.Fatalf("second project row = %d, %v; want 4, true", row, ok)
+	}
+	if _, ok = m.SetCollapsed(true).CurrentProjectScreenRow(); ok {
+		t.Fatal("collapsed Projects panel returned a current project screen row")
+	}
+}
+
 func TestSelectOnlyReplacesSelectionAndMovesCursor(t *testing.T) {
 	m := loadedProjectsModel()
 	m.selected["alpha"] = struct{}{}

@@ -2,6 +2,18 @@ package config
 
 import "testing"
 
+func TestPromotionKeyIdentifiers(t *testing.T) {
+	if got := string(BlockPromote); got != "promote" {
+		t.Errorf("BlockPromote = %q, want %q", got, "promote")
+	}
+	if got := string(ActionFocusPromote); got != "focus_promote" {
+		t.Errorf("ActionFocusPromote = %q, want %q", got, "focus_promote")
+	}
+	if got := string(ActionPromote); got != "promote" {
+		t.Errorf("ActionPromote = %q, want %q", got, "promote")
+	}
+}
+
 func TestMatchesDefaultKeyMap(t *testing.T) {
 	tests := []struct {
 		block  Block
@@ -14,6 +26,7 @@ func TestMatchesDefaultKeyMap(t *testing.T) {
 		{BlockGlobal, ActionQuit, "Q", false},
 		{BlockGlobal, ActionFocusConditions, "3", true},
 		{BlockGlobal, ActionFocusHistory, "4", true},
+		{BlockGlobal, ActionFocusPromote, "9", true},
 		{BlockGlobal, ActionFocusDetails, "5", true},
 		{BlockConditions, ActionColor, "c", true},
 		{BlockFilter, ActionFilterFuzzy, "~", true},

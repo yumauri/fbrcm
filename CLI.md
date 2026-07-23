@@ -921,10 +921,13 @@ Flags:
 --conditions           include only condition differences
 --cached               require both exact local snapshots and perform no Firebase requests
 --json                 print structured diff JSON
+--side-by-side         print a static two-column terminal diff
 --exit-code            return 1 for differences and 2 for errors
 ```
 
-`--parameters` and `--conditions` are mutually exclusive. Default output reuses the conditions, group descriptions, parameters, and summary diff format used by `projects diff`. JSON output contains `project`, `from_version`, `to_version`, `changed`, and `diff`.
+`--parameters` and `--conditions` are mutually exclusive. `--json` and `--side-by-side` are also mutually exclusive.
+
+Default output reuses the conditions, group descriptions, parameters, and summary diff format used by `projects diff`. `--side-by-side` prints every changed entity as a complete, non-interactive two-column view. The command header establishes the `<from> → <to>` direction; individual changes omit repeated column headers and outer borders. Text wraps within the detected terminal width, JSON values are formatted before comparison, and long values retain contextual chunks around each difference. JSON output contains `project`, `from_version`, `to_version`, `changed`, and `diff`.
 
 Without `--exit-code`, both differences and no differences return success. With it, exit statuses are `0` for no differences, `1` for differences, and `2` for any error. The status and JSON `changed` value describe the filtered result.
 
@@ -1205,7 +1208,7 @@ Flags:
 
 ### `fbrcm config reset [key]`
 
-Resets a preference to its built-in default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or `keys.<block>.<action>`. With no key, it resets all preferences while preserving the persisted active profile. A changed reset asks for confirmation; Yes is selected by default. Writes are validated and atomic.
+Resets a preference to its built-in default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or `keys.<block>.<action>`. With no key, it resets all preferences while preserving the persisted active profile. Reset can repair an invalid key map: obsolete blocks and actions are discarded while the requested value is restored, and the resulting configuration must be valid before it is saved. A changed reset asks for confirmation; Yes is selected by default. Writes are validated and atomic.
 
 Flags:
 

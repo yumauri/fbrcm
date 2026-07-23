@@ -41,6 +41,11 @@ func TestShortHelpDescriptions(t *testing.T) {
 			want: []string{"quit", "help", "maximize", "rename", "expression", "color", "new", "priority", "delete", "publish", "discard", "details", "copy", "update", "filter"},
 		},
 		{
+			name: "history",
+			keys: helpKeyMap{active: panels.History},
+			want: []string{"quit", "help", "diff", "changes only", "both versions", "choose versions", "maximize", "toggle", "copy", "filter"},
+		},
+		{
 			name: "condition move",
 			keys: helpKeyMap{active: panels.Conditions, conditionMove: true},
 			want: []string{"move up", "move down", "place", "cancel"},

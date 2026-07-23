@@ -16,12 +16,12 @@ func panelTitleKey() string {
 }
 
 var (
-	labelStyle             = styles.PanelMuted
-	projectValueStyle      = styles.PanelText.Bold(true).Foreground(styles.PaletteError)
-	groupValueStyle        = styles.PanelText.Bold(true).Foreground(styles.PaletteYellow)
-	parameterKeyStyle      = styles.PanelBody.Foreground(styles.PaletteBlueBright)
+	labelStyle             = styles.DetailsLabel
+	projectValueStyle      = styles.DetailsProjectValue
+	groupValueStyle        = styles.ParameterGroup
+	parameterKeyStyle      = styles.ParameterName
 	selectedValueStyle     = lipgloss.NewStyle().Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
-	conditionDefaultStyle  = styles.PanelMuted.Italic(true)
+	conditionDefaultStyle  = styles.DetailsEmptyValue
 	fieldDirtyStyle        = styles.PanelMuted.Bold(true).Underline(true)
 	fieldInvalidStyle      = lipgloss.NewStyle().Foreground(styles.PaletteError)
 	fieldInvalidDirtyStyle = lipgloss.NewStyle().

@@ -16,7 +16,7 @@ func (m Model) renderBox() string {
 	contentWidth := jsonPopupContentWidth(m.screenW)
 	innerWidth := viewutil.PopupInnerWidth(contentWidth)
 	contentHeight := jsonContentHeight(m.screenH)
-	scrollbar := expandedScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
+	scrollbar := viewutil.ScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
 	lines := []string{border.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
 	for range viewutil.PopupPaddingTop {
@@ -28,7 +28,7 @@ func (m Model) renderBox() string {
 			line = body[i]
 		}
 		rightEdge := border.Render("│")
-		if scrollbar.visible && i >= scrollbar.thumbStart && i <= scrollbar.thumbEnd {
+		if scrollbar.Visible && i >= scrollbar.ThumbStart && i <= scrollbar.ThumbEnd {
 			rightEdge = styles.ScrollbarThumb.Render("█")
 		}
 		lines = append(lines, border.Render("│")+viewutil.PopupContentLine(line, contentWidth)+rightEdge)
@@ -74,28 +74,4 @@ func renderHelpFooter(text string, width int) string {
 		return ""
 	}
 	return text + strings.Repeat(" ", max(width-lipgloss.Width(text), 0))
-}
-
-type expandedScrollbar struct {
-	visible    bool
-	thumbStart int
-	thumbEnd   int
-}
-
-func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
-	if visible <= 0 {
-		return expandedScrollbar{}
-	}
-	if total <= visible {
-		return expandedScrollbar{}
-	}
-	thumbHeight := max(1, (visible*visible)/total)
-	maxThumbStart := visible - thumbHeight
-	maxOffset := max(total-visible, 1)
-	thumbStart := (min(offset, maxOffset) * maxThumbStart) / maxOffset
-	return expandedScrollbar{
-		visible:    true,
-		thumbStart: thumbStart,
-		thumbEnd:   thumbStart + thumbHeight - 1,
-	}
 }

@@ -98,6 +98,7 @@ accounts = ["ctrl+a"]
 profiles = ["ctrl+p"]
 focus_conditions = ["3"]
 focus_history = ["4"]
+focus_promote = ["9"]
 focus_details = ["5"]
 
 [keys.projects]
@@ -135,11 +136,36 @@ publish_all = ["P"]
 discard = ["d"]
 discard_all = ["D"]
 
+[keys.promote]
+close = ["esc"]
+toggle = ["space"]
+submit = ["enter"] # open the selected change in the diff viewer
+select_all = ["a"]
+select_none = ["n"]
+swap = ["s"]
+prune = ["x"]
+save_draft = ["d"]
+publish = ["p"]
+toggle_source = ["u"]
+
+[keys.diff_view]
+close = ["esc"]
+toggle = ["space", "enter"]
+up = ["up", "k"]
+down = ["down", "j"]
+page_up = ["pgup"]
+page_down = ["pgdown"]
+home = ["home"]
+end = ["end"]
+left = ["left", "h"]
+right = ["right", "l"]
+
 [keys.history]
 pair_older = [","]
 pair_newer = ["."]
 choose_versions = ["v"]
 toggle_changes = ["c"]
+submit = ["enter"] # open the selected property in the diff viewer
 
 [keys.history_picker]
 cancel = ["esc"]
@@ -175,6 +201,10 @@ Press `i` to import Remote Config JSON into the project under the Projects-panel
 Press `e` to export the project under the Projects-panel cursor, also independently of marked projects. When a draft exists, choose between the published Remote Config and the local draft, then enter a destination path. Exports use the same stable JSON normalization and private file permissions as `fbrcm project export`; existing files require explicit overwrite confirmation.
 
 Press `d` to download application defaults for the project under the Projects-panel cursor. Choose JSON for Web, XML for Android, or plist for Apple, then enter a destination path. New files use private permissions, and existing files require explicit overwrite confirmation.
+
+Press `v` to promote Remote Config from the project under the Projects-panel cursor to another project. Promote opens a focused workspace with an explicit source-to-target direction, a selectable list of parameter, condition, and group-description actions, and a detail view for the focused action. Selecting a parameter automatically includes any condition or updated group description required by that parameter. Target-only items are kept unless pruning is explicitly enabled.
+
+The source uses its local draft when one exists; press `u` in Promote to switch between that draft and the published source. The target always uses its effective local state, including an existing draft. Press `d` to save or update the selected promotion as a target draft. Press `p` to review the complete Firebase-bound diff and publish it. Publication requires a verified Firebase snapshot; cached-only promotion reviews can still be inspected and saved as drafts. A failed validation or publication leaves the promoted candidate in the target draft for recovery.
 
 When `FBRCM_PROFILE` selects the TUI profile for the current process, Profiles shows that profile as pinned. Restart without the variable to create, switch, rename, or delete profiles interactively.
 

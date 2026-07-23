@@ -172,3 +172,14 @@ func sortedConditionalKeys(items map[string]firebase.RemoteConfigValue, order ma
 
 	return keys
 }
+
+// OrderedConditionalKeys returns conditional value names in Remote Config
+// evaluation order. Conditions absent from the config are placed afterward in
+// stable case-folded order.
+func OrderedConditionalKeys(items map[string]firebase.RemoteConfigValue, conditions []firebase.RemoteConfigCondition) []string {
+	order := make(map[string]int, len(conditions))
+	for index, condition := range conditions {
+		order[condition.Name] = index
+	}
+	return sortedConditionalKeys(items, order)
+}

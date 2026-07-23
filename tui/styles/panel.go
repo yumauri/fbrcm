@@ -22,6 +22,9 @@ var (
 	PaletteSlateDark   = corestyles.ColorSlateDark
 	PaletteError       = corestyles.ColorError
 	PaletteSuccess     = corestyles.ColorConditionGreen
+	PaletteAdded       = corestyles.ColorAdded
+	PaletteRemoved     = corestyles.ColorRemoved
+	PaletteChanged     = corestyles.ColorChanged
 
 	PanelBorderInactive = lipgloss.NewStyle().
 				Foreground(PaletteSlateDark)
@@ -48,6 +51,23 @@ var (
 
 	PanelText = lipgloss.NewStyle().
 			Foreground(PaletteSlateBright)
+
+	DetailsLabel = PanelMuted
+
+	DetailsValue = PanelText
+
+	DetailsProjectValue = PanelText.Bold(true).
+				Foreground(PaletteError)
+
+	DetailsEmptyValue = PanelMuted.Italic(true)
+
+	ParameterGroup = PanelText.Bold(true).
+			Foreground(PaletteYellow)
+
+	ParameterName = PanelBody.
+			Foreground(PaletteBlueBright)
+
+	ParameterSeparator = PanelMuted
 
 	FilterText = lipgloss.NewStyle().
 			Foreground(PaletteYellow)
@@ -78,6 +98,15 @@ var (
 				Bold(true).
 				Foreground(PaletteError)
 )
+
+// DetailsConditionValueStyle returns the value style used for a condition in
+// the Details panel. Conditions without a configured color use normal text.
+func DetailsConditionValueStyle(colorName string) lipgloss.Style {
+	if strings.TrimSpace(colorName) == "" {
+		return DetailsValue
+	}
+	return DetailsValue.Foreground(ConditionLipglossColor(colorName))
+}
 
 func BorderStyle(active bool) lipgloss.Style {
 	if active {
@@ -201,6 +230,18 @@ func TreeItemSelectionStyle() lipgloss.Style {
 		return lipgloss.NewStyle().Reverse(true)
 	}
 	return lipgloss.NewStyle().Background(PaletteBlueDeep).Foreground(PaletteSlateBright)
+}
+
+// SelectionListOptionStyle returns the shared style for options in compact
+// anchored selection lists such as group moves and promotion targets.
+func SelectionListOptionStyle(selected bool) lipgloss.Style {
+	if !selected {
+		return PanelText
+	}
+	if NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true).Reverse(true)
+	}
+	return PanelText.Bold(true).Foreground(PaletteGold)
 }
 
 // RenderDraftBadge renders the shared project-row draft marker.

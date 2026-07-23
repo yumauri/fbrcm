@@ -85,6 +85,8 @@ func sharedHelpActionAvailableIn(item helpPaletteAction, active tuiconfig.Block)
 		case tuiconfig.ActionToggleMaximize, tuiconfig.ActionToggle, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
 			return true
 		}
+	case tuiconfig.BlockPromote:
+		return item.action == tuiconfig.ActionToggleMaximize
 	}
 	return false
 }
@@ -92,6 +94,9 @@ func sharedHelpActionAvailableIn(item helpPaletteAction, active tuiconfig.Block)
 func (m Model) sharedHelpActionAvailability(active tuiconfig.Block, action tuiconfig.Action) (bool, string) {
 	if active == tuiconfig.BlockHistory {
 		return m.parametersHelpActionAvailability(action)
+	}
+	if active == tuiconfig.BlockPromote && action == tuiconfig.ActionToggleMaximize {
+		return true, ""
 	}
 	if action == tuiconfig.ActionToggleMaximize {
 		return true, ""
@@ -141,8 +146,19 @@ func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, stri
 			}
 		}
 	case tuiconfig.ActionFocusDetails:
+		if m.promote.WorkspaceOpen() {
+			return false, "the Promote panel replaces the workspace panels"
+		}
 		if !m.detailsVisible {
 			return false, "details panel is not open"
+		}
+	case tuiconfig.ActionFocusParameters, tuiconfig.ActionFocusConditions, tuiconfig.ActionFocusHistory:
+		if m.promote.WorkspaceOpen() {
+			return false, "the Promote panel replaces the workspace panels"
+		}
+	case tuiconfig.ActionFocusPromote:
+		if !m.promote.WorkspaceOpen() {
+			return false, "the Promote panel is not open"
 		}
 	}
 	if m.contextOverlayOpen() {
@@ -158,7 +174,7 @@ func (m Model) filterHelpActionAvailability(action tuiconfig.Action) (bool, stri
 	if m.contextOverlayOpen() {
 		return false, "close the current dialog or editor first"
 	}
-	filterPanel := m.active == panels.Projects || m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History
+	filterPanel := m.active == panels.Projects || m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History || m.active == panels.Promote
 	if !filterPanel {
 		return false, "the focused panel does not support filtering"
 	}
@@ -192,6 +208,8 @@ func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 		return tuiconfig.BlockAuthPicker, "authentication picker is open"
 	case m.dialog.IsOpen():
 		return tuiconfig.BlockDialog, "confirmation dialog is open"
+	case m.diffView.IsOpen():
+		return tuiconfig.BlockDiffView, "diff viewer is open"
 	case m.boolPicker.IsOpen():
 		return tuiconfig.BlockBoolInput, "boolean editor is open"
 	case m.jsonInput.IsOpen():
@@ -214,6 +232,8 @@ func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 		return tuiconfig.BlockConditions, ""
 	case panels.History:
 		return tuiconfig.BlockHistory, ""
+	case panels.Promote:
+		return tuiconfig.BlockPromote, ""
 	case panels.Details:
 		return tuiconfig.BlockDetails, ""
 	case panels.Logs:
@@ -239,7 +259,7 @@ func reasonForInactiveHelpBlock(block, active tuiconfig.Block, activeReason stri
 func isOverlayHelpBlock(block tuiconfig.Block) bool {
 	switch block {
 	case tuiconfig.BlockHistoryPicker, tuiconfig.BlockDetailsForm, tuiconfig.BlockDialog,
-		tuiconfig.BlockBoolInput, tuiconfig.BlockJSONInput, tuiconfig.BlockNumberInput,
+		tuiconfig.BlockBoolInput, tuiconfig.BlockDiffView, tuiconfig.BlockJSONInput, tuiconfig.BlockNumberInput,
 		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockAuthPicker, tuiconfig.BlockRenameInput:
 		return true
 	default:
@@ -259,6 +279,9 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 		if !m.projects.HasCurrentProject() {
 			return false, "no project is selected"
 		}
+		if action == tuiconfig.ActionPromote && len(m.projects.AllProjects()) < 2 {
+			return false, "at least two projects are required"
+		}
 		if action == tuiconfig.ActionBindAuth && !m.projects.AuthBindingAvailable() {
 			return false, "at least two authentication identities must discover every selected project"
 		}
@@ -273,9 +296,22 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 		return m.parametersHelpActionAvailability(action)
 	case tuiconfig.BlockConditions:
 		return m.conditionsHelpActionAvailability(action)
+	case tuiconfig.BlockPromote:
+		switch action {
+		case tuiconfig.ActionSaveDraft, tuiconfig.ActionPublish:
+			if !m.promote.HasSelection() {
+				return false, "no promotion changes are selected"
+			}
+			if action == tuiconfig.ActionPublish && !m.promote.CanPublish() {
+				return false, "Firebase verification is required before publication"
+			}
+		}
 	case tuiconfig.BlockHistory:
 		if _, ok := m.parameters.CurrentProject(); !ok {
 			return false, "no project history is selected"
+		}
+		if action == tuiconfig.ActionSubmit && !m.parameters.HistoryDiffAvailable() {
+			return false, "select a property in a loaded version pair"
 		}
 	case tuiconfig.BlockDetails:
 		return m.detailsHelpActionAvailability(action)

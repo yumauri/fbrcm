@@ -175,11 +175,30 @@ func (m Model) CurrentProject() (core.Project, bool) {
 	return m.projects[m.cursor], true
 }
 
+// CurrentProjectScreenRow returns the terminal row where the current
+// project's name is rendered in the expanded Projects panel.
+func (m Model) CurrentProjectScreenRow() (int, bool) {
+	if m.collapsed || m.cursor < 0 || m.cursor >= len(m.projectStarts) {
+		return 0, false
+	}
+	row := m.y + 1 + m.projectStarts[m.cursor] - m.viewport.YOffset()
+	if row <= m.y || row >= m.y+m.height-1-m.filter.Height() {
+		return 0, false
+	}
+	return row, true
+}
+
 // CurrentProjectEnabled reports whether the project under the cursor can be
 // used by project actions that require Firebase access.
 func (m Model) CurrentProjectEnabled() bool {
 	project, ok := m.CurrentProject()
 	return ok && !project.Disabled
+}
+
+// AllProjects returns a stable copy of every project in the panel, including
+// projects currently hidden by filtering.
+func (m Model) AllProjects() []core.Project {
+	return append([]core.Project(nil), m.allProjects...)
 }
 
 // ActionTargets returns marked projects, or the current project when nothing

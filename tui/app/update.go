@@ -69,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case profileRenameCompletedMsg:
 		return m.updateProfileRenameCompleted(msg)
 	}
-	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, keyMsg.String()) && (m.helpPalette.IsOpen() || m.helpShortcutAvailable(keyMsg.String())) {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && !m.promote.TargetPickerOpen() && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, keyMsg.String()) && (m.helpPalette.IsOpen() || m.helpShortcutAvailable(keyMsg.String())) {
 		if m.helpPalette.IsOpen() {
 			m.helpPalette = m.helpPalette.Close()
 			return m, nil
@@ -93,6 +93,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if next, cmd, ok := m.updateOpenModal(msg); ok {
 		return next, cmd
 	}
+	if m.promote.IsOpen() {
+		if next, cmd, handled := m.updatePromoteMessage(msg); handled {
+			return next, cmd
+		}
+	}
 	if m.setup.IsOpen() {
 		if size, ok := msg.(tea.WindowSizeMsg); ok {
 			m.updateWindowSize(size)
@@ -100,6 +105,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.setup, cmd = m.setup.Update(msg)
 		return m, cmd
+	}
+	if m.promote.IsOpen() {
+		// Choosing a target is a modal interaction. Once chosen, Promote is a
+		// regular workspace panel and participates in the app's normal focus,
+		// layout, mouse, and global-key routing.
+		if m.promote.TargetPickerOpen() {
+			if size, ok := msg.(tea.WindowSizeMsg); ok {
+				m.updateWindowSize(size)
+			}
+			var cmd tea.Cmd
+			m.promote, cmd = m.promote.Update(msg)
+			return m, cmd
+		}
+		next, cmd, handled := m.updateAppMessage(msg)
+		m = next
+		if handled {
+			return m, cmd
+		}
+		if m.projectSelectionLeavesPromote(msg) {
+			m, cmd = m.updateChildPanels(msg)
+			m = m.closePromote()
+			m.setActive(panels.Parameters)
+			return m, cmd
+		}
+		if m.active == panels.Promote {
+			m.promote, cmd = m.promote.Update(msg)
+			return m, cmd
+		}
+		return m.updateChildPanels(msg)
 	}
 	next, cmd, ok := m.updateAppMessage(msg)
 	m = next
@@ -166,6 +200,10 @@ func (m *Model) applyLayout() {
 	m.projects = m.projects.SetBounds(0, 0, layout.leftWidth, layout.topHeight)
 	m.parameters = m.parameters.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
 	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
+	m.promote = m.promote.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
+	if row, ok := m.projects.CurrentProjectScreenRow(); ok {
+		m.promote = m.promote.SetTargetRow(row)
+	}
 	m.dialog = m.dialog.SetBounds(0, 0, m.width, m.height)
 	m.authPicker = m.authPicker.SetBounds(0, 0, m.width, m.height)
 	m.projectIO = m.projectIO.SetBounds(0, 0, m.width, m.height)
@@ -175,6 +213,22 @@ func (m *Model) applyLayout() {
 }
 
 func (m Model) nextTabPanel() panels.ID {
+	if m.promote.WorkspaceOpen() {
+		switch m.active {
+		case panels.Logs:
+			if m.prevTop == panels.Projects || m.prevTop == panels.Promote {
+				return m.prevTop
+			}
+			return panels.Promote
+		case panels.Promote:
+			return panels.Projects
+		case panels.Projects:
+			return panels.Promote
+		default:
+			return panels.Promote
+		}
+	}
+
 	if m.active == panels.Logs {
 		if m.detailsVisible {
 			if m.prevTop == panels.Details || m.prevTop == panels.Parameters || m.prevTop == panels.Conditions || m.prevTop == panels.History {
@@ -224,13 +278,29 @@ func (m *Model) setActive(panel panels.ID) {
 	m.projects = m.projects.SetActive(panel == panels.Projects)
 	m.parameters = m.parameters.SetActive(panel == panels.Parameters || panel == panels.History)
 	m.conditions = m.conditions.SetActive(panel == panels.Conditions)
+	if panel == panels.Promote {
+		m.projects = m.projects.SetActive(false)
+	}
 	m.details = m.details.SetActive(panel == panels.Details)
 	m.details = m.details.SetBridgeActive(panel == panels.Parameters || panel == panels.Conditions)
 	m.logs = m.logs.SetActive(panel == panels.Logs)
 }
 
 func (m Model) keyboardCaptured() bool {
-	return m.capture != panels.None
+	return m.capture != panels.None || m.active == panels.Promote && m.promote.FilterFocused()
+}
+
+func (m Model) projectSelectionLeavesPromote(msg tea.Msg) bool {
+	key, ok := msg.(tea.KeyMsg)
+	if !ok || m.active != panels.Projects {
+		return false
+	}
+	k := key.String()
+	if tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionSelect, k) {
+		return true
+	}
+	return m.capture == panels.None &&
+		tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionMark, k)
 }
 
 func (m Model) panelAt(x, y int) (panels.ID, bool) {
@@ -246,6 +316,9 @@ func (m Model) panelAt(x, y int) (panels.ID, bool) {
 	if y < layout.topHeight {
 		if x < layout.leftWidth {
 			return panels.Projects, true
+		}
+		if m.promote.WorkspaceOpen() {
+			return panels.Promote, true
 		}
 		return m.selectedParametersTab(), true
 	}

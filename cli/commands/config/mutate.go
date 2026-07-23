@@ -129,9 +129,6 @@ func newResetCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !state.Report.Valid {
-				return invalidConfigError(state.Report)
-			}
 			candidate := mutableConfig(state)
 			key := "preferences"
 			if len(args) == 1 {
@@ -174,7 +171,7 @@ func newResetCommand() *cobra.Command {
 func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key string, allPreferences bool) (bool, error) {
 	defaults := tuiconfig.ToConfigMap(tuiconfig.DefaultKeyMap())
 	if allPreferences {
-		changed := candidate.PowerlineGlyphs == nil || !*candidate.PowerlineGlyphs || !reflect.DeepEqual(candidate.Keys, defaults)
+		changed := !state.Report.Valid || candidate.PowerlineGlyphs == nil || !*candidate.PowerlineGlyphs || !reflect.DeepEqual(candidate.Keys, defaults)
 		enabled := true
 		candidate.PowerlineGlyphs = &enabled
 		candidate.Keys = defaults
@@ -188,9 +185,9 @@ func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key st
 		previous := *state.Effective.PowerlineGlyphs
 		enabled := true
 		candidate.PowerlineGlyphs = &enabled
-		return previous != enabled, nil
+		return !state.Report.Valid || previous != enabled, nil
 	case key == "keys":
-		changed := !reflect.DeepEqual(candidate.Keys, defaults)
+		changed := !state.Report.Valid || !reflect.DeepEqual(candidate.Keys, defaults)
 		candidate.Keys = defaults
 		return changed, nil
 	case len(parts) == 2 && parts[0] == "keys":
@@ -198,7 +195,7 @@ func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key st
 		if !tuiconfig.KnownBlock(block) {
 			return false, fmt.Errorf("unknown keybinding block %q", block)
 		}
-		changed := !reflect.DeepEqual(candidate.Keys[block], defaults[block])
+		changed := !state.Report.Valid || !reflect.DeepEqual(candidate.Keys[block], defaults[block])
 		candidate.Keys[block] = cloneActionMap(defaults[block])
 		return changed, nil
 	case len(parts) == 3 && parts[0] == "keys":
@@ -209,7 +206,7 @@ func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key st
 		if !tuiconfig.KnownAction(block, action) {
 			return false, fmt.Errorf("unknown action %q in block %q", action, block)
 		}
-		changed := !reflect.DeepEqual(candidate.Keys[block][action], defaults[block][action])
+		changed := !state.Report.Valid || !reflect.DeepEqual(candidate.Keys[block][action], defaults[block][action])
 		candidate.Keys[block][action] = append([]string(nil), defaults[block][action]...)
 		return changed, nil
 	default:

@@ -29,6 +29,8 @@ func (m Model) updateHistoryKey(msg tea.KeyMsg, key string) (Model, tea.Cmd, boo
 		return m, nil, true
 	case !m.filter.Focused() && tuiconfig.Matches(tuiconfig.BlockHistory, tuiconfig.ActionHistoryChanges, key):
 		return m.toggleHistoryChangesOnly(), nil, true
+	case !m.filter.Focused() && tuiconfig.Matches(tuiconfig.BlockHistory, tuiconfig.ActionSubmit, key):
+		return m, m.historyDiffRequestedCmd(), true
 	default:
 		return m, nil, false
 	}

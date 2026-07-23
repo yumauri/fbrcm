@@ -49,27 +49,3 @@ func stringPopupContentWidth(screenW int) int {
 func stringContentHeight(screenH int) int {
 	return max(screenH-7-viewutil.PopupPaddingTop, 3)
 }
-
-type expandedScrollbar struct {
-	visible    bool
-	thumbStart int
-	thumbEnd   int
-}
-
-func expandedScrollbarState(total, offset, visible int) expandedScrollbar {
-	if visible <= 0 {
-		return expandedScrollbar{}
-	}
-	if total <= visible {
-		return expandedScrollbar{}
-	}
-	thumbHeight := max(1, (visible*visible)/total)
-	maxThumbStart := visible - thumbHeight
-	maxOffset := max(total-visible, 1)
-	thumbStart := (min(offset, maxOffset) * maxThumbStart) / maxOffset
-	return expandedScrollbar{
-		visible:    true,
-		thumbStart: thumbStart,
-		thumbEnd:   thumbStart + thumbHeight - 1,
-	}
-}

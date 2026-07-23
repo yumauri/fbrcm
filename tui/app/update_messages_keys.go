@@ -171,7 +171,7 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 		(m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k)):
 		return m.updateModeOrDuplicateKey()
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
-		if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History {
+		if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History || m.active == panels.Promote {
 			m.toggleWorkspaceMaximize()
 			return m, nil, true
 		}
@@ -213,6 +213,28 @@ func (m Model) updateConditionsReloadKey(k string) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
+	if m.promote.WorkspaceOpen() {
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusProjects, k):
+			m.setActive(panels.Projects)
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusLogs, k):
+			m.setActive(panels.Logs)
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote, k):
+			m.setActive(panels.Promote)
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
+			m.setActive(m.nextTabPanel())
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k),
+			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusConditions, k),
+			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k),
+			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
+			// These panels are replaced by Promote while its workspace is open.
+			return m, nil, true
+		default:
+			return m, nil, false
+		}
+		return m, nil, true
+	}
+
 	switch {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusProjects, k):
 		m.setActive(panels.Projects)
@@ -222,6 +244,8 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 		return m.activateWorkspacePanel(panels.Conditions)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k):
 		return m.activateWorkspacePanel(panels.History)
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote, k):
+		return m, nil, false
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
 		if !m.detailsVisible {
 			return m, nil, false
@@ -249,6 +273,8 @@ func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 		return m.openProjectExport()
 	case m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionDefaults, k):
 		return m.openProjectDefaults()
+	case m.active == panels.Projects && tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionPromote, k):
+		return m.openPromote()
 	case (m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDelete, k)) ||
 		(m.active == panels.Details && tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k)):
 		return m.updateDeleteKey()

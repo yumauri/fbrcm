@@ -143,6 +143,37 @@ func TestConfigResetPreservesProfile(t *testing.T) {
 	}
 }
 
+func TestConfigResetKeysRemovesObsoleteBindingsFromInvalidConfig(t *testing.T) {
+	setupConfigCommandTest(t)
+	if err := coreconfig.SaveAppConfigRaw([]byte(`[keys.compare]
+close = ["esc"]
+
+[keys.global]
+focus_compare = ["9"]
+
+[keys.projects]
+compare = ["v"]
+`)); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _, err := executeConfigCommand(t, New(), "reset", "keys", "--yes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stdout != "reset keys\n" {
+		t.Fatalf("reset output = %q", stdout)
+	}
+
+	cfg, err := coreconfig.LoadAppConfigStrict()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(cfg.Keys, tuiconfig.ToConfigMap(tuiconfig.DefaultKeyMap())) {
+		t.Fatalf("keys after reset = %#v, want defaults", cfg.Keys)
+	}
+}
+
 func TestConfigValidateReportsAllKeyErrorsAsJSON(t *testing.T) {
 	setupConfigCommandTest(t)
 	if err := coreconfig.SaveAppConfigRaw([]byte(`powerline_glyphs = true

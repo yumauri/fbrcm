@@ -67,6 +67,9 @@ func (m Model) baseView() string {
 	if m.selectedParametersTab() == panels.Conditions {
 		rightPanel = m.conditions.ViewWithBorder(conditionsActive, conditionsActive && !popupOpen)
 	}
+	if m.promote.WorkspaceOpen() {
+		rightPanel = m.promote.ViewWithBorder(m.active == panels.Promote && !popupOpen, m.active == panels.Promote && !popupOpen)
+	}
 	topRow := lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		m.projects.ViewWithBorder(projectsActive, projectsActive && !popupOpen),
@@ -90,6 +93,7 @@ func (m Model) contextOverlayOpen() bool {
 		m.parameters.HistoryPickerOpen() ||
 		m.details.DropdownOpen() ||
 		m.dialog.IsOpen() ||
+		m.diffView.IsOpen() ||
 		m.boolPicker.IsOpen() ||
 		m.jsonInput.IsOpen() ||
 		m.numberInput.IsOpen() ||
@@ -102,15 +106,35 @@ func (m Model) contextOverlayOpen() bool {
 
 func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers := []*lipgloss.Layer{lipgloss.NewLayer(body).ID("base")}
+	layers = m.appendPromotePickerLayers(layers)
 	layers = m.appendDetailsLayers(layers)
 	layers = m.appendHistoryPickerLayer(layers)
 	layers = m.appendInputLayers(layers)
+	layers = m.appendDiffViewLayer(layers)
 	layers = m.appendDialogLayers(layers)
 	layers = m.appendProjectIOLayer(layers)
 	layers = m.appendSetupLayer(layers)
 	layers = m.appendOfflineLayer(layers)
 	layers = m.appendHelpPaletteLayer(layers)
 	return layers
+}
+
+func (m Model) appendDiffViewLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.diffView.IsOpen() {
+		return layers
+	}
+	x, y := m.diffView.Position()
+	return append(layers, lipgloss.NewLayer(m.diffView.View()).ID("diff-view").X(x).Y(y).Z(8))
+}
+
+func (m Model) appendPromotePickerLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.promote.TargetPickerOpen() {
+		return layers
+	}
+	sourceX, sourceY := m.promote.SourcePosition()
+	layers = append(layers, lipgloss.NewLayer(m.promote.SourceView()).ID("promote-source").X(sourceX).Y(sourceY).Z(2))
+	x, y := m.promote.TargetPosition()
+	return append(layers, lipgloss.NewLayer(m.promote.TargetView()).ID("promote-target").X(x).Y(y).Z(3))
 }
 
 func (m Model) appendProjectIOLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {

@@ -87,13 +87,7 @@ func styledOptionLineStyle(option Option, selected bool) lipgloss.Style {
 }
 
 func optionLineStyle(selected bool) lipgloss.Style {
-	if !selected {
-		return optionStyle
-	}
-	if styles.NoColorEnabled() {
-		return lipgloss.NewStyle().Bold(true).Reverse(true)
-	}
-	return optionStyle.Bold(true).Foreground(styles.PaletteGold)
+	return styles.SelectionListOptionStyle(selected)
 }
 func padRenderedRight(value string, width int) string {
 	return value + strings.Repeat(" ", max(width-lipgloss.Width(value), 0))

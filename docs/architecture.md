@@ -122,6 +122,8 @@ Add or extend tests at the layer you touch:
 - Root group key representations (`""`, `__default__`, `(root)`) must stay consistent — see [root-group-key.md](root-group-key.md).
 - Empty Remote Config parameter groups are first-class entities and may carry descriptions. Parameter mutation, filtering, condition cleanup, draft merge, and promotion must preserve them; only explicit group operations may remove them. In the TUI, the configured delete action opens confirmation when no draft exists and stages removal immediately when a draft already exists, matching other edits.
 - Remote Config condition slice order is evaluation priority. View models and promotion must preserve it; alphabetical condition ordering is never semantically safe.
+- The cross-project TUI promotion workspace uses immutable source and target snapshots prepared by the `core` project-promotion facade. The source may be a local draft or published snapshot; the target is always its effective draft-aware state. UI selection remains atomic at parameter, condition, and group-description level, while `core/rc/promote` remains the source of truth for automatic dependencies, condition order, pruning, and group preservation.
+- Project promotion publication is draft-first. The exact reviewed candidate is saved to the target draft before validation and ETag-protected publication. Successful publication removes the draft; validation, merge, or publish failures retain the complete candidate so intent is recoverable and reviewable.
 - Private file I/O goes through `core/config.WritePrivateFile`.
 
 ### Stop criteria

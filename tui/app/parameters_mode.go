@@ -3,7 +3,7 @@ package app
 import "github.com/yumauri/fbrcm/tui/panels"
 
 func (m *Model) toggleWorkspaceMaximize() {
-	if m.active != panels.Parameters && m.active != panels.Conditions && m.active != panels.History {
+	if m.active != panels.Parameters && m.active != panels.Conditions && m.active != panels.History && m.active != panels.Promote {
 		return
 	}
 

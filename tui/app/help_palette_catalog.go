@@ -25,6 +25,7 @@ var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockProjects,
 	tuiconfig.BlockParameters,
 	tuiconfig.BlockConditions,
+	tuiconfig.BlockPromote,
 	tuiconfig.BlockHistory,
 	tuiconfig.BlockDetails,
 	tuiconfig.BlockLogs,
@@ -33,6 +34,7 @@ var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockDetailsForm,
 	tuiconfig.BlockDialog,
 	tuiconfig.BlockBoolInput,
+	tuiconfig.BlockDiffView,
 	tuiconfig.BlockJSONInput,
 	tuiconfig.BlockNumberInput,
 	tuiconfig.BlockStringInput,
@@ -51,7 +53,10 @@ func helpPaletteCatalog() []helpPaletteAction {
 			actions = append(actions, action)
 		}
 		slices.SortFunc(actions, func(left, right tuiconfig.Action) int {
-			return strings.Compare(helpPaletteActionTitle(block, left), helpPaletteActionTitle(block, right))
+			if byTitle := strings.Compare(helpPaletteActionTitle(block, left), helpPaletteActionTitle(block, right)); byTitle != 0 {
+				return byTitle
+			}
+			return strings.Compare(string(left), string(right))
 		})
 		for _, action := range actions {
 			title := helpPaletteActionTitle(block, action)
@@ -81,6 +86,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 		return "Parameters panel"
 	case tuiconfig.BlockConditions:
 		return "Conditions panel"
+	case tuiconfig.BlockPromote:
+		return "Promote workspace"
 	case tuiconfig.BlockHistory:
 		return "History panel"
 	case tuiconfig.BlockDetails:
@@ -97,6 +104,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 		return "Confirmation dialog"
 	case tuiconfig.BlockBoolInput:
 		return "Boolean editor"
+	case tuiconfig.BlockDiffView:
+		return "Diff viewer"
 	case tuiconfig.BlockJSONInput:
 		return "JSON editor"
 	case tuiconfig.BlockNumberInput:
@@ -139,6 +148,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Export Remote Config"
 		case tuiconfig.ActionDefaults:
 			return "Download application defaults"
+		case tuiconfig.ActionPromote:
+			return "Promote to another project"
 		}
 	}
 	if block == tuiconfig.BlockParameters {
@@ -190,6 +201,36 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 		case tuiconfig.ActionLast:
 			return "Last condition"
 		}
+	}
+	if block == tuiconfig.BlockPromote {
+		switch action {
+		case tuiconfig.ActionClose:
+			return "Close promotion"
+		case tuiconfig.ActionToggle:
+			return "Select or clear change"
+		case tuiconfig.ActionSubmit:
+			return "Open selected change diff"
+		case tuiconfig.ActionSelectAll:
+			return "Select visible changes"
+		case tuiconfig.ActionSelectNone:
+			return "Clear visible changes"
+		case tuiconfig.ActionSwap:
+			return "Swap source and target"
+		case tuiconfig.ActionPrune:
+			return "Toggle target-only removals"
+		case tuiconfig.ActionSaveDraft:
+			return "Save promotion draft"
+		case tuiconfig.ActionSource:
+			return "Toggle draft or published source"
+		case tuiconfig.ActionPublish:
+			return "Review and publish promotion"
+		}
+	}
+	if block == tuiconfig.BlockGlobal && action == tuiconfig.ActionFocusPromote {
+		return "Focus promote"
+	}
+	if block == tuiconfig.BlockHistory && action == tuiconfig.ActionSubmit {
+		return "Open selected property diff"
 	}
 	if block == tuiconfig.BlockDetails {
 		switch action {
@@ -295,6 +336,18 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Last action"
 		}
 	}
+	if block == tuiconfig.BlockDiffView {
+		switch action {
+		case tuiconfig.ActionClose:
+			return "Close diff"
+		case tuiconfig.ActionToggle:
+			return "Collapse or expand property"
+		case tuiconfig.ActionLeft:
+			return "Collapse property"
+		case tuiconfig.ActionRight:
+			return "Expand property"
+		}
+	}
 	if block == tuiconfig.BlockHistory {
 		switch action {
 		case tuiconfig.ActionHistoryBothOlder:
@@ -345,6 +398,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 		return "parameter or group"
 	case tuiconfig.BlockConditions:
 		return "condition"
+	case tuiconfig.BlockPromote:
+		return "change"
 	case tuiconfig.BlockHistoryPicker:
 		return "version"
 	case tuiconfig.BlockDetailsForm:
@@ -355,6 +410,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 		return "dialog line"
 	case tuiconfig.BlockBoolInput:
 		return "boolean value"
+	case tuiconfig.BlockDiffView:
+		return "property"
 	case tuiconfig.BlockMoveInput:
 		return "destination"
 	case tuiconfig.BlockAuthPicker:
@@ -381,7 +438,7 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 	case tuiconfig.ActionProfiles:
 		return "Open profile management."
 	case tuiconfig.ActionFocusProjects, tuiconfig.ActionFocusParameters, tuiconfig.ActionFocusConditions,
-		tuiconfig.ActionFocusHistory, tuiconfig.ActionFocusDetails, tuiconfig.ActionFocusLogs:
+		tuiconfig.ActionFocusHistory, tuiconfig.ActionFocusPromote, tuiconfig.ActionFocusDetails, tuiconfig.ActionFocusLogs:
 		return "Move keyboard focus to the " + strings.TrimPrefix(strings.ToLower(title), "focus ") + " panel."
 	case tuiconfig.ActionRefresh:
 		return "Update the cached project list from Firebase."
@@ -412,6 +469,9 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 	case tuiconfig.ActionSubmit:
 		if block == tuiconfig.BlockMoveInput {
 			return "Place the item at the selected destination."
+		}
+		if block == tuiconfig.BlockHistory {
+			return "Compare the selected property across both versions."
 		}
 	}
 	return title + " in the " + strings.ToLower(helpPaletteBlockTitle(block)) + "."

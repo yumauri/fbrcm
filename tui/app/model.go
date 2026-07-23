@@ -10,6 +10,7 @@ import (
 	"github.com/yumauri/fbrcm/tui/components/conditions"
 	"github.com/yumauri/fbrcm/tui/components/details"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
+	"github.com/yumauri/fbrcm/tui/components/diffview"
 	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
 	"github.com/yumauri/fbrcm/tui/components/logs"
 	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
@@ -17,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/tui/components/parameters"
 	"github.com/yumauri/fbrcm/tui/components/projectio"
 	"github.com/yumauri/fbrcm/tui/components/projects"
+	promotecmp "github.com/yumauri/fbrcm/tui/components/promote"
 	renameinput "github.com/yumauri/fbrcm/tui/components/renameinput"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 	stringinput "github.com/yumauri/fbrcm/tui/components/stringinput"
@@ -27,48 +29,52 @@ import (
 type Model struct {
 	svc *core.Core
 
-	projects        projects.Model
-	parameters      parameters.Model
-	conditions      conditions.Model
-	details         details.Model
-	logs            logs.Model
-	projectsMode    projectsPanelMode
-	logsHeight      int
-	logsSized       bool
-	logsMode        logsPanelMode
-	logsSaved       int
-	help            help.Model
-	helpPalette     helpPaletteModel
-	setup           setup.Model
-	active          panels.ID
-	parametersTab   panels.ID
-	prevTop         panels.ID
-	capture         panels.ID
-	detailsVisible  bool
-	dialog          dialogcmp.Model
-	jsonInput       jsoninput.Model
-	boolPicker      boolpicker.Model
-	numberInput     numberinput.Model
-	stringInput     stringinput.Model
-	moveParam       moveparam.Model
-	authPicker      authpicker.Model
-	renameInput     renameinput.Model
-	projectIO       projectio.Model
-	dialogQueue     []pendingDialog
-	duplicate       *duplicateSession
-	newParameter    *newParameterSession
-	pendingDetails  *pendingDetailsSelection
-	historyRollback *historyRollbackSession
-	conditionEdit   *conditionEditSession
-	conditionalAdd  *conditionalValueAddSession
-	authBind        *authBindingSession
-	profileRename   *profileRenameSession
-	projectImport   *core.ProjectImportPlan
-	projectExport   *projectExportSession
-	projectDefaults *projectDefaultsSession
-	draftPublish    *draftPublishBatch
-	valueEditSource panels.ID
-	authCount       int
+	projects         projects.Model
+	parameters       parameters.Model
+	conditions       conditions.Model
+	promote          promotecmp.Model
+	details          details.Model
+	logs             logs.Model
+	projectsMode     projectsPanelMode
+	logsHeight       int
+	logsSized        bool
+	logsMode         logsPanelMode
+	logsSaved        int
+	help             help.Model
+	helpPalette      helpPaletteModel
+	setup            setup.Model
+	active           panels.ID
+	parametersTab    panels.ID
+	prevTop          panels.ID
+	capture          panels.ID
+	detailsVisible   bool
+	dialog           dialogcmp.Model
+	diffView         diffview.Model
+	jsonInput        jsoninput.Model
+	boolPicker       boolpicker.Model
+	numberInput      numberinput.Model
+	stringInput      stringinput.Model
+	moveParam        moveparam.Model
+	authPicker       authpicker.Model
+	renameInput      renameinput.Model
+	projectIO        projectio.Model
+	dialogQueue      []pendingDialog
+	duplicate        *duplicateSession
+	newParameter     *newParameterSession
+	pendingDetails   *pendingDetailsSelection
+	historyRollback  *historyRollbackSession
+	conditionEdit    *conditionEditSession
+	conditionalAdd   *conditionalValueAddSession
+	authBind         *authBindingSession
+	profileRename    *profileRenameSession
+	projectImport    *core.ProjectImportPlan
+	projectExport    *projectExportSession
+	projectDefaults  *projectDefaultsSession
+	draftPublish     *draftPublishBatch
+	promoteReturn    *promoteReturnState
+	promotionPreview *core.ProjectPromotionPreview
+	valueEditSource  panels.ID
+	authCount        int
 
 	width  int
 	height int
@@ -133,7 +139,9 @@ func New(svc *core.Core) Model {
 		projects:      projects.New(svc),
 		parameters:    parameters.New(svc),
 		conditions:    conditions.New(svc),
+		promote:       promotecmp.New(svc),
 		dialog:        dialogcmp.New(),
+		diffView:      diffview.New(),
 		jsonInput:     jsoninput.New(),
 		boolPicker:    boolpicker.New(),
 		numberInput:   numberinput.New(),

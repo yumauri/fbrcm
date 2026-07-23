@@ -58,6 +58,8 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 		return append(common, conditionsHelp()...)
 	case panels.History:
 		return append(common, historyHelp()...)
+	case panels.Promote:
+		return append(common, promoteHelp()...)
 	case panels.Logs:
 		return append(common, k.logsHelp()...)
 	case panels.Details:
@@ -79,6 +81,21 @@ func conditionMoveHelp() []key.Binding {
 		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionDown, "move down"),
 		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionSubmit, "place"),
 		tuiconfig.Binding(tuiconfig.BlockMoveInput, tuiconfig.ActionCancel, "cancel"),
+	}
+}
+
+func promoteHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, "maximize"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionToggle, "select"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionSubmit, "diff"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionSelectAll, "select visible"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionPrune, "prune"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionSaveDraft, "draft"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionPublish, "publish"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionSwap, "swap"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionSource, "source"),
+		tuiconfig.Binding(tuiconfig.BlockPromote, tuiconfig.ActionClose, "close"),
 	}
 }
 
@@ -124,6 +141,7 @@ func groupDetailsHelp() []key.Binding {
 
 func historyHelp() []key.Binding {
 	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockHistory, tuiconfig.ActionSubmit, "diff"),
 		tuiconfig.Binding(tuiconfig.BlockHistory, tuiconfig.ActionHistoryChanges, "changes only"),
 		compoundBinding(ref(tuiconfig.BlockHistory, tuiconfig.ActionHistoryBothOlder), ref(tuiconfig.BlockHistory, tuiconfig.ActionHistoryBothNewer), "both versions"),
 		tuiconfig.Binding(tuiconfig.BlockHistory, tuiconfig.ActionHistoryChoose, "choose versions"),

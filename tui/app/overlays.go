@@ -11,6 +11,7 @@ func (m Model) currentValueEditSource() panels.ID {
 
 func (m *Model) closeOverlays() {
 	m.closeDialog()
+	m.diffView = m.diffView.Close()
 	m.closeJSONInput()
 	m.closeBoolPicker()
 	m.closeNumberInput()

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	groupOpenStyle   = styles.PanelText.Bold(true).Foreground(styles.PaletteYellow)
+	groupOpenStyle   = styles.ParameterGroup
 	groupClosedStyle = styles.PanelMuted
 	iconStyle        = lipgloss.NewStyle().Foreground(styles.PaletteSlateDark)
 	leafLineStyle    = iconStyle

@@ -8,6 +8,9 @@ import (
 )
 
 func (m Model) workspaceTabAt(x, y int) (panels.ID, bool) {
+	if m.promote.WorkspaceOpen() {
+		return panels.None, false
+	}
 	if y != 0 || (m.detailsVisible && m.details.Contains(x, y)) {
 		return panels.None, false
 	}
@@ -23,6 +26,9 @@ func (m Model) workspaceTabAt(x, y int) (panels.ID, bool) {
 }
 
 func (m Model) activateWorkspacePanel(panel panels.ID) (Model, tea.Cmd, bool) {
+	if m.promote.WorkspaceOpen() {
+		return m, nil, true
+	}
 	if workspaceTabIndex(panel) < 0 {
 		return m, nil, false
 	}

@@ -8,6 +8,7 @@ const (
 	Parameters
 	Conditions
 	History
+	Promote
 	Details
 	Logs
 )

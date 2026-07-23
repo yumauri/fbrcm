@@ -155,6 +155,9 @@ func TestDefaultKeyMapIncludesHistoryChangesToggle(t *testing.T) {
 	if got := DefaultKeyMap()[BlockHistory][ActionHistoryChanges]; len(got) != 1 || got[0] != "c" {
 		t.Fatalf("history changes toggle = %v, want [c]", got)
 	}
+	if got := DefaultKeyMap()[BlockHistory][ActionSubmit]; len(got) != 1 || got[0] != "enter" {
+		t.Fatalf("history diff = %v, want [enter]", got)
+	}
 }
 
 func TestDefaultKeyMapIncludesHelpPaletteBindings(t *testing.T) {

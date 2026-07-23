@@ -8,13 +8,13 @@ import (
 	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/lipgloss/v2"
-
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
 	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -33,10 +33,7 @@ func newGroupInput() textinput.Model {
 }
 
 func (m Model) conditionStyle(color string) lipgloss.Style {
-	if strings.TrimSpace(color) == "" {
-		return styles.PanelText
-	}
-	return styles.PanelText.Foreground(styles.ConditionLipglossColor(color))
+	return styles.DetailsConditionValueStyle(color)
 }
 
 func (m Model) valueTextStyle(value core.ParametersValue) lipgloss.Style {
@@ -92,30 +89,8 @@ func renderJSONValueLines(value string, width int) []string {
 	highlightedLines := jsoninput.HighlightJSONRanges(formatted, ranges)
 	rendered := make([]string, 0, len(highlightedLines))
 	for _, highlighted := range highlightedLines {
-		rendered = append(rendered, wrapRenderedLine(highlighted, width)...)
+		indent := min(leadingSpaceWidth(ansi.Strip(highlighted))+2, max(width-1, 0))
+		rendered = append(rendered, viewutil.WrapRenderedLine(highlighted, width, indent)...)
 	}
 	return rendered
-}
-
-func wrapRenderedLine(value string, width int) []string {
-	if width <= 0 {
-		return []string{""}
-	}
-	if lipgloss.Width(value) <= width {
-		return []string{value}
-	}
-	lines := make([]string, 0)
-	indent := min(leadingSpaceWidth(ansi.Strip(value))+2, max(width-1, 0))
-	indentText := strings.Repeat(" ", indent)
-	remaining := value
-	for lipgloss.Width(remaining) > width {
-		part := ansi.Truncate(remaining, width, "")
-		lines = append(lines, part)
-		remaining = ansi.Cut(remaining, lipgloss.Width(part), lipgloss.Width(remaining))
-		if indent > 0 {
-			remaining = indentText + remaining
-		}
-	}
-	lines = append(lines, remaining)
-	return lines
 }

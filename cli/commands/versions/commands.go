@@ -112,9 +112,9 @@ func newVersionsShowCommand(svc *core.Core) *cobra.Command {
 }
 
 type versionDiffOptions struct {
-	cached, json, parameters, conditions bool
-	filters, groups                      []string
-	search, expr                         string
+	cached, json, sideBySide, parameters, conditions bool
+	filters, groups                                  []string
+	search, expr                                     string
 }
 
 func newVersionsDiffCommand(svc *core.Core) *cobra.Command {
@@ -133,8 +133,10 @@ func addVersionDiffFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("conditions", false, "Include only condition changes")
 	cmd.Flags().Bool("cached", false, "Require local snapshots and do not contact Firebase")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
+	cmd.Flags().Bool("side-by-side", false, "Print a two-column terminal diff")
 	shared.AddDiffExitCodeFlag(cmd)
 	cmd.MarkFlagsMutuallyExclusive("parameters", "conditions")
+	cmd.MarkFlagsMutuallyExclusive("json", "side-by-side")
 }
 
 func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -165,6 +167,23 @@ func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s (%s): version %s → version %s\n", project.Name, project.ProjectID, fromCfg.Version.VersionNumber, toCfg.Version.VersionNumber); err != nil {
 		return err
 	}
+	if opts.sideBySide {
+		text, err := renderVersionSideBySide(
+			result,
+			shared.TerminalWidth(),
+		)
+		if err != nil {
+			return err
+		}
+		if !changed {
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+			return err
+		}
+		if _, err = fmt.Fprintln(cmd.OutOrStdout(), "\n"+renderVersionDiffSummary(result)+"\n\n"+text); err != nil {
+			return err
+		}
+		return shared.DiffFoundError(cmd)
+	}
 	text, changed := rcdiff.RenderResult(result)
 	if !changed {
 		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
@@ -179,6 +198,7 @@ func readVersionDiffOptions(cmd *cobra.Command) versionDiffOptions {
 	o := versionDiffOptions{}
 	o.cached, _ = cmd.Flags().GetBool("cached")
 	o.json, _ = cmd.Flags().GetBool("json")
+	o.sideBySide, _ = cmd.Flags().GetBool("side-by-side")
 	o.parameters, _ = cmd.Flags().GetBool("parameters")
 	o.conditions, _ = cmd.Flags().GetBool("conditions")
 	o.filters, _ = cmd.Flags().GetStringArray("filter")

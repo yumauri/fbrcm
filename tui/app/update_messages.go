@@ -3,6 +3,7 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
+	parameterscmp "github.com/yumauri/fbrcm/tui/components/parameters"
 	"github.com/yumauri/fbrcm/tui/components/projectio"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
@@ -98,6 +99,10 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case messages.HistoryRollbackCompletedMsg:
 		return m.updateHistoryRollbackCompleted(msg)
 
+	case parameterscmp.HistoryDiffRequestedMsg:
+		m.openDictionaryDiff(msg.Input, msg.Project)
+		return m, nil, true
+
 	case projectAuthBoundMsg:
 		return m.updateProjectAuthBound(msg)
 
@@ -113,6 +118,9 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 
 	case messages.SetActivePanelMsg:
 		panel := msg.Panel
+		if m.promote.WorkspaceOpen() && workspaceTabIndex(panel) >= 0 {
+			panel = panels.Promote
+		}
 		if panel == panels.Parameters && m.active == panels.Projects && !msg.ResetParametersTab {
 			panel = m.selectedParametersTab()
 		}
@@ -293,6 +301,8 @@ func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) 
 		m.conditions, cmd = m.conditions.Update(msg)
 	case panels.Details:
 		m.details, cmd = m.details.Update(msg)
+	case panels.Promote:
+		m.promote, cmd = m.promote.Update(msg)
 	default:
 		return m, nil, false
 	}

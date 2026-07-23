@@ -37,6 +37,48 @@ func TestHelpPaletteCatalogCoversEveryConfiguredAction(t *testing.T) {
 	}
 }
 
+func TestHelpPaletteCatalogDistinguishesPromotionToggleAndSubmit(t *testing.T) {
+	titles := make(map[tuiconfig.Action]string)
+	for _, item := range helpPaletteCatalog() {
+		if item.block == tuiconfig.BlockPromote {
+			titles[item.action] = item.title
+		}
+	}
+	if titles[tuiconfig.ActionToggle] != "Select or clear change" ||
+		titles[tuiconfig.ActionSubmit] != "Open selected change diff" {
+		t.Fatalf("promotion action titles = %#v", titles)
+	}
+}
+
+func TestHelpPaletteUsesPromotionWording(t *testing.T) {
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{name: "workspace", got: helpPaletteBlockTitle(tuiconfig.BlockPromote), want: "Promote workspace"},
+		{name: "project action", got: helpPaletteActionTitle(tuiconfig.BlockProjects, tuiconfig.ActionPromote), want: "Promote to another project"},
+		{name: "focus action", got: helpPaletteActionTitle(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote), want: "Focus promote"},
+		{name: "close action", got: helpPaletteActionTitle(tuiconfig.BlockPromote, tuiconfig.ActionClose), want: "Close promotion"},
+		{
+			name: "focus description",
+			got: helpPaletteActionDescription(
+				tuiconfig.BlockGlobal,
+				tuiconfig.ActionFocusPromote,
+				helpPaletteActionTitle(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote),
+			),
+			want: "Move keyboard focus to the promote panel.",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Fatalf("wording = %q, want %q", tt.got, tt.want)
+			}
+		})
+	}
+}
+
 func TestHelpKeyOpensAndClosesPalette(t *testing.T) {
 	m := viewTestModel(90, 24, panels.Projects)
 	next, _ := m.Update(keyPress('?'))

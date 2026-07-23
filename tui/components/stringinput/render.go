@@ -78,7 +78,7 @@ func (m Model) renderExpandedBox() string {
 	contentWidth := stringPopupContentWidth(m.screenW)
 	innerWidth := viewutil.PopupInnerWidth(contentWidth)
 	contentHeight := stringContentHeight(m.screenH)
-	scrollbar := expandedScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
+	scrollbar := viewutil.ScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
 	lines := []string{borderStyle.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
 	for range viewutil.PopupPaddingTop {
@@ -90,7 +90,7 @@ func (m Model) renderExpandedBox() string {
 			line = body[i]
 		}
 		rightEdge := borderStyle.Render("│")
-		if scrollbar.visible && i >= scrollbar.thumbStart && i <= scrollbar.thumbEnd {
+		if scrollbar.Visible && i >= scrollbar.ThumbStart && i <= scrollbar.ThumbEnd {
 			rightEdge = styles.ScrollbarThumb.Render("█")
 		}
 		lines = append(lines, borderStyle.Render("│")+viewutil.PopupContentLine(line, contentWidth)+rightEdge)

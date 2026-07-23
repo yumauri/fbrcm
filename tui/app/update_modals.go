@@ -7,6 +7,16 @@ import (
 )
 
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
+	if m.diffView.IsOpen() {
+		if size, ok := msg.(tea.WindowSizeMsg); ok {
+			m.updateWindowSize(size)
+			m.diffView = m.diffView.SetSize(size.Width, size.Height)
+			return m, nil, true
+		}
+		var cmd tea.Cmd
+		m.diffView, cmd = m.diffView.Update(msg)
+		return m, cmd, true
+	}
 	if m.projectIO.IsOpen() {
 		switch msg.(type) {
 		case projectio.ImportPlanRequestedMsg, projectio.ExportRequestedMsg, projectio.DefaultsRequestedMsg, projectImportPlanLoadedMsg:

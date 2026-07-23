@@ -9,6 +9,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	rcvalue "github.com/yumauri/fbrcm/core/rc/value"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -36,10 +37,7 @@ func (m Model) renderConditionColorField() string {
 }
 
 func conditionColorValue(color string) string {
-	if strings.TrimSpace(color) == "" {
-		return "No color"
-	}
-	return "● " + strings.ReplaceAll(color, "_", " ")
+	return viewutil.ConditionColorValue(color)
 }
 
 func (m Model) conditionFieldChanged(field fieldID) bool {

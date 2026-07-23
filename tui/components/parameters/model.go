@@ -12,9 +12,9 @@ import (
 
 var (
 	projectMetaStyle        = styles.PanelMuted
-	parameterStyle          = styles.PanelBody.Foreground(styles.PaletteBlueBright)
+	parameterStyle          = styles.ParameterName
 	parameterValueStyle     = styles.PanelMuted
-	parameterSeparatorStyle = styles.PanelMuted
+	parameterSeparatorStyle = styles.ParameterSeparator
 	descriptionStyle        = styles.PanelMuted.Italic(true)
 	conditionDefaultStyle   = styles.PanelMuted.Italic(true)
 )

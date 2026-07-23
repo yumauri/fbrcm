@@ -15,6 +15,7 @@ require (
 	github.com/itchyny/gojq v0.12.19
 	github.com/mattn/go-runewidth v0.0.24
 	github.com/pelletier/go-toml/v2 v2.4.3
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/uniseg v0.4.7
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/oauth2 v0.36.0
@@ -37,7 +38,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
-	github.com/mattn/go-isatty v0.0.23 // indirect
+	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
