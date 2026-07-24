@@ -81,6 +81,7 @@ func DefaultKeyMap() KeyMap {
 			ActionRename:         {"r"},
 			ActionEdit:           {"e"},
 			ActionNew:            {"a"},
+			ActionNewGroup:       {"A"},
 			ActionDuplicate:      {"c"},
 			ActionMove:           {"m"},
 			ActionToggle:         {" ", "space"},

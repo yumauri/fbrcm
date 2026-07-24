@@ -100,9 +100,17 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 					}
 				}
 			case fieldName:
-				m.nameInput, cmd = m.nameInput.Update(msg)
+				if tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
+					m = m.DeactivateField()
+				} else {
+					m.nameInput, cmd = m.nameInput.Update(msg)
+				}
 			case fieldConditionPriority:
-				m, cmd = m.updatePriorityInput(msg)
+				if tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
+					m = m.DeactivateField()
+				} else {
+					m, cmd = m.updatePriorityInput(msg)
+				}
 			case fieldConditionColor:
 				if m.dropdownOpen {
 					switch {
@@ -122,7 +130,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 					}
 				}
 			case fieldDescription:
-				if !tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
+				if tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
+					m = m.DeactivateField()
+				} else {
 					m.descInput, cmd = m.descInput.Update(msg)
 					m.normalizeDescriptionInput()
 				}

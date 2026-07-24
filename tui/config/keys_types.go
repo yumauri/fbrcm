@@ -80,6 +80,7 @@ const (
 	ActionEdit             Action = "edit"
 	ActionColor            Action = "color"
 	ActionNew              Action = "new"
+	ActionNewGroup         Action = "new_group"
 	ActionDuplicate        Action = "duplicate"
 	ActionMove             Action = "move"
 	ActionToggle           Action = "toggle"

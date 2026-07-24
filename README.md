@@ -391,6 +391,10 @@ Definition mutations print a Remote Config diff and offer publication or can be 
 
 In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish one/all drafts and `d`/`D` to discard one/all drafts. Draft publication prepares each candidate against fresh Firebase state, reviews that exact candidate, publishes approved projects independently, and finishes with per-project results plus a Retry Failed action. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
 
+In the Parameters tab, press `a` to create a parameter or `A` to create an empty parameter group. Both actions open Details with the name field focused.
+
+In Details, Enter finishes the active field or runs the selected item's contextual action. Everywhere else, Enter saves the form: it opens the publish-or-draft confirmation when no draft exists and stages immediately when the project already has a draft. `Ctrl+Enter` always saves directly from Details.
+
 Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, explains the selected action below the list, marks unavailable actions with a reason, and runs the selected available action with Enter. Search matches action names, explanations, shortcut keys, and technical aliases such as `reload`. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 
 Projects, Parameters, History, and Conditions support expression filtering with `:` in addition to the `~`, `^`, `/`, and `=` text-filter modes. The expression uses the context for the active panel described in [EXPR.md](EXPR.md); History uses parameter context against the newer value, or the older value for a removed parameter. Results update whenever the input forms a valid expression. While an edit is temporarily invalid, the expression is shown in red, a single-line compiler diagnostic is overlaid on the panel's bottom border without changing its height, and the last valid results remain visible.
@@ -569,7 +573,7 @@ Parameter commands support `--search` for matching names, descriptions, values, 
 - Override current config with imported config
 - Keep only portable conditions during cross-project import, with kept/removed counts
 - Add, update, rename, move, duplicate, and delete parameters
-- Display empty parameter groups and remove groups explicitly with the TUI delete action
+- Create, display, and remove empty parameter groups in the TUI
 - Stage, inspect, diff, safely publish, recover, and discard local drafts
 - Edit parameter values as boolean, number, string, or JSON
 - Validate and publish Remote Config through Firebase APIs

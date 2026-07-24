@@ -117,13 +117,7 @@ func (m Model) currentGroupViewData() (*messages.GroupViewData, bool) {
 	if project == nil || group == nil {
 		return nil, false
 	}
-	names := make([]string, 0, len(project.tree.Groups))
-	for _, candidate := range project.tree.Groups {
-		if core.NormalizeRemoteConfigGroupKey(candidate.Key) != "" {
-			names = append(names, candidate.Key)
-		}
-	}
-	return &messages.GroupViewData{Project: project.project, Group: *group, GroupNames: names}, true
+	return &messages.GroupViewData{Project: project.project, Group: *group, GroupNames: parameterGroupNames(project)}, true
 }
 
 func (m Model) parameterViewData(projectID, groupKey, paramKey string, valueIdx int) (*messages.ParameterViewData, bool) {
@@ -301,6 +295,33 @@ func (m Model) CurrentNewParameterTarget() (core.Project, string, string, bool) 
 		}
 	}
 	return project.project, groupKey, afterParamKey, true
+}
+
+// CurrentNewGroupViewData builds an empty group Details model for the current project.
+func (m Model) CurrentNewGroupViewData() (*messages.GroupViewData, bool) {
+	project, ok := m.currentProject()
+	if !ok {
+		return nil, false
+	}
+	state := m.projectByID(project.ProjectID)
+	return &messages.GroupViewData{
+		Project:    project,
+		Group:      core.ParametersGroup{},
+		GroupNames: parameterGroupNames(state),
+	}, true
+}
+
+func parameterGroupNames(project *projectState) []string {
+	if project == nil || project.tree == nil {
+		return nil
+	}
+	names := make([]string, 0, len(project.tree.Groups))
+	for _, group := range project.tree.Groups {
+		if core.NormalizeRemoteConfigGroupKey(group.Key) != "" {
+			names = append(names, group.Key)
+		}
+	}
+	return names
 }
 
 func (m Model) currentParameterNodeIndex() int {

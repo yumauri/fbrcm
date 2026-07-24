@@ -167,7 +167,8 @@ func (m Model) GroupEdit() (core.GroupDetailsEdit, bool) {
 		return core.GroupDetailsEdit{}, false
 	}
 	return core.GroupDetailsEdit{
-		Name: m.groupData.Group.Key, NextName: strings.TrimSpace(m.nameInput.Value()), NextDescription: m.descInput.Value(),
+		Create: m.groupData.Group.Key == "", Name: m.groupData.Group.Key,
+		NextName: strings.TrimSpace(m.nameInput.Value()), NextDescription: m.descInput.Value(),
 	}, true
 }
 

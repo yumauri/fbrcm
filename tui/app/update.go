@@ -181,6 +181,9 @@ func (m *Model) closeDetailsIfOrphaned() {
 	}
 	groupData := m.details.GroupData()
 	if groupData != nil {
+		if m.details.IsNewGroup() && m.parameters.HasProject(groupData.Project.ProjectID) {
+			return
+		}
 		if m.parameters.HasProject(groupData.Project.ProjectID) && m.parameters.HasGroup(groupData.Project.ProjectID, groupData.Group.Key) {
 			return
 		}

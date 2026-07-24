@@ -18,6 +18,7 @@ type Edit struct {
 }
 
 type DetailsEdit struct {
+	Create          bool
 	Name            string
 	NextName        string
 	NextDescription string
@@ -112,6 +113,9 @@ func Rename(cfg *firebase.RemoteConfig, name, nextName string) error {
 func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	if cfg == nil {
 		return fmt.Errorf("remote config is nil")
+	}
+	if edit.Create {
+		return Add(cfg, Definition{Name: edit.NextName, Description: edit.NextDescription})
 	}
 	group, ok := cfg.ParameterGroups[edit.Name]
 	if !ok {

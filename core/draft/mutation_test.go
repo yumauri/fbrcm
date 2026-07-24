@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/groups"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 )
 
@@ -128,6 +129,23 @@ func TestMutationOperations(t *testing.T) {
 			})},
 			assert: func(t *testing.T, raw json.RawMessage) {
 				assertParamValue(t, raw, "created", "value")
+			},
+		},
+		{
+			name:  "create empty group details",
+			cache: remoteConfigRaw("1", map[string]string{}),
+			spec: MutationSpec{Apply: EditGroupDetails(groups.DetailsEdit{
+				Create: true, NextName: "created", NextDescription: "Metadata only",
+			})},
+			assert: func(t *testing.T, raw json.RawMessage) {
+				cfg, err := firebase.ParseRemoteConfig(raw)
+				if err != nil {
+					t.Fatalf("ParseRemoteConfig returned error: %v", err)
+				}
+				group, ok := cfg.ParameterGroups["created"]
+				if !ok || group.Description != "Metadata only" || len(group.Parameters) != 0 {
+					t.Fatalf("created group = %#v, ok = %v", group, ok)
+				}
 			},
 		},
 		{

@@ -50,6 +50,9 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 		m.details, cmd = m.details.Update(msg)
 		return m, cmd, true
 	}
+	if tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
+		return m, m.submitDetailsForm(), true
+	}
 	return m, nil, false
 }
 
@@ -104,6 +107,9 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 		return m, m.copyDetailsPathCmd(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyValue, k):
 		return m, m.copyDetailsSelectedValueCmd(), true
+	}
+	if !m.details.FieldActive() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k) {
+		return m, m.submitDetailsForm(), true
 	}
 	var cmd tea.Cmd
 	m.details, cmd = m.details.Update(msg)
@@ -296,6 +302,8 @@ func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 		return m, m.requestDeleteCondition(), true
 	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionNew, k):
 		return m, m.openNewParameterDetails(), true
+	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionNewGroup, k):
+		return m, m.openNewGroupDetails(), true
 	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionEdit, k):
 		return m.updateParameterEditKey()
 	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionMove, k):

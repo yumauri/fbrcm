@@ -8,7 +8,7 @@ import (
 
 func TestGroupMetadataLifecyclePreservesEmptyGroups(t *testing.T) {
 	cfg := &firebase.RemoteConfig{}
-	if err := Add(cfg, Definition{Name: " empty ", Description: " Metadata only "}); err != nil {
+	if err := EditDetails(cfg, DetailsEdit{Create: true, NextName: " empty ", NextDescription: " Metadata only "}); err != nil {
 		t.Fatal(err)
 	}
 	group, ok := cfg.ParameterGroups["empty"]

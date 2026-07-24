@@ -32,6 +32,7 @@ func TestMatchesDefaultKeyMap(t *testing.T) {
 		{BlockFilter, ActionFilterFuzzy, "~", true},
 		{BlockFilter, ActionFilterExpression, ":", true},
 		{BlockParameters, ActionPublish, "p", true},
+		{BlockParameters, ActionNewGroup, "A", true},
 		{BlockJSONInput, ActionSave, "ctrl+s", true},
 		{BlockJSONInput, ActionSave, "ctrl+enter", true},
 	}

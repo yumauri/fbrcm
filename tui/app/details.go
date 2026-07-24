@@ -18,6 +18,9 @@ func (m *Model) closeDetailsPanel() {
 }
 
 func (m *Model) applyConditionSelection(msg messages.ConditionSelectionChangedMsg) {
+	if m.active == panels.Details && m.details.IsNewGroup() && !msg.Activate {
+		return
+	}
 	if msg.ResetScroll {
 		m.details = m.details.ResetScroll()
 	}
@@ -50,6 +53,23 @@ func (m *Model) openNewParameterDetails() tea.Cmd {
 		return m.handleParameterSelection(messages.ParameterSelectionChangedMsg{Data: data, Activate: true})
 	}
 	m.details = m.details.SetData(data)
+	m.detailsVisible = true
+	m.setActive(panels.Details)
+	var cmd tea.Cmd
+	m.details, cmd = m.details.ActivateName()
+	return cmd
+}
+
+func (m *Model) openNewGroupDetails() tea.Cmd {
+	data, ok := m.parameters.CurrentNewGroupViewData()
+	if !ok {
+		return nil
+	}
+	m.closeOverlays()
+	if m.detailsVisible && m.details.Dirty() {
+		return m.handleParameterSelection(messages.ParameterSelectionChangedMsg{GroupData: data, Activate: true})
+	}
+	m.details = m.details.SetGroupData(data)
 	m.detailsVisible = true
 	m.setActive(panels.Details)
 	var cmd tea.Cmd
@@ -334,6 +354,9 @@ func (m *Model) applyParameterSelection(msg messages.ParameterSelectionChangedMs
 }
 
 func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedMsg) tea.Cmd {
+	if m.active == panels.Details && m.details.IsNewGroup() && !msg.Activate {
+		return nil
+	}
 	if msg.Data == nil && msg.GroupData == nil && msg.ResetScroll {
 		m.applyParameterSelection(msg)
 		return nil
@@ -476,6 +499,9 @@ func (m *Model) applyPendingDetailsSelection() {
 	}
 	if pending.groupData != nil {
 		m.applyParameterSelection(messages.ParameterSelectionChangedMsg{GroupData: pending.groupData, Activate: pending.activate})
+		if pending.groupData.Group.Key == "" {
+			m.details, _ = m.details.ActivateName()
+		}
 		return
 	}
 	data := pending.data

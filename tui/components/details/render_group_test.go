@@ -26,7 +26,21 @@ func TestGroupDetailsRendersAndStagesMetadata(t *testing.T) {
 	m.nameInput.SetValue("payments")
 	m.descInput.SetValue("Payment flags")
 	edit, ok := m.GroupEdit()
-	if !ok || edit.Name != "checkout" || edit.NextName != "payments" || edit.NextDescription != "Payment flags" {
+	if !ok || edit.Create || edit.Name != "checkout" || edit.NextName != "payments" || edit.NextDescription != "Payment flags" {
+		t.Fatalf("GroupEdit = %#v, %v", edit, ok)
+	}
+}
+
+func TestNewGroupDetailsStagesCreation(t *testing.T) {
+	m := New().SetGroupData(&messages.GroupViewData{
+		Project:    core.Project{Name: "Demo", ProjectID: "demo"},
+		GroupNames: []string{"existing"},
+	})
+	m.nameInput.SetValue("new-group")
+	m.descInput.SetValue("Metadata only")
+
+	edit, ok := m.GroupEdit()
+	if !ok || !edit.Create || edit.Name != "" || edit.NextName != "new-group" || edit.NextDescription != "Metadata only" {
 		t.Fatalf("GroupEdit = %#v, %v", edit, ok)
 	}
 }

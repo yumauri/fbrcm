@@ -206,10 +206,16 @@ func (m *Model) openEditGroupDetailsDialog(project core.Project, edit core.Group
 		m.openErrorDialog("Edit Group Failed", project, err.Error())
 		return
 	}
+	title := "Edit Group?"
+	applyLabel := "Apply"
+	if edit.Create {
+		title = "Create Group?"
+		applyLabel = "Create"
+	}
 	m.dialog = m.dialog.Open(dialogcmp.Config{
-		Title: "Edit Group?", Body: body,
+		Title: title, Body: body,
 		Buttons: []dialogcmp.Button{
-			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.editGroupDetailsCmd(project, edit, true, closeDetails)},
+			{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPress: m.editGroupDetailsCmd(project, edit, true, closeDetails)},
 			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.editGroupDetailsCmd(project, edit, false, closeDetails)},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: detailsEditCanceledCmd(closeDetails)},
 		},

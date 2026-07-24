@@ -13,7 +13,7 @@ require (
 	github.com/erikgeiser/promptkit v0.12.0
 	github.com/expr-lang/expr v1.17.8
 	github.com/itchyny/gojq v0.12.19
-	github.com/mattn/go-runewidth v0.0.24
+	github.com/mattn/go-runewidth v0.0.27
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/uniseg v0.4.7

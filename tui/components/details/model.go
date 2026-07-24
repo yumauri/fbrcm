@@ -102,6 +102,8 @@ func (m Model) IsCondition() bool { return m.conditionData != nil }
 
 func (m Model) IsGroup() bool { return m.groupData != nil }
 
+func (m Model) IsNewGroup() bool { return m.groupData != nil && m.groupData.Group.Key == "" }
+
 func (m Model) FieldActive() bool {
 	return m.activeField != fieldNone
 }

@@ -205,7 +205,11 @@ func (m Model) editDetailsDialogBody(project core.Project, edit core.ParameterDe
 }
 
 func (m Model) editGroupDetailsDialogBody(project core.Project, edit core.GroupDetailsEdit) ([]string, error) {
-	return m.previewDialogBody(project, "Edit group or draft changes?", "group not changed", func() (*core.ParametersCache, json.RawMessage, error) {
+	prompt := "Edit group or draft changes?"
+	if edit.Create {
+		prompt = "Create group or draft changes?"
+	}
+	return m.previewDialogBody(project, prompt, "group not changed", func() (*core.ParametersCache, json.RawMessage, error) {
 		return m.svc.PreviewEditGroupDetails(project.ProjectID, edit)
 	}, func(cache *core.ParametersCache) (json.RawMessage, error) {
 		if draftRaw, hasDraft, err := m.svc.LoadDraft(project.ProjectID); err != nil {

@@ -370,7 +370,7 @@ func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, 
 		if !paramOK {
 			return false, "select a parameter"
 		}
-	case tuiconfig.ActionNew, tuiconfig.ActionReload, tuiconfig.ActionFirst, tuiconfig.ActionLast,
+	case tuiconfig.ActionNew, tuiconfig.ActionNewGroup, tuiconfig.ActionReload, tuiconfig.ActionFirst, tuiconfig.ActionLast,
 		tuiconfig.ActionNextGroup, tuiconfig.ActionPrevGroup, tuiconfig.ActionExpandAll,
 		tuiconfig.ActionCollapseAll, tuiconfig.ActionExpandGroups, tuiconfig.ActionCollapseGroups,
 		tuiconfig.ActionExpand, tuiconfig.ActionCollapse, tuiconfig.ActionUp, tuiconfig.ActionDown:

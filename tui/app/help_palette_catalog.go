@@ -158,6 +158,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Maximize or restore workspace"
 		case tuiconfig.ActionNew:
 			return "Add new parameter"
+		case tuiconfig.ActionNewGroup:
+			return "Add new parameter group"
 		case tuiconfig.ActionEdit:
 			return "Edit selected value"
 		case tuiconfig.ActionMove:
@@ -467,6 +469,9 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 			return "Copy the selected parameter value, condition expression, or usage."
 		}
 	case tuiconfig.ActionSubmit:
+		if block == tuiconfig.BlockDetails {
+			return "Save Details. Enter also saves when the current Details selection has no other Enter action."
+		}
 		if block == tuiconfig.BlockMoveInput {
 			return "Place the item at the selected destination."
 		}
