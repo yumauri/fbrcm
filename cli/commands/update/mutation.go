@@ -33,8 +33,12 @@ func confirmAndUpdateProject(cmd *cobra.Command, label string, cfg *firebase.Rem
 func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec updateSpec) error {
 	param := target.Param
 	if spec.value != nil {
+		nextValue := firebase.RemoteConfigValue{
+			Value:           spec.value.value,
+			UseInAppDefault: spec.value.useInAppDefault,
+		}
 		if spec.condition == "" {
-			param.DefaultValue = &firebase.RemoteConfigValue{Value: spec.value.value}
+			param.DefaultValue = &nextValue
 		} else {
 			condition, ok := coreconditions.ResolveName(cfg, spec.condition)
 			if !ok {
@@ -43,9 +47,11 @@ func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec
 			if param.ConditionalValues == nil {
 				param.ConditionalValues = make(map[string]firebase.RemoteConfigValue)
 			}
-			param.ConditionalValues[condition] = firebase.RemoteConfigValue{Value: spec.value.value}
+			param.ConditionalValues[condition] = nextValue
 		}
-		param.ValueType = spec.value.valueType
+		if !spec.value.useInAppDefault {
+			param.ValueType = spec.value.valueType
+		}
 	}
 	if spec.descriptionChanged {
 		param.Description = spec.description

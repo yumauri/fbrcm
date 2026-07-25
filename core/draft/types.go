@@ -23,6 +23,7 @@ type ParameterDetailsEdit struct {
 }
 
 type ParameterValueEdit struct {
-	Label     string
-	NextValue string
+	Label               string
+	NextValue           string
+	NextUseInAppDefault bool
 }

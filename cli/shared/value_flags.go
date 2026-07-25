@@ -4,17 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 // ValueFlag is the selected Remote Config value flag.
 type ValueFlag struct {
-	Value string
-	Type  string
+	Value           string
+	Type            string
+	UseInAppDefault bool
 }
 
-// ReadValueFlag reads one of --boolean, --number, --string, or --json.
+// ReadValueFlag reads one concrete value flag or --use-in-app-default.
 func ReadValueFlag(cmd *cobra.Command, required bool) (*ValueFlag, error) {
 	specs := []struct {
 		name      string
@@ -58,15 +60,40 @@ func ReadValueFlag(cmd *cobra.Command, required bool) (*ValueFlag, error) {
 		}
 		selected = append(selected, ValueFlag{Value: value, Type: spec.valueType})
 	}
+	if cmd.Flags().Lookup("use-in-app-default") != nil {
+		useInAppDefault, err := cmd.Flags().GetBool("use-in-app-default")
+		if err != nil {
+			return nil, err
+		}
+		if cmd.Flags().Changed("use-in-app-default") && useInAppDefault {
+			selected = append(selected, ValueFlag{UseInAppDefault: true})
+		}
+	}
 
 	if len(selected) == 0 {
 		if required {
-			return nil, fmt.Errorf("exactly one of --boolean, --number, --string, or --json is required")
+			return nil, fmt.Errorf("exactly one of --boolean, --number, --string, --json, or --use-in-app-default is required")
 		}
 		return nil, nil
 	}
 	if len(selected) > 1 {
-		return nil, fmt.Errorf("only one of --boolean, --number, --string, or --json may be used")
+		return nil, fmt.Errorf("only one of --boolean, --number, --string, --json, or --use-in-app-default may be used")
 	}
 	return &selected[0], nil
+}
+
+// ParseValueType parses a user-facing Remote Config parameter type.
+func ParseValueType(value string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "string":
+		return "STRING", nil
+	case "boolean", "bool":
+		return "BOOLEAN", nil
+	case "number":
+		return "NUMBER", nil
+	case "json":
+		return "JSON", nil
+	default:
+		return "", fmt.Errorf("--type must be one of string, boolean, number, or json")
+	}
 }

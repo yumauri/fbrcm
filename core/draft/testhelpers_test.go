@@ -108,6 +108,21 @@ func conditionalRemoteConfigRaw(version, key, condition, conditionalValue string
 	return marshalRemoteConfig(cfg)
 }
 
+func conditionalInAppDefaultRemoteConfigRaw(version, key, condition, valueType string) json.RawMessage {
+	param := remoteConfigParam("false", valueType)
+	param.ConditionalValues = map[string]firebase.RemoteConfigValue{
+		condition: {UseInAppDefault: true},
+	}
+	cfg := firebase.RemoteConfig{
+		Conditions: []firebase.RemoteConfigCondition{{Name: condition, Expression: "true"}},
+		Parameters: map[string]firebase.RemoteConfigParam{
+			key: param,
+		},
+		Version: firebase.RemoteConfigVersion{VersionNumber: version},
+	}
+	return marshalRemoteConfig(cfg)
+}
+
 func conditionOnlyRemoteConfigRaw(version, key, condition string) json.RawMessage {
 	cfg := firebase.RemoteConfig{
 		Conditions: []firebase.RemoteConfigCondition{{Name: condition, Expression: "true"}},

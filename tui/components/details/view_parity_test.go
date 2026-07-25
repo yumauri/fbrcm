@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
@@ -60,6 +61,19 @@ func TestDetailsViewSnapshot(t *testing.T) {
 	got := testutil.NormalizeViewSnapshot(parityTestModel().View())
 	if got != detailsViewSnapshot {
 		t.Fatalf("snapshot mismatch\n--- got ---\n%s\n--- want ---\n%s", got, detailsViewSnapshot)
+	}
+}
+
+func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	const label = "(in-app default)"
+
+	got := parityTestModel().renderValueLines(core.ParametersValue{
+		Value: label, ValueType: "BOOLEAN", UseInAppDefault: true,
+	}, 40)
+	want := corestyles.EmptyValueStyle().Render(label)
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("renderValueLines = %q, want shared empty-value style %q", got, want)
 	}
 }
 
@@ -145,6 +159,48 @@ func TestAddConditionalValueParticipatesInArrowNavigation(t *testing.T) {
 	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyDown}))
 	if m.AddConditionalValueSelected() || m.activeField != fieldGroup {
 		t.Fatalf("Down after Add selection = add:%v field:%v, want Group", m.AddConditionalValueSelected(), m.activeField)
+	}
+}
+
+func TestToggleSelectedValueSourceStagesPerValueEdit(t *testing.T) {
+	data := parityViewDataWithConditionals()
+	data.SelectedValueIdx = 0
+	m := New().SetBounds(0, 0, 60, 24).SetActive(true).SetData(data)
+
+	next, toggled := m.ToggleSelectedValueSource()
+	value, selected := next.SelectedParameterValue()
+	if !toggled || !selected || !value.UseInAppDefault || value.Plain {
+		t.Fatalf("in-app-default toggle = toggled:%v selected:%v value:%+v", toggled, selected, value)
+	}
+	edit, changed := next.Edit()
+	if !changed || len(edit.ValueEdits) != 1 || edit.ValueEdits[0].Label != "android" || !edit.ValueEdits[0].NextUseInAppDefault {
+		t.Fatalf("in-app-default edit = changed:%v edit:%+v", changed, edit)
+	}
+
+	next, toggled = next.ToggleSelectedValueSource()
+	value, _ = next.SelectedParameterValue()
+	if !toggled || !value.Plain || value.UseInAppDefault || value.RawValue != "" {
+		t.Fatalf("remote toggle = toggled:%v value:%+v", toggled, value)
+	}
+	edit, changed = next.Edit()
+	if !changed || len(edit.ValueEdits) != 1 || edit.ValueEdits[0].NextUseInAppDefault || edit.ValueEdits[0].NextValue != "" {
+		t.Fatalf("restored remote edit = changed:%v edit:%+v", changed, edit)
+	}
+}
+
+func TestToggleSelectedInAppDefaultRestoresTypedNeutralValue(t *testing.T) {
+	data := parityViewDataWithConditionals()
+	data.Parameter.Values[0] = core.ParametersValue{
+		Label: "android", Value: "(in-app default)", ValueType: "BOOLEAN", UseInAppDefault: true,
+	}
+	data.SelectedValueIdx = 0
+	m := New().SetBounds(0, 0, 60, 24).SetActive(true).SetData(data)
+	m.typeValue = "BOOLEAN"
+
+	next, toggled := m.ToggleSelectedValueSource()
+	value, _ := next.SelectedParameterValue()
+	if !toggled || !value.Plain || value.UseInAppDefault || value.RawValue != "false" {
+		t.Fatalf("restored value = toggled:%v value:%+v, want plain false", toggled, value)
 	}
 }
 

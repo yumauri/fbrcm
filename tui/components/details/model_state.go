@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/rootgroup"
 	"github.com/yumauri/fbrcm/tui/messages"
@@ -144,8 +145,35 @@ func (m Model) SetSelectedValue(nextRaw string) Model {
 	value.Value = rcdisplay.FormatRawValue(nextRaw, m.selectedType())
 	value.ValueType = m.selectedType()
 	value.Empty = nextRaw == ""
+	value.Plain = true
+	value.UseInAppDefault = false
 	m.refreshViewport()
 	return m
+}
+
+// ToggleSelectedValueSource stages a switch between a remote value and the
+// client application's default for the selected parameter value.
+func (m Model) ToggleSelectedValueSource() (Model, bool) {
+	value, ok := m.SelectedParameterValue()
+	if !ok {
+		return m, false
+	}
+	selected := &m.data.Parameter.Values[m.selectedValue]
+	if value.UseInAppDefault {
+		selected.RawValue = initialConditionalValue(m.selectedType())
+		selected.Value = rcdisplay.FormatRawValue(selected.RawValue, m.selectedType())
+		selected.Empty = selected.RawValue == ""
+		selected.Plain = true
+		selected.UseInAppDefault = false
+	} else {
+		selected.RawValue = ""
+		selected.Value = core.FormatRemoteConfigDisplayValue(firebase.RemoteConfigValue{UseInAppDefault: true}, m.selectedType())
+		selected.Empty = false
+		selected.Plain = false
+		selected.UseInAppDefault = true
+	}
+	m.refreshViewport()
+	return m, true
 }
 
 func (m Model) Dirty() bool {

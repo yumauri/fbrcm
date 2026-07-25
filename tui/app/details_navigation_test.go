@@ -1,11 +1,13 @@
 package app
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -59,6 +61,58 @@ func TestConditionUsageEditorStagesValueInConditionForm(t *testing.T) {
 	edit, changed := m.details.ConditionEdit()
 	if !handled || !changed || len(edit.ValueEdits) != 1 || edit.ValueEdits[0].NextValue != "false" {
 		t.Fatalf("submit = handled:%v changed:%v edit:%+v", handled, changed, edit)
+	}
+}
+
+func TestParameterValueInAppDefaultToggleDisablesTypedEditor(t *testing.T) {
+	keys := []tea.Key{{Code: tea.KeyRight}, {Code: 'e', Text: "e"}}
+	for _, key := range keys {
+		m := detailsCrossNavigationTestModel(t)
+		m, _, handled := m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'd', Text: "d"}))
+		value, ok := m.details.SelectedParameterValue()
+		if !handled || !ok || !value.UseInAppDefault {
+			t.Fatalf("d = handled:%v selected:%v value:%+v", handled, ok, value)
+		}
+
+		m, cmd, handled := m.updateKeyMessage(tea.KeyPressMsg(key))
+		if !handled || cmd != nil || m.boolPicker.IsOpen() || m.stringInput.IsOpen() {
+			t.Fatalf("%v = handled:%v cmd:%v bool:%v string:%v; want disabled", key.Code, handled, cmd != nil, m.boolPicker.IsOpen(), m.stringInput.IsOpen())
+		}
+	}
+}
+
+func TestParameterValueInAppDefaultToggleReturnsToRemoteValue(t *testing.T) {
+	m := detailsCrossNavigationTestModel(t)
+	m, _, _ = m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'd', Text: "d"}))
+	m, _, handled := m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'd', Text: "d"}))
+
+	value, ok := m.details.SelectedParameterValue()
+	if !handled || !ok || !value.Plain || value.UseInAppDefault || value.RawValue != "false" {
+		t.Fatalf("second d = handled:%v selected:%v value:%+v, want plain false", handled, ok, value)
+	}
+}
+
+func TestInAppDefaultActionPaletteAvailability(t *testing.T) {
+	m := detailsCrossNavigationTestModel(t)
+	m, _, _ = m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'd', Text: "d"}))
+
+	var toggle, edit helpPaletteAction
+	for _, item := range m.helpPaletteActions() {
+		if item.block != tuiconfig.BlockDetails {
+			continue
+		}
+		switch item.action {
+		case tuiconfig.ActionToggleInAppDefault:
+			toggle = item
+		case tuiconfig.ActionEditValue:
+			edit = item
+		}
+	}
+	if !toggle.enabled || !strings.Contains(toggle.title, "in-app default") {
+		t.Fatalf("toggle palette action = %+v, want enabled in-app-default action", toggle)
+	}
+	if edit.enabled || !strings.Contains(edit.reason, "does not use a remote value") {
+		t.Fatalf("edit palette action = %+v, want unavailable for in-app default", edit)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/yumauri/fbrcm/core"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
@@ -52,6 +53,19 @@ func TestParametersViewSnapshot(t *testing.T) {
 	got := testutil.NormalizeViewSnapshot(parityTestModel().View(true))
 	if got != parametersViewSnapshot {
 		t.Fatalf("snapshot mismatch\n--- got ---\n%s\n--- want ---\n%s", got, parametersViewSnapshot)
+	}
+}
+
+func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	const label = "(in-app default)"
+
+	got := parityTestModel().renderParameterValue(core.ParametersValue{
+		Value: label, ValueType: "BOOLEAN", UseInAppDefault: true,
+	}, false)
+	want := corestyles.EmptyValueStyle().Render(label)
+	if got != want {
+		t.Fatalf("renderParameterValue = %q, want shared empty-value style %q", got, want)
 	}
 }
 

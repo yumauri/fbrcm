@@ -71,6 +71,19 @@ func TestConditionDetailsUsesGroupAndTypedValueStyles(t *testing.T) {
 	}
 }
 
+func TestConditionUsageInAppDefaultUsesEmptyValueStyle(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	const label = "(in-app default)"
+
+	got := conditionDetailsTestModel().renderConditionUsageValueLines(core.ConditionUsage{
+		Value: label, ValueType: "BOOLEAN",
+	}, 40)
+	want := "  " + corestyles.EmptyValueStyle().Render(label)
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("renderConditionUsageValueLines = %q, want %q", got, want)
+	}
+}
+
 func TestConditionUsagesParticipateInNavigationAndStageValueEdits(t *testing.T) {
 	m := conditionDetailsTestModel()
 	m, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))

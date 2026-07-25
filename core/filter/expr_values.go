@@ -37,7 +37,7 @@ func defaultRemoteConfigValueForExpr(value *firebase.RemoteConfigValue, valueTyp
 func remoteConfigValueForExpr(value firebase.RemoteConfigValue, valueType string) any {
 	switch {
 	case value.UseInAppDefault:
-		return "<in-app default>"
+		return "(in-app default)"
 	case len(value.PersonalizationValue) > 0:
 		return "<personalization>"
 	case len(value.RolloutValue) > 0:

@@ -75,19 +75,20 @@ func (m Model) valueEdits() []core.ParameterValueEdit {
 	if m.data == nil {
 		return nil
 	}
-	original := make(map[string]string, len(m.originalParam.Values))
+	original := make(map[string]core.ParametersValue, len(m.originalParam.Values))
 	for _, value := range m.originalParam.Values {
-		original[value.Label] = value.RawValue
+		original[value.Label] = value
 	}
 	edits := make([]core.ParameterValueEdit, 0)
 	for _, value := range m.data.Parameter.Values {
 		originalValue, exists := original[value.Label]
-		if exists && originalValue == value.RawValue {
+		if exists && originalValue.RawValue == value.RawValue && originalValue.UseInAppDefault == value.UseInAppDefault {
 			continue
 		}
 		edits = append(edits, core.ParameterValueEdit{
-			Label:     value.Label,
-			NextValue: value.RawValue,
+			Label:               value.Label,
+			NextValue:           value.RawValue,
+			NextUseInAppDefault: value.UseInAppDefault,
 		})
 	}
 	return edits

@@ -54,7 +54,7 @@ func ConditionLipglossColor(name string) color.Color {
 // RemoteConfigValueStyle returns the shared type-aware display style used by
 // human-readable CLI values.
 func RemoteConfigValueStyle(value, valueType string) lipgloss.Style {
-	if strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")") {
+	if value == "(in-app default)" || strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")") {
 		return corestyles.EmptyValueStyle()
 	}
 	return corestyles.ValueTextStyle(value, valueType)

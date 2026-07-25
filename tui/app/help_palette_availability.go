@@ -445,13 +445,27 @@ func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, str
 		if action == tuiconfig.ActionNew {
 			return false, "conditional values can only be added to parameters"
 		}
+		if action == tuiconfig.ActionToggleInAppDefault {
+			return false, "in-app defaults can only be set on parameter values"
+		}
 		return true, ""
 	}
 	if action == tuiconfig.ActionColor {
 		return false, "colors can only be edited for conditions"
 	}
-	if action == tuiconfig.ActionEditValue && !m.details.ValueSelected() {
-		return false, "no parameter value is selected"
+	if action == tuiconfig.ActionEditValue {
+		value, ok := m.details.SelectedParameterValue()
+		if !ok {
+			return false, "no parameter value is selected"
+		}
+		if !value.Plain {
+			return false, "the selected value does not use a remote value"
+		}
+	}
+	if action == tuiconfig.ActionToggleInAppDefault {
+		if _, ok := m.details.SelectedParameterValue(); !ok {
+			return false, "no parameter value is selected"
+		}
 	}
 	if action == tuiconfig.ActionCopyValue && !m.details.ValueSelected() && !m.details.UsageSelected() {
 		return false, "no value or usage is selected"

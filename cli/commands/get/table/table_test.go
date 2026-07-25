@@ -7,8 +7,10 @@ import (
 	"testing"
 
 	"github.com/yumauri/fbrcm/cli/shared"
+	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 func TestRenderValueTreePlainText(t *testing.T) {
@@ -82,7 +84,7 @@ func TestValueFormattingHelpers(t *testing.T) {
 		valueType string
 		want      string
 	}{
-		{name: "in app default", value: firebase.RemoteConfigValue{UseInAppDefault: true}, want: "<in-app default>"},
+		{name: "in app default", value: firebase.RemoteConfigValue{UseInAppDefault: true}, want: "(in-app default)"},
 		{name: "personalization", value: firebase.RemoteConfigValue{PersonalizationValue: json.RawMessage(`{"x":1}`)}, want: "<personalization>"},
 		{name: "rollout", value: firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"x":1}`)}, want: "<rollout>"},
 		{name: "empty typed", value: firebase.RemoteConfigValue{}, valueType: "NUMBER", want: "(empty number)"},
@@ -111,6 +113,20 @@ func TestValueFormattingHelpers(t *testing.T) {
 	}
 	if ValueTypeKey("  ") != "string" || ValueTypeKey(" JSON ") != "json" {
 		t.Fatalf("ValueTypeKey normalization changed")
+	}
+}
+
+func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	const label = "(in-app default)"
+
+	got := renderValueText(label, "BOOLEAN", nil)
+	want := corestyles.EmptyValueStyle().Render(label)
+	if got != want {
+		t.Fatalf("renderValueText = %q, want shared empty-value style %q", got, want)
+	}
+	if style := clistyles.RemoteConfigValueStyle(label, "BOOLEAN"); style.Render(label) != want {
+		t.Fatalf("RemoteConfigValueStyle did not return the shared empty-value style")
 	}
 }
 

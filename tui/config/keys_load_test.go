@@ -192,6 +192,13 @@ func TestDefaultKeyMapIncludesProjectDefaultsBinding(t *testing.T) {
 	}
 }
 
+func TestDefaultKeyMapIncludesInAppDefaultToggle(t *testing.T) {
+	got := DefaultKeyMap()[BlockDetails][ActionToggleInAppDefault]
+	if len(got) != 1 || got[0] != "d" {
+		t.Fatalf("Details in-app-default binding = %v, want [d]", got)
+	}
+}
+
 func TestConflictsReportsDisabledActions(t *testing.T) {
 	keys := Clone(DefaultKeyMap())
 	keys[BlockProjects][ActionRefresh] = []string{"enter"}

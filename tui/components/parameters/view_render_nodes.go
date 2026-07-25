@@ -387,7 +387,7 @@ func (m Model) renderParameterValue(value core.ParametersValue, selected bool) s
 }
 
 func (m Model) renderParameterValueWithBase(value core.ParametersValue, selected bool) string {
-	if value.Empty {
+	if value.Empty || value.UseInAppDefault {
 		style := corestyles.EmptyValueStyle()
 		if selected {
 			if styles.NoColorEnabled() {

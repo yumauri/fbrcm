@@ -183,3 +183,54 @@ func TestReadUpdateSpecConditionRequiresValue(t *testing.T) {
 		t.Fatalf("readUpdateSpec error = %v", err)
 	}
 }
+
+func TestUpdateParamSlotSetsInAppDefaultWithoutChangingType(t *testing.T) {
+	cfg := &firebase.RemoteConfig{
+		Conditions: []firebase.RemoteConfigCondition{{Name: "Beta", Expression: "true"}},
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"payload": {
+				DefaultValue: &firebase.RemoteConfigValue{Value: `{"default":true}`},
+				ValueType:    "JSON",
+			},
+		},
+	}
+	target := shared.ParamTarget{Key: "payload", Param: cfg.Parameters["payload"]}
+	spec := updateSpec{
+		value:     &valueSpec{useInAppDefault: true},
+		condition: "beta",
+	}
+
+	if err := updateParamSlot(cfg, target, spec); err != nil {
+		t.Fatal(err)
+	}
+	param := cfg.Parameters["payload"]
+	if param.ValueType != "JSON" {
+		t.Fatalf("type = %q, want preserved JSON", param.ValueType)
+	}
+	if value := param.ConditionalValues["Beta"]; !value.UseInAppDefault || value.Value != "" {
+		t.Fatalf("conditional value = %#v, want useInAppDefault", value)
+	}
+	if param.DefaultValue == nil || param.DefaultValue.Value != `{"default":true}` {
+		t.Fatalf("default value = %#v, want unchanged", param.DefaultValue)
+	}
+}
+
+func TestUpdateParamSlotConcreteValueClearsInAppDefault(t *testing.T) {
+	cfg := &firebase.RemoteConfig{
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"flag": {
+				DefaultValue: &firebase.RemoteConfigValue{UseInAppDefault: true},
+				ValueType:    "BOOLEAN",
+			},
+		},
+	}
+	target := shared.ParamTarget{Key: "flag", Param: cfg.Parameters["flag"]}
+
+	if err := updateParamSlot(cfg, target, updateSpec{value: &valueSpec{value: "true", valueType: "BOOLEAN"}}); err != nil {
+		t.Fatal(err)
+	}
+	value := cfg.Parameters["flag"].DefaultValue
+	if value == nil || value.UseInAppDefault || value.Value != "true" {
+		t.Fatalf("default value = %#v, want plain true", value)
+	}
+}

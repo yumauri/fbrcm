@@ -110,6 +110,42 @@ func TestMutationOperations(t *testing.T) {
 			},
 		},
 		{
+			name:  "set default value to in-app default",
+			cache: typedRemoteConfigRaw("1", "flag", "true", "BOOLEAN"),
+			spec: MutationSpec{Apply: EditParameterDetails(ParameterDetailsEdit{
+				GroupKey: "", ParamKey: "flag", NextParamKey: "flag", NextValueType: "BOOLEAN",
+				ValueEdits: []ParameterValueEdit{{Label: "default", NextUseInAppDefault: true}},
+			})},
+			assert: func(t *testing.T, raw json.RawMessage) {
+				cfg, err := firebase.ParseRemoteConfig(raw)
+				if err != nil {
+					t.Fatal(err)
+				}
+				value := cfg.Parameters["flag"].DefaultValue
+				if value == nil || !value.UseInAppDefault || value.Value != "" {
+					t.Fatalf("default value = %#v, want useInAppDefault", value)
+				}
+			},
+		},
+		{
+			name:  "restore conditional in-app default to remote value",
+			cache: conditionalInAppDefaultRemoteConfigRaw("1", "flag", "cond", "BOOLEAN"),
+			spec: MutationSpec{Apply: EditParameterDetails(ParameterDetailsEdit{
+				GroupKey: "", ParamKey: "flag", NextParamKey: "flag", NextValueType: "BOOLEAN",
+				ValueEdits: []ParameterValueEdit{{Label: "cond", NextValue: "false"}},
+			})},
+			assert: func(t *testing.T, raw json.RawMessage) {
+				cfg, err := firebase.ParseRemoteConfig(raw)
+				if err != nil {
+					t.Fatal(err)
+				}
+				value := cfg.Parameters["flag"].ConditionalValues["cond"]
+				if value.UseInAppDefault || value.Value != "false" {
+					t.Fatalf("conditional value = %#v, want plain false", value)
+				}
+			},
+		},
+		{
 			name:  "duplicate parameter with provided name",
 			cache: remoteConfigRaw("1", map[string]string{"flag": "old"}),
 			spec:  MutationSpec{Apply: DuplicateParameterNamed("", "flag", "copy")},

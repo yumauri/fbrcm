@@ -12,8 +12,9 @@ import (
 )
 
 type valueSpec struct {
-	value     string
-	valueType string
+	value           string
+	valueType       string
+	useInAppDefault bool
 }
 
 type updateSpec struct {
@@ -69,10 +70,11 @@ func addUpdateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("number", "", "Number parameter value")
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
+	cmd.Flags().Bool("use-in-app-default", false, "Use the client application's default value")
 	cmd.Flags().String("condition", "", "Set the value for this condition instead of the default value")
 	cmd.Flags().Bool("remove-all-conditional-values", false, "Remove all conditional values from matched parameters")
 	cmd.Flags().StringArray("remove-conditional-value", nil, "Remove a conditional value from matched parameters; may be repeated")
-	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json")
+	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json", "use-in-app-default")
 	cmd.MarkFlagsMutuallyExclusive("group", "no-group")
 	cmd.MarkFlagsMutuallyExclusive("remove-all-conditional-values", "remove-conditional-value")
 	cmd.MarkFlagsMutuallyExclusive("condition", "remove-all-conditional-values", "remove-conditional-value")
@@ -206,5 +208,5 @@ func readValueSpec(cmd *cobra.Command) (*valueSpec, error) {
 	if value == nil {
 		return nil, nil
 	}
-	return &valueSpec{value: value.Value, valueType: value.Type}, nil
+	return &valueSpec{value: value.Value, valueType: value.Type, useInAppDefault: value.UseInAppDefault}, nil
 }

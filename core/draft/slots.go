@@ -68,7 +68,7 @@ func createParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetail
 	}
 	slot := rcmutate.Slot{Group: nextGroup, Param: param}
 	for _, valueEdit := range edit.ValueEdits {
-		if err := setRawParamValue(cfg, &slot.Param, valueEdit.Label, valueEdit.NextValue, slot.Param.ValueType); err != nil {
+		if err := setParamValue(cfg, &slot.Param, valueEdit, slot.Param.ValueType); err != nil {
 			return err
 		}
 	}
@@ -96,7 +96,7 @@ func editParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetailsE
 	slot.Param.Description = strings.TrimSpace(edit.NextDescription)
 	slot.Param.ValueType = normalizeParameterValueType(edit.NextValueType)
 	for _, valueEdit := range edit.ValueEdits {
-		if err := setRawParamValue(cfg, &slot.Param, valueEdit.Label, valueEdit.NextValue, slot.Param.ValueType); err != nil {
+		if err := setParamValue(cfg, &slot.Param, valueEdit, slot.Param.ValueType); err != nil {
 			return err
 		}
 	}
@@ -106,18 +106,22 @@ func editParameterDetailsSlot(cfg *firebase.RemoteConfig, edit ParameterDetailsE
 	return nil
 }
 
-func setRawParamValue(cfg *firebase.RemoteConfig, param *firebase.RemoteConfigParam, valueLabel, nextValue, valueType string) error {
-	if err := rcvalue.ValidateRawValueForType(nextValue, valueType); err != nil {
-		return err
+func setParamValue(cfg *firebase.RemoteConfig, param *firebase.RemoteConfigParam, edit ParameterValueEdit, valueType string) error {
+	if !edit.NextUseInAppDefault {
+		if err := rcvalue.ValidateRawValueForType(edit.NextValue, valueType); err != nil {
+			return err
+		}
 	}
 	updateValue := func(value firebase.RemoteConfigValue) (firebase.RemoteConfigValue, error) {
-		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if edit.NextUseInAppDefault {
+			return firebase.RemoteConfigValue{UseInAppDefault: true}, nil
+		}
+		if len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
 			return firebase.RemoteConfigValue{}, fmt.Errorf("value editor supports only plain values")
 		}
-		value.Value = nextValue
-		return value, nil
+		return firebase.RemoteConfigValue{Value: edit.NextValue}, nil
 	}
-	if valueLabel == "default" {
+	if edit.Label == "default" {
 		if param.DefaultValue == nil {
 			return fmt.Errorf("default value not found")
 		}
@@ -128,9 +132,9 @@ func setRawParamValue(cfg *firebase.RemoteConfig, param *firebase.RemoteConfigPa
 		param.DefaultValue = &next
 		return nil
 	}
-	canonicalLabel, ok := coreconditions.ResolveName(cfg, valueLabel)
+	canonicalLabel, ok := coreconditions.ResolveName(cfg, edit.Label)
 	if !ok {
-		return fmt.Errorf("condition %q not found", valueLabel)
+		return fmt.Errorf("condition %q not found", edit.Label)
 	}
 	if param.ConditionalValues == nil {
 		param.ConditionalValues = make(map[string]firebase.RemoteConfigValue)

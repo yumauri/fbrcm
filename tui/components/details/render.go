@@ -129,11 +129,12 @@ func (m Model) renderConditionContentLines(width int) []string {
 
 func (m Model) renderConditionUsageValueLines(usage core.ConditionUsage, width int) []string {
 	value := core.ParametersValue{
-		Value:     usage.Value,
-		RawValue:  usage.RawValue,
-		ValueType: usage.ValueType,
-		Empty:     usage.Plain && usage.RawValue == "",
-		Plain:     usage.Plain,
+		Value:           usage.Value,
+		RawValue:        usage.RawValue,
+		ValueType:       usage.ValueType,
+		Empty:           usage.Plain && usage.RawValue == "",
+		Plain:           usage.Plain,
+		UseInAppDefault: !usage.Plain && usage.Value == "(in-app default)",
 	}
 	const indent = "  "
 	valueLines := m.renderValueLines(value, max(width-lipgloss.Width(indent), 1))

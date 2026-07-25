@@ -83,3 +83,37 @@ func TestAddParameterClonesAndRejectsDuplicates(t *testing.T) {
 		t.Fatalf("duplicate addParameter created group-a")
 	}
 }
+
+func TestReadAddValueSpecRequiresTypeForInAppDefault(t *testing.T) {
+	cmd := New(nil)
+	if err := cmd.Flags().Set("use-in-app-default", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readAddValueSpec(cmd); err == nil || !strings.Contains(err.Error(), "--type is required") {
+		t.Fatalf("readAddValueSpec error = %v, want required type", err)
+	}
+	if err := cmd.Flags().Set("type", "json"); err != nil {
+		t.Fatal(err)
+	}
+	spec, err := readAddValueSpec(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !spec.useInAppDefault || spec.valueType != "JSON" {
+		t.Fatalf("readAddValueSpec = %+v, want JSON in-app default", spec)
+	}
+}
+
+func TestAddParameterSupportsInAppDefault(t *testing.T) {
+	cfg := &firebase.RemoteConfig{}
+	changed, finalCfg, err := addParameter(cfg, "payload", "", "", addValueSpec{
+		valueType: "JSON", useInAppDefault: true,
+	})
+	if err != nil || !changed {
+		t.Fatalf("addParameter = changed:%v err:%v", changed, err)
+	}
+	param := finalCfg.Parameters["payload"]
+	if param.ValueType != "JSON" || param.DefaultValue == nil || !param.DefaultValue.UseInAppDefault || param.DefaultValue.Value != "" {
+		t.Fatalf("payload = %#v, want JSON useInAppDefault", param)
+	}
+}

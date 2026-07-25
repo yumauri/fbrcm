@@ -12,7 +12,47 @@ func newValueFlagCommand() *cobra.Command {
 	cmd.Flags().String("number", "", "")
 	cmd.Flags().String("string", "", "")
 	cmd.Flags().String("json", "", "")
+	cmd.Flags().Bool("use-in-app-default", false, "")
 	return cmd
+}
+
+func TestReadValueFlagUseInAppDefault(t *testing.T) {
+	cmd := newValueFlagCommand()
+	if err := cmd.Flags().Set("use-in-app-default", "true"); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := ReadValueFlag(cmd, true)
+	if err != nil {
+		t.Fatalf("ReadValueFlag returned error: %v", err)
+	}
+	if !got.UseInAppDefault || got.Value != "" || got.Type != "" {
+		t.Fatalf("ReadValueFlag = %#v, want use-in-app-default", got)
+	}
+}
+
+func TestReadValueFlagRejectsInAppDefaultWithConcreteValue(t *testing.T) {
+	cmd := newValueFlagCommand()
+	if err := cmd.Flags().Set("use-in-app-default", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("string", "remote"); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := ReadValueFlag(cmd, true); err == nil {
+		t.Fatal("ReadValueFlag accepted in-app default with a concrete value")
+	}
+}
+
+func TestParseValueType(t *testing.T) {
+	got, err := ParseValueType(" bool ")
+	if err != nil || got != "BOOLEAN" {
+		t.Fatalf("ParseValueType = %q, %v, want BOOLEAN, nil", got, err)
+	}
+	if _, err := ParseValueType("object"); err == nil {
+		t.Fatal("ParseValueType accepted unsupported type")
+	}
 }
 
 func TestReadValueFlagRequired(t *testing.T) {

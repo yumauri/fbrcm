@@ -17,6 +17,14 @@ func (m Model) SelectedRawValue() (string, bool) {
 	return m.data.Parameter.Values[m.selectedValue].RawValue, true
 }
 
+// SelectedParameterValue returns the selected parameter value.
+func (m Model) SelectedParameterValue() (core.ParametersValue, bool) {
+	if !m.ValueSelected() {
+		return core.ParametersValue{}, false
+	}
+	return m.data.Parameter.Values[m.selectedValue], true
+}
+
 func (m Model) SelectedUsage() (core.ConditionUsage, bool) {
 	if !m.UsageSelected() {
 		return core.ConditionUsage{}, false

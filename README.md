@@ -393,7 +393,7 @@ In the TUI, press `3` by default to open the Conditions tab. The default actions
 
 In the Parameters tab, press `a` to create a parameter or `A` to create an empty parameter group. Both actions open Details with the name field focused.
 
-In Details, Enter finishes the active field or runs the selected item's contextual action. Everywhere else, Enter saves the form: it opens the publish-or-draft confirmation when no draft exists and stages immediately when the project already has a draft. `Ctrl+Enter` always saves directly from Details.
+In Details, Enter finishes the active field or runs the selected item's contextual action. With a default or conditional parameter value selected, `d` toggles Firebase's in-app-default source for that value. Values using the in-app default cannot be edited with `e` or Right; press `d` again to restore a neutral remote value (`""`, `false`, `0`, or `{}`, according to the parameter type). Everywhere else, Enter saves the form: it opens the publish-or-draft confirmation when no draft exists and stages immediately when the project already has a draft. `Ctrl+Enter` always saves directly from Details.
 
 Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, explains the selected action below the list, marks unavailable actions with a reason, and runs the selected available action with Enter. Search matches action names, explanations, shortcut keys, and technical aliases such as `reload`. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
 

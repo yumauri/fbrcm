@@ -18,7 +18,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │       ├── --boolean true|false
 │       ├── --number <number>
 │       ├── --string <text>
-│       └── --json <json>
+│       ├── --json <json>
+│       └── --use-in-app-default --type string|boolean|number|json
 │
 ├── cache
 │   ├── list [--json]
@@ -282,7 +283,8 @@ fbrcm [--help] [--version] [--profile <name>]
         ├── --boolean true|false
         ├── --number <number>
         ├── --string <text>
-        └── --json <json>
+        ├── --json <json>
+        └── --use-in-app-default
 ```
 
 ## Shared Behavior
@@ -416,6 +418,8 @@ Exactly one value flag is required:
 --number <number>      value type NUMBER; must parse as float
 --string <text>        value type STRING
 --json <json>          value type JSON; must be valid JSON
+--use-in-app-default   delegate the value to the client application; requires --type
+--type <type>           STRING, BOOLEAN, NUMBER, or JSON type for --use-in-app-default
 ```
 
 Other flags:
@@ -502,9 +506,12 @@ Flags:
 --number <number>          set NUMBER value
 --string <text>            set STRING value
 --json <json>              set JSON value
+--use-in-app-default       delegate the selected value to the client application
 ```
 
 At most one value flag may be used. `--condition` requires a value flag and resolves the condition by exact name, then exact case-insensitive name. It preserves the default and all other conditional values while assigning the selected typed value. `--group` and `--no-group` are mutually exclusive. `--condition`, `--remove-all-conditional-values`, and `--remove-conditional-value` are mutually exclusive.
+
+`--use-in-app-default` sets Firebase's `useInAppDefault` source on the default value, or on the conditional value selected by `--condition`. It preserves the parameter's existing type during `update`. Any concrete value flag switches the targeted value back to a remote value and sets the parameter type from that flag.
 
 Conditional value assignment and removal edit only `conditionalValues`; they keep the parameter, default value, description, group, and all conditions themselves.
 

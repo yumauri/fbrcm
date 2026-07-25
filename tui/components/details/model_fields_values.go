@@ -37,14 +37,14 @@ func (m Model) conditionStyle(color string) lipgloss.Style {
 }
 
 func (m Model) valueTextStyle(value core.ParametersValue) lipgloss.Style {
-	if value.Empty {
+	if value.Empty || value.UseInAppDefault {
 		return corestyles.EmptyValueStyle()
 	}
 	return corestyles.ValueTextStyle(value.Value, value.ValueType)
 }
 
 func (m Model) renderValueLines(value core.ParametersValue, width int) []string {
-	if value.Empty {
+	if value.Empty || value.UseInAppDefault {
 		return []string{corestyles.EmptyValueStyle().Render(value.Value)}
 	}
 	switch strings.TrimSpace(strings.ToLower(value.ValueType)) {

@@ -35,9 +35,18 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 		if _, ok := m.details.CurrentConditionalValueAnchor(); ok {
 			return m, m.openSelectedValueConditionDetails(), true
 		}
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionToggleInAppDefault, k):
+		if m.details.ValueSelected() {
+			m.details, _ = m.details.ToggleSelectedValueSource()
+			return m, nil, true
+		}
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, k):
 		if m.details.ValueSelected() {
-			return m, m.openDetailsValueEditor(), true
+			value, ok := m.details.SelectedParameterValue()
+			if ok && value.Plain {
+				return m, m.openDetailsValueEditor(), true
+			}
+			return m, nil, true
 		}
 	}
 	if !m.details.TextInputActive() {

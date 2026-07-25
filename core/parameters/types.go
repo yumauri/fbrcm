@@ -45,12 +45,13 @@ type Entry struct {
 }
 
 type Value struct {
-	Label     string
-	Value     string
-	RawValue  string
-	ValueType string
-	Color     string
-	Empty     bool
-	EmptyType string
-	Plain     bool
+	Label           string
+	Value           string
+	RawValue        string
+	ValueType       string
+	Color           string
+	Empty           bool
+	EmptyType       string
+	Plain           bool
+	UseInAppDefault bool
 }

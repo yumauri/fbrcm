@@ -217,6 +217,7 @@ func detailsHelp() []key.Binding {
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionNew, "add conditional value"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionRename, "rename"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionEditValue, "edit"),
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionToggleInAppDefault, "app default"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionMove, "move"),
 		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionDelete, "delete"),
 		compoundBinding(ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyName), ref(tuiconfig.BlockDetails, tuiconfig.ActionCopyPath), "copy"),

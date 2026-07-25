@@ -28,7 +28,7 @@ func TestFormatSummary(t *testing.T) {
 			name:      "in app default",
 			value:     firebase.RemoteConfigValue{UseInAppDefault: true},
 			valueType: "STRING",
-			want:      "<in-app default>",
+			want:      "(in-app default)",
 		},
 		{
 			name:      "personalization",

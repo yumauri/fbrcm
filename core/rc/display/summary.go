@@ -31,7 +31,7 @@ func FormatLocalDateTime(value time.Time) string {
 func FormatSummary(value firebase.RemoteConfigValue, valueType string) string {
 	switch {
 	case value.UseInAppDefault:
-		return "<in-app default>"
+		return "(in-app default)"
 	case len(value.PersonalizationValue) > 0:
 		return "<personalization>"
 	case len(value.RolloutValue) > 0:

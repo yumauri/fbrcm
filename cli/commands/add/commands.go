@@ -17,8 +17,9 @@ import (
 )
 
 type addValueSpec struct {
-	value     string
-	valueType string
+	value           string
+	valueType       string
+	useInAppDefault bool
 }
 
 type addOptions struct {
@@ -63,7 +64,9 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().String("number", "", "Number parameter value")
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
-	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json")
+	cmd.Flags().Bool("use-in-app-default", false, "Use the client application's default value")
+	cmd.Flags().String("type", "", "Parameter type for --use-in-app-default: string, boolean, number, or json")
+	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json", "use-in-app-default")
 }
 
 func runAddCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -132,6 +135,23 @@ func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
 	value, err := shared.ReadValueFlag(cmd, true)
 	if err != nil {
 		return addValueSpec{}, err
+	}
+	typeName, err := cmd.Flags().GetString("type")
+	if err != nil {
+		return addValueSpec{}, err
+	}
+	if value.UseInAppDefault {
+		if !cmd.Flags().Changed("type") {
+			return addValueSpec{}, fmt.Errorf("--type is required with --use-in-app-default")
+		}
+		valueType, err := shared.ParseValueType(typeName)
+		if err != nil {
+			return addValueSpec{}, err
+		}
+		return addValueSpec{valueType: valueType, useInAppDefault: true}, nil
+	}
+	if cmd.Flags().Changed("type") {
+		return addValueSpec{}, fmt.Errorf("--type requires --use-in-app-default")
 	}
 	return addValueSpec{value: value.Value, valueType: value.Type}, nil
 }
@@ -241,7 +261,7 @@ func addParameter(cfg *firebase.RemoteConfig, key, groupName, description string
 	}
 
 	param := firebase.RemoteConfigParam{
-		DefaultValue: &firebase.RemoteConfigValue{Value: spec.value},
+		DefaultValue: &firebase.RemoteConfigValue{Value: spec.value, UseInAppDefault: spec.useInAppDefault},
 		Description:  description,
 		ValueType:    spec.valueType,
 	}

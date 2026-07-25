@@ -242,6 +242,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Save details"
 		case tuiconfig.ActionEditValue:
 			return "Edit selected value or expression"
+		case tuiconfig.ActionToggleInAppDefault:
+			return "Toggle selected value's in-app default"
 		case tuiconfig.ActionMove:
 			return "Move selected item or priority"
 		case tuiconfig.ActionCopyValue:

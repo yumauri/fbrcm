@@ -98,26 +98,28 @@ func buildEntries(params map[string]firebase.RemoteConfigParam, conditionColors 
 		for _, condition := range conditionKeys {
 			rawValue := param.ConditionalValues[condition]
 			values = append(values, Value{
-				Label:     condition,
-				Value:     FormatRemoteConfigDisplayValue(rawValue, param.ValueType),
-				RawValue:  rawValue.Value,
-				ValueType: rcdisplay.EmptyValueType(param.ValueType),
-				Empty:     isEmptyRemoteConfigValue(rawValue),
-				EmptyType: rcdisplay.EmptyValueType(param.ValueType),
-				Color:     conditionColors[condition],
-				Plain:     !rawValue.UseInAppDefault && len(rawValue.PersonalizationValue) == 0 && len(rawValue.RolloutValue) == 0,
+				Label:           condition,
+				Value:           FormatRemoteConfigDisplayValue(rawValue, param.ValueType),
+				RawValue:        rawValue.Value,
+				ValueType:       rcdisplay.EmptyValueType(param.ValueType),
+				Empty:           isEmptyRemoteConfigValue(rawValue),
+				EmptyType:       rcdisplay.EmptyValueType(param.ValueType),
+				Color:           conditionColors[condition],
+				Plain:           !rawValue.UseInAppDefault && len(rawValue.PersonalizationValue) == 0 && len(rawValue.RolloutValue) == 0,
+				UseInAppDefault: rawValue.UseInAppDefault,
 			})
 		}
 		if param.DefaultValue != nil {
 			rawValue := *param.DefaultValue
 			values = append(values, Value{
-				Label:     "default",
-				Value:     FormatRemoteConfigDisplayValue(rawValue, param.ValueType),
-				RawValue:  rawValue.Value,
-				ValueType: rcdisplay.EmptyValueType(param.ValueType),
-				Empty:     isEmptyRemoteConfigValue(rawValue),
-				EmptyType: rcdisplay.EmptyValueType(param.ValueType),
-				Plain:     !rawValue.UseInAppDefault && len(rawValue.PersonalizationValue) == 0 && len(rawValue.RolloutValue) == 0,
+				Label:           "default",
+				Value:           FormatRemoteConfigDisplayValue(rawValue, param.ValueType),
+				RawValue:        rawValue.Value,
+				ValueType:       rcdisplay.EmptyValueType(param.ValueType),
+				Empty:           isEmptyRemoteConfigValue(rawValue),
+				EmptyType:       rcdisplay.EmptyValueType(param.ValueType),
+				Plain:           !rawValue.UseInAppDefault && len(rawValue.PersonalizationValue) == 0 && len(rawValue.RolloutValue) == 0,
+				UseInAppDefault: rawValue.UseInAppDefault,
 			})
 		}
 
