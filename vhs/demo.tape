@@ -8,7 +8,7 @@ Require ffmpeg
 Set Shell zsh
 Set Width 1200
 Set Height 720
-Set FontSize 20
+Set FontSize 18
 Set FontFamily "Cascadia Code"
 Set LineHeight 1.0
 Set LetterSpacing 0
