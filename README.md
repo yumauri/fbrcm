@@ -1,598 +1,209 @@
 # fbrcm
 
-`fbrcm` is a terminal Firebase Remote Config manager. It helps you manage Remote Config across Firebase projects, inspect parameters and condition priority/usage, export and import Remote Config JSON, and safely add, update, or delete Remote Config parameters.
+`fbrcm` is a terminal manager for Firebase Remote Config. Use its interactive
+TUI to explore and edit projects, or use the CLI for scripts, repeatable
+operations, and machine-readable output.
 
-Run `fbrcm` without arguments to open the interactive TUI. Run `fbrcm <command>` to use the CLI.
+![fbrcm TUI demo](vhs/demo.gif)
 
 > [!CAUTION]
-> This project is almost completely vibe-coded
+> This project is almost completely vibe-coded.
 
-## Requirements
+It is designed for work that spans more than one Firebase project:
 
-- Go 1.26 or newer
-- Google account with access to the Firebase or Google Cloud projects you want to manage
-- One supported Google credential source: an OAuth Desktop Client JSON, a service account JSON key, or existing gcloud Application Default Credentials
-- Access to these Google APIs for the target projects:
-  - Cloud Resource Manager API, used to list projects
-  - Firebase Remote Config API, used to read, validate, publish, and list Remote Config versions
+- inspect parameters, groups, conditions, and version history;
+- compare and promote configuration between projects or template types;
+- stage related changes as local drafts before publishing;
+- import, export, validate, roll back, and restore Remote Config templates;
+- manage client and server templates from the same workspace.
 
-## Install or Run
+## Installation
 
-Install latest release with the shell installer on macOS or Linux:
+### macOS and Linux
+
+Install the latest release:
 
 ```sh
 curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | sh
 ```
 
-Install to a custom directory:
+The installer places `fbrcm` in `/usr/local/bin` by default. To use another
+directory:
 
 ```sh
-curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | INSTALL_DIR="$HOME/.local/bin" sh
+curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh |
+  INSTALL_DIR="$HOME/.local/bin" sh
 ```
 
-Install with [Homebrew](https://brew.sh):
+With [Homebrew](https://brew.sh):
 
 ```sh
 brew tap yumauri/tap
 brew install --cask fbrcm
 ```
 
-Install with [Scoop](https://scoop.sh) on Windows:
+### Windows
+
+With [Scoop](https://scoop.sh):
 
 ```powershell
 scoop bucket add yumauri https://github.com/yumauri/scoop-bucket
 scoop install fbrcm
 ```
 
-Install with Go:
+### Other options
+
+Download an archive from
+[GitHub Releases](https://github.com/yumauri/fbrcm/releases), or install from
+source with Go 1.26.5 or newer:
 
 ```sh
 go install github.com/yumauri/fbrcm@latest
 ```
 
-Download a release archive manually from:
+## First run
 
-```text
-https://github.com/yumauri/fbrcm/releases
-```
-
-From the repository root:
-
-```sh
-go run .
-```
-
-Build a local binary:
-
-```sh
-go build -o fbrcm .
-./fbrcm --help
-```
-
-## TUI Configuration
-
-The TUI stores its global settings in `config.toml` under the fbrcm config directory. Use the local-only `config` commands to inspect, validate, update, reset, or edit it without requiring a profile or network connection:
-
-```sh
-fbrcm config show
-fbrcm config set powerline_glyphs false
-fbrcm config set keys.projects.refresh u ctrl+r
-fbrcm config validate
-fbrcm config edit
-```
-
-`config edit` uses `--editor`, `FBRCM_EDITOR`, `VISUAL`, or `EDITOR`, in that order. Editor commands may include arguments, so GUI editors should be configured to wait, for example `FBRCM_EDITOR="code --wait"`. If an edited file is invalid, fbrcm leaves the original untouched and reports the preserved staged file path.
-
-Powerline separators are enabled by default; disable them to use Unicode quarter-block arrows when the terminal font does not include Powerline glyphs:
-
-```toml
-powerline_glyphs = false
-```
-
-Filter, history, and version-chooser keys are configurable like all other TUI bindings:
-
-```toml
-[keys.global]
-help = ["?"]
-accounts = ["ctrl+a"]
-profiles = ["ctrl+p"]
-focus_conditions = ["3"]
-focus_history = ["4"]
-focus_promote = ["9"]
-focus_details = ["5"]
-
-[keys.projects]
-bind_auth = ["b"]
-import = ["i"]
-export = ["e"]
-defaults = ["d"]
-toggle_templates = ["t"]
-make_primary = ["p"]
-
-[keys.help]
-cancel = ["esc"]
-submit = ["enter"]
-up = ["up", "ctrl+k"]
-down = ["down", "ctrl+j"]
-page_up = ["pgup"]
-page_down = ["pgdown"]
-home = ["home"]
-end = ["end"]
-
-[keys.filter]
-fuzzy = ["~"]
-starts_with = ["^"]
-includes = ["/"]
-exact = ["="]
-expression = [":"]
-
-[keys.conditions]
-rename = ["r"]
-edit = ["e"]
-color = ["c"]
-new = ["a"]
-move = ["m"]
-delete = ["x"]
-publish = ["p"]
-publish_all = ["P"]
-discard = ["d"]
-discard_all = ["D"]
-
-[keys.promote]
-close = ["esc"]
-toggle = ["space"]
-submit = ["enter"] # open the selected change in the diff viewer
-select_all = ["a"]
-select_none = ["n"]
-swap = ["s"]
-prune = ["x"]
-save_draft = ["d"]
-publish = ["p"]
-toggle_source = ["u"]
-
-[keys.diff_view]
-close = ["esc"]
-toggle = ["space", "enter"]
-up = ["up", "k"]
-down = ["down", "j"]
-page_up = ["pgup"]
-page_down = ["pgdown"]
-home = ["home"]
-end = ["end"]
-left = ["left", "h"]
-right = ["right", "l"]
-
-[keys.history]
-pair_older = [","]
-pair_newer = ["."]
-choose_versions = ["v"]
-toggle_changes = ["c"]
-submit = ["enter"] # open the selected property in the diff viewer
-
-[keys.history_picker]
-cancel = ["esc"]
-toggle = ["tab", "shift+tab"]
-left = ["left"]
-right = ["right"]
-pair_older = [","]
-pair_newer = ["."]
-rollback = ["R"]
-reset = ["r"]
-up = ["up", "k"]
-down = ["down", "j"]
-page_up = ["pgup"]
-page_down = ["pgdown"]
-home = ["home"]
-end = ["end"]
-submit = ["enter"]
-```
-
-## First Setup
-
-`fbrcm` supports three Google auth methods: OAuth desktop login, service account keys, and gcloud Application Default Credentials (ADC).
-
-Run `fbrcm` without arguments to complete setup in the TUI. When the active profile has no authentication and no cached projects, the TUI opens a guided authentication screen instead of the workspace. It can import OAuth or service-account JSON, validate existing gcloud ADC, complete OAuth browser login, and discover projects without an `fbrcm` CLI command.
-
-Press `Ctrl+A` from the workspace to open Accounts or `Ctrl+P` to open Profiles. Both open as a popup over the workspace; `Tab`, `Shift+Tab`, and the left/right arrows switch between their border tabs. Accounts can add, validate, and delete identities and show how many cached projects use each one. Profiles can create, switch, rename, and delete profiles. Press `?` to open Actions over either tab and access the active tab's operations. If credentials are valid but return no projects, the TUI offers retry, another identity, or an empty workspace. Existing cached projects can still open without configured authentication.
-
-In the Projects panel, press `b` to bind the current project, or all marked projects, to another configured identity.
-Press `x` to remove the current project, or all marked projects, from the active profile together with its local cached configs, versions, and draft; Firebase is not changed.
-
-Projects initially show only their client Remote Config template. Press `t` to expand the focused project into client and `server@` rows. Press `p` on either row to make that template primary and move it first. Press `t` while both rows are visible to keep only the focused template, which also becomes primary. These choices persist per project and control the default template selection of unqualified CLI project arguments and filters; explicit `client@` or `server@` CLI targets always override them.
-
-Use `fbrcm project templates show <project>` and `fbrcm project templates set <project>` to inspect or change the same local preferences from the CLI.
-
-Press `i` to import Remote Config JSON into the project under the Projects-panel cursor. Marked projects control what is shown in Parameters but do not change the import target. The import wizard accepts raw Remote Config or an fbrcm cache file, supports merge or replacement, group and parameter filters, rich search, expressions, condition cleanup, and per-conflict resolution. It always shows the resulting diff. A new import can be saved as a draft or published immediately; when a draft already exists, the import updates that draft and leaves publication to the normal `p` action.
-
-Press `e` to export the project under the Projects-panel cursor, also independently of marked projects. When a draft exists, choose between the published Remote Config and the local draft, then enter a destination path. Exports use the same stable JSON normalization and private file permissions as `fbrcm project export`; existing files require explicit overwrite confirmation.
-
-Press `d` to download application defaults for the project under the Projects-panel cursor. Choose JSON for Web, XML for Android, or plist for Apple, then enter a destination path. New files use private permissions, and existing files require explicit overwrite confirmation.
-
-Press `v` to promote Remote Config from the project under the Projects-panel cursor to another project. Promote opens a focused workspace with an explicit source-to-target direction, a selectable list of parameter, condition, and group-description actions, and a detail view for the focused action. Selecting a parameter automatically includes any condition or updated group description required by that parameter. Target-only items are kept unless pruning is explicitly enabled.
-
-The source uses its local draft when one exists; press `u` in Promote to switch between that draft and the published source. The target always uses its effective local state, including an existing draft. Press `d` to save or update the selected promotion as a target draft. Press `p` to review the complete Firebase-bound diff and publish it. Publication requires a verified Firebase snapshot; cached-only promotion reviews can still be inspected and saved as drafts. A failed validation or publication leaves the promoted candidate in the target draft for recovery.
-
-When `FBRCM_PROFILE` selects the TUI profile for the current process, Profiles shows that profile as pinned. Restart without the variable to create, switch, rename, or delete profiles interactively.
-
-OAuth authorization and project discovery remain cancellable with `Esc`. The TUI shows the complete authorization link in a modal with **Open Browser**, **Copy Link**, and **Cancel** actions; it does not write the link over the terminal interface. The modal closes automatically after a successful callback. Canceling OAuth returns to the selected JSON file so a removed or otherwise unusable client can be replaced without restarting the TUI.
-
-### OAuth Desktop Login
-
-You need a Desktop app OAuth client secret JSON:
-
-> [!NOTE]
-> APIs & Services -> Credentials -> Create Credentials -> OAuth client ID -> Desktop app
-
-1. Open Google Cloud Console OAuth clients:
-   `https://console.cloud.google.com/auth/clients`
-2. Select or create a Google Cloud project.
-3. Create an OAuth client.
-4. Choose application type `Desktop app`.
-5. Create it and download the JSON file.
-6. Import that JSON into `fbrcm`.
-
-Import downloaded client secret file:
-
-```sh
-fbrcm auth add oauth default --from /path/to/client-secret.json
-```
-
-If `--from` is omitted, the command reads piped stdin; without stdin it opens an interactive `.json` file picker.
-
-After the client secret is imported, authenticate:
-
-```sh
-fbrcm auth login default
-```
-
-The CLI opens a browser authorization page and waits for the local OAuth callback. If the browser does not open, copy the printed URL into a browser. In the TUI, use **Open Browser** or **Copy Link** in the authorization modal.
-
-If Firebase rejects a cached OAuth access token, `fbrcm` forces a token refresh and retries the request once. When the refresh token is also rejected, it starts the authorization flow again before retrying.
-
-Check current auth files:
-
-```sh
-fbrcm auth path default
-```
-
-### Service Account
-
-Import a service account JSON key:
-
-```sh
-fbrcm auth add service-account prod --from /path/to/service-account.json
-```
-
-If `--from` is omitted, the command reads piped stdin; without stdin it opens an interactive `.json` file picker.
-
-### gcloud ADC
-
-Create Application Default Credentials with gcloud, then add an auth identity that uses ADC discovery:
-
-```sh
-gcloud auth application-default login
-fbrcm auth add gcloud default
-```
-
-## Where Auth Is Stored
-
-By default, `fbrcm` stores per-profile files under your user config and cache directories.
-
-- Auth config: `~/.config/fbrcm/<profile>/auth-config.json`
-- OAuth client secrets: `~/.config/fbrcm/<profile>/auth/<auth-id>/client-secret.json`
-- Service account keys: `~/.config/fbrcm/<profile>/auth/<auth-id>/service-account.json`
-- Projects cache: `~/.config/fbrcm/<profile>/projects-config.json`
-- OAuth token cache: user cache directory, under `fbrcm/<profile>/auth/<auth-id>/token.json`
-
-Project cache is a known-project registry. Each project stores its selected `auth_id`, so different projects can use different auth identities.
-
-Exact paths:
-
-```sh
-fbrcm auth path default
-fbrcm projects path
-fbrcm cache path
-fbrcm draft path
-```
-
-Delete auth files:
-
-```sh
-fbrcm auth delete default
-```
-
-## Environment Variables
-
-`fbrcm` and its shell installer handle the following environment variables. Empty-value behavior and precedence are called out where they are significant.
-
-| Variable | Scope | Behavior and precedence |
-|---|---|---|
-| `FBRCM_PROFILE` | Application | Selects an existing profile for the current process without changing the persisted active profile. The root `--profile <name>` flag takes precedence; otherwise fbrcm uses the persisted active profile. |
-| `FBRCM_CONFIG_DIR` | Application | Overrides the config root directory. Takes precedence over `XDG_CONFIG_HOME` and the user-home fallback. |
-| `FBRCM_CACHE_DIR` | Application | Overrides the cache root directory. Takes precedence over the operating system's user cache directory. |
-| `FBRCM_OFFLINE` | Application | Enables offline mode when the variable is defined, including when its value is empty or `0`. When it is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before starting the TUI or executing a network-capable CLI command and may enable offline mode automatically if the probe fails. Help, version, and `config` commands skip the probe. |
-| `FBRCM_LOG_LEVEL` | Application | Sets the log threshold to `debug`, `info`, `warn`, `error`, `fatal`, or `silent` (case-insensitive). The default is `info`; an invalid value logs a warning and uses the default. |
-| `FBRCM_EDITOR` | Config editor | Selects the command used by `fbrcm config edit`. The `--editor` flag takes precedence; otherwise resolution continues through `VISUAL`, `EDITOR`, and the platform default. Arguments are supported. |
-| `VISUAL` | Config editor | Selects the editor when neither `--editor` nor `FBRCM_EDITOR` is set. Takes precedence over `EDITOR`. |
-| `EDITOR` | Config editor | Selects the editor when `--editor`, `FBRCM_EDITOR`, and `VISUAL` are unset. The fallback is `vi` on Unix-like systems and `notepad.exe` on Windows. |
-| `SHELL` | Config editor (Unix-like systems) | Runs editor commands that include arguments. Defaults to `/bin/sh` when unset. |
-| `HTTPS_PROXY` / `https_proxy` | Networking | Configures the proxy for HTTPS requests, including the startup Firebase connectivity probe. |
-| `HTTP_PROXY` / `http_proxy` | Networking | Configures the proxy for HTTP requests through Go's standard HTTP transport. |
-| `NO_PROXY` / `no_proxy` | Networking | Comma-separated hosts, domains, and optional ports that bypass the configured HTTP or HTTPS proxy. |
-| `NO_COLOR` | Application | Disables ANSI color in CLI tables, logs, prompts, and the TUI when set to a non-empty value. |
-| `COLUMNS` | Application | Supplies terminal width as a positive integer for human-readable CLI output. An invalid value is ignored; fbrcm then detects stdout width and falls back to 80 columns when detection is unavailable. |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Google authentication | Points to an Application Default Credentials JSON file for `gcloud` auth identities and diagnostics. When unset, Google's default credential chain and the platform's well-known ADC file are used. |
-| `XDG_CONFIG_HOME` | Unix config discovery | Supplies the config home when `FBRCM_CONFIG_DIR` is unset; fbrcm appends `/fbrcm`. |
-| `XDG_CACHE_HOME` | Unix cache discovery (except macOS) | Supplies the user cache directory through Go's operating-system lookup when `FBRCM_CACHE_DIR` is unset; fbrcm appends `/fbrcm`. The path must be absolute. |
-| `HOME` | Unix and macOS directory discovery | Supplies the user home used by config, cache, and well-known gcloud ADC path fallbacks. |
-| `USERPROFILE` | Windows directory discovery | Supplies the user home used by config and fallback cache directory discovery. |
-| `LOCALAPPDATA` | Windows cache discovery | Supplies the user cache directory when `FBRCM_CACHE_DIR` is unset; fbrcm appends `fbrcm`. |
-| `APPDATA` | Windows Google authentication | Supplies the directory containing the well-known gcloud ADC path, `gcloud/application_default_credentials.json`, when `GOOGLE_APPLICATION_CREDENTIALS` is unset. |
-| `INSTALL_DIR` | macOS/Linux shell installer | Selects the binary destination for `install.sh`. Defaults to `/usr/local/bin`. |
-
-For example, select a profile for one invocation or override both storage roots:
-
-```sh
-FBRCM_PROFILE=staging fbrcm get
-FBRCM_CONFIG_DIR=/path/to/config FBRCM_CACHE_DIR=/path/to/cache fbrcm doctor
-```
-
-## Basic Usage
-
-Open interactive UI:
+Start the TUI:
 
 ```sh
 fbrcm
 ```
 
-Show CLI help:
+On a new profile, fbrcm opens guided setup. It supports:
 
-```sh
-fbrcm --help
-fbrcm <command> --help
-```
+- an OAuth Desktop app client;
+- a service-account JSON key;
+- existing gcloud Application Default Credentials.
 
-List projects:
+The identity needs access to the projects you want to manage. Project discovery
+uses the Cloud Resource Manager API; template reads, validation, publication,
+defaults, and history use the Firebase Remote Config API.
 
-```sh
-fbrcm projects list
-fbrcm projects list --update
-fbrcm projects list --json
-```
-
-Get Remote Config parameters across projects:
-
-```sh
-fbrcm get
-fbrcm get some_parameter
-fbrcm get --project my-project
-fbrcm get --project proj1 --project proj2
-fbrcm get --filter login
-fbrcm get --filter login --filter checkout
-fbrcm get --search rollout
-fbrcm get --json
-```
-
-Inspect conditions in their Firebase evaluation order and see which parameters use them:
-
-```sh
-fbrcm conditions list <project-id>
-fbrcm conditions list <project-id> --filter beta
-fbrcm conditions list <project-id> --search platform
-fbrcm conditions show <project-id> <condition-name>
-fbrcm conditions show <project-id> <condition-name> --json
-```
-
-Manage condition definitions from the CLI:
-
-```sh
-fbrcm conditions add <project-id> beta_users --expression "percent <= 10" --color BLUE
-fbrcm conditions edit <project-id> beta_users --expression "percent <= 20"
-fbrcm conditions edit <project-id> beta_users --color GREEN
-fbrcm conditions rename <project-id> beta_users expanded_beta
-fbrcm conditions move <project-id> expanded_beta 1
-fbrcm conditions delete <project-id> expanded_beta
-fbrcm conditions validate <project-id>
-```
-
-Definition mutations print a Remote Config diff and offer publication or can be staged with `--draft`. Use `--dry-run` to preview without persisting state and `--yes` to skip confirmation. `conditions validate` validates the current draft, if present, or the published template with Firebase's validate-only API.
-
-In the TUI, press `3` by default to open the Conditions tab. The default actions are `a` add, `r` rename, `e` edit the raw expression, `c` change color, `m` move priority, and `x` delete. Mutations show a diff with Publish, Draft, and Cancel choices; once a project has a draft, subsequent edits stage into it immediately. Use `p`/`P` to publish one/all drafts and `d`/`D` to discard one/all drafts. Draft publication prepares each candidate against fresh Firebase state, reviews that exact candidate, publishes approved projects independently, and finishes with per-project results plus a Retry Failed action. Press Enter on a condition to see its expression, priority, color, and parameter usages; the same edit actions work from Details.
-
-In the Parameters tab, press `a` to create a parameter or `A` to create an empty parameter group. Both actions open Details with the name field focused.
-
-In Details, Enter finishes the active field or runs the selected item's contextual action. With a default or conditional parameter value selected, `d` toggles Firebase's in-app-default source for that value. Values using the in-app default cannot be edited with `e` or Right; press `d` again to restore a neutral remote value (`""`, `false`, `0`, or `{}`, according to the parameter type). Everywhere else, Enter saves the form: it opens the publish-or-draft confirmation when no draft exists and stages immediately when the project already has a draft. `Ctrl+Enter` always saves directly from Details.
-
-Press `?` during TUI navigation to open the searchable action palette. It lists every configured shortcut by panel, explains the selected action below the list, marks unavailable actions with a reason, and runs the selected available action with Enter. Search matches action names, explanations, shortcut keys, and technical aliases such as `reload`. Use the arrow or page keys to navigate and `Esc` or `?` to close it. Printable `?` input is preserved while typing in filters and text editors.
-
-Projects, Parameters, History, and Conditions support expression filtering with `:` in addition to the `~`, `^`, `/`, and `=` text-filter modes. The expression uses the context for the active panel described in [EXPR.md](EXPR.md); History uses parameter context against the newer value, or the older value for a removed parameter. Results update whenever the input forms a valid expression. While an edit is temporarily invalid, the expression is shown in red, a single-line compiler diagnostic is overlaid on the panel's bottom border without changing its height, and the last valid results remain visible.
-
-Pressing `q` quits immediately unless the open Details form has unsaved changes, in which case fbrcm asks before discarding them. `Ctrl+C` always force-quits.
-
-Accounts and Profiles cannot open while the Details form has unsaved changes. Save or discard the form first so a profile transition cannot lose local edits.
-
-Check local setup, credentials, connectivity, APIs, permissions, and cache writability:
+After setup, run the built-in diagnostic whenever you need to check credentials,
+connectivity, API access, permissions, or local storage:
 
 ```sh
 fbrcm doctor
-fbrcm doctor --json
 ```
 
-Export one project Remote Config:
+See [TUI setup and workflows](docs/TUI.md#setup-and-authentication) for the
+guided path, or [CLI authentication](docs/CLI.md#fbrcm-auth-list) for
+non-interactive setup.
+
+## A quick tour
+
+Run `fbrcm` with no arguments for the TUI. Press `?` anywhere to open the
+searchable action palette; it shows the shortcuts that are relevant to the
+current panel.
+
+Any argument selects CLI mode:
 
 ```sh
-fbrcm project export <project-id> --to remote-config.json
-fbrcm project export <project-id> --to remote-config.json --yes
+# Refresh and list accessible projects.
+fbrcm projects list --update
+
+# Inspect one parameter across matching projects.
+fbrcm get feature_enabled --project '^prod'
+
+# Preview a change without writing it.
+fbrcm update feature_enabled --project '=my-app' --boolean true --dry-run
+
+# Stage the same change in a local draft.
+fbrcm update feature_enabled --project '=my-app' --boolean true --draft
+
+# Review and publish the draft.
+fbrcm draft diff my-app --against current
+fbrcm draft publish my-app
 ```
 
-File exports ask before replacing an existing destination. Use `--yes` for an intentional non-interactive overwrite.
-
-Download application defaults from the active Remote Config template:
+Project and parameter filters support fuzzy, prefix, contains, and exact modes.
+Expression filters can also inspect typed values and complete Remote Config
+context:
 
 ```sh
-fbrcm project defaults <project-id> --format json --to remote_config_defaults.json
-fbrcm project defaults <project-id> --format xml --to remote_config_defaults.xml
-fbrcm project defaults <project-id> --format plist --to RemoteConfigDefaults.plist
+fbrcm get --expr 'value == true'
+fbrcm projects list --expr '"feature_enabled" in keys(parameters)'
 ```
 
-Without `--to`, the raw defaults payload is written to stdout. Existing destinations require confirmation or `--yes`.
+## Drafts and safe writes
 
-Inspect and recover Remote Config version history:
+Remote Config publication replaces a complete template, so fbrcm treats review
+as part of the write workflow:
+
+- write commands show a diff and normally ask for confirmation;
+- `--dry-run` previews without changing Firebase or local drafts;
+- `--draft` stages supported mutations in the active profile;
+- draft publication rebases local intent onto current Firebase state and stops
+  on conflicts;
+- multi-project publication is non-atomic: each project succeeds or fails
+  independently, and fbrcm reports every result.
+
+Client and server templates have independent drafts, caches, and histories.
+Use an explicit target such as `client@my-project` or
+`server@my-project` when the configured default is not the one you want.
+
+## Configuration
+
+The TUI key map and active-profile preference live in the global `config.toml`.
+Inspect the effective configuration and its path with:
 
 ```sh
-fbrcm versions list <project-id>
-fbrcm versions show <project-id> 142
-fbrcm versions diff <project-id> 138 current
-fbrcm versions rollback <project-id> 138 --dry-run
-fbrcm versions rollback <project-id> 138
+fbrcm config show
+fbrcm config path
 ```
 
-Firebase version history is authoritative, but Firebase retains at most 300 versions and may remove inactive versions older than 90 days. `fbrcm` keeps immutable templates it has encountered until the cache is cleared. A cached version that Firebase no longer retains can be republished with:
+For example:
 
 ```sh
-fbrcm versions restore <project-id> 37 --dry-run
-fbrcm versions restore <project-id> 37
+fbrcm config set powerline_glyphs false
+fbrcm config set keys.projects.refresh u ctrl+r
+fbrcm config validate
 ```
 
-`rollback` uses Firebase's native rollback operation and creates a new version with rollback metadata. `restore` republishes a local snapshot as a normal new version. Both commands print a full diff and ask for confirmation unless `--yes` is used.
+Profiles keep authentication, project selection, drafts, and caches separate.
+Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 
-Import Remote Config:
+## Documentation
+
+| Guide | Use it for |
+| --- | --- |
+| [TUI guide](docs/TUI.md) | Setup, panels, shortcuts, editing, drafts, history, promotion, and key configuration |
+| [CLI reference](docs/CLI.md) | Complete command tree, flags, output contracts, template targets, and write behavior |
+| [Expression filters](docs/EXPR.md) | Expression contexts, typed values, helper functions, and `jq` queries |
+| [Architecture](docs/architecture.md) | Package boundaries and maintainer invariants |
+| [Root group keys](docs/root-group-key.md) | Internal root-parameter representations |
+
+Every CLI command also has focused help:
 
 ```sh
-fbrcm project import <project-id> --from remote-config.json --dry-run
-fbrcm project import <project-id> --from remote-config.json --merge
-fbrcm project import <project-id> --from remote-config.json --override
-fbrcm project import <project-id> --from remote-config.json --search rollout --dry-run
-fbrcm project import <project-id> --from remote-config.json --merge --yes --json
+fbrcm --help
+fbrcm projects promote --help
 ```
 
-Add parameter:
+## Build from source
+
+The module currently requires Go 1.26.5 or newer:
 
 ```sh
-fbrcm add new_parameter --project my-project --string "value" --description "Used by app startup"
-fbrcm add feature_enabled --project my-project --boolean true --dry-run
+git clone https://github.com/yumauri/fbrcm.git
+cd fbrcm
+go build -o fbrcm .
+go test ./...
 ```
 
-Duplicate a complete parameter, including its group, description, type, default value, and conditional values:
+## Security notes
 
-```sh
-fbrcm duplicate existing_parameter copied_parameter --project my-project --dry-run
-fbrcm duplicate existing_parameter copied_parameter --project '^prod' --expr 'project.id contains "android"' --yes
-```
+Treat OAuth client files, OAuth tokens, and service-account keys as secrets.
+Use `fbrcm auth path <auth-id>` to locate identity files.
 
-Update parameter:
+Do not store secrets in Remote Config values. Applications can receive and
+inspect the parameters available to them.
 
-```sh
-fbrcm update existing_parameter --project my-project --string "new value" --dry-run
-fbrcm update existing_parameter --project my-project --name renamed_parameter --yes
-fbrcm update --filter feature --search rollout --boolean true --dry-run
-```
+Cached historical templates may outlive Firebase's retained history. Clearing
+the fbrcm cache can therefore remove the only remaining local copy of an old
+template. Drafts are separate and are deleted only through explicit draft or
+project cleanup operations.
 
-Delete parameter:
+## License
 
-```sh
-fbrcm delete old_parameter --project my-project --dry-run
-fbrcm delete old_parameter --project my-project --yes
-fbrcm delete --filter old --search rollout --dry-run
-```
-
-Stage changes in profile-scoped local drafts instead of publishing immediately:
-
-```sh
-fbrcm add new_flag --project my-project --boolean true --draft
-fbrcm duplicate existing_parameter copied_parameter --project my-project --draft --yes
-fbrcm update existing_parameter --project my-project --string "new value" --draft --yes
-fbrcm delete old_parameter --project my-project --draft --yes
-fbrcm project import <project-id> --from remote-config.json --merge --draft
-```
-
-Inspect and resolve drafts:
-
-```sh
-fbrcm draft list
-fbrcm draft show <project-id> --to recovered-draft.json
-fbrcm draft diff <project-id>
-fbrcm draft diff <project-id> --against current
-fbrcm draft publish <project-id> --dry-run
-fbrcm draft publish <project-id>
-fbrcm draft discard <project-id>
-```
-
-Publishing rebases local draft changes onto the latest Firebase Remote Config and refuses conflicting changes. `draft publish --all` and `draft discard --all` process every draft in the active profile. Multi-project publication is non-atomic: each project is attempted independently, all outcomes are collected into a final `Results:` block after logging, failed drafts are preserved, and the command returns nonzero after mixed success. Other CLI write commands refuse to publish over a project with an unresolved draft while continuing with other selected projects.
-
-Manage caches:
-
-```sh
-fbrcm cache list
-fbrcm cache clear
-fbrcm projects reset
-```
-
-## Profiles
-
-Profiles let you keep separate OAuth clients, project caches, drafts, and token caches. The TUI Profiles tab supports creating, switching, renaming, and deleting profiles; deletion is limited to inactive profiles and confirms the affected config and cache paths first.
-
-```sh
-fbrcm profile
-fbrcm profile list
-fbrcm profile switch work
-fbrcm profile switch personal
-fbrcm profile rename old-name new-name
-```
-
-First run creates and uses the `default` profile.
-
-## Filtering
-
-Project, parameter, and condition filters support mode-prefixed queries:
-
-- No prefix or `~`: fuzzy match.
-- `^`: starts with.
-- `/`: includes.
-- `=`: exact match.
-
-Examples:
-
-```sh
-fbrcm projects list --filter '^prod'
-fbrcm get --filter '/checkout'
-fbrcm get --project '=my-project-id'
-fbrcm conditions list my-project --filter '~bt'
-```
-
-Several commands also support `--expr` with [expr-lang](https://expr-lang.org/docs/language-definition) expressions for advanced filtering.
-
-Parameter commands support `--search` for matching names, descriptions, values, condition names, and condition expressions. `--filter`, parameter-context `--expr`, and `--search` are ANDed.
-
-## What It Can Do
-
-- Open a TUI for managing Firebase projects, Remote Config parameters, and conditions
-- List Firebase projects available to the authenticated Google account
-- Cache project metadata and Remote Config snapshots locally
-- List, inspect, compare, export, roll back, and restore Remote Config versions
-- Fetch Remote Config from Firebase
-- Show parameters across many projects
-- Add, edit, rename, reorder, delete, validate, list, and inspect conditions and their parameter/value usage
-- Filter projects and parameters
-- Export Remote Config JSON
-- Download application defaults as JSON, Android XML, or Apple plist
-- Import Remote Config JSON
-- Merge imported config into current project config
-- Override current config with imported config
-- Keep only portable conditions during cross-project import, with kept/removed counts
-- Add, update, rename, move, duplicate, and delete parameters
-- Create, display, and remove empty parameter groups in the TUI
-- Stage, inspect, diff, safely publish, recover, and discard local drafts
-- Edit parameter values as boolean, number, string, or JSON
-- Validate and publish Remote Config through Firebase APIs
-- Use `--dry-run` on write commands to preview Firebase writes without sending them
-
-## Safety Notes
-
-Use `--dry-run` before imports, updates, additions, duplications, deletions, draft publishes, rollbacks, and restores when you are unsure. Write commands print diffs and usually ask for confirmation unless `--yes` is used.
-
-Clearing the Remote Config cache deletes every locally retained immutable version. Versions no longer retained by Firebase may then be permanently unavailable.
-
-Drafts are managed separately from cached snapshots. `fbrcm cache clear` does not delete drafts; use `fbrcm draft discard` explicitly.
-
-Keep `client-secret.json`, `token.json`, and service-account key files private. They grant access through Google account or service account permissions.
+[MIT](LICENSE)

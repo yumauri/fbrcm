@@ -1,137 +1,171 @@
-# fbrcm Module Map
+# fbrcm module map
 
-This document is a navigation aid for the codebase. It describes the package
-boundaries and dependency direction so refactors stay within the intended
-layering. It is descriptive of the current code, not aspirational.
+This is a navigation aid for maintainers. It describes the current package
+boundaries and important data-flow rules.
 
-## Top-level layout
+## Top-level flow
 
+```text
+main.go
+├── no arguments ──> tui/
+└── any arguments ─> cli/
+
+cli/ ─┐
+      ├──> core/ ──> Firebase and local storage
+tui/ ─┘
 ```
-main.go            Entry point: picks CLI vs TUI mode, builds core.Service.
-core/              Domain + infrastructure layer (no CLI/TUI imports).
-cli/               Cobra command tree (depends on core).
-tui/               Bubble Tea v2 app (depends on core).
-```
 
-Dependency direction is one-way: `cli/` and `tui/` depend on `core/`; `core/`
-never imports `cli/` or `tui/`.
+`main.go` initializes logging, constructs `core.Core`, and selects CLI or TUI
+mode. `cli` and `tui` depend on `core`; `core` never imports either presentation
+layer.
 
-## core/
+## `core/`
+
+The root `core` package is the facade used by both front ends. Its files expose
+authentication, project discovery, Remote Config reads and publication,
+parameter and condition trees, imports, drafts, history, and cross-project
+promotion.
 
 | Package | Responsibility |
 | --- | --- |
-| `core` | `Core` facade: auth registry, project sync, remote-config export/validate/publish/import, parameters cache, `ParametersTree`, and `ConditionsTree` view models. Draft lifecycle delegates to `core/draft`. |
-| `core/draft` | Draft storage, RC slot mutations, three-way merge, mutate/preview/publish pipeline. |
-| `core/parameters` | Parameters view model: tree/group/entry/value types, tree building from Remote Config, display value formatting. |
-| `core/conditions` | Order-aware condition catalog, validation and definition mutations, parameter usage index, and delete/reorder impact models shared by CLI and TUI. |
-| `core/rc/display` | Remote Config display formatting: summary vs diff modes, project/condition labels. |
-| `core/rc/diff` | Colored Remote Config diff rendering for CLI and TUI previews. |
-| `core/rc/mutate` | RC slot collection and in-memory parameter/group mutation. |
-| `core/rc/value` | Parameter value validation and JSON number checks. |
-| `core/config` | On-disk persistence: auth config, profiles, projects cache, parameter cache, drafts, path resolution. |
-| `core/firebase` | Firebase/Google wire types and HTTP API: resilient transport, auth (oauth/gcloud/service-account/token), dry-run and offline gating, remote-config endpoints. |
-| `core/filter` | Filtering: mode-prefixed fuzzy/exact/prefix/includes matching (`filter.go`) and expr-lang expression engine with jq support (`expr.go`). |
-| `core/env`, `core/log`, `core/styles`, `core/browser` | Cross-cutting helpers: env overrides, logging, shared styles, browser opener. |
-| `core/strfold` | Case-insensitive string compare/sort helpers and unified project sort order. |
+| `core/config` | Global config, profiles, auth registry, project registry, caches, drafts, private file I/O, and path resolution |
+| `core/firebase` | Google credentials, resilient HTTP transport, project APIs, Remote Config APIs, defaults, history, rollback, diagnostics, and offline gating |
+| `core/parameters` | Parameter/group/value tree models and display values |
+| `core/conditions` | Ordered condition definitions, usage indexing, validation, and mutation impact |
+| `core/groups` | Explicit parameter-group add, edit, rename, and delete operations |
+| `core/draft` | Draft envelopes, mutation composition, three-way merge, publish preparation, and cleanup |
+| `core/filter` | Mode-prefixed text matching and expr-lang evaluation with embedded gojq |
+| `core/rc/diff` | Structured and human-readable Remote Config comparison |
+| `core/rc/diffinput` | Conversion of Remote Config entities into generic property diffs |
+| `core/rc/display` | Shared labels, counts, and display formatting |
+| `core/rc/importer` | Import selection, condition cleanup, merge planning, and conflict resolution |
+| `core/rc/mutate` | Wire-level parameter slot collection and mutation |
+| `core/rc/promote` | Promotion plans, dependencies, selection, pruning, and application |
+| `core/rc/target` | Parsing and canonicalization of client/server template targets |
+| `core/rc/value` | Parameter value validation and JSON number handling |
+| `core/rootgroup` | Canonical root-group constants |
+| `core/dictdiff` | Ordered generic dictionary/property comparison |
+| `core/strfold` | Case-insensitive comparison, stable keys, and project sorting |
+| `core/browser`, `core/env`, `core/log`, `core/styles` | Cross-cutting browser, environment, logging, and style helpers |
 
-## cli/
+The facade keeps CLI/TUI callers out of storage and wire packages. Thin
+delegating methods in root `core` files are intentional.
 
-| Package | Responsibility |
-| --- | --- |
-| `cli/app` | Root command assembly and top-level error handling. |
-| `cli/commands/*` | One package per command group (`add`, `auth`, `cache`, `conditions`, `config`, `delete`, `draft`, `get`, `profile`, `project`, `projects`, `update`, `versions`). |
-| `cli/shared` | Reusable command plumbing: flags, project/parameter filtering, confirmation prompts, JSON input. |
-| `cli/shared/rc` | Remote Config CLI pipeline: input extraction, order-preserving JSON, diff rendering, export normalization, validate/publish with ETag retry. Imported directly by RC mutation commands (`add`, `delete`, `update`, `get`, `project`, `versions`). |
-| `cli/styles` | CLI palette and `NO_COLOR` handling. |
+## `cli/`
 
-### `cli/shared/rc` layout
+`cli/app` builds the Cobra root, selects the process profile, initializes
+offline mode, and maps command errors to exit codes.
 
-The RC pipeline lives in one subpackage with a clear file boundary:
+`cli/commands` contains one package per top-level feature:
+
+```text
+add  auth  cache  conditions  config  delete  doctor  draft
+duplicate  get  groups  profile  project  projects  update  versions
+```
+
+Notable nested packages:
+
+- `cli/commands/project/import` owns the interactive/non-interactive import
+  flow;
+- `cli/commands/get/table` owns the responsive parameter table;
+- `cli/commands/testutil` contains command-test helpers.
+
+`cli/shared` contains behavior used across command packages: target resolution,
+flags, text and expression filtering, confirmation, terminal sizing, JSON
+output, parameter search, prompt input, and batch-result helpers.
+
+### Remote Config CLI pipeline
+
+`cli/shared/rc` centralizes the read/transform/diff/validate/publish pipeline:
 
 | File | Responsibility |
 | --- | --- |
-| `input.go` | Read stdin / cache payloads; extract embedded `remote_config` JSON. |
-| `order.go` | Parse and marshal Remote Config JSON while preserving member order. |
-| `diff.go` | Diff and conflict preview helpers (delegates to `core/rc/diff` and `core/rc/display`). |
-| `normalize.go` | Stable export JSON entry points: escape normalization delegates to `core/firebase`. |
-| `normalize_conditional.go` | Conditional-value key reordering and JSON scanning helpers. |
-| `publish.go` | Validate/publish with ETag conflict detection and project mutation wrapper. |
-| `loop.go` | Multi-project revalidate → mutate → publish loop with retry on stale ETag. |
-| `project.go` | Revalidated per-project config snapshot used by the publish loop. |
-| `output.go` | Order-preserving stdout writer for stdin mutation commands. |
-| `conflict.go` | ETag/precondition conflict detection for publish retries. |
+| `input.go` | Read raw Remote Config or unwrap an fbrcm cache payload |
+| `order.go` | Parse and marshal JSON while preserving member order |
+| `normalize.go`, `normalize_conditional_reorder.go`, `normalize_conditional_scan.go` | Stable export normalization |
+| `diff.go` | Shared Remote Config preview formatting |
+| `publish.go`, `loop.go`, `project.go` | Revalidation, mutation, validation, ETag-protected publication, and batch flow |
+| `conflict.go` | Precondition and ETag conflict classification |
+| `output.go` | Order-preserving stdout for stdin transformations |
 
-Commands that mutate or display Remote Config import `cli/shared/rc` for the
-pipeline and `cli/shared` for shared flags, filtering, and confirmation. Display
-formatting for parameter headers in prompts uses `core/rc/display` directly where
-only formatting is needed.
+Other shared subpackages:
 
-## tui/
+- `cli/shared/diffview` renders static side-by-side property diffs;
+- `cli/shared/fileoutput` provides overwrite-safe private file output;
+- `cli/internal/jsonscan` supports order-aware JSON processing without becoming
+  a public package.
 
-| Package | Responsibility |
+## `tui/`
+
+`tui/app` is the Bubble Tea root model. It coordinates focus, panel layout,
+popups, editors, setup, profile transitions, draft publication, history
+rollback, project I/O, and promotion.
+
+Major components under `tui/components`:
+
+| Component | Responsibility |
 | --- | --- |
-| `tui/app` | Root Bubble Tea model that orchestrates panels, overlays, value editors, and draft dialogs. |
-| `tui/components/*` | Panels and overlays: `projects`, `parameters`, the condition definition/priority/usage panel, shared `details`, value editors (`boolpicker`, `numberinput`, `stringinput`, `jsoninput`), `dialog`, `filterbox`, `logs`, reusable option picker (`moveparam`), `renameinput`, `minsize`, and `viewutil` helpers. |
-| `tui/config`, `tui/messages`, `tui/panels`, `tui/styles` | Key bindings, inter-component messages, panel identifiers, panel styles. |
+| `projects` | Project/template list, marking, selection, filtering, and mouse interaction |
+| `parameters` | Parameters and groups, multi-project view, drafts, and version history |
+| `conditions` | Condition order, definitions, usages, and editing |
+| `details` | Contextual inspector and edit form |
+| `promote` | Source/target picker and selectable promotion workspace |
+| `diffview` | Interactive property and Remote Config comparison |
+| `projectio` | TUI import, export, and defaults workflows |
+| `setup`, `authpicker` | Guided authentication and identity selection |
+| `filterbox` | Text and expression filter input |
+| `logs` | Live logs and level controls |
+| `dialog`, `buttonbar` | Modal choices and clickable actions |
+| `boolpicker`, `numberinput`, `stringinput`, `jsoninput` | Typed value editors |
+| `moveparam`, `renameinput` | Move and rename editors |
+| `mouseutil`, `viewutil`, `minsize`, `inputstyles`, `workspaceheader` | Shared interaction and rendering primitives |
 
-## Charm stack note
+Supporting packages:
 
-The project is on the `charm.land/*` v2 line: bubbletea, bubbles, lipgloss, and
-log. `core/log` uses `charm.land/log/v2` with `charm.land/lipgloss/v2` for
-custom styles and `github.com/charmbracelet/colorprofile` for color profile
-detection (replacing direct `termenv` usage in the logger).
+- `tui/config` defines defaults, loads overrides, migrates old bindings, and
+  validates conflicts;
+- `tui/messages` contains cross-component Bubble Tea messages;
+- `tui/panels` defines focus identifiers;
+- `tui/styles` owns TUI colors and reusable render styles;
+- `tui/testutil` contains rendering-test helpers.
 
-## Refactor guidelines
+## Charm stack
 
-Use these when splitting files or cleaning up structure. They describe how the
-codebase is maintained today, not a future rewrite.
+The UI uses the `charm.land/*` v2 packages for Bubble Tea, Bubbles, Lip Gloss,
+and logging. `github.com/charmbracelet/colorprofile` handles terminal color
+profile detection.
 
-### Pass size and scope
+## Important invariants
 
-- Keep refactors **behavior-preserving** unless a functional change is explicitly requested.
-- Prefer **small, reviewable passes** (one concern per PR/commit): dedupe, split one oversized file, extract one helper, add tests for the touched layer.
-- Target **~200–300 lines** for new files; split when a file makes keybinding, overlay, or RC pipeline changes hard to review.
-- Do not split files under ~200 lines just to hit a line-count target.
+- Root group representations (`""`, `__default__`, and `(root)`) are
+  layer-specific. See [root-group-key.md](root-group-key.md).
+- Empty and description-only parameter groups must survive filtering,
+  condition cleanup, parameter mutation, import, merge, draft handling, and
+  promotion. Only an explicit group operation may remove a group.
+- Condition slice order is Firebase evaluation priority. Alphabetical sorting
+  is never semantically safe.
+- Client and `server@` targets share a physical Firebase project but have
+  independent template state, caches, drafts, and version histories.
+- Draft publication is candidate-stable: preview, validation, and publication
+  must refer to the same merged candidate. Conflicts preserve the draft.
+- Promotion selection is atomic at parameter, condition, and group-description
+  level. `core/rc/promote` is the source of truth for dependencies and pruning.
+- Files containing credentials, drafts, caches, or exported Remote Config use
+  the private-file helpers in `core/config`.
+- Human CLI tables use the shared Lip Gloss conventions and never rely on
+  terminal soft wrapping.
+- Selectable TUI rows support click selection and double-click activation;
+  visible buttons activate on one click.
 
-### Layering and public APIs
+## Validation
 
-- Respect dependency direction: `cli/` and `tui/` → `core/` only.
-- Keep **public APIs stable** (`core` facade methods, exported CLI/TUI config helpers) unless the refactor requires a break — then split that break into its own migration task.
-- Thin facades in `core/` (for example draft re-exports) are intentional; do not remove them during structural passes.
+Run the repository checks after implementation changes:
 
-### Tests per layer
-
-Run before and after every pass:
-
-```bash
-golangci-lint run ./...
+```sh
+golangci-lint run
 go test -race ./...
 ```
 
-Add or extend tests at the layer you touch:
-
-| Layer | Expected guard |
-| --- | --- |
-| `core/draft`, `cli/shared/rc` | Unit tests with fixtures under `testdata/remoteconfig/` |
-| `core/firebase` | Unit tests for transport, dry-run, offline, and normalize helpers |
-| `tui/components/*` | `view_parity_test.go` snapshot tests when changing render output |
-| `tui/config` | Keybinding tests for `Matches()` and conflict disabling |
-
-### Invariants
-
-- Root group key representations (`""`, `__default__`, `(root)`) must stay consistent — see [root-group-key.md](root-group-key.md).
-- Empty Remote Config parameter groups are first-class entities and may carry descriptions. Parameter mutation, filtering, condition cleanup, draft merge, and promotion must preserve them; only explicit group operations may remove them. In the TUI, the configured delete action opens confirmation when no draft exists and stages removal immediately when a draft already exists, matching other edits.
-- Remote Config condition slice order is evaluation priority. View models and promotion must preserve it; alphabetical condition ordering is never semantically safe.
-- The cross-project TUI promotion workspace uses immutable source and target snapshots prepared by the `core` project-promotion facade. The source may be a local draft or published snapshot; the target is always its effective draft-aware state. UI selection remains atomic at parameter, condition, and group-description level, while `core/rc/promote` remains the source of truth for automatic dependencies, condition order, pruning, and group preservation.
-- Project promotion publication is draft-first. The exact reviewed candidate is saved to the target draft before validation and ETag-protected publication. Successful publication removes the draft; validation, merge, or publish failures retain the complete candidate so intent is recoverable and reviewable.
-- Private file I/O goes through `core/config.WritePrivateFile`.
-
-### Stop criteria
-
-Skip a refactor pass when it cannot name at least one of:
-
-1. Duplicated logic to consolidate
-2. An oversized module blocking changes
-3. An untested path with real regression risk
-
-Dependency upgrades, Charm import unification, live Firebase integration tests, and `core` facade narrowing belong in **separate migration tasks**, not mixed into hygiene passes.
+Add tests at the layer being changed. Rendering changes should include the
+relevant narrow-width, no-color, mouse-hit-region, or view-parity regression
+coverage.

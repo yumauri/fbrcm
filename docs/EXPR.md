@@ -35,9 +35,11 @@ value >= 10 && value <= 20
 value | jq(.enabled == true)
 ```
 
-Built-in functions and collection helpers include `any`, `all`, `none`, `filter`, `map`, `len`, `keys`, `values`, `type`, `int`, `float`, and `string`. See full syntax and built-ins in the expr-lang documentation:
-
-https://expr-lang.org/docs/language-definition
+Built-in functions and collection helpers include `any`, `all`, `none`,
+`filter`, `map`, `len`, `keys`, `values`, `type`, `int`, `float`, and
+`string`. See the [expr-lang language
+definition](https://expr-lang.org/docs/language-definition) for the full syntax
+and built-ins.
 
 Expr also supports a pipe operator:
 
@@ -56,10 +58,16 @@ fbrcm get --expr '...'
 fbrcm delete --expr '...'
 fbrcm update --expr '...'
 fbrcm project import --expr '...'
+fbrcm draft diff <project> --expr '...'
+fbrcm versions diff <project> <from> [<to>] --expr '...'
+fbrcm projects diff <source> <target> --expr '...'
+fbrcm projects promote <source> <target> --expr '...'
 fbrcm conditions list <project> --expr '...'
 fbrcm projects list --expr '...'
 fbrcm projects update --expr '...'
+fbrcm projects forget --expr '...'
 fbrcm add --expr '...'
+fbrcm duplicate <source> <target> --expr '...'
 ```
 
 Commands use one of three expression contexts: parameter, condition, or project context.
@@ -75,9 +83,18 @@ fbrcm get --expr '...'
 fbrcm delete --expr '...'
 fbrcm update --expr '...'
 fbrcm project import --expr '...'
+fbrcm draft diff <project> --expr '...'
+fbrcm versions diff <project> <from> [<to>] --expr '...'
+fbrcm projects diff <source> <target> --expr '...'
+fbrcm projects promote <source> <target> --expr '...'
 ```
 
-In this context, the expression is evaluated once per parameter. A matching expression keeps the parameter for display, deletion, update, or import.
+In this context, the expression is evaluated once per parameter. A matching
+expression keeps the parameter in the command's selection.
+
+Diff and promotion commands evaluate the newer/source parameter state. For a
+removed parameter, they evaluate the older/target state instead. History uses
+the same newer-or-removed-side rule in the TUI.
 
 Available fields:
 
@@ -93,6 +110,11 @@ Available fields:
 | `default` | Current parameter default value only. Typed from Firebase `valueType`. |
 | `value` | Any current parameter value: default OR any conditional value. Typed from Firebase `valueType`. |
 | `conditionals` | Map of current parameter conditional values by condition name. Values are typed from Firebase `valueType`. |
+
+`draft diff` and `versions diff` currently expose an ungrouped changed
+parameter as `group == "default"`. Other parameter contexts, including
+`projects diff`, `projects promote`, and the TUI, use the root-group value
+described in the table.
 
 Examples:
 
@@ -171,10 +193,16 @@ Project context is used by:
 ```sh
 fbrcm projects list --expr '...'
 fbrcm projects update --expr '...'
+fbrcm projects forget --expr '...'
 fbrcm add --expr '...'
+fbrcm duplicate <source> <target> --expr '...'
 ```
 
 The expression is evaluated once per project. The command loads that project's Remote Config so project filters can inspect parameters too.
+
+`projects forget` is deliberately local: it evaluates against the cached client
+template and supplies an empty config context when no cache exists. Project-only
+expressions therefore still work without contacting Firebase.
 
 Available fields:
 

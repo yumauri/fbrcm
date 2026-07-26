@@ -1,6 +1,6 @@
 # fbrcm CLI
 
-`fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode.
+`fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode. See the [TUI guide](TUI.md) for the interactive workflow.
 
 ## Command Tree
 
@@ -213,6 +213,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --conditions
 │   │   ├── --cached
 │   │   ├── --json
+│   │   ├── --side-by-side
 │   │   └── --exit-code
 │   ├── export <project> <version>
 │   │   ├── --to <path>
@@ -313,6 +314,27 @@ FBRCM_CACHE_DIR
 FBRCM_PROFILE
 ```
 
+### Environment Variables
+
+| Variable | Behavior |
+| --- | --- |
+| `FBRCM_PROFILE` | Select an existing profile for this process. The root `--profile` flag takes precedence. |
+| `FBRCM_CONFIG_DIR` | Override the fbrcm config root. Takes precedence over `XDG_CONFIG_HOME` and the home-directory fallback. |
+| `FBRCM_CACHE_DIR` | Override the fbrcm cache root. Takes precedence over the operating system's user-cache directory. |
+| `FBRCM_OFFLINE` | Enable offline mode whenever the variable is defined, including as an empty string or `0`. If it is unset, network-capable commands perform a short, proxy-aware connectivity probe and may enable offline mode automatically. |
+| `FBRCM_LOG_LEVEL` | Set logging to `debug`, `info`, `warn`, `error`, `fatal`, or `silent`, case-insensitively. The default is `info`. |
+| `FBRCM_EDITOR` | Select the command used by `config edit`, after `--editor` and before `VISUAL` or `EDITOR`. Arguments are supported. |
+| `NO_COLOR` | Disable CLI, prompt, log, and TUI colors when set to a non-empty value. |
+| `COLUMNS` | Supply a positive terminal width for human-readable CLI output. Invalid values are ignored. |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Select an Application Default Credentials JSON file for gcloud identities and diagnostics. |
+| `XDG_CONFIG_HOME` | Supply the Unix config home when `FBRCM_CONFIG_DIR` is unset; fbrcm appends `fbrcm`. |
+| `XDG_CACHE_HOME` | Supply the Unix user-cache home where supported when `FBRCM_CACHE_DIR` is unset; fbrcm appends `fbrcm`. |
+| `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Configure Go's HTTP transport and startup connectivity probe. Lowercase forms are also honored. |
+
+`config edit` also consults `VISUAL`, `EDITOR`, and on Unix-like systems
+`SHELL`. Directory discovery follows the operating system and may use `HOME`,
+`USERPROFILE`, `LOCALAPPDATA`, or `APPDATA`.
+
 ### Filter Queries
 
 Flags named `--project` or `--filter` use mode-prefixed query strings:
@@ -373,7 +395,7 @@ Parameter-context commands also support `--search <text>`. It searches parameter
 
 ### Expression Filters
 
-`--expr` uses expr-lang and must evaluate to boolean. See [EXPR.md](/Users/vic/Dev/pets/fbrcm/EXPR.md) for full context fields and helper functions.
+`--expr` uses expr-lang and must evaluate to boolean. See [EXPR.md](EXPR.md) for full context fields and helper functions.
 
 Parameter-context commands:
 
@@ -384,6 +406,8 @@ update
 draft diff
 project import
 versions diff
+projects diff
+projects promote
 ```
 
 Condition-context commands:
@@ -592,7 +616,7 @@ Flags:
 --json                 print structured JSON
 ```
 
-Condition filters use the shared mode prefixes described under Filter Queries. Repeated filters are ORed. `--filter`, `--search`, and `--expr` are ANDed together. See [EXPR.md](/Users/vic/Dev/pets/fbrcm/EXPR.md) for condition context fields and examples.
+Condition filters use the shared mode prefixes described under Filter Queries. Repeated filters are ORed. `--filter`, `--search`, and `--expr` are ANDed together. See [EXPR.md](EXPR.md) for condition context fields and examples.
 
 Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Long expressions are cropped with an ellipsis. JSON output is a plain array of condition objects without repeated project/version/source context.
 

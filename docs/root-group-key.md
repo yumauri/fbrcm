@@ -1,77 +1,101 @@
 # Root group key representations
 
-Firebase Remote Config stores default (ungrouped) parameters at the top level of
-the `parameters` map. Grouped parameters live under `parameterGroups`. There is
-no named "root group" on the Firebase wire — the default bucket is implicit.
+Firebase Remote Config stores ungrouped parameters in the top-level
+`parameters` map. Grouped parameters live in `parameterGroups`. There is no
+named root group on the Firebase wire.
 
-fbrcm uses three distinct representations depending on the layer. They are defined
-in `core/rootgroup/rootgroup.go` and must not be conflated during refactors.
+fbrcm uses three representations for that implicit bucket. Their constants live
+in `core/rootgroup/rootgroup.go`.
 
 ## Constants
 
-| Constant | Value | Used where |
+| Constant | Value | Purpose |
 | --- | --- | --- |
-| `WireKey` | `""` (empty string) | Firebase JSON, draft slot keys, `rcmutate` group field for root params |
-| `TreeKey` | `"__default__"` | Parameters tree node identity, TUI navigation, internal tree maps |
-| `Label` | `"(root)"` | Human-facing label in UI and filter expressions |
+| `rootgroup.WireKey` | `""` | Firebase JSON, draft mutations, and Remote Config mutation slots |
+| `rootgroup.TreeKey` | `"__default__"` | Stable node identity in parameter and condition trees |
+| `rootgroup.Label` | `"(root)"` | Human-readable UI, diff, and expression label |
 
-## Wire format (`WireKey`)
+`core/rootgroup` currently contains these constants only. It does not provide
+generic `IsRoot` or `IsLabel` helpers.
 
-On the wire and in cached/draft JSON:
+## Wire representation
 
-- Root parameters appear in `parameters`, not inside `parameterGroups`.
-- Code passing a group key for a root parameter uses `""`.
-- Draft mutations and `rcmutate.Slot.Group` use empty string for the root bucket.
-
-Example (simplified):
+Root parameters appear directly under `parameters`:
 
 ```json
 {
   "parameters": {
-    "my_flag": { "defaultValue": { "value": "on" } }
+    "my_flag": {
+      "defaultValue": { "value": "on" }
+    }
   },
   "parameterGroups": {
     "experiments": {
-      "parameters": { "exp_flag": { "defaultValue": { "value": "off" } } }
+      "parameters": {
+        "exp_flag": {
+          "defaultValue": { "value": "off" }
+        }
+      }
     }
   }
 }
 ```
 
-Here `my_flag` is in the root group (`WireKey`); `exp_flag` belongs to group
+Here `my_flag` uses `WireKey`; `exp_flag` belongs to the real group
 `experiments`.
 
-## Tree and TUI (`TreeKey`)
+Draft mutation builders and `core/rc/mutate.Slot.Group` also use the empty
+string for an ungrouped parameter.
 
-The parameters tree (`core` `ParametersTree`, TUI parameters panel) assigns every
-group a stable node key. Real groups use their Firebase group name; the root bucket
-uses `TreeKey` (`__default__`) so it can be distinguished from an empty or missing
-name in UI state machines.
+## Tree representation
 
-Navigation, selection, and move/rename targets in the TUI refer to `TreeKey` for
-the default bucket.
+The parameter and condition trees need a stable, non-empty identity for their
+synthetic root node. They use `TreeKey` (`__default__`) internally while
+rendering `Label` (`(root)`) to users.
 
-## Display and filters (`Label`)
+TUI selection, navigation, and transient edit state may therefore carry
+`TreeKey`. They must normalize it before constructing a wire-level mutation.
 
-Users see `(root)` as the group name for ungrouped parameters. Filter expressions
-that match on group name accept `(root)` as the root group value (see `IsLabel`).
+## Expression and display representation
 
-## Conversion rules
+The expression environment represents the root group with an internal sentinel.
+Equality treats that sentinel as equal to both `nil` and `"(root)"`:
 
-When translating between layers:
+```expr
+group == nil
+group == "(root)"
+```
 
-| From | To | Rule |
-| --- | --- | --- |
-| Wire / draft | Tree / TUI | Empty group → `TreeKey` |
-| Tree / TUI | Wire / draft | `TreeKey` or `Label` → `WireKey` |
-| Filter input | Internal | `(root)` → `WireKey` via `NormalizeGroupKey` in `core/draft` |
+Diffs and human-readable tables render `(root)`.
 
-`IsRoot(value)` returns true for any of `WireKey`, `TreeKey`, or `Label`. Use it
-when accepting user or UI input that may use any representation.
+The current `draft diff` and `versions diff` expression paths are an exception:
+they expose an ungrouped changed parameter as the literal `"default"`. This
+behavior is documented in [EXPR.md](EXPR.md#parameter-context).
+
+## Conversions
+
+| Boundary | Current conversion |
+| --- | --- |
+| Firebase JSON or mutation slot | Root stays `WireKey` (`""`) |
+| Wire model to parameter tree | Root becomes `TreeKey` |
+| Parameter tree to UI | `TreeKey` is rendered as `Label` |
+| TUI/draft mutation input to wire | `draft.NormalizeGroupKey` converts `TreeKey` to `WireKey` |
+| Expression input to wire lookup | `"(root)"` maps to `WireKey` inside `core/filter` |
+
+`draft.NormalizeGroupKey` intentionally converts only `TreeKey`; it leaves
+`Label` unchanged. Callers that accept human labels must perform that
+translation at their own boundary rather than assuming the draft helper accepts
+all representations.
+
+The `core.NormalizeRemoteConfigGroupKey` facade delegates to
+`draft.NormalizeGroupKey` for TUI callers.
 
 ## Related code
 
-- `core/rootgroup/rootgroup.go` — canonical constants and helpers
-- `core/draft/normalize.go` — `NormalizeGroupKey` for mutation paths
-- `core/rc/mutate` — slot collection keyed by group + parameter
-- TUI parameters panel — renders root group with `Label`, navigates with `TreeKey`
+- `core/rootgroup/rootgroup.go` — canonical constants
+- `core/parameters/tree.go` — synthetic root tree node
+- `core/conditions/tree.go` — root-group condition usages
+- `core/draft/normalize.go` — `TreeKey` to `WireKey`
+- `core/rc/mutate/slot.go` — wire-level parameter slots
+- `core/filter/expr_env.go` and `expr_compare_equal.go` — expression sentinel
+- `core/rc/diff/format.go` — human-facing root label

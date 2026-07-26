@@ -22,7 +22,7 @@
 
 ## CLI documentation
 
-- Update `CLI.md` in the same change whenever the CLI interface surface changes, including commands, subcommands, positional arguments, flags, defaults, output contracts, confirmations, or other user-visible behavior.
+- Update `docs/CLI.md` in the same change whenever the CLI interface surface changes, including commands, subcommands, positional arguments, flags, defaults, output contracts, confirmations, or other user-visible behavior.
 - Keep both the command tree and the detailed command sections synchronized with the implemented Cobra command structure and its tests.
 
 ## User-visible wording
