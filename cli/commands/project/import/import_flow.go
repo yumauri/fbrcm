@@ -160,7 +160,12 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 			fmt.Sprintf("%s %s?", action, project.ProjectID),
 			shared.ConfirmationOptions{},
 		)
-		confirm.Input = cmd.InOrStdin()
+		promptInput, closePromptInput, err := shared.OpenPromptInput(cmd.InOrStdin())
+		if err != nil {
+			return err
+		}
+		defer closePromptInput()
+		confirm.Input = promptInput
 		confirm.Output = cmd.ErrOrStderr()
 		ok, err := confirm.RunPrompt()
 		if err != nil {
@@ -326,7 +331,12 @@ func chooseImportStrategy(cmd *cobra.Command, opts importOptions) (importStrateg
 		prompt.UnselectedChoiceStyle = styleImportStrategyUnselectedChoice
 		prompt.FinalChoiceStyle = styleImportStrategyFinalChoice
 		prompt.ExtendedTemplateFuncs["SelectedMarker"] = styleImportStrategySelectedMarker
-		prompt.Input = cmd.InOrStdin()
+		promptInput, closePromptInput, err := shared.OpenPromptInput(cmd.InOrStdin())
+		if err != nil {
+			return "", err
+		}
+		defer closePromptInput()
+		prompt.Input = promptInput
 		prompt.Output = cmd.ErrOrStderr()
 		choice, err := prompt.RunPrompt()
 		if err != nil {

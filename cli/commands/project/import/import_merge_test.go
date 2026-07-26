@@ -1,6 +1,8 @@
 package importpkg
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -49,6 +51,20 @@ func TestMergeRemoteConfigsUsesImportConflicts(t *testing.T) {
 	}
 	if got := finalCfg.Parameters["root_new"].DefaultValue.Value; got != "new" {
 		t.Fatalf("root_new value = %q, want new import param", got)
+	}
+}
+
+func TestResolveConflictCanChangeChoice(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("\x1b[B\r"))
+	cmd.SetErr(&bytes.Buffer{})
+
+	resolution, err := resolveConflict(cmd, importOptions{}, "flag", "current", "import")
+	if err != nil {
+		t.Fatalf("resolveConflict returned error: %v", err)
+	}
+	if resolution != conflictResolutionCurrent {
+		t.Fatalf("resolution = %q, want %q", resolution, conflictResolutionCurrent)
 	}
 }
 

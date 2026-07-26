@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/erikgeiser/promptkit"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/core"
@@ -87,6 +89,31 @@ func TestChooseImportStrategyFlags(t *testing.T) {
 	merge, err := chooseImportStrategy(&cobra.Command{}, importOptions{merge: true})
 	if err != nil || merge != importStrategyMerge {
 		t.Fatalf("merge strategy = %q err=%v", merge, err)
+	}
+}
+
+func TestChooseImportStrategyCanChangeChoice(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("\x1b[B\r"))
+	cmd.SetErr(&bytes.Buffer{})
+
+	strategy, err := chooseImportStrategy(cmd, importOptions{})
+	if err != nil {
+		t.Fatalf("chooseImportStrategy returned error: %v", err)
+	}
+	if strategy != importStrategyOverride {
+		t.Fatalf("strategy = %q, want %q", strategy, importStrategyOverride)
+	}
+}
+
+func TestChooseImportStrategyCanAbort(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetIn(strings.NewReader("\x03"))
+	cmd.SetErr(&bytes.Buffer{})
+
+	_, err := chooseImportStrategy(cmd, importOptions{})
+	if !errors.Is(err, promptkit.ErrAborted) {
+		t.Fatalf("chooseImportStrategy error = %v, want %v", err, promptkit.ErrAborted)
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -44,4 +45,24 @@ func StdinAvailable(in io.Reader) bool {
 		return false
 	}
 	return (info.Mode() & os.ModeCharDevice) == 0
+}
+
+var openPromptTTY = tea.OpenTTY
+
+// OpenPromptInput returns the command input for interactive prompts. When stdin
+// is redirected, it opens the controlling terminal so prompts do not try to
+// read from the redirected data stream.
+func OpenPromptInput(in io.Reader) (io.Reader, func(), error) {
+	if !StdinAvailable(in) {
+		return in, func() {}, nil
+	}
+
+	ttyIn, ttyOut, err := openPromptTTY()
+	if err != nil {
+		return nil, func() {}, fmt.Errorf("open terminal for prompt: %w", err)
+	}
+	return ttyIn, func() {
+		_ = ttyIn.Close()
+		_ = ttyOut.Close()
+	}, nil
 }

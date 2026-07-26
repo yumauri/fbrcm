@@ -6,6 +6,7 @@ import (
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/importer"
@@ -68,7 +69,12 @@ func resolveConflict(cmd *cobra.Command, opts importOptions, label string, curre
 	prompt.SelectedChoiceStyle = styleConflictSelectedChoice
 	prompt.UnselectedChoiceStyle = styleConflictUnselectedChoice
 	prompt.FinalChoiceStyle = styleConflictFinalChoice
-	prompt.Input = cmd.InOrStdin()
+	promptInput, closePromptInput, err := shared.OpenPromptInput(cmd.InOrStdin())
+	if err != nil {
+		return "", err
+	}
+	defer closePromptInput()
+	prompt.Input = promptInput
 	prompt.Output = cmd.ErrOrStderr()
 	choice, err := prompt.RunPrompt()
 	if err != nil {
