@@ -204,6 +204,17 @@ the fbrcm cache can therefore remove the only remaining local copy of an old
 template. Drafts are separate and are deleted only through explicit draft or
 project cleanup operations.
 
+## Acknowledgments
+
+fbrcm was inspired by Dmitrii Andriianov's
+[RemoteConfigModifier](https://github.com/andriyanovDS/RemoteConfigModifier).
+I discovered it while looking for a tool that could batch-update Firebase
+Remote Config across several projects, and it gave me the motivation to build
+fbrcm.
+
+RemoteConfigModifier is a smaller Rust project with a more focused feature set.
+fbrcm is an independent implementation and does not reuse any of its code.
+
 ## License
 
 [MIT](LICENSE)
