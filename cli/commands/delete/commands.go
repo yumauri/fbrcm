@@ -39,7 +39,7 @@ func New(svc *core.Core) *cobra.Command {
 }
 
 func addDeleteFlags(cmd *cobra.Command) {
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
 	shared.AddDryRunFlag(cmd)

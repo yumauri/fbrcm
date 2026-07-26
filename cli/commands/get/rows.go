@@ -127,7 +127,7 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 
 // singleExactProjectFilter reports whether table output can omit project columns.
 func singleExactProjectFilter(rawFilters []string) bool {
-	return shared.SingleExactFilter(rawFilters)
+	return shared.SingleExactProjectTargetFilter(rawFilters)
 }
 
 func filterParameterRows(rows []parameterRow, rawFilters []string) []parameterRow {
@@ -146,14 +146,11 @@ func filterParameterRows(rows []parameterRow, rawFilters []string) []parameterRo
 }
 
 func filterParameterRowsByProject(rows []parameterRow, rawFilters []string) []parameterRow {
-	if len(shared.ParseFilters(rawFilters)) == 0 {
-		return rows
-	}
-
 	filtered := make([]parameterRow, 0, len(rows))
 	for _, row := range rows {
 		project := core.Project{Name: row.Project, ProjectID: row.ProjectID}
-		if len(shared.FilterProjects([]core.Project{project}, rawFilters)) > 0 {
+		match, err := shared.MatchProjectTarget(project, rawFilters)
+		if err == nil && match {
 			filtered = append(filtered, row)
 		}
 	}

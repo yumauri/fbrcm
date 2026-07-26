@@ -254,6 +254,9 @@ func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 	if len(loaded) != 1 || loaded[0].ProjectID != "demo" || !loaded[0].Disabled {
 		t.Fatalf("LoadProjects = %+v, want demo project", loaded)
 	}
+	if got := loaded[0].TemplateKinds(); len(got) != 1 || got[0] != "client" {
+		t.Fatalf("default template kinds = %v, want client", got)
+	}
 }
 
 func TestLoadParametersCacheMissingCorruptAndRoundTrip(t *testing.T) {
@@ -364,6 +367,23 @@ func TestSaveParametersCacheSnapshotDoesNotMoveCurrentPointer(t *testing.T) {
 	}
 	if _, err := LoadParametersCacheVersion("demo", "3"); err != nil {
 		t.Fatalf("historical snapshot missing: %v", err)
+	}
+}
+
+func TestServerTemplateCacheAndDraftPathsUseTargetPrefix(t *testing.T) {
+	setupTestDirs(t)
+
+	if got, want := GetParametersCacheVersionPath("server@demo", "3"), filepath.Join(GetParametersCacheDirPath(), "server@demo.3.json"); got != want {
+		t.Fatalf("server cache path = %q, want %q", got, want)
+	}
+	if got, want := GetParametersCacheVersionPath("demo", "3"), filepath.Join(GetParametersCacheDirPath(), "demo.3.json"); got != want {
+		t.Fatalf("client cache path = %q, want %q", got, want)
+	}
+	if got, want := GetDraftPath("server@demo"), filepath.Join(GetDraftsDirPath(), "server@demo.json"); got != want {
+		t.Fatalf("server draft path = %q, want %q", got, want)
+	}
+	if got, want := GetDraftPath("demo"), filepath.Join(GetDraftsDirPath(), "demo.json"); got != want {
+		t.Fatalf("client draft path = %q, want %q", got, want)
 	}
 }
 

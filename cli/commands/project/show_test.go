@@ -41,6 +41,8 @@ func TestShowCommandPrintsProjectDetailsAndAuthIdentities(t *testing.T) {
 		"State: ACTIVE",
 		"Selected auth: main",
 		"Auth identities: main, work",
+		"Enabled templates: client",
+		"Primary template: client",
 		"Updated at: " + shared.FormatDateTime(project.UpdatedAt),
 		"Synced at: " + shared.FormatDateTime(project.SyncedAt),
 		"ETag: etag-value",
@@ -77,5 +79,8 @@ func TestShowCommandJSONUsesProjectListContract(t *testing.T) {
 	}
 	if got.URL != firebase.RemoteConfigConsoleURL(project.ProjectID) {
 		t.Fatalf("show URL = %q", got.URL)
+	}
+	if len(got.Templates) != 1 || got.Templates[0] != "client" || got.PrimaryTemplate != "client" {
+		t.Fatalf("show templates = %v/%q, want client/client", got.Templates, got.PrimaryTemplate)
 	}
 }

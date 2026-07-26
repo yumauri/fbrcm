@@ -90,3 +90,22 @@ func TestStyledOptionKeepsForegroundAndBecomesBoldWhenSelected(t *testing.T) {
 		t.Fatal("selected styled option is not bold")
 	}
 }
+
+func TestOptionRowsSelectAndReportDoubleClick(t *testing.T) {
+	m := New().OpenOptions(4, 5, "Group", []Option{
+		{Key: "alpha", Label: "Alpha"},
+		{Key: "beta", Label: "Beta"},
+	}, 0)
+	x, y := m.ListPosition()
+	now := time.Unix(100, 0)
+	if _, double, hit := m.SelectAt(x+1, y+2, now); !hit || double {
+		t.Fatalf("single click = hit:%v double:%v", hit, double)
+	}
+	if option, _ := m.Current(); option.Key != "beta" {
+		t.Fatalf("selected option = %q, want beta", option.Key)
+	}
+	x, y = m.ListPosition()
+	if _, double, hit := m.SelectAt(x+1, y+2, now.Add(time.Millisecond)); !hit || !double {
+		t.Fatalf("second click = hit:%v double:%v", hit, double)
+	}
+}

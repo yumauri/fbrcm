@@ -151,7 +151,7 @@ func newValidateCommand(svc *core.Core) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			project, err := shared.ResolveProjectArg(ctx, cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -220,7 +220,7 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
-	project, err := shared.ResolveProjectArg(ctx, cmd, svc, projectQuery)
+	project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, projectQuery)
 	if err != nil {
 		return err
 	}

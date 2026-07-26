@@ -2,20 +2,23 @@ package boolpicker
 
 import (
 	"strings"
+	"time"
 
 	"charm.land/lipgloss/v2"
 
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 type Model struct {
-	x        int
-	y        int
-	values   []string
-	selected int
-	open     bool
+	x         int
+	y         int
+	values    []string
+	selected  int
+	open      bool
+	lastClick mouseutil.ClickTracker
 }
 
 func New() Model {
@@ -55,6 +58,19 @@ func (m *Model) Move(delta int) {
 		return
 	}
 	m.selected = (m.selected + delta + len(m.values)) % len(m.values)
+}
+
+func (m *Model) SelectAt(x, y int, at time.Time) (bool, bool) {
+	popupX, popupY := m.Position()
+	if !m.open || x < popupX || x >= popupX+lipgloss.Width(m.View()) {
+		return false, false
+	}
+	index := y - popupY - 1
+	if index < 0 || index >= len(m.values) {
+		return false, false
+	}
+	m.selected = index
+	return m.lastClick.Register(0, index, at), true
 }
 
 func (m Model) Current() (bool, bool) {

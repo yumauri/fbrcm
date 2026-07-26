@@ -138,10 +138,7 @@ func renderSetupPanel(title string, body []string, innerWidth int) string {
 
 func renderSetupTabsPanel(accountsSelected, focused bool, body []string, innerWidth int) string {
 	frameInner := viewutil.PopupInnerWidth(innerWidth)
-	accountKey, accountTitle := setupTabTitle(tuiconfig.ActionAccounts, "A", "Accounts")
-	profileKey, profileTitle := setupTabTitle(tuiconfig.ActionProfiles, "P", "Profiles")
-	accounts, accountsWidth := styles.PanelHeaderTab(accountKey, accountTitle, accountsSelected, focused, max(frameInner-1, 0))
-	profiles, profilesWidth := styles.PanelHeaderTab(profileKey, profileTitle, !accountsSelected, focused, max(frameInner-accountsWidth-3, 0))
+	accounts, accountsWidth, profiles, profilesWidth := setupTabTitles(accountsSelected, focused, frameInner)
 	fill := max(frameInner-accountsWidth-profilesWidth-3, 0)
 	lines := []string{cardBorderStyle.Render("╭─") + accounts + cardBorderStyle.Render("──") + profiles + cardBorderStyle.Render(strings.Repeat("─", fill)+"╮")}
 	for range viewutil.PopupPaddingTop {
@@ -152,6 +149,14 @@ func renderSetupTabsPanel(accountsSelected, focused bool, body []string, innerWi
 	}
 	lines = append(lines, cardBorderStyle.Render("╰"+strings.Repeat("─", frameInner)+"╯"))
 	return strings.Join(lines, "\n")
+}
+
+func setupTabTitles(accountsSelected, focused bool, frameInner int) (string, int, string, int) {
+	accountKey, accountTitle := setupTabTitle(tuiconfig.ActionAccounts, "A", "Accounts")
+	profileKey, profileTitle := setupTabTitle(tuiconfig.ActionProfiles, "P", "Profiles")
+	accounts, accountsWidth := styles.PanelHeaderTab(accountKey, accountTitle, accountsSelected, focused, max(frameInner-1, 0))
+	profiles, profilesWidth := styles.PanelHeaderTab(profileKey, profileTitle, !accountsSelected, focused, max(frameInner-accountsWidth-3, 0))
+	return accounts, accountsWidth, profiles, profilesWidth
 }
 
 func setupTabTitle(action tuiconfig.Action, defaultKey, title string) (string, string) {

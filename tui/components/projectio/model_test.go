@@ -62,6 +62,24 @@ func TestExportPathProducesRequest(t *testing.T) {
 	}
 }
 
+func TestExportSourceRowsSelectThenContinueOnDoubleClick(t *testing.T) {
+	m, _ := New().SetBounds(0, 0, 90, 24).OpenExport(core.Project{ProjectID: "demo"}, true)
+	cardX, cardY := m.Position()
+	click := tea.MouseClickMsg{
+		X:      cardX + 2,
+		Y:      cardY + 1 + viewutil.PopupPaddingTop + 5,
+		Button: tea.MouseLeft,
+	}
+	m, cmd := m.Update(click)
+	if cmd != nil || !m.exportDraft || m.phase != phaseExportSource {
+		t.Fatalf("single source click = draft:%v phase:%v cmd:%v", m.exportDraft, m.phase, cmd)
+	}
+	m, cmd = m.Update(click)
+	if cmd == nil || m.phase != phaseExportPath {
+		t.Fatalf("double source click = phase:%v cmd:%v", m.phase, cmd)
+	}
+}
+
 func TestDefaultsFormatAndPathProduceRequest(t *testing.T) {
 	project := core.Project{Name: "Demo", ProjectID: "demo"}
 	m, _ := New().SetBounds(0, 0, 90, 24).OpenDefaults(project)

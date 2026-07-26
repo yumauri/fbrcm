@@ -37,6 +37,9 @@ func TestProjectsJSONCopiesFieldsAndAddsURL(t *testing.T) {
 	if row.URL != firebase.RemoteConfigConsoleURL("project-a") {
 		t.Fatalf("url = %q, want Remote Config console URL", row.URL)
 	}
+	if len(row.Templates) != 1 || row.Templates[0] != "client" || row.PrimaryTemplate != "client" {
+		t.Fatalf("templates = %v/%q, want client/client", row.Templates, row.PrimaryTemplate)
+	}
 	projects[0].DiscoveredBy[0] = "changed"
 	if row.DiscoveredBy[0] != "auth-main" {
 		t.Fatalf("DiscoveredBy was not copied: %#v", row.DiscoveredBy)

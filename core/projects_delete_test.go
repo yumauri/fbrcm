@@ -56,6 +56,25 @@ func TestDeleteProjectIDsRemovesOnlySelectedLocalData(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if err := config.SaveParametersCache("server@alpha", &config.ParametersCache{
+		ETag:         "etag-server-3",
+		CachedAt:     now,
+		RemoteConfig: json.RawMessage(`{"version":{"versionNumber":"3"}}`),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveDraft(&config.Draft{
+		FormatVersion:    config.DraftFormatVersion,
+		ProjectID:        "server@alpha",
+		BaseVersion:      "3",
+		BaseETag:         "etag-server-3",
+		CreatedAt:        now,
+		UpdatedAt:        now,
+		BaseRemoteConfig: json.RawMessage(`{}`),
+		RemoteConfig:     json.RawMessage(`{}`),
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	deleted, err := svc.DeleteProjectIDs([]string{"alpha"})
 	if err != nil {
@@ -73,6 +92,9 @@ func TestDeleteProjectIDsRemovesOnlySelectedLocalData(t *testing.T) {
 		config.GetParametersCacheVersionPath("alpha", "1"),
 		config.GetParametersCacheVersionPath("alpha", "2"),
 		config.GetDraftPath("alpha"),
+		config.GetParametersCachePath("server@alpha"),
+		config.GetParametersCacheVersionPath("server@alpha", "3"),
+		config.GetDraftPath("server@alpha"),
 	} {
 		if _, err := os.Lstat(path); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("deleted path %s still exists or returned err=%v", path, err)

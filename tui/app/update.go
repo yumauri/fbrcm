@@ -5,6 +5,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
 	logscmp "github.com/yumauri/fbrcm/tui/components/logs"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
 	"github.com/yumauri/fbrcm/tui/components/setup"
@@ -16,6 +18,14 @@ import (
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
 		return m, tea.Quit
+	}
+	switch msg := msg.(type) {
+	case core.OAuthAuthorizationEvent:
+		return m.updateOAuthAuthorizationEvent(msg)
+	case oauthLinkActionCompletedMsg:
+		return m.updateOAuthLinkAction(msg)
+	case oauthAuthorizationCanceledMsg:
+		return m.cancelOAuthAuthorization(msg)
 	}
 	if logscmp.IsBackgroundMessage(msg) {
 		var cmd tea.Cmd
@@ -69,6 +79,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case profileRenameCompletedMsg:
 		return m.updateProfileRenameCompleted(msg)
 	}
+	if m.oauthDialog.IsOpen() {
+		if size, ok := msg.(tea.WindowSizeMsg); ok {
+			m.updateWindowSize(size)
+			return m, nil
+		}
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionCancel, keyMsg.String()) {
+			if m.oauthSession != nil {
+				return m.cancelOAuthAuthorization(oauthAuthorizationCanceledMsg{flowID: m.oauthSession.flowID})
+			}
+			m.oauthDialog = m.oauthDialog.Close()
+			return m, nil
+		}
+		var cmd tea.Cmd
+		m.oauthDialog, cmd = m.oauthDialog.Update(msg)
+		return m, cmd
+	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && !m.promote.TargetPickerOpen() && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionHelp, keyMsg.String()) && (m.helpPalette.IsOpen() || m.helpShortcutAvailable(keyMsg.String())) {
 		if m.helpPalette.IsOpen() {
 			m.helpPalette = m.helpPalette.Close()
@@ -102,8 +128,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if size, ok := msg.(tea.WindowSizeMsg); ok {
 			m.updateWindowSize(size)
 		}
+		if click, ok := msg.(tea.MouseClickMsg); ok && click.Mouse().Button == tea.MouseLeft {
+			var cmd tea.Cmd
+			var handled bool
+			if m.profileBadgeAt(click.Mouse().X, click.Mouse().Y) {
+				m.setup, cmd, handled = m.setup.ActivateProfilesTab()
+			} else {
+				m.setup, cmd, handled = m.setup.UpdateTabClick(m.width, m.height, click)
+				if !handled {
+					m.setup, cmd, handled = m.setup.UpdateSelectionClick(m.width, m.height, click)
+				}
+			}
+			if handled {
+				m.profileName = config.GetActiveProfileName()
+				return m, cmd
+			}
+		}
 		var cmd tea.Cmd
 		m.setup, cmd = m.setup.Update(msg)
+		m.profileName = config.GetActiveProfileName()
 		return m, cmd
 	}
 	if m.promote.IsOpen() {
@@ -208,6 +251,7 @@ func (m *Model) applyLayout() {
 		m.promote = m.promote.SetTargetRow(row)
 	}
 	m.dialog = m.dialog.SetBounds(0, 0, m.width, m.height)
+	m.oauthDialog = m.oauthDialog.SetBounds(0, 0, m.width, m.height)
 	m.authPicker = m.authPicker.SetBounds(0, 0, m.width, m.height)
 	m.projectIO = m.projectIO.SetBounds(0, 0, m.width, m.height)
 	detailsWidth := m.detailsWidthForLayout(layout)

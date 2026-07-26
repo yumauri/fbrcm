@@ -66,7 +66,8 @@ func newListCommand(svc *core.Core) *cobra.Command {
 			if jsonOut {
 				return shared.WriteJSON(cmd, groupsJSON(entries))
 			}
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderGroupsTable(entries, !shared.SingleExactFilter(projectFilters)))
+			oneExactTarget := shared.SingleExactProjectTargetFilter(projectFilters) && len(loaded) == 1
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderGroupsTable(entries, !oneExactTarget))
 			return nil
 		},
 	}
@@ -77,7 +78,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 }
 
 func addReadFlags(cmd *cobra.Command) {
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().Bool("update", false, "Revalidate cached Remote Config before printing")
 	cmd.Flags().Bool("json", false, "Print groups as JSON")
 }
@@ -92,7 +93,10 @@ func loadProjects(cmd *cobra.Command, svc *core.Core) ([]loadedGroups, error) {
 	if err != nil {
 		return nil, err
 	}
-	projects = shared.FilterProjects(projects, projectFilters)
+	projects, err = shared.FilterProjectTargets(projects, projectFilters)
+	if err != nil {
+		return nil, err
+	}
 	strfold.SortProjects(projects, func(project core.Project) string { return project.Name }, func(project core.Project) string { return project.ProjectID })
 	update, _ := cmd.Flags().GetBool("update")
 	loaded := make([]loadedGroups, 0, len(projects))

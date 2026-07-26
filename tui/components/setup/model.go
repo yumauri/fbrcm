@@ -14,6 +14,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -153,6 +154,7 @@ type Model struct {
 	identity   textinput.Model
 	profileIn  textinput.Model
 	spinner    spinner.Model
+	lastClick  mouseutil.ClickTracker
 }
 
 // New creates startup setup. A nil service keeps setup disabled for isolated
@@ -314,9 +316,7 @@ func (m Model) ProfileRenamePosition(width, height int) (ProfileRenameAnchor, bo
 		return ProfileRenameAnchor{}, false
 	}
 	contentWidth := min(max(width-15, 45), 69)
-	popup := m.PopupView(width, height)
-	popupX := max((width-lipgloss.Width(popup))/2, 0)
-	popupY := max((height-lipgloss.Height(popup))/2, 0)
+	popupX, popupY := m.popupPosition(width, height)
 	return ProfileRenameAnchor{
 		X:        popupX + 1 + viewutil.PopupPaddingLeft,
 		Y:        popupY + 2 + viewutil.PopupPaddingTop + m.cursor,
@@ -324,6 +324,11 @@ func (m Model) ProfileRenamePosition(width, height int) (ProfileRenameAnchor, bo
 		MaxWidth: max(contentWidth-3, 1),
 		Profile:  profile,
 	}, true
+}
+
+func (m Model) popupPosition(width, height int) (int, int) {
+	popup := m.PopupView(width, height)
+	return max((width-lipgloss.Width(popup))/2, 0), max((height-lipgloss.Height(popup))/2, 0)
 }
 
 func (m Model) selectedProfile() string {

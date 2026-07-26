@@ -1,6 +1,8 @@
 package conditions
 
 import (
+	"time"
+
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
@@ -129,9 +131,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			return m, m.copyCurrentPathCmd()
 		}
 	case tea.MouseClickMsg:
+		if msg.Mouse().Button != tea.MouseLeft {
+			break
+		}
 		if index, ok := m.nodeAtMouse(msg.Mouse().X, msg.Mouse().Y); ok {
 			m.cursor = index
 			m.ensureCursorVisible()
+			if m.lastClick.Register(0, index, time.Now()) {
+				return m, m.selectionChangedCmd(true)
+			}
 			return m, m.selectionChangedCmd(false)
 		}
 	case tea.MouseWheelMsg:

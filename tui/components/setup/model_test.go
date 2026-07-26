@@ -172,6 +172,74 @@ func TestProfileOverridePinsInteractiveProfileSelection(t *testing.T) {
 	}
 }
 
+func TestAccountsAndProfilesHeaderTitlesSwitchTabsOnClick(t *testing.T) {
+	m := checkingTestModel(false)
+	m, _ = m.Update(inspectedMsg{state: core.StartupState{
+		Profile:  "default",
+		Profiles: []string{"default", "work"},
+		Auth:     []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}},
+	}})
+	if m.mode != modeAccounts {
+		t.Fatalf("initial mode = %v, want accounts", m.mode)
+	}
+
+	const width, height = 90, 28
+	popupX, popupY := m.popupPosition(width, height)
+	contentWidth := min(max(width-15, 45), 69)
+	frameInner := viewutil.PopupInnerWidth(contentWidth)
+	_, accountsWidth, _, _ := setupTabTitles(true, true, frameInner)
+
+	var handled bool
+	m, _, handled = m.UpdateTabClick(width, height, tea.MouseClickMsg{
+		X:      popupX + 4 + accountsWidth,
+		Y:      popupY,
+		Button: tea.MouseLeft,
+	})
+	if !handled || m.mode != modeProfiles {
+		t.Fatalf("Profiles title click = handled:%v mode:%v", handled, m.mode)
+	}
+
+	popupX, popupY = m.popupPosition(width, height)
+	m.cursor = len(m.profiles)
+	_ = m.profileIn.Focus()
+	m, _, handled = m.UpdateTabClick(width, height, tea.MouseClickMsg{
+		X:      popupX + 2,
+		Y:      popupY,
+		Button: tea.MouseLeft,
+	})
+	if !handled || m.mode != modeAccounts || m.profileIn.Focused() {
+		t.Fatalf("Accounts title click = handled:%v mode:%v input focused:%v", handled, m.mode, m.profileIn.Focused())
+	}
+}
+
+func TestProfileRowsSelectAndSubmitOnMouseClicks(t *testing.T) {
+	m := checkingTestModel(false)
+	m, _ = m.Update(inspectedMsg{state: core.StartupState{
+		Profile:  "default",
+		Profiles: []string{"default", "work"},
+		Auth:     []config.AuthEntry{{ID: "main", Type: config.AuthTypeGCloud}},
+	}})
+	m.mode = modeProfiles
+	m.cursor = 0
+
+	const width, height = 90, 28
+	popupX, popupY := m.popupPosition(width, height)
+	click := tea.MouseClickMsg{
+		X:      popupX + 1 + viewutil.PopupPaddingLeft,
+		Y:      popupY + 1 + viewutil.PopupPaddingTop + 3,
+		Button: tea.MouseLeft,
+	}
+	var handled bool
+	m, cmd, handled := m.UpdateSelectionClick(width, height, click)
+	if !handled || cmd != nil || m.cursor != 1 || m.mode != modeProfiles {
+		t.Fatalf("single profile click = handled:%v cursor:%d mode:%v cmd:%v", handled, m.cursor, m.mode, cmd)
+	}
+	m, cmd, handled = m.UpdateSelectionClick(width, height, click)
+	if !handled || cmd == nil || m.mode != modeSwitching || m.profileTo != "work" {
+		t.Fatalf("double profile click = handled:%v mode:%v target:%q cmd:%v", handled, m.mode, m.profileTo, cmd)
+	}
+}
+
 func TestSetupQEmitsGuardedQuitRequest(t *testing.T) {
 	m := checkingTestModel(false)
 	m.mode = modeAccounts

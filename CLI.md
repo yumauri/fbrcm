@@ -167,6 +167,12 @@ fbrcm [--help] [--version] [--profile <name>]
 │
 ├── project
 │   ├── show <project> [--update] [--json]
+│   ├── templates
+│   │   ├── show <project> [--json]
+│   │   └── set <project>
+│   │       ├── --templates client|server|client,server
+│   │       ├── --primary client|server
+│   │       └── --json
 │   ├── open <project>
 │   ├── defaults <project> [--format json|xml|plist] [--to <path>] [--yes|-y]
 │   ├── export <project> [--to <path>] [--yes|-y]
@@ -320,9 +326,38 @@ Flags named `--project` or `--filter` use mode-prefixed query strings:
 
 Project filters match project display name or project ID. Parameter filters match parameter key. `--project` and `--filter` may be repeated; repeated values are ORed and must be passed as separate flags.
 
+### Client and Server Template Targets
+
+Remote Config commands accept a template target wherever their command syntax shows a Remote Config `<project>` or a `--project` filter:
+
+```text
+project-id          configured template selection; implicit form
+client@project-id   client template; explicit alias
+server@project-id   server template in the firebase-server namespace
+```
+
+The prefix comes before a filter mode. For example, `-p 'server@=api-prod'` selects the server template of exactly `api-prod`, while `-p 'client@^mobile-'` selects client templates whose project name or ID starts with `mobile-`. Repeated flags can mix client and server targets in one invocation.
+
+Each cached project stores its enabled template selections and one primary template. New and existing projects default to client-only. An unqualified bulk filter, or no `--project` filter, expands every matched project to its configured enabled templates. An unqualified positional `<project>` selects that project's primary template. Explicit `client@` and `server@` prefixes always select exactly that template, independently of the saved selections.
+
+The target syntax applies to `add`, `get`, `update`, `delete`, `duplicate`, and `groups`; all `conditions` and `versions` commands; `draft` commands; `project export`, `project import`, and `project defaults`; and the source and destination of `projects diff` and `projects promote`.
+
+Project metadata commands remain project-scoped rather than template-scoped. In particular, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix.
+
+Client targets are canonicalized to the unqualified project ID, so `project-id` and `client@project-id` share exactly the same cache, version snapshots, and draft. Server targets retain their prefix and use separate local files:
+
+```text
+$(fbrcm cache path)/project-id.3.json          client template version 3
+$(fbrcm cache path)/server@project-id.3.json   server template version 3
+$(fbrcm draft path)/project-id.json            client draft
+$(fbrcm draft path)/server@project-id.json     server draft
+```
+
+Client and server templates have independent Firebase histories. CLI output uses the canonical target ID: unqualified for client templates and `server@project-id` for server templates.
+
 ### Positional Project Resolution
 
-Commands that accept a positional `<project>` argument resolve it in this order:
+Template-aware commands first parse the optional `client@` or `server@` prefix, then resolve the remaining positional `<project>` in this order:
 
 1. Exact case-insensitive project ID.
 2. Exact case-insensitive project display name.
@@ -330,7 +365,7 @@ Commands that accept a positional `<project>` argument resolve it in this order:
 
 A single match is selected. Multiple exact-name or substring matches print only the ambiguous projects and return an error. No match prints the known-project table and returns an error. Exact ID always wins, including when another project's display name has the same text.
 
-Draft commands resolve only locally stored drafts and never synchronize projects as a side effect. An exact case-insensitive draft project ID wins; otherwise the query must uniquely match the locally known project ID or display name. This also permits `show --raw` and `discard` for drafts whose project is no longer present in the projects cache.
+Draft commands resolve only locally stored drafts and never synchronize projects as a side effect. An explicit prefix selects that template kind. An unqualified query selects the configured primary template when the project is still registered, and falls back to the client template for an unregistered project. The query must uniquely match the locally known project ID or display name. This also permits `show --raw` and `discard` for drafts whose project is no longer present in the projects cache.
 
 ### Parameter Search
 
@@ -371,7 +406,7 @@ duplicate
 
 `get`, `add`, `update`, and `delete` switch to stdin mode when stdin is piped. In stdin mode, command reads Firebase Remote Config JSON from stdin and writes modified JSON or query output to stdout. Remote Firebase writes are not performed. These commands also accept an fbrcm parameters cache JSON file and read its internal `remote_config` field.
 
-`get` also accepts a directory passed as stdin. It reads top-level `.json` files from that directory, accepts raw Remote Config JSON or fbrcm cache JSON in each file, and treats each file as a project. Project ID is the file name without extension. Project name is built from that file name by splitting on `-` and `_`, then capitalizing words.
+`get` also accepts a directory passed as stdin. It reads top-level `.json` files from that directory, accepts raw Remote Config JSON or fbrcm cache JSON in each file, and treats each file stem as a canonical template target. An unqualified stem is a client target and a `server@` stem is a server target. Project name is built from the underlying project ID by splitting on `-` and `_`, then capitalizing words.
 
 `project import` reads JSON from `--from`, stdin, or an interactive `.json` file picker. It accepts raw Remote Config JSON or an fbrcm parameters cache JSON file with `remote_config`.
 
@@ -379,7 +414,7 @@ duplicate
 
 ### Draft lifecycle and write safety
 
-Drafts are profile-scoped, self-contained records. Each record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and a draft format version. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
+Drafts are profile-scoped, target-specific, self-contained records. Each record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and a draft format version. A project can therefore have independent client and server drafts. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
 
 `add`, `duplicate`, `update`, `delete`, `project import`, and the condition mutation commands accept `--draft`. In draft mode they apply changes on top of an existing project draft or create a new draft from freshly revalidated Remote Config. They do not validate or publish to Firebase. Combining `--draft` with `--dry-run` previews the change without writing either draft or Firebase state.
 
@@ -418,14 +453,14 @@ Exactly one value flag is required:
 --number <number>      value type NUMBER; must parse as float
 --string <text>        value type STRING
 --json <json>          value type JSON; must be valid JSON
---use-in-app-default   delegate the value to the client application; requires --type
+--use-in-app-default   delegate the value to the application; requires --type
 --type <type>           STRING, BOOLEAN, NUMBER, or JSON type for --use-in-app-default
 ```
 
 Other flags:
 
 ```text
--p, --project <query>      filter target projects; may be repeated
+-p, --project <query>      filter template targets; may be repeated
 --expr <expr>              filter target projects with project context
 --dry-run                  preview without writing local or Firebase state
 --draft                    save changes to local drafts instead of publishing
@@ -446,7 +481,7 @@ Duplicates one complete Remote Config parameter in every matched project. The co
 Flags:
 
 ```text
--p, --project <query>   filter target projects; may be repeated
+-p, --project <query>   filter template targets; may be repeated
 --expr <expr>           filter target projects with project context
 --dry-run               preview without writing local or Firebase state
 --draft                 save changes to local drafts instead of publishing
@@ -459,14 +494,14 @@ With `--draft`, duplication composes onto each existing draft and remains local.
 
 ### `fbrcm get [parameter]`
 
-Prints Remote Config parameters across projects.
+Prints Remote Config parameters across template targets.
 
 Passing `[parameter]` is shorthand for `--filter =<parameter>`. It cannot be combined with `--filter`.
 
 Flags:
 
 ```text
--p, --project <query>   filter projects; may be repeated
+-p, --project <query>   filter template targets; may be repeated
 -f, --filter <query>    filter parameters; may be repeated
 --expr <expr>           filter parameters with parameter context
 --search <text>         search parameter names, descriptions, values, and conditions
@@ -486,7 +521,7 @@ Updates matched Remote Config parameters. Passing `[parameter]` is shorthand for
 Flags:
 
 ```text
--p, --project <query>      filter projects; may be repeated
+-p, --project <query>      filter template targets; may be repeated
 -f, --filter <query>       filter parameters; may be repeated
 --expr <expr>              filter parameters with parameter context
 --search <text>            search parameter names, descriptions, values, and conditions
@@ -506,7 +541,7 @@ Flags:
 --number <number>          set NUMBER value
 --string <text>            set STRING value
 --json <json>              set JSON value
---use-in-app-default       delegate the selected value to the client application
+--use-in-app-default       delegate the selected value to the application
 ```
 
 At most one value flag may be used. `--condition` requires a value flag and resolves the condition by exact name, then exact case-insensitive name. It preserves the default and all other conditional values while assigning the selected typed value. `--group` and `--no-group` are mutually exclusive. `--condition`, `--remove-all-conditional-values`, and `--remove-conditional-value` are mutually exclusive.
@@ -528,7 +563,7 @@ Deletes matched Remote Config parameters. Passing `[parameter]` is shorthand for
 Flags:
 
 ```text
--p, --project <query>   filter projects; may be repeated
+-p, --project <query>   filter template targets; may be repeated
 -f, --filter <query>    filter parameters; may be repeated
 --expr <expr>           filter parameters with parameter context
 --search <text>         search parameter names, descriptions, values, and conditions
@@ -630,12 +665,12 @@ Human output identifies the project and whether the validated source was `draft`
 
 ### `fbrcm groups list`
 
-`groups list` lists real Firebase parameter groups across the selected projects, including intentionally empty and description-only groups. It uses an unpublished draft when present and otherwise follows the same fresh/stale cache behavior as condition reads. Human output is a naturally sized table with project ID, name, parameter count, and description; the project column is omitted for one exact `--project` filter, matching `get`. On narrow terminals, the description is cropped with an ellipsis first, followed by project ID and group name only when necessary.
+`groups list` lists real Firebase parameter groups across the selected template targets, including intentionally empty and description-only groups. It uses an unpublished target-specific draft when present and otherwise follows the same fresh/stale cache behavior as condition reads. Human output is a naturally sized table with canonical target ID, project name, parameter count, and description; the project column is omitted for one exact `--project` target filter, matching `get`. On narrow terminals, the description is cropped with an ellipsis first, followed by target ID and group name only when necessary.
 
 List flags:
 
 ```text
--p, --project <query>  filter projects by name or ID; may be repeated
+-p, --project <query>  filter template targets by optional client@ or server@ project query; may be repeated
 -f, --filter <query>   filter group names; may be repeated
 --search <text>        search group names and descriptions
 --update               revalidate cached Remote Config before printing
@@ -653,7 +688,7 @@ fbrcm groups delete <group> [--project|-p <query>]
 
 `add` creates a group entry even when it has no parameters or description. `edit` replaces or explicitly clears its description while preserving its parameters. `rename` preserves both parameters and description. `delete` is an explicit group-level operation and removes the group together with all parameters it contains.
 
-All group commands support repeatable `--project|-p` filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured project in stable project-name/ID order. Named mutations skip projects that do not contain the group; `add` skips projects where it already exists.
+All group commands support repeatable `--project|-p` target filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured enabled template in stable project-name/target-ID order. Named mutations skip targets that do not contain the group; `add` skips targets where it already exists.
 
 All group mutations also support `--dry-run`, `--draft`, and `--yes|-y`, with the same diff, confirmation, validation, ETag, draft-composition, and draft-conflict behavior as condition mutations. `--description` and `--no-description` are mutually exclusive.
 
@@ -664,11 +699,11 @@ Lists drafts in the active profile without contacting Firebase. Invalid draft en
 Flags:
 
 ```text
--f, --filter <query>   filter by project ID or cached display name; may be repeated
+-f, --filter <query>   filter by optional client@ or server@ project query; may be repeated
 --json                 print structured JSON
 ```
 
-Human output includes project ID, project name, base version, update time, parameter/condition change counts, and status. Status is `ready`, `unchanged`, or `invalid`.
+Human output includes canonical target ID, project name, base version, update time, parameter/condition change counts, and status. Status is `ready`, `unchanged`, or `invalid`.
 
 JSON entries include `project_id`, `project`, `base_version`, `created_at`, `updated_at`, byte size, status, validity, base availability, path, and change counts.
 
@@ -757,7 +792,7 @@ JSON output is an array containing one status result per selected project.
 
 ### `fbrcm project show <project>`
 
-Shows cached project metadata, the selected auth identity used for project operations, and every configured auth identity that discovered the project during synchronization. `<project>` uses the shared positional project resolution described above.
+Shows cached project metadata, enabled and primary templates, the selected auth identity used for project operations, and every configured auth identity that discovered the project during synchronization. `<project>` uses the shared positional project resolution described above.
 
 Flags:
 
@@ -770,13 +805,47 @@ Without `--update`, auth access reflects the latest cached project synchronizati
 
 The status is `disabled` when the latest project synchronization could not find the project through its assigned auth identity or any replacement identity. Disabled projects remain cached and visible, but live Firebase operations are blocked until a later update rediscovers and automatically rebinds them.
 
+### `fbrcm project templates show <project>`
+
+Shows the enabled templates and primary template stored for one physical project. It reads only the local projects registry and does not synchronize projects or contact Firebase. `<project>` uses normal cached project name or ID resolution; explicit `client@` and `server@` prefixes are rejected because the preferences belong to the physical project.
+
+Flags:
+
+```text
+--json   print project, project_id, templates, and primary_template
+```
+
+### `fbrcm project templates set <project>`
+
+Updates the local template selection for one physical project and prints the resulting state. It does not create, fetch, publish, or delete any Firebase template, cache, version, or draft.
+
+Flags:
+
+```text
+--templates <list>          replace enabled templates with client, server, or client,server
+--primary client|server     set the primary template
+--json                      print the resulting state as JSON
+```
+
+At least one mutation flag is required. `--templates` accepts comma-separated values and may be repeated; duplicates are ignored and stored in canonical client-then-server order. With one enabled template and no explicit `--primary`, that template automatically becomes primary. With both enabled and no explicit `--primary`, the existing primary is preserved. `--primary` without `--templates` changes only the primary. The command rejects a primary template that is not enabled.
+
+Examples:
+
+```sh
+fbrcm project templates set northstar-wallet --templates client
+fbrcm project templates set northstar-wallet --templates server
+fbrcm project templates set northstar-wallet --templates client,server
+fbrcm project templates set northstar-wallet --templates client,server --primary server
+fbrcm project templates set northstar-wallet --primary client
+```
+
 ### `fbrcm project open <project>`
 
 Opens the project's Remote Config page in the Firebase console. `<project>` uses the shared positional project resolution described above.
 
 ### `fbrcm project export <project>`
 
-Exports one project's Remote Config JSON. `<project>` uses the shared positional project resolution described above.
+Exports one template target's Remote Config JSON. `<project>` accepts the target syntax and uses the shared positional resolution described above.
 
 Flags:
 
@@ -789,7 +858,7 @@ Export normalizes JSON by unescaping `<`, `>`, `&`, trimming trailing line break
 
 ### `fbrcm project defaults <project>`
 
-Downloads the active client-side Remote Config parameter defaults directly from Firebase. `<project>` uses the shared positional project resolution described above. JSON is suitable for web applications, XML for Android, and plist for Apple applications.
+Downloads the selected client or server Remote Config parameter defaults directly from Firebase. `<project>` accepts the template target syntax and uses the shared positional resolution described above. JSON is suitable for web applications, XML for Android, and plist for Apple applications.
 
 Flags:
 
@@ -851,7 +920,7 @@ JSON output is one object containing `project_id`, `status`, `changed`, `draft`,
 
 ### Remote Config version history
 
-Version commands are scoped to one project and use the same project resolution as `project export`: project ID is matched first, followed by exact display name case-insensitively.
+Version commands are scoped to one template target and use the same target resolution as `project export`: project ID is matched first, followed by exact display name case-insensitively. Client and server histories and local snapshots are independent.
 
 Firebase history and the local cache serve different purposes:
 
@@ -1030,11 +1099,11 @@ Flags:
 --auth <auth-id>       sync projects for one auth identity
 ```
 
-Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project JSON includes a `disabled` boolean; human project listings mark disabled identities in the Auth column.
+Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project JSON includes `disabled`, `templates`, and `primary_template`; human project listings mark disabled identities in the Auth column.
 
 ### `fbrcm projects forget`
 
-Forgets matching locally tracked projects and deletes their cached Remote Config snapshots, cached versions, and drafts. It never deletes Firebase projects or otherwise reads from or writes to Firebase. With no filter or expression, every configured project is selected. The expression uses the same project context as `projects list`, but evaluates against local Remote Config cache only; project-only expressions work even when that cache is missing.
+Forgets matching locally tracked projects and deletes both their client and server cached Remote Config snapshots, cached versions, and drafts. It never deletes Firebase projects or otherwise reads from or writes to Firebase. With no filter or expression, every configured project is selected. The expression uses the same project context as `projects list`, but evaluates against local client Remote Config cache only; project-only expressions work even when that cache is missing.
 
 Flags:
 
@@ -1046,7 +1115,7 @@ Flags:
 
 ### `fbrcm projects diff <source-project> <target-project>`
 
-Compares Remote Config between two projects. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Both arguments use shared positional project resolution.
+Compares Remote Config between two template targets. `<source-project>` is the desired config and `<target-project>` is the config being checked for drift. Each argument independently accepts an implicit client, explicit `client@`, or `server@` target, so comparison can cross both projects and template kinds.
 
 By default, command fetches live Remote Config for both projects. Use `--cached` to require the local projects registry and compare local parameter cache entries without contacting Firebase. Stale cache entries are compared as stored; a missing registry or Remote Config entry is an error.
 
@@ -1070,7 +1139,7 @@ Without `--exit-code`, both differences and no differences return success. With 
 
 ### `fbrcm projects promote <source-project> <target-project>`
 
-Promotes selected Remote Config changes from source project to target project. `<source-project>` is the desired config. `<target-project>` is the project that may be published.
+Promotes selected Remote Config changes from one template target to another. `<source-project>` is the desired config. `<target-project>` is the target that may be published. Each argument independently accepts an implicit client, explicit `client@`, or `server@` target.
 
 Promotion refuses to publish when the target project has an unpublished draft.
 
@@ -1140,7 +1209,7 @@ JSON output is an array of checks. Every element includes the report-level profi
 
 ### `fbrcm cache list`
 
-Lists immutable cached Remote Config versions. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
+Lists immutable cached Remote Config versions for client and server template targets. Client entries use the unqualified project ID; server entries use `server@project-id`. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
 
 Flags:
 
@@ -1148,7 +1217,7 @@ Flags:
 --json   print cache entries as JSON
 ```
 
-JSON entries include project ID, project name, version, file size, cached time, and path.
+JSON entries include canonical target ID in `project_id`, underlying project name, version, file size, cached time, and path.
 
 ### `fbrcm cache path`
 
@@ -1162,7 +1231,7 @@ Flags:
 
 ### `fbrcm cache clear`
 
-Deletes all locally cached immutable Remote Config versions. The confirmation reports snapshot count, total size, and project count, and warns that versions no longer retained by Firebase may be permanently lost. Drafts are never deleted by this command.
+Deletes all locally cached immutable Remote Config versions for both template kinds. The confirmation reports snapshot count, total size, and template-target count, and warns that versions no longer retained by Firebase may be permanently lost. Drafts are never deleted by this command.
 
 Flags:
 
@@ -1342,7 +1411,7 @@ Flags:
 
 ### `fbrcm auth bind`
 
-Binds cached projects to an auth identity. Without `--project`, every cached project is selected. Repeated project filters are ORed and use the same mode-prefixed name/project-ID matching as `get --project` and `projects list --filter`.
+Binds cached projects to an auth identity. Without `--project`, every cached project is selected. Repeated project filters are ORed and use the same mode-prefixed name/project-ID matching as `projects list --filter`; auth binding is project-scoped and does not accept template prefixes.
 
 Flags:
 

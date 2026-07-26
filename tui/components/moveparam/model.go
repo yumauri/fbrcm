@@ -6,6 +6,10 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 )
 
 type Option struct {
@@ -16,16 +20,17 @@ type Option struct {
 }
 
 type Model struct {
-	x        int
-	y        int
-	label    string
-	options  []Option
-	selected int
-	input    textinput.Model
-	open     bool
-	allowNew bool
-	search   string
-	lastType time.Time
+	x         int
+	y         int
+	label     string
+	options   []Option
+	selected  int
+	input     textinput.Model
+	open      bool
+	allowNew  bool
+	search    string
+	lastType  time.Time
+	lastClick mouseutil.ClickTracker
 }
 
 const (
@@ -104,6 +109,27 @@ func (m Model) Current() (Option, bool) {
 		return Option{}, false
 	}
 	return m.options[optionIndex], true
+}
+
+func (m *Model) SelectAt(x, y int, at time.Time) (tea.Cmd, bool, bool) {
+	listX, listY := m.ListPosition()
+	if !m.open || x < listX || x >= listX+lipgloss.Width(m.ListView()) {
+		return nil, false, false
+	}
+	row := y - listY - 1
+	if row < 0 || row >= m.rowsCount() {
+		return nil, false, false
+	}
+	wasInput := m.selectedInput()
+	m.selected = row
+	m.search, m.lastType = "", time.Time{}
+	var cmd tea.Cmd
+	if m.selectedInput() && !wasInput {
+		cmd = m.input.Focus()
+	} else if wasInput && !m.selectedInput() {
+		m.input.Blur()
+	}
+	return cmd, m.lastClick.Register(0, row, at), true
 }
 
 func (m Model) InputSelected() bool {

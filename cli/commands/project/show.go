@@ -51,6 +51,7 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 }
 
 func renderProjectDetails(project core.Project) string {
+	_ = project.NormalizeTemplatePreferences()
 	authIdentities := strings.Join(project.DiscoveredBy, ", ")
 	if authIdentities == "" {
 		authIdentities = "none recorded"
@@ -64,11 +65,24 @@ func renderProjectDetails(project core.Project) string {
 		"State: " + displayProjectValue(project.State),
 		"Selected auth: " + displayProjectValue(project.AuthID),
 		"Auth identities: " + authIdentities,
+		"Enabled templates: " + projectTemplatesLabel(project),
+		"Primary template: " + string(project.PrimaryTemplate),
 		"Updated at: " + displayProjectValue(shared.FormatDateTime(project.UpdatedAt)),
 		"Synced at: " + displayProjectValue(shared.FormatDateTime(project.SyncedAt)),
 		"ETag: " + displayProjectValue(project.ETag),
 		"URL: " + firebase.RemoteConfigConsoleURL(project.ProjectID),
 	}, "\n")
+}
+
+func projectTemplatesLabel(project core.Project) string {
+	if err := project.NormalizeTemplatePreferences(); err != nil {
+		return "—"
+	}
+	templates := make([]string, len(project.Templates))
+	for i, kind := range project.Templates {
+		templates[i] = string(kind)
+	}
+	return strings.Join(templates, ", ")
 }
 
 func projectStatus(project core.Project) string {

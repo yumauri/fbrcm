@@ -130,6 +130,55 @@ func TestPopupWindowDimsBasePanelBorders(t *testing.T) {
 	}
 }
 
+func TestProfileBadgeIsAlwaysTopmostAndRightAligned(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Parameters)
+	m.profileName = "work"
+	layers := m.overlayLayers(m.baseView())
+
+	var profile *lipgloss.Layer
+	maxOtherZ := 0
+	for _, layer := range layers {
+		if layer.GetID() == "profile" {
+			profile = layer
+			continue
+		}
+		maxOtherZ = max(maxOtherZ, layer.GetZ())
+	}
+	if profile == nil {
+		t.Fatal("profile layer is missing")
+	}
+	if profile.GetZ() <= maxOtherZ {
+		t.Fatalf("profile z-index = %d, want above %d", profile.GetZ(), maxOtherZ)
+	}
+	if profile.GetY() != 0 {
+		t.Fatalf("profile y = %d, want 0", profile.GetY())
+	}
+	if got, want := profile.GetX(), m.width-lipgloss.Width(profile.GetContent()); got != want {
+		t.Fatalf("profile x = %d, want %d", got, want)
+	}
+}
+
+func TestProfileBadgeRemainsVisibleOnMinimumSizeView(t *testing.T) {
+	m := viewTestModel(20, 5, panels.Projects)
+	m.profileName = "work"
+
+	firstLine, _, _ := strings.Cut(testutil.NormalizeViewSnapshot(m.View().Content), "\n")
+	if !strings.HasSuffix(firstLine, "work") {
+		t.Fatalf("minimum-size top line = %q, want profile at right edge", firstLine)
+	}
+}
+
+func TestProfileBadgeTruncatesToAvailableWidth(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	badge := profileBadgeView(strings.Repeat("profile", 10), 12)
+	if got := lipgloss.Width(badge); got != 12 {
+		t.Fatalf("badge width = %d, want 12", got)
+	}
+	if plain := testutil.NormalizeViewSnapshot(badge); !strings.Contains(plain, "…") {
+		t.Fatalf("truncated badge = %q, want ellipsis", plain)
+	}
+}
+
 func TestAccountsPopupOverlaysWorkspace(t *testing.T) {
 	svc := newRenameTestService(t)
 	m := viewTestModel(90, 24, panels.Projects)
@@ -145,8 +194,8 @@ func TestAccountsPopupOverlaysWorkspace(t *testing.T) {
 	if !strings.Contains(view, "¹Projects") || !strings.Contains(view, "Starting fbrcm") {
 		t.Fatalf("popup did not retain workspace beneath setup:\n%s", view)
 	}
-	if m.View().MouseMode != tea.MouseModeNone {
-		t.Fatalf("popup mouse mode = %v, want none", m.View().MouseMode)
+	if m.View().MouseMode != tea.MouseModeAllMotion {
+		t.Fatalf("popup mouse mode = %v, want all motion", m.View().MouseMode)
 	}
 }
 
@@ -170,6 +219,26 @@ func TestGlobalProfilesShortcutOpensPopupDirectly(t *testing.T) {
 	}
 }
 
+func TestProfileBadgeClickOpensSamePopupAsProfilesShortcut(t *testing.T) {
+	svc := newRenameTestService(t)
+	m := viewTestModel(90, 24, panels.Projects)
+	m.svc = svc
+	m.setup = setup.New(svc).Close()
+	badge := profileBadgeView(m.profileName, m.width)
+	clickX := m.width - lipgloss.Width(badge)
+
+	clickedModel, clickCmd := m.Update(tea.MouseClickMsg{X: clickX, Y: 0, Button: tea.MouseLeft})
+	clicked := clickedModel.(Model)
+	keyed, keyCmd, handled := m.updateGlobalKeyMessage("ctrl+p")
+
+	if !handled || clickCmd == nil || keyCmd == nil {
+		t.Fatalf("profiles actions = handled:%v click cmd:%v key cmd:%v", handled, clickCmd != nil, keyCmd != nil)
+	}
+	if !clicked.setup.IsPopup() || !keyed.setup.IsPopup() {
+		t.Fatalf("profiles popup = click:%v key:%v", clicked.setup.IsPopup(), keyed.setup.IsPopup())
+	}
+}
+
 func TestPopupWindowDimsDetailsPanelBorder(t *testing.T) {
 	m := viewTestModel(90, 24, panels.Details)
 	m.detailsVisible = true
@@ -180,11 +249,11 @@ func TestPopupWindowDimsDetailsPanelBorder(t *testing.T) {
 	}
 }
 
-const minSizeViewSnapshot = `
+const minSizeViewSnapshot = `            default
  Terminal too small
  Minimum size 80x20`
 
-const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
+const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ────────────── default
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -207,9 +276,9 @@ No logs yet.
 
 
 ──────────────────────────────────────────────────────────────────────────────────────────
-q quit • ? help • c collapse • enter select • space mark • x delete • o open • u update …`
+q quit • ? help • c collapse • enter select • space mark • t templates • p make primary …`
 
-const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
+const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ────────────── default
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -234,7 +303,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • ? help • c collapse • [/] level • -/_/=/+ resize`
 
-const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ──────────────────────╮
+const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ────────────── default
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -261,6 +330,7 @@ q quit • ? help • z maximize • r rename • e edit • a new • c duplica
 
 func viewTestModel(width, height int, active panels.ID) Model {
 	m := New(nil)
+	m.profileName = "default"
 	m.width = width
 	m.height = height
 	m.logsSized = true

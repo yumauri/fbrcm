@@ -37,7 +37,9 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 			m.parameters, cmd = m.parameters.Update(msg)
 			return m, cmd, true
 		case tea.MouseMsg:
-			return m, nil, true
+			var cmd tea.Cmd
+			m.parameters, cmd = m.parameters.Update(msg)
+			return m, cmd, true
 		}
 	}
 	if m.conditions.MoveActive() {

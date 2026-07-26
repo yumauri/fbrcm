@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/singleflight"
@@ -14,6 +15,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 type Core struct {
@@ -24,6 +26,12 @@ type Core struct {
 	firebaseMu sync.Mutex
 	// firebaseInit deduplicates concurrent client creation per auth id.
 	firebaseInit singleflight.Group
+	// oauth coordinates interactive authorization with a host UI.
+	oauthMu         sync.RWMutex
+	oauthConfigured bool
+	oauthAutoOpen   bool
+	oauthObserver   func(OAuthAuthorizationEvent)
+	oauthFlowID     atomic.Uint64
 	// versionHistory deduplicates concurrent version-pair reads per project and selectors.
 	versionHistory singleflight.Group
 }
@@ -35,7 +43,7 @@ func NewService(ctx context.Context) (*Core, error) {
 
 	corelog.For("core").Debug("core service initialized")
 
-	return &Core{ctx: ctx, firebase: make(map[string]*firebase.Service)}, nil
+	return &Core{ctx: ctx, firebase: make(map[string]*firebase.Service), oauthAutoOpen: true}, nil
 }
 
 func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
@@ -154,6 +162,34 @@ func (s *Core) ProjectByID(projectID string) (Project, error) {
 	return Project{}, fmt.Errorf("project %q is not in projects config", projectID)
 }
 
+// SetProjectTemplatePreferences persists the enabled Remote Config templates
+// and primary template for one physical Firebase project.
+func (s *Core) SetProjectTemplatePreferences(projectID string, templates []rctarget.Kind, primary rctarget.Kind) (Project, error) {
+	target, err := rctarget.Parse(projectID)
+	if err != nil {
+		return Project{}, err
+	}
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return Project{}, err
+	}
+	for i := range projects {
+		if projects[i].ProjectID != target.ProjectID {
+			continue
+		}
+		projects[i].Templates = append([]rctarget.Kind(nil), templates...)
+		projects[i].PrimaryTemplate = primary
+		if err := projects[i].NormalizeTemplatePreferences(); err != nil {
+			return Project{}, err
+		}
+		if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
+			return Project{}, err
+		}
+		return projects[i], nil
+	}
+	return Project{}, fmt.Errorf("project %q is not in projects config", target.ProjectID)
+}
+
 func (s *Core) SyncProjects(ctx context.Context) ([]Project, string, error) {
 	corelog.For("core").Info("projects sync requested")
 	projects, err := s.syncProjects(ctx, "")
@@ -184,7 +220,8 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	if ctx != nil {
 		serviceCtx = ctx
 	}
-	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, !noOpen)
+	serviceCtx, autoOpen := s.oauthAuthorizationContext(serviceCtx, authID, !noOpen)
+	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, autoOpen)
 	if err != nil {
 		logger.Error("login failed", "err", err)
 		return err
@@ -245,11 +282,17 @@ func (s *Core) DeleteProjectIDs(projectIDs []string) ([]Project, error) {
 	logger := corelog.For("core")
 	logger.Info("delete local projects requested", "count", len(deleted))
 	for _, project := range deleted {
-		if err := config.DeleteParametersCacheForProject(project.ProjectID); err != nil {
-			return nil, fmt.Errorf("delete caches for project %s: %w", project.ProjectID, err)
+		targetIDs := []string{
+			project.ProjectID,
+			(rctarget.Target{Kind: rctarget.Server, ProjectID: project.ProjectID}).String(),
 		}
-		if err := config.DeleteDraft(project.ProjectID); err != nil {
-			return nil, fmt.Errorf("delete draft for project %s: %w", project.ProjectID, err)
+		for _, targetID := range targetIDs {
+			if err := config.DeleteParametersCacheForProject(targetID); err != nil {
+				return nil, fmt.Errorf("delete caches for template target %s: %w", targetID, err)
+			}
+			if err := config.DeleteDraft(targetID); err != nil {
+				return nil, fmt.Errorf("delete draft for template target %s: %w", targetID, err)
+			}
 		}
 	}
 	if err := config.SaveProjects(remaining, time.Now().UTC()); err != nil {

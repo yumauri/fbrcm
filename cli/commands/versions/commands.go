@@ -23,7 +23,7 @@ func New(svc *core.Core) *cobra.Command {
 }
 
 func resolveVersionProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
-	return shared.ResolveProjectArg(context.Background(), cmd, svc, query)
+	return shared.ResolveProjectTargetArg(context.Background(), cmd, svc, query)
 }
 
 func newVersionsListCommand(svc *core.Core) *cobra.Command {

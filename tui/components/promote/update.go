@@ -87,9 +87,8 @@ func (m Model) updateMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 		if row < 0 || index < 0 || index >= len(m.candidates) {
 			return m, nil
 		}
-		double := m.lastClick.index == index && time.Since(m.lastClick.at) <= 400*time.Millisecond
+		double := m.lastClick.Register(0, index, time.Now())
 		m.pickerCursor = index
-		m.lastClick.index, m.lastClick.at = index, time.Now()
 		if double {
 			return m, cmd(TargetSelectedMsg{Source: m.pickerSource, Target: m.candidates[index], Mode: m.sourceMode})
 		}
@@ -111,9 +110,8 @@ func (m Model) updateMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
-	double := m.lastClick.index == index && time.Since(m.lastClick.at) <= 400*time.Millisecond
+	double := m.lastClick.Register(1, index, time.Now())
 	m.cursor = index
-	m.lastClick.index, m.lastClick.at = index, time.Now()
 	m.ensureVisible()
 	m.syncDetail()
 	if double {

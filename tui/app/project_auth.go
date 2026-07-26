@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"slices"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -26,7 +27,7 @@ func (m *Model) openProjectAuthPicker() tea.Cmd {
 	if !m.projects.AuthBindingAvailable() {
 		return nil
 	}
-	targets := m.projects.ActionTargets()
+	targets := m.projects.PhysicalActionTargets()
 	if len(targets) == 0 {
 		return nil
 	}
@@ -112,7 +113,16 @@ func (m Model) updateAuthPicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	case tea.MouseClickMsg:
-		if msg.Mouse().Button != tea.MouseLeft || !m.authPicker.SelectButtonAt(msg.Mouse().X, msg.Mouse().Y) {
+		if msg.Mouse().Button != tea.MouseLeft {
+			return m, nil, true
+		}
+		if double, ok := m.authPicker.SelectOptionAt(msg.Mouse().X, msg.Mouse().Y, time.Now()); ok {
+			if double {
+				return m, m.submitAuthBinding(), true
+			}
+			return m, nil, true
+		}
+		if !m.authPicker.SelectButtonAt(msg.Mouse().X, msg.Mouse().Y) {
 			return m, nil, true
 		}
 		if m.authPicker.SelectedButton() == 1 {

@@ -12,6 +12,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
 	"github.com/yumauri/fbrcm/tui/components/setup"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -86,14 +87,34 @@ func TestHelpKeyOpensAndClosesPalette(t *testing.T) {
 	if !m.helpPalette.IsOpen() {
 		t.Fatal("help palette did not open for ?")
 	}
-	if m.mouseMode() != tea.MouseModeNone {
-		t.Fatalf("mouse mode = %v, want none while palette is open", m.mouseMode())
+	if m.mouseMode() != tea.MouseModeAllMotion {
+		t.Fatalf("mouse mode = %v, want mouse reporting while palette is open", m.mouseMode())
 	}
 
 	next, _ = m.Update(keyPress('?'))
 	m = next.(Model)
 	if m.helpPalette.IsOpen() {
 		t.Fatal("help palette did not close for second ?")
+	}
+}
+
+func TestHelpPaletteRowsAcceptMouseSelection(t *testing.T) {
+	m := viewTestModel(90, 24, panels.Projects)
+	m.helpPalette, _ = m.helpPalette.Open()
+	actions := m.helpPalette.filtered(m.helpPaletteActions())
+	if len(actions) < 2 {
+		t.Fatal("test needs at least two Actions palette rows")
+	}
+	view := m.helpPaletteView()
+	x := max((m.width-lipgloss.Width(view))/2, 0)
+	y := max((m.height-lipgloss.Height(view))/2, 0)
+	next, _, handled := m.updateHelpPalette(tea.MouseClickMsg{
+		X:      x + 2,
+		Y:      y + 3 + viewutil.PopupPaddingTop + 1,
+		Button: tea.MouseLeft,
+	})
+	if !handled || next.helpPalette.cursor != 1 {
+		t.Fatalf("row click = handled:%v cursor:%d", handled, next.helpPalette.cursor)
 	}
 }
 

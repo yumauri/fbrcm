@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/filepicker"
 	"charm.land/bubbles/v2/textinput"
@@ -14,7 +15,9 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/importer"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 )
 
 type Mode int
@@ -93,6 +96,7 @@ type Model struct {
 	reviewedConflicts   bool
 	workingFrom         phase
 	errorText           string
+	lastClick           mouseutil.ClickTracker
 }
 
 func New() Model {
@@ -286,6 +290,21 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) updateImportFile(msg tea.Msg) (Model, tea.Cmd) {
+	if mouse, ok := msg.(tea.MouseClickMsg); ok && mouse.Mouse().Button == tea.MouseLeft {
+		cardX, cardY := m.Position()
+		row := mouse.Mouse().Y - (cardY + 1 + viewutil.PopupPaddingTop + 4)
+		if mouse.Mouse().X > cardX && mouse.Mouse().X < cardX+viewWidth(m.View())-1 {
+			var hit bool
+			m.picker, hit = mouseutil.SelectFilePickerRow(m.picker, row)
+			if hit {
+				if m.lastClick.Register(4, row, time.Now()) {
+					return m.updateImportFile(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+				}
+				return m, nil
+			}
+		}
+		return m, nil
+	}
 	if key, ok := msg.(tea.KeyMsg); ok {
 		if m.buttonsFocused {
 			return m.updateFocusedActionButtons(key.String())
@@ -319,6 +338,17 @@ func (m Model) updateImportFile(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) updateImportOptions(msg tea.Msg) (Model, tea.Cmd) {
+	if mouse, ok := msg.(tea.MouseClickMsg); ok && mouse.Mouse().Button == tea.MouseLeft {
+		if row, hit := m.importOptionRowAt(mouse.Mouse().X, mouse.Mouse().Y); hit {
+			m.optionCursor = row
+			m.buttonsFocused = false
+			m.focusOptionInput()
+			if m.lastClick.Register(0, row, time.Now()) {
+				return m.updateImportOptions(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+			}
+		}
+		return m, nil
+	}
 	if key, ok := msg.(tea.KeyMsg); ok {
 		if m.buttonsFocused {
 			return m.updateFocusedActionButtons(key.String())
@@ -380,6 +410,15 @@ func (m Model) updateImportOptions(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) updateImportConflicts(msg tea.Msg) (Model, tea.Cmd) {
+	if mouse, ok := msg.(tea.MouseClickMsg); ok && mouse.Mouse().Button == tea.MouseLeft {
+		if index, hit := m.importConflictAt(mouse.Mouse().X, mouse.Mouse().Y); hit {
+			m.conflictCursor = index
+			if m.lastClick.Register(1, index, time.Now()) {
+				return m.updateImportConflicts(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+			}
+		}
+		return m, nil
+	}
 	key, ok := msg.(tea.KeyMsg)
 	if !ok || len(m.conflicts) == 0 {
 		return m, nil
@@ -411,6 +450,16 @@ func (m Model) updateImportConflicts(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) updateExportSource(msg tea.Msg) (Model, tea.Cmd) {
+	if mouse, ok := msg.(tea.MouseClickMsg); ok && mouse.Mouse().Button == tea.MouseLeft {
+		if index, hit := m.simpleChoiceAt(mouse.Mouse().X, mouse.Mouse().Y, 4, 2); hit {
+			m.exportDraft = index == 1
+			m.buttonsFocused = false
+			if m.lastClick.Register(2, index, time.Now()) {
+				return m.activateActionButton(0)
+			}
+		}
+		return m, nil
+	}
 	key, ok := msg.(tea.KeyMsg)
 	if !ok {
 		return m, nil
@@ -457,6 +506,17 @@ func (m Model) submitExportPath() (Model, tea.Cmd) {
 }
 
 func (m Model) updateDefaultsFormat(msg tea.Msg) (Model, tea.Cmd) {
+	if mouse, ok := msg.(tea.MouseClickMsg); ok && mouse.Mouse().Button == tea.MouseLeft {
+		formats := defaultsFormats()
+		if index, hit := m.simpleChoiceAt(mouse.Mouse().X, mouse.Mouse().Y, 4, len(formats)); hit {
+			m.defaultsFormat = formats[index]
+			m.buttonsFocused = false
+			if m.lastClick.Register(3, index, time.Now()) {
+				return m.activateActionButton(0)
+			}
+		}
+		return m, nil
+	}
 	key, ok := msg.(tea.KeyMsg)
 	if !ok {
 		return m, nil
@@ -529,6 +589,30 @@ func defaultsFormats() []firebase.DefaultsFormat {
 func defaultsPath(projectID string, format firebase.DefaultsFormat) string {
 	extension := strings.ToLower(string(format))
 	return filepath.Join(".", projectID+"-remote-config-defaults."+extension)
+}
+
+func (m Model) importOptionRowAt(x, y int) (int, bool) {
+	cardX, cardY := m.Position()
+	row := y - (cardY + 1 + viewutil.PopupPaddingTop + 6)
+	return row, x > cardX && x < cardX+viewWidth(m.View())-1 && row >= 0 && row < optionRowCount
+}
+
+func (m Model) importConflictAt(x, y int) (int, bool) {
+	if len(m.conflicts) == 0 {
+		return 0, false
+	}
+	cardX, cardY := m.Position()
+	rows := min(len(m.conflicts), max(m.height-15, 4))
+	start := max(min(m.conflictCursor-rows+1, len(m.conflicts)-rows), 0)
+	row := y - (cardY + 1 + viewutil.PopupPaddingTop + 4)
+	index := start + row
+	return index, x > cardX && x < cardX+viewWidth(m.View())-1 && row >= 0 && row < rows && index < len(m.conflicts)
+}
+
+func (m Model) simpleChoiceAt(x, y, bodyStart, count int) (int, bool) {
+	cardX, cardY := m.Position()
+	index := y - (cardY + 1 + viewutil.PopupPaddingTop + bodyStart)
+	return index, x > cardX && x < cardX+viewWidth(m.View())-1 && index >= 0 && index < count
 }
 
 const (

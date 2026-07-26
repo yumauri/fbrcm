@@ -17,6 +17,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func New(svc *core.Core) *cobra.Command {
@@ -49,7 +50,7 @@ func newPathCommand() *cobra.Command {
 
 func newListCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "list", Short: "List local Remote Config drafts", Args: cobra.NoArgs, RunE: runList}
-	cmd.Flags().StringArrayP("filter", "f", nil, "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated")
+	cmd.Flags().StringArrayP("filter", "f", nil, "Filter template targets by optional client@ or server@ project query; may be repeated")
 	cmd.Flags().Bool("json", false, "Print drafts as JSON")
 	return cmd
 }
@@ -375,7 +376,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		if len(cacheFailed) > 0 {
 			filters := make([]string, 0, len(cacheFailed))
 			for _, id := range cacheFailed {
-				filters = append(filters, fmt.Sprintf("-p '=%s'", id))
+				filter, err := rctarget.ExactFilter(id)
+				if err == nil {
+					filters = append(filters, fmt.Sprintf("-p '%s'", filter))
+				}
 			}
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Firebase was updated, but local caches are stale. Refresh them with:\n  fbrcm get --update %s\n", strings.Join(filters, " "))
 		}

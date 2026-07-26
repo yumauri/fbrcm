@@ -3,7 +3,9 @@ package projects
 import (
 	"fmt"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 type lineKind int
@@ -83,10 +85,38 @@ func (m *Model) contentLines() []string {
 	m.lineKinds = lineKinds
 	m.lineProjects = lineProjects
 	m.lineHighlights = lineHighlights
+	m.lineConnectors = templateGroupConnectors(m.projects, projectStarts, len(lines))
 	m.projectStarts = projectStarts
 	m.projectEnds = projectEnds
 
 	return m.lines
+}
+
+func templateGroupConnectors(projects []core.Project, projectStarts []int, lineCount int) []string {
+	connectors := make([]string, lineCount)
+	for i := 0; i+1 < len(projects) && i+1 < len(projectStarts); i++ {
+		first, err := rctarget.Parse(projects[i].ProjectID)
+		if err != nil {
+			continue
+		}
+		second, err := rctarget.Parse(projects[i+1].ProjectID)
+		if err != nil || first.ProjectID != second.ProjectID || first.Kind == second.Kind {
+			continue
+		}
+
+		firstLine := projectStarts[i]
+		secondLine := projectStarts[i+1]
+		if firstLine < 0 || secondLine <= firstLine || secondLine >= lineCount {
+			continue
+		}
+		connectors[firstLine] = "╭"
+		for line := firstLine + 1; line < secondLine; line++ {
+			connectors[line] = "│"
+		}
+		connectors[secondLine] = "╰"
+		i++
+	}
+	return connectors
 }
 
 func (m Model) View(active bool) string {
@@ -124,7 +154,11 @@ func (m *Model) applyFilter() {
 			if m.expressionConfigsReady && !ok {
 				continue
 			}
-			matched, err := m.filter.CompiledExpression().MatchProject(project.ProjectID, project.Name, cfg)
+			projectID := project.ProjectID
+			if target, err := rctarget.Parse(projectID); err == nil {
+				projectID = target.ProjectID
+			}
+			matched, err := m.filter.CompiledExpression().MatchProject(projectID, project.Name, cfg)
 			if err == nil && matched {
 				m.projects = append(m.projects, project)
 			}

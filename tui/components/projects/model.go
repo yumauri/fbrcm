@@ -2,7 +2,6 @@ package projects
 
 import (
 	"context"
-	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/viewport"
@@ -11,13 +10,16 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
 type Model struct {
 	svc *core.Core
 
+	baseProjects           []core.Project
 	allProjects            []core.Project
 	projects               []core.Project
 	source                 string
@@ -38,15 +40,13 @@ type Model struct {
 	height                 int
 	cursor                 int
 	selected               map[string]struct{}
-	lastClick              struct {
-		project int
-		at      time.Time
-	}
+	lastClick              mouseutil.ClickTracker
 
 	lines          []string
 	lineKinds      []lineKind
 	lineProjects   []int
 	lineHighlights [][]int
+	lineConnectors []string
 	projectStarts  []int
 	projectEnds    []int
 }
@@ -68,12 +68,6 @@ func New(svc *core.Core) Model {
 			spinner.WithSpinner(spinner.Line),
 		),
 		selected: make(map[string]struct{}),
-		lastClick: struct {
-			project int
-			at      time.Time
-		}{
-			project: -1,
-		},
 	}
 }
 
@@ -201,6 +195,42 @@ func (m Model) AllProjects() []core.Project {
 	return append([]core.Project(nil), m.allProjects...)
 }
 
+// PhysicalActionTargets returns deduplicated Firebase projects for actions
+// that operate on the project registry rather than a Remote Config template.
+func (m Model) PhysicalActionTargets() []core.Project {
+	targets := m.ActionTargets()
+	out := make([]core.Project, 0, len(targets))
+	seen := make(map[string]struct{}, len(targets))
+	for _, project := range targets {
+		target, err := rctarget.Parse(project.ProjectID)
+		if err != nil {
+			continue
+		}
+		if _, ok := seen[target.ProjectID]; ok {
+			continue
+		}
+		seen[target.ProjectID] = struct{}{}
+		project.ProjectID = target.ProjectID
+		out = append(out, project)
+	}
+	return out
+}
+
+// CanMakeCurrentPrimary reports whether the focused template is visible and
+// differs from the project's current primary template.
+func (m Model) CanMakeCurrentPrimary() bool {
+	current, ok := m.CurrentProject()
+	if !ok {
+		return false
+	}
+	target, err := rctarget.Parse(current.ProjectID)
+	if err != nil {
+		return false
+	}
+	base, ok := m.baseProject(target.ProjectID)
+	return ok && len(base.TemplateKinds()) > 1 && base.TemplateKinds()[0] != target.Kind
+}
+
 // ActionTargets returns marked projects, or the current project when nothing
 // is marked. Project-level batch actions share this targeting convention.
 func (m Model) ActionTargets() []core.Project {
@@ -217,7 +247,7 @@ func (m Model) ActionTargets() []core.Project {
 // AuthBindingAvailable reports whether every action target is enabled and at
 // least two auth identities discovered every target.
 func (m Model) AuthBindingAvailable() bool {
-	targets := m.ActionTargets()
+	targets := m.PhysicalActionTargets()
 	if len(targets) == 0 {
 		return false
 	}
@@ -247,19 +277,24 @@ func (m Model) AuthBindingAvailable() bool {
 func (m *Model) ApplyProjectUpdates(updates []core.Project) tea.Cmd {
 	byID := make(map[string]core.Project, len(updates))
 	for _, project := range updates {
-		byID[project.ProjectID] = project
+		target, err := rctarget.Parse(project.ProjectID)
+		if err != nil {
+			continue
+		}
+		project.ProjectID = target.ProjectID
+		byID[target.ProjectID] = project
 	}
-	for i := range m.allProjects {
-		if project, ok := byID[m.allProjects[i].ProjectID]; ok {
-			m.allProjects[i] = project
+	for i := range m.baseProjects {
+		if project, ok := byID[m.baseProjects[i].ProjectID]; ok {
+			if len(project.Templates) == 0 && project.PrimaryTemplate == "" {
+				project.Templates = append([]rctarget.Kind(nil), m.baseProjects[i].Templates...)
+				project.PrimaryTemplate = m.baseProjects[i].PrimaryTemplate
+			}
+			m.baseProjects[i] = project
 		}
 	}
-	for i := range m.projects {
-		if project, ok := byID[m.projects[i].ProjectID]; ok {
-			m.projects[i] = project
-		}
-	}
-	selectionChanged := m.dropDisabledSelections()
+	selectionChanged := m.rebuildTargets()
+	selectionChanged = m.dropDisabledSelections() || selectionChanged
 	m.syncViewport()
 	if len(m.selected) == 0 && !selectionChanged {
 		return nil
@@ -272,27 +307,35 @@ func (m *Model) ApplyProjectUpdates(updates []core.Project) tea.Cmd {
 func (m *Model) RemoveProjects(projects []core.Project) tea.Cmd {
 	ids := make(map[string]struct{}, len(projects))
 	for _, project := range projects {
-		ids[project.ProjectID] = struct{}{}
+		target, err := rctarget.Parse(project.ProjectID)
+		if err == nil {
+			ids[target.ProjectID] = struct{}{}
+		}
 	}
 	if len(ids) == 0 {
 		return nil
 	}
 
 	selectionChanged := false
-	for projectID := range ids {
-		if _, ok := m.selected[projectID]; ok {
+	for projectID := range m.selected {
+		target, err := rctarget.Parse(projectID)
+		if err == nil {
+			_, deleted := ids[target.ProjectID]
+			if !deleted {
+				continue
+			}
 			delete(m.selected, projectID)
 			selectionChanged = true
 		}
 	}
-	remaining := make([]core.Project, 0, len(m.allProjects))
-	for _, project := range m.allProjects {
+	remaining := make([]core.Project, 0, len(m.baseProjects))
+	for _, project := range m.baseProjects {
 		if _, deleted := ids[project.ProjectID]; !deleted {
 			remaining = append(remaining, project)
 		}
 	}
-	m.allProjects = remaining
-	m.applyFilter()
+	m.baseProjects = remaining
+	m.rebuildTargets()
 	m.syncViewport()
 	if selectionChanged {
 		return m.selectionChangedCmd()

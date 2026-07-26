@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -330,9 +333,7 @@ func (m Model) updateMethodsKey(k string) (Model, tea.Cmd) {
 
 func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 	if !m.profileInputSelected() && (tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) || k == "left" || k == "right" || k == "tab" || k == "shift+tab") {
-		m.profileIn.Blur()
-		m.mode = modeAccounts
-		m.cursor = 0
+		m.activateAccountsTab()
 		return m, nil
 	}
 	if m.profileOverride != "" {
@@ -396,6 +397,145 @@ func (m Model) updateProfilesKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 		return m, cmd
 	}
 	return m, nil
+}
+
+// ActivateProfilesTab applies the same in-setup transition as the global
+// Profiles shortcut when the current setup mode supports that action.
+func (m Model) ActivateProfilesTab() (Model, tea.Cmd, bool) {
+	switch m.mode {
+	case modeProfiles:
+		return m, nil, true
+	case modeAccounts, modeMethods:
+		return m, m.openProfiles(), true
+	default:
+		return m, nil, false
+	}
+}
+
+// UpdateTabClick switches the Accounts/Profiles popup tab selected by a
+// left-button click on its rendered header title.
+func (m Model) UpdateTabClick(width, height int, msg tea.MouseClickMsg) (Model, tea.Cmd, bool) {
+	if msg.Mouse().Button != tea.MouseLeft || (m.mode != modeAccounts && m.mode != modeProfiles) || width <= 0 || height <= 0 {
+		return m, nil, false
+	}
+	popupX, popupY := m.popupPosition(width, height)
+	if msg.Mouse().Y != popupY {
+		return m, nil, false
+	}
+
+	contentWidth := min(max(width-15, 45), 69)
+	frameInner := viewutil.PopupInnerWidth(contentWidth)
+	_, accountsWidth, _, profilesWidth := setupTabTitles(m.mode == modeAccounts, true, frameInner)
+	localX := msg.Mouse().X - popupX
+	switch {
+	case localX >= 2 && localX < 2+accountsWidth:
+		m.activateAccountsTab()
+		return m, nil, true
+	case localX >= 4+accountsWidth && localX < 4+accountsWidth+profilesWidth:
+		return m.ActivateProfilesTab()
+	default:
+		return m, nil, false
+	}
+}
+
+// UpdateSelectionClick selects a rendered setup choice with one click and
+// invokes that mode's Enter action when the same choice is double-clicked.
+func (m Model) UpdateSelectionClick(width, height int, msg tea.MouseClickMsg) (Model, tea.Cmd, bool) {
+	if msg.Mouse().Button != tea.MouseLeft || width <= 0 || height <= 0 {
+		return m, nil, false
+	}
+	popupX, popupY := m.popupPosition(width, height)
+	contentWidth := min(max(width-15, 45), 69)
+	mouse := msg.Mouse()
+	if mouse.X <= popupX || mouse.X >= popupX+viewutil.PopupInnerWidth(contentWidth)+1 {
+		return m, nil, false
+	}
+	bodyRow := mouse.Y - popupY - 1 - viewutil.PopupPaddingTop
+	if m.mode == modeFile {
+		pickerStart := 4
+		if m.method == methodOAuth {
+			pickerStart = 6
+		}
+		row := bodyRow - pickerStart
+		var hit bool
+		m.filepicker, hit = mouseutil.SelectFilePickerRow(m.filepicker, row)
+		if !hit {
+			return m, nil, false
+		}
+		if m.lastClick.Register(int(modeFile), row, time.Now()) {
+			next, cmd := m.updateFilepicker(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+			return next, cmd, true
+		}
+		return m, nil, true
+	}
+	index, ok := m.selectionIndexAtBodyRow(bodyRow)
+	if !ok {
+		return m, nil, false
+	}
+
+	kind := int(m.mode)
+	m.cursor = index
+	var focusCmd tea.Cmd
+	if m.mode == modeProfiles {
+		if m.profileInputSelected() {
+			focusCmd = m.profileIn.Focus()
+		} else {
+			m.profileIn.Blur()
+		}
+	}
+	if !m.lastClick.Register(kind, index, time.Now()) {
+		return m, focusCmd, true
+	}
+
+	switch m.mode {
+	case modeAccounts:
+		next, cmd := m.updateAccountsKey("enter")
+		return next, tea.Batch(focusCmd, cmd), true
+	case modeProfiles:
+		next, cmd := m.updateProfilesKey(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}), "enter")
+		return next, tea.Batch(focusCmd, cmd), true
+	case modeMethods:
+		next, cmd := m.updateMethodsKey("enter")
+		return next, tea.Batch(focusCmd, cmd), true
+	case modeNoProjects:
+		next, cmd := m.updateNoProjectsKey("enter")
+		return next, tea.Batch(focusCmd, cmd), true
+	default:
+		return m, focusCmd, true
+	}
+}
+
+func (m Model) selectionIndexAtBodyRow(row int) (int, bool) {
+	switch m.mode {
+	case modeAccounts:
+		index := row - 4
+		return index, index >= 0 && index <= len(m.auth)
+	case modeProfiles:
+		if m.profileOverride != "" {
+			return 0, false
+		}
+		index := row - 2
+		return index, index >= 0 && index <= len(m.profiles)
+	case modeMethods:
+		switch row {
+		case 4:
+			return int(methodOAuth), true
+		case 7:
+			return int(methodServiceAccount), true
+		case 10:
+			return int(methodGCloud), true
+		}
+	case modeNoProjects:
+		index := row - 5
+		return index, index >= 0 && index < 3
+	}
+	return 0, false
+}
+
+func (m *Model) activateAccountsTab() {
+	m.profileIn.Blur()
+	m.mode = modeAccounts
+	m.cursor = 0
 }
 
 func (m Model) submitNewProfile() (Model, tea.Cmd) {

@@ -150,6 +150,10 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Download application defaults"
 		case tuiconfig.ActionPromote:
 			return "Promote to another project"
+		case tuiconfig.ActionToggleTemplates:
+			return "Toggle project templates"
+		case tuiconfig.ActionMakePrimary:
+			return "Make template primary"
 		}
 	}
 	if block == tuiconfig.BlockParameters {
@@ -446,6 +450,10 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 		return "Move keyboard focus to the " + strings.TrimPrefix(strings.ToLower(title), "focus ") + " panel."
 	case tuiconfig.ActionRefresh:
 		return "Update the cached project list from Firebase."
+	case tuiconfig.ActionToggleTemplates:
+		return "Show both client and server templates, or keep only the focused template."
+	case tuiconfig.ActionMakePrimary:
+		return "Make the focused template primary and place it first."
 	case tuiconfig.ActionReload:
 		return "Update (reload) Remote Config for the current project."
 	case tuiconfig.ActionReloadAll:

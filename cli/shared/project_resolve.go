@@ -13,6 +13,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/filter"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
@@ -31,6 +32,42 @@ func ResolveCachedProjectArg(cmd *cobra.Command, query string) (core.Project, er
 		return core.Project{}, err
 	}
 	return resolveProjectArg(cmd, projects, query)
+}
+
+// ResolveProjectTargetArg resolves the project portion of a client/server
+// template target, then returns the project with its canonical target identity.
+func ResolveProjectTargetArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	projects, _, err := svc.ListProjects(ctx)
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectTargetArg(cmd, projects, query)
+}
+
+// ResolveCachedProjectTargetArg is the cache-only counterpart of
+// ResolveProjectTargetArg.
+func ResolveCachedProjectTargetArg(cmd *cobra.Command, query string) (core.Project, error) {
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectTargetArg(cmd, projects, query)
+}
+
+func resolveProjectTargetArg(cmd *cobra.Command, projects []core.Project, query string) (core.Project, error) {
+	target, explicit, err := rctarget.ParseSelector(query)
+	if err != nil {
+		return core.Project{}, err
+	}
+	project, err := resolveProjectArg(cmd, projects, target.ProjectID)
+	if err != nil {
+		return core.Project{}, err
+	}
+	if !explicit {
+		target.Kind = project.TemplateKinds()[0]
+	}
+	project.ProjectID = target.WithProjectID(project.ProjectID).String()
+	return project, nil
 }
 
 func resolveProjectArg(cmd *cobra.Command, projects []core.Project, query string) (core.Project, error) {

@@ -56,7 +56,7 @@ func New(svc *core.Core) *cobra.Command {
 }
 
 func addUpdateFlags(cmd *cobra.Command) {
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
@@ -70,7 +70,7 @@ func addUpdateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("number", "", "Number parameter value")
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
-	cmd.Flags().Bool("use-in-app-default", false, "Use the client application's default value")
+	cmd.Flags().Bool("use-in-app-default", false, "Use the application's default value")
 	cmd.Flags().String("condition", "", "Set the value for this condition instead of the default value")
 	cmd.Flags().Bool("remove-all-conditional-values", false, "Remove all conditional values from matched parameters")
 	cmd.Flags().StringArray("remove-conditional-value", nil, "Remove a conditional value from matched parameters; may be repeated")

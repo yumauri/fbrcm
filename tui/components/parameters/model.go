@@ -7,6 +7,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/rc/diff"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -145,6 +146,7 @@ type Model struct {
 	nextHistoryPairs   map[string]historyPairSelection
 	historyChangesOnly bool
 	historyViews       map[bool]selectionSnapshot
+	lastClick          mouseutil.ClickTracker
 }
 
 type transientDuplicate struct {

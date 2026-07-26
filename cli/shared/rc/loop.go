@@ -11,6 +11,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/display"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 // RemoteMutationStatus is the final per-project outcome of a mutation batch.
@@ -241,9 +242,12 @@ func writeMutationRecoveryHints(cmd *cobra.Command, totals RemoteMutationTotals,
 	if ids := totals.failedProjectIDs(); len(ids) > 0 {
 		filters := make([]string, 0, len(ids))
 		for _, id := range ids {
-			filters = append(filters, fmt.Sprintf("-p '=%s'", id))
+			filter, err := rctarget.ExactFilter(id)
+			if err == nil {
+				filters = append(filters, fmt.Sprintf("-p '%s'", filter))
+			}
 		}
-		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Retry projects that were not %s by rerunning the command with only these project filters:\n  %s\n", map[bool]string{true: "drafted", false: "published"}[operation == "draft"], strings.Join(filters, " "))
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Retry template targets that were not %s by rerunning the command with only these target filters:\n  %s\n", map[bool]string{true: "drafted", false: "published"}[operation == "draft"], strings.Join(filters, " "))
 	}
 	cacheFailed := make([]string, 0)
 	for _, result := range totals.Results {
@@ -254,7 +258,10 @@ func writeMutationRecoveryHints(cmd *cobra.Command, totals RemoteMutationTotals,
 	if len(cacheFailed) > 0 {
 		filters := make([]string, 0, len(cacheFailed))
 		for _, id := range cacheFailed {
-			filters = append(filters, fmt.Sprintf("-p '=%s'", id))
+			filter, err := rctarget.ExactFilter(id)
+			if err == nil {
+				filters = append(filters, fmt.Sprintf("-p '%s'", filter))
+			}
 		}
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Firebase was updated, but local caches are stale. Refresh them instead of retrying the mutation:\n  fbrcm get --update %s\n", strings.Join(filters, " "))
 	}
@@ -265,7 +272,7 @@ func mutationBatchError(totals RemoteMutationTotals) error {
 	if failures == 0 {
 		return nil
 	}
-	return fmt.Errorf("%s failed", display.FormatCount(failures, "project", "projects"))
+	return fmt.Errorf("%s failed", display.FormatCount(failures, "template target", "template targets"))
 }
 
 func batchMustStop(ctx context.Context, err error) bool {

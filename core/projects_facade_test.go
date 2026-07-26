@@ -10,6 +10,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func TestBindProjectsAuthMatchesAndPersists(t *testing.T) {
@@ -48,6 +49,35 @@ func TestBindProjectsAuthMatchesAndPersists(t *testing.T) {
 	}
 	if got := strings.Join(project.DiscoveredBy, ","); got != "main,old" {
 		t.Fatalf("persisted DiscoveredBy = %q, want observed identities unchanged", got)
+	}
+}
+
+func TestSetProjectTemplatePreferencesPersistsViewsAndPrimary(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	if err := config.SaveProjects([]config.Project{{
+		Name:      "Demo",
+		ProjectID: "demo",
+		AuthID:    "main",
+	}}, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := svc.SetProjectTemplatePreferences(
+		"server@demo",
+		[]rctarget.Kind{rctarget.Client, rctarget.Server},
+		rctarget.Server,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := updated.TemplateKinds(); len(got) != 2 || got[0] != rctarget.Server || got[1] != rctarget.Client {
+		t.Fatalf("updated template kinds = %v", got)
+	}
+	persisted, err := svc.ProjectByID("demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.PrimaryTemplate != rctarget.Server || len(persisted.Templates) != 2 {
+		t.Fatalf("persisted preferences = %#v", persisted)
 	}
 }
 
@@ -163,6 +193,11 @@ func TestDisabledProjectCannotCreateFirebaseClient(t *testing.T) {
 	_, err := svc.firebaseServiceForProject(context.Background(), "demo")
 	if err == nil || !strings.Contains(err.Error(), `project "demo" is disabled`) {
 		t.Fatalf("firebaseServiceForProject = %v, want disabled error", err)
+	}
+
+	_, err = svc.firebaseServiceForProject(context.Background(), "server@demo")
+	if err == nil || !strings.Contains(err.Error(), `project "server@demo" is disabled`) {
+		t.Fatalf("firebaseServiceForProject server target = %v, want disabled error for underlying project", err)
 	}
 }
 

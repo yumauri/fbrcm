@@ -2,20 +2,25 @@ package app
 
 import (
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	corefilter "github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 type helpPaletteModel struct {
-	input  textinput.Model
-	open   bool
-	cursor int
-	scroll int
+	input     textinput.Model
+	open      bool
+	cursor    int
+	scroll    int
+	lastClick mouseutil.ClickTracker
 }
 
 type helpPaletteKeyMsg struct{ value string }
@@ -150,6 +155,26 @@ func (m Model) updateHelpPalette(msg tea.Msg) (Model, tea.Cmd, bool) {
 
 	actions := m.helpPalette.filtered(m.helpPaletteActions())
 	height := helpPaletteListHeight(m.height)
+	if mouseMsg, ok := msg.(tea.MouseClickMsg); ok {
+		mouse := mouseMsg.Mouse()
+		if mouse.Button == tea.MouseLeft {
+			view := m.helpPaletteView()
+			x := max((m.width-lipgloss.Width(view))/2, 0)
+			y := max((m.height-lipgloss.Height(view))/2, 0)
+			row := mouse.Y - y - 3 - viewutil.PopupPaddingTop
+			index := m.helpPalette.scroll + row
+			if mouse.X >= x && mouse.X < x+lipgloss.Width(view) &&
+				row >= 0 && row < height && index >= 0 && index < len(actions) {
+				m.helpPalette.cursor = index
+				m.helpPalette.ensureVisible(len(actions), height)
+				if m.helpPalette.lastClick.Register(0, index, time.Now()) {
+					return m.runHelpPaletteAction(actions, height)
+				}
+				return m, nil, true
+			}
+		}
+		return m, nil, true
+	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		k := keyMsg.String()
 		switch {

@@ -152,18 +152,17 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
-	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) ||
-		tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
+		next, cmd := m.openProfileSelection()
+		return next, cmd, true
+	}
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) {
 		if m.details.Dirty() {
 			m.openAccountsBlockedByDirtyDetailsDialog()
 			return m, nil, true
 		}
 		var cmd tea.Cmd
-		if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
-			m.setup, cmd = m.setup.OpenProfiles()
-		} else {
-			m.setup, cmd = m.setup.OpenAccounts()
-		}
+		m.setup, cmd = m.setup.OpenAccounts()
 		return m, cmd, true
 	}
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k) {
@@ -202,6 +201,16 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 		return m.updateGlobalPanelActionKey(k)
 	}
 	return m, nil, false
+}
+
+func (m Model) openProfileSelection() (Model, tea.Cmd) {
+	if m.details.Dirty() {
+		m.openAccountsBlockedByDirtyDetailsDialog()
+		return m, nil
+	}
+	var cmd tea.Cmd
+	m.setup, cmd = m.setup.OpenProfiles()
+	return m, cmd
 }
 
 func (m Model) updateConditionsReloadKey(k string) (Model, tea.Cmd, bool) {

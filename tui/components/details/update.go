@@ -1,6 +1,8 @@
 package details
 
 import (
+	"time"
+
 	tea "charm.land/bubbletea/v2"
 
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
@@ -199,6 +201,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	mouse := msg.Mouse()
+	if mouse.Button != tea.MouseLeft {
+		return m, nil
+	}
 	if m.dropdownOpen {
 		if idx, ok := m.dropdownRowAt(mouse.X, mouse.Y); ok {
 			m.dropdownIndex = idx
@@ -209,6 +214,8 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 				m.descInput.Blur()
 			} else {
 				m.groupInput.Blur()
+			}
+			if m.lastClick.Register(0, idx, time.Now()) {
 				m.commitDropdown()
 			}
 			m.refreshViewport()
@@ -230,7 +237,10 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 		m.groupInput.Blur()
 		m.dropdownOpen = false
 		m.refreshViewport()
-		return m, func() tea.Msg { return messages.DetailsValueEditRequestedMsg{} }
+		if m.lastClick.Register(1, idx, time.Now()) {
+			return m, func() tea.Msg { return messages.DetailsSelectionSubmitRequestedMsg{} }
+		}
+		return m, nil
 	}
 	if idx, ok := m.usageAt(mouse.X, mouse.Y); ok {
 		m.activeField = fieldNone
@@ -241,10 +251,21 @@ func (m Model) handleMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 		m.priorityInput.Blur()
 		m.dropdownOpen = false
 		m.refreshViewport()
+		if m.lastClick.Register(2, idx, time.Now()) {
+			return m, func() tea.Msg { return messages.DetailsSelectionSubmitRequestedMsg{} }
+		}
 		return m, nil
 	}
 	if m.addConditionalValueAt(mouse.X, mouse.Y) {
-		return m, func() tea.Msg { return messages.DetailsAddConditionalValueRequestedMsg{} }
+		m.activeField = fieldNone
+		m.selectedValue = -1
+		m.selectedUsage = -1
+		m.selectedAddValue = true
+		m.refreshViewport()
+		if m.lastClick.Register(3, 0, time.Now()) {
+			return m, func() tea.Msg { return messages.DetailsSelectionSubmitRequestedMsg{} }
+		}
+		return m, nil
 	}
 
 	field, ok := m.fieldAt(mouse.X, mouse.Y)

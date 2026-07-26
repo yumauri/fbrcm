@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
@@ -39,6 +40,7 @@ type Model struct {
 	valuesInvalid       bool
 	originalParam       core.ParametersEntry
 	originalCondition   core.ConditionEntry
+	lastClick           mouseutil.ClickTracker
 }
 
 func New() Model {

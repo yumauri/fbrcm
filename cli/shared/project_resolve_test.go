@@ -11,6 +11,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
@@ -48,6 +49,37 @@ func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 	}
 }
 
+func TestResolveCachedProjectTargetArgUsesConfiguredPrimary(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, root+"/config")
+	t.Setenv(env.CacheDir, root+"/cache")
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	project := config.Project{
+		Name:            "Demo",
+		ProjectID:       "demo",
+		AuthID:          "main",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Server,
+	}
+	if err := config.SaveProjects([]config.Project{project}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	cmd := &cobra.Command{Use: "diff"}
+	cmd.SetOut(&bytes.Buffer{})
+	for input, want := range map[string]string{
+		"demo":        "server@demo",
+		"client@demo": "demo",
+		"server@demo": "server@demo",
+	} {
+		got, err := ResolveCachedProjectTargetArg(cmd, input)
+		if err != nil || got.ProjectID != want {
+			t.Fatalf("ResolveCachedProjectTargetArg(%q) = %#v, %v; want %q", input, got, err, want)
+		}
+	}
+}
+
 func TestResolveCachedProjectArgUsesLocalRegistry(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, root+"/config")
@@ -66,5 +98,32 @@ func TestResolveCachedProjectArgUsesLocalRegistry(t *testing.T) {
 	}
 	if project.ProjectID != "demo" {
 		t.Fatalf("cached project = %#v", project)
+	}
+}
+
+func TestResolveCachedProjectTargetArgCanonicalizesClientAndServer(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, root+"/config")
+	t.Setenv(env.CacheDir, root+"/cache")
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", AuthID: "main"}}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	cmd := &cobra.Command{Use: "diff"}
+	cmd.SetOut(&bytes.Buffer{})
+	for input, want := range map[string]string{
+		"demo":        "demo",
+		"client@demo": "demo",
+		"server@Demo": "server@demo",
+	} {
+		project, err := ResolveCachedProjectTargetArg(cmd, input)
+		if err != nil {
+			t.Fatalf("ResolveCachedProjectTargetArg(%q) = %v", input, err)
+		}
+		if project.ProjectID != want {
+			t.Fatalf("ResolveCachedProjectTargetArg(%q).ProjectID = %q, want %q", input, project.ProjectID, want)
+		}
 	}
 }

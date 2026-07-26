@@ -40,7 +40,7 @@ func New(svc *core.Core) *cobra.Command {
 			return runDuplicateRemote(cmd, svc, opts)
 		},
 	}
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
@@ -100,7 +100,10 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 	if err != nil {
 		return err
 	}
-	projects = shared.FilterProjects(projects, opts.projectFilters)
+	projects, err = shared.FilterProjectTargets(projects, opts.projectFilters)
+	if err != nil {
+		return err
+	}
 	projects, err = shared.FilterProjectsByExpr(ctx, svc, projects, opts.projectExpr)
 	if err != nil {
 		return err

@@ -3,9 +3,12 @@ package authpicker
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 )
 
 func TestPickerSelectsMovesAndWraps(t *testing.T) {
@@ -77,4 +80,23 @@ func TestPickerCancelButtonHitAreaMatchesView(t *testing.T) {
 		return
 	}
 	t.Fatal("Cancel button not found")
+}
+
+func TestPickerOptionsSelectAndReportDoubleClick(t *testing.T) {
+	m := New().SetBounds(10, 5, 80, 24).Open("Bind authentication", []string{"Project: demo"}, []Option{
+		{Key: "main", Label: "main", Detail: "OAuth"},
+		{Key: "work", Label: "work", Detail: "gcloud ADC"},
+	}, 0)
+	boxX, boxY := m.Position()
+	firstRow := boxY + 1 + viewutil.PopupPaddingTop + len(m.body) + 1
+	now := time.Unix(100, 0)
+	if double, hit := m.SelectOptionAt(boxX+2, firstRow+1, now); !hit || double {
+		t.Fatalf("single click = hit:%v double:%v", hit, double)
+	}
+	if current, _ := m.Current(); current.Key != "work" {
+		t.Fatalf("selected option = %q, want work", current.Key)
+	}
+	if double, hit := m.SelectOptionAt(boxX+2, firstRow+1, now.Add(time.Millisecond)); !hit || !double {
+		t.Fatalf("second click = hit:%v double:%v", hit, double)
+	}
 }

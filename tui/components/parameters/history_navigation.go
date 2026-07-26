@@ -2,6 +2,7 @@ package parameters
 
 import (
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -224,6 +225,69 @@ func (m Model) updateHistoryPickerKey(key string) (Model, tea.Cmd, bool) {
 	}
 	m.versionPicker = picker
 	return m, nil, true
+}
+
+func (m Model) updateHistoryPickerMouse(msg tea.MouseClickMsg) (Model, tea.Cmd) {
+	if m.versionPicker == nil || msg.Mouse().Button != tea.MouseLeft {
+		return m, nil
+	}
+	mouse := msg.Mouse()
+	geometry := m.historyPickerGeometry()
+	if mouse.X < geometry.x || mouse.X >= geometry.x+geometry.width ||
+		mouse.Y < geometry.y || mouse.Y >= geometry.y+geometry.height {
+		return m, nil
+	}
+	localX, localY := mouse.X-geometry.x, mouse.Y-geometry.y
+	leftWidth := historyPickerTabWidth(geometry.leftLabel)
+	rightWidth := historyPickerTabWidth(geometry.rightLabel)
+	if localY <= 1 {
+		switch {
+		case localX >= geometry.leftTab && localX < geometry.leftTab+leftWidth:
+			m.versionPicker.left = true
+		case localX >= geometry.rightTab && localX < geometry.rightTab+rightWidth:
+			m.versionPicker.left = false
+		}
+		return m, nil
+	}
+
+	state := m.histories[m.versionPicker.projectID]
+	rows := max(geometry.height-6-viewutil.PopupPaddingTop, 0)
+	cursor := m.versionPicker.rightCursor
+	if m.versionPicker.left {
+		cursor = m.versionPicker.leftCursor
+	}
+	start := max(min(cursor-rows/2, len(state.versions)-rows), 0)
+	row := localY - 4 - viewutil.PopupPaddingTop
+	index := start + row
+	if row < 0 || row >= rows || index < 0 || index >= len(state.versions) {
+		return m, nil
+	}
+	if localX < geometry.width/3 {
+		m.versionPicker.left = true
+	} else if localX >= geometry.width*2/3 {
+		m.versionPicker.left = false
+	}
+	low, high := historyPickerBounds(
+		len(state.versions),
+		m.versionPicker.leftCursor,
+		m.versionPicker.rightCursor,
+		m.versionPicker.left,
+	)
+	if index < low || index > high {
+		return m, nil
+	}
+	kind := 10
+	if !m.versionPicker.left {
+		kind = 11
+		m.versionPicker.rightCursor = index
+	} else {
+		m.versionPicker.leftCursor = index
+	}
+	if m.lastClick.Register(kind, index, time.Now()) {
+		next, cmd, _ := m.updateHistoryPickerKey("enter")
+		return next, cmd
+	}
+	return m, nil
 }
 
 func stageHistoryPickerPair(picker *historyVersionPicker, versionCount, delta int) *historyVersionPicker {
@@ -619,8 +683,8 @@ func historyVersionAuthor(version core.RemoteConfigVersionEntry) string {
 const (
 	historyPickerPowerlineLeftArrow  = ""
 	historyPickerPowerlineRightArrow = ""
-	historyPickerFallbackLeftArrow   = "◀"
-	historyPickerFallbackRightArrow  = "▶"
+	historyPickerFallbackLeftArrow   = "🭮"
+	historyPickerFallbackRightArrow  = "🭬"
 	historyPickerArrowWidth          = 1
 )
 

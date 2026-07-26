@@ -101,6 +101,68 @@ func TestGetRemoteConfigVersion(t *testing.T) {
 	}
 }
 
+func TestServerRemoteConfigUsesFirebaseServerNamespace(t *testing.T) {
+	const wantPath = "/v1/projects/demo/namespaces/firebase-server/remoteConfig"
+	svc := NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Path != wantPath {
+				t.Fatalf("path = %q, want %q", req.URL.Path, wantPath)
+			}
+			return jsonHTTPResponse(http.StatusOK, `{"version":{"versionNumber":"7"}}`, `"etag-7"`), nil
+		}),
+	})
+
+	if _, _, err := svc.GetRemoteConfig(context.Background(), "server@demo"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := svc.UpdateRemoteConfig(context.Background(), "server@demo", json.RawMessage(`{}`), `"etag-6"`); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestServerRemoteConfigHistoryUsesFirebaseServerNamespace(t *testing.T) {
+	const wantBasePath = "/v1/projects/demo/namespaces/firebase-server/remoteConfig"
+	svc := NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			switch req.Method {
+			case http.MethodGet:
+				if req.URL.Path != wantBasePath+":listVersions" {
+					t.Fatalf("list path = %q", req.URL.Path)
+				}
+				return jsonHTTPResponse(http.StatusOK, `{"versions":[]}`, ""), nil
+			case http.MethodPost:
+				if req.URL.Path != wantBasePath+":rollback" {
+					t.Fatalf("rollback path = %q", req.URL.Path)
+				}
+				return jsonHTTPResponse(http.StatusOK, `{"version":{"versionNumber":"8"}}`, `"etag-8"`), nil
+			default:
+				return nil, io.EOF
+			}
+		}),
+	})
+
+	if _, err := svc.ListRemoteConfigVersions(context.Background(), "server@demo", ListVersionsOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := svc.RollbackRemoteConfig(context.Background(), "server@demo", "7"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExplicitClientTargetUsesLegacyEndpoint(t *testing.T) {
+	svc := NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Path != "/v1/projects/demo/remoteConfig" {
+				t.Fatalf("path = %q", req.URL.Path)
+			}
+			return jsonHTTPResponse(http.StatusOK, `{}`, `"etag"`), nil
+		}),
+	})
+	if _, _, err := svc.GetRemoteConfig(context.Background(), "client@demo"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestUpdateRemoteConfigValidateOnly(t *testing.T) {
 	payload := []byte(`{"version":{"versionNumber":"3"},"parameters":{"flag":{"defaultValue":{"value":"x"}}}}`)
 	svc := NewServiceWithHTTPClient(&http.Client{

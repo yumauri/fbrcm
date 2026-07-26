@@ -249,9 +249,9 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 func loadCompareConfigs(ctx context.Context, cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, cached bool) (core.Project, core.Project, *firebase.RemoteConfig, *firebase.RemoteConfig, error) {
 	resolveProject := func(query string) (core.Project, error) {
 		if cached {
-			return shared.ResolveCachedProjectArg(cmd, query)
+			return shared.ResolveCachedProjectTargetArg(cmd, query)
 		}
-		return shared.ResolveProjectArg(ctx, cmd, svc, query)
+		return shared.ResolveProjectTargetArg(ctx, cmd, svc, query)
 	}
 	source, err := resolveProject(sourceQuery)
 	if err != nil {

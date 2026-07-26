@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 type listItem struct {
@@ -40,11 +41,23 @@ func loadItems(rawFilters []string) ([]listItem, error) {
 		return nil, err
 	}
 	names := projectNames()
+	projects := configuredProjects()
 	filters := shared.ParseFilters(rawFilters)
 	items := make([]listItem, 0, len(ids))
 	for _, projectID := range ids {
-		name := names[projectID]
-		if len(filters) > 0 && !shared.MatchAnyFilter(projectID, filters) && !shared.MatchAnyFilter(name, filters) {
+		target, targetErr := rctarget.Parse(projectID)
+		if targetErr != nil {
+			return nil, targetErr
+		}
+		name := names[target.ProjectID]
+		project := projects[target.ProjectID]
+		project.Name = name
+		project.ProjectID = target.String()
+		match, matchErr := shared.MatchProjectTarget(project, rawFilters)
+		if matchErr != nil {
+			return nil, matchErr
+		}
+		if len(filters) > 0 && !match {
 			continue
 		}
 		path := config.GetDraftPath(projectID)
@@ -149,22 +162,44 @@ func projectNames() map[string]string {
 	return out
 }
 
+func configuredProjects() map[string]core.Project {
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return nil
+	}
+	out := make(map[string]core.Project, len(projects))
+	for _, project := range projects {
+		out[project.ProjectID] = project
+	}
+	return out
+}
+
 func resolveDraft(query string) (string, core.Project, error) {
 	ids, err := config.ListDraftProjectIDs()
 	if err != nil {
 		return "", core.Project{}, err
 	}
-	for _, id := range ids {
-		if strings.EqualFold(id, strings.TrimSpace(query)) {
-			return id, projectForID(id), nil
-		}
+	requested, explicit, err := rctarget.ParseSelector(query)
+	if err != nil {
+		return "", core.Project{}, err
 	}
-	mode, value := filter.ParseModePrefixedQuery(query)
+	mode, value := filter.ParseModePrefixedQuery(requested.ProjectID)
 	matches := make([]string, 0)
 	for _, id := range ids {
+		candidate, targetErr := rctarget.Parse(id)
+		if targetErr != nil {
+			continue
+		}
 		project := projectForID(id)
+		requiredKind := requested.Kind
+		if !explicit {
+			requiredKind = project.TemplateKinds()[0]
+		}
+		if candidate.Kind != requiredKind {
+			continue
+		}
 		nameMatch, _ := filter.Match(project.Name, value, mode)
-		idMatch, _ := filter.Match(id, value, mode)
+		idMatch, _ := filter.Match(candidate.ProjectID, value, mode)
 		if nameMatch || idMatch {
 			matches = append(matches, id)
 		}
@@ -179,9 +214,14 @@ func resolveDraft(query string) (string, core.Project, error) {
 }
 
 func projectForID(projectID string) core.Project {
+	target, err := rctarget.Parse(projectID)
+	if err != nil {
+		return core.Project{ProjectID: projectID}
+	}
 	projects, _ := config.LoadProjects()
 	for _, project := range projects {
-		if project.ProjectID == projectID {
+		if project.ProjectID == target.ProjectID {
+			project.ProjectID = target.String()
 			return project
 		}
 	}

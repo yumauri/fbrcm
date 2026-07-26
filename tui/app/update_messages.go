@@ -158,6 +158,11 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 			return m, m.openAddConditionalValue(), true
 		}
 
+	case messages.DetailsSelectionSubmitRequestedMsg:
+		if m.active == panels.Details && m.detailsVisible {
+			return m.updateDetailsKeyMessage(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}), "enter")
+		}
+
 	case messages.ParameterSelectionChangedMsg:
 		return m, m.handleParameterSelection(msg), true
 
@@ -178,6 +183,10 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 		return m.updatePasteMessage(msg)
 
 	case tea.MouseClickMsg:
+		if msg.Mouse().Button == tea.MouseLeft && m.profileBadgeAt(msg.Mouse().X, msg.Mouse().Y) {
+			next, cmd := m.openProfileSelection()
+			return next, cmd, true
+		}
 		return m.updatePanelMouseMessage(msg)
 
 	case tea.MouseWheelMsg:

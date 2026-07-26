@@ -89,7 +89,10 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 	if err != nil {
 		return rc.RemoteMutationTotals{}, err
 	}
-	projects = FilterProjects(projects, opts.ProjectFilters)
+	projects, err = FilterProjectTargets(projects, opts.ProjectFilters)
+	if err != nil {
+		return rc.RemoteMutationTotals{}, err
+	}
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 	compiledExpr, ok := CompileExpr(opts.ParamExpr, "")
 	if !ok {

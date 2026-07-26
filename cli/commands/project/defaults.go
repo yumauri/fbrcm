@@ -23,7 +23,7 @@ func newDefaultsCommand(svc *core.Core) *cobra.Command {
 func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloader) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "defaults <project>",
-		Short: "Download project application defaults",
+		Short: "Download template application defaults",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			formatName, err := cmd.Flags().GetString("format")
@@ -35,7 +35,7 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 				return err
 			}
 			ctx := cmd.Context()
-			project, err := shared.ResolveProjectArg(ctx, cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
 			}

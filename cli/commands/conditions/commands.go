@@ -108,7 +108,7 @@ func addReadFlags(cmd *cobra.Command) {
 }
 
 func load(cmd *cobra.Command, svc *core.Core, query string) (loadedConditions, error) {
-	project, err := shared.ResolveProjectArg(context.Background(), cmd, svc, query)
+	project, err := shared.ResolveProjectTargetArg(context.Background(), cmd, svc, query)
 	if err != nil {
 		return loadedConditions{}, err
 	}

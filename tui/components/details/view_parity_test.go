@@ -86,6 +86,27 @@ func TestDetailsViewEmptyWithoutBounds(t *testing.T) {
 	}
 }
 
+func TestValueRowsSelectThenSubmitOnDoubleClick(t *testing.T) {
+	m := New().SetBounds(0, 0, 60, 24).SetActive(true).SetData(parityViewDataWithConditionals())
+	click := tea.MouseClickMsg{
+		X:      2,
+		Y:      m.y + 1 + m.valueConditionLine(1) - m.viewport.YOffset(),
+		Button: tea.MouseLeft,
+	}
+	var cmd tea.Cmd
+	m, cmd = m.Update(click)
+	if cmd != nil || !m.ValueSelected() || m.selectedValue != 1 {
+		t.Fatalf("single click = selected:%v index:%d cmd:%v", m.ValueSelected(), m.selectedValue, cmd)
+	}
+	m, cmd = m.Update(click)
+	if cmd == nil {
+		t.Fatal("double click did not submit the selected value")
+	}
+	if _, ok := cmd().(messages.DetailsSelectionSubmitRequestedMsg); !ok {
+		t.Fatalf("double-click message = %T, want DetailsSelectionSubmitRequestedMsg", cmd())
+	}
+}
+
 // TestCurrentConditionalValueAnchorFirstConditional guards against treating the
 // first conditional value (index 0 in Values) as a whole-parameter delete target.
 func TestCurrentConditionalValueAnchorFirstConditional(t *testing.T) {

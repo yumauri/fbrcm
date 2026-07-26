@@ -39,7 +39,7 @@ func New(svc *core.Core) *cobra.Command {
 
 func addGetFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("json", false, "Print parameters as JSON")
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
 	cmd.Flags().Bool("all", false, "Include projects with no matching parameters")
@@ -128,7 +128,10 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	if err != nil {
 		return err
 	}
-	projects = shared.FilterProjects(projects, opts.projectFilters)
+	projects, err = shared.FilterProjectTargets(projects, opts.projectFilters)
+	if err != nil {
+		return err
+	}
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
 	loaded, err := loadProjectsParameters(context.Background(), svc, projects, opts.update)
@@ -158,7 +161,7 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 		return nil
 	}
 
-	projectExact := singleExactProjectFilter(opts.projectFilters)
+	projectExact := singleExactProjectFilter(opts.projectFilters) && len(loaded) == 1
 	paramExact := singleExactParameterFilter(opts.paramFilters)
 	tableRows := rows
 	if opts.all {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/yumauri/fbrcm/core/config"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func TestMergeProjectsReturnsSortedProjects(t *testing.T) {
@@ -26,6 +27,27 @@ func TestMergeProjectsReturnsSortedProjects(t *testing.T) {
 		if got[i].ProjectID != want {
 			t.Fatalf("project[%d] = %q, want %q; got order %+v", i, got[i].ProjectID, want, got)
 		}
+	}
+}
+
+func TestMergeProjectsPreservesTemplatePreferences(t *testing.T) {
+	now := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
+	existing := []config.Project{{
+		Name:            "Demo",
+		ProjectID:       "demo",
+		AuthID:          "main",
+		DiscoveredBy:    []string{"main"},
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Server,
+	}}
+	incoming := []config.Project{{
+		Name:         "Demo renamed",
+		ProjectID:    "demo",
+		DiscoveredBy: []string{"main"},
+	}}
+	got := mergeProjects(existing, incoming, "main", []string{"main"}, "", now)
+	if len(got) != 1 || got[0].PrimaryTemplate != rctarget.Server || len(got[0].Templates) != 2 {
+		t.Fatalf("merged project preferences = %#v", got)
 	}
 }
 

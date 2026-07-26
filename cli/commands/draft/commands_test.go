@@ -14,6 +14,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func TestNewCommandStructure(t *testing.T) {
@@ -121,6 +122,77 @@ func TestListShowDiffAndDiscardLocalDraft(t *testing.T) {
 	}
 	if _, err := config.LoadDraft("demo"); err == nil {
 		t.Fatal("draft still exists after discard")
+	}
+}
+
+func TestDraftCommandsResolveClientAliasAndServerTargetSeparately(t *testing.T) {
+	setupCommandTest(t)
+	now := time.Now().UTC()
+	for targetID, value := range map[string]string{"demo": "client", "server@demo": "server"} {
+		raw := commandRemoteConfig("1", value)
+		if err := config.SaveDraft(&config.Draft{
+			FormatVersion:    config.DraftFormatVersion,
+			ProjectID:        targetID,
+			BaseVersion:      "1",
+			BaseETag:         "etag-1",
+			CreatedAt:        now,
+			UpdatedAt:        now,
+			BaseRemoteConfig: raw,
+			RemoteConfig:     raw,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if out := executeCommand(t, "show", "client@demo"); !strings.Contains(out, `"value":"client"`) {
+		t.Fatalf("explicit client draft = %q", out)
+	}
+	if out := executeCommand(t, "show", "server@demo"); !strings.Contains(out, `"value":"server"`) {
+		t.Fatalf("server draft = %q", out)
+	}
+	clientList := executeCommand(t, "list", "--filter", "client@=demo", "--json")
+	if !strings.Contains(clientList, `"project_id": "demo"`) || strings.Contains(clientList, `"server@demo"`) {
+		t.Fatalf("client draft list = %q", clientList)
+	}
+	serverList := executeCommand(t, "list", "--filter", "server@=demo", "--json")
+	if !strings.Contains(serverList, `"project_id": "server@demo"`) || strings.Contains(serverList, `"project_id": "demo"`) {
+		t.Fatalf("server draft list = %q", serverList)
+	}
+}
+
+func TestDraftCommandsUseConfiguredTemplatePreferences(t *testing.T) {
+	setupCommandTest(t)
+	if err := config.SaveProjects([]config.Project{{
+		Name:            "Demo",
+		ProjectID:       "demo",
+		AuthID:          "main",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Server,
+	}}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	for targetID, value := range map[string]string{"demo": "client", "server@demo": "server"} {
+		raw := commandRemoteConfig("1", value)
+		if err := config.SaveDraft(&config.Draft{
+			FormatVersion:    config.DraftFormatVersion,
+			ProjectID:        targetID,
+			BaseVersion:      "1",
+			BaseETag:         "etag-1",
+			CreatedAt:        now,
+			UpdatedAt:        now,
+			BaseRemoteConfig: raw,
+			RemoteConfig:     raw,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if out := executeCommand(t, "show", "demo"); !strings.Contains(out, `"value":"server"`) {
+		t.Fatalf("unqualified primary draft = %q", out)
+	}
+	out := executeCommand(t, "list", "--filter", "=demo", "--json")
+	if !strings.Contains(out, `"project_id": "demo"`) || !strings.Contains(out, `"project_id": "server@demo"`) {
+		t.Fatalf("unqualified configured draft list = %q", out)
 	}
 }
 

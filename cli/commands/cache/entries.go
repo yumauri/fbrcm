@@ -8,6 +8,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
@@ -50,6 +51,10 @@ func loadParametersCacheEntries(projectNames map[string]string) ([]cacheEntry, e
 
 	entries := make([]cacheEntry, 0, len(snapshots))
 	for _, snapshot := range snapshots {
+		target, targetErr := rctarget.Parse(snapshot.ProjectID)
+		if targetErr != nil {
+			return nil, targetErr
+		}
 		version := snapshot.Version
 		if remoteConfig, err := firebase.ParseRemoteConfig(snapshot.Cache.RemoteConfig); err == nil {
 			version = remoteConfig.Version.VersionNumber
@@ -57,7 +62,7 @@ func loadParametersCacheEntries(projectNames map[string]string) ([]cacheEntry, e
 		cachedAt := snapshot.Cache.CachedAt
 		entries = append(entries, cacheEntry{
 			ProjectID: snapshot.ProjectID,
-			Project:   projectNames[snapshot.ProjectID],
+			Project:   projectNames[target.ProjectID],
 			Version:   version,
 			CachedAt:  &cachedAt,
 			Size:      snapshot.Size,

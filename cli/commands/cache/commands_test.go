@@ -104,3 +104,32 @@ func TestCacheClearEmptyDoesNotPrompt(t *testing.T) {
 		t.Fatalf("output = %q", out.String())
 	}
 }
+
+func TestCacheListKeepsClientAndServerTargetsSeparate(t *testing.T) {
+	setupCacheTest(t)
+	for targetID, version := range map[string]string{"demo": "2", "server@demo": "3"} {
+		if err := config.SaveParametersCache(targetID, &config.ParametersCache{
+			CachedAt:     time.Now().UTC(),
+			RemoteConfig: []byte(`{"version":{"versionNumber":"` + version + `"}}`),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	entries, err := loadParametersCacheEntries(map[string]string{"demo": "Demo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("entries = %#v", entries)
+	}
+	byTarget := make(map[string]cacheEntry, len(entries))
+	for _, entry := range entries {
+		byTarget[entry.ProjectID] = entry
+	}
+	if byTarget["demo"].Version != "2" || byTarget["server@demo"].Version != "3" {
+		t.Fatalf("entries by target = %#v", byTarget)
+	}
+	if byTarget["demo"].Project != "Demo" || byTarget["server@demo"].Project != "Demo" {
+		t.Fatalf("project names = %#v", byTarget)
+	}
+}

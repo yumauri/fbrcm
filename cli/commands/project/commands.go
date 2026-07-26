@@ -20,7 +20,14 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "project",
 		Short: "Manage individual project Remote Config",
 	}
-	projectCmd.AddCommand(newShowCommand(svc), newOpenCommand(svc, browser.OpenURL), newExportCommand(svc), newImportCommand(svc), newDefaultsCommand(svc))
+	projectCmd.AddCommand(
+		newShowCommand(svc),
+		newTemplatesCommand(svc),
+		newOpenCommand(svc, browser.OpenURL),
+		newExportCommand(svc),
+		newImportCommand(svc),
+		newDefaultsCommand(svc),
+	)
 	return projectCmd
 }
 
@@ -45,7 +52,7 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 		Short: "Export project Remote Config JSON",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := shared.ResolveProjectArg(context.Background(), cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetArg(context.Background(), cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -108,7 +115,7 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 				ctx = firebase.WithDryRun(ctx)
 			}
 
-			project, err := shared.ResolveProjectArg(ctx, cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
 			}

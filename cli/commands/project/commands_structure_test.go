@@ -8,9 +8,15 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmd := New(nil)
-	cmdtest.AssertSubcommands(t, cmd, "show", "open", "export", "import", "defaults")
+	cmdtest.AssertSubcommands(t, cmd, "show", "templates", "open", "export", "import", "defaults")
+	templates := cmdtest.FindCommand(t, cmd, "templates")
+	cmdtest.AssertSubcommands(t, templates, "show", "set")
 	cmdtest.AssertFlag(t, cmd, "show", "update")
 	cmdtest.AssertFlag(t, cmd, "show", "json")
+	cmdtest.AssertNestedFlag(t, cmd, []string{"templates", "show"}, "json")
+	for _, flag := range []string{"templates", "primary", "json"} {
+		cmdtest.AssertNestedFlag(t, cmd, []string{"templates", "set"}, flag)
+	}
 	cmdtest.AssertFlag(t, cmd, "export", "to")
 	cmdtest.AssertFlag(t, cmd, "export", "yes")
 	for _, flag := range []string{"format", "to", "yes"} {

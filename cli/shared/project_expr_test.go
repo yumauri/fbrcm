@@ -6,6 +6,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func TestParseFiltersAndMatchAnyFilter(t *testing.T) {
@@ -32,6 +33,85 @@ func TestFilterProjects(t *testing.T) {
 	got := FilterProjects(projects, []string{"=alpha"})
 	if len(got) != 1 || got[0].ProjectID != "alpha" {
 		t.Fatalf("FilterProjects = %+v", got)
+	}
+}
+
+func TestFilterProjectTargets(t *testing.T) {
+	projects := []core.Project{
+		{Name: "Mobile", ProjectID: "mobile-prod"},
+		{Name: "API", ProjectID: "api-prod"},
+	}
+	got, err := FilterProjectTargets(projects, []string{"client@=mobile-prod", "server@=api-prod", "server@=api-prod"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].ProjectID != "mobile-prod" || got[1].ProjectID != "server@api-prod" {
+		t.Fatalf("targets = %#v", got)
+	}
+}
+
+func TestFilterProjectTargetsDefaultsToClient(t *testing.T) {
+	projects := []core.Project{{Name: "Mobile", ProjectID: "mobile-prod"}}
+	got, err := FilterProjectTargets(projects, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ProjectID != "mobile-prod" {
+		t.Fatalf("targets = %#v", got)
+	}
+}
+
+func TestFilterProjectTargetsUsesConfiguredViewsAndExplicitOverride(t *testing.T) {
+	projects := []core.Project{{
+		Name:            "Demo",
+		ProjectID:       "demo",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Server,
+	}}
+	got, err := FilterProjectTargets(projects, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].ProjectID != "server@demo" || got[1].ProjectID != "demo" {
+		t.Fatalf("configured targets = %#v, want server then client", got)
+	}
+	got, err = FilterProjectTargets(projects, []string{"=demo"})
+	if err != nil || len(got) != 2 || got[0].ProjectID != "server@demo" || got[1].ProjectID != "demo" {
+		t.Fatalf("unqualified targets = %#v, %v", got, err)
+	}
+	got, err = FilterProjectTargets(projects, []string{"client@=demo"})
+	if err != nil || len(got) != 1 || got[0].ProjectID != "demo" {
+		t.Fatalf("explicit client targets = %#v, %v", got, err)
+	}
+}
+
+func TestMatchProjectTargetSeparatesTemplateKinds(t *testing.T) {
+	server := core.Project{Name: "Demo", ProjectID: "server@demo"}
+	for filter, want := range map[string]bool{
+		"server@=demo": true,
+		"client@=demo": false,
+		"=demo":        false,
+	} {
+		got, err := MatchProjectTarget(server, []string{filter})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != want {
+			t.Fatalf("MatchProjectTarget(server, %q) = %t, want %t", filter, got, want)
+		}
+	}
+}
+
+func TestMatchProjectTargetUsesConfiguredViewsForUnqualifiedFilter(t *testing.T) {
+	server := core.Project{
+		Name:            "Demo",
+		ProjectID:       "server@demo",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Server,
+	}
+	got, err := MatchProjectTarget(server, []string{"=demo"})
+	if err != nil || !got {
+		t.Fatalf("MatchProjectTarget configured server = %t, %v", got, err)
 	}
 }
 
@@ -65,6 +145,17 @@ func TestCompileExprAndMatchProjectByExpr(t *testing.T) {
 	}
 	if MatchProjectByExpr(project, cfg, `project_id == "other"`) {
 		t.Fatal("MatchProjectByExpr should not match other id")
+	}
+}
+
+func TestProjectExpressionUsesUnderlyingProjectIDForServerTarget(t *testing.T) {
+	compiled, ok := CompileExpr(`project_id == "demo"`, "")
+	if !ok {
+		t.Fatal("CompileExpr failed")
+	}
+	match, valid := MatchProjectByCompiledExpr(compiled, core.Project{ProjectID: "server@demo", Name: "Demo"}, &firebase.RemoteConfig{})
+	if !valid || !match {
+		t.Fatalf("MatchProjectByCompiledExpr = %t/%t", match, valid)
 	}
 }
 

@@ -2,6 +2,7 @@ package diffview
 
 import (
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/core/dictdiff"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
@@ -60,6 +61,23 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			delta = -delta
 		}
 		m.scroll(delta)
+		return m, nil
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button != tea.MouseLeft {
+			return m, nil
+		}
+		x, y := m.Position()
+		view := m.View()
+		if msg.Mouse().X <= x || msg.Mouse().X >= x+lipgloss.Width(view)-1 {
+			return m, nil
+		}
+		bodyRow := msg.Mouse().Y - y - 4
+		rows := m.bodyRows(m.contentWidth())
+		index := m.offset + bodyRow
+		if bodyRow >= 0 && bodyRow < m.bodyHeight() && index >= 0 && index < len(rows) {
+			m.cursor = rows[index].property
+			m.ensureSelectedVisible()
+		}
 		return m, nil
 	case tea.KeyMsg:
 		k := msg.String()

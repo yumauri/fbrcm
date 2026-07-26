@@ -2,7 +2,6 @@ package promote
 
 import (
 	"strings"
-	"time"
 
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbles/v2/viewport"
@@ -13,6 +12,7 @@ import (
 	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 )
 
 type phase int
@@ -70,10 +70,7 @@ type Model struct {
 	x, y         int
 	width        int
 	height       int
-	lastClick    struct {
-		index int
-		at    time.Time
-	}
+	lastClick    mouseutil.ClickTracker
 }
 
 func New(svc *core.Core) Model {
@@ -82,9 +79,7 @@ func New(svc *core.Core) Model {
 	targetInput := inputstyles.NewTextInput()
 	targetInput.Prompt = "Filter: "
 	targetInput.Placeholder = "Type to filter projects"
-	m := Model{svc: svc, requested: make(map[rcpromote.ItemID]bool), targetInput: targetInput, filter: filterbox.New(), detail: detail}
-	m.lastClick.index = -1
-	return m
+	return Model{svc: svc, requested: make(map[rcpromote.ItemID]bool), targetInput: targetInput, filter: filterbox.New(), detail: detail}
 }
 
 func (m Model) IsOpen() bool                           { return m.phase != phaseClosed }

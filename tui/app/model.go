@@ -5,6 +5,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/authpicker"
 	boolpicker "github.com/yumauri/fbrcm/tui/components/boolpicker"
 	"github.com/yumauri/fbrcm/tui/components/conditions"
@@ -49,6 +50,7 @@ type Model struct {
 	capture          panels.ID
 	detailsVisible   bool
 	dialog           dialogcmp.Model
+	oauthDialog      dialogcmp.Model
 	diffView         diffview.Model
 	jsonInput        jsoninput.Model
 	boolPicker       boolpicker.Model
@@ -75,6 +77,9 @@ type Model struct {
 	promotionPreview *core.ProjectPromotionPreview
 	valueEditSource  panels.ID
 	authCount        int
+	oauthEvents      <-chan core.OAuthAuthorizationEvent
+	oauthSession     *oauthAuthorizationSession
+	profileName      string
 
 	width  int
 	height int
@@ -129,10 +134,15 @@ type profileRenameSession struct {
 
 func New(svc *core.Core) Model {
 	authCount := 0
+	var oauthEvents chan core.OAuthAuthorizationEvent
 	if svc != nil {
 		if entries, _, err := svc.ListAuth(); err == nil {
 			authCount = len(entries)
 		}
+		oauthEvents = make(chan core.OAuthAuthorizationEvent, 8)
+		svc.ConfigureOAuthAuthorization(false, func(event core.OAuthAuthorizationEvent) {
+			oauthEvents <- event
+		})
 	}
 	m := Model{
 		svc:           svc,
@@ -141,6 +151,7 @@ func New(svc *core.Core) Model {
 		conditions:    conditions.New(svc),
 		promote:       promotecmp.New(svc),
 		dialog:        dialogcmp.New(),
+		oauthDialog:   dialogcmp.New(),
 		diffView:      diffview.New(),
 		jsonInput:     jsoninput.New(),
 		boolPicker:    boolpicker.New(),
@@ -157,6 +168,8 @@ func New(svc *core.Core) Model {
 		helpPalette:   newHelpPaletteModel(),
 		setup:         setup.New(svc),
 		authCount:     authCount,
+		oauthEvents:   oauthEvents,
+		profileName:   config.GetActiveProfileName(),
 		active:        panels.Projects,
 		parametersTab: panels.Parameters,
 		prevTop:       panels.Projects,
@@ -173,5 +186,6 @@ func (m Model) Init() tea.Cmd {
 		m.conditions.Init(),
 		m.details.Init(),
 		m.logs.Init(),
+		m.waitOAuthAuthorizationEventCmd(),
 	)
 }

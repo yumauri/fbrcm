@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
@@ -108,11 +109,19 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectFilters []string
 	rows := make([]parameterRow, 0)
 	for _, name := range names {
 		projectID := strings.TrimSuffix(name, filepath.Ext(name))
-		project := core.Project{
-			Name:      stdinDirectoryProjectName(projectID),
-			ProjectID: projectID,
+		target, err := rctarget.Parse(projectID)
+		if err != nil {
+			return true, nil, fmt.Errorf("invalid template target in stdin directory file %q: %w", name, err)
 		}
-		if len(shared.FilterProjects([]core.Project{project}, projectFilters)) == 0 {
+		project := core.Project{
+			Name:      stdinDirectoryProjectName(target.ProjectID),
+			ProjectID: target.String(),
+		}
+		match, err := shared.MatchProjectTarget(project, projectFilters)
+		if err != nil {
+			return true, nil, err
+		}
+		if !match {
 			continue
 		}
 

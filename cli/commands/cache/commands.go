@@ -8,6 +8,7 @@ import (
 
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core/config"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 )
 
 func New() *cobra.Command {
@@ -71,7 +72,12 @@ func newClearCommand() *cobra.Command {
 			deleteCaches := snapshotCount > 0
 			if deleteCaches && !yes {
 				confirm := shared.NewConfirmation(
-					fmt.Sprintf("Delete %d cached Remote Config versions (%s) across %d projects?", snapshotCount, strings.TrimSpace(humanSize(snapshotSize)), len(projects)),
+					fmt.Sprintf(
+						"Delete %s (%s) across %s?",
+						rcdisplay.FormatCount(snapshotCount, "cached Remote Config version", "cached Remote Config versions"),
+						strings.TrimSpace(humanSize(snapshotSize)),
+						rcdisplay.FormatCount(len(projects), "template target", "template targets"),
+					),
 					shared.ConfirmationOptions{Destructive: true, Notes: []shared.ConfirmationNote{{Text: "Local versions no longer retained by Firebase may be permanently lost."}}},
 				)
 				ok, err := confirm.RunPrompt()

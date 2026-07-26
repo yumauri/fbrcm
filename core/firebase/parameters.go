@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 type RemoteConfig struct {
@@ -110,13 +111,17 @@ func ParseRemoteConfig(raw json.RawMessage) (*RemoteConfig, error) {
 
 func (s *Service) GetRemoteConfig(ctx context.Context, projectID string, versionNumber ...string) (json.RawMessage, string, error) {
 	logger := corelog.For("firebase")
+	resource, quotaProjectID, err := remoteConfigResource(projectID)
+	if err != nil {
+		return nil, "", err
+	}
 	version := ""
 	if len(versionNumber) > 0 {
 		version = strings.TrimSpace(versionNumber[0])
 	}
 	logger.Info("get remote config", "project_id", projectID, "version", version)
 
-	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig", projectID)
+	endpoint := "https://firebaseremoteconfig.googleapis.com/v1/" + resource
 	if version != "" {
 		endpoint += "?" + url.Values{"versionNumber": []string{version}}.Encode()
 	}
@@ -131,7 +136,7 @@ func (s *Service) GetRemoteConfig(ctx context.Context, projectID string, version
 		logger.Error("create remote config request failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("create remote config request: %w", err)
 	}
-	s.setQuotaProject(req, projectID)
+	s.setQuotaProject(req, quotaProjectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)
@@ -175,6 +180,10 @@ func (s *Service) UpdateRemoteConfig(ctx context.Context, projectID string, raw 
 func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw json.RawMessage, etag string, validateOnly bool) (json.RawMessage, string, error) {
 	logger := corelog.For("firebase")
 	logger.Info("update remote config", "project_id", projectID, "validate_only", validateOnly)
+	resource, quotaProjectID, err := remoteConfigResource(projectID)
+	if err != nil {
+		return nil, "", err
+	}
 
 	body := bytes.TrimSpace(raw)
 	if !json.Valid(body) {
@@ -182,7 +191,7 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 		return nil, "", fmt.Errorf("remote config payload is not valid json")
 	}
 
-	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig", projectID)
+	endpoint := "https://firebaseremoteconfig.googleapis.com/v1/" + resource
 	if validateOnly {
 		endpoint += "?" + url.Values{"validateOnly": []string{"true"}}.Encode()
 	}
@@ -199,7 +208,7 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("If-Match", strings.TrimSpace(etag))
-	s.setQuotaProject(req, projectID)
+	s.setQuotaProject(req, quotaProjectID)
 	req.GetBody = func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(body)), nil
 	}
@@ -252,6 +261,10 @@ func (s *Service) GetLatestRemoteConfigVersion(ctx context.Context, projectID st
 func (s *Service) ListRemoteConfigVersions(ctx context.Context, projectID string, opts ListVersionsOptions) (RemoteConfigVersionsPage, error) {
 	logger := corelog.For("firebase")
 	logger.Info("list remote config versions", "project_id", projectID)
+	resource, quotaProjectID, err := remoteConfigResource(projectID)
+	if err != nil {
+		return RemoteConfigVersionsPage{}, err
+	}
 	values := url.Values{}
 	if opts.PageSize > 0 {
 		values.Set("pageSize", fmt.Sprint(opts.PageSize))
@@ -268,7 +281,7 @@ func (s *Service) ListRemoteConfigVersions(ctx context.Context, projectID string
 	if strings.TrimSpace(opts.EndTime) != "" {
 		values.Set("endTime", opts.EndTime)
 	}
-	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig:listVersions", projectID)
+	endpoint := "https://firebaseremoteconfig.googleapis.com/v1/" + resource + ":listVersions"
 	if encoded := values.Encode(); encoded != "" {
 		endpoint += "?" + encoded
 	}
@@ -283,7 +296,7 @@ func (s *Service) ListRemoteConfigVersions(ctx context.Context, projectID string
 		logger.Error("create remote config version request failed", "project_id", projectID, "err", err)
 		return RemoteConfigVersionsPage{}, fmt.Errorf("create remote config version request: %w", err)
 	}
-	s.setQuotaProject(req, projectID)
+	s.setQuotaProject(req, quotaProjectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)
@@ -322,14 +335,18 @@ func (s *Service) RollbackRemoteConfig(ctx context.Context, projectID, versionNu
 	if err != nil {
 		return nil, "", err
 	}
-	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig:rollback", projectID)
+	resource, quotaProjectID, err := remoteConfigResource(projectID)
+	if err != nil {
+		return nil, "", err
+	}
+	endpoint := "https://firebaseremoteconfig.googleapis.com/v1/" + resource + ":rollback"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, "", fmt.Errorf("create rollback request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(body)), nil }
-	s.setQuotaProject(req, projectID)
+	s.setQuotaProject(req, quotaProjectID)
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("rollback remote config: %w", err)
@@ -347,6 +364,18 @@ func (s *Service) RollbackRemoteConfig(ctx context.Context, projectID, versionNu
 		return nil, "", fmt.Errorf("rollback remote config api returned invalid json")
 	}
 	return bytes.TrimSpace(respBody), strings.TrimSpace(resp.Header.Get("ETag")), nil
+}
+
+func remoteConfigResource(value string) (resource, projectID string, err error) {
+	target, err := rctarget.Parse(value)
+	if err != nil {
+		return "", "", err
+	}
+	resource = "projects/" + target.ProjectID
+	if namespace := target.Namespace(); namespace != "" {
+		resource += "/namespaces/" + namespace
+	}
+	return resource + "/remoteConfig", target.ProjectID, nil
 }
 
 func normalizeRemoteConfigRaw(raw json.RawMessage) json.RawMessage {

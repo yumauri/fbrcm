@@ -28,7 +28,17 @@ func (m Model) updateConditionMove(msg tea.Msg) (Model, tea.Cmd, bool) {
 		default:
 			return m, nil, true
 		}
-	case tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button == tea.MouseLeft {
+			if double, hit := m.conditions.MoveActiveConditionAt(msg.Mouse().X, msg.Mouse().Y, time.Now()); hit {
+				if double {
+					return m, m.submitConditionMove(), true
+				}
+				return m, nil, true
+			}
+		}
+		return m, nil, true
+	case tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
 		return m, nil, true
 	}
 	return m, nil, false
@@ -66,7 +76,19 @@ func (m Model) updateMoveParam(msg tea.Msg) (Model, tea.Cmd, bool) {
 		if m.moveParam.InputSelected() {
 			return m, m.moveParam.Update(msg), true
 		}
-	case tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button == tea.MouseLeft {
+			if selectCmd, double, ok := m.moveParam.SelectAt(msg.Mouse().X, msg.Mouse().Y, time.Now()); ok {
+				if double {
+					if _, valid := m.moveParam.Current(); valid {
+						return m, tea.Batch(selectCmd, m.submitMoveParam()), true
+					}
+				}
+				return m, selectCmd, true
+			}
+		}
+		return m, nil, true
+	case tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
 		return m, nil, true
 	}
 	return m, nil, false

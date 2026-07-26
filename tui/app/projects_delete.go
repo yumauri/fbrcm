@@ -16,7 +16,7 @@ type projectsDeletedMsg struct {
 }
 
 func (m *Model) requestDeleteProjects() tea.Cmd {
-	targets := m.projects.ActionTargets()
+	targets := m.projects.PhysicalActionTargets()
 	if len(targets) == 0 {
 		return nil
 	}

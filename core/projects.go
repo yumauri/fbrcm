@@ -8,6 +8,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
@@ -43,6 +44,8 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 	}
 	for _, project := range incoming {
 		if previous, ok := byID[project.ProjectID]; ok {
+			project.Templates = append([]rctarget.Kind(nil), previous.Templates...)
+			project.PrimaryTemplate = previous.PrimaryTemplate
 			if onlyAuthID != "" {
 				project.DiscoveredBy = appendUnique(previous.DiscoveredBy, onlyAuthID)
 			}

@@ -94,7 +94,7 @@ func newDeleteCommand(svc *core.Core) *cobra.Command {
 }
 
 func addMutationFlags(cmd *cobra.Command) {
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddDryRunFlag(cmd)
 	shared.AddYesFlag(cmd, "Print diff and apply without confirmation")
@@ -131,7 +131,10 @@ func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, 
 	if err != nil {
 		return err
 	}
-	projects = shared.FilterProjects(projects, opts.ProjectFilters)
+	projects, err = shared.FilterProjectTargets(projects, opts.ProjectFilters)
+	if err != nil {
+		return err
+	}
 	strfold.SortProjects(projects, func(project core.Project) string { return project.Name }, func(project core.Project) string { return project.ProjectID })
 	plan := func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteConfigMutation, error) {
 		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {

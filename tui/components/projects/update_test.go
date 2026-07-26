@@ -1,14 +1,19 @@
 package projects
 
 import (
+	"context"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/env"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -186,6 +191,118 @@ func TestActionTargetsUsesMarkedProjectsOrCurrentProject(t *testing.T) {
 	got := m.ActionTargets()
 	if len(got) != 2 || got[0].ProjectID != "alpha" || got[1].ProjectID != "gamma" {
 		t.Fatalf("marked targets = %+v, want alpha and gamma", got)
+	}
+}
+
+func TestTemplateRowsArePrimaryFirstAndCursorFollowsReorder(t *testing.T) {
+	m := New(nil).SetBounds(0, 0, 32, 12).SetActive(true)
+	project := core.Project{
+		Name:            "Alpha Project",
+		ProjectID:       "alpha",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Client,
+	}
+	m, _ = m.Update(messages.ProjectsLoadedMsg{Projects: []core.Project{project}, Source: "cache"})
+	if got := []string{m.allProjects[0].ProjectID, m.allProjects[1].ProjectID}; !reflect.DeepEqual(got, []string{"alpha", "server@alpha"}) {
+		t.Fatalf("initial target order = %v", got)
+	}
+	m.cursor = 1
+	project.PrimaryTemplate = rctarget.Server
+	m, _ = m.Update(messages.ProjectTemplatePreferencesUpdatedMsg{
+		Project: project,
+	})
+	if got := []string{m.allProjects[0].ProjectID, m.allProjects[1].ProjectID}; !reflect.DeepEqual(got, []string{"server@alpha", "alpha"}) {
+		t.Fatalf("primary target order = %v", got)
+	}
+	current, ok := m.CurrentProject()
+	if !ok || current.ProjectID != "server@alpha" || m.cursor != 0 {
+		t.Fatalf("current after reorder = %#v, cursor %d", current, m.cursor)
+	}
+}
+
+func TestToggleTemplatesKeyPersistsAndExpandsProject(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, root+"/config")
+	t.Setenv(env.CacheDir, root+"/cache")
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	project := core.Project{Name: "Alpha Project", ProjectID: "alpha", AuthID: "main"}
+	if err := config.SaveProjects([]config.Project{project}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	projects, err := config.LoadProjects()
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc, err := core.NewService(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := New(svc).SetBounds(0, 0, 32, 12).SetActive(true)
+	m, _ = m.Update(messages.ProjectsLoadedMsg{Projects: projects, Source: "cache"})
+	m, cmd := m.Update(keyPress('t'))
+	if cmd == nil {
+		t.Fatal("toggle templates key returned no command")
+	}
+	msg, ok := cmd().(messages.ProjectTemplatePreferencesUpdatedMsg)
+	if !ok || msg.Err != nil {
+		t.Fatalf("toggle templates result = %#v", msg)
+	}
+	m, _ = m.Update(msg)
+	if len(m.allProjects) != 2 || m.allProjects[0].ProjectID != "alpha" || m.allProjects[1].ProjectID != "server@alpha" {
+		t.Fatalf("expanded targets = %#v", m.allProjects)
+	}
+	persisted, err := config.LoadProjects()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(persisted[0].Templates) != 2 || persisted[0].PrimaryTemplate != rctarget.Client {
+		t.Fatalf("persisted preferences = %#v", persisted[0])
+	}
+}
+
+func TestCollapsingTemplatesKeepsFocusedTargetAndDropsHiddenSelection(t *testing.T) {
+	m := New(nil).SetBounds(0, 0, 32, 12).SetActive(true)
+	project := core.Project{
+		Name:            "Alpha Project",
+		ProjectID:       "alpha",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Client,
+	}
+	m, _ = m.Update(messages.ProjectsLoadedMsg{Projects: []core.Project{project}, Source: "cache"})
+	m.selected["alpha"] = struct{}{}
+	m.selected["server@alpha"] = struct{}{}
+	m.cursor = 1
+	project.Templates = []rctarget.Kind{rctarget.Server}
+	project.PrimaryTemplate = rctarget.Server
+	m, cmd := m.Update(messages.ProjectTemplatePreferencesUpdatedMsg{
+		Project: project,
+	})
+	if len(m.allProjects) != 1 || m.allProjects[0].ProjectID != "server@alpha" || m.cursor != 0 {
+		t.Fatalf("collapsed targets = %#v, cursor %d", m.allProjects, m.cursor)
+	}
+	if _, ok := m.selected["alpha"]; ok {
+		t.Fatal("hidden client target remained selected")
+	}
+	if cmd == nil {
+		t.Fatal("collapse did not notify downstream panels after removing a selected target")
+	}
+}
+
+func TestPhysicalActionTargetsDeduplicateTemplateRows(t *testing.T) {
+	m := New(nil).SetBounds(0, 0, 32, 12).SetActive(true)
+	m, _ = m.Update(messages.ProjectsLoadedMsg{Projects: []core.Project{{
+		Name:            "Alpha Project",
+		ProjectID:       "alpha",
+		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
+		PrimaryTemplate: rctarget.Client,
+	}}})
+	m.selected["alpha"] = struct{}{}
+	m.selected["server@alpha"] = struct{}{}
+	got := m.PhysicalActionTargets()
+	if len(got) != 1 || got[0].ProjectID != "alpha" {
+		t.Fatalf("physical action targets = %#v", got)
 	}
 }
 

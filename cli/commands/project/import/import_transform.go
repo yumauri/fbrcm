@@ -6,6 +6,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/importer"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func normalizeGroups(groups []string) []string {
@@ -25,5 +26,9 @@ func normalizeGroups(groups []string) []string {
 }
 
 func transformImportConfig(project core.Project, cfg *firebase.RemoteConfig, opts importOptions) error {
-	return importer.Transform(project.ProjectID, project.Name, cfg, opts.plannerOptions())
+	projectID := project.ProjectID
+	if target, err := rctarget.Parse(projectID); err == nil {
+		projectID = target.ProjectID
+	}
+	return importer.Transform(projectID, project.Name, cfg, opts.plannerOptions())
 }

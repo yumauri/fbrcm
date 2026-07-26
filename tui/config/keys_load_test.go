@@ -192,6 +192,15 @@ func TestDefaultKeyMapIncludesProjectDefaultsBinding(t *testing.T) {
 	}
 }
 
+func TestDefaultKeyMapIncludesProjectTemplateBindings(t *testing.T) {
+	if got := DefaultKeyMap()[BlockProjects][ActionToggleTemplates]; len(got) != 1 || got[0] != "t" {
+		t.Fatalf("projects template toggle keys = %v, want [t]", got)
+	}
+	if got := DefaultKeyMap()[BlockProjects][ActionMakePrimary]; len(got) != 1 || got[0] != "p" {
+		t.Fatalf("projects make-primary keys = %v, want [p]", got)
+	}
+}
+
 func TestDefaultKeyMapIncludesInAppDefaultToggle(t *testing.T) {
 	got := DefaultKeyMap()[BlockDetails][ActionToggleInAppDefault]
 	if len(got) != 1 || got[0] != "d" {

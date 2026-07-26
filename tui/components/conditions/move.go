@@ -1,6 +1,10 @@
 package conditions
 
-import "github.com/yumauri/fbrcm/core"
+import (
+	"time"
+
+	"github.com/yumauri/fbrcm/core"
+)
 
 // StartMove begins a reversible reorder operation for the selected condition.
 func (m *Model) StartMove() bool {
@@ -54,6 +58,40 @@ func (m *Model) MoveActiveCondition(delta int) bool {
 	m.syncVisible()
 	m.selectCondition(m.move.projectID, m.move.conditionName)
 	return true
+}
+
+// MoveActiveConditionAt moves the condition being reordered to the condition
+// row under the pointer.
+func (m *Model) MoveActiveConditionAt(x, y int, at time.Time) (bool, bool) {
+	if m.move == nil {
+		return false, false
+	}
+	visibleIndex, ok := m.nodeAtMouse(x, y)
+	if !ok || visibleIndex < 0 || visibleIndex >= len(m.visible) {
+		return false, false
+	}
+	node := m.visible[visibleIndex]
+	if node.kind != nodeCondition || node.projectID != m.move.projectID {
+		return false, false
+	}
+	projectIndex, ok := m.projectIndex[m.move.projectID]
+	if !ok || m.projects[projectIndex].tree == nil {
+		return false, false
+	}
+	current := conditionIndexByName(m.projects[projectIndex].tree.Conditions, m.move.conditionName)
+	for current >= 0 && current < node.conditionIndex {
+		if !m.MoveActiveCondition(1) {
+			break
+		}
+		current++
+	}
+	for current > node.conditionIndex {
+		if !m.MoveActiveCondition(-1) {
+			break
+		}
+		current--
+	}
+	return m.lastClick.Register(20, node.conditionIndex, at), true
 }
 
 // CancelMove restores the condition order from before move mode started.

@@ -20,6 +20,35 @@ import (
 )
 
 type oauthTerminalOutputKey struct{}
+type oauthAuthorizationObserverKey struct{}
+
+// OAuthAuthorizationEvent reports the interactive portion of a desktop OAuth
+// flow. A start event contains URL; a completion event has Done set.
+type OAuthAuthorizationEvent struct {
+	URL    string
+	Done   bool
+	Err    error
+	Cancel context.CancelFunc
+}
+
+// WithOAuthAuthorizationObserver reports desktop OAuth progress without
+// coupling the Firebase layer to a particular user interface.
+func WithOAuthAuthorizationObserver(ctx context.Context, observer func(OAuthAuthorizationEvent)) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, oauthAuthorizationObserverKey{}, observer)
+}
+
+func notifyOAuthAuthorization(ctx context.Context, event OAuthAuthorizationEvent) {
+	if ctx == nil {
+		return
+	}
+	observer, _ := ctx.Value(oauthAuthorizationObserverKey{}).(func(OAuthAuthorizationEvent))
+	if observer != nil {
+		observer(event)
+	}
+}
 
 // WithOAuthTerminalOutput controls whether the desktop OAuth flow writes its
 // authorization URL and status to stderr. It defaults to enabled for CLI
@@ -94,10 +123,10 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 		path:    tokenPath,
 	}
 
-	tok, err = tokenSource.Token()
+	hadRefreshToken, err := refreshOAuthToken(tokenSource, tok)
 	if err != nil {
-		logger.Warn("oauth token refresh failed; reauthorizing", "has_refresh_token", tok.RefreshToken != "")
-		tok, err = authorizeDesktopClient(ctx, oauthCfg, tok.RefreshToken == "", autoOpen)
+		logger.Warn("oauth token refresh failed; reauthorizing", "has_refresh_token", hadRefreshToken)
+		tok, err = authorizeDesktopClient(ctx, oauthCfg, true, autoOpen)
 		if err != nil {
 			return nil, err
 		}
@@ -117,14 +146,43 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 	}
 
 	logger.Debug("oauth http client ready")
-	client := oauth2.NewClient(ctx, tokenSource)
+	rotatingSource := newRotatingOAuthTokenSource(tokenSource, tok)
+	client, err := newRecoveringOAuthClient(
+		ctx,
+		rotatingSource,
+		func(cached *oauth2.Token) (oauth2.TokenSource, *oauth2.Token, error) {
+			return recoverRejectedOAuthToken(
+				ctx,
+				oauthCfg,
+				cached,
+				tokenPath,
+				persistAuthState,
+				autoOpen,
+			)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 	return wrapAuthHTTPClient(client), nil
 }
 
+func refreshOAuthToken(source oauth2.TokenSource, cached *oauth2.Token) (bool, error) {
+	_, err := source.Token()
+	if err != nil {
+		return cached != nil && cached.RefreshToken != "", err
+	}
+	return false, nil
+}
+
 // Authorizes a desktop client using OAuth2 and returns the OAuth token
-func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceConsent bool, autoOpen bool) (*oauth2.Token, error) {
+func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceConsent bool, autoOpen bool) (token *oauth2.Token, returnErr error) {
 	logger := corelog.For("firebase")
 	logger.Info("start oauth desktop authorization", "force_consent", forceConsent, "auto_open", autoOpen)
+	oauthCfgCopy := *oauthCfg
+	oauthCfg = &oauthCfgCopy
+	authorizationCtx, cancelAuthorization := context.WithCancel(ctx)
+	defer cancelAuthorization()
 
 	state, err := randomToken(32)
 	if err != nil {
@@ -161,6 +219,10 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	}
 	authURL := oauthCfg.AuthCodeURL(state, authCodeOpts...)
 	logger.Info("oauth authorization url ready", "url", redactedURLStringValue(authURL))
+	notifyOAuthAuthorization(ctx, OAuthAuthorizationEvent{URL: authURL, Cancel: cancelAuthorization})
+	defer func() {
+		notifyOAuthAuthorization(ctx, OAuthAuthorizationEvent{Done: true, Err: returnErr})
+	}()
 
 	terminalOutput := oauthTerminalOutputEnabled(ctx)
 	if terminalOutput {
@@ -188,7 +250,7 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	case code := <-codeCh:
 		logger.Info("oauth callback received; exchanging code")
 		tok, err := oauthCfg.Exchange(
-			ctx,
+			authorizationCtx,
 			code,
 			oauth2.SetAuthURLParam("code_verifier", verifier),
 		)
@@ -201,9 +263,9 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	case err := <-errCh:
 		logger.Error("oauth callback failed", "err", err)
 		return nil, err
-	case <-ctx.Done():
-		logger.Info("oauth authorization canceled", "err", ctx.Err())
-		return nil, fmt.Errorf("OAuth authorization canceled: %w", ctx.Err())
+	case <-authorizationCtx.Done():
+		logger.Info("oauth authorization canceled", "err", authorizationCtx.Err())
+		return nil, fmt.Errorf("OAuth authorization canceled: %w", authorizationCtx.Err())
 	case <-timer.C:
 		logger.Error("oauth callback timed out")
 		return nil, fmt.Errorf("timed out waiting for OAuth callback")

@@ -48,18 +48,13 @@ func (m Model) renderContentLine(index int, line string, width int) string {
 		return m.renderProjectLine(line, index, projectIndex, width, base)
 	}
 
-	line = " " + line
-	padding := max(width-lipgloss.Width(line), 0)
-	line += strings.Repeat(" ", padding)
-	return base.Render(line)
+	prefix := m.renderLinePrefix(index, base, metaStyle)
+	padding := max(width-1-lipgloss.Width(line), 0)
+	return prefix + base.Render(line+strings.Repeat(" ", padding))
 }
 
 func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int, base lipgloss.Style) string {
-	state := m.projectStateStyle(projectIndex)
-	normal := base.Inherit(state)
-	if m.projects[projectIndex].Disabled {
-		normal = normal.Foreground(styles.PanelTitleInactiveTab.GetForeground())
-	}
+	normal := m.projectLineStyle(base, projectIndex)
 	highlight := normal
 	if !m.projects[projectIndex].Disabled {
 		highlight = normal.Foreground(styles.PaletteYellow)
@@ -70,7 +65,7 @@ func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int
 	}
 
 	var builder strings.Builder
-	builder.WriteString(normal.Render(" "))
+	builder.WriteString(m.renderLinePrefix(lineIndex, normal, m.projectLineStyle(metaStyle, projectIndex)))
 	for i, r := range []rune(line) {
 		style := normal
 		if highlighted[i] {
@@ -85,6 +80,21 @@ func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int
 	}
 
 	return builder.String()
+}
+
+func (m Model) renderLinePrefix(lineIndex int, base, connector lipgloss.Style) string {
+	if lineIndex < 0 || lineIndex >= len(m.lineConnectors) || m.lineConnectors[lineIndex] == "" {
+		return base.Render(" ")
+	}
+	return connector.Render(m.lineConnectors[lineIndex])
+}
+
+func (m Model) projectLineStyle(base lipgloss.Style, projectIndex int) lipgloss.Style {
+	style := base.Inherit(m.projectStateStyle(projectIndex))
+	if m.projects[projectIndex].Disabled {
+		style = style.Foreground(styles.PanelTitleInactiveTab.GetForeground())
+	}
+	return style
 }
 
 func (m Model) projectStateStyle(index int) lipgloss.Style {
@@ -110,7 +120,7 @@ func (m Model) secondaryTitle() secondaryTitleState {
 		}
 	default:
 		return secondaryTitleState{
-			text:  fmt.Sprintf("%d", len(m.allProjects)),
+			text:  fmt.Sprintf("%d", len(m.baseProjects)),
 			style: styles.SecondaryTitleCount,
 		}
 	}
@@ -126,6 +136,6 @@ func (m Model) secondaryTitleText() string {
 	case m.err != nil:
 		return "E"
 	default:
-		return fmt.Sprintf("%d", len(m.allProjects))
+		return fmt.Sprintf("%d", len(m.baseProjects))
 	}
 }

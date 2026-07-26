@@ -1,6 +1,8 @@
 package parameters
 
 import (
+	"time"
+
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 
@@ -154,6 +156,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case tea.MouseClickMsg:
+		if m.versionPicker != nil {
+			return m.updateHistoryPickerMouse(msg)
+		}
+		if msg.Mouse().Button != tea.MouseLeft {
+			break
+		}
 		if !m.isMouseInside(msg.Mouse()) {
 			if m.filter.Focused() {
 				m.filter.Blur()
@@ -170,16 +178,30 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if index, ok := m.nodeIndexAtMouse(msg.Mouse()); ok {
 				m.cursor = index
 				m.ensureCursorVisible()
+				if m.lastClick.Register(0, index, time.Now()) {
+					return m.activateMouseSelection(messages.KeyboardCaptureCmd(false))
+				}
 			}
 			return m, tea.Batch(messages.KeyboardCaptureCmd(false), m.selectionChangedCmd(false))
 		}
 		if index, ok := m.nodeIndexAtMouse(msg.Mouse()); ok {
 			m.cursor = index
 			m.ensureCursorVisible()
+			if m.lastClick.Register(0, index, time.Now()) {
+				return m.activateMouseSelection(nil)
+			}
 			return m, m.selectionChangedCmd(false)
 		}
 
 	case tea.MouseWheelMsg:
+		if m.versionPicker != nil {
+			key := "down"
+			if msg.Mouse().Button == tea.MouseWheelUp {
+				key = "up"
+			}
+			next, cmd, _ := m.updateHistoryPickerKey(key)
+			return next, cmd
+		}
 		if !m.isMouseInside(msg.Mouse()) {
 			break
 		}
@@ -199,6 +221,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+func (m Model) activateMouseSelection(prefix tea.Cmd) (Model, tea.Cmd) {
+	if m.history {
+		return m, tea.Batch(prefix, m.historyDiffRequestedCmd())
+	}
+	return m, tea.Batch(prefix, m.selectionChangedCmd(true))
 }
 
 func (m Model) updateFilterInput(msg tea.Msg) (Model, tea.Cmd) {

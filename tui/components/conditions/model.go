@@ -6,6 +6,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
 )
 
 type projectState struct {
@@ -70,6 +71,7 @@ type Model struct {
 	cursor              int
 	offset              int
 	move                *conditionMoveState
+	lastClick           mouseutil.ClickTracker
 }
 
 func New(svc *core.Core) Model {

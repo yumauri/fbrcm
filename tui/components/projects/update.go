@@ -10,17 +10,33 @@ import (
 	"github.com/yumauri/fbrcm/core/browser"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-const doubleClickWindow = 400 * time.Millisecond
-
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case messages.ProjectsLoadedMsg:
 		return m, m.updateLoaded(msg)
+	case messages.ProjectTemplatePreferencesUpdatedMsg:
+		if msg.Err != nil {
+			return m, nil
+		}
+		m.replaceBaseProject(msg.Project)
+		selectionChanged := m.rebuildTargets()
+		m.expressionConfigs = make(map[string]*firebase.RemoteConfig)
+		m.expressionConfigsReady = false
+		m.syncViewport()
+		var cmds []tea.Cmd
+		if selectionChanged {
+			cmds = append(cmds, m.selectionChangedCmd())
+		}
+		if m.filter.ExpressionMode() {
+			cmds = append(cmds, m.loadExpressionConfigsCmd())
+		}
+		return m, tea.Batch(cmds...)
 	case messages.ProjectExpressionConfigsLoadedMsg:
 		m.expressionConfigs = msg.Configs
 		maps.Copy(m.expressionConfigs, m.expressionOverrides)
@@ -64,14 +80,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m *Model) updateLoaded(msg messages.ProjectsLoadedMsg) tea.Cmd {
-	m.allProjects = msg.Projects
+	m.baseProjects = msg.Projects
+	selectionChanged := m.rebuildTargets()
 	m.source = msg.Source
 	m.err = msg.Err
 	m.loading = false
 	m.expressionConfigs = make(map[string]*firebase.RemoteConfig)
 	m.expressionConfigsReady = false
-	selectionChanged := m.dropDisabledSelections()
-	m.applyFilter()
+	selectionChanged = m.dropDisabledSelections() || selectionChanged
 	m.syncViewport()
 	var cmds []tea.Cmd
 	if selectionChanged {
@@ -180,6 +196,10 @@ func (m Model) updateProjectKey(k string) (Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, m.selectionChangedCmd()
+	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleTemplates, k):
+		return m, m.toggleCurrentTemplatesCmd()
+	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionMakePrimary, k):
+		return m, m.makeCurrentPrimaryCmd()
 	}
 	return m, nil
 }
@@ -220,13 +240,12 @@ func (m Model) updateFilteredMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) 
 	if index, ok := m.projectIndexAtMouse(msg.Mouse()); ok {
 		m.cursor = index
 		m.syncViewport()
-		if msg.Mouse().Button == tea.MouseLeft && m.isDoubleClick(index) {
+		if msg.Mouse().Button == tea.MouseLeft && m.lastClick.Register(0, index, time.Now()) {
 			if m.selectOnlyCurrent() {
 				return m, tea.Batch(m.selectionChangedCmd(), messages.KeyboardCaptureCmd(false))
 			}
 			return m, messages.KeyboardCaptureCmd(false)
 		}
-		m.rememberClick(index)
 	}
 	return m, messages.KeyboardCaptureCmd(false)
 }
@@ -235,13 +254,12 @@ func (m Model) updateProjectMouseClick(msg tea.MouseClickMsg) (Model, tea.Cmd) {
 	if index, ok := m.projectIndexAtMouse(msg.Mouse()); ok {
 		m.cursor = index
 		m.syncViewport()
-		if msg.Mouse().Button == tea.MouseLeft && m.isDoubleClick(index) {
+		if msg.Mouse().Button == tea.MouseLeft && m.lastClick.Register(0, index, time.Now()) {
 			if m.selectOnlyCurrent() {
 				return m, m.selectionChangedCmd()
 			}
 			return m, nil
 		}
-		m.rememberClick(index)
 	}
 	return m, nil
 }
@@ -278,15 +296,6 @@ func setActivePanelCmd(panel panels.ID) tea.Cmd {
 	}
 }
 
-func (m Model) isDoubleClick(index int) bool {
-	return m.lastClick.project == index && time.Since(m.lastClick.at) <= doubleClickWindow
-}
-
-func (m *Model) rememberClick(index int) {
-	m.lastClick.project = index
-	m.lastClick.at = time.Now()
-}
-
 func (m Model) openCurrentProjectCmd() tea.Cmd {
 	if len(m.projects) == 0 || m.cursor < 0 || m.cursor >= len(m.projects) {
 		return nil
@@ -296,7 +305,11 @@ func (m Model) openCurrentProjectCmd() tea.Cmd {
 	if project.Disabled {
 		return nil
 	}
-	url := firebase.RemoteConfigConsoleURL(project.ProjectID)
+	target, err := rctarget.Parse(project.ProjectID)
+	if err != nil {
+		return nil
+	}
+	url := firebase.RemoteConfigConsoleURL(target.ProjectID)
 	return func() tea.Msg {
 		logger := corelog.For("tui.projects")
 		logger.Info("open project remote config", "project_id", project.ProjectID, "url", url)

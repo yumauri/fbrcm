@@ -8,10 +8,15 @@ import (
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) (*firebase.Service, error) {
-	project, err := s.ProjectByID(projectID)
+	target, err := rctarget.Parse(projectID)
+	if err != nil {
+		return nil, err
+	}
+	project, err := s.ProjectByID(target.ProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +52,8 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 		if err != nil {
 			return nil, err
 		}
-		fb, err := firebase.NewServiceForAuth(serviceCtx, auth, true)
+		authCtx, autoOpen := s.oauthAuthorizationContext(serviceCtx, authID, true)
+		fb, err := firebase.NewServiceForAuth(authCtx, auth, autoOpen)
 		if err != nil {
 			return nil, err
 		}

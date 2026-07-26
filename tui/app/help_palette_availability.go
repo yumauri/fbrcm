@@ -279,6 +279,9 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 		if !m.projects.HasCurrentProject() {
 			return false, "no project is selected"
 		}
+		if action == tuiconfig.ActionMakePrimary && !m.projects.CanMakeCurrentPrimary() {
+			return false, "the focused template is already primary or is the only visible template"
+		}
 		if action == tuiconfig.ActionPromote && len(m.projects.AllProjects()) < 2 {
 			return false, "at least two projects are required"
 		}

@@ -43,6 +43,18 @@ func TestDownloadRemoteConfigDefaultsRejectsInvalidFormatWithoutRequest(t *testi
 	}
 }
 
+func TestDownloadServerRemoteConfigDefaultsUsesNamespace(t *testing.T) {
+	svc := NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Path != "/v1/projects/demo/namespaces/firebase-server/remoteConfig:downloadDefaults" {
+			t.Fatalf("path = %q", req.URL.Path)
+		}
+		return jsonHTTPResponse(http.StatusOK, `{}`, ""), nil
+	})})
+	if _, err := svc.DownloadRemoteConfigDefaults(context.Background(), "server@demo", DefaultsFormatJSON); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDownloadRemoteConfigDefaultsReportsAPIError(t *testing.T) {
 	svc := NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		return jsonHTTPResponse(http.StatusForbidden, `{"error":"denied"}`, ""), nil

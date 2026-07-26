@@ -34,7 +34,7 @@ func ParseDefaultsFormat(value string) (DefaultsFormat, error) {
 	}
 }
 
-// DownloadRemoteConfigDefaults downloads the client-side template defaults.
+// DownloadRemoteConfigDefaults downloads the selected template defaults.
 func (s *Service) DownloadRemoteConfigDefaults(ctx context.Context, projectID string, format DefaultsFormat) ([]byte, error) {
 	logger := corelog.For("firebase")
 	parsedFormat, err := ParseDefaultsFormat(string(format))
@@ -43,13 +43,17 @@ func (s *Service) DownloadRemoteConfigDefaults(ctx context.Context, projectID st
 	}
 	logger.Info("download remote config defaults", "project_id", projectID, "format", parsedFormat)
 
-	endpoint := fmt.Sprintf("https://firebaseremoteconfig.googleapis.com/v1/projects/%s/remoteConfig:downloadDefaults", projectID)
+	resource, quotaProjectID, err := remoteConfigResource(projectID)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := "https://firebaseremoteconfig.googleapis.com/v1/" + resource + ":downloadDefaults"
 	endpoint += "?" + url.Values{"format": []string{string(parsedFormat)}}.Encode()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create remote config defaults request: %w", err)
 	}
-	s.setQuotaProject(req, projectID)
+	s.setQuotaProject(req, quotaProjectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)

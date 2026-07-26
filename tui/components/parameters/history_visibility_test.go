@@ -470,7 +470,10 @@ func TestHistoryVersionPickerSelectionExcludesArrowColumns(t *testing.T) {
 	}
 	fallbackLeft, fallbackRight := historyPickerArrowGlyphs(false)
 	if fallbackLeft != historyPickerFallbackLeftArrow || fallbackRight != historyPickerFallbackRightArrow {
-		t.Fatal("standard Unicode arrow fallback is not selected when Powerline glyphs are disabled")
+		t.Fatal("Unicode quarter-block fallback is not selected when Powerline glyphs are disabled")
+	}
+	if lipgloss.Width(fallbackLeft) != historyPickerArrowWidth || lipgloss.Width(fallbackRight) != historyPickerArrowWidth {
+		t.Fatal("Unicode quarter-block arrow glyph width does not match its reserved column")
 	}
 }
 

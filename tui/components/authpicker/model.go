@@ -2,10 +2,13 @@ package authpicker
 
 import (
 	"strings"
+	"time"
 
 	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/tui/components/buttonbar"
+	"github.com/yumauri/fbrcm/tui/components/mouseutil"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 )
 
 type Option struct {
@@ -24,6 +27,7 @@ type Model struct {
 	scroll        int
 	open          bool
 	buttons       buttonbar.Model
+	lastClick     mouseutil.ClickTracker
 }
 
 func New() Model {
@@ -91,6 +95,26 @@ func (m *Model) SelectButtonAt(x, y int) bool {
 	}
 	m.buttons = m.buttons.SetSelected(index)
 	return true
+}
+
+func (m *Model) SelectOptionAt(x, y int, at time.Time) (bool, bool) {
+	boxX, boxY := m.Position()
+	boxWidth, _ := m.boxSize()
+	if !m.open || x < boxX+1 || x >= boxX+boxWidth-1 {
+		return false, false
+	}
+	firstRow := boxY + 1 + viewutil.PopupPaddingTop + len(m.body)
+	if len(m.body) > 0 {
+		firstRow++
+	}
+	visibleIndex := y - firstRow
+	index := m.scroll + visibleIndex
+	if visibleIndex < 0 || visibleIndex >= m.visibleRows() || index < 0 || index >= len(m.options) {
+		return false, false
+	}
+	m.cursor = index
+	m.ensureVisible()
+	return m.lastClick.Register(0, index, at), true
 }
 
 func (m Model) Position() (int, int) {

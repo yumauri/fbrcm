@@ -184,6 +184,20 @@ func (m Model) conditionSelectorOptions() []moveparam.Option {
 }
 
 func (m Model) updateOptionSelector(msg tea.Msg) (Model, tea.Cmd) {
+	if mouse, ok := msg.(tea.MouseClickMsg); ok {
+		if mouse.Mouse().Button != tea.MouseLeft {
+			return m, nil
+		}
+		selectCmd, double, hit := m.optionSelector.SelectAt(mouse.Mouse().X, mouse.Mouse().Y, time.Now())
+		if !hit {
+			return m, nil
+		}
+		if double {
+			next, cmd := m.commitOptionSelector()
+			return next, tea.Batch(selectCmd, cmd)
+		}
+		return m, selectCmd
+	}
 	key, ok := msg.(tea.KeyMsg)
 	if !ok {
 		return m, nil
@@ -197,21 +211,26 @@ func (m Model) updateOptionSelector(msg tea.Msg) (Model, tea.Cmd) {
 	case "down", "j", "ctrl+j":
 		return m, m.optionSelector.Move(1)
 	case "enter":
-		option, selected := m.optionSelector.Current()
-		if !selected {
-			return m, nil
-		}
-		switch m.optionSelectorKind {
-		case optionSelectorStrategy:
-			m.strategy = core.ProjectImportStrategy(option.Key)
-		case optionSelectorConditions:
-			m.conditionPolicy = core.ProjectConditionPolicy(option.Key)
-		}
-		m.optionSelector = m.optionSelector.Close()
-		m.optionSelectorKind = optionSelectorNone
+		return m.commitOptionSelector()
 	default:
 		m.optionSelector.Typeahead(key.String(), time.Now())
 	}
+	return m, nil
+}
+
+func (m Model) commitOptionSelector() (Model, tea.Cmd) {
+	option, selected := m.optionSelector.Current()
+	if !selected {
+		return m, nil
+	}
+	switch m.optionSelectorKind {
+	case optionSelectorStrategy:
+		m.strategy = core.ProjectImportStrategy(option.Key)
+	case optionSelectorConditions:
+		m.conditionPolicy = core.ProjectConditionPolicy(option.Key)
+	}
+	m.optionSelector = m.optionSelector.Close()
+	m.optionSelectorKind = optionSelectorNone
 	return m, nil
 }
 

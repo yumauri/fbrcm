@@ -4,6 +4,7 @@ import "github.com/spf13/cobra"
 
 const (
 	projectFilterFlagHelp   = "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+	targetFilterFlagHelp    = "Filter template targets by optional client@ or server@ project query; may be repeated"
 	parameterFilterFlagHelp = "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated"
 	parameterSearchFlagHelp = "Search parameters by name, description, values, and conditions"
 	dryRunFlagHelp          = "Preview changes without writing local or Firebase state"
@@ -11,6 +12,10 @@ const (
 
 func AddProjectFilterFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayP("project", "p", nil, projectFilterFlagHelp)
+}
+
+func AddProjectTargetFilterFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayP("project", "p", nil, targetFilterFlagHelp)
 }
 
 func AddProjectListFilterFlag(cmd *cobra.Command) {

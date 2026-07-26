@@ -1,8 +1,11 @@
 package app
 
 import (
+	"strings"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
@@ -18,17 +21,28 @@ var (
 				Foreground(lipgloss.Color("15")).
 				Background(lipgloss.Color("196")).
 				Padding(0, 1)
+
+	profileBadgeStyle = lipgloss.NewStyle().
+				Bold(true).
+				Foreground(styles.PaletteSlateBright).
+				Background(styles.PaletteBlueDeep).
+				Padding(0, 1)
 )
 
 func (m Model) View() tea.View {
 	if m.width < minsize.MinWidth || m.height < minsize.MinHeight {
-		return appView(rootStyle.Render(minsize.View(m.width, m.height)), tea.MouseModeNone)
+		body := m.profileOverlay(minsize.View(m.width, m.height))
+		return appView(rootStyle.Render(body), tea.MouseModeNone)
 	}
-	if m.setup.IsOpen() && !m.setup.IsPopup() {
-		return appView(rootStyle.Render(m.setup.View(m.width, m.height)), tea.MouseModeNone)
+	if m.setup.IsOpen() && !m.setup.IsPopup() && !m.oauthDialog.IsOpen() {
+		body := m.profileOverlay(m.setup.View(m.width, m.height))
+		return appView(rootStyle.Render(body), tea.MouseModeAllMotion)
 	}
 
 	body := m.baseView()
+	if m.setup.IsOpen() && !m.setup.IsPopup() {
+		body = m.setup.View(m.width, m.height)
+	}
 	layers := m.overlayLayers(body)
 	if len(layers) > 1 {
 		body = lipgloss.NewCompositor(layers...).Render()
@@ -45,10 +59,13 @@ func appView(content string, mouseMode tea.MouseMode) tea.View {
 }
 
 func (m Model) mouseMode() tea.MouseMode {
-	if m.helpPalette.IsOpen() || m.setup.IsOpen() {
-		return tea.MouseModeNone
+	if m.helpPalette.IsOpen() {
+		return tea.MouseModeAllMotion
 	}
-	if m.dialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
+	if m.setup.IsOpen() {
+		return tea.MouseModeAllMotion
+	}
+	if m.dialog.IsOpen() || m.oauthDialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
 	if m.active == panels.Logs {
@@ -93,6 +110,7 @@ func (m Model) contextOverlayOpen() bool {
 		m.parameters.HistoryPickerOpen() ||
 		m.details.DropdownOpen() ||
 		m.dialog.IsOpen() ||
+		m.oauthDialog.IsOpen() ||
 		m.diffView.IsOpen() ||
 		m.boolPicker.IsOpen() ||
 		m.jsonInput.IsOpen() ||
@@ -114,8 +132,10 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendDialogLayers(layers)
 	layers = m.appendProjectIOLayer(layers)
 	layers = m.appendSetupLayer(layers)
+	layers = m.appendOAuthDialogLayer(layers)
 	layers = m.appendOfflineLayer(layers)
 	layers = m.appendHelpPaletteLayer(layers)
+	layers = m.appendProfileLayer(layers)
 	return layers
 }
 
@@ -157,7 +177,7 @@ func (m Model) appendSetupLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if !m.setup.IsOpen() || !m.setup.IsPopup() {
 		return layers
 	}
-	focused := !m.helpPalette.IsOpen() && !m.dialog.IsOpen() && !m.renameInput.IsOpen()
+	focused := !m.helpPalette.IsOpen() && !m.dialog.IsOpen() && !m.oauthDialog.IsOpen() && !m.renameInput.IsOpen()
 	view := m.setup.PopupViewWithFocus(m.width, m.height, focused)
 	return append(layers, lipgloss.NewLayer(view).
 		ID("accounts-profiles").
@@ -254,12 +274,53 @@ func (m Model) appendDialogLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	return layers
 }
 
+func (m Model) appendOAuthDialogLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.oauthDialog.IsOpen() {
+		return layers
+	}
+	dialog := m.oauthDialog.View()
+	x, y := m.oauthDialog.Position()
+	return append(layers, lipgloss.NewLayer(dialog).ID("oauth-authorization").X(x).Y(y).Z(90))
+}
+
 func (m Model) appendOfflineLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if firebase.IsOffline() {
 		badge := offlineBadgeView()
 		layers = append(layers, lipgloss.NewLayer(badge).ID("offline").X(max(m.width-lipgloss.Width(badge), 0)).Y(max(m.height-1, 0)).Z(99))
 	}
 	return layers
+}
+
+func (m Model) appendProfileLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	badge := profileBadgeView(m.profileName, m.width)
+	if badge == "" {
+		return layers
+	}
+	return append(layers, lipgloss.NewLayer(badge).
+		ID("profile").
+		X(max(m.width-lipgloss.Width(badge), 0)).
+		Y(0).
+		Z(101))
+}
+
+func (m Model) profileBadgeAt(x, y int) bool {
+	if y != 0 {
+		return false
+	}
+	badge := profileBadgeView(m.profileName, m.width)
+	if badge == "" {
+		return false
+	}
+	left := max(m.width-lipgloss.Width(badge), 0)
+	return x >= left && x < left+lipgloss.Width(badge)
+}
+
+func (m Model) profileOverlay(body string) string {
+	layers := m.appendProfileLayer([]*lipgloss.Layer{lipgloss.NewLayer(body).ID("base")})
+	if len(layers) == 1 {
+		return body
+	}
+	return lipgloss.NewCompositor(layers...).Render()
 }
 
 func (m Model) detailsX() int {
@@ -277,4 +338,21 @@ func offlineBadgeView() string {
 		return lipgloss.NewStyle().Bold(true).Reverse(true).Padding(0, 1).Render("OFFLINE")
 	}
 	return offlineBadgeStyle.Render("OFFLINE")
+}
+
+func profileBadgeView(profile string, maxWidth int) string {
+	profile = strings.TrimSpace(profile)
+	if profile == "" || maxWidth <= 0 {
+		return ""
+	}
+
+	padding := 1
+	if maxWidth < 3 {
+		padding = 0
+	}
+	profile = ansi.Truncate(profile, max(maxWidth-padding*2, 1), "…")
+	if styles.NoColorEnabled() {
+		return lipgloss.NewStyle().Bold(true).Reverse(true).Padding(0, padding).Render(profile)
+	}
+	return profileBadgeStyle.Padding(0, padding).Render(profile)
 }

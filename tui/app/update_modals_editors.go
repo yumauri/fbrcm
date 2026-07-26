@@ -1,6 +1,8 @@
 package app
 
 import (
+	"time"
+
 	tea "charm.land/bubbletea/v2"
 
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
@@ -35,7 +37,17 @@ func (m Model) updateBoolPicker(msg tea.Msg) (Model, tea.Cmd, bool) {
 			m.boolPicker.Move(1)
 			return m, nil, true
 		}
-	case tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+	case tea.MouseClickMsg:
+		if msg.Mouse().Button == tea.MouseLeft {
+			if double, ok := m.boolPicker.SelectAt(msg.Mouse().X, msg.Mouse().Y, time.Now()); ok {
+				if double {
+					return m, m.submitBoolPicker(), true
+				}
+				return m, nil, true
+			}
+		}
+		return m, nil, true
+	case tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
 		return m, nil, true
 	}
 	return m, nil, false

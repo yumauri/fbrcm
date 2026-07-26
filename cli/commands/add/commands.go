@@ -54,7 +54,7 @@ func New(svc *core.Core) *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	shared.AddProjectFilterFlag(cmd)
+	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
@@ -64,7 +64,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().String("number", "", "Number parameter value")
 	cmd.Flags().String("string", "", "String parameter value")
 	cmd.Flags().String("json", "", "JSON parameter value")
-	cmd.Flags().Bool("use-in-app-default", false, "Use the client application's default value")
+	cmd.Flags().Bool("use-in-app-default", false, "Use the application's default value")
 	cmd.Flags().String("type", "", "Parameter type for --use-in-app-default: string, boolean, number, or json")
 	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json", "use-in-app-default")
 }
@@ -166,7 +166,10 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	if err != nil {
 		return err
 	}
-	projects = shared.FilterProjects(projects, opts.projectFilters)
+	projects, err = shared.FilterProjectTargets(projects, opts.projectFilters)
+	if err != nil {
+		return err
+	}
 	projects, err = shared.FilterProjectsByExpr(ctx, svc, projects, opts.projectExpr)
 	if err != nil {
 		return err

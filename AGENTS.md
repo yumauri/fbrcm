@@ -31,6 +31,14 @@
 - Use the shared `core/rc/display.FormatCount` helper for counted nouns, and ensure the surrounding verbs, pronouns, and sentence structure are also correct for both singular and plural counts.
 - When adding or changing counted text, search for related wording across the repository and add regression coverage for both singular and plural output where practical.
 
+## TUI mouse interactions
+
+- Every selectable TUI item must support left-click selection. Double-clicking the same item must invoke the same action as Enter on that item.
+- Every visible TUI button must support immediate left-click activation.
+- Use the shared `tui/components/mouseutil` behavior for double-click detection and mouse adaptation instead of component-local timing or duplicate implementations.
+- Keep mouse hit regions aligned with the rendered layout, including popup positions, borders, padding, scrolling, and wrapped or filtered rows. Add regression tests for new or changed mouse interactions.
+- Keep mouse reporting disabled while the Logs panel is active and no mouse-interactive popup is open, so terminal-native log text selection continues to work. A mouse-interactive popup may temporarily enable reporting and must capture its mouse events without passing them to the Logs panel.
+
 ## Remote Config groups
 
 - Preserve empty and description-only parameter groups across all parameter mutations, filtering, condition cleanup, drafts, imports, merges, and promotions.

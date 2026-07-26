@@ -12,6 +12,11 @@ type ProjectsLoadedMsg struct {
 	Err      error
 }
 
+type ProjectTemplatePreferencesUpdatedMsg struct {
+	Project core.Project
+	Err     error
+}
+
 type ProjectExpressionConfigsLoadedMsg struct {
 	Configs map[string]*firebase.RemoteConfig
 }
@@ -155,3 +160,7 @@ type DetailsInvalidDiscardMsg struct {
 type DetailsValueEditRequestedMsg struct{}
 
 type DetailsAddConditionalValueRequestedMsg struct{}
+
+// DetailsSelectionSubmitRequestedMsg asks the application to apply the same
+// action as Enter to the item selected in the Details panel.
+type DetailsSelectionSubmitRequestedMsg struct{}

@@ -83,7 +83,7 @@ fbrcm config edit
 
 `config edit` uses `--editor`, `FBRCM_EDITOR`, `VISUAL`, or `EDITOR`, in that order. Editor commands may include arguments, so GUI editors should be configured to wait, for example `FBRCM_EDITOR="code --wait"`. If an edited file is invalid, fbrcm leaves the original untouched and reports the preserved staged file path.
 
-Powerline separators are enabled by default; disable them to use standard Unicode arrows when the terminal font does not include Powerline glyphs:
+Powerline separators are enabled by default; disable them to use Unicode quarter-block arrows when the terminal font does not include Powerline glyphs:
 
 ```toml
 powerline_glyphs = false
@@ -106,6 +106,8 @@ bind_auth = ["b"]
 import = ["i"]
 export = ["e"]
 defaults = ["d"]
+toggle_templates = ["t"]
+make_primary = ["p"]
 
 [keys.help]
 cancel = ["esc"]
@@ -196,6 +198,10 @@ Press `Ctrl+A` from the workspace to open Accounts or `Ctrl+P` to open Profiles.
 In the Projects panel, press `b` to bind the current project, or all marked projects, to another configured identity.
 Press `x` to remove the current project, or all marked projects, from the active profile together with its local cached configs, versions, and draft; Firebase is not changed.
 
+Projects initially show only their client Remote Config template. Press `t` to expand the focused project into client and `server@` rows. Press `p` on either row to make that template primary and move it first. Press `t` while both rows are visible to keep only the focused template, which also becomes primary. These choices persist per project and control the default template selection of unqualified CLI project arguments and filters; explicit `client@` or `server@` CLI targets always override them.
+
+Use `fbrcm project templates show <project>` and `fbrcm project templates set <project>` to inspect or change the same local preferences from the CLI.
+
 Press `i` to import Remote Config JSON into the project under the Projects-panel cursor. Marked projects control what is shown in Parameters but do not change the import target. The import wizard accepts raw Remote Config or an fbrcm cache file, supports merge or replacement, group and parameter filters, rich search, expressions, condition cleanup, and per-conflict resolution. It always shows the resulting diff. A new import can be saved as a draft or published immediately; when a draft already exists, the import updates that draft and leaves publication to the normal `p` action.
 
 Press `e` to export the project under the Projects-panel cursor, also independently of marked projects. When a draft exists, choose between the published Remote Config and the local draft, then enter a destination path. Exports use the same stable JSON normalization and private file permissions as `fbrcm project export`; existing files require explicit overwrite confirmation.
@@ -208,7 +214,7 @@ The source uses its local draft when one exists; press `u` in Promote to switch 
 
 When `FBRCM_PROFILE` selects the TUI profile for the current process, Profiles shows that profile as pinned. Restart without the variable to create, switch, rename, or delete profiles interactively.
 
-OAuth authorization and project discovery remain cancellable with `Esc`. Canceling OAuth returns to the selected JSON file so a removed or otherwise unusable client can be replaced without restarting the TUI.
+OAuth authorization and project discovery remain cancellable with `Esc`. The TUI shows the complete authorization link in a modal with **Open Browser**, **Copy Link**, and **Cancel** actions; it does not write the link over the terminal interface. The modal closes automatically after a successful callback. Canceling OAuth returns to the selected JSON file so a removed or otherwise unusable client can be replaced without restarting the TUI.
 
 ### OAuth Desktop Login
 
@@ -239,7 +245,9 @@ After the client secret is imported, authenticate:
 fbrcm auth login default
 ```
 
-The app opens a browser authorization page and waits for the local OAuth callback. If the browser does not open, copy the printed URL into a browser.
+The CLI opens a browser authorization page and waits for the local OAuth callback. If the browser does not open, copy the printed URL into a browser. In the TUI, use **Open Browser** or **Copy Link** in the authorization modal.
+
+If Firebase rejects a cached OAuth access token, `fbrcm` forces a token refresh and retries the request once. When the refresh token is also rejected, it starts the authorization flow again before retrying.
 
 Check current auth files:
 

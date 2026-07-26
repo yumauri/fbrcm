@@ -169,6 +169,24 @@ func TestRunRemotePublishLoopContinuesAfterProjectFailure(t *testing.T) {
 	}
 }
 
+func TestWriteRemoteMutationResultsFormatsServerRetryFilter(t *testing.T) {
+	cmd := &cobra.Command{}
+	var out, errOut bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&errOut)
+	WriteRemoteMutationResults(cmd, RemoteMutationTotals{Results: []RemoteMutationResult{{
+		Project: core.Project{ProjectID: "server@demo"},
+		Status:  RemoteMutationConflict,
+		Err:     errors.New("conflict"),
+	}}}, "publish", "✅")
+	if !strings.Contains(errOut.String(), "-p 'server@=demo'") {
+		t.Fatalf("stderr = %q", errOut.String())
+	}
+	if strings.Contains(errOut.String(), "-p '=server@demo'") {
+		t.Fatalf("stderr uses invalid target filter = %q", errOut.String())
+	}
+}
+
 func setupLoopTestCore(t *testing.T) *core.Core {
 	t.Helper()
 	root := t.TempDir()
