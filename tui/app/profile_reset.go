@@ -14,7 +14,7 @@ func (m *Model) resetWorkspaceForProfile() tea.Cmd {
 	logsHeight, logsSized := m.logsHeight, m.logsSized
 	logsMode, logsSaved := m.logsMode, m.logsSaved
 
-	fresh := New(m.svc)
+	fresh := newModel(m.svc, m.oauthEvents)
 	fresh.setup = setupModel
 	fresh.logs = logsModel
 	fresh.help = helpModel

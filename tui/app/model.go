@@ -77,7 +77,7 @@ type Model struct {
 	promotionPreview *core.ProjectPromotionPreview
 	valueEditSource  panels.ID
 	authCount        int
-	oauthEvents      <-chan core.OAuthAuthorizationEvent
+	oauthEvents      chan core.OAuthAuthorizationEvent
 	oauthSession     *oauthAuthorizationSession
 	profileName      string
 
@@ -133,13 +133,18 @@ type profileRenameSession struct {
 }
 
 func New(svc *core.Core) Model {
+	return newModel(svc, nil)
+}
+
+func newModel(svc *core.Core, oauthEvents chan core.OAuthAuthorizationEvent) Model {
 	authCount := 0
-	var oauthEvents chan core.OAuthAuthorizationEvent
 	if svc != nil {
 		if entries, _, err := svc.ListAuth(); err == nil {
 			authCount = len(entries)
 		}
-		oauthEvents = make(chan core.OAuthAuthorizationEvent, 8)
+		if oauthEvents == nil {
+			oauthEvents = make(chan core.OAuthAuthorizationEvent, 8)
+		}
 		svc.ConfigureOAuthAuthorization(false, func(event core.OAuthAuthorizationEvent) {
 			oauthEvents <- event
 		})
