@@ -12,6 +12,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --expr <expr>
 │   ├── --dry-run
 │   ├── --draft
+│   ├── --yes, -y
 │   ├── --description <text>
 │   ├── --group <name>
 │   └── exactly one value flag:
@@ -488,13 +489,14 @@ Other flags:
 --expr <expr>              filter target projects with project context
 --dry-run                  preview without writing local or Firebase state
 --draft                    save changes to local drafts instead of publishing
+-y, --yes                  print diff and add without confirmation
 --description <text>       parameter description
 --group <name>             add parameter inside group
 ```
 
-Remote mode loads projects, filters them, adds parameter where it does not already exist, validates, and publishes. Existing parameters are skipped.
+Remote mode loads projects, filters them, and adds the parameter where it does not already exist. It prints the complete Remote Config diff and asks for confirmation for each project unless `--yes` is set, then validates and publishes each confirmed project independently. Existing parameters are skipped.
 
-With `--draft`, the same mutation is stored locally on top of any existing draft. Without `--draft`, the command refuses projects that already have unpublished drafts.
+With `--draft`, each confirmed mutation is stored locally on top of any existing draft. Without `--draft`, the command refuses projects that already have unpublished drafts.
 
 Stdin mode reads Remote Config JSON from stdin, adds parameter to that JSON, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field.
 

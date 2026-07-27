@@ -27,6 +27,7 @@ type addOptions struct {
 	projectExpr    string
 	dryRun         bool
 	draft          bool
+	yes            bool
 	groupName      string
 	description    string
 	valueSpec      addValueSpec
@@ -58,6 +59,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
+	shared.AddYesFlag(cmd, "Print diff and add without confirmation")
 	cmd.Flags().String("description", "", "Parameter description")
 	cmd.Flags().String("group", "", "Target parameter group")
 	cmd.Flags().String("boolean", "", "Boolean parameter value: true or false")
@@ -101,6 +103,10 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 	if err != nil {
 		return addOptions{}, err
 	}
+	yes, err := cmd.Flags().GetBool("yes")
+	if err != nil {
+		return addOptions{}, err
+	}
 	groupName, err := cmd.Flags().GetString("group")
 	if err != nil {
 		return addOptions{}, err
@@ -124,6 +130,7 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 		projectExpr:    projectExpr,
 		dryRun:         dryRun,
 		draft:          draftMode,
+		yes:            yes,
 		groupName:      strings.TrimSpace(groupName),
 		description:    description,
 		valueSpec:      spec,
@@ -178,19 +185,17 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 
 	plan := func(project core.Project, _ *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
 		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
-			changed, finalCfg, err := addParameter(current, opts.key, opts.groupName, opts.description, opts.valueSpec)
+			if shared.ParamExists(current, opts.key) {
+				corelog.For("add").Error("parameter already exists; skipping", "project_id", project.ProjectID, "parameter", opts.key)
+				return 0, current, nil
+			}
+			changed, finalCfg, err := addProject(cmd, project, current, opts.key, opts.groupName, opts.description, opts.valueSpec, opts.yes)
 			if err != nil {
 				return 0, nil, err
 			}
 			if !changed {
-				corelog.For("add").Error("parameter already exists; skipping", "project_id", project.ProjectID, "parameter", opts.key)
 				return 0, finalCfg, nil
 			}
-			diffText, hasChanges := rc.RenderRemoteConfigDiff(current, finalCfg)
-			if !hasChanges {
-				return 0, finalCfg, nil
-			}
-			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 			return 1, finalCfg, nil
 		}, nil
 	}
@@ -203,6 +208,23 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	logAddTotals("remote", addTotals{modifiedProjects: totals.ModifiedProjects, addedParams: totals.ChangedParams})
 	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "➕")
 	return err
+}
+
+func addProject(cmd *cobra.Command, project core.Project, current *firebase.RemoteConfig, key, groupName, description string, spec addValueSpec, yes bool) (bool, *firebase.RemoteConfig, error) {
+	changed, finalCfg, err := addParameter(current, key, groupName, description, spec)
+	if err != nil || !changed {
+		return changed, finalCfg, err
+	}
+	diffText, hasChanges := rc.RenderRemoteConfigDiff(current, finalCfg)
+	if !hasChanges {
+		return false, finalCfg, nil
+	}
+	prompt := fmt.Sprintf("Add %s to %s?", shared.FormatParameterHeader(key, groupName), project.ProjectID)
+	confirmed, err := shared.PrintDiffAndConfirm(cmd, yes, cmd.ErrOrStderr(), diffText, prompt, false)
+	if err != nil || !confirmed {
+		return false, finalCfg, err
+	}
+	return true, finalCfg, nil
 }
 
 func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec addValueSpec, projectExpr string) error {

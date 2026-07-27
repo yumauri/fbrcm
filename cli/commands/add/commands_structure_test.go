@@ -8,6 +8,6 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmdtest.AssertCommandStructure(t, New(nil), "add <parameter>",
-		"project", "expr", "dry-run", "draft", "description", "group", "boolean", "number", "string", "json",
+		"project", "expr", "dry-run", "draft", "yes", "description", "group", "boolean", "number", "string", "json",
 		"use-in-app-default", "type")
 }

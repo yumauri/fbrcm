@@ -6,8 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -115,5 +117,60 @@ func TestAddParameterSupportsInAppDefault(t *testing.T) {
 	param := finalCfg.Parameters["payload"]
 	if param.ValueType != "JSON" || param.DefaultValue == nil || !param.DefaultValue.UseInAppDefault || param.DefaultValue.Value != "" {
 		t.Fatalf("payload = %#v, want JSON useInAppDefault", param)
+	}
+}
+
+func TestReadAddOptionsIncludesYes(t *testing.T) {
+	cmd := New(nil)
+	for flag, value := range map[string]string{
+		"boolean": "true",
+		"yes":     "true",
+	} {
+		if err := cmd.Flags().Set(flag, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	opts, err := readAddOptions(cmd, []string{" feature_enabled "})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !opts.yes || opts.key != "feature_enabled" {
+		t.Fatalf("options = %#v, want yes and trimmed key", opts)
+	}
+}
+
+func TestAddProjectPrintsDiffWithoutMutatingSource(t *testing.T) {
+	cmd := &cobra.Command{}
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+	cmd.SetOut(&bytes.Buffer{})
+	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
+		"existing": {DefaultValue: &firebase.RemoteConfigValue{Value: "old"}},
+	}}
+
+	changed, finalCfg, err := addProject(
+		cmd,
+		core.Project{ProjectID: "demo"},
+		cfg,
+		"new_flag",
+		"group-a",
+		"New flag",
+		addValueSpec{value: "true", valueType: "BOOLEAN"},
+		true,
+	)
+	if err != nil || !changed {
+		t.Fatalf("addProject = changed %v, err %v", changed, err)
+	}
+	if _, exists := finalCfg.ParameterGroups["group-a"].Parameters["new_flag"]; !exists {
+		t.Fatal("new_flag is missing from final config")
+	}
+	if _, exists := cfg.ParameterGroups["group-a"]; exists {
+		t.Fatal("addProject mutated source config")
+	}
+	diff := ansi.Strip(errOut.String())
+	for _, want := range []string{"+ new_flag [group-a]", "default:", "true"} {
+		if !strings.Contains(diff, want) {
+			t.Fatalf("diff = %q, want %q", diff, want)
+		}
 	}
 }
