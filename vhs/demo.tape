@@ -37,11 +37,15 @@ Sleep 2 s
 Type "/tmp/fbrcm-vhs-demo"
 Enter
 Wait+Screen@30s /Projects/
+Down
+Enter
+Wait+Screen@30s /account_nickname_max_length/
 Show
 
-# Navigate to the third project and let its full parameter tree fill the screen.
+# Start on Northstar Wallet, then navigate to PulseForge Fitness.
 Sleep 1 s
-Down@350ms 2
+Type "1"
+Down@350ms 1
 Enter
 Wait+Screen@30s /enable_visual_search/
 Sleep 700 ms
