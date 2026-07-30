@@ -1522,7 +1522,9 @@ Flags:
 
 ### `fbrcm auth add gcloud <auth-id>`
 
-Adds or replaces a gcloud ADC identity. Run `gcloud auth application-default login` first so ADC discovery can find credentials.
+Adds or replaces a [Google Cloud CLI](https://cloud.google.com/cli) ADC
+identity. Run `gcloud auth application-default login` first so ADC discovery
+can find credentials.
 
 Flags:
 

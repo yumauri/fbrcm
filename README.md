@@ -73,7 +73,8 @@ On a new profile, fbrcm opens guided setup. It supports:
 
 - an OAuth Desktop app client;
 - a service-account JSON key;
-- existing gcloud Application Default Credentials.
+- existing [Google Cloud CLI](https://cloud.google.com/cli) Application Default
+  Credentials.
 
 The identity needs access to the projects you want to manage. Project discovery
 uses the Cloud Resource Manager API; template reads, validation, publication,

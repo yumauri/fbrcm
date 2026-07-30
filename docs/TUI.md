@@ -34,7 +34,8 @@ opens guided setup instead of an empty workspace. It can:
 
 1. import an OAuth Desktop app client JSON and complete browser authorization;
 2. import a service-account JSON key;
-3. validate existing gcloud Application Default Credentials;
+3. validate existing [Google Cloud CLI](https://cloud.google.com/cli)
+   Application Default Credentials;
 4. discover the projects available to the selected identity.
 
 OAuth authorization is cancellable. The authorization dialog shows the complete
@@ -92,7 +93,7 @@ fbrcm auth add service-account production \
 
 The account needs the relevant project discovery and Remote Config permissions.
 
-### gcloud Application Default Credentials
+### Google Cloud CLI Application Default Credentials
 
 Create ADC first, then select the gcloud identity during setup:
 
