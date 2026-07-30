@@ -182,8 +182,8 @@ func writeVersion(buf *bytes.Buffer, version firebase.RemoteConfigVersion, inden
 		value := version.UpdateTime
 		entries = append(entries, objectEntry{key: "updateTime", writeValue: func() { writeJSONString(buf, value) }})
 	}
-	if version.Description != "" {
-		value := version.Description
+	if version.ChangeNote != "" {
+		value := version.ChangeNote
 		entries = append(entries, objectEntry{key: "description", writeValue: func() { writeJSONString(buf, value) }})
 	}
 	writeObject(buf, indent, entries)

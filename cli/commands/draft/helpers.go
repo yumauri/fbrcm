@@ -9,6 +9,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -33,6 +34,7 @@ type listItem struct {
 	BaseAvailable bool           `json:"base_available"`
 	Path          string         `json:"path"`
 	Changes       map[string]int `json:"changes,omitempty"`
+	ChangeNote    *string        `json:"change_note"`
 }
 
 func loadItems(rawFilters []string) ([]listItem, error) {
@@ -68,6 +70,7 @@ func loadItems(rawFilters []string) ([]listItem, error) {
 		stored, loadErr := config.LoadDraft(projectID)
 		if loadErr == nil {
 			item.BaseVersion = stored.BaseVersion
+			item.ChangeNote = optionalString(stored.ChangeNote)
 			created, updated := stored.CreatedAt, stored.UpdatedAt
 			item.CreatedAt, item.UpdatedAt = &created, &updated
 			baseCfg, baseErr := firebase.ParseRemoteConfig(stored.BaseRemoteConfig)
@@ -89,8 +92,12 @@ func loadItems(rawFilters []string) ([]listItem, error) {
 }
 
 func renderList(items []listItem) string {
+	return renderListAtWidth(items, shared.TerminalWidth())
+}
+
+func renderListAtWidth(items []listItem, terminalWidth int) string {
 	noColor := clistyles.NoColorEnabled()
-	headers := []string{"Project ID", "Project", "Base", "Updated", "Changes", "Status"}
+	headers := []string{"Project ID", "Project", "Base", "Updated", "Changes", "Status", "Change Note"}
 	widths := make([]int, len(headers))
 	for i, header := range headers {
 		widths[i] = lipgloss.Width(header)
@@ -105,11 +112,38 @@ func renderList(items []listItem) string {
 		if item.Changes != nil {
 			changes = fmt.Sprintf("%d params, %d conditions", item.Changes["parameters"], item.Changes["conditions"])
 		}
-		row := []string{item.ProjectID, item.Project, item.BaseVersion, updated, changes, item.Status}
+		changeNote := ""
+		if item.ChangeNote != nil {
+			changeNote = *item.ChangeNote
+		}
+		row := []string{item.ProjectID, item.Project, item.BaseVersion, updated, changes, item.Status, changeNote}
 		for i, cell := range row {
 			widths[i] = max(widths[i], lipgloss.Width(cell))
 		}
 		rows = append(rows, row)
+	}
+	tableWidth := func() int {
+		width := 3*len(headers) + 1
+		for _, cellWidth := range widths {
+			width += cellWidth
+		}
+		return width
+	}
+	if terminalWidth > 0 && tableWidth() > terminalWidth {
+		for _, column := range []int{6, 1, 0, 4, 3} {
+			minimum := lipgloss.Width(headers[column])
+			for widths[column] > minimum && tableWidth() > terminalWidth {
+				widths[column]--
+			}
+		}
+		for column := range headers {
+			headers[column] = ansi.Truncate(headers[column], widths[column], "…")
+		}
+		for row := range rows {
+			for column := range rows[row] {
+				rows[row][column] = ansi.Truncate(rows[row][column], widths[column], "…")
+			}
+		}
 	}
 
 	styleFunc := func(row, col int) lipgloss.Style {
@@ -132,10 +166,7 @@ func renderList(items []listItem) string {
 		return style.Foreground(clistyles.PaletteSlateDim)
 	}
 
-	width := 3*len(headers) + 1
-	for _, cellWidth := range widths {
-		width += cellWidth
-	}
+	width := tableWidth()
 	tbl := table.New().
 		Headers(headers...).
 		Rows(rows...).

@@ -18,9 +18,10 @@ import (
 )
 
 type mutationOptions struct {
-	Draft  bool
-	DryRun bool
-	Yes    bool
+	Draft      bool
+	DryRun     bool
+	Yes        bool
+	ChangeNote *string
 }
 
 type conditionMutation func(*firebase.RemoteConfig) error
@@ -195,6 +196,7 @@ func newValidateCommand(svc *core.Core) *cobra.Command {
 func addMutationFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Print diff and apply without confirmation")
 	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
 }
@@ -203,7 +205,12 @@ func readMutationOptions(cmd *cobra.Command) mutationOptions {
 	draft, _ := cmd.Flags().GetBool("draft")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
-	return mutationOptions{Draft: draft, DryRun: dryRun, Yes: yes}
+	var changeNote *string
+	if cmd.Flags().Changed("change-note") {
+		value, _ := cmd.Flags().GetString("change-note")
+		changeNote = &value
+	}
+	return mutationOptions{Draft: draft, DryRun: dryRun, Yes: yes, ChangeNote: changeNote}
 }
 
 func runNamedConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery, requestedName string, opts mutationOptions, operation, emoji string, destructive bool, mutate func(*firebase.RemoteConfig, string) error) error {
@@ -220,6 +227,11 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 	ctx := context.Background()
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	var err error
+	ctx, err = shared.WithChangeNote(ctx, opts.ChangeNote)
+	if err != nil {
+		return err
 	}
 	project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, projectQuery)
 	if err != nil {

@@ -251,11 +251,12 @@ func (m Model) updateHistoryPickerMouse(msg tea.MouseClickMsg) (Model, tea.Cmd) 
 	}
 
 	state := m.histories[m.versionPicker.projectID]
-	rows := max(geometry.height-6-viewutil.PopupPaddingTop, 0)
 	cursor := m.versionPicker.rightCursor
 	if m.versionPicker.left {
 		cursor = m.versionPicker.leftCursor
 	}
+	noteLines := historyPickerFocusedNoteLines(state.versions, cursor, max(geometry.width-2-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 0))
+	rows := max(geometry.height-6-viewutil.PopupPaddingTop-len(noteLines), 0)
 	start := max(min(cursor-rows/2, len(state.versions)-rows), 0)
 	row := localY - 4 - viewutil.PopupPaddingTop
 	index := start + row
@@ -379,8 +380,8 @@ func (m Model) historyPickerGeometry() historyPickerLayout {
 		tabRight = rightAnchor + rightTabWidth
 	}
 
-	versionWidth, publishedWidth, authorWidth := historyPickerNaturalColumnWidths(state.versions)
-	tableWidth := versionWidth*2 + publishedWidth + authorWidth + 6
+	versionWidth, publishedWidth, authorWidth, noteWidth := historyPickerNaturalColumnWidths(state.versions)
+	tableWidth := versionWidth*2 + publishedWidth + authorWidth + noteWidth + 8
 	width := max(tableWidth+4, tabRight-leftAnchor)
 	if !hasBounds {
 		panelRight = max(panelRight, width)
@@ -388,11 +389,17 @@ func (m Model) historyPickerGeometry() historyPickerLayout {
 	x := tabRight - width
 	x = max(x, 0)
 	width = min(width, max(panelRight-x, 1))
+	inner := max(width-2-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 0)
+	cursor := m.versionPicker.rightCursor
+	if m.versionPicker.left {
+		cursor = m.versionPicker.leftCursor
+	}
+	noteLines := historyPickerFocusedNoteLines(state.versions, cursor, inner)
 
 	projectLine := m.historyPickerProjectScreenLine(m.versionPicker.projectID)
 	y := m.y + max(projectLine, 0)
 	availableHeight := max(m.viewportHeight()-max(projectLine, 0), 1)
-	desiredHeight := min(max(len(state.versions)+6, historyPickerMinHeight), 24)
+	desiredHeight := max(len(state.versions)+6+viewutil.PopupPaddingTop+len(noteLines), historyPickerMinHeight)
 	height := min(desiredHeight, availableHeight)
 
 	leftTab := max(leftAnchor-x, 0)
@@ -480,19 +487,21 @@ func (m Model) HistoryPickerView() string {
 	state := m.histories[m.versionPicker.projectID]
 	geometry := m.historyPickerGeometry()
 	w, h := geometry.width, geometry.height
-	inner, rows := max(w-2-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 0), max(h-6-viewutil.PopupPaddingTop, 0)
+	inner := max(w-2-viewutil.PopupPaddingLeft-viewutil.PopupPaddingRight, 0)
 	cursor := m.versionPicker.rightCursor
 	if m.versionPicker.left {
 		cursor = m.versionPicker.leftCursor
 	}
+	noteLines := historyPickerFocusedNoteLines(state.versions, cursor, inner)
+	rows := max(h-6-viewutil.PopupPaddingTop-len(noteLines), 0)
 	start := max(min(cursor-rows/2, len(state.versions)-rows), 0)
 	tabTop, tabContent, bodyTop := renderHistoryPickerTabs(geometry, m.versionPicker.left, m.historyPickerUnderlyingLine(geometry))
 	lines := []string{tabTop, tabContent, bodyTop}
 	for range viewutil.PopupPaddingTop {
 		lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine("", inner)+styles.PanelBorderActive.Render("│"))
 	}
-	versionWidth, publishedWidth, authorWidth := historyPickerColumnWidths(state.versions, inner)
-	header := pickerVersionTableRow("", "Published", "Author", "", versionWidth, publishedWidth, authorWidth)
+	versionWidth, publishedWidth, authorWidth, noteWidth := historyPickerColumnWidths(state.versions, inner)
+	header := pickerVersionTableRow("", "Published", "Author", "Change Note", "", versionWidth, publishedWidth, authorWidth, noteWidth)
 	header = centerHistoryPickerLine(styles.PanelMuted.Bold(true).Render(header), inner)
 	lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(header, inner)+styles.PanelBorderActive.Render("│"))
 	low, high := historyPickerBounds(len(state.versions), m.versionPicker.leftCursor, m.versionPicker.rightCursor, m.versionPicker.left)
@@ -504,7 +513,7 @@ func (m Model) HistoryPickerView() string {
 			author := historyVersionAuthor(v)
 			leftPicked := index == m.versionPicker.leftCursor
 			rightPicked := index == m.versionPicker.rightCursor
-			table := pickerVersionTableRow("v"+v.VersionNumber, formatPublished(v.UpdateTime), author, "v"+v.VersionNumber, versionWidth, publishedWidth, authorWidth)
+			table := pickerVersionTableRow("v"+v.VersionNumber, formatPublished(v.UpdateTime), author, v.ChangeNote, "v"+v.VersionNumber, versionWidth, publishedWidth, authorWidth, noteWidth)
 			available := index >= low && index <= high
 			if !available {
 				table = styles.PanelTitleInactiveTab.Render(table)
@@ -516,6 +525,9 @@ func (m Model) HistoryPickerView() string {
 			table = historyPickerRowArrows(table, leftPicked, rightPicked, m.versionPicker.left, !m.versionPicker.left)
 			line = centerHistoryPickerLine(table, inner)
 		}
+		lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(line, inner)+styles.PanelBorderActive.Render("│"))
+	}
+	for _, line := range noteLines {
 		lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(line, inner)+styles.PanelBorderActive.Render("│"))
 	}
 	lines = append(lines, styles.PanelBorderActive.Render("│")+viewutil.PopupContentLine(historyPickerHintView(inner), inner)+styles.PanelBorderActive.Render("│"))
@@ -643,20 +655,27 @@ func historyPickerKeyPair(left, right tuiconfig.Action) string {
 	return tuiconfig.Label(tuiconfig.BlockHistoryPicker, left) + "/" + tuiconfig.Label(tuiconfig.BlockHistoryPicker, right)
 }
 
-func historyPickerNaturalColumnWidths(versions []core.RemoteConfigVersionEntry) (int, int, int) {
+func historyPickerNaturalColumnWidths(versions []core.RemoteConfigVersionEntry) (int, int, int, int) {
 	versionWidth := historyPickerArrowWidth*2 + 1
 	publishedWidth, authorWidth := lipgloss.Width("Published"), lipgloss.Width("Author")
+	noteWidth := lipgloss.Width("Change Note")
 	for _, version := range versions {
 		versionWidth = max(versionWidth, historyPickerArrowWidth+1+lipgloss.Width("v"+version.VersionNumber))
 		publishedWidth = max(publishedWidth, lipgloss.Width(formatPublished(version.UpdateTime)))
 		authorWidth = max(authorWidth, lipgloss.Width(historyVersionAuthor(version)))
+		noteWidth = max(noteWidth, lipgloss.Width(version.ChangeNote))
 	}
-	return versionWidth, publishedWidth, authorWidth
+	return versionWidth, publishedWidth, authorWidth, noteWidth
 }
 
-func historyPickerColumnWidths(versions []core.RemoteConfigVersionEntry, inner int) (int, int, int) {
-	versionWidth, publishedWidth, authorWidth := historyPickerNaturalColumnWidths(versions)
-	overflow := versionWidth*2 + publishedWidth + authorWidth + 6 - inner
+func historyPickerColumnWidths(versions []core.RemoteConfigVersionEntry, inner int) (int, int, int, int) {
+	versionWidth, publishedWidth, authorWidth, noteWidth := historyPickerNaturalColumnWidths(versions)
+	overflow := versionWidth*2 + publishedWidth + authorWidth + noteWidth + 8 - inner
+	if overflow > 0 {
+		reduction := min(overflow, max(noteWidth-1, 0))
+		noteWidth -= reduction
+		overflow -= reduction
+	}
 	if overflow > 0 {
 		reduction := min(overflow, max(authorWidth-1, 0))
 		authorWidth -= reduction
@@ -666,7 +685,7 @@ func historyPickerColumnWidths(versions []core.RemoteConfigVersionEntry, inner i
 		reduction := min(overflow, max(publishedWidth-1, 0))
 		publishedWidth -= reduction
 	}
-	return versionWidth, publishedWidth, authorWidth
+	return versionWidth, publishedWidth, authorWidth, noteWidth
 }
 
 func historyVersionAuthor(version core.RemoteConfigVersionEntry) string {
@@ -690,11 +709,29 @@ const (
 
 var historyPickerInactiveSelectionColor = lipgloss.Color("#343A43")
 
-func pickerVersionTableRow(leftVersion, published, author, rightVersion string, versionWidth, publishedWidth, authorWidth int) string {
+func pickerVersionTableRow(leftVersion, published, author, changeNote, rightVersion string, versionWidth, publishedWidth, authorWidth, noteWidth int) string {
 	left := strings.Repeat(" ", historyPickerArrowWidth) + " " + leftVersion
 	right := rightVersion + " " + strings.Repeat(" ", historyPickerArrowWidth)
-	columns := []string{pickerCell(left, versionWidth), pickerCell(published, publishedWidth), pickerCell(author, authorWidth), pickerCell(right, versionWidth)}
+	columns := []string{
+		pickerCell(left, versionWidth),
+		pickerCell(published, publishedWidth),
+		pickerCell(author, authorWidth),
+		pickerEllipsisCell(changeNote, noteWidth),
+		pickerCell(right, versionWidth),
+	}
 	return strings.Join(columns, "  ")
+}
+
+func historyPickerFocusedNoteLines(versions []core.RemoteConfigVersionEntry, index, width int) []string {
+	if index < 0 || index >= len(versions) || width <= 0 {
+		return nil
+	}
+	note := strings.TrimSpace(versions[index].ChangeNote)
+	if note == "" {
+		note = "—"
+	}
+	wrapped := ansi.Hardwrap("Change note: "+note, width, true)
+	return strings.Split(wrapped, "\n")
 }
 
 func historyPickerRowArrows(line string, left, right, leftActive, rightActive bool) string {
@@ -750,4 +787,8 @@ func historyPickerArrowGlyphs(powerline bool) (string, string) {
 
 func pickerCell(value string, width int) string {
 	return viewutil.PadRight(ansi.Truncate(value, width, ""), width)
+}
+
+func pickerEllipsisCell(value string, width int) string {
+	return viewutil.PadRight(ansi.Truncate(value, width, "…"), width)
 }

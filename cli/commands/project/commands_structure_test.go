@@ -22,7 +22,7 @@ func TestNewCommandStructure(t *testing.T) {
 	for _, flag := range []string{"format", "to", "yes"} {
 		cmdtest.AssertFlag(t, cmd, "defaults", flag)
 	}
-	for _, flag := range []string{"from", "group", "filter", "expr", "search", "dry-run", "draft", "remove-all-conditions", "keep-portable-conditions-only", "merge", "override", "merge-resolve", "yes", "json"} {
+	for _, flag := range []string{"from", "group", "filter", "expr", "search", "dry-run", "draft", "change-note", "remove-all-conditions", "keep-portable-conditions-only", "merge", "override", "merge-resolve", "yes", "json"} {
 		cmdtest.AssertFlag(t, cmd, "import", flag)
 	}
 	importCmd, _, err := cmd.Find([]string{"import"})

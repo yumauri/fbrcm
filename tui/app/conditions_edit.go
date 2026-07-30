@@ -17,7 +17,7 @@ import (
 )
 
 type conditionPreviewFunc func() (*core.ParametersCache, json.RawMessage, error)
-type conditionApplyFunc func(bool) tea.Cmd
+type conditionApplyFunc func(bool, ...string) tea.Cmd
 
 func (m *Model) openNewConditionInput() tea.Cmd {
 	project, x, y, ok := m.conditions.CurrentProjectAnchor()
@@ -137,8 +137,8 @@ func (m *Model) submitConditionRenameInput() tea.Cmd {
 		func() (*core.ParametersCache, json.RawMessage, error) {
 			return m.svc.PreviewRenameCondition(session.project.ProjectID, session.originalName, name)
 		},
-		func(publish bool) tea.Cmd {
-			return m.renameConditionCmd(session.project, session.originalName, name, publish)
+		func(publish bool, changeNote ...string) tea.Cmd {
+			return m.renameConditionCmd(session.project, session.originalName, name, publish, changeNote...)
 		},
 	)
 }
@@ -167,8 +167,8 @@ func (m *Model) submitConditionMove() tea.Cmd {
 		func() (*core.ParametersCache, json.RawMessage, error) {
 			return m.svc.PreviewMoveCondition(session.project.ProjectID, session.originalName, priority)
 		},
-		func(publish bool) tea.Cmd {
-			return m.moveConditionCmd(session.project, session.originalName, priority, publish)
+		func(publish bool, changeNote ...string) tea.Cmd {
+			return m.moveConditionCmd(session.project, session.originalName, priority, publish, changeNote...)
 		},
 		rcdisplay.FormatConditionMoveImpact(len(impact.CrossedConditions), len(impact.AffectedParameters)),
 	)
@@ -199,7 +199,9 @@ func (m *Model) submitConditionExpressionInput() tea.Cmd {
 			func() (*core.ParametersCache, json.RawMessage, error) {
 				return m.svc.PreviewAddCondition(session.project.ProjectID, definition, 0)
 			},
-			func(publish bool) tea.Cmd { return m.addConditionCmd(session.project, definition, 0, publish) },
+			func(publish bool, changeNote ...string) tea.Cmd {
+				return m.addConditionCmd(session.project, definition, 0, publish, changeNote...)
+			},
 		)
 	}
 	data, ok := m.conditionDataForAction()
@@ -212,8 +214,8 @@ func (m *Model) submitConditionExpressionInput() tea.Cmd {
 		func() (*core.ParametersCache, json.RawMessage, error) {
 			return m.svc.PreviewEditCondition(session.project.ProjectID, session.originalName, edit)
 		},
-		func(publish bool) tea.Cmd {
-			return m.editConditionCmd(session.project, session.originalName, edit, publish)
+		func(publish bool, changeNote ...string) tea.Cmd {
+			return m.editConditionCmd(session.project, session.originalName, edit, publish, changeNote...)
 		},
 	)
 }
@@ -239,8 +241,8 @@ func (m *Model) submitConditionOption() (tea.Cmd, bool) {
 		func() (*core.ParametersCache, json.RawMessage, error) {
 			return m.svc.PreviewEditCondition(session.project.ProjectID, session.originalName, edit)
 		},
-		func(publish bool) tea.Cmd {
-			return m.editConditionCmd(session.project, session.originalName, edit, publish)
+		func(publish bool, changeNote ...string) tea.Cmd {
+			return m.editConditionCmd(session.project, session.originalName, edit, publish, changeNote...)
 		},
 	), true
 }
@@ -260,7 +262,9 @@ func (m *Model) requestDeleteCondition() tea.Cmd {
 		func() (*core.ParametersCache, json.RawMessage, error) {
 			return m.svc.PreviewDeleteCondition(data.Project.ProjectID, data.Condition.Name)
 		},
-		func(publish bool) tea.Cmd { return m.deleteConditionCmd(data.Project, data.Condition.Name, publish) },
+		func(publish bool, changeNote ...string) tea.Cmd {
+			return m.deleteConditionCmd(data.Project, data.Condition.Name, publish, changeNote...)
+		},
 		rcdisplay.FormatConditionDeleteImpact(len(impact.Usages), len(impact.RemovedParameters)),
 	)
 }
@@ -280,17 +284,25 @@ func (m *Model) startConditionMutation(project core.Project, title, errorTitle, 
 		return lines, nil
 	}
 	m.openPreviewDialog(project, title, errorTitle, body, func(error) {}, []dialogcmp.Button{
-		{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPress: apply(true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: apply(false)},
+		{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return apply(true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return apply(false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 	return nil
 }
 
-func (m Model) conditionMutationCmd(project core.Project, selectConditionName string, publish bool, run draftMutationFunc) tea.Cmd {
+func (m Model) conditionMutationCmd(project core.Project, selectConditionName string, publish bool, run draftMutationFunc, changeNote ...string) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
-		_, tree, hasDraft, err := run(context.Background())
+		ctx, err := tuiChangeNoteContext(changeNote...)
+		if err != nil {
+			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale, SelectConditionName: selectConditionName}
+		}
+		_, tree, hasDraft, err := run(ctx)
 		if err != nil {
 			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale, SelectConditionName: selectConditionName}
 		}
@@ -302,34 +314,34 @@ func (m Model) conditionMutationCmd(project core.Project, selectConditionName st
 	}
 }
 
-func (m Model) addConditionCmd(project core.Project, definition core.ConditionDefinition, priority int, publish bool) tea.Cmd {
+func (m Model) addConditionCmd(project core.Project, definition core.ConditionDefinition, priority int, publish bool, changeNote ...string) tea.Cmd {
 	return m.conditionMutationCmd(project, definition.Name, publish, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
 		return m.svc.AddCondition(ctx, project.ProjectID, definition, priority, publish)
-	})
+	}, changeNote...)
 }
 
-func (m Model) editConditionCmd(project core.Project, name string, edit core.ConditionEdit, publish bool) tea.Cmd {
+func (m Model) editConditionCmd(project core.Project, name string, edit core.ConditionEdit, publish bool, changeNote ...string) tea.Cmd {
 	return m.conditionMutationCmd(project, name, publish, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
 		return m.svc.EditCondition(ctx, project.ProjectID, name, edit, publish)
-	})
+	}, changeNote...)
 }
 
-func (m Model) renameConditionCmd(project core.Project, name, nextName string, publish bool) tea.Cmd {
+func (m Model) renameConditionCmd(project core.Project, name, nextName string, publish bool, changeNote ...string) tea.Cmd {
 	return m.conditionMutationCmd(project, nextName, publish, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
 		return m.svc.RenameCondition(ctx, project.ProjectID, name, nextName, publish)
-	})
+	}, changeNote...)
 }
 
-func (m Model) moveConditionCmd(project core.Project, name string, priority int, publish bool) tea.Cmd {
+func (m Model) moveConditionCmd(project core.Project, name string, priority int, publish bool, changeNote ...string) tea.Cmd {
 	return m.conditionMutationCmd(project, name, publish, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
 		return m.svc.MoveCondition(ctx, project.ProjectID, name, priority, publish)
-	})
+	}, changeNote...)
 }
 
-func (m Model) deleteConditionCmd(project core.Project, name string, publish bool) tea.Cmd {
+func (m Model) deleteConditionCmd(project core.Project, name string, publish bool, changeNote ...string) tea.Cmd {
 	return m.conditionMutationCmd(project, "", publish, func(ctx context.Context) (*core.ParametersCache, *core.ParametersTree, bool, error) {
 		return m.svc.DeleteCondition(ctx, project.ProjectID, name, publish)
-	})
+	}, changeNote...)
 }
 
 func (m Model) conditionDataForAction() (*messages.ConditionViewData, bool) {
@@ -341,10 +353,16 @@ func (m Model) conditionDataForAction() (*messages.ConditionViewData, bool) {
 	return m.conditions.CurrentCondition()
 }
 
-func (m Model) conditionDetailsMutationCmd(project core.Project, edit core.ConditionDetailsEdit, publish, closeDetails bool) tea.Cmd {
+func (m Model) conditionDetailsMutationCmd(project core.Project, edit core.ConditionDetailsEdit, publish, closeDetails bool, changeNote ...string) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
-		_, tree, hasDraft, err := m.svc.EditConditionDetails(context.Background(), project.ProjectID, edit, publish)
+		ctx, err := tuiChangeNoteContext(changeNote...)
+		if err != nil {
+			return messages.ParametersLoadedMsg{
+				Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale, CloseDetails: closeDetails,
+			}
+		}
+		_, tree, hasDraft, err := m.svc.EditConditionDetails(ctx, project.ProjectID, edit, publish)
 		if err != nil {
 			return messages.ParametersLoadedMsg{
 				Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale, CloseDetails: closeDetails,
@@ -381,8 +399,12 @@ func (m *Model) openConditionDetailsDialog(project core.Project, edit core.Condi
 			return cache.RemoteConfig, nil
 		})
 	}, func(error) {}, []dialogcmp.Button{
-		{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.conditionDetailsMutationCmd(project, edit, true, closeDetails)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.conditionDetailsMutationCmd(project, edit, false, closeDetails)},
+		{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.conditionDetailsMutationCmd(project, edit, true, closeDetails, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.conditionDetailsMutationCmd(project, edit, false, closeDetails, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: detailsEditCanceledCmd(closeDetails)},
 	})
 }

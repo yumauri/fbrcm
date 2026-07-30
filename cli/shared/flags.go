@@ -1,6 +1,12 @@
 package shared
 
-import "github.com/spf13/cobra"
+import (
+	"context"
+
+	"github.com/spf13/cobra"
+
+	"github.com/yumauri/fbrcm/core/firebase"
+)
 
 const (
 	projectFilterFlagHelp   = "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
@@ -29,6 +35,32 @@ func AddParameterFilterFlags(cmd *cobra.Command) {
 
 func AddDryRunFlag(cmd *cobra.Command) {
 	cmd.Flags().Bool("dry-run", false, dryRunFlagHelp)
+}
+
+func AddChangeNoteFlag(cmd *cobra.Command) {
+	cmd.Flags().String("change-note", "", "Change note for publication or the stored draft")
+}
+
+func ReadChangeNoteFlag(cmd *cobra.Command) (*string, error) {
+	if cmd.Flags().Lookup("change-note") == nil || !cmd.Flags().Changed("change-note") {
+		return nil, nil
+	}
+	value, err := cmd.Flags().GetString("change-note")
+	if err != nil {
+		return nil, err
+	}
+	value, err = firebase.NormalizeChangeNote(value)
+	if err != nil {
+		return nil, err
+	}
+	return &value, nil
+}
+
+func WithChangeNote(ctx context.Context, changeNote *string) (context.Context, error) {
+	if changeNote == nil {
+		return ctx, nil
+	}
+	return firebase.WithChangeNote(ctx, *changeNote)
 }
 
 func AddYesFlag(cmd *cobra.Command, help string) {

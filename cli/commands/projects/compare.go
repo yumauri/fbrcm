@@ -33,6 +33,7 @@ type compareOptions struct {
 	Interactive    bool
 	DryRun         bool
 	Yes            bool
+	ChangeNote     *string
 }
 
 func newDiffCommand(svc *core.Core) *cobra.Command {
@@ -73,6 +74,7 @@ func newPromoteCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("all", false, "Select all eligible promotion items")
 	cmd.Flags().Bool("prune", false, "Include target-only removals")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Skip final publish confirmation")
 	cmd.Flags().Bool("json", false, "Print promotion result as JSON")
 	return cmd
@@ -154,6 +156,12 @@ func readCompareOptions(cmd *cobra.Command) (compareOptions, error) {
 			return opts, err
 		}
 	}
+	if cmd.Flags().Lookup("change-note") != nil {
+		opts.ChangeNote, err = shared.ReadChangeNoteFlag(cmd)
+		if err != nil {
+			return opts, err
+		}
+	}
 	opts.Expr = strings.TrimSpace(opts.Expr)
 	opts.Groups = normalizeGroups(opts.Groups)
 	return opts, nil
@@ -190,6 +198,11 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	ctx := context.Background()
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	var err error
+	ctx, err = shared.WithChangeNote(ctx, opts.ChangeNote)
+	if err != nil {
+		return err
 	}
 	source, target, sourceCfg, targetCfg, err := loadCompareConfigs(ctx, cmd, svc, sourceQuery, targetQuery, false)
 	if err != nil {
@@ -595,6 +608,7 @@ func promoteJSON(source, target core.Project, opts compareOptions, published boo
 		"dry_run":        opts.DryRun,
 		"published":      published,
 		"selected":       len(applied),
+		"change_note":    opts.ChangeNote,
 		"summary": map[string]rcdiff.Summary{
 			"conditions":         result.ConditionSummary(),
 			"parameters":         result.ParameterSummary(),

@@ -76,7 +76,11 @@ func (m *Model) openJSONValueDialog(project core.Project, groupKey, paramKey, va
 		return m.jsonValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
 	}, func(err error) {
 		corelog.For("tui.json").Error("json value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
-	}, m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
+	}, func(note string) tea.Cmd {
+		return m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true, note)
+	}, func(note string) tea.Cmd {
+		return m.setJSONParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false, note)
+	})
 }
 
 func (m Model) jsonValueDialogBody(project core.Project, groupKey, paramKey, valueLabel, nextValue string) ([]string, error) {
@@ -85,9 +89,9 @@ func (m Model) jsonValueDialogBody(project core.Project, groupKey, paramKey, val
 	})
 }
 
-func (m Model) setJSONParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool) tea.Cmd {
+func (m Model) setJSONParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool, changeNote ...string) tea.Cmd {
 	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
 		_, tree, hasDraft, err := m.svc.SetJSONParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
 		return tree, hasDraft, err
-	})
+	}, changeNote...)
 }

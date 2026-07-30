@@ -19,12 +19,17 @@ func (m Model) scrollbar() scrollbarState {
 	return scrollbarState{visible: true, thumbStart: thumbStart, thumbEnd: min(thumbStart+thumbHeight-1, contentHeight-1)}
 }
 
-func (m Model) bodyHeight() int { return max(min(max(m.height-10, 3), len(m.bodyLines())), 1) }
+func (m Model) bodyHeight() int {
+	return max(min(max(m.height-10-m.inputHeight(), 3), len(m.bodyLines())), 1)
+}
 
 func (m Model) contentWidth() int {
 	width := len([]rune(m.title))
 	for _, line := range m.body {
 		width = max(width, printableWidth(line))
+	}
+	if m.hasInput {
+		width = max(width, printableWidth(m.inputLabel), printableWidth(m.input.Value()), printableWidth(m.input.Placeholder))
 	}
 	width = max(width, printableWidth(m.renderButtons())) + 2
 	return min(max(width, 38), min(max(m.width-12, 38), 88))
@@ -32,7 +37,7 @@ func (m Model) contentWidth() int {
 
 func (m Model) boxGeometry() (x, y, width, height int) {
 	contentWidth, bodyHeight := m.contentWidth(), m.bodyHeight()
-	width, height = contentWidth+7, bodyHeight+m.buttonHeight()+4
+	width, height = contentWidth+7, bodyHeight+m.inputHeight()+m.buttonHeight()+4
 	if m.positioned {
 		x = clamp(m.manualX, m.x, max(m.x+m.width-width, m.x))
 		y = clamp(m.manualY, m.y, max(m.y+m.height-height, m.y))
@@ -57,6 +62,13 @@ func (m Model) titleHit(x, y int) bool {
 
 func (m Model) buttonHeight() int { return max(lipgloss.Height(m.renderButtons()), 1) }
 
+func (m Model) inputHeight() int {
+	if m.hasInput {
+		return 2
+	}
+	return 0
+}
+
 func clamp(value, low, high int) int { return max(low, min(value, high)) }
 
 func (m Model) buttonIndexAt(x, y int) (int, bool) {
@@ -70,9 +82,19 @@ func (m Model) buttonIndexAt(x, y int) (int, bool) {
 		return -1, false
 	}
 	buttonX := boxX + 4 + max(contentWidth-printableWidth(buttonLines[0]), 0)
-	buttonY := boxY + bodyHeight + 3
+	buttonY := boxY + bodyHeight + m.inputHeight() + 3
 	if y < buttonY || y >= buttonY+len(buttonLines) {
 		return -1, false
 	}
 	return m.buttonBar().IndexAt(x-buttonX, y-buttonY)
+}
+
+func (m Model) inputHit(x, y int) bool {
+	if !m.open || !m.hasInput {
+		return false
+	}
+	boxX, boxY, _, _ := m.boxGeometry()
+	contentWidth, bodyHeight := m.contentWidth(), m.bodyHeight()
+	inputY := boxY + bodyHeight + 2
+	return y >= inputY && y < inputY+m.inputHeight() && x >= boxX+4 && x < boxX+4+contentWidth
 }

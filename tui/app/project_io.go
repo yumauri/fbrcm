@@ -188,22 +188,38 @@ func (m *Model) openProjectImportReview(plan *core.ProjectImportPlan) {
 	}
 	body = append(body, dialogDiffLines(plan.Diff)...)
 	buttons := []dialogcmp.Button{
-		{Label: "Save Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.executeProjectImportCmd(false)},
-		{Label: "Publish Now", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.executeProjectImportCmd(true)},
+		{Label: "Save Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.executeProjectImportCmd(false, note)
+		}},
+		{Label: "Publish Now", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.executeProjectImportCmd(true, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	}
 	if plan.HasDraft {
 		body = append(body, "", "An unpublished draft exists. This import will update that draft.")
 		buttons = []dialogcmp.Button{
-			{Label: "Update Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.executeProjectImportCmd(false)},
+			{Label: "Update Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+				return m.executeProjectImportCmd(false, note)
+			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		}
 	}
-	m.dialog = m.dialog.Open(dialogcmp.Config{Title: "Import Remote Config?", Body: body, Buttons: buttons})
+	m.dialog = m.dialog.Open(dialogcmp.Config{
+		Title:   "Import Remote Config?",
+		Body:    body,
+		Input:   &dialogcmp.Input{Label: "Change note", Value: plan.ChangeNote, Placeholder: "Optional change note"},
+		Buttons: buttons,
+	})
 }
 
-func (m Model) executeProjectImportCmd(publish bool) tea.Cmd {
+func (m Model) executeProjectImportCmd(publish bool, changeNote ...string) tea.Cmd {
 	plan := m.projectImport
+	if plan != nil && len(changeNote) > 0 {
+		copy := *plan
+		copy.ChangeNote = changeNote[0]
+		plan = &copy
+	}
 	return func() tea.Msg {
 		result, err := m.svc.ExecuteProjectImport(context.Background(), plan, publish)
 		return projectImportCompletedMsg{plan: plan, result: result, err: err}

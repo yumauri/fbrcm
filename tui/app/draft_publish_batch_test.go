@@ -25,7 +25,8 @@ func TestDraftPublishBatchReviewsEveryPreparedProject(t *testing.T) {
 		t.Fatal("first review dialog was not opened")
 	}
 	for index := 0; index < len(items); index++ {
-		m, _, handled = m.updateDraftPublishDecision(draftPublishDecisionMsg{decision: "approve"})
+		note := "note-" + items[index].project.ProjectID
+		m, _, handled = m.updateDraftPublishDecision(draftPublishDecisionMsg{decision: "approve", changeNote: note})
 		if !handled {
 			t.Fatalf("decision %d was not handled", index)
 		}
@@ -37,6 +38,9 @@ func TestDraftPublishBatchReviewsEveryPreparedProject(t *testing.T) {
 		if !item.approved {
 			t.Fatalf("item %d (%s) was not approved", index, item.project.ProjectID)
 		}
+		if item.plan.ChangeNote != "note-"+item.project.ProjectID {
+			t.Fatalf("item %d change note = %q", index, item.plan.ChangeNote)
+		}
 	}
 }
 
@@ -45,11 +49,15 @@ func TestDraftPublishBatchReviewUsesPreparedCandidate(t *testing.T) {
 	m.dialog = m.dialog.SetBounds(0, 0, 120, 40)
 	m.draftPublish = &draftPublishBatch{phase: draftPublishPreparing}
 	item := draftPublishItem{project: core.Project{Name: "Demo", ProjectID: "demo"}, plan: testDraftPublishPlan("old", "prepared-new")}
+	item.plan.ChangeNote = "Prepared release"
 
 	m, _, _ = m.updateDraftPublishPrepared(draftPublishPreparedMsg{items: []draftPublishItem{item}})
 	view := m.dialog.View()
 	if !strings.Contains(view, "prepared-new") || !strings.Contains(view, "old") {
 		t.Fatalf("review view does not contain prepared diff:\n%s", view)
+	}
+	if m.dialog.InputValue() != "Prepared release" {
+		t.Fatalf("review change note = %q", m.dialog.InputValue())
 	}
 }
 

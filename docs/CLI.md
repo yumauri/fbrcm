@@ -12,6 +12,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --expr <expr>
 │   ├── --dry-run
 │   ├── --draft
+│   ├── --change-note <text>
 │   ├── --yes, -y
 │   ├── --json
 │   ├── --description <text>
@@ -56,6 +57,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --priority <n>
 │   │   ├── --dry-run
 │   │   ├── --draft
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
 │   ├── edit <project> <condition>
@@ -64,21 +66,25 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --no-color
 │   │   ├── --dry-run
 │   │   ├── --draft
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
 │   ├── rename <project> <condition> <new-name>
 │   │   ├── --dry-run
 │   │   ├── --draft
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
 │   ├── move <project> <condition> <priority>
 │   │   ├── --dry-run
 │   │   ├── --draft
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
 │   ├── delete <project> <condition>
 │   │   ├── --dry-run
 │   │   ├── --draft
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
 │   └── validate <project> [--json]
@@ -90,6 +96,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --search <text>
 │   ├── --dry-run
 │   ├── --draft
+│   ├── --change-note <text>
 │   ├── --yes, -y
 │   └── --json
 │
@@ -117,7 +124,11 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── publish [project...]
 │   │   ├── --all
 │   │   ├── --dry-run
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   └── --json
+│   ├── change-note <project> [text]
+│   │   ├── --clear
 │   │   └── --json
 │   └── discard [project...]
 │       ├── --all
@@ -129,6 +140,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --expr <expr>
 │   ├── --dry-run
 │   ├── --draft
+│   ├── --change-note <text>
 │   ├── --yes, -y
 │   └── --json
 │
@@ -153,10 +165,10 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --search <text>
 │   │   ├── --update
 │   │   └── --json
-│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--yes|-y] [--json]
-│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--yes|-y] [--json]
-│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y] [--json]
-│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y] [--json]
+│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
+│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
+│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
+│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
 │
 ├── personalizations
 │   ├── list <project> [--update] [--json]
@@ -200,6 +212,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │       ├── --search <text>
 │       ├── --dry-run
 │       ├── --draft
+│       ├── --change-note <text>
 │       ├── --remove-all-conditions
 │       ├── --keep-portable-conditions-only
 │       ├── --merge
@@ -241,6 +254,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   └── --json
 │   └── restore <project> <version>
 │       ├── --dry-run
+│       ├── --change-note <text>
 │       ├── --yes, -y
 │       └── --json
 │
@@ -282,6 +296,7 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --all
 │   │   ├── --prune
 │   │   ├── --dry-run
+│   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
 │   ├── path [--json]
@@ -299,6 +314,7 @@ fbrcm [--help] [--version] [--profile <name>]
     ├── --search <text>
     ├── --dry-run
     ├── --draft
+    ├── --change-note <text>
     ├── --yes, -y
     ├── --json
     ├── --description <text>
@@ -467,7 +483,9 @@ duplicate
 
 ### Draft lifecycle and write safety
 
-Drafts are profile-scoped, target-specific, self-contained records. Each record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and a draft format version. A project can therefore have independent client and server drafts. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
+Drafts are profile-scoped, target-specific, self-contained records. Each version-1 record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and an optional `change_note`. A project can therefore have independent client and server drafts. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
+
+`add`, `duplicate`, `update`, `delete`, group and condition mutations, `project import`, `projects promote`, `draft publish`, and `versions restore` accept `--change-note <text>`. The note is trimmed, must be one line, and is sent as Firebase `version.description` on ordinary publication. With `--draft`, it is stored as `change_note` and remains editable with `draft change-note`; an explicitly empty note clears it. Native `versions rollback` intentionally has no change-note flag because Firebase owns rollback metadata.
 
 `add`, `duplicate`, `update`, `delete`, `project import`, and the condition mutation commands accept `--draft`. In draft mode they apply changes on top of an existing project draft or create a new draft from freshly revalidated Remote Config. They do not validate or publish to Firebase. Combining `--draft` with `--dry-run` previews the change without writing either draft or Firebase state.
 
@@ -489,13 +507,14 @@ Direct Remote Config mutations—`add`, `update`, `delete`, `duplicate`, all con
     "published_version": "42",
     "draft": false,
     "dry_run": false,
+    "change_note": "Enable checkout v2",
     "error": null,
     "retry_selector": null
   }
 ]
 ```
 
-`previous_version` and `published_version` are `null` when that version is unavailable or no publication occurred. `error` is either `null` or an object with `stage` (`preparation`, `validation`, `publication`, `draft`, or `cache`) and `message`. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. JSON mode keeps stdout machine-readable but does not imply `--yes`; prompts and review output continue on stderr. In stdin transformation mode, `add`, `update`, and `delete` continue to emit the transformed Remote Config JSON itself.
+`previous_version`, `published_version`, and `change_note` are `null` when unavailable or omitted. `error` is either `null` or an object with `stage` (`preparation`, `validation`, `publication`, `draft`, or `cache`) and `message`. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. JSON mode keeps stdout machine-readable but does not imply `--yes`; prompts and review output continue on stderr. In stdin transformation mode, `add`, `update`, and `delete` continue to emit the transformed Remote Config JSON itself; `--change-note` is unavailable because no publication or draft write occurs.
 
 If Firebase accepts a publish but the returned state cannot be saved locally, the outcome is reported as `published-cache-failed`, not as an unpublished project. Refresh that project's cache instead of blindly retrying the mutation. For coordinated changes, `--draft` provides reviewable and recoverable intent, but publishing those drafts is still non-atomic across projects.
 
@@ -538,6 +557,7 @@ Other flags:
 --expr <expr>              filter target projects with project context
 --dry-run                  preview without writing local or Firebase state
 --draft                    save changes to local drafts instead of publishing
+--change-note <text>       set the change note for publication or draft storage
 -y, --yes                  print diff and add without confirmation
 --json                     print structured mutation results
 --description <text>       parameter description
@@ -561,6 +581,7 @@ Flags:
 --expr <expr>           filter target projects with project context
 --dry-run               preview without writing local or Firebase state
 --draft                 save changes to local drafts instead of publishing
+--change-note <text>    set the change note for publication or draft storage
 -y, --yes               print diff and duplicate without confirmation
 --json                  print structured mutation results
 ```
@@ -604,6 +625,7 @@ Flags:
 --search <text>            search parameter names, descriptions, values, and conditions
 --dry-run                  preview without writing local or Firebase state
 --draft                    save changes to local drafts instead of publishing
+--change-note <text>       set the change note for publication or draft storage
 -y, --yes                  print diff and update without confirmation
 --json                     print structured mutation results
 --description <text>       set parameter description
@@ -647,6 +669,7 @@ Flags:
 --search <text>         search parameter names, descriptions, values, and conditions
 --dry-run               preview without writing local or Firebase state
 --draft                 save changes to local drafts instead of publishing
+--change-note <text>    set the change note for publication or draft storage
 -y, --yes               print diff and delete without confirmation
 --json                  print structured mutation results
 ```
@@ -707,6 +730,8 @@ All five commands support:
 ```text
 --dry-run   preview without writing local or Firebase state
 --draft     save changes to a local draft instead of publishing
+--change-note <text>
+            set the change note for publication or draft storage
 -y, --yes   print the diff and apply without confirmation
 --json      print structured mutation results
 ```
@@ -772,7 +797,7 @@ fbrcm groups delete <group> [--project|-p <query>]
 
 All group commands support repeatable `--project|-p` target filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured enabled template in stable project-name/target-ID order. Named mutations skip targets that do not contain the group; `add` skips targets where it already exists.
 
-All group mutations also support `--dry-run`, `--draft`, `--yes|-y`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, and structured-result behavior as condition mutations. `--description` and `--no-description` are mutually exclusive.
+All group mutations also support `--dry-run`, `--draft`, `--change-note`, `--yes|-y`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, and structured-result behavior as condition mutations. `--description` and `--no-description` are mutually exclusive.
 
 ### `fbrcm draft list`
 
@@ -785,9 +810,9 @@ Flags:
 --json                 print structured JSON
 ```
 
-Human output includes canonical target ID, project name, base version, update time, parameter/condition change counts, and status. Status is `ready`, `unchanged`, or `invalid`.
+Human output includes canonical target ID, project name, base version, update time, parameter/condition change counts, status, and the optional Change Note as the final column. Status is `ready`, `unchanged`, or `invalid`.
 
-JSON entries include `project_id`, `project`, `base_version`, `created_at`, `updated_at`, byte size, status, validity, base availability, path, and change counts.
+JSON entries include `project_id`, `project`, `base_version`, `created_at`, `updated_at`, byte size, status, validity, base availability, path, change counts, and `change_note`.
 
 ### `fbrcm draft path`
 
@@ -811,6 +836,17 @@ Flags:
 ```
 
 `--raw` bypasses draft decoding, so it can recover an invalid or damaged envelope. File output is forced to mode `0600`.
+
+### `fbrcm draft change-note <project> [text]`
+
+Sets, replaces, or clears the optional note stored with one draft without changing its Remote Config candidate.
+
+```text
+--clear   clear the stored note; mutually exclusive with [text]
+--json    print project_id and change_note
+```
+
+The note must be a single line. An empty `[text]` also clears it. Draft format remains version 1; the field is stored as `change_note`.
 
 ### `fbrcm draft diff <project>`
 
@@ -846,6 +882,8 @@ Flags:
 ```text
 --all          publish every active-profile draft
 --dry-run      fetch, merge, validate, and preview without publishing or deleting drafts
+--change-note <text>
+               override the stored note for every selected draft
 -y, --yes      skip publish confirmations
 --json         print structured results
 ```
@@ -854,7 +892,7 @@ For each project, the command fetches current Firebase state, merges local inten
 
 If current Firebase state already contains the effective draft changes, no new version is created and the draft is removed as `already-applied`. Batch mode is non-atomic, continues after independent project failures, prints its collected results together at the end followed by a targeted retry command, and returns nonzero if any item failed.
 
-JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, `conflict`, `published-cache-failed`, and `published-cleanup-failed`. Prompts, warnings, retry hints, and human diffs are kept off JSON stdout.
+JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, `change_note`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, `conflict`, `published-cache-failed`, and `published-cleanup-failed`. Prompts, warnings, retry hints, and human diffs are kept off JSON stdout.
 
 ### `fbrcm draft discard [project...]`
 
@@ -976,6 +1014,7 @@ Flags:
 --search <text>                          import only parameters matching rich search text
 --dry-run                                preview without writing local or Firebase state
 --draft                                  save the import as a local draft
+--change-note <text>                     set the change note for publication or draft storage
 --remove-all-conditions                  remove all conditions and conditional values
 --keep-portable-conditions-only          keep portable conditions and remove destination-specific usages
 --merge                                  merge import into current config
@@ -998,7 +1037,7 @@ If current config is empty, import replaces it. If current config has content an
 
 After import transform, the CLI reports how many source conditions are kept and removed. `--keep-portable-conditions-only` removes conditions tied to destination-specific resources such as Analytics audiences or user properties, experiments, Firebase App IDs, custom signals, and installation IDs. Unused conditions and unknown condition references are also removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
 
-JSON output is one object containing `project_id`, `status`, `changed`, `draft`, and `dry_run`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, or `canceled`. JSON mode suppresses human condition summaries and diffs but does not imply `--yes` or choose an import strategy.
+JSON output is one object containing `project_id`, `status`, `changed`, `draft`, `dry_run`, and `change_note`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, or `canceled`. JSON mode suppresses human condition summaries and diffs but does not imply `--yes` or choose an import strategy.
 
 ### Remote Config managed features
 
@@ -1152,11 +1191,11 @@ Flags:
 --json               print structured JSON
 ```
 
-Human live output includes version number, current marker, publication time, updating user, origin, update type, cached marker, and description. Cached output includes version, current marker, cache time, size, and any metadata stored in the template.
+Human live output keeps the existing column order: version number, current marker, publication time, updating user, origin, update type, cached marker, and Change Note. Cached output keeps version, current marker, cache time, size, and Change Note.
 
 In cached mode, `--since` and `--until` apply to the local cache time because authoritative publication metadata may be unavailable.
 
-JSON output is a plain array of version objects without project or pagination metadata. Each element includes Firebase metadata, `current`, `cached`, and available local cache fields.
+JSON output is a plain array without project or pagination metadata. Each element uses fbrcm's canonical `change_note` name together with the other Firebase metadata, `current`, `cached`, and available local cache fields. Raw Firebase templates still encode this value in the API-required `version.description` field.
 
 ### `fbrcm versions show <project> <version>`
 
@@ -1254,9 +1293,13 @@ Flags:
 
 ```text
 --dry-run   validate and preview the cached snapshot without publishing
+--change-note <text>
+            set the new version's change note
 -y, --yes   skip final publish confirmation
 --json      print a structured operation result
 ```
+
+Restore JSON includes `change_note`. Native rollback does not accept a change note and leaves its Firebase-defined rollback semantics unchanged.
 
 Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, and `changed`, including no-op results where `changed` is `false`. Human previews are written separately from JSON data so stdout remains machine-readable.
 
@@ -1349,11 +1392,12 @@ Flags:
 --all                  select all eligible changes without per-item prompts
 --prune                include target-only removals
 --dry-run              preview without writing local or Firebase state
+--change-note <text>   set the change note
 -y, --yes              skip final publish confirmation
 --json                 print promotion result JSON
 ```
 
-Promotion JSON includes `changed`, which reports whether the selected result contains changes independently of whether it was a dry run or was published.
+Promotion JSON includes `change_note` and `changed`; `changed` reports whether the selected result contains changes independently of whether it was a dry run or was published.
 
 Non-interactive promote requires explicit selection intent: `--all`, `--filter`, `--group`, `--expr`, or `--search`. Command reloads the target before publishing, validates with Firebase, publishes using the latest target ETag, and retries if the target changes during promotion.
 

@@ -326,6 +326,13 @@ The first mutation to a project can be published immediately or saved as a
 draft. Once a draft exists, subsequent TUI edits compose onto it. The project
 row indicates that the displayed template includes draft state.
 
+Every Remote Config mutation review includes an optional single-line **Change
+note** field. It is prefilled from the current draft when one exists. `Tab`
+switches between the field and the buttons; `Enter` moves from the field to the
+buttons and then activates the selected action. Saving a draft stores the note,
+and publishing sends it as the new Firebase version's change note (the API's
+`version.description` field). Clearing the field clears the draft change note.
+
 Publishing a draft:
 
 1. fetches current Firebase state;
@@ -354,9 +361,10 @@ cache file. It supports:
 - condition cleanup;
 - per-conflict keep-current or use-import choices.
 
-The resulting diff is always reviewed. A new import can be published or saved
-as a draft. If the target already has a draft, the import updates that draft
-and leaves publication to the normal draft action.
+The resulting diff is always reviewed with a Change note field. A new import
+can be published or saved as a draft. If the target already has a draft, the
+field is prefilled from that draft, the import updates the draft and its note,
+and publication remains available through the normal draft action.
 
 ### Export
 
@@ -384,8 +392,12 @@ pair is the previous and current version.
 
 In the picker, `Tab` switches sides, arrows choose versions, `r` restores the
 default previous/current pair, and `R` begins a native Firebase rollback to the
-active historical version. Rollback is blocked while the project has an
-unpublished draft, shows a diff, and requires confirmation.
+active historical version. The table includes a Change Note column; long notes
+are ellipsized there, while the focused version's complete note is wrapped
+below the table. The main History version headers remain unchanged. Rollback is
+blocked while the project has an unpublished draft, shows a diff, requires
+confirmation, and intentionally has no editable note because it uses Firebase's
+native rollback operation.
 
 Firebase history is authoritative, but fbrcm also retains immutable templates
 it encounters. The CLI can restore a cached snapshot that Firebase no longer
@@ -418,8 +430,10 @@ draft and published source. The target always starts from its effective local
 state, including an existing draft. Cached-only reviews can be inspected and
 saved as drafts, but publication requires a verified Firebase snapshot.
 
-Before publishing, fbrcm saves the exact selected candidate as a target draft.
-If validation or publication fails, that draft remains available for recovery.
+The promotion review includes a Change note field prefilled from the target
+draft. Before publishing, fbrcm saves the exact selected candidate and note as
+a target draft. If validation or publication fails, that draft remains
+available for recovery with the note intact.
 
 ## Filtering
 

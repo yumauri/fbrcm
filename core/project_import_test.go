@@ -32,6 +32,7 @@ func TestPrepareAndExecuteProjectImportDraft(t *testing.T) {
 	if !plan.HasChanges || plan.HasDraft || len(plan.Conflicts) != 1 {
 		t.Fatalf("plan changes=%v draft=%v conflicts=%d", plan.HasChanges, plan.HasDraft, len(plan.Conflicts))
 	}
+	plan.ChangeNote = "Import checkout v2"
 	result, err := svc.ExecuteProjectImport(context.Background(), plan, false)
 	if err != nil {
 		t.Fatalf("ExecuteProjectImport draft = %v", err)
@@ -55,6 +56,13 @@ func TestPrepareAndExecuteProjectImportDraft(t *testing.T) {
 	}
 	if cfg.Version.VersionNumber != "1" {
 		t.Fatalf("draft version = %q, want 1", cfg.Version.VersionNumber)
+	}
+	record, ok, err := svc.LoadDraftRecord("demo")
+	if err != nil || !ok {
+		t.Fatalf("LoadDraftRecord = ok:%v err:%v", ok, err)
+	}
+	if record.ChangeNote != "Import checkout v2" {
+		t.Fatalf("draft change note = %q", record.ChangeNote)
 	}
 }
 
@@ -83,6 +91,9 @@ func TestExecuteProjectImportPublishesValidatedCandidate(t *testing.T) {
 			if got := payload.Parameters["flag"].DefaultValue.Value; got != "imported" {
 				t.Fatalf("publish flag = %q", got)
 			}
+			if payload.Version.ChangeNote != "Import checkout v2" {
+				t.Fatalf("publish change note = %q", payload.Version.ChangeNote)
+			}
 			return jsonResponse(http.StatusOK, string(remoteConfigRaw("2", map[string]string{"flag": "imported"})), `"etag-2"`), nil
 		default:
 			return nil, io.EOF
@@ -94,6 +105,7 @@ func TestExecuteProjectImportPublishesValidatedCandidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareProjectImport = %v", err)
 	}
+	plan.ChangeNote = "Import checkout v2"
 	result, err := svc.ExecuteProjectImport(context.Background(), plan, true)
 	if err != nil {
 		t.Fatalf("ExecuteProjectImport publish = %v", err)
@@ -110,7 +122,7 @@ func TestProjectImportUpdatesExistingDraftAndRejectsDirectPublish(t *testing.T) 
 	if err := config.SaveParametersCache("demo", cache); err != nil {
 		t.Fatalf("SaveParametersCache = %v", err)
 	}
-	if err := svc.SaveDraft("demo", remoteConfigRaw("1", map[string]string{"flag": "draft"})); err != nil {
+	if err := svc.SaveDraftWithChangeNote("demo", remoteConfigRaw("1", map[string]string{"flag": "draft"}), DraftChangeNoteUpdate{Set: true, Value: "Existing note"}); err != nil {
 		t.Fatalf("SaveDraft = %v", err)
 	}
 
@@ -120,6 +132,9 @@ func TestProjectImportUpdatesExistingDraftAndRejectsDirectPublish(t *testing.T) 
 	}
 	if !plan.HasDraft {
 		t.Fatal("plan did not use existing draft")
+	}
+	if plan.ChangeNote != "Existing note" {
+		t.Fatalf("plan change note = %q", plan.ChangeNote)
 	}
 	if _, err := svc.ExecuteProjectImport(context.Background(), plan, true); err == nil {
 		t.Fatal("direct publish with existing draft succeeded")

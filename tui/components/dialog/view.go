@@ -36,6 +36,12 @@ func (m Model) View() string {
 	for len(lines) < bodyHeight {
 		lines = append(lines, strings.Repeat(" ", contentWidth))
 	}
+	if m.hasInput {
+		lines = append(lines, fitBodyLine(m.inputLabel, contentWidth))
+		input := m.input
+		input.SetWidth(contentWidth)
+		lines = append(lines, padToWidth(input.View(), contentWidth))
+	}
 	lines = append(lines, strings.Repeat(" ", contentWidth))
 	lines = append(lines, renderBlockAlignedRight(m.renderButtons(), contentWidth)...)
 
@@ -63,7 +69,7 @@ func (m Model) buttonBar() buttonbar.Model {
 	for _, button := range m.buttons {
 		buttons = append(buttons, buttonbar.Button{Label: button.Label, Variant: button.Variant})
 	}
-	return buttonbar.New(buttons).SetSelected(m.selected).SetFocused(true)
+	return buttonbar.New(buttons).SetSelected(m.selected).SetFocused(!m.inputFocus)
 }
 
 type scrollbarState struct {

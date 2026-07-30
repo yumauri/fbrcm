@@ -19,11 +19,12 @@ import (
 )
 
 type importResult struct {
-	ProjectID string `json:"project_id"`
-	Status    string `json:"status"`
-	Changed   bool   `json:"changed"`
-	Draft     bool   `json:"draft"`
-	DryRun    bool   `json:"dry_run"`
+	ProjectID  string  `json:"project_id"`
+	Status     string  `json:"status"`
+	Changed    bool    `json:"changed"`
+	Draft      bool    `json:"draft"`
+	DryRun     bool    `json:"dry_run"`
+	ChangeNote *string `json:"change_note"`
 }
 
 // Run executes the project import command pipeline.
@@ -53,6 +54,15 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
+	changeNote, err := shared.ReadChangeNoteFlag(cmd)
+	if err != nil {
+		return err
+	}
+	ctx, err = shared.WithChangeNote(ctx, changeNote)
+	if err != nil {
+		return err
+	}
+	result.ChangeNote = changeNote
 	if !draftMode {
 		hasDraft, draftErr := svc.HasDraft(project.ProjectID)
 		if draftErr != nil {
@@ -182,8 +192,14 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if draftMode {
 		progress.Start("Saving draft for " + project.ProjectID + "…")
 		if !dryRun {
-			if err := svc.SaveDraft(project.ProjectID, finalRaw); err != nil {
-				return err
+			var saveErr error
+			if note, set := firebase.ChangeNoteFromContext(ctx); set {
+				saveErr = svc.SaveDraftWithChangeNote(project.ProjectID, finalRaw, core.DraftChangeNoteUpdate{Set: true, Value: note})
+			} else {
+				saveErr = svc.SaveDraft(project.ProjectID, finalRaw)
+			}
+			if saveErr != nil {
+				return saveErr
 			}
 		}
 		result.Status = "drafted"

@@ -85,7 +85,11 @@ func (m *Model) openStringValueDialog(project core.Project, groupKey, paramKey, 
 		return m.stringValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
 	}, func(err error) {
 		corelog.For("tui.string").Error("string value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
-	}, m.setStringParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setStringParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
+	}, func(note string) tea.Cmd {
+		return m.setStringParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true, note)
+	}, func(note string) tea.Cmd {
+		return m.setStringParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false, note)
+	})
 }
 
 func (m Model) stringValueDialogBody(project core.Project, groupKey, paramKey, valueLabel, nextValue string) ([]string, error) {
@@ -94,9 +98,9 @@ func (m Model) stringValueDialogBody(project core.Project, groupKey, paramKey, v
 	})
 }
 
-func (m Model) setStringParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool) tea.Cmd {
+func (m Model) setStringParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool, changeNote ...string) tea.Cmd {
 	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
 		_, tree, hasDraft, err := m.svc.SetStringParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
 		return tree, hasDraft, err
-	})
+	}, changeNote...)
 }

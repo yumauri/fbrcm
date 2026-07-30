@@ -23,7 +23,7 @@ import (
 
 func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "draft", Short: "Inspect, publish, and discard Remote Config drafts"}
-	cmd.AddCommand(newListCommand(), newPathCommand(), newShowCommand(), newDiffCommand(svc), newPublishCommand(svc), newDiscardCommand())
+	cmd.AddCommand(newListCommand(), newPathCommand(), newShowCommand(), newChangeNoteCommand(svc), newDiffCommand(svc), newPublishCommand(svc), newDiscardCommand())
 	return cmd
 }
 
@@ -74,6 +74,46 @@ func newShowCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "show <project>", Short: "Show a local Remote Config draft", Args: cobra.ExactArgs(1), RunE: runShow}
 	cmd.Flags().Bool("raw", false, "Print the exact stored draft envelope without parsing")
 	cmd.Flags().String("to", "", "Write output to file path")
+	return cmd
+}
+
+func newChangeNoteCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "change-note <project> [<text>]",
+		Short: "Show or update a Remote Config draft change note",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			projectID, _, err := resolveDraft(args[0])
+			if err != nil {
+				return err
+			}
+			clear, _ := cmd.Flags().GetBool("clear")
+			if clear && len(args) == 2 {
+				return fmt.Errorf("change note text cannot be used with --clear")
+			}
+			if clear || len(args) == 2 {
+				value := ""
+				if len(args) == 2 {
+					value = args[1]
+				}
+				if err := svc.SetDraftChangeNote(projectID, value); err != nil {
+					return err
+				}
+			}
+			stored, err := config.LoadDraft(projectID)
+			if err != nil {
+				return err
+			}
+			jsonOut, _ := cmd.Flags().GetBool("json")
+			if jsonOut {
+				return shared.WriteJSON(cmd, map[string]any{"project_id": projectID, "change_note": optionalString(stored.ChangeNote)})
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), stored.ChangeNote)
+			return err
+		},
+	}
+	cmd.Flags().Bool("clear", false, "Clear the stored change note")
+	cmd.Flags().Bool("json", false, "Print the draft change note as JSON")
 	return cmd
 }
 
@@ -227,22 +267,24 @@ func newPublishCommand(svc *core.Core) *cobra.Command {
 	}}
 	cmd.Flags().Bool("all", false, "Publish every valid draft in the active profile")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Skip publish confirmations")
 	cmd.Flags().Bool("json", false, "Print results as JSON")
 	return cmd
 }
 
 type publishResult struct {
-	ProjectID        string `json:"project_id"`
-	Status           string `json:"status"`
-	BaseVersion      string `json:"base_version,omitempty"`
-	PreviousVersion  string `json:"previous_version,omitempty"`
-	PublishedVersion string `json:"published_version,omitempty"`
-	Rebased          bool   `json:"rebased"`
-	Changed          bool   `json:"changed"`
-	DraftDeleted     bool   `json:"draft_deleted"`
-	DryRun           bool   `json:"dry_run"`
-	Error            string `json:"error,omitempty"`
+	ProjectID        string  `json:"project_id"`
+	Status           string  `json:"status"`
+	BaseVersion      string  `json:"base_version,omitempty"`
+	PreviousVersion  string  `json:"previous_version,omitempty"`
+	PublishedVersion string  `json:"published_version,omitempty"`
+	Rebased          bool    `json:"rebased"`
+	Changed          bool    `json:"changed"`
+	DraftDeleted     bool    `json:"draft_deleted"`
+	DryRun           bool    `json:"dry_run"`
+	Error            string  `json:"error,omitempty"`
+	ChangeNote       *string `json:"change_note"`
 }
 
 func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -253,6 +295,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	dry, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
 	jsonOut, _ := cmd.Flags().GetBool("json")
+	changeNote, err := shared.ReadChangeNoteFlag(cmd)
+	if err != nil {
+		return err
+	}
 	ctx := context.Background()
 	if dry {
 		ctx = firebase.WithDryRun(ctx)
@@ -273,6 +319,11 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			continue
 		}
 		result.BaseVersion = plan.Draft.BaseVersion
+		effectiveNote := plan.ChangeNote
+		if changeNote != nil {
+			effectiveNote = *changeNote
+		}
+		result.ChangeNote = optionalString(effectiveNote)
 		result.Rebased = plan.Rebased
 		result.Changed = plan.HasChanges
 		latestCfg, _ := firebase.ParseRemoteConfig(plan.Latest.RemoteConfig)
@@ -300,6 +351,25 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			progress.Start("Previewing draft for " + projectID + "…")
 		} else {
 			progress.Start("Publishing draft for " + projectID + "…")
+		}
+		if changeNote != nil {
+			if dry {
+				plan.ChangeNote = *changeNote
+			} else {
+				if setErr := svc.SetDraftChangeNote(projectID, *changeNote); setErr != nil {
+					result.Status, result.Error = "failed", setErr.Error()
+					results = append(results, result)
+					failed = true
+					continue
+				}
+				plan, prepareErr = svc.PrepareDraftPublish(ctx, projectID)
+				if prepareErr != nil {
+					result.Status, result.Error = "failed", prepareErr.Error()
+					results = append(results, result)
+					failed = true
+					continue
+				}
+			}
 		}
 		cache, _, publishErr := svc.ExecuteDraftPublish(ctx, projectID, plan)
 		if publishErr != nil {
@@ -398,6 +468,13 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return fmt.Errorf("one or more drafts failed")
 	}
 	return nil
+}
+
+func optionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }
 
 func newDiscardCommand() *cobra.Command {

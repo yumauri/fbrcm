@@ -17,6 +17,7 @@ type (
 	DraftRecord                = draft.Record
 	DraftPublishPlan           = draft.PublishPlan
 	DraftPublishedCleanupError = draft.PublishedCleanupError
+	DraftChangeNoteUpdate      = draft.ChangeNoteUpdate
 )
 
 func NormalizeRemoteConfigGroupKey(groupKey string) string {
@@ -99,6 +100,14 @@ func (s *Core) HasDraft(projectID string) (bool, error) {
 
 func (s *Core) SaveDraft(projectID string, raw json.RawMessage) error {
 	return draft.Save(projectID, raw)
+}
+
+func (s *Core) SaveDraftWithChangeNote(projectID string, raw json.RawMessage, noteUpdate DraftChangeNoteUpdate) error {
+	return draft.Save(projectID, raw, noteUpdate)
+}
+
+func (s *Core) SetDraftChangeNote(projectID, value string) error {
+	return draft.SetChangeNote(projectID, value)
 }
 
 func (s *Core) DeleteDraft(projectID string) error {

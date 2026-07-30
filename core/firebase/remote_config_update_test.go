@@ -1,11 +1,60 @@
 package firebase
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestPrepareRemoteConfigUpdateWritesOnlyExplicitChangeNoteVersionMetadata(t *testing.T) {
+	raw := []byte(`{"version":{"versionNumber":"12","description":"inherited"},"parameters":{}}`)
+	withoutNote, err := PrepareRemoteConfigUpdate(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var without map[string]any
+	if err := json.Unmarshal(withoutNote, &without); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := without["version"]; ok {
+		t.Fatalf("update inherited source version metadata: %#v", without["version"])
+	}
+
+	withNote, err := PrepareRemoteConfigUpdate(raw, " Enable checkout v2 ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var with map[string]any
+	if err := json.Unmarshal(withNote, &with); err != nil {
+		t.Fatal(err)
+	}
+	version, ok := with["version"].(map[string]any)
+	if !ok || !reflect.DeepEqual(version, map[string]any{"description": "Enable checkout v2"}) {
+		t.Fatalf("version = %#v, want description-only metadata", with["version"])
+	}
+}
+
+func TestChangeNoteContextNormalizesAndPreservesExplicitEmpty(t *testing.T) {
+	ctx, err := WithChangeNote(context.Background(), " release note ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := ChangeNoteFromContext(ctx); !ok || got != "release note" {
+		t.Fatalf("ChangeNoteFromContext = %q, %v", got, ok)
+	}
+	ctx, err = WithChangeNote(context.Background(), " ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := ChangeNoteFromContext(ctx); !ok || got != "" {
+		t.Fatalf("empty ChangeNoteFromContext = %q, %v", got, ok)
+	}
+	if _, err := WithChangeNote(context.Background(), "line one\nline two"); err == nil {
+		t.Fatal("multiline change note returned nil error")
+	}
+}
 
 func TestPrepareRemoteConfigUpdateRejectsUnsupportedConditionFields(t *testing.T) {
 	_, err := PrepareRemoteConfigUpdate([]byte(`{"conditions":[{"name":"staff","expression":"true","description":"unsupported"}]}`))

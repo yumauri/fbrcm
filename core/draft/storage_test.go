@@ -18,7 +18,7 @@ func TestLoadSaveDeleteAndList(t *testing.T) {
 	}
 
 	raw := remoteConfigRaw("1", map[string]string{"flag": "draft"})
-	if err := Save("demo", raw); err != nil {
+	if err := Save("demo", raw, ChangeNoteUpdate{Set: true, Value: " Enable checkout v2 "}); err != nil {
 		t.Fatalf("Save returned error: %v", err)
 	}
 	loaded, hasDraft, err := Load("demo")
@@ -29,6 +29,28 @@ func TestLoadSaveDeleteAndList(t *testing.T) {
 		t.Fatal("hasDraft = false, want true")
 	}
 	assertParamValue(t, loaded, "flag", "draft")
+	record, ok, err := LoadRecord("demo")
+	if err != nil || !ok {
+		t.Fatalf("LoadRecord = (%v, %v)", ok, err)
+	}
+	if record.FormatVersion != 1 || record.ChangeNote != "Enable checkout v2" {
+		t.Fatalf("draft metadata = version %d, note %q", record.FormatVersion, record.ChangeNote)
+	}
+
+	if err := Save("demo", remoteConfigRaw("1", map[string]string{"flag": "updated"})); err != nil {
+		t.Fatal(err)
+	}
+	record, _, _ = LoadRecord("demo")
+	if record.ChangeNote != "Enable checkout v2" {
+		t.Fatalf("omitted change note update cleared draft change note: %q", record.ChangeNote)
+	}
+	if err := SetChangeNote("demo", ""); err != nil {
+		t.Fatal(err)
+	}
+	record, _, _ = LoadRecord("demo")
+	if record.ChangeNote != "" {
+		t.Fatalf("SetChangeNote did not clear note: %q", record.ChangeNote)
+	}
 
 	ids, err := ListProjectIDs()
 	if err != nil {

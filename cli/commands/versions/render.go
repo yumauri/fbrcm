@@ -6,16 +6,22 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/ansi"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 )
 
 func renderVersionsTable(entries []core.RemoteConfigVersionEntry, cachedOnly bool) string {
+	return renderVersionsTableAtWidth(entries, cachedOnly, shared.TerminalWidth())
+}
+
+func renderVersionsTableAtWidth(entries []core.RemoteConfigVersionEntry, cachedOnly bool, terminalWidth int) string {
 	noColor := clistyles.NoColorEnabled()
-	headers := []string{"Version", "State", "Published", "Updated By", "Origin", "Type", "Cached", "Description"}
+	headers := []string{"Version", "State", "Published", "Updated By", "Origin", "Type", "Cached", "Change Note"}
 	if cachedOnly {
-		headers = []string{"Version", "State", "Cached At", "Size", "Description"}
+		headers = []string{"Version", "State", "Cached At", "Size", "Change Note"}
 	}
 	widths := make([]int, len(headers))
 	for i, header := range headers {
@@ -29,7 +35,7 @@ func renderVersionsTable(entries []core.RemoteConfigVersionEntry, cachedOnly boo
 		}
 		var row []string
 		if cachedOnly {
-			row = []string{entry.VersionNumber, state, formatVersionTime(entry.CachedAt), humanVersionSize(entry.Size), entry.Description}
+			row = []string{entry.VersionNumber, state, formatVersionTime(entry.CachedAt), humanVersionSize(entry.Size), entry.ChangeNote}
 		} else {
 			cached := "no"
 			if entry.Cached {
@@ -39,12 +45,42 @@ func renderVersionsTable(entries []core.RemoteConfigVersionEntry, cachedOnly boo
 			if user == "" {
 				user = entry.UpdateUser.Name
 			}
-			row = []string{entry.VersionNumber, state, formatFirebaseVersionTime(entry.UpdateTime), user, friendlyVersionEnum(entry.UpdateOrigin), friendlyVersionEnum(entry.UpdateType), cached, entry.Description}
+			row = []string{entry.VersionNumber, state, formatFirebaseVersionTime(entry.UpdateTime), user, friendlyVersionEnum(entry.UpdateOrigin), friendlyVersionEnum(entry.UpdateType), cached, entry.ChangeNote}
 		}
 		for i, cell := range row {
 			widths[i] = max(widths[i], lipgloss.Width(cell))
 		}
 		rows = append(rows, row)
+	}
+	tableWidth := func() int {
+		width := 3*len(headers) + 1
+		for _, cellWidth := range widths {
+			width += cellWidth
+		}
+		return width
+	}
+	if terminalWidth > 0 && tableWidth() > terminalWidth {
+		flexible := []int{len(headers) - 1}
+		if !cachedOnly {
+			flexible = append(flexible, 3, 4, 5, 2)
+		}
+		for _, column := range flexible {
+			minimum := 1
+			if column == len(headers)-1 {
+				minimum = lipgloss.Width(headers[column])
+			}
+			for widths[column] > minimum && tableWidth() > terminalWidth {
+				widths[column]--
+			}
+		}
+		for column := range headers {
+			headers[column] = ansi.Truncate(headers[column], widths[column], "…")
+		}
+		for row := range rows {
+			for column := range rows[row] {
+				rows[row][column] = ansi.Truncate(rows[row][column], widths[column], "…")
+			}
+		}
 	}
 
 	styleFunc := func(row, col int) lipgloss.Style {
@@ -77,10 +113,7 @@ func renderVersionsTable(entries []core.RemoteConfigVersionEntry, cachedOnly boo
 		return style.Foreground(clistyles.PaletteSlateDim)
 	}
 
-	width := 3*len(headers) + 1
-	for _, cellWidth := range widths {
-		width += cellWidth
-	}
+	width := tableWidth()
 	tbl := table.New().Headers(headers...).Rows(rows...).Width(width).Border(lipgloss.NormalBorder()).BorderHeader(true).BorderRow(false).StyleFunc(styleFunc)
 	if !noColor {
 		tbl = tbl.BorderStyle(clistyles.BorderStyle(false))

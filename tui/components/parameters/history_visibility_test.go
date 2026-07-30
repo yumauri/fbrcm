@@ -348,7 +348,7 @@ func TestHistoryVersionPickerRendersAuthorsAlignedInsideCompleteBorder(t *testin
 	versions := []core.RemoteConfigVersionEntry{
 		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3", UpdateTime: "2026-07-13T12:34:56Z", UpdateUser: firebase.RemoteConfigUser{Email: "alice@example.com"}}},
 		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2", UpdateTime: "2026-07-12T11:22:33Z", UpdateUser: firebase.RemoteConfigUser{Name: "Bob Builder"}}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1", UpdateTime: "2026-07-11T10:20:30Z"}},
+		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1", UpdateTime: "2026-07-11T10:20:30Z", ChangeNote: "Enable checkout v2 for production after final validation"}},
 	}
 	m := New(nil).SetBounds(0, 0, 90, 18)
 	m.projects = []projectState{{project: project, tree: historyTestTree("p")}}
@@ -364,6 +364,9 @@ func TestHistoryVersionPickerRendersAuthorsAlignedInsideCompleteBorder(t *testin
 	leftArrow, rightArrow := historyPickerArrowGlyphs(true)
 	if !strings.Contains(plain, "alice@example.com") || !strings.Contains(plain, "Bob Builder") {
 		t.Fatalf("picker does not show version authors:\n%s", plain)
+	}
+	if !strings.Contains(plain, "Change Note") || !strings.Contains(plain, "Change note: Enable checkout v2 for production after final validation") {
+		t.Fatalf("picker does not show the Change Note column and complete focused note:\n%s", plain)
 	}
 	if strings.Contains(plain, "Status") {
 		t.Fatalf("picker still contains status column:\n%s", plain)
@@ -454,7 +457,7 @@ func TestHistoryVersionPickerHintUsesApplicationHelpStyles(t *testing.T) {
 }
 
 func TestHistoryVersionPickerSelectionExcludesArrowColumns(t *testing.T) {
-	row := pickerVersionTableRow("v7", "2025-04-11 13:34:34", "author@example.com", "v7", 5, 19, 18)
+	row := pickerVersionTableRow("v7", "2025-04-11 13:34:34", "author@example.com", "note", "v7", 5, 19, 18, 8)
 	selected := historyPickerSelectedRow(row, true)
 	width := lipgloss.Width(row)
 	left := ansi.Cut(row, 0, historyPickerArrowWidth)
@@ -478,7 +481,7 @@ func TestHistoryVersionPickerSelectionExcludesArrowColumns(t *testing.T) {
 }
 
 func TestHistoryVersionPickerKeepsInactiveSideSelected(t *testing.T) {
-	row := pickerVersionTableRow("v7", "2025-04-11 13:34:34", "author@example.com", "v7", 5, 19, 18)
+	row := pickerVersionTableRow("v7", "2025-04-11 13:34:34", "author@example.com", "note", "v7", 5, 19, 18, 8)
 	active := historyPickerSelectedRow(row, true)
 	inactive := historyPickerSelectedRow(row, false)
 	if active == inactive {

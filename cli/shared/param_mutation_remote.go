@@ -21,6 +21,7 @@ type ParameterMutationOpts struct {
 	Yes            bool
 	DryRun         bool
 	Draft          bool
+	ChangeNote     *string
 }
 
 // ReadParameterMutationOpts reads project/filter/search/expr/dry-run/yes flags and resolves
@@ -57,6 +58,10 @@ func ReadParameterMutationOpts(cmd *cobra.Command, args []string) (ParameterMuta
 	if err != nil {
 		return ParameterMutationOpts{}, err
 	}
+	changeNote, err := ReadChangeNoteFlag(cmd)
+	if err != nil {
+		return ParameterMutationOpts{}, err
+	}
 	if len(args) > 0 {
 		paramFilters, err = ResolveParameterArgFilters(args, paramFilters)
 		if err != nil {
@@ -71,6 +76,7 @@ func ReadParameterMutationOpts(cmd *cobra.Command, args []string) (ParameterMuta
 		Yes:            yes,
 		DryRun:         dryRun,
 		Draft:          draftMode,
+		ChangeNote:     changeNote,
 	}, nil
 }
 
@@ -84,6 +90,10 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 	ctx := context.Background()
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	ctx, err := WithChangeNote(ctx, opts.ChangeNote)
+	if err != nil {
+		return rc.RemoteMutationTotals{}, err
 	}
 
 	progress.Start("Loading projects…")

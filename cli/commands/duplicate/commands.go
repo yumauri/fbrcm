@@ -24,6 +24,7 @@ type duplicateOptions struct {
 	yes            bool
 	source         string
 	target         string
+	changeNote     *string
 }
 
 // New constructs the duplicate command.
@@ -43,6 +44,7 @@ func New(svc *core.Core) *cobra.Command {
 	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and duplicate without confirmation")
 	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
@@ -70,6 +72,10 @@ func readDuplicateOptions(cmd *cobra.Command, args []string) (duplicateOptions, 
 	if err != nil {
 		return duplicateOptions{}, err
 	}
+	changeNote, err := shared.ReadChangeNoteFlag(cmd)
+	if err != nil {
+		return duplicateOptions{}, err
+	}
 	source := strings.TrimSpace(args[0])
 	target := strings.TrimSpace(args[1])
 	if source == "" {
@@ -89,6 +95,7 @@ func readDuplicateOptions(cmd *cobra.Command, args []string) (duplicateOptions, 
 		yes:            yes,
 		source:         source,
 		target:         target,
+		changeNote:     changeNote,
 	}, nil
 }
 
@@ -96,6 +103,10 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 	ctx := context.Background()
 	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	ctx, err := shared.WithChangeNote(ctx, opts.changeNote)
+	if err != nil {
+		return err
 	}
 	projects, _, err := svc.ListProjects(ctx)
 	if err != nil {

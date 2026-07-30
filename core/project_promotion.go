@@ -40,6 +40,7 @@ type ProjectPromotionSnapshot struct {
 	StaleDraft   bool
 	DraftUpdated time.Time
 	CachedAt     time.Time
+	ChangeNote   string
 }
 
 type ProjectPromotionPlan struct {
@@ -62,6 +63,7 @@ type ProjectPromotionPreview struct {
 	PublishDiff       rcdiff.Result
 	PublishDiffText   string
 	HasChanges        bool
+	ChangeNote        string
 }
 
 type ProjectPromotionResult struct {
@@ -163,6 +165,7 @@ func (s *Core) loadPromotionSnapshot(ctx context.Context, project Project, force
 	out.HasDraft = true
 	out.DraftVersion = draftCfg.Version.VersionNumber
 	out.DraftUpdated = record.UpdatedAt
+	out.ChangeNote = record.ChangeNote
 	out.StaleDraft = record.BaseVersion != "" && published.Version.VersionNumber != "" && record.BaseVersion != published.Version.VersionNumber
 	return out, nil
 }
@@ -228,6 +231,7 @@ func (s *Core) PreviewProjectPromotion(plan *ProjectPromotionPlan, requested map
 		PublishDiff:       publishDiff,
 		PublishDiffText:   publishText,
 		HasChanges:        changed,
+		ChangeNote:        plan.Target.ChangeNote,
 	}, nil
 }
 
@@ -274,12 +278,12 @@ func (s *Core) SaveProjectPromotionDraft(preview *ProjectPromotionPreview) (*Pro
 	}
 	projectID := preview.Plan.Target.Project.ProjectID
 	if preview.Plan.Target.HasDraft {
-		if err := s.SaveDraft(projectID, preview.CandidateRaw); err != nil {
+		if err := s.SaveDraftWithChangeNote(projectID, preview.CandidateRaw, DraftChangeNoteUpdate{Set: true, Value: preview.ChangeNote}); err != nil {
 			return nil, err
 		}
 	} else {
 		base := &config.ParametersCache{ETag: preview.Plan.Target.ETag, CachedAt: preview.Plan.Target.CachedAt, RemoteConfig: preview.Plan.Target.PublishedRaw}
-		if err := draft.SaveWithBase(projectID, base, preview.CandidateRaw); err != nil {
+		if err := draft.SaveWithBase(projectID, base, preview.CandidateRaw, draft.ChangeNoteUpdate{Set: true, Value: preview.ChangeNote}); err != nil {
 			return nil, err
 		}
 	}

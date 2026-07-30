@@ -78,7 +78,11 @@ func (m *Model) openBoolValueDialog(project core.Project, groupKey, paramKey, va
 		return m.boolValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
 	}, func(err error) {
 		corelog.For("tui.bool").Error("boolean value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "err", err)
-	}, m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
+	}, func(note string) tea.Cmd {
+		return m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true, note)
+	}, func(note string) tea.Cmd {
+		return m.setBooleanParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false, note)
+	})
 }
 
 func (m Model) boolValueDialogBody(project core.Project, groupKey, paramKey, valueLabel string, nextValue bool) ([]string, error) {
@@ -87,9 +91,9 @@ func (m Model) boolValueDialogBody(project core.Project, groupKey, paramKey, val
 	})
 }
 
-func (m Model) setBooleanParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel string, nextValue, publish bool) tea.Cmd {
+func (m Model) setBooleanParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel string, nextValue, publish bool, changeNote ...string) tea.Cmd {
 	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
 		_, tree, hasDraft, err := m.svc.SetBooleanParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
 		return tree, hasDraft, err
-	})
+	}, changeNote...)
 }

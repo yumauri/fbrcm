@@ -1,6 +1,8 @@
 package app
 
 import (
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
@@ -20,9 +22,14 @@ func (m *Model) openDeleteDialog(project core.Project, groupKey, paramKey string
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: "Delete Parameter?",
 		Body:  body,
+		Input: m.changeNoteDialogInput(project),
 		Buttons: []dialogcmp.Button{
-			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.deleteParameterCmd(project, groupKey, paramKey, true, closeDetails)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.deleteParameterCmd(project, groupKey, paramKey, false, closeDetails)},
+			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+				return m.deleteParameterCmd(project, groupKey, paramKey, true, closeDetails, note)
+			}},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+				return m.deleteParameterCmd(project, groupKey, paramKey, false, closeDetails, note)
+			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		},
 	})
@@ -42,9 +49,14 @@ func (m *Model) openDeleteGroupDialog(project core.Project, groupKey, groupLabel
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: "Delete Group?",
 		Body:  body,
+		Input: m.changeNoteDialogInput(project),
 		Buttons: []dialogcmp.Button{
-			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.deleteGroupCmd(project, groupKey, true, closeDetails)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.deleteGroupCmd(project, groupKey, false, closeDetails)},
+			{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+				return m.deleteGroupCmd(project, groupKey, true, closeDetails, note)
+			}},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+				return m.deleteGroupCmd(project, groupKey, false, closeDetails, note)
+			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		},
 	})
@@ -61,6 +73,7 @@ func (m *Model) openPreviewDialog(project core.Project, title, errorTitle string
 		Title:   title,
 		Body:    body,
 		Buttons: buttons,
+		Input:   m.changeNoteDialogInput(project),
 	})
 }
 
@@ -71,8 +84,12 @@ func (m *Model) openDeleteConditionalValueDialog(project core.Project, groupKey,
 	}, func(err error) {
 		corelog.For("tui.delete").Error("delete conditional value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "err", err)
 	}, []dialogcmp.Button{
-		{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.deleteConditionalValueCmd(project, groupKey, paramKey, valueLabel, true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.deleteConditionalValueCmd(project, groupKey, paramKey, valueLabel, false)},
+		{Label: "Delete", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.deleteConditionalValueCmd(project, groupKey, paramKey, valueLabel, true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.deleteConditionalValueCmd(project, groupKey, paramKey, valueLabel, false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 }
@@ -94,10 +111,14 @@ func (m *Model) openDraftDialog(project core.Project, mode dialogMode, queue []p
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	}
 	title := "Discard Draft?"
+	var input *dialogcmp.Input
 	if mode == dialogModePublishDraft {
 		title = "Publish Draft?"
+		input = m.changeNoteDialogInput(project)
 		buttons = []dialogcmp.Button{
-			{Label: "Publish", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.publishDraftCmd(project)},
+			{Label: "Publish", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+				return m.publishDraftCmd(project, note)
+			}},
 			{Label: "Discard", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.discardDraftCmd(project)},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		}
@@ -108,6 +129,7 @@ func (m *Model) openDraftDialog(project core.Project, mode dialogMode, queue []p
 		Title:   title,
 		Body:    body,
 		Buttons: buttons,
+		Input:   input,
 	})
 }
 
@@ -117,8 +139,12 @@ func (m *Model) openRenameDialog(project core.Project, groupKey, paramKey, nextP
 	}, func(err error) {
 		corelog.For("tui.rename").Error("rename preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "next_param", nextParamKey, "err", err)
 	}, []dialogcmp.Button{
-		{Label: "Rename", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.renameParameterCmd(project, groupKey, paramKey, nextParamKey, true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.renameParameterCmd(project, groupKey, paramKey, nextParamKey, false)},
+		{Label: "Rename", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.renameParameterCmd(project, groupKey, paramKey, nextParamKey, true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.renameParameterCmd(project, groupKey, paramKey, nextParamKey, false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 }
@@ -129,8 +155,12 @@ func (m *Model) openRenameGroupDialog(project core.Project, groupKey, nextGroupK
 	}, func(err error) {
 		corelog.For("tui.rename").Error("rename group preview failed", "project_id", project.ProjectID, "group", groupKey, "next_group", nextGroupKey, "err", err)
 	}, []dialogcmp.Button{
-		{Label: "Rename", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.renameGroupCmd(project, groupKey, nextGroupKey, true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.renameGroupCmd(project, groupKey, nextGroupKey, false)},
+		{Label: "Rename", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.renameGroupCmd(project, groupKey, nextGroupKey, true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.renameGroupCmd(project, groupKey, nextGroupKey, false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 }
@@ -141,8 +171,12 @@ func (m *Model) openMoveDialog(project core.Project, groupKey, paramKey, nextGro
 	}, func(err error) {
 		corelog.For("tui.move").Error("move parameter preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "next_group", nextGroupKey, "err", err)
 	}, []dialogcmp.Button{
-		{Label: "Move", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.moveParameterCmd(project, groupKey, paramKey, nextGroupKey, true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.moveParameterCmd(project, groupKey, paramKey, nextGroupKey, false)},
+		{Label: "Move", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.moveParameterCmd(project, groupKey, paramKey, nextGroupKey, true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.moveParameterCmd(project, groupKey, paramKey, nextGroupKey, false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 }
@@ -153,8 +187,12 @@ func (m *Model) openMoveGroupDialog(project core.Project, groupKey, nextGroupKey
 	}, func(err error) {
 		corelog.For("tui.move").Error("move group preview failed", "project_id", project.ProjectID, "group", groupKey, "next_group", nextGroupKey, "err", err)
 	}, []dialogcmp.Button{
-		{Label: "Move", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.moveGroupCmd(project, groupKey, nextGroupKey, true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.moveGroupCmd(project, groupKey, nextGroupKey, false)},
+		{Label: "Move", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.moveGroupCmd(project, groupKey, nextGroupKey, true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.moveGroupCmd(project, groupKey, nextGroupKey, false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 }
@@ -165,8 +203,12 @@ func (m *Model) openDuplicateDialog(project core.Project, groupKey, paramKey, ne
 	}, func(err error) {
 		corelog.For("tui.duplicate").Error("duplicate parameter preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "next_param", nextParamKey, "err", err)
 	}, []dialogcmp.Button{
-		{Label: "Duplicate", Variant: dialogcmp.ButtonVariantDanger, OnPress: m.duplicateParameterNamedCmd(project, groupKey, paramKey, nextParamKey, true)},
-		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.duplicateParameterNamedCmd(project, groupKey, paramKey, nextParamKey, false)},
+		{Label: "Duplicate", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+			return m.duplicateParameterNamedCmd(project, groupKey, paramKey, nextParamKey, true, note)
+		}},
+		{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+			return m.duplicateParameterNamedCmd(project, groupKey, paramKey, nextParamKey, false, note)
+		}},
 		{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 	})
 }
@@ -191,9 +233,14 @@ func (m *Model) openEditDetailsDialog(project core.Project, edit core.ParameterD
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: title,
 		Body:  body,
+		Input: m.changeNoteDialogInput(project),
 		Buttons: []dialogcmp.Button{
-			{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPress: m.editParameterDetailsCmd(project, edit, true, closeDetails, selectSaved)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.editParameterDetailsCmd(project, edit, false, closeDetails, selectSaved)},
+			{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+				return m.editParameterDetailsCmd(project, edit, true, closeDetails, selectSaved, note)
+			}},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+				return m.editParameterDetailsCmd(project, edit, false, closeDetails, selectSaved, note)
+			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: detailsEditCanceledCmd(closeDetails)},
 		},
 	})
@@ -214,12 +261,25 @@ func (m *Model) openEditGroupDetailsDialog(project core.Project, edit core.Group
 	}
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: title, Body: body,
+		Input: m.changeNoteDialogInput(project),
 		Buttons: []dialogcmp.Button{
-			{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPress: m.editGroupDetailsCmd(project, edit, true, closeDetails)},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: m.editGroupDetailsCmd(project, edit, false, closeDetails)},
+			{Label: applyLabel, Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+				return m.editGroupDetailsCmd(project, edit, true, closeDetails, note)
+			}},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: func(note string) tea.Cmd {
+				return m.editGroupDetailsCmd(project, edit, false, closeDetails, note)
+			}},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: detailsEditCanceledCmd(closeDetails)},
 		},
 	})
+}
+
+func (m Model) changeNoteDialogInput(project core.Project) *dialogcmp.Input {
+	value := ""
+	if record, ok, err := m.svc.LoadDraftRecord(project.ProjectID); err == nil && ok {
+		value = record.ChangeNote
+	}
+	return &dialogcmp.Input{Label: "Change note", Value: value, Placeholder: "Optional change note"}
 }
 
 func (m *Model) openInvalidDetailsDialog(project core.Project, reasons []string, closeDetails bool) {

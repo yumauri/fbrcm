@@ -82,7 +82,7 @@ that the other tool approaches the same concern differently.
 | Repository project aliases | ✅ Yes | ➖ No direct equivalent | Firebase CLI stores aliases in `.firebaserc`; fbrcm resolves cached projects by name, ID, filters, and profiles. |
 | Predeploy and postdeploy hooks | ✅ Yes | ❌ No | Firebase CLI integrates hooks through `firebase.json`. |
 | Deploy other Firebase products | ✅ Yes | ❌ No | fbrcm intentionally focuses on Remote Config. |
-| User-authored Remote Config publish note | ❌ No | ❌ No | The REST API supports `version.description`, but Firebase Console and the documented Firebase CLI publish flow do not expose it. Firebase CLI's `--message` is used for Hosting release comments. |
+| User-authored Remote Config change note | ❌ No | ✅ Yes | fbrcm exposes `--change-note`, stores `change_note` with drafts, prompts in TUI publication reviews, and maps it to the REST API's writable `version.description`. Firebase CLI's `--message` is used for Hosting release comments. |
 
 ## Command equivalents
 
@@ -101,7 +101,7 @@ template; use `client@project-id` or `server@project-id` when needed.
 | Show version metadata | Included in `remoteconfig:get` output | `fbrcm versions show PROJECT VERSION` |
 | List recent versions | `firebase --project PROJECT remoteconfig:versions:list --limit N` | `fbrcm versions list PROJECT --limit N` |
 | List every retained version | `firebase --project PROJECT remoteconfig:versions:list --limit 0` | `fbrcm versions list PROJECT --all` |
-| Publish template file | `firebase --project PROJECT deploy --only remoteconfig` | `fbrcm project import PROJECT --from FILE` |
+| Publish template file | `firebase --project PROJECT deploy --only remoteconfig` | `fbrcm project import PROJECT --from FILE [--change-note TEXT]` |
 | Preview template-file deployment | `firebase --project PROJECT deploy --only remoteconfig --dry-run` | `fbrcm project import PROJECT --from FILE --dry-run` |
 | Stage template file without publishing | No equivalent | `fbrcm project import PROJECT --from FILE --draft` |
 | Roll back to version | `firebase --project PROJECT remoteconfig:rollback -v VERSION` | `fbrcm versions rollback PROJECT VERSION` |
@@ -161,7 +161,8 @@ fbrcm update checkout_enabled \
   --draft
 
 fbrcm draft diff production-project --against current
-fbrcm draft publish production-project
+fbrcm draft publish production-project \
+  --change-note "Enable checkout v2 for production"
 ```
 
 Draft publication fetches current Firebase state, performs a three-way merge,

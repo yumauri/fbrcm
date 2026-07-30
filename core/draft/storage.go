@@ -45,34 +45,42 @@ func Load(projectID string) (json.RawMessage, bool, error) {
 
 // Save stores raw as a draft using the current parameters cache as its base.
 // Existing drafts retain their original base.
-func Save(projectID string, raw json.RawMessage) error {
+func Save(projectID string, raw json.RawMessage, noteUpdates ...ChangeNoteUpdate) error {
+	noteUpdate, err := normalizeChangeNoteUpdate(noteUpdates)
+	if err != nil {
+		return err
+	}
 	if existing, ok, err := LoadRecord(projectID); err != nil {
 		return err
 	} else if ok {
-		return saveRecord(existing, raw, existing.BaseRemoteConfig, existing.BaseETag, existing.BaseVersion, existing.CreatedAt)
+		return saveRecord(existing, raw, existing.BaseRemoteConfig, existing.BaseETag, existing.BaseVersion, existing.CreatedAt, noteUpdate)
 	}
 	cache, err := config.LoadParametersCache(projectID)
 	if err != nil {
 		return fmt.Errorf("load draft base: %w", err)
 	}
-	return SaveWithBase(projectID, cache, raw)
+	return SaveWithBase(projectID, cache, raw, noteUpdate)
 }
 
-func SaveWithBase(projectID string, base *config.ParametersCache, raw json.RawMessage) error {
+func SaveWithBase(projectID string, base *config.ParametersCache, raw json.RawMessage, noteUpdates ...ChangeNoteUpdate) error {
 	if base == nil {
 		return fmt.Errorf("draft base is nil")
+	}
+	noteUpdate, err := normalizeChangeNoteUpdate(noteUpdates)
+	if err != nil {
+		return err
 	}
 	createdAt := time.Now().UTC()
 	if existing, ok, err := LoadRecord(projectID); err != nil {
 		return err
 	} else if ok {
-		return saveRecord(existing, raw, existing.BaseRemoteConfig, existing.BaseETag, existing.BaseVersion, existing.CreatedAt)
+		return saveRecord(existing, raw, existing.BaseRemoteConfig, existing.BaseETag, existing.BaseVersion, existing.CreatedAt, noteUpdate)
 	}
 	baseCfg, err := firebase.ParseRemoteConfig(base.RemoteConfig)
 	if err != nil {
 		return fmt.Errorf("decode draft base: %w", err)
 	}
-	return saveRecord(&Record{ProjectID: projectID}, raw, base.RemoteConfig, base.ETag, baseCfg.Version.VersionNumber, createdAt)
+	return saveRecord(&Record{ProjectID: projectID}, raw, base.RemoteConfig, base.ETag, baseCfg.Version.VersionNumber, createdAt, noteUpdate)
 }
 
 func SaveRebased(projectID string, base *config.ParametersCache, raw json.RawMessage, createdAt time.Time) error {
@@ -86,10 +94,18 @@ func SaveRebased(projectID string, base *config.ParametersCache, raw json.RawMes
 	if createdAt.IsZero() {
 		createdAt = time.Now().UTC()
 	}
-	return saveRecord(&Record{ProjectID: projectID}, raw, base.RemoteConfig, base.ETag, baseCfg.Version.VersionNumber, createdAt)
+	existing, _, err := LoadRecord(projectID)
+	if err != nil {
+		return err
+	}
+	noteUpdate := ChangeNoteUpdate{}
+	if existing != nil {
+		noteUpdate = ChangeNoteUpdate{Set: true, Value: existing.ChangeNote}
+	}
+	return saveRecord(&Record{ProjectID: projectID}, raw, base.RemoteConfig, base.ETag, baseCfg.Version.VersionNumber, createdAt, noteUpdate)
 }
 
-func saveRecord(stored *Record, raw, baseRaw json.RawMessage, baseETag, baseVersion string, createdAt time.Time) error {
+func saveRecord(stored *Record, raw, baseRaw json.RawMessage, baseETag, baseVersion string, createdAt time.Time, noteUpdate ChangeNoteUpdate) error {
 	if _, err := firebase.ParseRemoteConfig(baseRaw); err != nil {
 		return fmt.Errorf("decode draft base: %w", err)
 	}
@@ -102,9 +118,43 @@ func saveRecord(stored *Record, raw, baseRaw json.RawMessage, baseETag, baseVers
 	stored.BaseETag = baseETag
 	stored.CreatedAt = createdAt
 	stored.UpdatedAt = now
+	if noteUpdate.Set {
+		stored.ChangeNote = noteUpdate.Value
+	}
 	stored.BaseRemoteConfig = append(json.RawMessage(nil), baseRaw...)
 	stored.RemoteConfig = append(json.RawMessage(nil), raw...)
 	return config.SaveDraft(stored)
+}
+
+func SetChangeNote(projectID, value string) error {
+	stored, ok, err := LoadRecord(projectID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("draft not found")
+	}
+	value, err = firebase.NormalizeChangeNote(value)
+	if err != nil {
+		return err
+	}
+	stored.ChangeNote = value
+	stored.UpdatedAt = time.Now().UTC()
+	return config.SaveDraft(stored)
+}
+
+func normalizeChangeNoteUpdate(updates []ChangeNoteUpdate) (ChangeNoteUpdate, error) {
+	if len(updates) > 1 {
+		return ChangeNoteUpdate{}, fmt.Errorf("several change note updates were supplied")
+	}
+	if len(updates) == 0 || !updates[0].Set {
+		return ChangeNoteUpdate{}, nil
+	}
+	value, err := firebase.NormalizeChangeNote(updates[0].Value)
+	if err != nil {
+		return ChangeNoteUpdate{}, err
+	}
+	return ChangeNoteUpdate{Set: true, Value: value}, nil
 }
 
 func Delete(projectID string) error {

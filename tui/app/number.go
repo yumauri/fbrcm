@@ -80,7 +80,11 @@ func (m *Model) openNumberValueDialog(project core.Project, groupKey, paramKey, 
 		return m.numberValueDialogBody(project, groupKey, paramKey, valueLabel, nextValue)
 	}, func(err error) {
 		corelog.For("tui.number").Error("number value preview failed", "project_id", project.ProjectID, "group", groupKey, "param", paramKey, "value_label", valueLabel, "next_value", nextValue, "err", err)
-	}, m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true), m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false))
+	}, func(note string) tea.Cmd {
+		return m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, true, note)
+	}, func(note string) tea.Cmd {
+		return m.setNumberParameterValueCmd(project, groupKey, paramKey, valueLabel, nextValue, false, note)
+	})
 }
 
 func (m Model) numberValueDialogBody(project core.Project, groupKey, paramKey, valueLabel, nextValue string) ([]string, error) {
@@ -89,9 +93,9 @@ func (m Model) numberValueDialogBody(project core.Project, groupKey, paramKey, v
 	})
 }
 
-func (m Model) setNumberParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool) tea.Cmd {
+func (m Model) setNumberParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel, nextValue string, publish bool, changeNote ...string) tea.Cmd {
 	return m.runSetParameterValueCmd(project, groupKey, paramKey, valueLabel, publish, func(ctx context.Context) (*core.ParametersTree, bool, error) {
 		_, tree, hasDraft, err := m.svc.SetNumberParameterValue(ctx, project.ProjectID, groupKey, paramKey, valueLabel, nextValue, publish)
 		return tree, hasDraft, err
-	})
+	}, changeNote...)
 }

@@ -89,7 +89,7 @@ func remoteConfigFieldPresent(cfg *firebase.RemoteConfig, key string) bool {
 	case "version":
 		return strings.TrimSpace(cfg.Version.VersionNumber) != "" ||
 			strings.TrimSpace(cfg.Version.UpdateTime) != "" ||
-			strings.TrimSpace(cfg.Version.Description) != ""
+			strings.TrimSpace(cfg.Version.ChangeNote) != ""
 	default:
 		return false
 	}

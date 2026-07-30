@@ -44,6 +44,7 @@ type RemoteMutationResult struct {
 	ErrorStage       string
 	Published        bool
 	Err              error
+	ChangeNote       *string
 }
 
 // RemoteMutationTotals contains aggregate counts and ordered project results.
@@ -83,7 +84,7 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 	var totals RemoteMutationTotals
 	for _, project := range projects {
 		progress.Start("Preparing draft for " + project.ProjectID + "…")
-		result := RemoteMutationResult{Project: project}
+		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx)}
 		cfg, err := RevalidateProjectConfig(ctx, svc, project)
 		if err == nil {
 			if draftRaw, hasDraft, loadErr := svc.LoadDraft(project.ProjectID); loadErr != nil {
@@ -126,7 +127,11 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		}
 		if err == nil && !firebase.IsDryRun(ctx) {
 			progress.Start("Saving draft for " + project.ProjectID + "…")
-			err = svc.SaveDraft(project.ProjectID, finalRaw)
+			if changeNote, set := firebase.ChangeNoteFromContext(ctx); set {
+				err = svc.SaveDraftWithChangeNote(project.ProjectID, finalRaw, core.DraftChangeNoteUpdate{Set: true, Value: changeNote})
+			} else {
+				err = svc.SaveDraft(project.ProjectID, finalRaw)
+			}
 		}
 		if err != nil {
 			result.Status, result.Err = RemoteMutationDraftFailed, err
@@ -157,7 +162,7 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 
 	for _, project := range projects {
 		progress.Start("Preparing Remote Config for " + project.ProjectID + "…")
-		result := RemoteMutationResult{Project: project}
+		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx)}
 		preparationFailed := false
 		hasDraft, err := svc.HasDraft(project.ProjectID)
 		if err == nil && hasDraft {
@@ -243,6 +248,7 @@ type RemoteMutationJSONResult struct {
 	DryRun           bool                     `json:"dry_run"`
 	Error            *RemoteMutationJSONError `json:"error"`
 	RetrySelector    *string                  `json:"retry_selector"`
+	ChangeNote       *string                  `json:"change_note"`
 }
 
 // WriteRemoteMutationResults renders a collected batch after command logging
@@ -274,6 +280,7 @@ func writeRemoteMutationJSON(cmd *cobra.Command, totals RemoteMutationTotals, dr
 			ChangedItemCount: result.ChangedCount,
 			Draft:            draft,
 			DryRun:           dryRun,
+			ChangeNote:       result.ChangeNote,
 		}
 		if result.PreviousVersion != "" {
 			item.PreviousVersion = &result.PreviousVersion
@@ -297,6 +304,14 @@ func writeRemoteMutationJSON(cmd *cobra.Command, totals RemoteMutationTotals, dr
 	encoder := json.NewEncoder(cmd.OutOrStdout())
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(results)
+}
+
+func remoteMutationChangeNote(ctx context.Context) *string {
+	value, ok := firebase.ChangeNoteFromContext(ctx)
+	if !ok {
+		return nil
+	}
+	return &value
 }
 
 func remoteMutationErrorStage(result RemoteMutationResult) string {

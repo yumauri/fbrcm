@@ -12,10 +12,10 @@ func TestGroupsCommandSurface(t *testing.T) {
 	cmd := New(nil)
 	want := map[string][]string{
 		"list":   {"project", "filter", "search", "update", "json"},
-		"add":    {"project", "description", "dry-run", "draft", "yes"},
-		"edit":   {"project", "description", "no-description", "dry-run", "draft", "yes"},
-		"rename": {"project", "dry-run", "draft", "yes"},
-		"delete": {"project", "dry-run", "draft", "yes"},
+		"add":    {"project", "description", "dry-run", "draft", "change-note", "yes"},
+		"edit":   {"project", "description", "no-description", "dry-run", "draft", "change-note", "yes"},
+		"rename": {"project", "dry-run", "draft", "change-note", "yes"},
+		"delete": {"project", "dry-run", "draft", "change-note", "yes"},
 	}
 	if len(cmd.Commands()) != len(want) {
 		t.Fatalf("subcommands = %d, want %d", len(cmd.Commands()), len(want))

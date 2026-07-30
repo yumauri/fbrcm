@@ -24,6 +24,7 @@ type Draft struct {
 	BaseETag         string          `json:"base_etag"`
 	CreatedAt        time.Time       `json:"created_at"`
 	UpdatedAt        time.Time       `json:"updated_at"`
+	ChangeNote       string          `json:"change_note,omitempty"`
 	BaseRemoteConfig json.RawMessage `json:"base_remote_config"`
 	RemoteConfig     json.RawMessage `json:"remote_config"`
 }

@@ -32,6 +32,7 @@ type addOptions struct {
 	description    string
 	valueSpec      addValueSpec
 	key            string
+	changeNote     *string
 }
 
 type addTotals struct {
@@ -58,6 +59,7 @@ func addFlags(cmd *cobra.Command) {
 	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().String("expr", "", "Filter projects by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and add without confirmation")
 	cmd.Flags().String("description", "", "Parameter description")
@@ -77,6 +79,9 @@ func runAddCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if shared.StdinAvailable(cmd.InOrStdin()) {
 		if opts.draft {
 			return fmt.Errorf("--draft is unavailable in stdin mode")
+		}
+		if opts.changeNote != nil {
+			return fmt.Errorf("--change-note is unavailable in stdin mode")
 		}
 		corelog.For("add").Info("stdin mode enabled; using remote config from stdin")
 		return runAddStdin(cmd, opts.key, opts.groupName, opts.description, opts.valueSpec, opts.projectExpr)
@@ -117,6 +122,10 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 	if err != nil {
 		return addOptions{}, err
 	}
+	changeNote, err := shared.ReadChangeNoteFlag(cmd)
+	if err != nil {
+		return addOptions{}, err
+	}
 
 	key := strings.TrimSpace(args[0])
 	if key == "" {
@@ -133,6 +142,7 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 		description:    description,
 		valueSpec:      spec,
 		key:            key,
+		changeNote:     changeNote,
 	}, nil
 }
 
@@ -148,6 +158,10 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	ctx := context.Background()
 	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	ctx, err := shared.WithChangeNote(ctx, opts.changeNote)
+	if err != nil {
+		return err
 	}
 
 	projects, _, err := svc.ListProjects(ctx)

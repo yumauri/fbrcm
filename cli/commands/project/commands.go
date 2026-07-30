@@ -127,6 +127,7 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter imported config by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	cmd.Flags().Bool("remove-all-conditions", false, "Remove all conditions and conditional values from imported config")
 	cmd.Flags().Bool("keep-portable-conditions-only", false, "Keep only portable conditions and remove destination-specific usages")

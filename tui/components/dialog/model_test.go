@@ -67,6 +67,60 @@ func TestMouseButtonClickRunsCommandAndCloses(t *testing.T) {
 	}
 }
 
+func TestInputIsEditableAndPassedToButton(t *testing.T) {
+	m := New().SetBounds(0, 0, 100, 30).Open(Config{
+		Title: "Publish",
+		Body:  []string{"Review changes"},
+		Input: &Input{Label: "Change note", Value: "old"},
+		Buttons: []Button{{
+			Label: "Publish",
+			OnPressWithInput: func(value string) tea.Cmd {
+				return func() tea.Msg { return pressedMsg(value) }
+			},
+		}},
+	})
+	if !strings.Contains(ansi.Strip(m.View()), "Change note") {
+		t.Fatalf("input label missing:\n%s", ansi.Strip(m.View()))
+	}
+	m, _ = m.Update(tea.KeyPressMsg{Code: 'x', Text: "x"})
+	if got := m.InputValue(); got != "oldx" {
+		t.Fatalf("input value = %q, want oldx", got)
+	}
+	m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if m.inputFocus {
+		t.Fatal("Enter should move focus from input to buttons")
+	}
+	next, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if next.IsOpen() || cmd == nil {
+		t.Fatalf("submit left open=%v cmd nil=%v", next.IsOpen(), cmd == nil)
+	}
+	if got := cmd(); got != pressedMsg("oldx") {
+		t.Fatalf("command returned %#v", got)
+	}
+}
+
+func TestInputAndButtonsSupportArrowFocusNavigation(t *testing.T) {
+	m := New().SetBounds(0, 0, 100, 30).Open(Config{
+		Title:   "Publish",
+		Body:    []string{"Review changes"},
+		Input:   &Input{Label: "Change note"},
+		Buttons: []Button{{Label: "Publish"}},
+	})
+	if !m.inputFocus {
+		t.Fatal("input should initially have focus")
+	}
+
+	m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
+	if m.inputFocus {
+		t.Fatal("Down should move focus from the input to the buttons")
+	}
+
+	m, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyUp})
+	if !m.inputFocus {
+		t.Fatal("Up should move focus from the buttons to the input")
+	}
+}
+
 func TestEveryRenderedButtonIsClickable(t *testing.T) {
 	buttons := []Button{
 		{Label: "Save Draft", OnPress: func() tea.Msg { return pressedMsg("draft") }},

@@ -27,7 +27,7 @@ require (
 require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20260730002925-d9e819d7acab // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20260730003005-19049f296fa9 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect

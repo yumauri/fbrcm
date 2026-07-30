@@ -16,7 +16,7 @@ func TestNewCommandStructure(t *testing.T) {
 		cmdtest.AssertNestedFlag(t, cmd, []string{"show"}, flag)
 	}
 	for _, command := range []string{"add", "delete", "edit", "move", "rename"} {
-		for _, flag := range []string{"draft", "dry-run", "yes", "json"} {
+		for _, flag := range []string{"draft", "dry-run", "change-note", "yes", "json"} {
 			cmdtest.AssertNestedFlag(t, cmd, []string{command}, flag)
 		}
 	}

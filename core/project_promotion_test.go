@@ -48,6 +48,7 @@ func TestProjectPromotionPreviewReportsDependenciesAndSavesDraft(t *testing.T) {
 	if len(preview.Required) != 1 || preview.Required[0].ID.Kind != rcdiff.ItemCondition || preview.Required[0].ID.Name != "beta" {
 		t.Fatalf("required = %#v, want condition beta", preview.Required)
 	}
+	preview.ChangeNote = "Promote beta flag"
 	result, err := svc.SaveProjectPromotionDraft(preview)
 	if err != nil {
 		t.Fatal(err)
@@ -61,6 +62,9 @@ func TestProjectPromotionPreviewReportsDependenciesAndSavesDraft(t *testing.T) {
 	}
 	if record.BaseVersion != "3" || record.BaseETag != "etag-prod" {
 		t.Fatalf("draft base = version:%q etag:%q", record.BaseVersion, record.BaseETag)
+	}
+	if record.ChangeNote != "Promote beta flag" {
+		t.Fatalf("draft change note = %q", record.ChangeNote)
 	}
 	saved, err := firebase.ParseRemoteConfig(record.RemoteConfig)
 	if err != nil {
@@ -81,7 +85,7 @@ func TestProjectPromotionComposesOntoExistingTargetDraft(t *testing.T) {
 	savePromotionCache(t, source.ProjectID, "etag-dev", sourceCfg)
 	savePromotionCache(t, target.ProjectID, "etag-prod", targetCfg)
 	draftRaw := marshalPromotionConfig(t, draftCfg)
-	if err := svc.SaveDraft(target.ProjectID, draftRaw); err != nil {
+	if err := svc.SaveDraftWithChangeNote(target.ProjectID, draftRaw, DraftChangeNoteUpdate{Set: true, Value: "Existing promotion note"}); err != nil {
 		t.Fatal(err)
 	}
 	before, _, err := svc.LoadDraftRecord(target.ProjectID)
@@ -96,9 +100,15 @@ func TestProjectPromotionComposesOntoExistingTargetDraft(t *testing.T) {
 	if !plan.Target.HasDraft || plan.Target.Source != "draft" {
 		t.Fatalf("target snapshot = %#v, want draft", plan.Target)
 	}
+	if plan.Target.ChangeNote != "Existing promotion note" {
+		t.Fatalf("target change note = %q", plan.Target.ChangeNote)
+	}
 	preview, err := svc.PreviewProjectPromotion(plan, map[rcpromote.ItemID]bool{{Kind: rcdiff.ItemParameter, Name: "promoted"}: true}, false)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if preview.ChangeNote != "Existing promotion note" {
+		t.Fatalf("preview change note = %q", preview.ChangeNote)
 	}
 	if _, err := svc.SaveProjectPromotionDraft(preview); err != nil {
 		t.Fatal(err)

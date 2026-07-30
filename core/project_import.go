@@ -51,6 +51,7 @@ type ProjectImportPlan struct {
 	BaseETag         string
 	BaseCachedAt     time.Time
 	BaseDraftUpdated time.Time
+	ChangeNote       string
 }
 
 type ProjectImportResult struct {
@@ -73,11 +74,13 @@ func (s *Core) PrepareProjectImport(ctx context.Context, project Project, source
 	currentRaw := append(json.RawMessage(nil), cache.RemoteConfig...)
 	hasDraft := false
 	var draftUpdated time.Time
+	changeNote := ""
 	if record, ok, loadErr := s.LoadDraftRecord(project.ProjectID); loadErr != nil {
 		return nil, loadErr
 	} else if ok {
 		hasDraft = true
 		draftUpdated = record.UpdatedAt
+		changeNote = record.ChangeNote
 		currentRaw = append(json.RawMessage(nil), record.RemoteConfig...)
 	}
 	currentCfg, err := firebase.ParseCloneRemoteConfig(currentRaw)
@@ -120,6 +123,7 @@ func (s *Core) PrepareProjectImport(ctx context.Context, project Project, source
 		BaseETag:         cache.ETag,
 		BaseCachedAt:     cache.CachedAt,
 		BaseDraftUpdated: draftUpdated,
+		ChangeNote:       changeNote,
 	}, nil
 }
 
@@ -129,6 +133,11 @@ func (s *Core) ExecuteProjectImport(ctx context.Context, plan *ProjectImportPlan
 	}
 	if !plan.HasChanges {
 		return nil, fmt.Errorf("import has no changes")
+	}
+	var err error
+	ctx, err = firebase.WithChangeNote(ctx, plan.ChangeNote)
+	if err != nil {
+		return nil, err
 	}
 	if plan.HasDraft && publish {
 		return nil, fmt.Errorf("project %s has an unpublished draft; update the draft or publish it separately", plan.Project.ProjectID)
@@ -176,7 +185,7 @@ func (s *Core) ExecuteProjectImport(ctx context.Context, plan *ProjectImportPlan
 			return nil, fmt.Errorf("current Remote Config changed during import preview; review the import again")
 		}
 	}
-	if err := s.SaveDraft(plan.Project.ProjectID, plan.DraftRaw); err != nil {
+	if err := s.SaveDraftWithChangeNote(plan.Project.ProjectID, plan.DraftRaw, DraftChangeNoteUpdate{Set: true, Value: plan.ChangeNote}); err != nil {
 		return nil, err
 	}
 	cache := &ParametersCache{ETag: plan.BaseETag, CachedAt: plan.BaseCachedAt, RemoteConfig: plan.DraftRaw}

@@ -29,7 +29,10 @@ type projectPromotionPreparedMsg struct {
 	err      error
 }
 
-type projectPromotionExecuteMsg struct{ publish bool }
+type projectPromotionExecuteMsg struct {
+	publish    bool
+	changeNote string
+}
 type projectPromotionBackMsg struct{}
 
 type projectPromotionCompletedMsg struct {
@@ -99,7 +102,7 @@ func (m Model) updatePromoteMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 		m.promotionPreview = nil
 		return m, nil, true
 	case projectPromotionExecuteMsg:
-		return m, m.executeProjectPromotionCmd(msg.publish), true
+		return m, m.executeProjectPromotionCmd(msg.publish, msg.changeNote), true
 	case projectPromotionCompletedMsg:
 		return m.updateProjectPromotionCompleted(msg)
 	}
@@ -158,15 +161,23 @@ func (m *Model) openProjectPromotionReview(preview *core.ProjectPromotionPreview
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: title,
 		Body:  body,
+		Input: &dialogcmp.Input{Label: "Change note", Value: preview.ChangeNote, Placeholder: "Optional change note"},
 		Buttons: []dialogcmp.Button{
-			{Label: label, Variant: variant, OnPress: func() tea.Msg { return projectPromotionExecuteMsg{publish: publish} }},
+			{Label: label, Variant: variant, OnPressWithInput: func(note string) tea.Cmd {
+				return func() tea.Msg { return projectPromotionExecuteMsg{publish: publish, changeNote: note} }
+			}},
 			{Label: "Back", Variant: dialogcmp.ButtonVariantAccent, OnPress: func() tea.Msg { return projectPromotionBackMsg{} }},
 		},
 	})
 }
 
-func (m Model) executeProjectPromotionCmd(publish bool) tea.Cmd {
+func (m Model) executeProjectPromotionCmd(publish bool, changeNote ...string) tea.Cmd {
 	preview := m.promotionPreview
+	if preview != nil && len(changeNote) > 0 {
+		copy := *preview
+		copy.ChangeNote = changeNote[0]
+		preview = &copy
+	}
 	return func() tea.Msg {
 		var result *core.ProjectPromotionResult
 		var err error

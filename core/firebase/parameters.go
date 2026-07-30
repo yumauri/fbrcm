@@ -76,7 +76,7 @@ type RemoteConfigVersion struct {
 	VersionNumber  string           `json:"versionNumber,omitempty"`
 	UpdateTime     string           `json:"updateTime,omitempty"`
 	UpdateUser     RemoteConfigUser `json:"updateUser,omitzero"`
-	Description    string           `json:"description,omitempty"`
+	ChangeNote     string           `json:"description,omitempty"`
 	UpdateOrigin   string           `json:"updateOrigin,omitempty"`
 	UpdateType     string           `json:"updateType,omitempty"`
 	RollbackSource string           `json:"rollbackSource,omitempty"`

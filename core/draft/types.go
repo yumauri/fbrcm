@@ -11,6 +11,13 @@ type MutationSpec struct {
 	Apply        Mutation
 }
 
+// ChangeNoteUpdate distinguishes an omitted draft change note from an explicit
+// set or clear operation.
+type ChangeNoteUpdate struct {
+	Set   bool
+	Value string
+}
+
 type ParameterDetailsEdit struct {
 	Create          bool
 	GroupKey        string

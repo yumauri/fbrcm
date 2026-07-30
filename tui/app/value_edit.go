@@ -15,6 +15,7 @@ import (
 type previewValueEditFunc func() (*core.ParametersCache, []byte, error)
 type valueDialogBodyFunc func() ([]string, error)
 type setParameterValueFunc func(context.Context) (*core.ParametersTree, bool, error)
+type valueEditCommandFunc func(string) tea.Cmd
 
 func (m Model) valueEditDialogBody(project core.Project, preview previewValueEditFunc) ([]string, error) {
 	cache, finalRaw, err := preview()
@@ -45,7 +46,7 @@ func (m Model) valueEditDialogBody(project core.Project, preview previewValueEdi
 	return lines, nil
 }
 
-func (m *Model) openValueEditDialog(project core.Project, bodyFn valueDialogBodyFunc, logErr func(error), applyCmd, draftCmd tea.Cmd) {
+func (m *Model) openValueEditDialog(project core.Project, bodyFn valueDialogBodyFunc, logErr func(error), applyCmd, draftCmd valueEditCommandFunc) {
 	body, err := bodyFn()
 	if err != nil {
 		logErr(err)
@@ -55,18 +56,23 @@ func (m *Model) openValueEditDialog(project core.Project, bodyFn valueDialogBody
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: "Edit Value?",
 		Body:  body,
+		Input: m.changeNoteDialogInput(project),
 		Buttons: []dialogcmp.Button{
-			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPress: applyCmd},
-			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPress: draftCmd},
+			{Label: "Apply", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: applyCmd},
+			{Label: "Draft", Variant: dialogcmp.ButtonVariantAccent, OnPressWithInput: draftCmd},
 			{Label: "Cancel", Variant: dialogcmp.ButtonVariantAccent, OnPress: dialogCanceledCmd()},
 		},
 	})
 }
 
-func (m Model) runSetParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel string, publish bool, set setParameterValueFunc) tea.Cmd {
+func (m Model) runSetParameterValueCmd(project core.Project, groupKey, paramKey, valueLabel string, publish bool, set setParameterValueFunc, changeNote ...string) tea.Cmd {
 	return func() tea.Msg {
 		_, stale := m.parameters.ProjectDraftState(project.ProjectID)
-		tree, hasDraft, err := set(context.Background())
+		ctx, err := tuiChangeNoteContext(changeNote...)
+		if err != nil {
+			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
+		}
+		tree, hasDraft, err := set(ctx)
 		if err != nil {
 			return messages.ParametersLoadedMsg{Project: project, Err: err, HasDraft: m.parameters.HasDraft(project.ProjectID), StaleDraft: stale}
 		}

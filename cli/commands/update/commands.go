@@ -60,6 +60,7 @@ func addUpdateFlags(cmd *cobra.Command) {
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and update without confirmation")
 	cmd.Flags().String("description", "", "Parameter description")
@@ -87,6 +88,9 @@ func runUpdateCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if shared.StdinAvailable(cmd.InOrStdin()) {
 		if opts.Draft {
 			return fmt.Errorf("--draft is unavailable in stdin mode")
+		}
+		if opts.ChangeNote != nil {
+			return fmt.Errorf("--change-note is unavailable in stdin mode")
 		}
 		corelog.For("update").Info("stdin mode enabled; using remote config from stdin")
 		return runUpdateStdin(cmd, opts.ParamFilters, opts.ParamExpr, opts.Search, opts.spec)

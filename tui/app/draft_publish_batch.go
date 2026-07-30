@@ -47,7 +47,10 @@ type draftPublishBatch struct {
 }
 
 type draftPublishPreparedMsg struct{ items []draftPublishItem }
-type draftPublishDecisionMsg struct{ decision string }
+type draftPublishDecisionMsg struct {
+	decision   string
+	changeNote string
+}
 type draftPublishExecutedMsg struct {
 	item  draftPublishItem
 	cache *core.ParametersCache
@@ -137,8 +140,11 @@ func (m Model) advanceDraftPublishReview() (Model, tea.Cmd, bool) {
 		m.dialog = m.dialog.Open(dialogcmp.Config{
 			Title: "Review Draft Publish",
 			Body:  body,
+			Input: &dialogcmp.Input{Label: "Change note", Value: item.plan.ChangeNote, Placeholder: "Optional change note"},
 			Buttons: []dialogcmp.Button{
-				{Label: "Approve", Variant: dialogcmp.ButtonVariantDanger, OnPress: draftPublishDecisionCmd("approve")},
+				{Label: "Approve", Variant: dialogcmp.ButtonVariantDanger, OnPressWithInput: func(note string) tea.Cmd {
+					return draftPublishDecisionCmd("approve", note)
+				}},
 				{Label: "Skip", Variant: dialogcmp.ButtonVariantAccent, OnPress: draftPublishDecisionCmd("skip")},
 				{Label: "Cancel All", Variant: dialogcmp.ButtonVariantAccent, OnPress: draftPublishDecisionCmd("cancel")},
 			},
@@ -148,8 +154,12 @@ func (m Model) advanceDraftPublishReview() (Model, tea.Cmd, bool) {
 	return m.startDraftPublishExecution()
 }
 
-func draftPublishDecisionCmd(decision string) tea.Cmd {
-	return func() tea.Msg { return draftPublishDecisionMsg{decision: decision} }
+func draftPublishDecisionCmd(decision string, changeNote ...string) tea.Cmd {
+	note := ""
+	if len(changeNote) > 0 {
+		note = changeNote[0]
+	}
+	return func() tea.Msg { return draftPublishDecisionMsg{decision: decision, changeNote: note} }
 }
 
 func (m Model) updateDraftPublishDecision(msg draftPublishDecisionMsg) (Model, tea.Cmd, bool) {
@@ -159,6 +169,7 @@ func (m Model) updateDraftPublishDecision(msg draftPublishDecisionMsg) (Model, t
 	switch msg.decision {
 	case "approve":
 		m.draftPublish.items[m.draftPublish.current].approved = true
+		m.draftPublish.items[m.draftPublish.current].plan.ChangeNote = msg.changeNote
 	case "skip":
 		item := &m.draftPublish.items[m.draftPublish.current]
 		item.skipped = true

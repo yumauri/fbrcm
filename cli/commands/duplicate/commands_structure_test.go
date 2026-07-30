@@ -8,5 +8,5 @@ import (
 
 func TestCommandStructure(t *testing.T) {
 	cmdtest.AssertCommandStructure(t, New(nil), "duplicate <source> <target>",
-		"project", "expr", "dry-run", "draft", "yes", "json")
+		"project", "expr", "dry-run", "change-note", "draft", "yes", "json")
 }

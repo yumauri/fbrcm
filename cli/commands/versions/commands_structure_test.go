@@ -35,6 +35,10 @@ func TestNewCommandStructure(t *testing.T) {
 			cmdtest.AssertNestedFlag(t, cmd, []string{name}, flag)
 		}
 	}
+	cmdtest.AssertNestedFlag(t, cmd, []string{"restore"}, "change-note")
+	if rollback := cmdtest.FindCommand(t, cmd, "rollback"); rollback.Flags().Lookup("change-note") != nil {
+		t.Fatal("versions rollback unexpectedly exposes --change-note")
+	}
 }
 
 func TestVersionDiffRejectsJSONWithSideBySide(t *testing.T) {

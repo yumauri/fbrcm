@@ -9,8 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"charm.land/lipgloss/v2"
+
 	cmdtest "github.com/yumauri/fbrcm/cli/commands/testutil"
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -19,11 +22,13 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmd := New(nil)
-	cmdtest.AssertSubcommands(t, cmd, "list", "path", "show", "diff", "publish", "discard")
+	cmdtest.AssertSubcommands(t, cmd, "list", "path", "show", "change-note", "diff", "publish", "discard")
 	cmdtest.AssertFlag(t, cmd, "path", "json")
 	for _, flag := range []string{"filter", "json"} {
 		cmdtest.AssertFlag(t, cmd, "list", flag)
 	}
+	cmdtest.AssertFlag(t, cmd, "publish", "change-note")
+	cmdtest.AssertFlag(t, cmd, "change-note", "clear")
 	for _, flag := range []string{"raw", "to"} {
 		cmdtest.AssertFlag(t, cmd, "show", flag)
 	}
@@ -107,6 +112,14 @@ func TestListShowDiffAndDiscardLocalDraft(t *testing.T) {
 	listOut := executeCommand(t, "list", "--json")
 	if !strings.Contains(listOut, `"project_id": "demo"`) || !strings.Contains(listOut, `"status": "ready"`) {
 		t.Fatalf("draft list output = %s", listOut)
+	}
+	noteOut := executeCommand(t, "change-note", "demo", "Enable checkout v2", "--json")
+	if !strings.Contains(noteOut, `"change_note": "Enable checkout v2"`) {
+		t.Fatalf("draft change-note output = %s", noteOut)
+	}
+	stored, err := config.LoadDraft("demo")
+	if err != nil || stored.ChangeNote != "Enable checkout v2" || stored.FormatVersion != 1 {
+		t.Fatalf("stored change note = %q, format = %d, err = %v", stored.ChangeNote, stored.FormatVersion, err)
 	}
 	showOut := executeCommand(t, "show", "demo")
 	if !strings.Contains(showOut, `"value":"new"`) || strings.Contains(showOut, "base_remote_config") {
@@ -200,14 +213,14 @@ func TestRenderListTablePlainText(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	updatedAt := time.Date(2026, 7, 15, 9, 10, 0, 0, time.Local)
 
-	output := renderList([]listItem{{
+	output := renderListAtWidth([]listItem{{
 		ProjectID:   "project-a",
 		Project:     "Project A",
 		BaseVersion: "42",
 		UpdatedAt:   &updatedAt,
 		Status:      "ready",
 		Changes:     map[string]int{"parameters": 3, "conditions": 1},
-	}})
+	}}, 200)
 
 	for _, want := range []string{"┌", "│", "Project ID", "Project", "Base", "Updated", "Changes", "Status", "project-a", "Project A", "42", "3 params, 1 conditions", "ready"} {
 		if !strings.Contains(output, want) {
@@ -231,6 +244,26 @@ func TestRenderListEmptyTablePlainText(t *testing.T) {
 	}
 }
 
+func TestRenderListCropsChangeNoteOnNarrowTerminal(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	note := "Enable checkout version two for the production environment"
+	output := renderListAtWidth([]listItem{{
+		ProjectID:  "production-project",
+		Project:    "Production Project",
+		Status:     "ready",
+		Changes:    map[string]int{"parameters": 1, "conditions": 0},
+		ChangeNote: &note,
+	}}, 80)
+	for index, line := range strings.Split(output, "\n") {
+		if got := lipgloss.Width(line); got > 80 {
+			t.Fatalf("line %d width = %d, want <= 80:\n%s", index, got, output)
+		}
+	}
+	if !strings.Contains(output, "…") {
+		t.Fatalf("narrow table did not ellipsize flexible content:\n%s", output)
+	}
+}
+
 func setupCommandTest(t *testing.T) {
 	t.Helper()
 	root := t.TempDir()
@@ -243,7 +276,7 @@ func setupCommandTest(t *testing.T) {
 
 func executeCommand(t *testing.T, args ...string) string {
 	t.Helper()
-	cmd := New(nil)
+	cmd := New(&core.Core{})
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&out)

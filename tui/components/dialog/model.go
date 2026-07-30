@@ -1,9 +1,11 @@
 package dialog
 
 import (
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/tui/components/buttonbar"
+	"github.com/yumauri/fbrcm/tui/components/inputstyles"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -23,9 +25,16 @@ const (
 )
 
 type Button struct {
-	Label   string
-	Variant ButtonVariant
-	OnPress tea.Cmd
+	Label            string
+	Variant          ButtonVariant
+	OnPress          tea.Cmd
+	OnPressWithInput func(string) tea.Cmd
+}
+
+type Input struct {
+	Label       string
+	Value       string
+	Placeholder string
 }
 
 type Config struct {
@@ -33,6 +42,7 @@ type Config struct {
 	Body    []string
 	Buttons []Button
 	Tone    Tone
+	Input   *Input
 }
 
 type Model struct {
@@ -53,10 +63,14 @@ type Model struct {
 	dragging   bool
 	dragOffX   int
 	dragOffY   int
+	input      textinput.Model
+	inputLabel string
+	hasInput   bool
+	inputFocus bool
 }
 
 func New() Model {
-	return Model{}
+	return Model{input: inputstyles.NewTextInput()}
 }
 
 func (m Model) SetBounds(x, y, width, height int) Model {
@@ -87,6 +101,17 @@ func (m Model) Open(cfg Config) Model {
 	m.dragging = false
 	m.dragOffX = 0
 	m.dragOffY = 0
+	m.input = inputstyles.NewTextInput()
+	m.inputLabel = ""
+	m.hasInput = cfg.Input != nil
+	m.inputFocus = m.hasInput
+	if cfg.Input != nil {
+		m.inputLabel = cfg.Input.Label
+		m.input.SetValue(cfg.Input.Value)
+		m.input.Placeholder = cfg.Input.Placeholder
+		m.input.CursorEnd()
+		_ = m.input.Focus()
+	}
 	return m
 }
 
@@ -102,6 +127,10 @@ func (m Model) Close() Model {
 	m.dragging = false
 	m.dragOffX = 0
 	m.dragOffY = 0
+	m.input = inputstyles.NewTextInput()
+	m.inputLabel = ""
+	m.hasInput = false
+	m.inputFocus = false
 	return m
 }
 
@@ -117,6 +146,13 @@ func (m Model) Contains(x, y int) bool {
 	return x >= boxX && x < boxX+boxWidth && y >= boxY && y < boxY+boxHeight
 }
 
+func (m Model) InputValue() string {
+	if !m.hasInput {
+		return ""
+	}
+	return m.input.Value()
+}
+
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if !m.open {
 		return m, nil
@@ -125,6 +161,30 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		k := msg.String()
+		if m.hasInput {
+			switch k {
+			case "tab":
+				m.setInputFocus(!m.inputFocus)
+				return m, nil
+			case "shift+tab":
+				m.setInputFocus(!m.inputFocus)
+				return m, nil
+			}
+			if m.inputFocus {
+				if tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionSubmit, k) ||
+					tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionDown, k) {
+					m.setInputFocus(false)
+					return m, nil
+				}
+				var cmd tea.Cmd
+				m.input, cmd = m.input.Update(msg)
+				return m, cmd
+			}
+			if tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionUp, k) {
+				m.setInputFocus(true)
+				return m, nil
+			}
+		}
 		switch {
 		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionPrev, k):
 			m.move(-1)
@@ -144,7 +204,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.scroll = m.maxScroll()
 		case tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionSubmit, k):
 			if m.selected >= 0 && m.selected < len(m.buttons) {
-				cmd := m.buttons[m.selected].OnPress
+				cmd := m.buttonCommand(m.selected)
 				m = m.Close()
 				return m, cmd
 			}
@@ -158,13 +218,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.dragOffY = mouse.Y - boxY
 			return m, nil
 		}
+		if mouse.Button == tea.MouseLeft && m.inputHit(mouse.X, mouse.Y) {
+			m.setInputFocus(true)
+			return m, nil
+		}
 		index, ok := m.buttonIndexAt(msg.Mouse().X, msg.Mouse().Y)
 		if !ok {
 			return m, nil
 		}
 		m.selected = index
+		m.setInputFocus(false)
 		if index >= 0 && index < len(m.buttons) {
-			cmd := m.buttons[index].OnPress
+			cmd := m.buttonCommand(index)
 			m = m.Close()
 			return m, cmd
 		}
@@ -183,6 +248,26 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 
 	return m, nil
+}
+
+func (m Model) buttonCommand(index int) tea.Cmd {
+	if index < 0 || index >= len(m.buttons) {
+		return nil
+	}
+	button := m.buttons[index]
+	if button.OnPressWithInput != nil {
+		return button.OnPressWithInput(m.InputValue())
+	}
+	return button.OnPress
+}
+
+func (m *Model) setInputFocus(focused bool) {
+	m.inputFocus = m.hasInput && focused
+	if m.inputFocus {
+		_ = m.input.Focus()
+		return
+	}
+	m.input.Blur()
 }
 
 func (m *Model) move(delta int) {

@@ -71,10 +71,44 @@ func newVersionsListCommand(svc *core.Core) *cobra.Command {
 	return cmd
 }
 
-func versionListJSON(result core.RemoteConfigVersionList) []core.RemoteConfigVersionEntry {
-	items := make([]core.RemoteConfigVersionEntry, len(result.Versions))
-	copy(items, result.Versions)
+type versionJSON struct {
+	VersionNumber  string                    `json:"versionNumber,omitempty"`
+	UpdateTime     string                    `json:"updateTime,omitempty"`
+	UpdateUser     firebase.RemoteConfigUser `json:"updateUser,omitzero"`
+	ChangeNote     *string                   `json:"change_note"`
+	UpdateOrigin   string                    `json:"updateOrigin,omitempty"`
+	UpdateType     string                    `json:"updateType,omitempty"`
+	RollbackSource string                    `json:"rollbackSource,omitempty"`
+	IsLegacy       bool                      `json:"isLegacy,omitempty"`
+	Current        bool                      `json:"current"`
+	Cached         bool                      `json:"cached"`
+	CachedAt       time.Time                 `json:"cached_at,omitzero"`
+	Size           int64                     `json:"size,omitempty"`
+	Path           string                    `json:"path,omitempty"`
+}
+
+func versionListJSON(result core.RemoteConfigVersionList) []versionJSON {
+	items := make([]versionJSON, 0, len(result.Versions))
+	for _, entry := range result.Versions {
+		items = append(items, versionEntryJSON(entry))
+	}
 	return items
+}
+
+func versionEntryJSON(entry core.RemoteConfigVersionEntry) versionJSON {
+	return versionJSON{
+		VersionNumber: entry.VersionNumber, UpdateTime: entry.UpdateTime, UpdateUser: entry.UpdateUser,
+		ChangeNote: optionalVersionString(entry.ChangeNote), UpdateOrigin: entry.UpdateOrigin,
+		UpdateType: entry.UpdateType, RollbackSource: entry.RollbackSource, IsLegacy: entry.IsLegacy,
+		Current: entry.Current, Cached: entry.Cached, CachedAt: entry.CachedAt, Size: entry.Size, Path: entry.Path,
+	}
+}
+
+func optionalVersionString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }
 
 func timeFlag(cmd *cobra.Command, name string) (time.Time, error) {
@@ -102,9 +136,10 @@ func newVersionsShowCommand(svc *core.Core) *cobra.Command {
 		}
 		jsonOut, _ := cmd.Flags().GetBool("json")
 		if jsonOut {
-			return shared.WriteJSON(cmd, map[string]any{"project": project, "version": resolved.Version, "cached": resolved.Cached})
+			entry := core.RemoteConfigVersionEntry{RemoteConfigVersion: resolved.Version, Cached: resolved.Cached}
+			return shared.WriteJSON(cmd, map[string]any{"project": project, "version": versionEntryJSON(entry), "cached": resolved.Cached})
 		}
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\nVersion: %s\nPublished: %s\nUpdated by: %s\nOrigin: %s\nType: %s\nDescription: %s\nRollback source: %s\nCached: %t\n", project.Name, project.ProjectID, resolved.Version.VersionNumber, resolved.Version.UpdateTime, resolved.Version.UpdateUser.Email, resolved.Version.UpdateOrigin, resolved.Version.UpdateType, resolved.Version.Description, resolved.Version.RollbackSource, resolved.Cached)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\nVersion: %s\nPublished: %s\nUpdated by: %s\nOrigin: %s\nType: %s\nChange note: %s\nRollback source: %s\nCached: %t\n", project.Name, project.ProjectID, resolved.Version.VersionNumber, resolved.Version.UpdateTime, resolved.Version.UpdateUser.Email, resolved.Version.UpdateOrigin, resolved.Version.UpdateType, resolved.Version.ChangeNote, resolved.Version.RollbackSource, resolved.Cached)
 		return nil
 	}}
 	cmd.Flags().Bool("cached", false, "Require a local snapshot and do not contact Firebase")
@@ -321,6 +356,9 @@ func newVersionsRollbackCommand(svc *core.Core, restore bool) *cobra.Command {
 		return runVersionPublish(cmd, svc, args[0], args[1], restore)
 	}}
 	shared.AddDryRunFlag(cmd)
+	if restore {
+		shared.AddChangeNoteFlag(cmd)
+	}
 	shared.AddYesFlag(cmd, "Skip final publish confirmation")
 	cmd.Flags().Bool("json", false, "Print result as JSON")
 	return cmd
@@ -332,6 +370,18 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	jsonOut, _ := cmd.Flags().GetBool("json")
 	if dry {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	var changeNote *string
+	var err error
+	if restore {
+		changeNote, err = shared.ReadChangeNoteFlag(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, err = shared.WithChangeNote(ctx, changeNote)
+		if err != nil {
+			return err
+		}
 	}
 	project, err := resolveVersionProject(cmd, svc, query)
 	if err != nil {
@@ -352,7 +402,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	}
 	if current.Version.VersionNumber == target.Version.VersionNumber {
 		if jsonOut {
-			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", dry, false))
+			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, dry, false))
 		}
 		_, err := fmt.Fprintf(cmd.OutOrStdout(), "version %s is already current; no operation performed\n", target.Version.VersionNumber)
 		return err
@@ -360,7 +410,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	diffText, changed := rc.RenderRemoteConfigDiff(current.Config, target.Config)
 	if !changed {
 		if jsonOut {
-			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", dry, false))
+			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, dry, false))
 		}
 		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
 		return err
@@ -397,7 +447,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 				return err
 			}
 		}
-		result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", true, true)
+		result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, true, true)
 		if jsonOut {
 			return shared.WriteJSON(cmd, result)
 		}
@@ -413,7 +463,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	}
 	var result core.VersionPublishResult
 	if restore {
-		result, err = svc.RestoreRemoteConfigVersion(context.Background(), project.ProjectID, target.Version.VersionNumber)
+		result, err = svc.RestoreRemoteConfigVersion(ctx, project.ProjectID, target.Version.VersionNumber)
 	} else {
 		result, err = svc.RollbackRemoteConfig(context.Background(), project.ProjectID, target.Version.VersionNumber)
 	}
@@ -423,7 +473,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 		}
 		return err
 	}
-	payload := versionPublishJSON(project.ProjectID, restore, result.PreviousVersion, result.SourceVersion, result.PublishedVersion, false, true)
+	payload := versionPublishJSON(project.ProjectID, restore, result.PreviousVersion, result.SourceVersion, result.PublishedVersion, changeNote, false, true)
 	if jsonOut {
 		return shared.WriteJSON(cmd, payload)
 	}
@@ -431,12 +481,12 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	return nil
 }
 
-func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, dryRun, changed bool) map[string]any {
+func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, changeNote *string, dryRun, changed bool) map[string]any {
 	var published any
 	if publishedVersion != "" {
 		published = publishedVersion
 	}
-	return map[string]any{
+	result := map[string]any{
 		"project_id":        projectID,
 		"operation":         map[bool]string{true: "restore", false: "rollback"}[restore],
 		"previous_version":  previousVersion,
@@ -445,4 +495,8 @@ func versionPublishJSON(projectID string, restore bool, previousVersion, sourceV
 		"dry_run":           dryRun,
 		"changed":           changed,
 	}
+	if restore {
+		result["change_note"] = changeNote
+	}
+	return result
 }

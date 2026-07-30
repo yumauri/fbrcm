@@ -20,6 +20,7 @@ type mutationOptions struct {
 	Draft          bool
 	DryRun         bool
 	Yes            bool
+	ChangeNote     *string
 }
 
 type groupMutation func(*firebase.RemoteConfig) (bool, error)
@@ -97,6 +98,7 @@ func addMutationFlags(cmd *cobra.Command) {
 	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Print diff and apply without confirmation")
 	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
 }
@@ -106,7 +108,12 @@ func readMutationOptions(cmd *cobra.Command) mutationOptions {
 	draft, _ := cmd.Flags().GetBool("draft")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
-	return mutationOptions{ProjectFilters: projectFilters, Draft: draft, DryRun: dryRun, Yes: yes}
+	var changeNote *string
+	if cmd.Flags().Changed("change-note") {
+		value, _ := cmd.Flags().GetString("change-note")
+		changeNote = &value
+	}
+	return mutationOptions{ProjectFilters: projectFilters, Draft: draft, DryRun: dryRun, Yes: yes, ChangeNote: changeNote}
 }
 
 func runNamedGroupMutation(cmd *cobra.Command, svc *core.Core, requested string, opts mutationOptions, operation, emoji string, destructive bool, mutate func(*firebase.RemoteConfig, string) (bool, error)) error {
@@ -127,6 +134,11 @@ func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, 
 	ctx := context.Background()
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
+	}
+	var err error
+	ctx, err = shared.WithChangeNote(ctx, opts.ChangeNote)
+	if err != nil {
+		return err
 	}
 	projects, _, err := svc.ListProjects(ctx)
 	if err != nil {

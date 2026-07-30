@@ -32,6 +32,7 @@ type PublishPlan struct {
 	Draft      *Record
 	Latest     *config.ParametersCache
 	Candidate  json.RawMessage
+	ChangeNote string
 	HasChanges bool
 	Rebased    bool
 }
@@ -88,6 +89,7 @@ func Preview(deps Deps, projectID string, spec MutationSpec) (*config.Parameters
 
 func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache *config.ParametersCache, finalRaw json.RawMessage, hasDraft bool, publish bool) (*MutateResult, bool, error) {
 	logger := corelog.For("core")
+	changeNote, changeNoteSet := firebase.ChangeNoteFromContext(ctx)
 	if publish {
 		validated := false
 		if hasDraft {
@@ -97,6 +99,18 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 			}
 			if !ok {
 				return nil, hasDraft, fmt.Errorf("draft not found")
+			}
+			if !changeNoteSet {
+				changeNote = stored.ChangeNote
+				ctx, _ = firebase.WithChangeNote(ctx, changeNote)
+			} else if stored.ChangeNote != changeNote && !firebase.IsDryRun(ctx) {
+				if err := SetChangeNote(projectID, changeNote); err != nil {
+					return nil, hasDraft, err
+				}
+				stored, _, err = LoadRecord(projectID)
+				if err != nil {
+					return nil, hasDraft, err
+				}
 			}
 			latest, _, err := deps.GetParameters(ctx, projectID, true)
 			if err != nil {
@@ -172,7 +186,8 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 		return result, false, nil
 	}
 
-	if err := SaveWithBase(projectID, cache, finalRaw); err != nil {
+	noteUpdate := ChangeNoteUpdate{Set: changeNoteSet, Value: changeNote}
+	if err := SaveWithBase(projectID, cache, finalRaw, noteUpdate); err != nil {
 		return nil, hasDraft, err
 	}
 	return &MutateResult{
@@ -230,6 +245,7 @@ func PreparePublish(ctx context.Context, deps Deps, projectID string) (*PublishP
 		Draft:      stored,
 		Latest:     cache,
 		Candidate:  candidateRaw,
+		ChangeNote: stored.ChangeNote,
 		HasChanges: hasChanges,
 		Rebased:    baseCfg.Version.VersionNumber != latestCfg.Version.VersionNumber,
 	}, nil
@@ -247,6 +263,24 @@ func ExecutePublish(ctx context.Context, deps Deps, projectID string, plan *Publ
 	if !ok || !current.UpdatedAt.Equal(plan.Draft.UpdatedAt) {
 		return nil, nil, fmt.Errorf("draft changed during preview; rerun the command")
 	}
+	normalizedNote, err := firebase.NormalizeChangeNote(plan.ChangeNote)
+	if err != nil {
+		return nil, nil, err
+	}
+	plan.ChangeNote = normalizedNote
+	if normalizedNote != current.ChangeNote && !firebase.IsDryRun(ctx) {
+		if err := SetChangeNote(projectID, normalizedNote); err != nil {
+			return nil, nil, err
+		}
+		current, ok, err = LoadRecord(projectID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !ok {
+			return nil, nil, fmt.Errorf("draft not found")
+		}
+		plan.Draft = current
+	}
 	if !plan.HasChanges {
 		if !firebase.IsDryRun(ctx) {
 			if err := Delete(projectID); err != nil {
@@ -254,6 +288,10 @@ func ExecutePublish(ctx context.Context, deps Deps, projectID string, plan *Publ
 			}
 		}
 		return plan.Latest, plan.Latest.RemoteConfig, nil
+	}
+	ctx, err = firebase.WithChangeNote(ctx, plan.ChangeNote)
+	if err != nil {
+		return nil, nil, err
 	}
 	if deps.ValidateRemoteConfigWithETag != nil {
 		if err := deps.ValidateRemoteConfigWithETag(ctx, projectID, plan.Candidate, plan.Latest.ETag); err != nil {

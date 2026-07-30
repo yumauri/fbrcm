@@ -71,7 +71,13 @@ func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID strin
 		return err
 	}
 
-	updateRaw, err := firebase.PrepareRemoteConfigUpdate(raw)
+	changeNote, changeNoteSet := firebase.ChangeNoteFromContext(ctx)
+	var updateRaw []byte
+	if changeNoteSet {
+		updateRaw, err = firebase.PrepareRemoteConfigUpdate(raw, changeNote)
+	} else {
+		updateRaw, err = firebase.PrepareRemoteConfigUpdate(raw)
+	}
 	if err != nil {
 		logger.Error("remote config validation payload decode failed", "project_id", projectID, "err", err)
 		return fmt.Errorf("decode remote config: %w", err)
@@ -94,7 +100,13 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 		return nil, "", err
 	}
 
-	updateRaw, err := firebase.PrepareRemoteConfigUpdate(raw)
+	changeNote, changeNoteSet := firebase.ChangeNoteFromContext(ctx)
+	var updateRaw []byte
+	if changeNoteSet {
+		updateRaw, err = firebase.PrepareRemoteConfigUpdate(raw, changeNote)
+	} else {
+		updateRaw, err = firebase.PrepareRemoteConfigUpdate(raw)
+	}
 	if err != nil {
 		logger.Error("remote config publish payload decode failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("decode remote config: %w", err)
