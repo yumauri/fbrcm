@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -262,6 +263,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	results := make([]publishResult, 0, len(ids))
 	failed := false
 	for _, projectID := range ids {
+		progress.Start("Preparing draft for " + projectID + "…")
 		result := publishResult{ProjectID: projectID, DryRun: dry}
 		plan, prepareErr := svc.PrepareDraftPublish(ctx, projectID)
 		if prepareErr != nil {
@@ -293,6 +295,11 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 				results = append(results, result)
 				continue
 			}
+		}
+		if dry {
+			progress.Start("Previewing draft for " + projectID + "…")
+		} else {
+			progress.Start("Publishing draft for " + projectID + "…")
 		}
 		cache, _, publishErr := svc.ExecuteDraftPublish(ctx, projectID, plan)
 		if publishErr != nil {

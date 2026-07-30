@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -227,6 +228,8 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 			fmt.Sprintf("Publish selected Remote Config changes to %s?", target.ProjectID),
 			shared.ConfirmationOptions{},
 		)
+		confirm.Input = cmd.InOrStdin()
+		confirm.Output = cmd.ErrOrStderr()
 		ok, err := confirm.RunPrompt()
 		if err != nil || !ok {
 			return err
@@ -293,6 +296,7 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 }
 
 func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, error) {
+	progress.Start("Preparing promotion to " + target.ProjectID + "…")
 	if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
 		return false, err
 	} else if hasDraft {
@@ -364,7 +368,7 @@ func promptPromotionItems(cmd *cobra.Command, plan rcpromote.Plan) (map[rcpromot
 		if preview != "" {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), preview)
 		}
-		choice, err := promptPromotionChoice("Promote this item?")
+		choice, err := promptPromotionChoice(cmd, "Promote this item?")
 		if err != nil {
 			return nil, err
 		}
@@ -384,7 +388,7 @@ func promptPromotionItems(cmd *cobra.Command, plan rcpromote.Plan) (map[rcpromot
 	return selected, nil
 }
 
-func promptPromotionChoice(prompt string) (string, error) {
+func promptPromotionChoice(cmd *cobra.Command, prompt string) (string, error) {
 	p := selection.New(prompt, []promotionChoice{
 		{label: "Promote", value: "promote"},
 		{label: "Skip", value: "skip"},
@@ -392,6 +396,13 @@ func promptPromotionChoice(prompt string) (string, error) {
 		{label: "Skip remaining in this section", value: "skip-section"},
 		{label: "Quit without publishing", value: "quit"},
 	})
+	promptInput, closePromptInput, err := shared.OpenPromptInput(cmd.InOrStdin())
+	if err != nil {
+		return "", err
+	}
+	defer closePromptInput()
+	p.Input = promptInput
+	p.Output = cmd.ErrOrStderr()
 	choice, err := p.RunPrompt()
 	if err != nil {
 		return "", err

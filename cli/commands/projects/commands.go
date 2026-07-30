@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -60,6 +61,8 @@ func newForgetCommand(svc *core.Core) *cobra.Command {
 						Notes:       []shared.ConfirmationNote{{Text: "Firebase projects will not be deleted."}},
 					},
 				)
+				confirm.Input = cmd.InOrStdin()
+				confirm.Output = cmd.ErrOrStderr()
 				ok, err := confirm.RunPrompt()
 				if err != nil {
 					return err
@@ -109,6 +112,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 			var projects []core.Project
 			var source string
 			if forceUpdate {
+				progress.Start("Syncing projects…")
 				projects, source, err = svc.SyncProjects(context.Background())
 			} else {
 				projects, source, err = svc.ListProjects(context.Background())
@@ -203,6 +207,8 @@ func newResetCommand(svc *core.Core) *cobra.Command {
 						Notes:       []shared.ConfirmationNote{{Text: "Remote Config snapshots, cached versions, and drafts will not be deleted."}},
 					},
 				)
+				confirm.Input = cmd.InOrStdin()
+				confirm.Output = cmd.ErrOrStderr()
 				ok, err := confirm.RunPrompt()
 				if err != nil {
 					return err

@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -17,6 +18,7 @@ import (
 )
 
 func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	progress.Start("Resolving project…")
 	projects, _, err := svc.ListProjects(ctx)
 	if err != nil {
 		return core.Project{}, err
@@ -27,6 +29,7 @@ func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 // ResolveCachedProjectArg resolves a project using only the local projects
 // registry. It never attempts project discovery.
 func ResolveCachedProjectArg(cmd *cobra.Command, query string) (core.Project, error) {
+	progress.Start("Resolving project…")
 	projects, err := config.LoadProjects()
 	if err != nil {
 		return core.Project{}, err
@@ -37,6 +40,7 @@ func ResolveCachedProjectArg(cmd *cobra.Command, query string) (core.Project, er
 // ResolveProjectTargetArg resolves the project portion of a client/server
 // template target, then returns the project with its canonical target identity.
 func ResolveProjectTargetArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	progress.Start("Resolving project…")
 	projects, _, err := svc.ListProjects(ctx)
 	if err != nil {
 		return core.Project{}, err
@@ -47,6 +51,7 @@ func ResolveProjectTargetArg(ctx context.Context, cmd *cobra.Command, svc *core.
 // ResolveCachedProjectTargetArg is the cache-only counterpart of
 // ResolveProjectTargetArg.
 func ResolveCachedProjectTargetArg(cmd *cobra.Command, query string) (core.Project, error) {
+	progress.Start("Resolving project…")
 	projects, err := config.LoadProjects()
 	if err != nil {
 		return core.Project{}, err

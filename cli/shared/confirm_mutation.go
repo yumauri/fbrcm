@@ -17,7 +17,7 @@ func PrintDiffAndConfirm(cmd *cobra.Command, yes bool, diffOut io.Writer, diffTe
 	if yes {
 		return true, nil
 	}
-	return RunConfirmationPrompt(prompt, destructive, cmd.OutOrStdout())
+	return RunConfirmationPrompt(prompt, destructive, cmd.ErrOrStderr())
 }
 
 // RunConfirmedTargetMutations applies a per-target mutation after optional confirmation.

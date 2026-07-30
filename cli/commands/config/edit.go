@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 )
@@ -127,6 +128,7 @@ func runEditor(cmd *cobra.Command, editor, path string) error {
 	process.Stdin = cmd.InOrStdin()
 	process.Stdout = cmd.OutOrStdout()
 	process.Stderr = cmd.ErrOrStderr()
+	progress.Stop()
 	return process.Run()
 }
 

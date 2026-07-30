@@ -227,6 +227,8 @@ func newDeleteCommand(svc *core.Core) *cobra.Command {
 					fmt.Sprintf("Delete auth identity %s and its files?", args[0]),
 					shared.ConfirmationOptions{Destructive: true},
 				)
+				confirm.Input = cmd.InOrStdin()
+				confirm.Output = cmd.ErrOrStderr()
 				ok, err := confirm.RunPrompt()
 				if err != nil {
 					return err

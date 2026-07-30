@@ -29,11 +29,13 @@ const (
 )
 
 type manager struct {
-	mu     sync.RWMutex
-	mode   Mode
-	level  charmlog.Level
-	logger *charmlog.Logger
-	sink   *lineSink
+	mu             sync.RWMutex
+	mode           Mode
+	level          charmlog.Level
+	logger         *charmlog.Logger
+	sink           *lineSink
+	cliOutput      io.Writer
+	terminalOutput io.Writer
 }
 
 var global = newManager()
@@ -48,8 +50,10 @@ func newManager() *manager {
 	})
 
 	return &manager{
-		logger: logger,
-		sink:   sink,
+		logger:         logger,
+		sink:           sink,
+		cliOutput:      os.Stderr,
+		terminalOutput: os.Stderr,
 	}
 }
 
@@ -79,6 +83,18 @@ func CurrentLevel() charmlog.Level {
 
 func SetLevel(level charmlog.Level) {
 	global.setLevel(level)
+}
+
+// ConfigureCLIOutput installs coordinated writers for CLI logs and direct
+// terminal guidance. It has no effect on TUI log rendering.
+func ConfigureCLIOutput(logOutput, terminalOutput io.Writer) {
+	global.configureCLIOutput(logOutput, terminalOutput)
+}
+
+// TerminalOutput returns the writer for direct CLI guidance that must remain
+// visible independently of the configured log level.
+func TerminalOutput() io.Writer {
+	return global.terminalWriter()
 }
 
 func AvailableLevels() []charmlog.Level {
@@ -145,6 +161,26 @@ func (m *manager) setLevel(level charmlog.Level) {
 	m.setLevelLocked(level)
 }
 
+func (m *manager) configureCLIOutput(logOutput, terminalOutput io.Writer) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if logOutput != nil {
+		m.cliOutput = logOutput
+	}
+	if terminalOutput != nil {
+		m.terminalOutput = terminalOutput
+	}
+	if m.mode == ModeCLI && m.level != SilentLevel {
+		m.logger.SetOutput(m.cliOutput)
+	}
+}
+
+func (m *manager) terminalWriter() io.Writer {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.terminalOutput
+}
+
 func (m *manager) setLevelLocked(level charmlog.Level) {
 	m.level = level
 	if level == SilentLevel {
@@ -155,7 +191,7 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 
 	m.logger.SetLevel(level)
 	if m.mode == ModeCLI {
-		m.logger.SetOutput(os.Stderr)
+		m.logger.SetOutput(m.cliOutput)
 		return
 	}
 	m.logger.SetOutput(io.Writer(m.sink))

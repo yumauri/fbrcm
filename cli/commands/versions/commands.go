@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -382,6 +383,14 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 			return err
 		}
 	}
+	action := "Rolling back Remote Config for "
+	if restore {
+		action = "Restoring Remote Config for "
+	}
+	if dry {
+		action = "Previewing version change for "
+	}
+	progress.Start(action + project.ProjectID + "…")
 	if dry {
 		if restore {
 			if _, err := svc.RestoreRemoteConfigVersion(ctx, project.ProjectID, target.Version.VersionNumber); err != nil {

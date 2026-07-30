@@ -25,6 +25,7 @@ import (
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
 	versionscmd "github.com/yumauri/fbrcm/cli/commands/versions"
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -55,6 +56,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			if cmd.Name() == "help" || isConfigCommand(cmd) {
 				return nil
 			}
+			progress.Start(commandProgressMessage(cmd))
 			profileName, err := cmd.Flags().GetString("profile")
 			if err != nil {
 				return err
@@ -72,7 +74,12 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			initOfflineMode()
 			return nil
 		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			progress.Stop()
+		},
 	}
+	rootCmd.SetOut(progress.StopWriter(os.Stdout))
+	rootCmd.SetErr(progress.StopWriter(os.Stderr))
 	rootCmd.Version = fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
 	rootCmd.SetVersionTemplate(versionTemplate)
 	profileDefault, _ := env.LookupTrimmed(env.Profile)
@@ -105,12 +112,45 @@ func Execute(s *core.Core, version, commit, date string) {
 	corelog.For("cli").Debug("register cli commands")
 	rootCmd := newRootCommand(s, version, commit, date)
 	executedCmd, err := rootCmd.ExecuteC()
+	progress.Stop()
 	if err != nil {
 		exitCode := commandExitCode(executedCmd, err, os.Args[1:]...)
 		if err.Error() != "" {
 			corelog.For("cli").Error("cli command failed", "err", err)
 		}
 		os.Exit(exitCode)
+	}
+}
+
+func commandProgressMessage(cmd *cobra.Command) string {
+	path := strings.TrimPrefix(cmd.CommandPath(), "fbrcm ")
+	switch {
+	case path == "get":
+		return "Loading Remote Config…"
+	case path == "projects list":
+		return "Loading projects…"
+	case path == "projects update":
+		return "Syncing projects…"
+	case path == "doctor":
+		return "Running diagnostics…"
+	case path == "auth login":
+		return "Authenticating…"
+	case strings.HasPrefix(path, "versions "):
+		return "Loading Remote Config versions…"
+	case path == "draft publish":
+		return "Preparing Remote Config drafts…"
+	case path == "project import":
+		return "Preparing Remote Config import…"
+	case strings.HasPrefix(path, "experiments"),
+		strings.HasPrefix(path, "rollouts"),
+		strings.HasPrefix(path, "personalizations"):
+		return "Loading managed features…"
+	case path == "add", path == "update", path == "delete", path == "duplicate",
+		strings.HasPrefix(path, "groups "), strings.HasPrefix(path, "conditions "),
+		path == "projects promote":
+		return "Preparing Remote Config changes…"
+	default:
+		return "Working…"
 	}
 }
 

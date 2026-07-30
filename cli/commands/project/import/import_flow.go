@@ -10,6 +10,7 @@ import (
 	"github.com/erikgeiser/promptkit/selection"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -92,6 +93,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), importConditionCountLine(sourceConditionCount, len(importCfg.Conditions)))
 	}
 
+	progress.Start("Loading current Remote Config for " + project.ProjectID + "…")
 	var currentRaw json.RawMessage
 	var currentETag string
 	if draftMode {
@@ -142,6 +144,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	}
 	result.Changed = true
 	if !draftMode {
+		progress.Start("Validating Remote Config for " + project.ProjectID + "…")
 		if err := svc.ValidateRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
 			return err
 		}
@@ -177,6 +180,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		}
 	}
 	if draftMode {
+		progress.Start("Saving draft for " + project.ProjectID + "…")
 		if !dryRun {
 			if err := svc.SaveDraft(project.ProjectID, finalRaw); err != nil {
 				return err
@@ -189,6 +193,11 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return writeImportResult(cmd, jsonOut, result)
 	}
 
+	if dryRun {
+		progress.Start("Previewing Remote Config import for " + project.ProjectID + "…")
+	} else {
+		progress.Start("Publishing Remote Config import for " + project.ProjectID + "…")
+	}
 	if _, _, err := svc.PublishRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
 		return err
 	}

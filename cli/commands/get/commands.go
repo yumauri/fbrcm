@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/commands/get/table"
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -124,6 +125,7 @@ func runGetStdin(cmd *cobra.Command, opts getOptions) error {
 }
 
 func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
+	progress.Start("Loading projects…")
 	projects, _, err := svc.ListProjects(context.Background())
 	if err != nil {
 		return err
@@ -134,6 +136,11 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	}
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
+	if opts.update {
+		progress.Start("Revalidating Remote Config…")
+	} else {
+		progress.Start("Loading Remote Config…")
+	}
 	loaded, err := loadProjectsParameters(context.Background(), svc, projects, opts.update)
 	if err != nil {
 		return err

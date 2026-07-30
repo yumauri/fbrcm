@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/term"
 	"github.com/erikgeiser/promptkit/confirmation"
 )
 
@@ -26,6 +27,9 @@ func TestNewConfirmationIncludesNotes(t *testing.T) {
 	}
 	if confirm.DefaultValue != confirmation.Yes {
 		t.Fatalf("confirmation default = %v, want Yes", confirm.DefaultValue)
+	}
+	if _, ok := confirm.Output.(term.File); !ok {
+		t.Fatalf("confirmation output type = %T, want terminal-capable writer", confirm.Output)
 	}
 }
 

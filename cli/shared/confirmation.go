@@ -3,11 +3,13 @@ package shared
 import (
 	"image/color"
 	"io"
+	"os"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 	"github.com/erikgeiser/promptkit/confirmation"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 )
 
@@ -35,6 +37,7 @@ func RunConfirmationPrompt(prompt string, destructive bool, fallbackOut io.Write
 // NewConfirmation creates a CLI confirmation with Yes selected by default.
 func NewConfirmation(prompt string, options ConfirmationOptions) *confirmation.Confirmation {
 	confirm := confirmation.New(prompt, confirmation.Yes)
+	confirm.Output = progress.StopWriter(os.Stderr)
 	hint := renderConfirmationNotes(options.Notes)
 
 	confirm.Template = `

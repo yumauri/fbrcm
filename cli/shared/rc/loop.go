@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/display"
@@ -77,6 +78,7 @@ type RemoteMutationPlanner func(project core.Project, cfg *ProjectConfig) (Remot
 func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, operation string, plan RemoteMutationPlanner) (RemoteMutationTotals, error) {
 	var totals RemoteMutationTotals
 	for _, project := range projects {
+		progress.Start("Preparing draft for " + project.ProjectID + "…")
 		result := RemoteMutationResult{Project: project}
 		cfg, err := RevalidateProjectConfig(ctx, svc, project)
 		if err == nil {
@@ -116,6 +118,7 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 			finalRaw, err = firebase.MarshalRemoteConfig(finalCfg)
 		}
 		if err == nil && !firebase.IsDryRun(ctx) {
+			progress.Start("Saving draft for " + project.ProjectID + "…")
 			err = svc.SaveDraft(project.ProjectID, finalRaw)
 		}
 		if err != nil {
@@ -146,6 +149,7 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 	}
 
 	for _, project := range projects {
+		progress.Start("Preparing Remote Config for " + project.ProjectID + "…")
 		result := RemoteMutationResult{Project: project}
 		preparationFailed := false
 		hasDraft, err := svc.HasDraft(project.ProjectID)

@@ -225,22 +225,23 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	}()
 
 	terminalOutput := oauthTerminalOutputEnabled(ctx)
+	terminalWriter := corelog.TerminalOutput()
 	if terminalOutput {
-		fmt.Fprintln(os.Stderr, "Open this URL in your browser to authorize fbrcm:")
-		fmt.Fprintln(os.Stderr, authURL)
+		_, _ = fmt.Fprintln(terminalWriter, "Open this URL in your browser to authorize fbrcm:")
+		_, _ = fmt.Fprintln(terminalWriter, authURL)
 	}
 	if autoOpen {
 		if err := browser.OpenURL(authURL); err != nil {
 			logger.Warn("open browser automatically failed", "err", err)
 			if terminalOutput {
-				fmt.Fprintf(os.Stderr, "Could not open browser automatically: %v\n", err)
+				_, _ = fmt.Fprintf(terminalWriter, "Could not open browser automatically: %v\n", err)
 			}
 		}
 	} else {
 		logger.Info("browser auto-open disabled")
 	}
 	if terminalOutput {
-		fmt.Fprintln(os.Stderr, "Waiting for OAuth callback on local loopback server...")
+		_, _ = fmt.Fprintln(terminalWriter, "Waiting for OAuth callback on local loopback server...")
 	}
 	logger.Info("waiting for oauth callback")
 

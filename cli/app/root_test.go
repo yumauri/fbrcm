@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
@@ -37,6 +38,9 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	}
 	if len(first.Commands()) != len(second.Commands()) {
 		t.Fatalf("command counts differ: %d vs %d", len(first.Commands()), len(second.Commands()))
+	}
+	if _, ok := first.ErrOrStderr().(term.File); !ok {
+		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
 	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "personalizations", "profile", "project", "projects", "rollouts", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
@@ -75,6 +79,24 @@ func TestRootCommandDefinesProfileOverride(t *testing.T) {
 	}
 	if !strings.Contains(flag.Usage, "FBRCM_PROFILE") || !strings.Contains(flag.Usage, "without changing") {
 		t.Fatalf("profile usage = %q", flag.Usage)
+	}
+}
+
+func TestCommandProgressMessageUsesMeaningfulPhases(t *testing.T) {
+	root := &cobra.Command{Use: "fbrcm"}
+	projects := &cobra.Command{Use: "projects"}
+	update := &cobra.Command{Use: "update"}
+	root.AddCommand(projects)
+	projects.AddCommand(update)
+
+	if got := commandProgressMessage(update); got != "Syncing projects…" {
+		t.Fatalf("projects update progress = %q", got)
+	}
+
+	unknown := &cobra.Command{Use: "local"}
+	root.AddCommand(unknown)
+	if got := commandProgressMessage(unknown); got != "Working…" {
+		t.Fatalf("fallback progress = %q", got)
 	}
 }
 

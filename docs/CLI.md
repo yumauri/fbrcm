@@ -319,6 +319,15 @@ Most commands require a selected profile. `profile`, `config`, `doctor`, and `he
 
 Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
 
+Long-running CLI work displays a gray animated progress line on stderr when
+stderr is an interactive terminal. The message changes for major phases such
+as project resolution, Remote Config loading, validation, publication, and
+draft updates. Durable log lines temporarily replace the progress line and the
+animation resumes underneath them. Progress is erased before results, diffs,
+diagnostics, file pickers, editors, or confirmation prompts are displayed, and
+it is never written when stderr is redirected. `FBRCM_LOG_LEVEL=silent`
+suppresses logs without suppressing interactive progress.
+
 Human-readable collection output always renders its normal table, including when there are no rows. An empty result therefore contains the table headers rather than a special empty-state message. A command whose primary JSON result is a collection always emits a top-level array and uses `[]` when empty. Singular resources and single-operation reports remain JSON objects.
 
 Auth identities, project cache, parameter cache, and drafts are profile-scoped. Project cache stores known projects plus their selected `auth_id`. Default storage lives under user config/cache directories. Override roots with:

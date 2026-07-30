@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -85,6 +86,7 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 		ctx = firebase.WithDryRun(ctx)
 	}
 
+	progress.Start("Loading projects…")
 	projects, _, err := svc.ListProjects(ctx)
 	if err != nil {
 		return rc.RemoteMutationTotals{}, err
@@ -109,7 +111,9 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 		}, nil
 	}
 	if opts.Draft {
+		progress.Start("Preparing Remote Config drafts…")
 		return rc.RunRemoteDraftLoop(ctx, cmd, svc, projects, operation, plan)
 	}
+	progress.Start("Preparing Remote Config changes…")
 	return rc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
 }

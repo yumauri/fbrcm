@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -141,6 +142,7 @@ func newExperimentsDeleteCommand(svc *core.Core) *cobra.Command {
 			if !confirmed {
 				return nil
 			}
+			progress.Start("Deleting experiment from " + project.ProjectID + "…")
 			if err := svc.DeleteRemoteConfigExperiment(cmd.Context(), project, id); err != nil {
 				return err
 			}
@@ -234,6 +236,7 @@ func newRolloutsDeleteCommand(svc *core.Core) *cobra.Command {
 			if !confirmed {
 				return nil
 			}
+			progress.Start("Deleting rollout from " + project.ProjectID + "…")
 			if err := svc.DeleteRemoteConfigRollout(cmd.Context(), project, id); err != nil {
 				return err
 			}

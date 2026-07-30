@@ -9,6 +9,8 @@ import (
 	"charm.land/bubbles/v2/filepicker"
 	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
+
+	"github.com/yumauri/fbrcm/cli/progress"
 )
 
 // ErrNoJSONSelection may be passed as onCancel to return fmt.Errorf("no %s selected", label).
@@ -33,6 +35,7 @@ func ReadJSONInput(cmd *cobra.Command, fromPath, label string, onCancel error) (
 		}
 		return data, nil
 	default:
+		progress.Stop()
 		selectedPath, err := pickJSONFile()
 		if err != nil {
 			return nil, err

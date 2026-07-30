@@ -148,6 +148,8 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 			fmt.Sprintf("Delete profile %s folders?\n%s\n%s", profileName, configPath, cachePath),
 			shared.ConfirmationOptions{Destructive: true},
 		)
+		confirm.Input = cmd.InOrStdin()
+		confirm.Output = cmd.ErrOrStderr()
 		ok, err := confirm.RunPrompt()
 		if err != nil {
 			return err

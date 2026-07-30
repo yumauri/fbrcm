@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
@@ -48,12 +49,18 @@ type RemoteConfigMutation func(current *firebase.RemoteConfig) (changedCount int
 
 // ValidateAndPublishRemoteConfig validates, publishes, and reports whether callers should retry.
 func ValidateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigPublisher, projectID string, raw json.RawMessage, etag, operation string, errOut io.Writer) (bool, error) {
+	progress.Start("Validating Remote Config for " + projectID + "…")
 	if err := publisher.ValidateRemoteConfigWithETag(ctx, projectID, raw, etag); err != nil {
 		if IsRemoteConfigConflict(err) {
 			writeRemoteConfigRetry(errOut, operation, projectID)
 			return true, nil
 		}
 		return false, &RemoteConfigValidationError{Err: err}
+	}
+	if firebase.IsDryRun(ctx) {
+		progress.Start("Previewing Remote Config for " + projectID + "…")
+	} else {
+		progress.Start("Publishing Remote Config for " + projectID + "…")
 	}
 	if _, _, err := publisher.PublishRemoteConfigWithETag(ctx, projectID, raw, etag); err != nil {
 		if IsRemoteConfigConflict(err) {

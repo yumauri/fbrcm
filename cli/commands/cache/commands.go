@@ -80,6 +80,8 @@ func newClearCommand() *cobra.Command {
 					),
 					shared.ConfirmationOptions{Destructive: true, Notes: []shared.ConfirmationNote{{Text: "Local versions no longer retained by Firebase may be permanently lost."}}},
 				)
+				confirm.Input = cmd.InOrStdin()
+				confirm.Output = cmd.ErrOrStderr()
 				ok, err := confirm.RunPrompt()
 				if err != nil {
 					return err
