@@ -205,7 +205,7 @@ func (k helpKeyMap) projectsHelp() []key.Binding {
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMark, "mark"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleTemplates, "templates"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMakePrimary, "make primary"),
-		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionDelete, "delete"),
+		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionDelete, "forget"),
 	}
 	if k.canBindAuth {
 		bindings = append(bindings, tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionBindAuth, "bind auth"))

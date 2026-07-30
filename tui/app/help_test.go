@@ -28,12 +28,12 @@ func TestShortHelpDescriptions(t *testing.T) {
 		{
 			name: "projects expanded",
 			keys: helpKeyMap{active: panels.Projects, canBindAuth: true},
-			want: []string{"quit", "help", "collapse", "select", "mark", "templates", "make primary", "delete", "bind auth", "open", "update", "filter"},
+			want: []string{"quit", "help", "collapse", "select", "mark", "templates", "make primary", "forget", "bind auth", "open", "update", "filter"},
 		},
 		{
 			name: "projects collapsed",
 			keys: helpKeyMap{active: panels.Projects, projectsMode: projectsPanelModeCollapsed, canBindAuth: true},
-			want: []string{"quit", "help", "expand", "select", "mark", "templates", "make primary", "delete", "bind auth", "open", "update", "filter"},
+			want: []string{"quit", "help", "expand", "select", "mark", "templates", "make primary", "forget", "bind auth", "open", "update", "filter"},
 		},
 		{
 			name: "parameters",

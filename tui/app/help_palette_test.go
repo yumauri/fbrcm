@@ -80,6 +80,12 @@ func TestHelpPaletteUsesPromotionWording(t *testing.T) {
 	}
 }
 
+func TestHelpPaletteUsesProjectForgetWording(t *testing.T) {
+	if got, want := helpPaletteActionTitle(tuiconfig.BlockProjects, tuiconfig.ActionDelete), "Forget local project"; got != want {
+		t.Fatalf("project removal action title = %q, want %q", got, want)
+	}
+}
+
 func TestHelpKeyOpensAndClosesPalette(t *testing.T) {
 	m := viewTestModel(90, 24, panels.Projects)
 	next, _ := m.Update(keyPress('?'))

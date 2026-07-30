@@ -145,7 +145,7 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 		case tuiconfig.ActionMark:
 			return "Mark or unmark project"
 		case tuiconfig.ActionDelete:
-			return "Delete local project"
+			return "Forget local project"
 		case tuiconfig.ActionBindAuth:
 			return "Bind authentication"
 		case tuiconfig.ActionImport:
