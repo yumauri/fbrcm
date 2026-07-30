@@ -108,6 +108,26 @@ func DetailsConditionValueStyle(colorName string) lipgloss.Style {
 	return DetailsValue.Foreground(ConditionLipglossColor(colorName))
 }
 
+// ManagedFeatureStatusStyle returns the shared state color used by managed
+// feature lists and Details.
+func ManagedFeatureStatusStyle(state string) lipgloss.Style {
+	if NoColorEnabled() {
+		return lipgloss.NewStyle()
+	}
+	switch strings.ToUpper(strings.TrimSpace(state)) {
+	case "RUNNING":
+		return lipgloss.NewStyle().Foreground(PaletteSuccess)
+	case "PENDING":
+		return lipgloss.NewStyle().Foreground(PaletteYellow)
+	case "DONE":
+		return lipgloss.NewStyle().Foreground(PaletteBlueBright)
+	case "EXPIRED":
+		return lipgloss.NewStyle().Foreground(PaletteSlateDim)
+	default:
+		return PanelMuted
+	}
+}
+
 func BorderStyle(active bool) lipgloss.Style {
 	if active {
 		return PanelBorderActive

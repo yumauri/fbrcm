@@ -1,6 +1,7 @@
 package parameters
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/rootgroup"
 )
 
@@ -157,6 +159,50 @@ func TestBuildTreeGroupedOnlyNoRootBucket(t *testing.T) {
 	}
 	if tree.Groups[0].Key != "alpha" {
 		t.Fatalf("group key = %q, want alpha", tree.Groups[0].Key)
+	}
+}
+
+func TestBuildTreeRetainsManagedValueDisplayStructure(t *testing.T) {
+	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
+		"experiment": {
+			DefaultValue: &firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"experimentId":"exp-1"}`)},
+		},
+		"personalization": {
+			DefaultValue: &firebase.RemoteConfigValue{PersonalizationValue: json.RawMessage(`{"personalizationId":"p-1"}`)},
+		},
+		"rollout": {
+			DefaultValue: &firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"rolloutId":"r-1","value":"20","percent":10}`)},
+			ValueType:    "NUMBER",
+		},
+		"unknown": {
+			DefaultValue: &firebase.RemoteConfigValue{
+				UnknownValueOption: "futureValue", UnknownValue: json.RawMessage(`{}`),
+			},
+		},
+	}}
+
+	tree := BuildTree(cfg, time.Now(), "etag")
+	root, ok := findGroup(tree.Groups, rootgroup.TreeKey)
+	if !ok {
+		t.Fatal("root group not found")
+	}
+	want := map[string]struct {
+		kind rcdisplay.ValueSummaryKind
+		text string
+	}{
+		"experiment":      {kind: rcdisplay.ValueSummaryExperiment, text: "⚗ (a/b test)"},
+		"personalization": {kind: rcdisplay.ValueSummaryPersonalization, text: "◈ (personalization)"},
+		"rollout":         {kind: rcdisplay.ValueSummaryRollout, text: "◐ 10% → 20 / ◑ (no change)"},
+		"unknown":         {kind: rcdisplay.ValueSummaryUnknown, text: "(futureValue)"},
+	}
+	for _, entry := range root.Parameters {
+		if len(entry.Values) != 1 {
+			t.Fatalf("%s values = %#v", entry.Key, entry.Values)
+		}
+		expected := want[entry.Key]
+		if got := entry.Values[0].Display; got.Kind != expected.kind || got.Text != expected.text || entry.Values[0].Value != expected.text {
+			t.Fatalf("%s display = %#v, value %q; want %s %q", entry.Key, got, entry.Values[0].Value, expected.kind, expected.text)
+		}
 	}
 }
 

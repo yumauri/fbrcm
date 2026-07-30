@@ -7,6 +7,9 @@ import (
 )
 
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
+	if m.workspaceMenu {
+		return m.updateWorkspaceMenu(msg)
+	}
 	if m.diffView.IsOpen() {
 		if size, ok := msg.(tea.WindowSizeMsg); ok {
 			m.updateWindowSize(size)

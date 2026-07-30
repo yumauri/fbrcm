@@ -121,8 +121,19 @@ func (m Model) updateProfileRenameCompleted(msg profileRenameCompletedMsg) (Mode
 		m.openSetupErrorDialog(setup.ErrorRequestedMsg{Title: "Rename Profile Failed", Body: []string{msg.err.Error()}})
 		return m, nil
 	}
-	m.profileName = config.GetActiveProfileName()
+	m.refreshProfileName()
 	var cmd tea.Cmd
 	m.setup, cmd = m.setup.OpenProfiles()
 	return m, cmd
+}
+
+func (m *Model) refreshProfileName() {
+	name := config.GetActiveProfileName()
+	if m.profileName == name {
+		return
+	}
+	m.profileName = name
+	if m.width > 0 && m.height > 0 {
+		m.applyLayout()
+	}
 }

@@ -72,6 +72,7 @@ type Model struct {
 	offset              int
 	move                *conditionMoveState
 	lastClick           mouseutil.ClickTracker
+	headerRightReserve  int
 }
 
 func New(svc *core.Core) Model {
@@ -88,6 +89,12 @@ func (m Model) Init() tea.Cmd { return m.spin.Tick }
 func (m Model) SetBounds(x, y, width, height int) Model {
 	m.x, m.y, m.width, m.height = x, y, width, height
 	m.ensureCursorVisible()
+	return m
+}
+
+// SetHeaderRightReserve keeps workspace titles clear of app-level overlays.
+func (m Model) SetHeaderRightReserve(width int) Model {
+	m.headerRightReserve = max(width, 0)
 	return m
 }
 

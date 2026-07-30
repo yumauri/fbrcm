@@ -41,6 +41,24 @@ func TestRunUpdateStdinUpdatesRootParameterValue(t *testing.T) {
 	}
 }
 
+func TestRunUpdateStdinRejectsManagedValue(t *testing.T) {
+	cmd := &cobra.Command{}
+	var out bytes.Buffer
+	cmd.SetIn(strings.NewReader(`{"parameters":{"flag":{"defaultValue":{"rolloutValue":{"rolloutId":"rollout-1","value":"20","percent":10}},"valueType":"NUMBER"}}}`))
+	cmd.SetOut(&out)
+	cmd.SetErr(&bytes.Buffer{})
+
+	err := runUpdateStdin(cmd, []string{"=flag"}, "", shared.ParameterSearch{}, updateSpec{
+		value: &valueSpec{value: "30", valueType: "NUMBER"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "rollout value is read-only") {
+		t.Fatalf("error = %v, want read-only rollout error", err)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", out.String())
+	}
+}
+
 func TestUpdateParamSlotRenamesMovesAndEditsParameter(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{

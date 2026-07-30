@@ -17,6 +17,7 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 	m.data = cloneViewData(data)
 	m.groupData = nil
 	m.conditionData = nil
+	m.managedFeatureData = nil
 	m.activeField = fieldNone
 	m.dropdownOpen = false
 	m.dropdownIndex = 0
@@ -69,6 +70,7 @@ func (m Model) SetConditionData(data *messages.ConditionViewData) Model {
 	m.data = nil
 	m.groupData = nil
 	m.conditionData = cloneConditionViewData(data)
+	m.managedFeatureData = nil
 	m.activeField = fieldNone
 	m.dropdownOpen = false
 	m.selectedValue = -1
@@ -99,6 +101,7 @@ func (m Model) SetGroupData(data *messages.GroupViewData) Model {
 	m.data = nil
 	m.conditionData = nil
 	m.groupData = cloneGroupViewData(data)
+	m.managedFeatureData = nil
 	m.activeField = fieldNone
 	m.dropdownOpen = false
 	m.selectedValue = -1
@@ -117,6 +120,38 @@ func (m Model) SetGroupData(data *messages.GroupViewData) Model {
 	}
 	m.refreshViewport()
 	m.viewport.GotoTop()
+	return m
+}
+
+func (m Model) SetManagedFeatureData(data *messages.ManagedFeatureViewData) Model {
+	m.data = nil
+	m.groupData = nil
+	m.conditionData = nil
+	m.managedFeatureData = cloneManagedFeatureViewData(data)
+	m.activeField = fieldNone
+	m.dropdownOpen = false
+	m.selectedValue = -1
+	m.selectedUsage = -1
+	m.selectedAddValue = false
+	m.valuesInvalid = false
+	m.originalParam = core.ParametersEntry{}
+	m.originalCondition = core.ConditionEntry{}
+	m.nameInput = newTextInput()
+	m.descInput = newDescriptionInput()
+	m.groupInput = newGroupInput()
+	m.priorityInput = newTextInput()
+	m.refreshViewport()
+	m.viewport.GotoTop()
+	return m
+}
+
+// RefreshManagedFeatureData replaces read-only managed-feature details without
+// moving the user's current scroll position.
+func (m Model) RefreshManagedFeatureData(data *messages.ManagedFeatureViewData) Model {
+	offset := m.viewport.YOffset()
+	m.managedFeatureData = cloneManagedFeatureViewData(data)
+	m.refreshViewport()
+	m.viewport.SetYOffset(offset)
 	return m
 }
 
@@ -156,6 +191,9 @@ func (m Model) SetSelectedValue(nextRaw string) Model {
 func (m Model) ToggleSelectedValueSource() (Model, bool) {
 	value, ok := m.SelectedParameterValue()
 	if !ok {
+		return m, false
+	}
+	if value.ReadOnly() {
 		return m, false
 	}
 	selected := &m.data.Parameter.Values[m.selectedValue]

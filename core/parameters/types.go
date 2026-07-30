@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 )
 
 type Tree struct {
@@ -47,6 +48,7 @@ type Entry struct {
 type Value struct {
 	Label           string
 	Value           string
+	Display         rcdisplay.ValueSummary
 	RawValue        string
 	ValueType       string
 	Color           string
@@ -54,4 +56,32 @@ type Value struct {
 	EmptyType       string
 	Plain           bool
 	UseInAppDefault bool
+}
+
+// ReadOnly reports whether Firebase or an unsupported future union option owns
+// this value rather than fbrcm's plain-value editors.
+func (v Value) ReadOnly() bool {
+	return v.Display.Kind != rcdisplay.ValueSummaryPlain
+}
+
+// HasReadOnlyValues reports whether any value in the parameter is opaque to
+// fbrcm mutations.
+func (e Entry) HasReadOnlyValues() bool {
+	for _, value := range e.Values {
+		if value.ReadOnly() {
+			return true
+		}
+	}
+	return false
+}
+
+// HasReadOnlyValues reports whether any parameter in the group contains an
+// opaque value.
+func (g Group) HasReadOnlyValues() bool {
+	for _, parameter := range g.Parameters {
+		if parameter.HasReadOnlyValues() {
+			return true
+		}
+	}
+	return false
 }

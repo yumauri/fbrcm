@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
 // RemoteConfigValidationError identifies a project failure that occurred
@@ -76,6 +77,9 @@ func PublishProjectConfigMutation(ctx context.Context, publisher RemoteConfigPub
 	}
 	if changedCount == 0 {
 		return 0, false, nil
+	}
+	if err := rcmutate.EnsureOpaqueValuesUnchanged(projectCfg.Config, finalCfg); err != nil {
+		return 0, false, &RemoteConfigPreparationError{Err: err}
 	}
 
 	finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)

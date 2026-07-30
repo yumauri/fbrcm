@@ -9,6 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
 // Deps supplies draft pipeline callbacks that require Core services.
@@ -103,6 +104,17 @@ func writeMutationResult(ctx context.Context, deps Deps, projectID string, cache
 			}
 			mergedRaw, changed, err := MergeWithLatest(stored.BaseRemoteConfig, finalRaw, latest.RemoteConfig)
 			if err != nil {
+				return nil, hasDraft, err
+			}
+			latestCfg, err := firebase.ParseRemoteConfig(latest.RemoteConfig)
+			if err != nil {
+				return nil, hasDraft, err
+			}
+			mergedCfg, err := firebase.ParseRemoteConfig(mergedRaw)
+			if err != nil {
+				return nil, hasDraft, err
+			}
+			if err := rcmutate.EnsureOpaqueValuesUnchanged(latestCfg, mergedCfg); err != nil {
 				return nil, hasDraft, err
 			}
 			if !changed {
@@ -202,6 +214,13 @@ func PreparePublish(ctx context.Context, deps Deps, projectID string) (*PublishP
 	}
 	latestCfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
 	if err != nil {
+		return nil, err
+	}
+	candidateCfg, err := firebase.ParseRemoteConfig(candidateRaw)
+	if err != nil {
+		return nil, err
+	}
+	if err := rcmutate.EnsureOpaqueValuesUnchanged(latestCfg, candidateCfg); err != nil {
 		return nil, err
 	}
 	if !hasChanges {

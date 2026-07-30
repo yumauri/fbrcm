@@ -242,6 +242,61 @@ func (m Model) CurrentParameterRef() (core.Project, string, string, bool) {
 	return project.project, groupKey, paramKey, true
 }
 
+// CurrentMutableParameterRef returns the selected parameter only when changing
+// its identity or existence cannot affect a Firebase-managed value.
+func (m Model) CurrentMutableParameterRef() (core.Project, string, string, bool) {
+	project, groupKey, paramKey, ok := m.CurrentParameterRef()
+	if !ok {
+		return core.Project{}, "", "", false
+	}
+	param := m.parameterByKey(project.ProjectID, groupKey, paramKey)
+	if param == nil || param.HasReadOnlyValues() {
+		return core.Project{}, "", "", false
+	}
+	return project, groupKey, paramKey, true
+}
+
+// CurrentSelectionReadOnly reports whether the selected parameter or group
+// contains a Firebase-managed or unsupported opaque value.
+func (m Model) CurrentSelectionReadOnly() bool {
+	if m.cursor < 0 || m.cursor >= len(m.visible) {
+		return false
+	}
+	node := m.visible[m.cursor]
+	switch node.kind {
+	case nodeParameter, nodeValue:
+		param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
+		return param != nil && param.HasReadOnlyValues()
+	case nodeGroup:
+		group := m.groupByKey(node.projectID, node.groupKey)
+		return group != nil && group.HasReadOnlyValues()
+	default:
+		return false
+	}
+}
+
+// CurrentDeleteReadOnly reports whether deleting the selected row would remove
+// an opaque value. Plain conditional values remain independently deletable.
+func (m Model) CurrentDeleteReadOnly() bool {
+	if m.cursor < 0 || m.cursor >= len(m.visible) {
+		return false
+	}
+	node := m.visible[m.cursor]
+	switch node.kind {
+	case nodeValue:
+		param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
+		return param != nil && node.valueIdx >= 0 && node.valueIdx < len(param.Values) && param.Values[node.valueIdx].ReadOnly()
+	case nodeParameter:
+		param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
+		return param != nil && param.HasReadOnlyValues()
+	case nodeGroup:
+		group := m.groupByKey(node.projectID, node.groupKey)
+		return group != nil && group.HasReadOnlyValues()
+	default:
+		return false
+	}
+}
+
 func (m *Model) FocusCurrentParameterDefaultValue() bool {
 	return m.focusCurrentParameterDefaultValue()
 }
@@ -255,7 +310,8 @@ func (m Model) CurrentGroupRef() (core.Project, string, string, bool) {
 		return core.Project{}, "", "", false
 	}
 	project := m.projectByID(node.projectID)
-	if project == nil {
+	group := m.groupByKey(node.projectID, node.groupKey)
+	if project == nil || group == nil || group.HasReadOnlyValues() {
 		return core.Project{}, "", "", false
 	}
 	return project.project, node.groupKey, node.label, true

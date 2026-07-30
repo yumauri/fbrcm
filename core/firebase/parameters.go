@@ -27,6 +27,15 @@ type RemoteConfigCondition struct {
 	TagColor   string `json:"tagColor,omitempty"`
 }
 
+// ConditionTagColorsByName indexes Remote Config condition display colors.
+func ConditionTagColorsByName(conditions []RemoteConfigCondition) map[string]string {
+	colors := make(map[string]string, len(conditions))
+	for _, condition := range conditions {
+		colors[condition.Name] = condition.TagColor
+	}
+	return colors
+}
+
 // UnmarshalJSON rejects fields outside Firebase's condition schema instead of
 // silently discarding unsupported condition metadata.
 func (c *RemoteConfigCondition) UnmarshalJSON(data []byte) error {
@@ -54,10 +63,13 @@ type RemoteConfigParam struct {
 }
 
 type RemoteConfigValue struct {
-	Value                string          `json:"value,omitempty"`
-	UseInAppDefault      bool            `json:"useInAppDefault,omitempty"`
-	PersonalizationValue json.RawMessage `json:"personalizationValue,omitempty"`
-	RolloutValue         json.RawMessage `json:"rolloutValue,omitempty"`
+	Value                string          `json:"-"`
+	UseInAppDefault      bool            `json:"-"`
+	PersonalizationValue json.RawMessage `json:"-"`
+	ExperimentValue      json.RawMessage `json:"-"`
+	RolloutValue         json.RawMessage `json:"-"`
+	UnknownValueOption   string          `json:"-"`
+	UnknownValue         json.RawMessage `json:"-"`
 }
 
 type RemoteConfigVersion struct {

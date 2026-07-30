@@ -1,6 +1,10 @@
 package conditions
 
-import "time"
+import (
+	"time"
+
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+)
 
 // Tree is an order-aware, read-only view of the conditions in a Remote Config
 // template. Conditions are kept in evaluation priority order.
@@ -39,13 +43,31 @@ type UsageValueEdit struct {
 }
 
 type Usage struct {
-	GroupKey     string `json:"group_key,omitempty"`
-	GroupLabel   string `json:"group"`
-	ParameterKey string `json:"parameter"`
-	Value        string `json:"value"`
-	RawValue     string `json:"raw_value,omitempty"`
-	ValueType    string `json:"value_type"`
-	Plain        bool   `json:"plain"`
+	GroupKey     string                 `json:"group_key,omitempty"`
+	GroupLabel   string                 `json:"group"`
+	ParameterKey string                 `json:"parameter"`
+	Value        string                 `json:"value"`
+	Display      rcdisplay.ValueSummary `json:"-"`
+	RawValue     string                 `json:"raw_value,omitempty"`
+	ValueType    string                 `json:"value_type"`
+	Plain        bool                   `json:"plain"`
+}
+
+// ReadOnly reports whether this usage has a Firebase-managed or unsupported
+// future value option.
+func (u Usage) ReadOnly() bool {
+	return u.Display.Kind != rcdisplay.ValueSummaryPlain
+}
+
+// HasReadOnlyValues reports whether renaming or deleting this condition would
+// relocate or remove an opaque conditional value.
+func (e Entry) HasReadOnlyValues() bool {
+	for _, usage := range e.Usages {
+		if usage.ReadOnly() {
+			return true
+		}
+	}
+	return false
 }
 
 type ParameterRef struct {

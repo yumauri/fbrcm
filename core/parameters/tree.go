@@ -45,10 +45,9 @@ func buildConditions(remoteConfig *firebase.RemoteConfig) []Condition {
 }
 
 func buildGroups(remoteConfig *firebase.RemoteConfig) []Group {
-	conditionColors := make(map[string]string, len(remoteConfig.Conditions))
+	conditionColors := firebase.ConditionTagColorsByName(remoteConfig.Conditions)
 	conditionOrder := make(map[string]int, len(remoteConfig.Conditions))
 	for i, condition := range remoteConfig.Conditions {
-		conditionColors[condition.Name] = condition.TagColor
 		conditionOrder[condition.Name] = i
 	}
 
@@ -97,28 +96,32 @@ func buildEntries(params map[string]firebase.RemoteConfigParam, conditionColors 
 		conditionKeys := sortedConditionalKeys(param.ConditionalValues, conditionOrder)
 		for _, condition := range conditionKeys {
 			rawValue := param.ConditionalValues[condition]
+			display := SummarizeRemoteConfigDisplayValue(rawValue, param.ValueType)
 			values = append(values, Value{
 				Label:           condition,
-				Value:           FormatRemoteConfigDisplayValue(rawValue, param.ValueType),
+				Value:           display.Text,
+				Display:         display,
 				RawValue:        rawValue.Value,
 				ValueType:       rcdisplay.EmptyValueType(param.ValueType),
 				Empty:           isEmptyRemoteConfigValue(rawValue),
 				EmptyType:       rcdisplay.EmptyValueType(param.ValueType),
 				Color:           conditionColors[condition],
-				Plain:           !rawValue.UseInAppDefault && len(rawValue.PersonalizationValue) == 0 && len(rawValue.RolloutValue) == 0,
+				Plain:           rawValue.IsPlain(),
 				UseInAppDefault: rawValue.UseInAppDefault,
 			})
 		}
 		if param.DefaultValue != nil {
 			rawValue := *param.DefaultValue
+			display := SummarizeRemoteConfigDisplayValue(rawValue, param.ValueType)
 			values = append(values, Value{
 				Label:           "default",
-				Value:           FormatRemoteConfigDisplayValue(rawValue, param.ValueType),
+				Value:           display.Text,
+				Display:         display,
 				RawValue:        rawValue.Value,
 				ValueType:       rcdisplay.EmptyValueType(param.ValueType),
 				Empty:           isEmptyRemoteConfigValue(rawValue),
 				EmptyType:       rcdisplay.EmptyValueType(param.ValueType),
-				Plain:           !rawValue.UseInAppDefault && len(rawValue.PersonalizationValue) == 0 && len(rawValue.RolloutValue) == 0,
+				Plain:           rawValue.IsPlain(),
 				UseInAppDefault: rawValue.UseInAppDefault,
 			})
 		}
@@ -144,7 +147,7 @@ func summarizeParameterValues(values []Value) string {
 }
 
 func isEmptyRemoteConfigValue(value firebase.RemoteConfigValue) bool {
-	return !value.UseInAppDefault && len(value.PersonalizationValue) == 0 && len(value.RolloutValue) == 0 && value.Value == ""
+	return value.IsPlain() && value.Value == ""
 }
 
 func sortedConditionalKeys(items map[string]firebase.RemoteConfigValue, order map[string]int) []string {

@@ -124,12 +124,10 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 		if panel == panels.Parameters && m.active == panels.Projects && !msg.ResetParametersTab {
 			panel = m.selectedParametersTab()
 		}
-		m.setActive(panel)
-		if panel == panels.History {
-			var cmd tea.Cmd
-			m.parameters, cmd = m.parameters.LoadHistory()
-			return m, cmd, true
+		if isWorkspacePanel(panel) {
+			return m.activateWorkspacePanel(panel)
 		}
+		m.setActive(panel)
 
 	case messages.DialogCanceledMsg:
 		if m.historyRollback != nil {
@@ -168,6 +166,13 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 
 	case messages.ConditionSelectionChangedMsg:
 		m.applyConditionSelection(msg)
+		return m, nil, true
+
+	case messages.ManagedFeatureSelectionChangedMsg:
+		return m, m.applyManagedFeatureSelection(msg), true
+
+	case managedFeatureDetailsLoadedMsg:
+		m.applyManagedFeatureDetailsLoaded(msg)
 		return m, nil, true
 
 	case messages.ParametersLoadedMsg:
@@ -212,6 +217,15 @@ func (m Model) updateChildPanels(msg tea.Msg) (Model, tea.Cmd) {
 	cmds = appendCmd(cmds, cmd)
 	m.conditions, cmd = m.conditions.Update(msg)
 	cmds = appendCmd(cmds, cmd)
+	m.abTests, cmd = m.abTests.Update(msg)
+	cmds = appendCmd(cmds, cmd)
+	m.personalizations, cmd = m.personalizations.Update(msg)
+	cmds = appendCmd(cmds, cmd)
+	m.rollouts, cmd = m.rollouts.Update(msg)
+	cmds = appendCmd(cmds, cmd)
+	if loaded, ok := msg.(messages.ManagedFeaturesLoadedMsg); ok {
+		cmds = appendCmd(cmds, m.refreshOpenManagedFeatureFromList(loaded))
+	}
 	if m.conditionEdit != nil && m.conditionEdit.mode == conditionMove && !m.conditions.MoveActive() {
 		m.conditionEdit = nil
 	}
@@ -222,7 +236,7 @@ func (m Model) updateChildPanels(msg tea.Msg) (Model, tea.Cmd) {
 
 	m.logs, cmd = m.logs.Update(msg)
 	cmds = appendCmd(cmds, cmd)
-	m.updateParametersLoadedPanelState(msg)
+	cmds = appendCmd(cmds, m.updateParametersLoadedPanelState(msg))
 
 	return m, tea.Batch(cmds...)
 }
@@ -234,13 +248,14 @@ func appendCmd(cmds []tea.Cmd, cmd tea.Cmd) []tea.Cmd {
 	return append(cmds, cmd)
 }
 
-func (m *Model) updateParametersLoadedPanelState(msg tea.Msg) {
+func (m *Model) updateParametersLoadedPanelState(msg tea.Msg) tea.Cmd {
 	loadedMsg, ok := msg.(messages.ParametersLoadedMsg)
 	if !ok || loadedMsg.Err != nil {
-		return
+		return nil
 	}
-	m.updateDetailsAfterParametersLoaded(loadedMsg)
+	cmd := m.updateDetailsAfterParametersLoaded(loadedMsg)
 	m.updateDuplicateAfterParametersLoaded(loadedMsg)
+	return cmd
 }
 
 func (m *Model) updateParametersLoadedMessage(msg messages.ParametersLoadedMsg) {
@@ -288,6 +303,9 @@ func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) 
 		return m, nil, false
 	}
 	if click, ok := msg.(tea.MouseClickMsg); ok && click.Mouse().Button == tea.MouseLeft {
+		if m.workspaceOverflowAt(click.Mouse().X, click.Mouse().Y) {
+			return m.openWorkspaceMenu(), nil, true
+		}
 		if panel, ok := m.workspaceTabAt(click.Mouse().X, click.Mouse().Y); ok {
 			return m.activateWorkspacePanel(panel)
 		}
@@ -308,6 +326,12 @@ func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) 
 		m.parameters, cmd = m.parameters.Update(msg)
 	case panels.Conditions:
 		m.conditions, cmd = m.conditions.Update(msg)
+	case panels.ABTests:
+		m.abTests, cmd = m.abTests.Update(msg)
+	case panels.Personalizations:
+		m.personalizations, cmd = m.personalizations.Update(msg)
+	case panels.Rollouts:
+		m.rollouts, cmd = m.rollouts.Update(msg)
 	case panels.Details:
 		m.details, cmd = m.details.Update(msg)
 	case panels.Promote:

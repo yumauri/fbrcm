@@ -38,6 +38,22 @@ func TestRunDeleteStdinDeletesRootParameter(t *testing.T) {
 	}
 }
 
+func TestRunDeleteStdinRejectsManagedParameter(t *testing.T) {
+	cmd := &cobra.Command{}
+	var out bytes.Buffer
+	cmd.SetIn(strings.NewReader(`{"parameters":{"flag":{"defaultValue":{"experimentValue":{"experimentId":"experiment-1"}}}}}`))
+	cmd.SetOut(&out)
+	cmd.SetErr(&bytes.Buffer{})
+
+	err := runDeleteStdin(cmd, []string{"=flag"}, "", shared.ParameterSearch{})
+	if err == nil || !strings.Contains(err.Error(), "A/B test value is read-only") {
+		t.Fatalf("error = %v, want read-only A/B test error", err)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", out.String())
+	}
+}
+
 func TestConfirmAndDeleteProjectRemovesMatchedTargets(t *testing.T) {
 	cmd := &cobra.Command{}
 	var out bytes.Buffer

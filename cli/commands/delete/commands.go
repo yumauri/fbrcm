@@ -12,6 +12,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
 type deleteOptions struct {
@@ -112,7 +113,7 @@ func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr strin
 }
 
 func confirmAndDeleteProject(cmd *cobra.Command, label string, cfg *firebase.RemoteConfig, matched []shared.ParamTarget, yes bool, diffOut io.Writer) ([]shared.ParamTarget, *firebase.RemoteConfig, error) {
-	return shared.ConfirmParamTargets(cmd, label, cfg, matched, yes, diffOut, func(target shared.ParamTarget, finalCfg *firebase.RemoteConfig) (shared.ParamTargetMutationStep, error) {
+	deleted, finalCfg, err := shared.ConfirmParamTargets(cmd, label, cfg, matched, yes, diffOut, func(target shared.ParamTarget, finalCfg *firebase.RemoteConfig) (shared.ParamTargetMutationStep, error) {
 		return shared.ParamTargetMutationStep{
 			DiffText:    rc.RenderRemovedParameterDetail(target.Key, target.Group, target.Param),
 			Prompt:      fmt.Sprintf("Delete %s from %s?", rcdisplay.FormatParameterHeader(target.Key, target.Group), label),
@@ -123,6 +124,10 @@ func confirmAndDeleteProject(cmd *cobra.Command, label string, cfg *firebase.Rem
 			},
 		}, nil
 	})
+	if err == nil {
+		err = rcmutate.EnsureOpaqueValuesUnchanged(cfg, finalCfg)
+	}
+	return deleted, finalCfg, err
 }
 
 func logDeleteTotals(mode string, totals deleteTotals) {

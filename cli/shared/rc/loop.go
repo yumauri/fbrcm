@@ -11,6 +11,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/display"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -101,6 +102,9 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		var finalCfg *firebase.RemoteConfig
 		if err == nil {
 			result.ChangedCount, finalCfg, err = mutate(cfg.Config)
+		}
+		if err == nil {
+			err = rcmutate.EnsureOpaqueValuesUnchanged(cfg.Config, finalCfg)
 		}
 		if err == nil && result.ChangedCount == 0 {
 			result.Status = RemoteMutationUnchanged

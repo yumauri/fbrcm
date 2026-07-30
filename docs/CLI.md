@@ -126,6 +126,11 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --draft
 │   └── --yes, -y
 │
+├── experiments
+│   ├── list <project> [--filter|-f <query>]... [--update] [--json]
+│   ├── show <project> <experiment-id> [--update] [--json]
+│   └── delete <project> <experiment-id> [--yes|-y]
+│
 ├── get [parameter]
 │   ├── --project, -p <query>  repeated
 │   ├── --filter, -f <query>   repeated
@@ -146,6 +151,10 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--yes|-y]
 │   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y]
 │   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y]
+│
+├── personalizations
+│   ├── list <project> [--update] [--json]
+│   └── show <project> <personalization-id> [--update] [--json]
 │
 ├── help [command]
 │
@@ -272,6 +281,11 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── path [--json]
 │   └── reset [--yes|-y]
 │
+├── rollouts
+│   ├── list <project> [--update] [--json]
+│   ├── show <project> <rollout-id> [--update] [--json]
+│   └── delete <project> <rollout-id> [--yes|-y]
+│
 └── update [parameter]
     ├── --project, -p <query>  repeated
     ├── --filter, -f <query>   repeated
@@ -365,7 +379,7 @@ Each cached project stores its enabled template selections and one primary templ
 
 The target syntax applies to `add`, `get`, `update`, `delete`, `duplicate`, and `groups`; all `conditions` and `versions` commands; `draft` commands; `project export`, `project import`, and `project defaults`; and the source and destination of `projects diff` and `projects promote`.
 
-Project metadata commands remain project-scoped rather than template-scoped. In particular, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix.
+Project metadata and managed-feature commands remain project-scoped rather than template-scoped. In particular, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `experiments`, `rollouts`, `personalizations`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix. Managed features belong to the client Remote Config namespace; these commands reject `client@` and `server@` target syntax. A `server@` target reports that managed features support only the client namespace, while a `client@` target asks you to omit the unnecessary prefix.
 
 Client targets are canonicalized to the unqualified project ID, so `project-id` and `client@project-id` share exactly the same cache, version snapshots, and draft. Server targets retain their prefix and use separate local files:
 
@@ -536,7 +550,7 @@ Flags:
 --update                revalidate cached parameters before printing
 ```
 
-Default output is a terminal table. JSON output includes project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status.
+Default output is a terminal table. Firebase-managed values use compact human summaries: personalizations render as `◈ (personalization)`, experiments as `⚗ (a/b test)`, and unknown future value options as `(optionName)`, all in muted text. Rollouts render their published value without another API request as `◐ 10% → 20 / ◑ (no change)`; the percentage uses the shared gold count color and the rollout chrome and no-change marker are muted. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status.
 
 Stdin mode reads Remote Config JSON from stdin and queries only that config. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. If stdin is a directory, `get` reads top-level `.json` files and treats them as multiple projects.
 
@@ -576,6 +590,8 @@ At most one value flag may be used. `--condition` requires a value flag and reso
 
 Conditional value assignment and removal edit only `conditionalValues`; they keep the parameter, default value, description, group, and all conditions themselves.
 
+Firebase-managed personalization, A/B test, and rollout values are read-only. `update` rejects replacing them, changing their parameter type, removing their conditional slots, or relocating them through a parameter or condition rename/move. Unknown future value options receive the same protection.
+
 Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes each project independently, reports every outcome, continues after project-scoped failures, and returns nonzero if any project failed.
 
 With `--draft`, mutations compose onto each existing draft and remain local. Without `--draft`, publication is best-effort and non-atomic; failures do not roll back earlier projects or prevent later independent projects from being attempted.
@@ -603,6 +619,8 @@ Remote mode prints diffs and prompts unless `--yes` is set. It validates and pub
 With `--draft`, deletions are saved locally on top of any existing draft. Without `--draft`, a project with an unpublished draft fails independently while other selected projects continue.
 
 Stdin mode reads Remote Config JSON from stdin, deletes matching parameters, and prints final JSON. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. It does not prompt.
+
+Parameters containing Firebase-managed or unknown future values cannot be deleted. The same protection applies in remote, draft, and stdin modes.
 
 ### `fbrcm conditions list <project>`
 
@@ -943,6 +961,113 @@ If current config is empty, import replaces it. If current config has content an
 After import transform, the CLI reports how many source conditions are kept and removed. `--keep-portable-conditions-only` removes conditions tied to destination-specific resources such as Analytics audiences or user properties, experiments, Firebase App IDs, custom signals, and installation IDs. Unused conditions and unknown condition references are also removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
 
 JSON output is one object containing `project_id`, `status`, `changed`, `draft`, and `dry_run`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, or `canceled`. JSON mode suppresses human condition summaries and diffs but does not imply `--yes` or choose an import strategy.
+
+### Remote Config managed features
+
+Experiments and rollouts provide read-only `list` and `show` commands plus an explicit destructive `delete` command. Personalizations remain read-only. The CLI cannot create, start, stop, or edit managed features, and none of these commands publish Remote Config. All three command groups use ordinary positional project resolution and the client Remote Config namespace.
+
+Experiment and rollout metadata comes from Firebase's public Remote Config v1 managed-feature endpoints. fbrcm prefers the numeric `project_number` saved by project discovery and falls back to the Firebase project ID when that number is absent; both forms are accepted by the managed-feature resource paths.
+
+Experiment, rollout, and personalization bindings come from `experimentValue`, `rolloutValue`, and `personalizationValue` objects in the published Remote Config template. Normal reads use the standard cache/revalidation policy. `--update` explicitly revalidates that cached template before scanning it. Drafts are intentionally excluded because Firebase managed-feature state refers to the published template.
+
+These commands project known binding fields for display without rewriting managed values. Validate and publish preparation preserves complete opaque `experimentValue`, `rolloutValue`, and `personalizationValue` objects. Value editors treat all three as read-only rather than plain values. Template mutations also reject adding, replacing, removing, duplicating, renaming, or relocating managed values; imports, promotions, draft publication, stdin mutations, and unknown future value options use the same guard. Machine-readable experiment and rollout output also preserves unrecognized fields from Firebase's beta managed-feature responses so schema additions are not silently discarded.
+
+### `fbrcm experiments list <project>`
+
+Lists every experiment returned by Firebase using only the paginated list endpoint and correlates it with published-template bindings. Human output includes experiment ID, display name, parameter, condition, exposure percentage, relative last-update time, and state, in that order. Parameter names use the same blue styling as `get`, and condition names use their configured Remote Config tag colors. Missing values are shown as empty-value dashes, while an explicitly configured zero exposure is shown as `0%`. Descriptions and detail-only metadata such as variants and objectives are omitted from the human list. An experiment with no binding in the current template remains visible with empty binding columns.
+
+Flags:
+
+```text
+-f, --filter <query>   filter display names locally; may be repeated
+--update                revalidate cached Remote Config before reading bindings
+--json                  print a top-level array of filtered experiment objects with references
+```
+
+Experiment filters use the shared mode prefixes described under Filter Queries. Repeated filters are ORed. Matching is case-insensitive and applies only to the experiment display name, not its description or resource ID. Filtering is local after all list pages have been loaded; fbrcm does not send the query to Firebase.
+
+### `fbrcm experiments show <project> <experiment-id>`
+
+Shows one experiment's display metadata, state, timestamps, activation event, variants and weights, primary and secondary objectives, and every published parameter binding. Binding details include the experiment exposure percentage and each template variant ID with its value or no-change marker. Empty-string variant values are displayed as `""`, while absent values remain an empty-value dash. `<experiment-id>` is the final component printed in the list table, such as `2`.
+
+Flags:
+
+```text
+--update   revalidate cached Remote Config before reading bindings
+--json     print project/template context and the complete Firebase experiment object with references
+```
+
+The metadata endpoint and template are intentionally correlated by experiment ID. Firebase's metadata remains authoritative for experiment state and definitions; the published template remains authoritative for affected parameters, per-variant values, and exposure.
+
+### `fbrcm experiments delete <project> <experiment-id>`
+
+Loads the experiment first so the confirmation names its display name and ID, then calls Firebase's experiment DELETE endpoint. The command does not publish or independently rewrite the Remote Config template.
+
+Flags:
+
+```text
+-y, --yes   delete without confirmation
+```
+
+Without `--yes`, the destructive confirmation selects Yes by default. Selecting No cancels successfully without deleting anything. Successful output names the deleted experiment and project.
+
+### `fbrcm rollouts list <project>`
+
+Lists Firebase rollouts and correlates each rollout ID with its published-template parameter bindings. Human output includes ID, display name, parameter, condition, percentage, relative last-update time, and state, in that order. Parameter names use the same blue styling as `get`, and condition names use their configured Remote Config tag colors. Descriptions and enabled values are omitted from the human list but remain available through JSON and `rollouts show`. A rollout with no binding in the current template remains visible with empty binding columns.
+
+Flags:
+
+```text
+--update   revalidate cached Remote Config before reading bindings
+--json     print a top-level array of rollout objects with references
+```
+
+### `fbrcm rollouts show <project> <rollout-id>`
+
+Shows rollout metadata, create/start/end/update timestamps, control and enabled variant names, and every published parameter binding. Explicit `0%` traffic and empty-string rollout values remain distinguishable from absent fields. `<rollout-id>` is the final component printed in the list table, such as `rollout_1`.
+
+Flags:
+
+```text
+--update   revalidate cached Remote Config before reading bindings
+--json     print project/template context and the rollout with references
+```
+
+### `fbrcm rollouts delete <project> <rollout-id>`
+
+Loads the rollout first so the confirmation names its display name and ID, then calls Firebase's rollout DELETE endpoint. The command does not publish or independently rewrite the Remote Config template or local cache.
+
+Flags:
+
+```text
+-y, --yes   delete without confirmation
+```
+
+Without `--yes`, the destructive confirmation selects Yes by default. Selecting No cancels successfully without deleting anything. Successful output names the deleted rollout and project.
+
+### `fbrcm personalizations list <project>`
+
+Scans the published template and lists every personalization ID with its group, parameter, and condition. Parameter names use the same blue styling as `get`, and condition names use their configured Remote Config tag colors. Firebase does not provide a separate public personalization resource endpoint, so the template is the authoritative API-visible source.
+
+Flags:
+
+```text
+--update   revalidate cached Remote Config before scanning it
+--json     print a top-level array of personalization IDs and references
+```
+
+### `fbrcm personalizations show <project> <personalization-id>`
+
+Shows every published parameter binding for one personalization ID.
+
+Flags:
+
+```text
+--update   revalidate cached Remote Config before scanning it
+--json     print project/template context and the personalization references
+```
+
+Firebase exposes the personalization ID and binding in the template, but not the candidate values, chosen values, objectives, or result metrics through this API. Human output states that limitation explicitly.
 
 ### Remote Config version history
 

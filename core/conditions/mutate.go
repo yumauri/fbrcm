@@ -216,7 +216,7 @@ func editUsageValues(cfg *firebase.RemoteConfig, conditionName string, edits []U
 		if !ok {
 			return false, fmt.Errorf("conditional value %q not found on parameter %q", conditionName, edit.ParameterKey)
 		}
-		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if !value.IsPlain() {
 			return false, fmt.Errorf("value editor supports only plain values")
 		}
 		if err := rcvalue.ValidateRawValueForType(edit.NextValue, slot.Param.ValueType); err != nil {

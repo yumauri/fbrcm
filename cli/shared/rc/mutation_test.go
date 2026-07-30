@@ -75,6 +75,38 @@ func TestPublishProjectConfigMutationNoChangeSkipsPublish(t *testing.T) {
 	}
 }
 
+func TestPublishProjectConfigMutationRejectsManagedValueChanges(t *testing.T) {
+	publisher := &fakeRemoteConfigPublisher{}
+	projectCfg := &ProjectConfig{
+		Project: core.Project{ProjectID: "project-a"},
+		Cache:   &core.ParametersCache{ETag: "etag"},
+		Config: &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
+			"flag": {
+				DefaultValue: &firebase.RemoteConfigValue{
+					RolloutValue: json.RawMessage(`{"rolloutId":"rollout-1","value":"20","percent":10}`),
+				},
+			},
+		}},
+	}
+
+	_, retry, err := PublishProjectConfigMutation(context.Background(), publisher, projectCfg, "update", nil, func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+		next, cloneErr := firebase.CloneRemoteConfig(current)
+		if cloneErr != nil {
+			return 0, nil, cloneErr
+		}
+		param := next.Parameters["flag"]
+		param.DefaultValue = &firebase.RemoteConfigValue{Value: "20"}
+		next.Parameters["flag"] = param
+		return 1, next, nil
+	})
+	if err == nil || !strings.Contains(err.Error(), "rollout value is read-only") {
+		t.Fatalf("error = %v, want read-only rollout error", err)
+	}
+	if retry || publisher.validateCalls != 0 || publisher.publishCalls != 0 {
+		t.Fatalf("retry/validate/publish = %v/%d/%d, want false/0/0", retry, publisher.validateCalls, publisher.publishCalls)
+	}
+}
+
 func TestPublishProjectConfigMutationConflictRetries(t *testing.T) {
 	publisher := &fakeRemoteConfigPublisher{validateErr: errors.New("returned 412")}
 	projectCfg := &ProjectConfig{

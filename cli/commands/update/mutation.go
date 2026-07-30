@@ -11,10 +11,11 @@ import (
 	coreconditions "github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
 func confirmAndUpdateProject(cmd *cobra.Command, label string, cfg *firebase.RemoteConfig, matched []shared.ParamTarget, spec updateSpec, yes bool, diffOut io.Writer) ([]shared.ParamTarget, *firebase.RemoteConfig, error) {
-	return shared.ConfirmParamTargets(cmd, label, cfg, matched, yes, diffOut, func(target shared.ParamTarget, finalCfg *firebase.RemoteConfig) (shared.ParamTargetMutationStep, error) {
+	updated, finalCfg, err := shared.ConfirmParamTargets(cmd, label, cfg, matched, yes, diffOut, func(target shared.ParamTarget, finalCfg *firebase.RemoteConfig) (shared.ParamTargetMutationStep, error) {
 		nextCfg, err := firebase.CloneRemoteConfig(finalCfg)
 		if err != nil {
 			return shared.ParamTargetMutationStep{}, err
@@ -28,6 +29,10 @@ func confirmAndUpdateProject(cmd *cobra.Command, label string, cfg *firebase.Rem
 		}
 		return shared.ParamTargetMutationStep{DiffText: diffText, Prompt: fmt.Sprintf("Update %s in %s?", rcdisplay.FormatParameterHeader(target.Key, target.Group), label), Apply: func(_ *firebase.RemoteConfig) (*firebase.RemoteConfig, error) { return nextCfg, nil }}, nil
 	})
+	if err == nil {
+		err = rcmutate.EnsureOpaqueValuesUnchanged(cfg, finalCfg)
+	}
+	return updated, finalCfg, err
 }
 
 func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec updateSpec) error {

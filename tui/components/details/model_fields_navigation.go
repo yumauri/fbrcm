@@ -88,12 +88,18 @@ func (m *Model) focusNextItem(delta int) {
 
 func (m Model) formFields() []fieldID {
 	if m.conditionData != nil {
+		if m.conditionData.Condition.HasReadOnlyValues() {
+			return []fieldID{fieldConditionPriority, fieldConditionColor}
+		}
 		return []fieldID{fieldConditionPriority, fieldName, fieldConditionColor}
 	}
 	if m.groupData != nil {
 		return []fieldID{fieldName, fieldDescription}
 	}
 	if m.data != nil {
+		if m.data.Parameter.HasReadOnlyValues() {
+			return []fieldID{fieldDescription}
+		}
 		return []fieldID{fieldGroup, fieldName, fieldType, fieldDescription}
 	}
 	return nil

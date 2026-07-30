@@ -9,6 +9,7 @@ import (
 
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
@@ -64,14 +65,22 @@ func renderValueTree(lines []ValueLine, status string, labelWidth int, showNames
 
 		if !showNames {
 			head := renderTreeChrome(prefix+" ", rowBG)
-			value := renderValueText(clipPlainText(line.Value, max(maxWidth-lipgloss.Width(head), 1)), line.ValueType, rowBG)
+			value := renderValueLineText(
+				line,
+				clipPlainText(line.Value, max(maxWidth-lipgloss.Width(head), 1)),
+				rowBG,
+			)
 			rendered = append(rendered, head+value)
 			continue
 		}
 		fillWidth := max(labelWidth-lipgloss.Width(line.Label)+1, 1)
 		filler := renderTreeChrome(strings.Repeat("╌", fillWidth), rowBG)
 		head := renderTreeChrome(prefix+" ", rowBG) + label + renderTreeChrome(" ", rowBG) + filler + renderTreeChrome(" ", rowBG)
-		value := renderValueText(clipPlainText(line.Value, max(maxWidth-lipgloss.Width(head), 1)), line.ValueType, rowBG)
+		value := renderValueLineText(
+			line,
+			clipPlainText(line.Value, max(maxWidth-lipgloss.Width(head), 1)),
+			rowBG,
+		)
 		rendered = append(rendered, head+value)
 	}
 
@@ -169,6 +178,34 @@ func renderValueText(value, valueType string, rowBG color.Color) string {
 	}
 	style := valueTextStyle(value, valueType)
 	return applyBackground(style, rowBG).Render(value)
+}
+
+func renderValueLineText(line ValueLine, value string, rowBG color.Color) string {
+	if line.Display.Kind == rcdisplay.ValueSummaryPlain {
+		return renderValueText(value, line.ValueType, rowBG)
+	}
+	if value == "" || clistyles.NoColorEnabled() {
+		return value
+	}
+	if value != line.Display.Text {
+		return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
+	}
+	switch line.Display.Kind {
+	case rcdisplay.ValueSummaryRollout:
+		if line.Display.Rollout == nil {
+			return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
+		}
+		muted := applyBackground(clistyles.PanelMuted, rowBG)
+		percentage := applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteGold), rowBG)
+		enabled := applyBackground(valueTextStyle(line.Display.Rollout.Value, line.ValueType), rowBG)
+		return muted.Render("◐ ") +
+			percentage.Render(line.Display.Rollout.Percentage) +
+			muted.Render(" → ") +
+			enabled.Render(line.Display.Rollout.Value) +
+			muted.Render(" / ◑ (no change)")
+	default:
+		return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
+	}
 }
 
 func valueTextStyle(value, valueType string) lipgloss.Style {

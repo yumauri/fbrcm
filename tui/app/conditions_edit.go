@@ -34,7 +34,7 @@ func (m *Model) openNewConditionInput() tea.Cmd {
 
 func (m *Model) openConditionRenameInput() tea.Cmd {
 	anchor, ok := m.conditions.CurrentEditAnchor()
-	if !ok {
+	if !ok || anchor.Condition.HasReadOnlyValues() {
 		return nil
 	}
 	m.closeOverlays()
@@ -247,7 +247,7 @@ func (m *Model) submitConditionOption() (tea.Cmd, bool) {
 
 func (m *Model) requestDeleteCondition() tea.Cmd {
 	data, ok := m.conditionDataForAction()
-	if !ok {
+	if !ok || data.Condition.HasReadOnlyValues() {
 		return nil
 	}
 	impact, err := m.conditions.CurrentDeleteImpact()

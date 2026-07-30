@@ -3,6 +3,8 @@ package table
 import (
 	"image/color"
 	"time"
+
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 )
 
 // Row is one rendered parameter line in the get table output.
@@ -30,6 +32,7 @@ type ValueLine struct {
 	IsDefault bool
 	Missing   bool
 	ValueType string
+	Display   rcdisplay.ValueSummary
 }
 
 // ParameterConditionJSON mirrors the JSON shape for parameter conditions.

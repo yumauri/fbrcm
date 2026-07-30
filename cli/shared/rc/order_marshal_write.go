@@ -144,8 +144,8 @@ func writeConditionalValues(buf *bytes.Buffer, values map[string]firebase.Remote
 }
 
 func writeRemoteConfigValue(buf *bytes.Buffer, value firebase.RemoteConfigValue, indent int) {
-	entries := make([]objectEntry, 0, 4)
-	if value.Value != "" || (!value.UseInAppDefault && len(value.PersonalizationValue) == 0 && len(value.RolloutValue) == 0) {
+	entries := make([]objectEntry, 0, 1)
+	if value.IsPlain() {
 		raw := value.Value
 		entries = append(entries, objectEntry{key: "value", writeValue: func() { writeJSONString(buf, raw) }})
 	}
@@ -156,9 +156,18 @@ func writeRemoteConfigValue(buf *bytes.Buffer, value firebase.RemoteConfigValue,
 		raw := append([]byte(nil), value.PersonalizationValue...)
 		entries = append(entries, objectEntry{key: "personalizationValue", writeValue: func() { buf.Write(NormalizeJSONEscapes(bytes.TrimSpace(raw))) }})
 	}
+	if len(value.ExperimentValue) > 0 {
+		raw := append([]byte(nil), value.ExperimentValue...)
+		entries = append(entries, objectEntry{key: "experimentValue", writeValue: func() { buf.Write(NormalizeJSONEscapes(bytes.TrimSpace(raw))) }})
+	}
 	if len(value.RolloutValue) > 0 {
 		raw := append([]byte(nil), value.RolloutValue...)
 		entries = append(entries, objectEntry{key: "rolloutValue", writeValue: func() { buf.Write(NormalizeJSONEscapes(bytes.TrimSpace(raw))) }})
+	}
+	if value.UnknownValueOption != "" && len(value.UnknownValue) > 0 {
+		key := value.UnknownValueOption
+		raw := append([]byte(nil), value.UnknownValue...)
+		entries = append(entries, objectEntry{key: key, writeValue: func() { buf.Write(NormalizeJSONEscapes(bytes.TrimSpace(raw))) }})
 	}
 	writeObject(buf, indent, entries)
 }

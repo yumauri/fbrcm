@@ -272,8 +272,11 @@ func (m Model) renderHistoryTypedValue(value *core.ParametersValue, kind rcdiff.
 		return ""
 	}
 	clipped := *value
-	clipped.Value = ansi.Truncate(clipped.Value, width, "")
+	if clipped.Display.Kind == rcdisplay.ValueSummaryPlain {
+		clipped.Value = ansi.Truncate(clipped.Value, width, "")
+	}
 	rendered := m.renderParameterValueWithBase(clipped, selected)
+	rendered = ansi.Truncate(rendered, width, "")
 	if !selected {
 		if background := historyChangeBackground(kind); background != nil {
 			rendered = lipgloss.NewStyle().Background(background).Render(rendered)
@@ -400,6 +403,9 @@ func (m Model) renderParameterValueWithBase(value core.ParametersValue, selected
 	}
 	if selected {
 		return valueSelectionStyle().Render(value.Value)
+	}
+	if rendered, ok := viewutil.RenderManagedValueSummary(value.Display, value.ValueType); ok {
+		return rendered
 	}
 	if strings.EqualFold(strings.TrimSpace(value.ValueType), "json") {
 		return jsoninput.HighlightJSONVisible(value.Value)

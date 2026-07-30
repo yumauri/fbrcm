@@ -162,7 +162,7 @@ func (m Model) isEmptyExpandedGroup(index int) bool {
 	return next.kind == nodeGroup || next.kind == nodeProject
 }
 
-func renderPanel(body []string, width, height int, active, borderActive, history bool, historyModes []string, historyBorders []int, scrollbar scrollbarState, footer []string) string {
+func renderPanel(body []string, width, height int, active, borderActive, history bool, historyModes []string, historyBorders []int, scrollbar scrollbarState, footer []string, headerRightReserve int, previewOpen bool, previewTab int) string {
 	if width <= 0 || height <= 0 {
 		return ""
 	}
@@ -175,7 +175,13 @@ func renderPanel(body []string, width, height int, active, borderActive, history
 	if history {
 		selectedTab = 2
 	}
-	titleRendered, titleWidth := workspaceheader.Render(width, selectedTab, active, borderStyle)
+	var titleRendered string
+	var titleWidth int
+	if previewOpen {
+		titleRendered, titleWidth = workspaceheader.RenderMenuWithRightReserve(width, selectedTab, previewTab, active, borderStyle, headerRightReserve)
+	} else {
+		titleRendered, titleWidth = workspaceheader.RenderWithRightReserve(width, selectedTab, active, borderStyle, headerRightReserve)
+	}
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
 	remainingWidth := max(width-topPrefixWidth-titleWidth-1, 0)
 	mode := ""

@@ -19,6 +19,10 @@ func (m Model) CurrentRenameAnchor() (RenameAnchor, bool) {
 		if core.NormalizeRemoteConfigGroupKey(node.groupKey) == "" {
 			return RenameAnchor{}, false
 		}
+		group := m.groupByKey(node.projectID, node.groupKey)
+		if group == nil || group.HasReadOnlyValues() {
+			return RenameAnchor{}, false
+		}
 		screenLine := m.screenLineForOffset(m.cursor, m.offset)
 		if screenLine < 0 {
 			return RenameAnchor{}, false
@@ -53,6 +57,10 @@ func (m Model) CurrentRenameAnchor() (RenameAnchor, bool) {
 		}
 		_, groupKey, paramKey, ok := m.currentParameterRef()
 		if !ok {
+			return RenameAnchor{}, false
+		}
+		param := m.parameterByKey(node.projectID, groupKey, paramKey)
+		if param == nil || param.HasReadOnlyValues() {
 			return RenameAnchor{}, false
 		}
 		paramIndex := m.currentParameterNodeIndex()

@@ -116,7 +116,7 @@ func setParamValue(cfg *firebase.RemoteConfig, param *firebase.RemoteConfigParam
 		if edit.NextUseInAppDefault {
 			return firebase.RemoteConfigValue{UseInAppDefault: true}, nil
 		}
-		if len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if value.IsOpaque() {
 			return firebase.RemoteConfigValue{}, fmt.Errorf("value editor supports only plain values")
 		}
 		return firebase.RemoteConfigValue{Value: edit.NextValue}, nil

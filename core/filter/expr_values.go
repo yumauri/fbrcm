@@ -40,8 +40,12 @@ func remoteConfigValueForExpr(value firebase.RemoteConfigValue, valueType string
 		return "(in-app default)"
 	case len(value.PersonalizationValue) > 0:
 		return "<personalization>"
+	case len(value.ExperimentValue) > 0:
+		return "<experiment>"
 	case len(value.RolloutValue) > 0:
 		return "<rollout>"
+	case value.UnknownValueOption != "":
+		return "<" + value.UnknownValueOption + ">"
 	}
 	raw := strings.TrimSpace(value.Value)
 	switch strings.ToUpper(strings.TrimSpace(valueType)) {

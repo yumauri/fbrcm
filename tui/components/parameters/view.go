@@ -14,6 +14,16 @@ func (m Model) View(active bool) string {
 }
 
 func (m Model) ViewWithBorder(active, borderActive bool) string {
+	return m.viewWithWorkspacePreview(active, borderActive, false, 0)
+}
+
+// ViewWithWorkspacePreview renders a menu title in the workspace border row
+// without storing transient app-level menu state in the parameters model.
+func (m Model) ViewWithWorkspacePreview(active, borderActive bool, tab int) string {
+	return m.viewWithWorkspacePreview(active, borderActive, true, tab)
+}
+
+func (m Model) viewWithWorkspacePreview(active, borderActive, previewOpen bool, previewTab int) string {
 	projectLine, groupLine, bodyStart := m.stickyHeaderLines(m.offset)
 	bodyLines := m.visibleBodyLines(bodyStart)
 	lines := make([]string, 0, len(bodyLines)+2)
@@ -25,7 +35,7 @@ func (m Model) ViewWithBorder(active, borderActive bool) string {
 	}
 	lines = append(lines, bodyLines...)
 	borders := []int(nil)
-	panel := renderPanel(lines, m.width, m.height, active, borderActive, m.history, m.historyModeLabels(), borders, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()))
+	panel := renderPanel(lines, m.width, m.height, active, borderActive, m.history, m.historyModeLabels(), borders, m.scrollbar(), m.filter.View(max(m.width-1, 1), active, m.filteredParameterCount()), m.headerRightReserve, previewOpen, previewTab)
 	return m.filter.OverlayExpressionError(panel, 1)
 }
 

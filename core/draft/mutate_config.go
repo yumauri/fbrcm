@@ -23,6 +23,9 @@ func BuildMutatedRemoteConfig(currentRaw json.RawMessage, unchangedErr string, m
 	}
 	rcmutate.DropUnknownConditionReferences(finalCfg)
 	rcmutate.NormalizeEmptyParameterMaps(finalCfg)
+	if err := rcmutate.EnsureOpaqueValuesUnchanged(currentCfg, finalCfg); err != nil {
+		return nil, err
+	}
 
 	if unchangedErr != "" && reflect.DeepEqual(currentCfg, finalCfg) {
 		return nil, fmt.Errorf("%s", unchangedErr)

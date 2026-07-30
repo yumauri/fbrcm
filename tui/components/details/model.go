@@ -22,6 +22,7 @@ type Model struct {
 	data                *messages.ParameterViewData
 	groupData           *messages.GroupViewData
 	conditionData       *messages.ConditionViewData
+	managedFeatureData  *messages.ManagedFeatureViewData
 	activeField         fieldID
 	dropdownOpen        bool
 	dropdownIndex       int
@@ -100,9 +101,13 @@ func (m Model) ConditionData() *messages.ConditionViewData {
 
 func (m Model) GroupData() *messages.GroupViewData { return m.groupData }
 
+func (m Model) ManagedFeatureData() *messages.ManagedFeatureViewData { return m.managedFeatureData }
+
 func (m Model) IsCondition() bool { return m.conditionData != nil }
 
 func (m Model) IsGroup() bool { return m.groupData != nil }
+
+func (m Model) IsManagedFeature() bool { return m.managedFeatureData != nil }
 
 func (m Model) IsNewGroup() bool { return m.groupData != nil && m.groupData.Group.Key == "" }
 

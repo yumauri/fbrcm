@@ -8,6 +8,9 @@ const (
 	Parameters
 	Conditions
 	History
+	ABTests
+	Personalizations
+	Rollouts
 	Promote
 	Details
 	Logs

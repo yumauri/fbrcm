@@ -47,6 +47,9 @@ func (m Model) renderValueLines(value core.ParametersValue, width int) []string 
 	if value.Empty || value.UseInAppDefault {
 		return []string{corestyles.EmptyValueStyle().Render(value.Value)}
 	}
+	if rendered, ok := viewutil.RenderManagedValueSummary(value.Display, value.ValueType); ok {
+		return []string{ansi.Truncate(rendered, width, "")}
+	}
 	switch strings.TrimSpace(strings.ToLower(value.ValueType)) {
 	case "json":
 		return renderJSONValueLines(value.RawValue, width)

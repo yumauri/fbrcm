@@ -117,14 +117,15 @@ type visibleNode struct {
 type Model struct {
 	svc *core.Core
 
-	width   int
-	height  int
-	x       int
-	y       int
-	active  bool
-	history bool
-	spin    spinner.Model
-	filter  filterbox.Model
+	width              int
+	height             int
+	x                  int
+	y                  int
+	active             bool
+	history            bool
+	spin               spinner.Model
+	filter             filterbox.Model
+	headerRightReserve int
 
 	projects           []projectState
 	parameterNameWidth int
@@ -253,6 +254,12 @@ func (m Model) SetBounds(x, y, width, height int) Model {
 	m.width = width
 	m.height = height
 	m.syncVisible()
+	return m
+}
+
+// SetHeaderRightReserve keeps workspace titles clear of app-level overlays.
+func (m Model) SetHeaderRightReserve(width int) Model {
+	m.headerRightReserve = max(width, 0)
 	return m
 }
 

@@ -132,6 +132,39 @@ type ConditionSelectionChangedMsg struct {
 	ResetScroll bool
 }
 
+type ManagedFeatureKind string
+
+const (
+	ManagedFeatureExperiment      ManagedFeatureKind = "experiment"
+	ManagedFeaturePersonalization ManagedFeatureKind = "personalization"
+	ManagedFeatureRollout         ManagedFeatureKind = "rollout"
+)
+
+type ManagedFeaturesLoadedMsg struct {
+	Kind             ManagedFeatureKind
+	Project          core.Project
+	Template         core.ManagedFeatureTemplate
+	Experiments      []core.ExperimentEntry
+	Personalizations []core.PersonalizationEntry
+	Rollouts         []core.RolloutEntry
+	Err              error
+}
+
+type ManagedFeatureViewData struct {
+	Kind            ManagedFeatureKind
+	Project         core.Project
+	Template        core.ManagedFeatureTemplate
+	Experiment      *core.ExperimentEntry
+	Personalization *core.PersonalizationEntry
+	Rollout         *core.RolloutEntry
+}
+
+type ManagedFeatureSelectionChangedMsg struct {
+	Data        *ManagedFeatureViewData
+	Activate    bool
+	ResetScroll bool
+}
+
 type KeyboardCaptureMsg struct {
 	Enabled bool
 }

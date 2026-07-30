@@ -20,11 +20,13 @@ type helpPaletteAction struct {
 
 var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockGlobal,
+	tuiconfig.BlockWorkspaceMenu,
 	tuiconfig.BlockAccounts,
 	tuiconfig.BlockProfiles,
 	tuiconfig.BlockProjects,
 	tuiconfig.BlockParameters,
 	tuiconfig.BlockConditions,
+	tuiconfig.BlockManagedFeatures,
 	tuiconfig.BlockPromote,
 	tuiconfig.BlockHistory,
 	tuiconfig.BlockDetails,
@@ -76,6 +78,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 	switch block {
 	case tuiconfig.BlockGlobal:
 		return "Global"
+	case tuiconfig.BlockWorkspaceMenu:
+		return "Workspace tabs menu"
 	case tuiconfig.BlockAccounts:
 		return "Accounts panel"
 	case tuiconfig.BlockProfiles:
@@ -86,6 +90,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 		return "Parameters panel"
 	case tuiconfig.BlockConditions:
 		return "Conditions panel"
+	case tuiconfig.BlockManagedFeatures:
+		return "Managed features panel"
 	case tuiconfig.BlockPromote:
 		return "Promote workspace"
 	case tuiconfig.BlockHistory:
@@ -208,6 +214,17 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Last condition"
 		}
 	}
+	if block == tuiconfig.BlockManagedFeatures && action == tuiconfig.ActionOpenDetails {
+		return "Open managed feature details"
+	}
+	if block == tuiconfig.BlockManagedFeatures {
+		switch action {
+		case tuiconfig.ActionFirst:
+			return "First managed feature"
+		case tuiconfig.ActionLast:
+			return "Last managed feature"
+		}
+	}
 	if block == tuiconfig.BlockPromote {
 		switch action {
 		case tuiconfig.ActionClose:
@@ -320,6 +337,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Open profiles"
 		case tuiconfig.ActionHelp:
 			return "Open or close Actions"
+		case tuiconfig.ActionWorkspaceMenu:
+			return "Open or close workspace tabs"
 		case tuiconfig.ActionForceQuit:
 			return "Force quit"
 		}
@@ -406,6 +425,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 		return "parameter or group"
 	case tuiconfig.BlockConditions:
 		return "condition"
+	case tuiconfig.BlockManagedFeatures:
+		return "managed feature"
 	case tuiconfig.BlockPromote:
 		return "change"
 	case tuiconfig.BlockHistoryPicker:
@@ -430,6 +451,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 		return "profile"
 	case tuiconfig.BlockHelp:
 		return "action"
+	case tuiconfig.BlockWorkspaceMenu:
+		return "hidden workspace tab"
 	default:
 		return ""
 	}
@@ -446,7 +469,8 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 	case tuiconfig.ActionProfiles:
 		return "Open profile management."
 	case tuiconfig.ActionFocusProjects, tuiconfig.ActionFocusParameters, tuiconfig.ActionFocusConditions,
-		tuiconfig.ActionFocusHistory, tuiconfig.ActionFocusPromote, tuiconfig.ActionFocusDetails, tuiconfig.ActionFocusLogs:
+		tuiconfig.ActionFocusHistory, tuiconfig.ActionFocusABTests, tuiconfig.ActionFocusPersonalizations,
+		tuiconfig.ActionFocusRollouts, tuiconfig.ActionFocusPromote, tuiconfig.ActionFocusDetails, tuiconfig.ActionFocusLogs:
 		return "Move keyboard focus to the " + strings.TrimPrefix(strings.ToLower(title), "focus ") + " panel."
 	case tuiconfig.ActionRefresh:
 		return "Update the cached project list from Firebase."
@@ -468,6 +492,8 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 		return "Maximize the workspace panel or restore the split layout."
 	case tuiconfig.ActionFocusNext:
 		return "Move keyboard focus to the next workspace panel."
+	case tuiconfig.ActionWorkspaceMenu:
+		return "Open or close the menu of workspace tabs hidden at the current terminal width."
 	case tuiconfig.ActionHelp:
 		return "Open or close this searchable Actions window."
 	case tuiconfig.ActionOpenDetails:

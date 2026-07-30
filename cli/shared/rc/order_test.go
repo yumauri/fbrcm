@@ -62,6 +62,62 @@ func TestMarshalPrettyRemoteConfigWithOrderNilConfig(t *testing.T) {
 	}
 }
 
+func TestMarshalPrettyRemoteConfigWithOrderPreservesExperimentValue(t *testing.T) {
+	raw := []byte(`{"parameters":{"flag":{"defaultValue":{"experimentValue":{"experimentId":"experiment-1","exposurePercent":25,"variantValue":[{"variantId":"0","noChange":true},{"variantId":"1","value":""}]}}}}}`)
+	order, err := ParseRemoteConfigOrder(raw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfigOrder returned error: %v", err)
+	}
+	cfg, err := firebase.ParseRemoteConfig(raw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfig returned error: %v", err)
+	}
+
+	out, err := MarshalPrettyRemoteConfigWithOrder(cfg, order)
+	if err != nil {
+		t.Fatalf("MarshalPrettyRemoteConfigWithOrder returned error: %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("decode output: %v\n%s", err, out)
+	}
+	parameters := got["parameters"].(map[string]any)
+	flag := parameters["flag"].(map[string]any)
+	defaultValue := flag["defaultValue"].(map[string]any)
+	experiment := defaultValue["experimentValue"].(map[string]any)
+	if experiment["experimentId"] != "experiment-1" || experiment["exposurePercent"] != float64(25) {
+		t.Fatalf("experimentValue = %#v", experiment)
+	}
+}
+
+func TestMarshalPrettyRemoteConfigWithOrderPreservesUnknownValueOption(t *testing.T) {
+	raw := []byte(`{"parameters":{"flag":{"defaultValue":{"someFutureValue":{"id":"future-1","settings":{"enabled":true}}}}}}`)
+	order, err := ParseRemoteConfigOrder(raw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfigOrder returned error: %v", err)
+	}
+	cfg, err := firebase.ParseRemoteConfig(raw)
+	if err != nil {
+		t.Fatalf("ParseRemoteConfig returned error: %v", err)
+	}
+
+	out, err := MarshalPrettyRemoteConfigWithOrder(cfg, order)
+	if err != nil {
+		t.Fatalf("MarshalPrettyRemoteConfigWithOrder returned error: %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out, &got); err != nil {
+		t.Fatalf("decode output: %v\n%s", err, out)
+	}
+	parameters := got["parameters"].(map[string]any)
+	flag := parameters["flag"].(map[string]any)
+	defaultValue := flag["defaultValue"].(map[string]any)
+	future := defaultValue["someFutureValue"].(map[string]any)
+	if future["id"] != "future-1" {
+		t.Fatalf("someFutureValue = %#v", future)
+	}
+}
+
 func TestParseRemoteConfigOrderRejectsInvalidJSON(t *testing.T) {
 	for _, raw := range [][]byte{
 		[]byte(`[`),

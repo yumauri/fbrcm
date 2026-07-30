@@ -171,6 +171,17 @@ func TestDefaultKeyMapIncludesHelpPaletteBindings(t *testing.T) {
 	}
 }
 
+func TestDefaultKeyMapIncludesWorkspaceMenuBindings(t *testing.T) {
+	if got := DefaultKeyMap()[BlockGlobal][ActionWorkspaceMenu]; len(got) != 1 || got[0] != "\\" {
+		t.Fatalf("workspace menu action = %v, want [\\\\]", got)
+	}
+	for _, action := range []Action{ActionCancel, ActionSubmit, ActionUp, ActionDown, ActionHome, ActionEnd} {
+		if len(DefaultKeyMap()[BlockWorkspaceMenu][action]) == 0 {
+			t.Fatalf("workspace menu action %q has no default binding", action)
+		}
+	}
+}
+
 func TestDefaultKeyMapIncludesAccountsBinding(t *testing.T) {
 	if got := DefaultKeyMap()[BlockGlobal][ActionAccounts]; len(got) != 1 || got[0] != "ctrl+a" {
 		t.Fatalf("accounts action = %v, want [ctrl+a]", got)

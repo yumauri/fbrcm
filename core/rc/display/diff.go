@@ -3,6 +3,7 @@ package display
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -13,8 +14,12 @@ func FormatDiff(value firebase.RemoteConfigValue) string {
 	switch {
 	case len(value.PersonalizationValue) > 0:
 		return string(normalizeJSON(bytes.TrimSpace(value.PersonalizationValue)))
+	case len(value.ExperimentValue) > 0:
+		return string(normalizeJSON(bytes.TrimSpace(value.ExperimentValue)))
 	case len(value.RolloutValue) > 0:
 		return string(normalizeJSON(bytes.TrimSpace(value.RolloutValue)))
+	case value.UnknownValueOption != "":
+		return fmt.Sprintf("%s: %s", value.UnknownValueOption, normalizeJSON(bytes.TrimSpace(value.UnknownValue)))
 	case value.UseInAppDefault:
 		return "useInAppDefault"
 	default:

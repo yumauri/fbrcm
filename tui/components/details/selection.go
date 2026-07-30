@@ -44,6 +44,13 @@ func (m Model) CurrentConditionalValueAnchor() (parameters.ConditionalValueAncho
 	return parameters.ConditionalValueAnchor{Project: m.data.Project, GroupKey: m.data.GroupKey, ParamKey: m.data.Parameter.Key, ValueLabel: value.Label}, true
 }
 
+// SelectedValueReadOnly reports whether the selected parameter value is owned
+// by Firebase or an unsupported future value option.
+func (m Model) SelectedValueReadOnly() bool {
+	value, ok := m.SelectedParameterValue()
+	return ok && value.ReadOnly()
+}
+
 func (m Model) DropdownOpen() bool {
 	return m.dropdownOpen && (m.activeField == fieldGroup || m.activeField == fieldType || m.activeField == fieldConditionColor)
 }

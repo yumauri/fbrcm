@@ -46,8 +46,16 @@ func Value(value firebase.RemoteConfigValue, valueType string) dictdiff.Value {
 		return dictdiff.Enum("in-app default")
 	case len(value.PersonalizationValue) > 0:
 		return dictdiff.JSON(string(value.PersonalizationValue))
+	case len(value.ExperimentValue) > 0:
+		return dictdiff.JSON(string(value.ExperimentValue))
 	case len(value.RolloutValue) > 0:
 		return dictdiff.JSON(string(value.RolloutValue))
+	case value.UnknownValueOption != "":
+		raw, err := json.Marshal(map[string]json.RawMessage{value.UnknownValueOption: value.UnknownValue})
+		if err == nil {
+			return dictdiff.JSON(string(raw))
+		}
+		return dictdiff.String(value.UnknownValueOption)
 	}
 	switch strings.ToLower(strings.TrimSpace(valueType)) {
 	case "boolean":

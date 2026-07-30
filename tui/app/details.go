@@ -36,6 +36,59 @@ func (m *Model) applyConditionSelection(msg messages.ConditionSelectionChangedMs
 	}
 }
 
+func (m *Model) applyManagedFeatureSelection(msg messages.ManagedFeatureSelectionChangedMsg) tea.Cmd {
+	if m.active == panels.Details && m.details.IsNewGroup() && !msg.Activate {
+		return nil
+	}
+	if msg.ResetScroll {
+		m.details = m.details.ResetScroll()
+	}
+	if msg.Data == nil {
+		return nil
+	}
+	if !m.detailsVisible || !m.details.Dirty() {
+		return m.applyManagedFeatureSelectionClean(msg)
+	}
+	m.pendingDetails = &pendingDetailsSelection{managedData: msg.Data, activate: msg.Activate}
+	if m.details.IsCondition() {
+		return m.saveConditionDetailsForPending()
+	}
+	if m.details.IsGroup() {
+		return m.saveGroupDetailsForPending()
+	}
+	edit, ok := m.details.Edit()
+	if !ok {
+		return m.applyPendingDetailsSelection()
+	}
+	data := m.details.Data()
+	if data == nil {
+		return m.applyPendingDetailsSelection()
+	}
+	if m.details.Invalid() {
+		m.openInvalidDetailsDialog(data.Project, m.details.InvalidReasons(), false)
+		return nil
+	}
+	if m.parameters.HasDraft(data.Project.ProjectID) {
+		return m.editParameterDetailsCmd(data.Project, edit, false, false, false)
+	}
+	m.openEditDetailsDialog(data.Project, edit, false, false)
+	return nil
+}
+
+func (m *Model) applyManagedFeatureSelectionClean(msg messages.ManagedFeatureSelectionChangedMsg) tea.Cmd {
+	detailsWereVisible := m.detailsVisible
+	data := m.withCachedManagedFeatureDetails(msg.Data)
+	m.details = m.details.SetManagedFeatureData(data)
+	if msg.Activate {
+		m.detailsVisible = true
+		m.setActive(panels.Details)
+	}
+	if msg.Activate || (detailsWereVisible && managedFeatureHasLazyDetails(data.Kind)) {
+		return m.refreshManagedFeatureDetailsCmd(data)
+	}
+	return nil
+}
+
 func (m *Model) openNewParameterDetails() tea.Cmd {
 	project, groupKey, afterParamKey, ok := m.parameters.CurrentNewParameterTarget()
 	if !ok {
@@ -239,12 +292,18 @@ func (m *Model) submitConditionDetailsForm() tea.Cmd {
 // requestDeleteDetails opens delete flow for details parameter.
 func (m *Model) requestDeleteDetails() tea.Cmd {
 	if data := m.details.GroupData(); data != nil {
+		if data.Group.HasReadOnlyValues() {
+			return nil
+		}
 		if m.parameters.HasDraft(data.Project.ProjectID) {
 			return m.deleteGroupCmd(data.Project, data.Group.Key, false, true)
 		}
 		m.openDeleteGroupDialog(data.Project, data.Group.Key, data.Group.Label, true)
 		x, y, width, height := m.details.Bounds()
 		m.dialog = m.dialog.CenterWithin(x, y, width, height)
+		return nil
+	}
+	if m.details.SelectedValueReadOnly() {
 		return nil
 	}
 	if anchor, ok := m.details.CurrentConditionalValueAnchor(); ok {
@@ -258,6 +317,9 @@ func (m *Model) requestDeleteDetails() tea.Cmd {
 	}
 	data := m.details.Data()
 	if data == nil {
+		return nil
+	}
+	if data.Parameter.HasReadOnlyValues() {
 		return nil
 	}
 	if m.parameters.HasDraft(data.Project.ProjectID) {
@@ -400,13 +462,11 @@ func (m *Model) handleParameterSelection(msg messages.ParameterSelectionChangedM
 func (m *Model) saveGroupDetailsForPending() tea.Cmd {
 	edit, ok := m.details.GroupEdit()
 	if !ok {
-		m.applyPendingDetailsSelection()
-		return nil
+		return m.applyPendingDetailsSelection()
 	}
 	data := m.details.GroupData()
 	if data == nil {
-		m.applyPendingDetailsSelection()
-		return nil
+		return m.applyPendingDetailsSelection()
 	}
 	if m.details.Invalid() {
 		m.openInvalidDetailsDialog(data.Project, m.details.InvalidReasons(), false)
@@ -438,13 +498,11 @@ func (m *Model) handleConditionDetailsSelection(data *messages.ConditionViewData
 	}
 	edit, ok := m.details.Edit()
 	if !ok {
-		m.applyPendingDetailsSelection()
-		return nil
+		return m.applyPendingDetailsSelection()
 	}
 	current := m.details.Data()
 	if current == nil {
-		m.applyPendingDetailsSelection()
-		return nil
+		return m.applyPendingDetailsSelection()
 	}
 	if m.details.Invalid() {
 		m.openInvalidDetailsDialog(current.Project, m.details.InvalidReasons(), false)
@@ -460,13 +518,11 @@ func (m *Model) handleConditionDetailsSelection(data *messages.ConditionViewData
 func (m *Model) saveConditionDetailsForPending() tea.Cmd {
 	edit, ok := m.details.ConditionEdit()
 	if !ok {
-		m.applyPendingDetailsSelection()
-		return nil
+		return m.applyPendingDetailsSelection()
 	}
 	data := m.details.ConditionData()
 	if data == nil {
-		m.applyPendingDetailsSelection()
-		return nil
+		return m.applyPendingDetailsSelection()
 	}
 	if m.details.Invalid() {
 		m.openInvalidDetailsDialog(data.Project, m.details.InvalidReasons(), false)
@@ -479,12 +535,17 @@ func (m *Model) saveConditionDetailsForPending() tea.Cmd {
 	return nil
 }
 
-func (m *Model) applyPendingDetailsSelection() {
+func (m *Model) applyPendingDetailsSelection() tea.Cmd {
 	if m.pendingDetails == nil {
-		return
+		return nil
 	}
 	pending := m.pendingDetails
 	m.pendingDetails = nil
+	if pending.managedData != nil {
+		return m.applyManagedFeatureSelectionClean(messages.ManagedFeatureSelectionChangedMsg{
+			Data: pending.managedData, Activate: pending.activate,
+		})
+	}
 	if pending.conditionData != nil {
 		data := pending.conditionData
 		if refreshed, ok := m.conditions.Condition(data.Project.ProjectID, data.Condition.Name); ok {
@@ -495,14 +556,14 @@ func (m *Model) applyPendingDetailsSelection() {
 		if pending.activate {
 			m.setActive(panels.Details)
 		}
-		return
+		return nil
 	}
 	if pending.groupData != nil {
 		m.applyParameterSelection(messages.ParameterSelectionChangedMsg{GroupData: pending.groupData, Activate: pending.activate})
 		if pending.groupData.Group.Key == "" {
 			m.details, _ = m.details.ActivateName()
 		}
-		return
+		return nil
 	}
 	data := pending.data
 	if data != nil {
@@ -515,4 +576,5 @@ func (m *Model) applyPendingDetailsSelection() {
 		}
 	}
 	m.applyParameterSelection(messages.ParameterSelectionChangedMsg{Data: data, Activate: pending.activate})
+	return nil
 }

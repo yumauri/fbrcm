@@ -24,10 +24,9 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 	}
 
 	conditionOrder := make(map[string]int, len(cfg.Conditions))
-	conditionColors := make(map[string]string, len(cfg.Conditions))
+	conditionColors := firebase.ConditionTagColorsByName(cfg.Conditions)
 	for i, condition := range cfg.Conditions {
 		conditionOrder[condition.Name] = i
-		conditionColors[condition.Name] = condition.TagColor
 	}
 
 	rows := make([]parameterRow, 0)
@@ -77,7 +76,8 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 	valueLines := make([]valueLine, 0, len(param.ConditionalValues)+1)
 
 	for _, name := range table.SortedConditionalKeys(param.ConditionalValues, conditionOrder) {
-		value := core.FormatRemoteConfigDisplayValue(param.ConditionalValues[name], param.ValueType)
+		display := core.SummarizeRemoteConfigDisplayValue(param.ConditionalValues[name], param.ValueType)
+		value := display.Text
 		conditions = append(conditions, parameterConditionJSON{
 			Name:  name,
 			Value: table.ValueForJSON(value),
@@ -88,18 +88,21 @@ func buildParameterRow(project core.Project, group, key string, param firebase.R
 			Color:     clistyles.ConditionLipglossColor(conditionColors[name]),
 			IsDefault: false,
 			ValueType: table.ValueTypeKey(param.ValueType),
+			Display:   display,
 		})
 	}
 
 	var defaultValue *string
 	if param.DefaultValue != nil {
-		formatted := core.FormatRemoteConfigDisplayValue(*param.DefaultValue, param.ValueType)
+		display := core.SummarizeRemoteConfigDisplayValue(*param.DefaultValue, param.ValueType)
+		formatted := display.Text
 		defaultValue = table.ValueForJSON(formatted)
 		valueLines = append(valueLines, valueLine{
 			Label:     "Default value",
 			Value:     formatted,
 			IsDefault: true,
 			ValueType: table.ValueTypeKey(param.ValueType),
+			Display:   display,
 		})
 	}
 

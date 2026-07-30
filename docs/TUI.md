@@ -14,9 +14,10 @@ is recommended when comparing values or promoting changes.
 The workspace has four main areas:
 
 - **Projects** selects the Firebase projects and template targets in view.
-- **Parameters**, **Conditions**, and **History** are tabs over the main data
-  panel.
-- **Details** opens the selected parameter, group, condition, or value.
+- **Parameters**, **Conditions**, **History**, **A/B Tests**,
+  **Personalizations**, and **Rollouts** are tabs over the main data panel.
+- **Details** opens the selected parameter, group, condition, value, or managed
+  feature.
 - **Logs** shows live application activity and errors.
 
 Promotion temporarily replaces the normal data tabs with a dedicated
@@ -111,15 +112,49 @@ These defaults work throughout the workspace:
 | `3` | Focus Conditions |
 | `4` | Focus History |
 | `5` | Focus Details |
+| `6` | Focus A/B Tests |
+| `7` | Focus Personalizations |
+| `8` | Focus Rollouts |
 | `9` | Focus the open Promote workspace |
 | `0` | Focus Logs |
 | `Tab` | Focus the next panel |
+| `\` | Open the hidden workspace tabs menu |
 | `q` | Quit |
 | `Ctrl+C` | Force quit |
 
 Most lists use the arrow keys or `j`/`k`. `Home` and `End` jump to the first and
 last item. Panel-specific alternatives are shown in the footer and action
 palette.
+
+When the data panel is wide enough, its header shows every workspace tab. At
+narrower widths, it keeps a sequence of complete titles on the left, places a
+`\≡` overflow button before one trailing title, and hides the remaining titles
+instead of shortening them to individual letters. The trailing title is
+normally the next title after the left-hand sequence. Selecting a later hidden
+tab moves its complete active title into that position; if necessary, another
+left-hand title is hidden to make room. The current-profile badge width is also
+reserved so it never covers a workspace title. Compact fitting reserves the
+widest title that can occupy the trailing slot, so opening the menu cannot
+suddenly hide another leading title.
+
+Press `\` or click the overflow button to open the collapsed titles as one
+ordered vertical stack. Its current title occupies the panel-border row and
+later titles appear below it. `Down`/`j` previews the next title in the
+panel-border row and shifts the stack upward; `Up`/`k` previews the previous
+title and shifts it downward. Previewing does not switch the active panel or
+recalculate which leading titles fit. The popup's complete border moves with
+the stack: after rows move above the terminal, its vertical sides continue at
+the top edge and the cursor row has no internal separator. A `▸` in the
+overflow-glyph column marks the title that Enter will select and inherits the
+active or inactive border color. The actually active workspace title keeps its
+highlighted background wherever it appears in the visible stack. The menu keeps
+two spaces between its longest title and the right border.
+Consequently, opening the menu with Rollouts in the trailing slot starts at the
+maximum upward shift, with Rollouts in the border row. `Home` and `End` move the
+first and last collapsed titles into that row. `Enter` activates the border-row
+title and closes the menu; clicking a visible title activates it immediately.
+`Esc` or `\` closes the menu, and the numbered workspace shortcuts continue to
+work while it is open. `q` follows the normal quit flow while the menu is open.
 
 `q` quits immediately unless an open Details form has unsaved edits. In that
 case, fbrcm asks before discarding them. `Ctrl+C` always exits immediately.
@@ -211,10 +246,50 @@ the condition.
 Condition order affects value resolution, so moves are reviewed as Remote
 Config changes rather than treated as cosmetic sorting.
 
+## A/B Tests, Personalizations, and Rollouts
+
+The three managed-feature tabs are read-only and show entities grouped by
+selected Firebase project. Press `Enter`, or double-click an entity, to open its
+Details. A tab loads each selected project the first time it is shown and keeps
+that content when focus moves between Projects and the tab. Use `u` to update
+the project under the cursor or `U` to update every project in the active tab.
+Newly selected projects are loaded when the tab is next shown.
+
+These tabs apply only to selected client Remote Config templates. A
+`server@project` template is omitted because Firebase exposes managed features
+under the client `firebase` namespace, not the `firebase-server` namespace.
+
+- **A/B Tests** lists experiment IDs, display names, states, start times,
+  last-updated times, descriptions, and published-template binding counts.
+  Its `~`, `^`, `/`, and `=` filters match display names only, not descriptions.
+  Opening
+  Details reuses that list metadata immediately, then lazily refreshes it and
+  loads the selected experiment's variants and objectives from its exact
+  resource. Details also shows affected parameters, exposure, and each
+  template variant value or no-change marker.
+- **Personalizations** shows personalization IDs and the parameter-value
+  bindings found in the published Remote Config template. Firebase does not
+  expose value candidates or result metrics through this API.
+- **Rollouts** combines rollout metadata from the public rollout API with the
+  parameter-value bindings found in the published template.
+
+An explicit zero percentage is rendered as `0%`, and an explicit empty managed
+value is rendered as `""`; both remain distinct from missing data. If a project
+load fails, the project row shows the error and the tab retries it when
+activated again. Reloading a list refreshes matching open Details without
+changing its scroll position. Navigating to a managed feature while an editable
+Details form has unsaved changes uses the same save-or-discard flow as other
+Details navigation.
+
+The lists use `Up`/`Down` or `j`/`k`, `Page Up`/`Page Down` or `h`/`l`, and
+`Home`/`End`. `u` updates the current project, `U` updates all projects, and `z`
+maximizes or restores the workspace.
+
 ## Details and editors
 
 Details is both an inspector and an edit form. The available actions depend on
-the selected entity.
+the selected entity. Managed-feature Details are read-only and use `Esc` to
+close.
 
 | Default key | Action |
 | --- | --- |
@@ -347,8 +422,8 @@ If validation or publication fails, that draft remains available for recovery.
 
 ## Filtering
 
-Projects, Parameters, Conditions, History, and Promote support live text
-filtering:
+Projects, Parameters, Conditions, History, A/B Tests, and Promote support live
+text filtering:
 
 | Prefix or key | Mode |
 | --- | --- |
@@ -358,7 +433,9 @@ filtering:
 | `=` | Exact match |
 
 Projects, Parameters, Conditions, and History also support expression filtering
-with `:`. Promote currently uses only the four text modes above.
+with `:`. Promote and A/B Tests use only the four text modes above. A/B Tests
+matches experiment display names only; it does not search descriptions or
+resource IDs.
 
 Text and expression filters remember separate input. While an expression is
 temporarily invalid, the input turns red, a compact compiler error appears on

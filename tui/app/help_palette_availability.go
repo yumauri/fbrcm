@@ -87,6 +87,11 @@ func sharedHelpActionAvailableIn(item helpPaletteAction, active tuiconfig.Block)
 		}
 	case tuiconfig.BlockPromote:
 		return item.action == tuiconfig.ActionToggleMaximize
+	case tuiconfig.BlockManagedFeatures:
+		switch item.action {
+		case tuiconfig.ActionToggleMaximize, tuiconfig.ActionReload, tuiconfig.ActionReloadAll:
+			return true
+		}
 	}
 	return false
 }
@@ -97,6 +102,24 @@ func (m Model) sharedHelpActionAvailability(active tuiconfig.Block, action tuico
 	}
 	if active == tuiconfig.BlockPromote && action == tuiconfig.ActionToggleMaximize {
 		return true, ""
+	}
+	if active == tuiconfig.BlockManagedFeatures {
+		panel := m.activeManagedFeaturesPanel()
+		if panel == nil {
+			return false, "no managed-feature panel is active"
+		}
+		if action == tuiconfig.ActionReloadAll {
+			if !panel.HasProjects() {
+				return false, "no projects are selected"
+			}
+			return true, ""
+		}
+		if action == tuiconfig.ActionReload {
+			if _, ok := panel.CurrentProject(); !ok {
+				return false, "no project is selected"
+			}
+			return true, ""
+		}
 	}
 	if action == tuiconfig.ActionToggleMaximize {
 		return true, ""
@@ -137,6 +160,14 @@ func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, stri
 		return true, ""
 	case tuiconfig.ActionHelp:
 		return true, ""
+	case tuiconfig.ActionWorkspaceMenu:
+		if m.promote.WorkspaceOpen() {
+			return false, "the Promote panel replaces the workspace tabs"
+		}
+		if !m.workspaceMenuAvailable() {
+			return false, "all workspace tabs are visible"
+		}
+		return true, ""
 	case tuiconfig.ActionForceQuit:
 		return true, ""
 	case tuiconfig.ActionQuit:
@@ -152,7 +183,8 @@ func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, stri
 		if !m.detailsVisible {
 			return false, "details panel is not open"
 		}
-	case tuiconfig.ActionFocusParameters, tuiconfig.ActionFocusConditions, tuiconfig.ActionFocusHistory:
+	case tuiconfig.ActionFocusParameters, tuiconfig.ActionFocusConditions, tuiconfig.ActionFocusHistory,
+		tuiconfig.ActionFocusABTests, tuiconfig.ActionFocusPersonalizations, tuiconfig.ActionFocusRollouts:
 		if m.promote.WorkspaceOpen() {
 			return false, "the Promote panel replaces the workspace panels"
 		}
@@ -174,9 +206,13 @@ func (m Model) filterHelpActionAvailability(action tuiconfig.Action) (bool, stri
 	if m.contextOverlayOpen() {
 		return false, "close the current dialog or editor first"
 	}
-	filterPanel := m.active == panels.Projects || m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History || m.active == panels.Promote
+	filterPanel := m.active == panels.Projects || m.active == panels.Parameters || m.active == panels.Conditions ||
+		m.active == panels.History || m.active == panels.ABTests || m.active == panels.Promote
 	if !filterPanel {
 		return false, "the focused panel does not support filtering"
+	}
+	if m.active == panels.ABTests && action == tuiconfig.ActionFilterExpression {
+		return false, "A/B Tests supports display-name filtering only"
 	}
 	filterOpen := m.keyboardCaptured()
 	if action == tuiconfig.ActionFilterApply || action == tuiconfig.ActionFilterCancel || action == tuiconfig.ActionFilterUp || action == tuiconfig.ActionFilterDown {
@@ -200,6 +236,8 @@ func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 		return "", "account or profile workflow is active"
 	case m.keyboardCaptured():
 		return tuiconfig.BlockFilter, "panel filter has keyboard focus"
+	case m.workspaceMenu:
+		return tuiconfig.BlockWorkspaceMenu, "workspace tabs menu is open"
 	case m.parameters.HistoryPickerOpen():
 		return tuiconfig.BlockHistoryPicker, "history version picker is open"
 	case m.conditions.MoveActive(), m.moveParam.IsOpen():
@@ -232,6 +270,8 @@ func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 		return tuiconfig.BlockConditions, ""
 	case panels.History:
 		return tuiconfig.BlockHistory, ""
+	case panels.ABTests, panels.Personalizations, panels.Rollouts:
+		return tuiconfig.BlockManagedFeatures, ""
 	case panels.Promote:
 		return tuiconfig.BlockPromote, ""
 	case panels.Details:
@@ -260,7 +300,8 @@ func isOverlayHelpBlock(block tuiconfig.Block) bool {
 	switch block {
 	case tuiconfig.BlockHistoryPicker, tuiconfig.BlockDetailsForm, tuiconfig.BlockDialog,
 		tuiconfig.BlockBoolInput, tuiconfig.BlockDiffView, tuiconfig.BlockJSONInput, tuiconfig.BlockNumberInput,
-		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockAuthPicker, tuiconfig.BlockRenameInput:
+		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockAuthPicker, tuiconfig.BlockRenameInput,
+		tuiconfig.BlockWorkspaceMenu:
 		return true
 	default:
 		return false
@@ -299,6 +340,17 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 		return m.parametersHelpActionAvailability(action)
 	case tuiconfig.BlockConditions:
 		return m.conditionsHelpActionAvailability(action)
+	case tuiconfig.BlockManagedFeatures:
+		panel := m.activeManagedFeaturesPanel()
+		if panel == nil {
+			return false, "no managed-feature panel is active"
+		}
+		if action == tuiconfig.ActionOpenDetails {
+			if !panel.HasCurrentEntity() {
+				return false, "no managed feature is selected"
+			}
+		}
+		return true, ""
 	case tuiconfig.BlockPromote:
 		switch action {
 		case tuiconfig.ActionSaveDraft, tuiconfig.ActionPublish:
@@ -325,6 +377,7 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	project, projectOK := m.parameters.CurrentProject()
 	_, _, _, paramOK := m.parameters.CurrentParameterRef()
+	_, _, _, mutableParamOK := m.parameters.CurrentMutableParameterRef()
 	_, _, _, groupOK := m.parameters.CurrentGroupRef()
 	_, conditionalOK := m.parameters.CurrentConditionalValueAnchor()
 	_, renameOK := m.parameters.CurrentRenameAnchor()
@@ -357,7 +410,11 @@ func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, 
 		if !valueOK && !paramOK {
 			return false, "select a parameter value"
 		}
-	case tuiconfig.ActionDuplicate, tuiconfig.ActionOpenDetails, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
+	case tuiconfig.ActionDuplicate:
+		if !mutableParamOK {
+			return false, "Firebase-managed parameters cannot be duplicated"
+		}
+	case tuiconfig.ActionOpenDetails, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
 		if !paramOK {
 			return false, "select a parameter"
 		}
@@ -366,7 +423,7 @@ func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, 
 			return false, "select a parameter or parameter group"
 		}
 	case tuiconfig.ActionDelete:
-		if !paramOK && !groupOK && !conditionalOK {
+		if !mutableParamOK && !groupOK && !conditionalOK {
 			return false, "select a parameter, group, or conditional value"
 		}
 	case tuiconfig.ActionToggle:
@@ -400,7 +457,7 @@ func (m Model) currentParameterValueSelected() bool {
 
 func (m Model) conditionsHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	project, projectOK := m.conditions.CurrentProject()
-	_, conditionOK := m.conditions.CurrentCondition()
+	condition, conditionOK := m.conditions.CurrentCondition()
 	switch action {
 	case tuiconfig.ActionPublishAll, tuiconfig.ActionDiscardAll:
 		if len(m.parameters.DraftProjects()) == 0 {
@@ -428,17 +485,32 @@ func (m Model) conditionsHelpActionAvailability(action tuiconfig.Action) (bool, 
 			return false, "no condition is selected"
 		}
 	}
+	if conditionOK && condition.Condition.HasReadOnlyValues() &&
+		(action == tuiconfig.ActionRename || action == tuiconfig.ActionDelete) {
+		return false, "the condition has Firebase-managed values"
+	}
 	return true, ""
 }
 
 func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, string) {
-	if !m.detailsVisible || (m.details.Data() == nil && m.details.ConditionData() == nil && m.details.GroupData() == nil) {
+	if !m.detailsVisible || (m.details.Data() == nil && m.details.ConditionData() == nil && m.details.GroupData() == nil && m.details.ManagedFeatureData() == nil) {
 		return false, "details panel has no selected item"
 	}
+	if m.details.IsManagedFeature() {
+		if action == tuiconfig.ActionClose {
+			return true, ""
+		}
+		return false, "managed feature details are read-only"
+	}
 	if m.details.IsGroup() {
+		readOnly := m.details.GroupData().Group.HasReadOnlyValues()
 		switch action {
-		case tuiconfig.ActionClose, tuiconfig.ActionSubmit, tuiconfig.ActionRename,
-			tuiconfig.ActionDelete, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
+		case tuiconfig.ActionRename, tuiconfig.ActionDelete:
+			if readOnly {
+				return false, "the group contains Firebase-managed values"
+			}
+			return true, ""
+		case tuiconfig.ActionClose, tuiconfig.ActionSubmit, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
 			return true, ""
 		default:
 			return false, "parameter groups do not support this Details action"
@@ -451,7 +523,16 @@ func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, str
 		if action == tuiconfig.ActionToggleInAppDefault {
 			return false, "in-app defaults can only be set on parameter values"
 		}
+		if m.details.ConditionData().Condition.HasReadOnlyValues() &&
+			(action == tuiconfig.ActionRename || action == tuiconfig.ActionDelete) {
+			return false, "the condition has Firebase-managed values"
+		}
 		return true, ""
+	}
+	readOnlyParameter := m.details.Data().Parameter.HasReadOnlyValues()
+	if readOnlyParameter &&
+		(action == tuiconfig.ActionRename || action == tuiconfig.ActionMove || action == tuiconfig.ActionDelete) {
+		return false, "the parameter has Firebase-managed values"
 	}
 	if action == tuiconfig.ActionColor {
 		return false, "colors can only be edited for conditions"
@@ -461,13 +542,20 @@ func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, str
 		if !ok {
 			return false, "no parameter value is selected"
 		}
+		if value.ReadOnly() {
+			return false, "Firebase-managed values are read-only"
+		}
 		if !value.Plain {
 			return false, "the selected value does not use a remote value"
 		}
 	}
 	if action == tuiconfig.ActionToggleInAppDefault {
-		if _, ok := m.details.SelectedParameterValue(); !ok {
+		value, ok := m.details.SelectedParameterValue()
+		if !ok {
 			return false, "no parameter value is selected"
+		}
+		if value.ReadOnly() {
+			return false, "Firebase-managed values are read-only"
 		}
 	}
 	if action == tuiconfig.ActionCopyValue && !m.details.ValueSelected() && !m.details.UsageSelected() {

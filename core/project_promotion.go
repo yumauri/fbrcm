@@ -11,6 +11,7 @@ import (
 	"github.com/yumauri/fbrcm/core/draft"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
 )
 
@@ -184,6 +185,9 @@ func (s *Core) PreviewProjectPromotion(plan *ProjectPromotionPlan, requested map
 
 	candidate, applied, err := rcpromote.Apply(plan.Plan, selected, rcpromote.Options{Prune: prune})
 	if err != nil {
+		return nil, err
+	}
+	if err := rcmutate.EnsureOpaqueValuesUnchanged(plan.Plan.Target, candidate); err != nil {
 		return nil, err
 	}
 	targetVersion, err := remoteConfigVersionValue(plan.Target.Raw)

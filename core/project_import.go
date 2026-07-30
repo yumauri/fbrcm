@@ -11,6 +11,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	"github.com/yumauri/fbrcm/core/rc/importer"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
 type (
@@ -88,6 +89,9 @@ func (s *Core) PrepareProjectImport(ctx context.Context, project Project, source
 
 	planned, err := importer.BuildPlan(project.ProjectID, project.Name, currentCfg, source, opts)
 	if err != nil {
+		return nil, err
+	}
+	if err := rcmutate.EnsureOpaqueValuesUnchanged(currentCfg, planned.Final); err != nil {
 		return nil, err
 	}
 	planned.Final.Version = firebase.RemoteConfigVersion{}

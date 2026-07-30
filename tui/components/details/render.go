@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -27,6 +28,9 @@ func (m Model) renderContentLines() []string {
 	width := max(m.width-5, 1)
 	if m.conditionData != nil {
 		return m.renderConditionContentLines(width)
+	}
+	if m.managedFeatureData != nil {
+		return m.renderManagedFeatureContentLines(width)
 	}
 	if m.groupData != nil {
 		return m.renderGroupContentLines(width)
@@ -130,6 +134,7 @@ func (m Model) renderConditionContentLines(width int) []string {
 func (m Model) renderConditionUsageValueLines(usage core.ConditionUsage, width int) []string {
 	value := core.ParametersValue{
 		Value:           usage.Value,
+		Display:         usage.Display,
 		RawValue:        usage.RawValue,
 		ValueType:       usage.ValueType,
 		Empty:           usage.Plain && usage.RawValue == "",
@@ -244,6 +249,42 @@ func cloneGroupViewData(data *messages.GroupViewData) *messages.GroupViewData {
 	next.GroupNames = append([]string(nil), data.GroupNames...)
 	next.Group.Parameters = append([]core.ParametersEntry(nil), data.Group.Parameters...)
 	return &next
+}
+
+func cloneManagedFeatureViewData(data *messages.ManagedFeatureViewData) *messages.ManagedFeatureViewData {
+	if data == nil {
+		return nil
+	}
+	next := *data
+	if data.Experiment != nil {
+		experiment := *data.Experiment
+		experiment.Definition.Variants = append([]firebase.ExperimentVariant(nil), data.Experiment.Definition.Variants...)
+		experiment.Definition.Objectives.EventObjectives = append(
+			[]firebase.ExperimentEventObjective(nil),
+			data.Experiment.Definition.Objectives.EventObjectives...,
+		)
+		experiment.References = cloneManagedValueReferences(data.Experiment.References)
+		next.Experiment = &experiment
+	}
+	if data.Personalization != nil {
+		personalization := *data.Personalization
+		personalization.References = cloneManagedValueReferences(data.Personalization.References)
+		next.Personalization = &personalization
+	}
+	if data.Rollout != nil {
+		rollout := *data.Rollout
+		rollout.References = cloneManagedValueReferences(data.Rollout.References)
+		next.Rollout = &rollout
+	}
+	return &next
+}
+
+func cloneManagedValueReferences(references []core.ManagedValueReference) []core.ManagedValueReference {
+	cloned := append([]core.ManagedValueReference(nil), references...)
+	for index := range cloned {
+		cloned[index].Variants = append([]core.ManagedVariantValue(nil), references[index].Variants...)
+	}
+	return cloned
 }
 
 func cloneConditionEntry(condition core.ConditionEntry) core.ConditionEntry {

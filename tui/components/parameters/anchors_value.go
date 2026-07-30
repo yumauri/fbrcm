@@ -41,6 +41,9 @@ func (m Model) CurrentConditionalValueAnchor() (ConditionalValueAnchor, bool) {
 		return ConditionalValueAnchor{}, false
 	}
 	value := param.Values[node.valueIdx]
+	if value.ReadOnly() {
+		return ConditionalValueAnchor{}, false
+	}
 	if value.Label == "" || value.Label == "default" {
 		return ConditionalValueAnchor{}, false
 	}
@@ -105,6 +108,9 @@ func (m Model) CurrentNumberValueAnchor() (NumberValueAnchor, bool) {
 		return NumberValueAnchor{}, false
 	}
 	value := param.Values[node.valueIdx]
+	if !value.Plain {
+		return NumberValueAnchor{}, false
+	}
 	if strings.TrimSpace(strings.ToLower(value.ValueType)) != "number" {
 		return NumberValueAnchor{}, false
 	}

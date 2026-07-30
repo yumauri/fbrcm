@@ -6,7 +6,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
-	"github.com/yumauri/fbrcm/core/config"
 	logscmp "github.com/yumauri/fbrcm/tui/components/logs"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
 	"github.com/yumauri/fbrcm/tui/components/setup"
@@ -140,13 +139,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			if handled {
-				m.profileName = config.GetActiveProfileName()
+				m.refreshProfileName()
 				return m, cmd
 			}
 		}
 		var cmd tea.Cmd
 		m.setup, cmd = m.setup.Update(msg)
-		m.profileName = config.GetActiveProfileName()
+		m.refreshProfileName()
 		return m, cmd
 	}
 	if m.promote.IsOpen() {
@@ -214,6 +213,21 @@ func (m *Model) closeDetailsIfOrphaned() {
 	if !m.detailsVisible {
 		return
 	}
+	if data := m.details.ManagedFeatureData(); data != nil {
+		var present bool
+		switch data.Kind {
+		case messages.ManagedFeatureExperiment:
+			present = m.abTests.HasEntity(data.Project.ProjectID, managedFeatureDataID(data))
+		case messages.ManagedFeaturePersonalization:
+			present = m.personalizations.HasEntity(data.Project.ProjectID, managedFeatureDataID(data))
+		case messages.ManagedFeatureRollout:
+			present = m.rollouts.HasEntity(data.Project.ProjectID, managedFeatureDataID(data))
+		}
+		if !present {
+			m.closeDetailsPanel()
+		}
+		return
+	}
 	data := m.details.Data()
 	if data != nil {
 		if m.parameters.HasProject(data.Project.ProjectID) {
@@ -244,8 +258,12 @@ func (m *Model) applyLayout() {
 
 	m.projects = m.projects.SetCollapsed(m.projectsMode == projectsPanelModeCollapsed)
 	m.projects = m.projects.SetBounds(0, 0, layout.leftWidth, layout.topHeight)
-	m.parameters = m.parameters.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
-	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
+	headerRightReserve := m.workspaceHeaderRightReserve()
+	m.parameters = m.parameters.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
+	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
+	m.abTests = m.abTests.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
+	m.personalizations = m.personalizations.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
+	m.rollouts = m.rollouts.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
 	m.promote = m.promote.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight)
 	if row, ok := m.projects.CurrentProjectScreenRow(); ok {
 		m.promote = m.promote.SetTargetRow(row)
@@ -278,7 +296,7 @@ func (m Model) nextTabPanel() panels.ID {
 
 	if m.active == panels.Logs {
 		if m.detailsVisible {
-			if m.prevTop == panels.Details || m.prevTop == panels.Parameters || m.prevTop == panels.Conditions || m.prevTop == panels.History {
+			if m.prevTop == panels.Details || isWorkspacePanel(m.prevTop) {
 				return m.prevTop
 			}
 			return m.selectedParametersTab()
@@ -290,13 +308,13 @@ func (m Model) nextTabPanel() panels.ID {
 		if m.active == panels.Details {
 			return m.selectedParametersTab()
 		}
-		if m.active == panels.Parameters || m.active == panels.Conditions {
+		if isWorkspacePanel(m.active) {
 			return panels.Details
 		}
 		return m.selectedParametersTab()
 	}
 
-	if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History {
+	if isWorkspacePanel(m.active) {
 		return panels.Projects
 	}
 
@@ -304,7 +322,7 @@ func (m Model) nextTabPanel() panels.ID {
 }
 
 func (m Model) selectedParametersTab() panels.ID {
-	if m.parametersTab == panels.History || m.parametersTab == panels.Conditions {
+	if isWorkspacePanel(m.parametersTab) {
 		return m.parametersTab
 	}
 	return panels.Parameters
@@ -315,7 +333,7 @@ func (m *Model) setActive(panel panels.ID) {
 		m.prevTop = panel
 	}
 	m.active = panel
-	if panel == panels.Parameters || panel == panels.Conditions || panel == panels.History {
+	if isWorkspacePanel(panel) {
 		m.parametersTab = panel
 		m.parameters = m.parameters.SetHistory(panel == panels.History)
 	}
@@ -325,12 +343,19 @@ func (m *Model) setActive(panel panels.ID) {
 	m.projects = m.projects.SetActive(panel == panels.Projects)
 	m.parameters = m.parameters.SetActive(panel == panels.Parameters || panel == panels.History)
 	m.conditions = m.conditions.SetActive(panel == panels.Conditions)
+	m.abTests = m.abTests.SetActive(panel == panels.ABTests)
+	m.personalizations = m.personalizations.SetActive(panel == panels.Personalizations)
+	m.rollouts = m.rollouts.SetActive(panel == panels.Rollouts)
 	if panel == panels.Promote {
 		m.projects = m.projects.SetActive(false)
 	}
 	m.details = m.details.SetActive(panel == panels.Details)
-	m.details = m.details.SetBridgeActive(panel == panels.Parameters || panel == panels.Conditions)
+	m.details = m.details.SetBridgeActive(isWorkspacePanel(panel))
 	m.logs = m.logs.SetActive(panel == panels.Logs)
+}
+
+func isWorkspacePanel(panel panels.ID) bool {
+	return workspaceTabIndex(panel) >= 0
 }
 
 func (m Model) keyboardCaptured() bool {

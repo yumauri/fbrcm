@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/testutil"
@@ -222,6 +223,24 @@ func TestToggleSelectedInAppDefaultRestoresTypedNeutralValue(t *testing.T) {
 	value, _ := next.SelectedParameterValue()
 	if !toggled || !value.Plain || value.UseInAppDefault || value.RawValue != "false" {
 		t.Fatalf("restored value = toggled:%v value:%+v, want plain false", toggled, value)
+	}
+}
+
+func TestManagedValueCannotToggleToInAppDefault(t *testing.T) {
+	data := parityViewData()
+	data.Parameter.Values[0] = core.ParametersValue{
+		Label: "default", Value: "⚗ (a/b test)", ValueType: "BOOLEAN",
+		Display: rcdisplay.ValueSummary{Kind: rcdisplay.ValueSummaryExperiment, Text: "⚗ (a/b test)"},
+	}
+	data.SelectedValueIdx = 0
+	m := New().SetBounds(0, 0, 60, 24).SetActive(true).SetData(data)
+
+	next, toggled := m.ToggleSelectedValueSource()
+	if toggled || next.Dirty() {
+		t.Fatalf("managed toggle = toggled:%v dirty:%v, want false/false", toggled, next.Dirty())
+	}
+	if _, ok := next.CurrentBoolValueAnchor(); ok {
+		t.Fatal("managed BOOLEAN value exposed an editor anchor")
 	}
 }
 

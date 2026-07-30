@@ -253,7 +253,7 @@ const minSizeViewSnapshot = `            default
  Terminal too small
  Minimum size 80x20`
 
-const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ────────────── default
+const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── \≡ ── ³Conditions ──────────────────── default
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -278,7 +278,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • ? help • c collapse • enter select • space mark • t templates • p make primary …`
 
-const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ────────────── default
+const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── \≡ ── ³Conditions ──────────────────── default
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │
@@ -303,7 +303,7 @@ No logs yet.
 ──────────────────────────────────────────────────────────────────────────────────────────
 q quit • ? help • c collapse • [/] level • -/_/=/+ resize`
 
-const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── ³Conditions ── ⁴History ────────────── default
+const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── \≡ ── ³Conditions ──────────────────── default
  Loading projects...    ││Select project in Projects panel.                              │
                         ││                                                               │
                         ││Selected project will appear here immediately.                 │

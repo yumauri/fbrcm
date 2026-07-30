@@ -5,6 +5,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
+	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
@@ -12,6 +13,19 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 	if !m.details.FieldActive() || tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k) {
 		if next, cmd, ok := m.updateGlobalFocusKey(k); ok {
 			return next, cmd, true
+		}
+	}
+	if m.details.IsManagedFeature() {
+		switch {
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, k):
+			return m, m.requestQuit(), true
+		case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionClose, k):
+			m.closeDetailsPanel()
+			return m, nil, true
+		default:
+			var cmd tea.Cmd
+			m.details, cmd = m.details.Update(msg)
+			return m, cmd, true
 		}
 	}
 	if m.details.IsCondition() {
@@ -93,6 +107,9 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 	case m.details.UsageSelected() && tuiconfig.Matches(tuiconfig.BlockDetailsForm, tuiconfig.ActionSubmit, k):
 		return m, m.openSelectedUsageParameterDetails(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionRename, k):
+		if data := m.details.ConditionData(); data != nil && data.Condition.HasReadOnlyValues() {
+			return m, nil, true
+		}
 		var cmd tea.Cmd
 		m.details, cmd = m.details.ActivateName()
 		return m, cmd, true
@@ -109,6 +126,9 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 		m.details, cmd = m.details.ActivateConditionPriority()
 		return m, cmd, true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k):
+		if data := m.details.ConditionData(); data != nil && data.Condition.HasReadOnlyValues() {
+			return m, nil, true
+		}
 		return m, m.requestDeleteCondition(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionCopyName, k):
 		return m, m.copyDetailsNameCmd(), true
@@ -132,8 +152,17 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionNew, k):
 		return m, m.openAddConditionalValue(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionMove, k):
+		if data := m.details.Data(); data != nil && data.Parameter.HasReadOnlyValues() {
+			return m, nil, true
+		}
 		return m, m.activateDetailsGroup(), true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionRename, k):
+		if data := m.details.Data(); data != nil && data.Parameter.HasReadOnlyValues() {
+			return m, nil, true
+		}
+		if data := m.details.GroupData(); data != nil && data.Group.HasReadOnlyValues() {
+			return m, nil, true
+		}
 		var cmd tea.Cmd
 		m.details, cmd = m.details.ActivateName()
 		return m, cmd, true
@@ -146,12 +175,26 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 			return m, m.copyDetailsSelectedValueCmd(), true
 		}
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionDelete, k):
+		if data := m.details.Data(); data != nil && data.Parameter.HasReadOnlyValues() {
+			if value, ok := m.details.SelectedParameterValue(); !ok || value.ReadOnly() {
+				return m, nil, true
+			}
+		}
+		if data := m.details.GroupData(); data != nil && data.Group.HasReadOnlyValues() {
+			return m, nil, true
+		}
 		return m, m.requestDeleteDetails(), true
 	}
 	return m, nil, false
 }
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionWorkspaceMenu, k) {
+		if !m.workspaceMenuAvailable() {
+			return m, nil, false
+		}
+		return m.openWorkspaceMenu(), nil, true
+	}
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionProfiles, k) {
 		next, cmd := m.openProfileSelection()
 		return next, cmd, true
@@ -185,11 +228,25 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 		(m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionDuplicate, k)):
 		return m.updateModeOrDuplicateKey()
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, k):
-		if m.active == panels.Parameters || m.active == panels.Conditions || m.active == panels.History || m.active == panels.Promote {
+		if isWorkspacePanel(m.active) || m.active == panels.Promote {
 			m.toggleWorkspaceMaximize()
 			return m, nil, true
 		}
 	case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReload, k), tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k):
+		if m.active == panels.ABTests || m.active == panels.Rollouts {
+			kind := messages.ManagedFeatureExperiment
+			panel := &m.abTests
+			if m.active == panels.Rollouts {
+				kind = messages.ManagedFeatureRollout
+				panel = &m.rollouts
+			}
+			if tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k) {
+				m.invalidateAllManagedFeatureDetails(kind)
+			} else if project, ok := panel.CurrentProject(); ok {
+				m.invalidateManagedFeatureDetails(kind, project.ProjectID)
+			}
+			return m, nil, false
+		}
 		if m.active == panels.Conditions {
 			return m.updateConditionsReloadKey(k)
 		}
@@ -250,6 +307,9 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k),
 			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusConditions, k),
 			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k),
+			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusABTests, k),
+			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPersonalizations, k),
+			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusRollouts, k),
 			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
 			// These panels are replaced by Promote while its workspace is open.
 			return m, nil, true
@@ -268,6 +328,12 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 		return m.activateWorkspacePanel(panels.Conditions)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k):
 		return m.activateWorkspacePanel(panels.History)
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusABTests, k):
+		return m.activateWorkspacePanel(panels.ABTests)
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPersonalizations, k):
+		return m.activateWorkspacePanel(panels.Personalizations)
+	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusRollouts, k):
+		return m.activateWorkspacePanel(panels.Rollouts)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote, k):
 		return m, nil, false
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
@@ -278,7 +344,11 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusLogs, k):
 		m.setActive(panels.Logs)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
-		m.setActive(m.nextTabPanel())
+		next := m.nextTabPanel()
+		if isWorkspacePanel(next) {
+			return m.activateWorkspacePanel(next)
+		}
+		m.setActive(next)
 	default:
 		return m, nil, false
 	}
@@ -384,6 +454,9 @@ func (m Model) updateDeleteKey() (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateParametersDeleteKey() (Model, tea.Cmd, bool) {
+	if m.parameters.CurrentDeleteReadOnly() {
+		return m, nil, true
+	}
 	if anchor, ok := m.parameters.CurrentConditionalValueAnchor(); ok {
 		if m.parameters.HasDraft(anchor.Project.ProjectID) {
 			return m, m.deleteConditionalValueCmd(anchor.Project, anchor.GroupKey, anchor.ParamKey, anchor.ValueLabel, false), true
@@ -399,7 +472,7 @@ func (m Model) updateParametersDeleteKey() (Model, tea.Cmd, bool) {
 		m.openDeleteGroupDialog(project, groupKey, groupLabel, false)
 		return m, nil, true
 	}
-	project, groupKey, paramKey, ok := m.parameters.CurrentParameterRef()
+	project, groupKey, paramKey, ok := m.parameters.CurrentMutableParameterRef()
 	if ok {
 		if m.parameters.HasDraft(project.ProjectID) {
 			return m, m.deleteParameterCmd(project, groupKey, paramKey, false, false), true

@@ -59,6 +59,9 @@ func appView(content string, mouseMode tea.MouseMode) tea.View {
 }
 
 func (m Model) mouseMode() tea.MouseMode {
+	if m.workspaceMenu {
+		return tea.MouseModeAllMotion
+	}
 	if m.helpPalette.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
@@ -77,13 +80,8 @@ func (m Model) mouseMode() tea.MouseMode {
 func (m Model) baseView() string {
 	popupOpen := m.popupWindowOpen()
 	projectsActive := m.active == panels.Projects && !popupOpen
-	parametersActive := (m.active == panels.Parameters || m.active == panels.History) && !popupOpen
-	conditionsActive := m.active == panels.Conditions && !popupOpen
 	logsActive := m.active == panels.Logs && !popupOpen
-	rightPanel := m.parameters.ViewWithBorder(parametersActive, parametersActive && !popupOpen)
-	if m.selectedParametersTab() == panels.Conditions {
-		rightPanel = m.conditions.ViewWithBorder(conditionsActive, conditionsActive && !popupOpen)
-	}
+	rightPanel := m.workspacePanelView(popupOpen)
 	if m.promote.WorkspaceOpen() {
 		rightPanel = m.promote.ViewWithBorder(m.active == panels.Promote && !popupOpen, m.active == panels.Promote && !popupOpen)
 	}
@@ -99,6 +97,43 @@ func (m Model) baseView() string {
 		m.logs.ViewWithBorder(logsActive, logsActive && !popupOpen),
 		m.helpView(),
 	)
+}
+
+func (m Model) workspacePanelView(popupOpen bool) string {
+	selected := m.selectedParametersTab()
+	active := m.active == selected && !popupOpen
+	previewTab, previewOpen := 0, false
+	if header, _, ok := m.workspaceBaseHeaderLayout(); ok {
+		previewTab, previewOpen = m.workspaceMenuPreview(header)
+	}
+
+	switch selected {
+	case panels.Conditions:
+		if previewOpen {
+			return m.conditions.ViewWithWorkspacePreview(active, active, previewTab)
+		}
+		return m.conditions.ViewWithBorder(active, active)
+	case panels.ABTests:
+		if previewOpen {
+			return m.abTests.ViewWithWorkspacePreview(active, active, previewTab)
+		}
+		return m.abTests.ViewWithBorder(active, active)
+	case panels.Personalizations:
+		if previewOpen {
+			return m.personalizations.ViewWithWorkspacePreview(active, active, previewTab)
+		}
+		return m.personalizations.ViewWithBorder(active, active)
+	case panels.Rollouts:
+		if previewOpen {
+			return m.rollouts.ViewWithWorkspacePreview(active, active, previewTab)
+		}
+		return m.rollouts.ViewWithBorder(active, active)
+	default:
+		if previewOpen {
+			return m.parameters.ViewWithWorkspacePreview(active, active, previewTab)
+		}
+		return m.parameters.ViewWithBorder(active, active)
+	}
 }
 
 func (m Model) popupWindowOpen() bool {
@@ -126,6 +161,7 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers := []*lipgloss.Layer{lipgloss.NewLayer(body).ID("base")}
 	layers = m.appendPromotePickerLayers(layers)
 	layers = m.appendDetailsLayers(layers)
+	layers = m.appendWorkspaceMenuLayers(layers)
 	layers = m.appendHistoryPickerLayer(layers)
 	layers = m.appendInputLayers(layers)
 	layers = m.appendDiffViewLayer(layers)
@@ -137,6 +173,33 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendHelpPaletteLayer(layers)
 	layers = m.appendProfileLayer(layers)
 	return layers
+}
+
+func (m Model) appendWorkspaceMenuLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.workspaceMenu {
+		return layers
+	}
+	header, panelX, ok := m.workspaceHeaderLayout()
+	if !ok {
+		return layers
+	}
+	geometry, ok := header.PopupGeometry()
+	if !ok {
+		return layers
+	}
+	active := m.workspaceMenuBorderActive()
+	border := styles.BorderStyle(active)
+	const z = 4
+	layers = append(layers, lipgloss.NewLayer(header.PopupViewFocused(m.workspaceCursor, active, border)).
+		ID("workspace-menu").
+		X(panelX+geometry.X).
+		Y(0).
+		Z(z))
+	return layers
+}
+
+func (m Model) workspaceMenuBorderActive() bool {
+	return isWorkspacePanel(m.active)
 }
 
 func (m Model) appendDiffViewLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
@@ -355,4 +418,8 @@ func profileBadgeView(profile string, maxWidth int) string {
 		return lipgloss.NewStyle().Bold(true).Reverse(true).Padding(0, padding).Render(profile)
 	}
 	return profileBadgeStyle.Padding(0, padding).Render(profile)
+}
+
+func (m Model) workspaceHeaderRightReserve() int {
+	return lipgloss.Width(profileBadgeView(m.profileName, m.width))
 }

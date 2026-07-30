@@ -6,6 +6,9 @@ import (
 )
 
 func (m *Model) openMoveParam() {
+	if m.parameters.CurrentSelectionReadOnly() {
+		return
+	}
 	anchor, ok := m.parameters.CurrentMoveAnchor()
 	if !ok {
 		project, _ := m.parameters.CurrentProject()

@@ -92,14 +92,16 @@ func addParameterUsages(conditions []Entry, byName map[string]int, groupKey, gro
 			continue
 		}
 		state.conditionalValues[conditionName] = struct{}{}
+		valueDisplay := parameters.SummarizeRemoteConfigDisplayValue(value, parameter.ValueType)
 		conditions[conditionIndex].Usages = append(conditions[conditionIndex].Usages, Usage{
 			GroupKey:     groupKey,
 			GroupLabel:   groupLabel,
 			ParameterKey: parameterKey,
-			Value:        parameters.FormatRemoteConfigDisplayValue(value, parameter.ValueType),
+			Value:        valueDisplay.Text,
+			Display:      valueDisplay,
 			RawValue:     value.Value,
 			ValueType:    valueType,
-			Plain:        !value.UseInAppDefault && len(value.PersonalizationValue) == 0 && len(value.RolloutValue) == 0,
+			Plain:        value.IsPlain(),
 		})
 	}
 	return state

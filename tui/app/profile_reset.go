@@ -32,6 +32,9 @@ func (m *Model) resetWorkspaceForProfile() tea.Cmd {
 	return tea.Batch(
 		m.parameters.Init(),
 		m.conditions.Init(),
+		m.abTests.Init(),
+		m.personalizations.Init(),
+		m.rollouts.Init(),
 		m.details.Init(),
 	)
 }

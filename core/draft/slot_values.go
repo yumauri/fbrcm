@@ -21,7 +21,7 @@ func setBooleanParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueL
 		target = "true"
 	}
 	updateValue := func(value firebase.RemoteConfigValue) (firebase.RemoteConfigValue, error) {
-		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if !value.IsPlain() {
 			return firebase.RemoteConfigValue{}, fmt.Errorf("boolean editor supports only plain values")
 		}
 		if strings.EqualFold(value.Value, target) {
@@ -70,7 +70,7 @@ func setNumberParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueLa
 		return fmt.Errorf("parameter not found")
 	}
 	updateValue := func(value firebase.RemoteConfigValue) (firebase.RemoteConfigValue, error) {
-		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if !value.IsPlain() {
 			return firebase.RemoteConfigValue{}, fmt.Errorf("number editor supports only plain values")
 		}
 		if strings.TrimSpace(value.Value) == nextValue {
@@ -115,7 +115,7 @@ func setStringParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueLa
 		return fmt.Errorf("parameter not found")
 	}
 	updateValue := func(value firebase.RemoteConfigValue) (firebase.RemoteConfigValue, error) {
-		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if !value.IsPlain() {
 			return firebase.RemoteConfigValue{}, fmt.Errorf("string editor supports only plain values")
 		}
 		if value.Value == nextValue {
@@ -168,7 +168,7 @@ func setJSONParamValueSlot(cfg *firebase.RemoteConfig, key, groupName, valueLabe
 		return fmt.Errorf("parameter not found")
 	}
 	updateValue := func(value firebase.RemoteConfigValue) (firebase.RemoteConfigValue, error) {
-		if value.UseInAppDefault || len(value.PersonalizationValue) > 0 || len(value.RolloutValue) > 0 {
+		if !value.IsPlain() {
 			return firebase.RemoteConfigValue{}, fmt.Errorf("json editor supports only plain values")
 		}
 		if value.Value == compact.String() {

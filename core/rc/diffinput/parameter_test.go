@@ -42,6 +42,17 @@ func TestValueKeepsInvalidJSONForRawComparison(t *testing.T) {
 	}
 }
 
+func TestValuePreservesUnknownValueOptionForComparison(t *testing.T) {
+	value := Value(firebase.RemoteConfigValue{
+		UnknownValueOption: "someFutureValue",
+		UnknownValue:       []byte(`{"id":"future-1"}`),
+	}, "STRING")
+	if value.Type != dictdiff.ValueJSON || value.CompareAs != dictdiff.CompareJSON ||
+		value.Raw != `{"someFutureValue":{"id":"future-1"}}` {
+		t.Fatalf("unknown value adapter = %#v", value)
+	}
+}
+
 func TestParameterEntityNameUsesGroupKeyWithoutDescription(t *testing.T) {
 	if got := ParameterEntityName("WEB", "banner"); got != "Property: WEB / banner" {
 		t.Fatalf("ParameterEntityName() = %q", got)

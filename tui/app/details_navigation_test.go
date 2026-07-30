@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -18,6 +19,34 @@ func TestParameterConditionalValueEnterOpensConditionDetails(t *testing.T) {
 
 	if !handled || !m.details.IsCondition() || m.details.ConditionData().Condition.Name != "staff" {
 		t.Fatalf("Enter = handled:%v condition:%v data:%#v", handled, m.details.IsCondition(), m.details.ConditionData())
+	}
+}
+
+func TestManagedConditionalValueEnterOpensConditionDetailsWithoutEnablingMutation(t *testing.T) {
+	m := detailsCrossNavigationTestModel(t)
+	data := m.details.Data()
+	data.Parameter.Values[0].Plain = false
+	data.Parameter.Values[0].Display = rcdisplay.ValueSummary{
+		Kind: rcdisplay.ValueSummaryExperiment,
+		Text: "⚗ (a/b test)",
+	}
+	m.details = m.details.SetData(data)
+
+	m, _, handled := m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	if !handled || !m.details.IsCondition() || m.details.ConditionData().Condition.Name != "staff" {
+		t.Fatalf("Enter = handled:%v condition:%v data:%#v", handled, m.details.IsCondition(), m.details.ConditionData())
+	}
+
+	m = detailsCrossNavigationTestModel(t)
+	data = m.details.Data()
+	data.Parameter.Values[0].Plain = false
+	data.Parameter.Values[0].Display = rcdisplay.ValueSummary{
+		Kind: rcdisplay.ValueSummaryExperiment,
+		Text: "⚗ (a/b test)",
+	}
+	m.details = m.details.SetData(data)
+	if cmd := m.requestDeleteDetails(); cmd != nil || m.dialog.IsOpen() {
+		t.Fatalf("managed conditional delete = cmd:%v dialog:%v, want disabled", cmd != nil, m.dialog.IsOpen())
 	}
 }
 
@@ -89,6 +118,54 @@ func TestParameterValueInAppDefaultToggleReturnsToRemoteValue(t *testing.T) {
 	value, ok := m.details.SelectedParameterValue()
 	if !handled || !ok || !value.Plain || value.UseInAppDefault || value.RawValue != "false" {
 		t.Fatalf("second d = handled:%v selected:%v value:%+v, want plain false", handled, ok, value)
+	}
+}
+
+func TestManagedNumberValueCannotOpenEditorOrToggleSource(t *testing.T) {
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	tree := &core.ParametersTree{Groups: []core.ParametersGroup{{
+		Key: "__default__", Label: "(root)",
+		Parameters: []core.ParametersEntry{{
+			Key: "funding_minimum_amount",
+			Values: []core.ParametersValue{{
+				Label: "default", Value: "◐ 10% → 20 / ◑ (no change)", ValueType: "NUMBER",
+				Display: rcdisplay.ValueSummary{
+					Kind:    rcdisplay.ValueSummaryRollout,
+					Text:    "◐ 10% → 20 / ◑ (no change)",
+					Rollout: &rcdisplay.RolloutSummary{Percentage: "10%", Value: "20"},
+				},
+			}},
+		}},
+	}}}
+	m := viewTestModel(100, 32, panels.Parameters)
+	m.parameters, _ = m.parameters.Update(messages.ProjectsSelectionChangedMsg{Projects: []core.Project{project}})
+	m.parameters, _ = m.parameters.Update(messages.ParametersLoadedMsg{Project: project, Tree: tree, Source: "cache"})
+	if !m.parameters.FocusValue(project.ProjectID, "__default__", "funding_minimum_amount", 0) {
+		t.Fatal("failed to focus rollout value")
+	}
+	m.setActive(panels.Parameters)
+
+	m, cmd, handled := m.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'e', Text: "e"}))
+	if !handled || cmd != nil || m.numberInput.IsOpen() || m.stringInput.IsOpen() {
+		t.Fatalf("edit = handled:%v cmd:%v number:%v string:%v, want disabled", handled, cmd != nil, m.numberInput.IsOpen(), m.stringInput.IsOpen())
+	}
+
+	data, ok := m.parameters.ParameterViewData(project.ProjectID, "__default__", "funding_minimum_amount", "default")
+	if !ok {
+		t.Fatal("managed parameter Details data missing")
+	}
+	m.details = m.details.SetData(data)
+	m.detailsVisible = true
+	m.setActive(panels.Details)
+	for _, key := range []tea.Key{{Code: 'e', Text: "e"}, {Code: 'd', Text: "d"}} {
+		m, cmd, handled = m.updateKeyMessage(tea.KeyPressMsg(key))
+		if !handled || cmd != nil || m.numberInput.IsOpen() {
+			t.Fatalf("%q = handled:%v cmd:%v number:%v, want disabled", key.Text, handled, cmd != nil, m.numberInput.IsOpen())
+		}
+	}
+	value, selected := m.details.SelectedParameterValue()
+	if !selected || !value.ReadOnly() || value.UseInAppDefault {
+		t.Fatalf("managed value changed after disabled actions: selected:%v value:%+v", selected, value)
 	}
 }
 

@@ -16,12 +16,22 @@ import (
 )
 
 func (m Model) ViewWithBorder(active, borderActive bool) string {
+	return m.viewWithWorkspacePreview(active, borderActive, false, 0)
+}
+
+// ViewWithWorkspacePreview renders a menu title in the workspace border row
+// without storing transient app-level menu state in the conditions model.
+func (m Model) ViewWithWorkspacePreview(active, borderActive bool, tab int) string {
+	return m.viewWithWorkspacePreview(active, borderActive, true, tab)
+}
+
+func (m Model) viewWithWorkspacePreview(active, borderActive, previewOpen bool, previewTab int) string {
 	if m.width <= 0 || m.height <= 0 {
 		return ""
 	}
 	footer := m.filter.View(max(m.width-1, 1), active, m.conditionCount())
 	body := m.bodyLines()
-	panel := renderPanel(body, footer, m.width, m.height, active, borderActive)
+	panel := renderPanel(body, footer, m.width, m.height, active, borderActive, m.headerRightReserve, previewOpen, previewTab)
 	return m.filter.OverlayExpressionError(panel, 1)
 }
 
@@ -212,11 +222,17 @@ func (m Model) conditionCount() int {
 	return count
 }
 
-func renderPanel(body, footer []string, width, height int, active, borderActive bool) string {
+func renderPanel(body, footer []string, width, height int, active, borderActive bool, headerRightReserve int, previewOpen bool, previewTab int) string {
 	borderStyle := styles.BorderStyle(borderActive)
 	contentHeight := max(height-2-len(footer), 0)
 	topPrefixWidth := min(2, width)
-	titles, titleWidth := workspaceheader.Render(width, 1, active, borderStyle)
+	var titles string
+	var titleWidth int
+	if previewOpen {
+		titles, titleWidth = workspaceheader.RenderMenuWithRightReserve(width, 1, previewTab, active, borderStyle, headerRightReserve)
+	} else {
+		titles, titleWidth = workspaceheader.RenderWithRightReserve(width, 1, active, borderStyle, headerRightReserve)
+	}
 	top := borderStyle.Render("╭"+strings.Repeat("─", max(topPrefixWidth-1, 0))) + titles + borderStyle.Render(strings.Repeat("─", max(width-topPrefixWidth-titleWidth-1, 0))+"╮")
 	lines := []string{top}
 	innerWidth := max(width-2, 0)

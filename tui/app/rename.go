@@ -21,7 +21,7 @@ func (m *Model) openRenameInput() tea.Cmd {
 }
 
 func (m *Model) openDuplicateInput() tea.Cmd {
-	project, groupKey, paramKey, ok := m.parameters.CurrentParameterRef()
+	project, groupKey, paramKey, ok := m.parameters.CurrentMutableParameterRef()
 	if !ok {
 		return nil
 	}

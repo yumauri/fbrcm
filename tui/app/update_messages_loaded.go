@@ -8,24 +8,25 @@ import (
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
-func (m *Model) updateDetailsAfterParametersLoaded(msg messages.ParametersLoadedMsg) {
+func (m *Model) updateDetailsAfterParametersLoaded(msg messages.ParametersLoadedMsg) tea.Cmd {
 	if msg.DetailsSaved {
 		m.clearTransientNewParameterAfterLoad(msg)
 		m.refreshPendingConditionUsages(msg.Tree)
 		if msg.CloseDetails {
 			m.pendingDetails = nil
 		} else if m.pendingDetails != nil {
-			m.applyPendingDetailsSelection()
+			return m.applyPendingDetailsSelection()
 		} else {
 			m.details = m.details.MarkSaved()
 		}
-		return
+		return nil
 	}
 	if m.detailsVisible && msg.SelectParamKey != "" {
 		if data, ok := m.parameters.CurrentParameterViewData(); ok && data.Project.ProjectID == msg.Project.ProjectID {
 			m.details = m.details.SetData(data)
 		}
 	}
+	return nil
 }
 
 func (m *Model) refreshPendingConditionUsages(tree *core.ParametersTree) {
@@ -84,7 +85,7 @@ func (m Model) updateDetailsEditCanceled(msg messages.DetailsEditCanceledMsg) (M
 	if m.pendingDetails != nil {
 		m.newParameter = nil
 		m.parameters.ClearTransientNewParameter()
-		m.applyPendingDetailsSelection()
+		return m, m.applyPendingDetailsSelection(), false
 	}
 	return m, nil, false
 }
@@ -112,8 +113,7 @@ func (m Model) updateDetailsInvalidDiscard(msg messages.DetailsInvalidDiscardMsg
 	if m.pendingDetails != nil {
 		m.newParameter = nil
 		m.parameters.ClearTransientNewParameter()
-		m.applyPendingDetailsSelection()
-		return m, nil, true
+		return m, m.applyPendingDetailsSelection(), true
 	}
 	if data := m.details.Data(); data != nil {
 		m.details = m.details.SetData(data)

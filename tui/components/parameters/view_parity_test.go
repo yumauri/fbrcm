@@ -1,10 +1,12 @@
 package parameters
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/yumauri/fbrcm/core"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/testutil"
@@ -30,6 +32,34 @@ func parityTree() *core.ParametersTree {
 				},
 			},
 		},
+	}
+}
+
+func TestManagedNumberValueHasNoEditorAnchor(t *testing.T) {
+	m := parityTestModel()
+	project := &m.projects[0]
+	project.tree.Groups[0].Parameters[0].Values = []core.ParametersValue{{
+		Label: "default", Value: "◐ 10% → 20 / ◑ (no change)", ValueType: "NUMBER",
+		Display: rcdisplay.ValueSummary{
+			Kind: rcdisplay.ValueSummaryRollout,
+			Text: "◐ 10% → 20 / ◑ (no change)",
+			Rollout: &rcdisplay.RolloutSummary{
+				Percentage: "10%",
+				Value:      "20",
+			},
+		},
+		RawValue: string(json.RawMessage(`{"rolloutId":"rollout-1"}`)),
+	}}
+	m.syncVisible()
+	for index, node := range m.visible {
+		if node.kind == nodeValue {
+			m.cursor = index
+			break
+		}
+	}
+
+	if _, ok := m.CurrentNumberValueAnchor(); ok {
+		t.Fatal("managed NUMBER value exposed an editor anchor")
 	}
 }
 
@@ -162,7 +192,7 @@ func TestCurrentConditionalValueAnchorFirstConditional(t *testing.T) {
 	}
 }
 
-const parametersViewSnapshot = `╭─ ²Parameters ── ³Conditions ── ⁴History ─────────────────╮
+const parametersViewSnapshot = `╭─ ²Parameters ── \≡ ── ³Conditions ───────────────────────╮
 │Demo Prod demo-prod                             v12 staled│
 │▾ (root)                                                  │
 │  feature_login                                           │

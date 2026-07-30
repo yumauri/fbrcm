@@ -6,10 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/lipgloss/v2"
+
 	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
@@ -85,8 +88,10 @@ func TestValueFormattingHelpers(t *testing.T) {
 		want      string
 	}{
 		{name: "in app default", value: firebase.RemoteConfigValue{UseInAppDefault: true}, want: "(in-app default)"},
-		{name: "personalization", value: firebase.RemoteConfigValue{PersonalizationValue: json.RawMessage(`{"x":1}`)}, want: "<personalization>"},
-		{name: "rollout", value: firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"x":1}`)}, want: "<rollout>"},
+		{name: "personalization", value: firebase.RemoteConfigValue{PersonalizationValue: json.RawMessage(`{"x":1}`)}, want: "◈ (personalization)"},
+		{name: "experiment", value: firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"x":1}`)}, want: "⚗ (a/b test)"},
+		{name: "rollout", value: firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"value":"20","percent":10}`)}, want: "◐ 10% → 20 / ◑ (no change)"},
+		{name: "unknown", value: firebase.RemoteConfigValue{UnknownValueOption: "futureValue", UnknownValue: json.RawMessage(`{}`)}, want: "(futureValue)"},
 		{name: "empty typed", value: firebase.RemoteConfigValue{}, valueType: "NUMBER", want: "(empty number)"},
 		{name: "newline", value: firebase.RemoteConfigValue{Value: "a\nb"}, want: `a\nb`},
 	}
@@ -127,6 +132,94 @@ func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
 	}
 	if style := clistyles.RemoteConfigValueStyle(label, "BOOLEAN"); style.Render(label) != want {
 		t.Fatalf("RemoteConfigValueStyle did not return the shared empty-value style")
+	}
+}
+
+func TestManagedValuesUseMutedAndRolloutFragmentStyles(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	rollout := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+		RolloutValue: json.RawMessage(`{"value":"20","percent":10}`),
+	}, "NUMBER")
+	got := renderValueLineText(ValueLine{
+		Value: rollout.Text, ValueType: "NUMBER", Display: rollout,
+	}, rollout.Text, nil)
+	for fragment, want := range map[string]string{
+		"icon":       clistyles.PanelMuted.Render("◐ "),
+		"percentage": lipgloss.NewStyle().Foreground(clistyles.PaletteGold).Render("10%"),
+		"arrow":      clistyles.PanelMuted.Render(" → "),
+		"value":      corestyles.ValueTextStyle("20", "NUMBER").Render("20"),
+		"control":    clistyles.PanelMuted.Render(" / ◑ (no change)"),
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("rollout does not use the %s style: %q", fragment, got)
+		}
+	}
+
+	for name, display := range map[string]rcdisplay.ValueSummary{
+		"personalization": core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+			PersonalizationValue: json.RawMessage(`{}`),
+		}, "STRING"),
+		"experiment": core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+			ExperimentValue: json.RawMessage(`{}`),
+		}, "STRING"),
+		"unknown": core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+			UnknownValueOption: "futureValue", UnknownValue: json.RawMessage(`{}`),
+		}, "STRING"),
+	} {
+		got := renderValueLineText(ValueLine{Value: display.Text, Display: display}, display.Text, nil)
+		if want := clistyles.PanelMuted.Render(display.Text); got != want {
+			t.Fatalf("%s render = %q, want muted %q", name, got, want)
+		}
+	}
+}
+
+func TestManagedValuesRespectNoColor(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	display := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+		RolloutValue: json.RawMessage(`{"value":"20","percent":10}`),
+	}, "NUMBER")
+	got := renderValueLineText(ValueLine{
+		Value: display.Text, ValueType: "NUMBER", Display: display,
+	}, display.Text, nil)
+	if got != "◐ 10% → 20 / ◑ (no change)" {
+		t.Fatalf("no-color rollout = %q", got)
+	}
+}
+
+func TestManagedRolloutTableRespectsNaturalAndNarrowWidths(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	display := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+		RolloutValue: json.RawMessage(`{"value":"20","percent":10}`),
+	}, "NUMBER")
+	rows := []Row{{
+		Group: "onboarding",
+		Key:   "funding_minimum_amount",
+		Type:  "NUMBER",
+		ValueLines: []ValueLine{{
+			Label: "android_beta_10", Value: display.Text, ValueType: "NUMBER", Display: display,
+		}},
+	}}
+
+	t.Setenv("COLUMNS", "120")
+	natural := Render(rows, nil, true, false)
+	if !strings.Contains(natural, display.Text) {
+		t.Fatalf("natural rollout table missing complete summary:\n%s", natural)
+	}
+	for index, line := range strings.Split(natural, "\n") {
+		if width := lipgloss.Width(line); width > 120 {
+			t.Fatalf("natural line %d width = %d, want at most 120:\n%s", index, width, natural)
+		}
+	}
+
+	t.Setenv("COLUMNS", "24")
+	narrow := Render(rows, nil, true, false)
+	for index, line := range strings.Split(narrow, "\n") {
+		if width := lipgloss.Width(line); width > 24 {
+			t.Fatalf("narrow line %d width = %d, want at most 24:\n%s", index, width, narrow)
+		}
+	}
+	if !strings.Contains(narrow, "…") {
+		t.Fatalf("narrow rollout table does not crop with an ellipsis:\n%s", narrow)
 	}
 }
 

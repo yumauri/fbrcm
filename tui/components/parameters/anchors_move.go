@@ -20,6 +20,10 @@ func (m Model) CurrentMoveAnchor() (MoveAnchor, bool) {
 		if node.transient {
 			return MoveAnchor{}, false
 		}
+		group := m.groupByKey(node.projectID, node.groupKey)
+		if group == nil || group.HasReadOnlyValues() {
+			return MoveAnchor{}, false
+		}
 		screenLine := m.screenLineForOffset(m.cursor, m.offset)
 		if screenLine < 0 {
 			return MoveAnchor{}, false
@@ -54,6 +58,10 @@ func (m Model) CurrentMoveAnchor() (MoveAnchor, bool) {
 	case nodeParameter, nodeValue:
 		_, groupKey, paramKey, ok := m.currentParameterRef()
 		if !ok {
+			return MoveAnchor{}, false
+		}
+		param := m.parameterByKey(node.projectID, groupKey, paramKey)
+		if param == nil || param.HasReadOnlyValues() {
 			return MoveAnchor{}, false
 		}
 		paramIndex := m.currentParameterNodeIndex()

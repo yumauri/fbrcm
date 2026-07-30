@@ -21,6 +21,11 @@ func TestShortHelpDescriptions(t *testing.T) {
 			want: []string{"quit", "help", "close filter", "apply", "filter"},
 		},
 		{
+			name: "A/B tests keyboard capture",
+			keys: helpKeyMap{active: panels.ABTests, keyboardCapture: true},
+			want: []string{"quit", "help", "close filter", "apply", "filter"},
+		},
+		{
 			name: "projects expanded",
 			keys: helpKeyMap{active: panels.Projects, canBindAuth: true},
 			want: []string{"quit", "help", "collapse", "select", "mark", "templates", "make primary", "delete", "bind auth", "open", "update", "filter"},
@@ -44,6 +49,16 @@ func TestShortHelpDescriptions(t *testing.T) {
 			name: "history",
 			keys: helpKeyMap{active: panels.History},
 			want: []string{"quit", "help", "diff", "changes only", "both versions", "choose versions", "maximize", "toggle", "copy", "filter"},
+		},
+		{
+			name: "A/B tests",
+			keys: helpKeyMap{active: panels.ABTests},
+			want: []string{"quit", "help", "maximize", "details", "update", "filter"},
+		},
+		{
+			name: "rollouts",
+			keys: helpKeyMap{active: panels.Rollouts},
+			want: []string{"quit", "help", "maximize", "details", "update"},
 		},
 		{
 			name: "condition move",
@@ -83,6 +98,14 @@ func TestShortHelpDescriptions(t *testing.T) {
 				t.Fatalf("descriptions = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestABTestsFilterHelpOmitsExpressionKey(t *testing.T) {
+	bindings := helpKeyMap{active: panels.ABTests, keyboardCapture: true}.ShortHelp()
+	filter := bindings[len(bindings)-1]
+	if slices.Contains(filter.Keys(), ":") {
+		t.Fatalf("A/B Tests filter help keys = %v, should omit expression filtering", filter.Keys())
 	}
 }
 

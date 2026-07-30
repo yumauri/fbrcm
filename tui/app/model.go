@@ -14,6 +14,7 @@ import (
 	"github.com/yumauri/fbrcm/tui/components/diffview"
 	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
 	"github.com/yumauri/fbrcm/tui/components/logs"
+	"github.com/yumauri/fbrcm/tui/components/managedfeatures"
 	moveparam "github.com/yumauri/fbrcm/tui/components/moveparam"
 	numberinput "github.com/yumauri/fbrcm/tui/components/numberinput"
 	"github.com/yumauri/fbrcm/tui/components/parameters"
@@ -33,6 +34,9 @@ type Model struct {
 	projects         projects.Model
 	parameters       parameters.Model
 	conditions       conditions.Model
+	abTests          managedfeatures.Model
+	personalizations managedfeatures.Model
+	rollouts         managedfeatures.Model
 	promote          promotecmp.Model
 	details          details.Model
 	logs             logs.Model
@@ -48,6 +52,8 @@ type Model struct {
 	parametersTab    panels.ID
 	prevTop          panels.ID
 	capture          panels.ID
+	workspaceMenu    bool
+	workspaceCursor  int
 	detailsVisible   bool
 	dialog           dialogcmp.Model
 	oauthDialog      dialogcmp.Model
@@ -81,6 +87,10 @@ type Model struct {
 	oauthSession     *oauthAuthorizationSession
 	profileName      string
 
+	managedFeatureDetails           map[managedFeatureDetailsKey]managedFeatureDetailsEntry
+	managedFeatureDetailLoads       map[managedFeatureDetailsKey]uint64
+	managedFeatureDetailGenerations map[managedFeatureDetailsScope]uint64
+
 	width  int
 	height int
 }
@@ -89,6 +99,7 @@ type pendingDetailsSelection struct {
 	data          *messages.ParameterViewData
 	groupData     *messages.GroupViewData
 	conditionData *messages.ConditionViewData
+	managedData   *messages.ManagedFeatureViewData
 	activate      bool
 }
 
@@ -150,34 +161,37 @@ func newModel(svc *core.Core, oauthEvents chan core.OAuthAuthorizationEvent) Mod
 		})
 	}
 	m := Model{
-		svc:           svc,
-		projects:      projects.New(svc),
-		parameters:    parameters.New(svc),
-		conditions:    conditions.New(svc),
-		promote:       promotecmp.New(svc),
-		dialog:        dialogcmp.New(),
-		oauthDialog:   dialogcmp.New(),
-		diffView:      diffview.New(),
-		jsonInput:     jsoninput.New(),
-		boolPicker:    boolpicker.New(),
-		numberInput:   numberinput.New(),
-		stringInput:   stringinput.New(),
-		moveParam:     moveparam.New(),
-		authPicker:    authpicker.New(),
-		renameInput:   renameinput.New(),
-		projectIO:     projectio.New(),
-		details:       details.New(),
-		logs:          logs.New(svc),
-		logsHeight:    defaultLogsPanelHeight,
-		help:          newHelpModel(),
-		helpPalette:   newHelpPaletteModel(),
-		setup:         setup.New(svc),
-		authCount:     authCount,
-		oauthEvents:   oauthEvents,
-		profileName:   config.GetActiveProfileName(),
-		active:        panels.Projects,
-		parametersTab: panels.Parameters,
-		prevTop:       panels.Projects,
+		svc:              svc,
+		projects:         projects.New(svc),
+		parameters:       parameters.New(svc),
+		conditions:       conditions.New(svc),
+		abTests:          managedfeatures.New(svc, messages.ManagedFeatureExperiment),
+		personalizations: managedfeatures.New(svc, messages.ManagedFeaturePersonalization),
+		rollouts:         managedfeatures.New(svc, messages.ManagedFeatureRollout),
+		promote:          promotecmp.New(svc),
+		dialog:           dialogcmp.New(),
+		oauthDialog:      dialogcmp.New(),
+		diffView:         diffview.New(),
+		jsonInput:        jsoninput.New(),
+		boolPicker:       boolpicker.New(),
+		numberInput:      numberinput.New(),
+		stringInput:      stringinput.New(),
+		moveParam:        moveparam.New(),
+		authPicker:       authpicker.New(),
+		renameInput:      renameinput.New(),
+		projectIO:        projectio.New(),
+		details:          details.New(),
+		logs:             logs.New(svc),
+		logsHeight:       defaultLogsPanelHeight,
+		help:             newHelpModel(),
+		helpPalette:      newHelpPaletteModel(),
+		setup:            setup.New(svc),
+		authCount:        authCount,
+		oauthEvents:      oauthEvents,
+		profileName:      config.GetActiveProfileName(),
+		active:           panels.Projects,
+		parametersTab:    panels.Parameters,
+		prevTop:          panels.Projects,
 	}
 
 	m.projects = m.projects.SetActive(true)
@@ -189,6 +203,9 @@ func (m Model) Init() tea.Cmd {
 		m.setup.Init(),
 		m.parameters.Init(),
 		m.conditions.Init(),
+		m.abTests.Init(),
+		m.personalizations.Init(),
+		m.rollouts.Init(),
 		m.details.Init(),
 		m.logs.Init(),
 		m.waitOAuthAuthorizationEventCmd(),

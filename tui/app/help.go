@@ -15,15 +15,16 @@ import (
 const helpLineHeight = 1
 
 type helpKeyMap struct {
-	active          panels.ID
-	keyboardCapture bool
-	projectsMode    projectsPanelMode
-	logsMode        logsPanelMode
-	detailsVisible  bool
-	conditionDetail bool
-	groupDetail     bool
-	conditionMove   bool
-	canBindAuth     bool
+	active               panels.ID
+	keyboardCapture      bool
+	projectsMode         projectsPanelMode
+	logsMode             logsPanelMode
+	detailsVisible       bool
+	conditionDetail      bool
+	groupDetail          bool
+	managedFeatureDetail bool
+	conditionMove        bool
+	canBindAuth          bool
 }
 
 func newHelpModel() help.Model {
@@ -46,7 +47,7 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 	}
 
 	if k.keyboardCapture {
-		return append(common, captureHelp()...)
+		return append(common, captureHelp(k.active == panels.ABTests)...)
 	}
 
 	switch k.active {
@@ -58,11 +59,18 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 		return append(common, conditionsHelp()...)
 	case panels.History:
 		return append(common, historyHelp()...)
+	case panels.ABTests:
+		return append(common, managedFeaturesHelp(true)...)
+	case panels.Personalizations, panels.Rollouts:
+		return append(common, managedFeaturesHelp(false)...)
 	case panels.Promote:
 		return append(common, promoteHelp()...)
 	case panels.Logs:
 		return append(common, k.logsHelp()...)
 	case panels.Details:
+		if k.managedFeatureDetail {
+			return append(common, readOnlyDetailsHelp()...)
+		}
 		if k.conditionDetail {
 			return append(common, conditionDetailsHelp()...)
 		}
@@ -72,6 +80,28 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 		return append(common, detailsHelp()...)
 	default:
 		return common
+	}
+}
+
+func managedFeaturesHelp(withFilter bool) []key.Binding {
+	bindings := []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockParameters, tuiconfig.ActionToggleMaximize, "maximize"),
+		tuiconfig.Binding(tuiconfig.BlockManagedFeatures, tuiconfig.ActionOpenDetails, "details"),
+		compoundBinding(
+			ref(tuiconfig.BlockParameters, tuiconfig.ActionReload),
+			ref(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll),
+			"update",
+		),
+	}
+	if withFilter {
+		bindings = append(bindings, textFilterBinding())
+	}
+	return bindings
+}
+
+func readOnlyDetailsHelp() []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockDetails, tuiconfig.ActionClose, "close"),
 	}
 }
 
@@ -152,11 +182,15 @@ func historyHelp() []key.Binding {
 	}
 }
 
-func captureHelp() []key.Binding {
+func captureHelp(textOnly bool) []key.Binding {
+	filter := filterBinding()
+	if textOnly {
+		filter = textFilterBinding()
+	}
 	return []key.Binding{
 		tuiconfig.Binding(tuiconfig.BlockFilter, tuiconfig.ActionFilterCancel, "close filter"),
 		tuiconfig.Binding(tuiconfig.BlockFilter, tuiconfig.ActionFilterApply, "apply"),
-		filterBinding(),
+		filter,
 	}
 }
 
@@ -237,6 +271,15 @@ func filterBinding() key.Binding {
 	)
 }
 
+func textFilterBinding() key.Binding {
+	return multiBinding("filter",
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterFuzzy),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterStartsWith),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterIncludes),
+		ref(tuiconfig.BlockFilter, tuiconfig.ActionFilterExact),
+	)
+}
+
 type helpRef struct {
 	block  tuiconfig.Block
 	action tuiconfig.Action
@@ -296,15 +339,16 @@ func (m Model) helpView() string {
 	h := m.help
 	h.SetWidth(m.width)
 	line := h.View(helpKeyMap{
-		active:          m.active,
-		keyboardCapture: m.keyboardCaptured(),
-		projectsMode:    m.projectsMode,
-		logsMode:        m.logsMode,
-		detailsVisible:  m.detailsVisible,
-		conditionDetail: m.details.IsCondition(),
-		groupDetail:     m.details.IsGroup(),
-		conditionMove:   m.conditions.MoveActive(),
-		canBindAuth:     m.authCount > 1,
+		active:               m.active,
+		keyboardCapture:      m.keyboardCaptured(),
+		projectsMode:         m.projectsMode,
+		logsMode:             m.logsMode,
+		detailsVisible:       m.detailsVisible,
+		conditionDetail:      m.details.IsCondition(),
+		groupDetail:          m.details.IsGroup(),
+		managedFeatureDetail: m.details.IsManagedFeature(),
+		conditionMove:        m.conditions.MoveActive(),
+		canBindAuth:          m.authCount > 1,
 	})
 
 	return lipgloss.NewStyle().
