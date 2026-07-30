@@ -45,6 +45,7 @@ func New(svc *core.Core) *cobra.Command {
 	shared.AddDryRunFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and duplicate without confirmation")
+	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
 	return cmd
 }
 
@@ -129,7 +130,9 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, "duplicate", "📋", plan)
 	}
 	corelog.For("duplicate").Info("total", "projects", totals.ModifiedProjects, "parameters", totals.ChangedParams)
-	sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "📋")
+	if writeErr := sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "📋"); writeErr != nil {
+		return writeErr
+	}
 	return err
 }
 

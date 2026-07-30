@@ -7,11 +7,15 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 )
 
 type fakeRemoteConfigPublisher struct {
 	validateErr   error
 	publishErr    error
+	publishRaw    json.RawMessage
 	validated     bool
 	published     bool
 	validateCalls int
@@ -36,7 +40,7 @@ func (f *fakeRemoteConfigPublisher) PublishRemoteConfigWithETag(_ context.Contex
 	f.projectID = projectID
 	f.raw = raw
 	f.etag = etag
-	return nil, "", f.publishErr
+	return f.publishRaw, "", f.publishErr
 }
 
 func TestValidateAndPublishRemoteConfigSuccess(t *testing.T) {
@@ -51,6 +55,44 @@ func TestValidateAndPublishRemoteConfigSuccess(t *testing.T) {
 	}
 	if !publisher.validated || !publisher.published {
 		t.Fatalf("validated=%v published=%v, want both true", publisher.validated, publisher.published)
+	}
+}
+
+func TestPublishProjectConfigMutationResultCapturesPublishedVersion(t *testing.T) {
+	publisher := &fakeRemoteConfigPublisher{
+		publishRaw: json.RawMessage(`{"version":{"versionNumber":"42"}}`),
+	}
+	projectCfg := &ProjectConfig{
+		Project: core.Project{ProjectID: "demo"},
+		Cache:   &core.ParametersCache{ETag: "etag-41"},
+		Config:  &firebase.RemoteConfig{},
+	}
+	result, err := PublishProjectConfigMutationResult(context.Background(), publisher, projectCfg, "update", nil, func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+		return 1, current, nil
+	})
+	if err != nil {
+		t.Fatalf("PublishProjectConfigMutationResult = %v", err)
+	}
+	if result.ChangedCount != 1 || result.Retry || result.FailureStage != "" || result.PublishedVersion != "42" {
+		t.Fatalf("result = %+v, want changed count 1 and published version 42", result)
+	}
+}
+
+func TestPublishProjectConfigMutationResultIdentifiesValidationConflictStage(t *testing.T) {
+	publisher := &fakeRemoteConfigPublisher{validateErr: errors.New("returned 412")}
+	projectCfg := &ProjectConfig{
+		Project: core.Project{ProjectID: "demo"},
+		Cache:   &core.ParametersCache{ETag: "etag-41"},
+		Config:  &firebase.RemoteConfig{},
+	}
+	result, err := PublishProjectConfigMutationResult(context.Background(), publisher, projectCfg, "update", nil, func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+		return 1, current, nil
+	})
+	if err != nil {
+		t.Fatalf("PublishProjectConfigMutationResult = %v", err)
+	}
+	if !result.Retry || result.FailureStage != "validation" {
+		t.Fatalf("result = %+v, want retryable validation conflict", result)
 	}
 }
 

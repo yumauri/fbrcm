@@ -2,6 +2,7 @@ package rc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -35,11 +36,14 @@ const (
 
 // RemoteMutationResult records one selected project's final outcome.
 type RemoteMutationResult struct {
-	Project      core.Project
-	Status       RemoteMutationStatus
-	ChangedCount int
-	Published    bool
-	Err          error
+	Project          core.Project
+	Status           RemoteMutationStatus
+	ChangedCount     int
+	PreviousVersion  string
+	PublishedVersion string
+	ErrorStage       string
+	Published        bool
+	Err              error
 }
 
 // RemoteMutationTotals contains aggregate counts and ordered project results.
@@ -91,6 +95,9 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 					cfg.Config = draftCfg
 				}
 			}
+		}
+		if cfg != nil && cfg.Config != nil {
+			result.PreviousVersion = cfg.Config.Version.VersionNumber
 		}
 		var mutate RemoteConfigMutation
 		if err == nil {
@@ -160,6 +167,9 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 		if err == nil {
 			cfg, err = RevalidateProjectConfig(ctx, svc, project)
 		}
+		if cfg != nil && cfg.Config != nil {
+			result.PreviousVersion = cfg.Config.Version.VersionNumber
+		}
 		var mutate RemoteConfigMutation
 		if err == nil {
 			mutate, err = plan(project, cfg)
@@ -170,12 +180,15 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 			totals.Results = append(totals.Results, result)
 			continue
 		}
-		var retry bool
+		var publishResult RemoteConfigMutationPublishResult
 		if err == nil {
-			result.ChangedCount, retry, err = PublishProjectConfigMutation(ctx, svc, cfg, operation, nil, mutate)
+			publishResult, err = PublishProjectConfigMutationResult(ctx, svc, cfg, operation, nil, mutate)
+			result.ChangedCount = publishResult.ChangedCount
+			result.PublishedVersion = publishResult.PublishedVersion
+			result.ErrorStage = publishResult.FailureStage
 		}
 		switch {
-		case retry:
+		case publishResult.Retry:
 			result.Status = RemoteMutationConflict
 			result.Err = fmt.Errorf("remote config changed during %s; rerun the command to review a fresh candidate", operation)
 		case err != nil:
@@ -211,17 +224,97 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 	return totals, mutationBatchError(totals)
 }
 
+// RemoteMutationJSONError is the stable structured failure payload for a
+// direct Remote Config mutation result.
+type RemoteMutationJSONError struct {
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
+}
+
+// RemoteMutationJSONResult is the stable per-target automation contract shared
+// by add, update, delete, duplicate, condition, and group mutations.
+type RemoteMutationJSONResult struct {
+	Target           string                   `json:"target"`
+	Status           RemoteMutationStatus     `json:"status"`
+	ChangedItemCount int                      `json:"changed_item_count"`
+	PreviousVersion  *string                  `json:"previous_version"`
+	PublishedVersion *string                  `json:"published_version"`
+	Draft            bool                     `json:"draft"`
+	DryRun           bool                     `json:"dry_run"`
+	Error            *RemoteMutationJSONError `json:"error"`
+	RetrySelector    *string                  `json:"retry_selector"`
+}
+
 // WriteRemoteMutationResults renders a collected batch after command logging
 // has finished, keeping outcomes together at the end of the run.
-func WriteRemoteMutationResults(cmd *cobra.Command, totals RemoteMutationTotals, operation, publishedEmoji string) {
+func WriteRemoteMutationResults(cmd *cobra.Command, totals RemoteMutationTotals, operation, publishedEmoji string) error {
+	jsonOut, _ := cmd.Flags().GetBool("json")
+	if jsonOut {
+		draft, _ := cmd.Flags().GetBool("draft")
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		return writeRemoteMutationJSON(cmd, totals, draft, dryRun)
+	}
 	if len(totals.Results) == 0 {
-		return
+		return nil
 	}
 	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Results:")
 	for _, result := range totals.Results {
 		writeMutationResult(cmd, result, publishedEmoji)
 	}
 	writeMutationRecoveryHints(cmd, totals, operation)
+	return nil
+}
+
+func writeRemoteMutationJSON(cmd *cobra.Command, totals RemoteMutationTotals, draft, dryRun bool) error {
+	results := make([]RemoteMutationJSONResult, 0, len(totals.Results))
+	for _, result := range totals.Results {
+		item := RemoteMutationJSONResult{
+			Target:           result.Project.ProjectID,
+			Status:           result.Status,
+			ChangedItemCount: result.ChangedCount,
+			Draft:            draft,
+			DryRun:           dryRun,
+		}
+		if result.PreviousVersion != "" {
+			item.PreviousVersion = &result.PreviousVersion
+		}
+		if result.PublishedVersion != "" {
+			item.PublishedVersion = &result.PublishedVersion
+		}
+		if result.Err != nil {
+			item.Error = &RemoteMutationJSONError{
+				Stage:   remoteMutationErrorStage(result),
+				Message: result.Err.Error(),
+			}
+		}
+		if result.Err != nil && !result.Published {
+			if selector, err := rctarget.ExactFilter(result.Project.ProjectID); err == nil {
+				item.RetrySelector = &selector
+			}
+		}
+		results = append(results, item)
+	}
+	encoder := json.NewEncoder(cmd.OutOrStdout())
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(results)
+}
+
+func remoteMutationErrorStage(result RemoteMutationResult) string {
+	if result.ErrorStage != "" {
+		return result.ErrorStage
+	}
+	switch result.Status {
+	case RemoteMutationValidationFailed:
+		return "validation"
+	case RemoteMutationPublishFailed, RemoteMutationConflict:
+		return "publication"
+	case RemoteMutationPublishedCacheFailed:
+		return "cache"
+	case RemoteMutationDraftFailed:
+		return "draft"
+	default:
+		return "preparation"
+	}
 }
 
 func writeMutationResult(cmd *cobra.Command, result RemoteMutationResult, publishedEmoji string) {

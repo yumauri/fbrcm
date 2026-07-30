@@ -123,8 +123,9 @@ func TestAddParameterSupportsInAppDefault(t *testing.T) {
 func TestReadAddOptionsIncludesYes(t *testing.T) {
 	cmd := New(nil)
 	for flag, value := range map[string]string{
-		"boolean": "true",
-		"yes":     "true",
+		"type":  "boolean",
+		"value": "true",
+		"yes":   "true",
 	} {
 		if err := cmd.Flags().Set(flag, value); err != nil {
 			t.Fatal(err)

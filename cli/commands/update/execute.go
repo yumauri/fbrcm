@@ -18,7 +18,9 @@ func runUpdateRemote(cmd *cobra.Command, svc *core.Core, opts updateOptions) err
 		return len(updated), finalCfg, nil
 	})
 	logUpdateTotals("remote", updateTotals{modifiedProjects: totals.ModifiedProjects, updatedParams: totals.ChangedParams})
-	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "✏️")
+	if writeErr := rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "✏️"); writeErr != nil {
+		return writeErr
+	}
 	return err
 }
 

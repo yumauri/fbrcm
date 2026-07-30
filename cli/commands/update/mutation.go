@@ -54,9 +54,7 @@ func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec
 			}
 			param.ConditionalValues[condition] = nextValue
 		}
-		if !spec.value.useInAppDefault {
-			param.ValueType = spec.value.valueType
-		}
+		param.ValueType = spec.value.valueType
 	}
 	if spec.descriptionChanged {
 		param.Description = spec.description

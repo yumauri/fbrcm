@@ -3,6 +3,7 @@ package rc
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -56,7 +57,9 @@ func TestRunRemotePublishLoopPublishesMatchedProjects(t *testing.T) {
 	if out.Len() != 0 {
 		t.Fatalf("stdout before final rendering = %q, want buffered results", out.String())
 	}
-	WriteRemoteMutationResults(cmd, totals, "publish", "✅")
+	if err := WriteRemoteMutationResults(cmd, totals, "publish", "✅"); err != nil {
+		t.Fatalf("WriteRemoteMutationResults = %v", err)
+	}
 	if !strings.Contains(out.String(), "published: demo") {
 		t.Fatalf("stdout = %q, want publish line", out.String())
 	}
@@ -160,7 +163,9 @@ func TestRunRemotePublishLoopContinuesAfterProjectFailure(t *testing.T) {
 		t.Fatalf("stderr before final rendering = %q, want buffered recovery hints", errOut.String())
 	}
 	_, _ = out.WriteString("INFO total\n")
-	WriteRemoteMutationResults(cmd, totals, "publish", "✅")
+	if err := WriteRemoteMutationResults(cmd, totals, "publish", "✅"); err != nil {
+		t.Fatalf("WriteRemoteMutationResults = %v", err)
+	}
 	if !strings.Contains(errOut.String(), "-p '=project-b'") || !strings.Contains(errOut.String(), "-p '=project-d'") {
 		t.Fatalf("stderr = %q, want exact retry filters", errOut.String())
 	}
@@ -174,16 +179,86 @@ func TestWriteRemoteMutationResultsFormatsServerRetryFilter(t *testing.T) {
 	var out, errOut bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
-	WriteRemoteMutationResults(cmd, RemoteMutationTotals{Results: []RemoteMutationResult{{
+	if err := WriteRemoteMutationResults(cmd, RemoteMutationTotals{Results: []RemoteMutationResult{{
 		Project: core.Project{ProjectID: "server@demo"},
 		Status:  RemoteMutationConflict,
 		Err:     errors.New("conflict"),
-	}}}, "publish", "✅")
+	}}}, "publish", "✅"); err != nil {
+		t.Fatalf("WriteRemoteMutationResults = %v", err)
+	}
 	if !strings.Contains(errOut.String(), "-p 'server@=demo'") {
 		t.Fatalf("stderr = %q", errOut.String())
 	}
 	if strings.Contains(errOut.String(), "-p '=server@demo'") {
 		t.Fatalf("stderr uses invalid target filter = %q", errOut.String())
+	}
+}
+
+func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.Flags().Bool("json", false, "")
+	cmd.Flags().Bool("draft", false, "")
+	cmd.Flags().Bool("dry-run", false, "")
+	if err := cmd.Flags().Set("json", "true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("dry-run", "true"); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&errOut)
+	publishedVersion := "42"
+	totals := RemoteMutationTotals{Results: []RemoteMutationResult{
+		{
+			Project:          core.Project{ProjectID: "demo"},
+			Status:           RemoteMutationWouldPublish,
+			ChangedCount:     2,
+			PreviousVersion:  "41",
+			PublishedVersion: "",
+		},
+		{
+			Project:         core.Project{ProjectID: "server@demo"},
+			Status:          RemoteMutationValidationFailed,
+			ChangedCount:    1,
+			PreviousVersion: "41",
+			Err:             errors.New("invalid candidate"),
+		},
+		{
+			Project:          core.Project{ProjectID: "published"},
+			Status:           RemoteMutationPublished,
+			ChangedCount:     1,
+			PreviousVersion:  "41",
+			PublishedVersion: publishedVersion,
+			Published:        true,
+		},
+	}}
+	if err := WriteRemoteMutationResults(cmd, totals, "publish", "✅"); err != nil {
+		t.Fatalf("WriteRemoteMutationResults = %v", err)
+	}
+	var got []RemoteMutationJSONResult
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatalf("decode JSON %q: %v", out.String(), err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("result count = %d, want 3", len(got))
+	}
+	if got[0].Target != "demo" || got[0].Status != RemoteMutationWouldPublish || got[0].ChangedItemCount != 2 ||
+		got[0].PreviousVersion == nil || *got[0].PreviousVersion != "41" || got[0].PublishedVersion != nil || got[0].Draft || !got[0].DryRun ||
+		got[0].Error != nil || got[0].RetrySelector != nil {
+		t.Fatalf("dry-run result = %+v", got[0])
+	}
+	if got[1].Error == nil || got[1].Error.Stage != "validation" || got[1].Error.Message != "invalid candidate" {
+		t.Fatalf("validation error = %+v", got[1].Error)
+	}
+	if got[1].RetrySelector == nil || *got[1].RetrySelector != "server@=demo" {
+		t.Fatalf("retry selector = %v, want server@=demo", got[1].RetrySelector)
+	}
+	if got[2].PublishedVersion == nil || *got[2].PublishedVersion != publishedVersion {
+		t.Fatalf("published version = %v, want %s", got[2].PublishedVersion, publishedVersion)
+	}
+	if errOut.Len() != 0 {
+		t.Fatalf("JSON stderr = %q, want empty", errOut.String())
 	}
 }
 

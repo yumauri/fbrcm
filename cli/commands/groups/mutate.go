@@ -98,6 +98,7 @@ func addMutationFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddDryRunFlag(cmd)
 	shared.AddYesFlag(cmd, "Print diff and apply without confirmation")
+	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
 }
 
 func readMutationOptions(cmd *cobra.Command) mutationOptions {
@@ -166,6 +167,8 @@ func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, 
 	} else {
 		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
 	}
-	sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], emoji)
+	if writeErr := sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], emoji); writeErr != nil {
+		return writeErr
+	}
 	return err
 }

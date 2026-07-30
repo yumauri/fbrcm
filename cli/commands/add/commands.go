@@ -62,13 +62,11 @@ func addFlags(cmd *cobra.Command) {
 	shared.AddYesFlag(cmd, "Print diff and add without confirmation")
 	cmd.Flags().String("description", "", "Parameter description")
 	cmd.Flags().String("group", "", "Target parameter group")
-	cmd.Flags().String("boolean", "", "Boolean parameter value: true or false")
-	cmd.Flags().String("number", "", "Number parameter value")
-	cmd.Flags().String("string", "", "String parameter value")
-	cmd.Flags().String("json", "", "JSON parameter value")
+	cmd.Flags().String("type", "", "Parameter type: string, boolean, number, or json")
+	cmd.Flags().String("value", "", "Parameter value interpreted according to --type")
 	cmd.Flags().Bool("use-in-app-default", false, "Use the application's default value")
-	cmd.Flags().String("type", "", "Parameter type for --use-in-app-default: string, boolean, number, or json")
-	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json", "use-in-app-default")
+	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
+	cmd.MarkFlagsMutuallyExclusive("value", "use-in-app-default")
 }
 
 func runAddCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -143,24 +141,7 @@ func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
 	if err != nil {
 		return addValueSpec{}, err
 	}
-	typeName, err := cmd.Flags().GetString("type")
-	if err != nil {
-		return addValueSpec{}, err
-	}
-	if value.UseInAppDefault {
-		if !cmd.Flags().Changed("type") {
-			return addValueSpec{}, fmt.Errorf("--type is required with --use-in-app-default")
-		}
-		valueType, err := shared.ParseValueType(typeName)
-		if err != nil {
-			return addValueSpec{}, err
-		}
-		return addValueSpec{valueType: valueType, useInAppDefault: true}, nil
-	}
-	if cmd.Flags().Changed("type") {
-		return addValueSpec{}, fmt.Errorf("--type requires --use-in-app-default")
-	}
-	return addValueSpec{value: value.Value, valueType: value.Type}, nil
+	return addValueSpec{value: value.Value, valueType: value.Type, useInAppDefault: value.UseInAppDefault}, nil
 }
 
 func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
@@ -206,7 +187,9 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 		totals, err = rc.RunRemotePublishLoop(ctx, cmd, svc, projects, "add", "➕", plan)
 	}
 	logAddTotals("remote", addTotals{modifiedProjects: totals.ModifiedProjects, addedParams: totals.ChangedParams})
-	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "➕")
+	if writeErr := rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "➕"); writeErr != nil {
+		return writeErr
+	}
 	return err
 }
 

@@ -107,15 +107,29 @@ fbrcm projects list --update
 fbrcm get feature_enabled --project '^prod'
 
 # Preview a change without writing it.
-fbrcm update feature_enabled --project '=my-app' --boolean true --dry-run
+fbrcm update feature_enabled --project '=my-app' --type boolean --value true --dry-run
 
 # Stage the same change in a local draft.
-fbrcm update feature_enabled --project '=my-app' --boolean true --draft
+fbrcm update feature_enabled --project '=my-app' --type boolean --value true --draft
 
 # Review and publish the draft.
 fbrcm draft diff my-app --against current
 fbrcm draft publish my-app
 ```
+
+Direct Remote Config mutations support a shared automation contract. Add
+`--json` to `add`, `update`, `delete`, `duplicate`, condition mutations, or
+group mutations to receive one structured result per target, including changed
+item count, version transition, draft and dry-run state, structured errors, and
+an exact retry selector when retrying is safe:
+
+```sh
+fbrcm update feature_enabled --project '=my-app' --type boolean --value true --yes --json
+```
+
+Use `--type json --value '<json>'` when the parameter value is JSON. See the
+[CLI mutation JSON contract](docs/CLI.md#mutation-json-automation-contract) for
+the complete schema.
 
 Project and parameter filters support fuzzy, prefix, contains, and exact modes.
 Expression filters can also inspect typed values and complete Remote Config

@@ -222,7 +222,7 @@ Examples:
 fbrcm projects list --expr 'project_id startsWith "test-"'
 fbrcm projects list --expr '"some_flag" in keys(parameters)'
 fbrcm projects list --expr 'parameters["some_flag"].value == true'
-fbrcm add new_param --boolean true --expr 'parameters["old_param"].value == true'
+fbrcm add new_param --type boolean --value true --expr 'parameters["old_param"].value == true'
 ```
 
 ## Value Typing
@@ -409,13 +409,13 @@ fbrcm delete --expr 'is_string(value) && is_empty(default) && all(values(conditi
 Update only params whose default is false:
 
 ```sh
-fbrcm update --boolean true --expr 'default == false' --dry-run
+fbrcm update --type boolean --value true --expr 'default == false' --dry-run
 ```
 
 Update a specific string parameter only where it contains a value:
 
 ```sh
-fbrcm update some_text --string "new value" --expr 'value contains "old"' --dry-run
+fbrcm update some_text --type string --value "new value" --expr 'value contains "old"' --dry-run
 ```
 
 Import only JSON params whose imported value is enabled:
@@ -433,7 +433,7 @@ fbrcm projects list --expr '"some_flag" in keys(parameters) && parameters["some_
 Add a parameter only to projects with a group:
 
 ```sh
-fbrcm add new_flag --boolean false --expr '"group_a" in groups' --dry-run
+fbrcm add new_flag --type boolean --value false --expr '"group_a" in groups' --dry-run
 ```
 
 Find parameters with redundant conditional values:

@@ -46,6 +46,7 @@ func addDeleteFlags(cmd *cobra.Command) {
 	shared.AddDryRunFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and delete without confirmation")
+	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
 }
 
 func runDeleteCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -80,7 +81,9 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, opts deleteOptions) err
 		return len(deleted), finalCfg, nil
 	})
 	logDeleteTotals("remote", deleteTotals{modifiedProjects: totals.ModifiedProjects, deletedParams: totals.ChangedParams})
-	rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "🗑️")
+	if writeErr := rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "🗑️"); writeErr != nil {
+		return writeErr
+	}
 	return err
 }
 

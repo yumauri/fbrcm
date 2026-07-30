@@ -13,14 +13,13 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --dry-run
 │   ├── --draft
 │   ├── --yes, -y
+│   ├── --json
 │   ├── --description <text>
 │   ├── --group <name>
-│   └── exactly one value flag:
-│       ├── --boolean true|false
-│       ├── --number <number>
-│       ├── --string <text>
-│       ├── --json <json>
-│       └── --use-in-app-default --type string|boolean|number|json
+│   ├── --type string|boolean|number|json
+│   └── exactly one value source:
+│       ├── --value <value>
+│       └── --use-in-app-default
 │
 ├── cache
 │   ├── list [--json]
@@ -57,26 +56,31 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --priority <n>
 │   │   ├── --dry-run
 │   │   ├── --draft
-│   │   └── --yes, -y
+│   │   ├── --yes, -y
+│   │   └── --json
 │   ├── edit <project> <condition>
 │   │   ├── --expression <expr>
 │   │   ├── --color <color>
 │   │   ├── --no-color
 │   │   ├── --dry-run
 │   │   ├── --draft
-│   │   └── --yes, -y
+│   │   ├── --yes, -y
+│   │   └── --json
 │   ├── rename <project> <condition> <new-name>
 │   │   ├── --dry-run
 │   │   ├── --draft
-│   │   └── --yes, -y
+│   │   ├── --yes, -y
+│   │   └── --json
 │   ├── move <project> <condition> <priority>
 │   │   ├── --dry-run
 │   │   ├── --draft
-│   │   └── --yes, -y
+│   │   ├── --yes, -y
+│   │   └── --json
 │   ├── delete <project> <condition>
 │   │   ├── --dry-run
 │   │   ├── --draft
-│   │   └── --yes, -y
+│   │   ├── --yes, -y
+│   │   └── --json
 │   └── validate <project> [--json]
 │
 ├── delete [parameter]
@@ -86,7 +90,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --search <text>
 │   ├── --dry-run
 │   ├── --draft
-│   └── --yes, -y
+│   ├── --yes, -y
+│   └── --json
 │
 ├── doctor [--json] [--timeout <duration>]
 │
@@ -124,7 +129,8 @@ fbrcm [--help] [--version] [--profile <name>]
 │   ├── --expr <expr>
 │   ├── --dry-run
 │   ├── --draft
-│   └── --yes, -y
+│   ├── --yes, -y
+│   └── --json
 │
 ├── experiments
 │   ├── list <project> [--filter|-f <query>]... [--update] [--json]
@@ -147,10 +153,10 @@ fbrcm [--help] [--version] [--profile <name>]
 │   │   ├── --search <text>
 │   │   ├── --update
 │   │   └── --json
-│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--yes|-y]
-│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--yes|-y]
-│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y]
-│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y]
+│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--yes|-y] [--json]
+│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--yes|-y] [--json]
+│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y] [--json]
+│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--yes|-y] [--json]
 │
 ├── personalizations
 │   ├── list <project> [--update] [--json]
@@ -294,6 +300,7 @@ fbrcm [--help] [--version] [--profile <name>]
     ├── --dry-run
     ├── --draft
     ├── --yes, -y
+    ├── --json
     ├── --description <text>
     ├── --group <name>
     ├── --no-group
@@ -301,11 +308,9 @@ fbrcm [--help] [--version] [--profile <name>]
     ├── --condition <name>
     ├── --remove-all-conditional-values
     ├── --remove-conditional-value <condition>  repeated
-    └── at most one value flag:
-        ├── --boolean true|false
-        ├── --number <number>
-        ├── --string <text>
-        ├── --json <json>
+    ├── --type string|boolean|number|json
+    └── at most one value source:
+        ├── --value <value>
         └── --use-in-app-default
 ```
 
@@ -470,6 +475,28 @@ Immediate Remote Config writes refuse to proceed when the target has an unpublis
 
 Multi-project Remote Config publication is non-atomic: Firebase accepts a separate validated write for each project. Commands process every selected project even when an independent project fails, collect one outcome per project, and print the complete `Results:` block after operation logging has finished. They return nonzero after the batch if any project failed. Successful projects are not rolled back. Conflicts are reported for a fresh explicit retry instead of silently recalculating and publishing a different candidate. Failed-project output includes exact `-p '=project-id'` filters for retrying only projects that were not published.
 
+### Mutation JSON automation contract
+
+Direct Remote Config mutations—`add`, `update`, `delete`, `duplicate`, all condition mutations, and all group mutations—accept `--json`. JSON output is an ordered array with one stable result object per selected template target:
+
+```json
+[
+  {
+    "target": "my-project",
+    "status": "published",
+    "changed_item_count": 1,
+    "previous_version": "41",
+    "published_version": "42",
+    "draft": false,
+    "dry_run": false,
+    "error": null,
+    "retry_selector": null
+  }
+]
+```
+
+`previous_version` and `published_version` are `null` when that version is unavailable or no publication occurred. `error` is either `null` or an object with `stage` (`preparation`, `validation`, `publication`, `draft`, or `cache`) and `message`. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. JSON mode keeps stdout machine-readable but does not imply `--yes`; prompts and review output continue on stderr. In stdin transformation mode, `add`, `update`, and `delete` continue to emit the transformed Remote Config JSON itself.
+
 If Firebase accepts a publish but the returned state cannot be saved locally, the outcome is reported as `published-cache-failed`, not as an unpublished project. Refresh that project's cache instead of blindly retrying the mutation. For coordinated changes, `--draft` provides reviewable and recoverable intent, but publishing those drafts is still non-atomic across projects.
 
 Draft publish always fetches current Firebase state, performs a three-way merge from base, draft, and current, validates using the current ETag, and publishes only the exact candidate that was previewed. Conflicts preserve the local draft. Successfully published or already-applied drafts are removed locally. A publish that succeeds remotely but cannot remove its local record reports `published-cleanup-failed`; rerunning recognizes the already-applied content and retries cleanup without creating another version.
@@ -494,16 +521,15 @@ Flags:
 
 Adds a new Remote Config parameter to every matched project. Parameter key is required and cannot be empty.
 
-Exactly one value flag is required:
+`--type` plus exactly one value source is required:
 
 ```text
---boolean true|false   value type BOOLEAN
---number <number>      value type NUMBER; must parse as float
---string <text>        value type STRING
---json <json>          value type JSON; must be valid JSON
---use-in-app-default   delegate the value to the application; requires --type
---type <type>           STRING, BOOLEAN, NUMBER, or JSON type for --use-in-app-default
+--type <type>           STRING, BOOLEAN, NUMBER, or JSON
+--value <value>         concrete value interpreted according to --type
+--use-in-app-default   delegate the value to the application instead of setting --value
 ```
+
+`--value` and `--use-in-app-default` are mutually exclusive. Boolean values must be `true` or `false`, number values must parse as a float, and JSON values must be valid JSON. String values may be empty when `--value ""` is passed explicitly.
 
 Other flags:
 
@@ -513,6 +539,7 @@ Other flags:
 --dry-run                  preview without writing local or Firebase state
 --draft                    save changes to local drafts instead of publishing
 -y, --yes                  print diff and add without confirmation
+--json                     print structured mutation results
 --description <text>       parameter description
 --group <name>             add parameter inside group
 ```
@@ -535,6 +562,7 @@ Flags:
 --dry-run               preview without writing local or Firebase state
 --draft                 save changes to local drafts instead of publishing
 -y, --yes               print diff and duplicate without confirmation
+--json                  print structured mutation results
 ```
 
 Remote mode prints the complete Remote Config diff and prompts before each duplicate unless `--yes` is set. It validates and publishes each project independently. A conflict fails that project without suppressing later projects, and the final command status is nonzero when any project fails. Project filters are applied before the project-context expression, matching `add` behavior.
@@ -577,25 +605,24 @@ Flags:
 --dry-run                  preview without writing local or Firebase state
 --draft                    save changes to local drafts instead of publishing
 -y, --yes                  print diff and update without confirmation
+--json                     print structured mutation results
 --description <text>       set parameter description
 --group <name>             move parameter into group
 --no-group                 move parameter out of any group
 --name <new-name>          rename parameter; cannot be empty
---condition <name>         assign the value flag to this condition instead of the default value
+--condition <name>         assign the selected value to this condition instead of the default value
 --remove-all-conditional-values
                            remove all conditional values from matched parameters
 --remove-conditional-value <condition>
                            remove named conditional value from matched parameters; may be repeated
---boolean true|false       set BOOLEAN value
---number <number>          set NUMBER value
---string <text>            set STRING value
---json <json>              set JSON value
---use-in-app-default       delegate the selected value to the application
+--type <type>              STRING, BOOLEAN, NUMBER, or JSON
+--value <value>            set a concrete value interpreted according to --type
+--use-in-app-default       delegate the selected value to the application instead of setting --value
 ```
 
-At most one value flag may be used. `--condition` requires a value flag and resolves the condition by exact name, then exact case-insensitive name. It preserves the default and all other conditional values while assigning the selected typed value. `--group` and `--no-group` are mutually exclusive. `--condition`, `--remove-all-conditional-values`, and `--remove-conditional-value` are mutually exclusive.
+`--value` and `--use-in-app-default` are mutually exclusive, and either one requires `--type`. `--type` cannot be passed alone. `--condition` requires one of these value sources and resolves the condition by exact name, then exact case-insensitive name. It preserves the default and all other conditional values while assigning the selected typed value. Boolean, number, and JSON values use the same validation as `add`. `--group` and `--no-group` are mutually exclusive. `--condition`, `--remove-all-conditional-values`, and `--remove-conditional-value` are mutually exclusive.
 
-`--use-in-app-default` sets Firebase's `useInAppDefault` source on the default value, or on the conditional value selected by `--condition`. It preserves the parameter's existing type during `update`. Any concrete value flag switches the targeted value back to a remote value and sets the parameter type from that flag.
+`--use-in-app-default` sets Firebase's `useInAppDefault` source on the default value, or on the conditional value selected by `--condition`. Both value sources set the parameter type from the required `--type`.
 
 Conditional value assignment and removal edit only `conditionalValues`; they keep the parameter, default value, description, group, and all conditions themselves.
 
@@ -621,6 +648,7 @@ Flags:
 --dry-run               preview without writing local or Firebase state
 --draft                 save changes to local drafts instead of publishing
 -y, --yes               print diff and delete without confirmation
+--json                  print structured mutation results
 ```
 
 Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes each project independently, reports every outcome, continues after project-scoped failures, and returns nonzero if any project failed.
@@ -680,6 +708,7 @@ All five commands support:
 --dry-run   preview without writing local or Firebase state
 --draft     save changes to a local draft instead of publishing
 -y, --yes   print the diff and apply without confirmation
+--json      print structured mutation results
 ```
 
 Without `--draft`, mutations print the complete Remote Config diff, ask for confirmation unless `--yes` is set, validate with Firebase, and publish with ETag protection. They refuse immediate publication while the project has an unpublished draft. With `--draft`, mutations compose onto the existing draft or create one and remain local.
@@ -743,7 +772,7 @@ fbrcm groups delete <group> [--project|-p <query>]
 
 All group commands support repeatable `--project|-p` target filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured enabled template in stable project-name/target-ID order. Named mutations skip targets that do not contain the group; `add` skips targets where it already exists.
 
-All group mutations also support `--dry-run`, `--draft`, and `--yes|-y`, with the same diff, confirmation, validation, ETag, draft-composition, and draft-conflict behavior as condition mutations. `--description` and `--no-description` are mutually exclusive.
+All group mutations also support `--dry-run`, `--draft`, `--yes|-y`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, and structured-result behavior as condition mutations. `--description` and `--no-description` are mutually exclusive.
 
 ### `fbrcm draft list`
 

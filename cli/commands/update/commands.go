@@ -66,15 +66,14 @@ func addUpdateFlags(cmd *cobra.Command) {
 	cmd.Flags().String("group", "", "Target parameter group")
 	cmd.Flags().Bool("no-group", false, "Move parameter out of its group")
 	cmd.Flags().String("name", "", "New parameter name")
-	cmd.Flags().String("boolean", "", "Boolean parameter value: true or false")
-	cmd.Flags().String("number", "", "Number parameter value")
-	cmd.Flags().String("string", "", "String parameter value")
-	cmd.Flags().String("json", "", "JSON parameter value")
+	cmd.Flags().String("type", "", "Parameter type: string, boolean, number, or json")
+	cmd.Flags().String("value", "", "Parameter value interpreted according to --type")
 	cmd.Flags().Bool("use-in-app-default", false, "Use the application's default value")
 	cmd.Flags().String("condition", "", "Set the value for this condition instead of the default value")
 	cmd.Flags().Bool("remove-all-conditional-values", false, "Remove all conditional values from matched parameters")
 	cmd.Flags().StringArray("remove-conditional-value", nil, "Remove a conditional value from matched parameters; may be repeated")
-	cmd.MarkFlagsMutuallyExclusive("boolean", "number", "string", "json", "use-in-app-default")
+	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
+	cmd.MarkFlagsMutuallyExclusive("value", "use-in-app-default")
 	cmd.MarkFlagsMutuallyExclusive("group", "no-group")
 	cmd.MarkFlagsMutuallyExclusive("remove-all-conditional-values", "remove-conditional-value")
 	cmd.MarkFlagsMutuallyExclusive("condition", "remove-all-conditional-values", "remove-conditional-value")
@@ -149,7 +148,7 @@ func readUpdateSpec(cmd *cobra.Command) (updateSpec, error) {
 		return updateSpec{}, fmt.Errorf("--condition cannot be empty")
 	}
 	if conditionChanged && value == nil {
-		return updateSpec{}, fmt.Errorf("--condition requires one value flag")
+		return updateSpec{}, fmt.Errorf("--condition requires --value or --use-in-app-default")
 	}
 
 	groupChanged := cmd.Flags().Changed("group")
