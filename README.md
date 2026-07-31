@@ -4,14 +4,14 @@
 TUI to explore and edit projects, or use the CLI for scripts, repeatable
 operations, and machine-readable output.
 
-![fbrcm TUI demo](vhs/demo.gif)
+![fbrcm TUI demo](https://raw.githubusercontent.com/yumauri/fbrcm/main/vhs/demo.gif)
 
 > [!CAUTION]
 > This project is almost completely vibe-coded.
 
 > [!TIP]
 > Already using the official Firebase CLI? See
-> [fbrcm vs. Firebase CLI](docs/FIREBASE_CLI_COMPARISON.md) for feature parity,
+> [fbrcm vs. Firebase CLI](https://github.com/yumauri/fbrcm/blob/main/docs/FIREBASE_CLI_COMPARISON.md) for feature parity,
 > command equivalents, and the Remote Config workflows fbrcm adds.
 
 It is designed for work that spans more than one Firebase project:
@@ -92,8 +92,8 @@ connectivity, API access, permissions, or local storage:
 fbrcm doctor
 ```
 
-See [TUI setup and workflows](docs/TUI.md#setup-and-authentication) for the
-guided path, or [CLI authentication](docs/CLI.md#fbrcm-auth-list) for
+See [TUI setup and workflows](https://github.com/yumauri/fbrcm/blob/main/docs/TUI.md#setup-and-authentication) for the
+guided path, or [CLI authentication](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md#fbrcm-auth-list) for
 non-interactive setup.
 
 ## A quick tour
@@ -133,7 +133,7 @@ fbrcm update feature_enabled --project '=my-app' --type boolean --value true --y
 ```
 
 Use `--type json --value '<json>'` when the parameter value is JSON. See the
-[CLI mutation JSON contract](docs/CLI.md#mutation-json-automation-contract) for
+[CLI mutation JSON contract](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md#mutation-json-automation-contract) for
 the complete schema.
 
 Project and parameter filters support fuzzy, prefix, contains, and exact modes.
@@ -187,11 +187,11 @@ Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 
 | Guide | Use it for |
 | --- | --- |
-| [TUI guide](docs/TUI.md) | Setup, panels, shortcuts, editing, drafts, history, promotion, and key configuration |
-| [CLI reference](docs/CLI.md) | Complete command tree, flags, output contracts, template targets, and write behavior |
-| [Expression filters](docs/EXPR.md) | Expression contexts, typed values, helper functions, and `jq` queries |
-| [Architecture](docs/architecture.md) | Package boundaries and maintainer invariants |
-| [Root group keys](docs/root-group-key.md) | Internal root-parameter representations |
+| [TUI guide](https://github.com/yumauri/fbrcm/blob/main/docs/TUI.md) | Setup, panels, shortcuts, editing, drafts, history, promotion, and key configuration |
+| [CLI reference](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md) | Complete command tree, flags, output contracts, template targets, and write behavior |
+| [Expression filters](https://github.com/yumauri/fbrcm/blob/main/docs/EXPR.md) | Expression contexts, typed values, helper functions, and `jq` queries |
+| [Architecture](https://github.com/yumauri/fbrcm/blob/main/docs/architecture.md) | Package boundaries and maintainer invariants |
+| [Root group keys](https://github.com/yumauri/fbrcm/blob/main/docs/root-group-key.md) | Internal root-parameter representations |
 
 Every CLI command also has focused help:
 
@@ -237,4 +237,4 @@ fbrcm is an independent implementation and does not reuse any of its code.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/yumauri/fbrcm/blob/main/LICENSE)

@@ -5,6 +5,10 @@ project_name: fbrcm
 before:
   hooks:
     - go mod tidy
+    - mkdir -p completions
+    - sh -c 'go run . completion bash > completions/fbrcm.bash'
+    - sh -c 'go run . completion zsh > completions/fbrcm.zsh'
+    - sh -c 'go run . completion fish > completions/fbrcm.fish'
 
 builds:
   - env:
@@ -30,6 +34,11 @@ archives:
       - goos: windows
         formats:
           - zip
+    files:
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+      - completions/*
     name_template: >-
       {{ .ProjectName }}_
       {{- .Os }}_
@@ -65,14 +74,10 @@ homebrew_casks:
           if OS.mac?
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/fbrcm"]
           end
-    generate_completions_from_executable:
-      args:
-        - completion
-      shell_parameter_format: cobra
-      shells:
-        - bash
-        - zsh
-        - fish
+    completions:
+      bash: "completions/fbrcm.bash"
+      zsh: "completions/fbrcm.zsh"
+      fish: "completions/fbrcm.fish"
 
 scoops:
   - repository:
