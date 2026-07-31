@@ -12,7 +12,7 @@ publish Firebase Remote Config. They are optimized for different workflows:
   many projects and both client and server templates.
 
 This comparison covers the documented Firebase CLI surface and
-`firebase-tools` 15.24.0 as of July 30, 2026. Consult the
+`firebase-tools` 15.25.1 as of July 31, 2026. Consult the
 [current Firebase CLI reference](https://firebase.google.com/docs/cli) when
 using a later release.
 

@@ -11,7 +11,7 @@ operations, and machine-readable output.
 
 > [!TIP]
 > Already using the official Firebase CLI? See
-> [fbrcm vs. Firebase CLI](https://github.com/yumauri/fbrcm/blob/main/docs/FIREBASE_CLI_COMPARISON.md) for feature parity,
+> [fbrcm vs. Firebase CLI](https://github.com/yumauri/fbrcm/blob/main/docs/firebase-cli-comparison.md) for feature parity,
 > command equivalents, and the Remote Config workflows fbrcm adds.
 
 It is designed for work that spans more than one Firebase project:
