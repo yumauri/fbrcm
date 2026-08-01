@@ -339,25 +339,23 @@ func readDiffOptions(cmd *cobra.Command) diffOptions {
 	return o
 }
 
-func filterDiff(project core.Project, result rcdiff.Result, from, to *firebase.RemoteConfig, opts diffOptions) rcdiff.Result {
+func filterDiff(project core.Project, result rcdiff.Result, from, to *firebase.RemoteConfig, opts diffOptions) (rcdiff.Result, error) {
 	if opts.parameters {
 		result.Conditions = nil
 	}
 	if opts.conditions {
 		result.Parameters = nil
 		result.GroupDescriptions = nil
-		return result
+		return result, nil
 	}
 	filters := shared.ParseFilters(opts.filters)
 	groupSet := make(map[string]bool)
 	for _, group := range opts.groups {
 		groupSet[group] = true
 	}
-	compiled, ok := shared.CompileExpr(strings.TrimSpace(opts.expr), project.ProjectID)
-	if !ok {
-		result.Parameters = nil
-		result.GroupDescriptions = nil
-		return result
+	compiled, err := shared.CompileExpr(strings.TrimSpace(opts.expr), project.ProjectID)
+	if err != nil {
+		return rcdiff.Result{}, err
 	}
 	search := shared.NewParameterSearch(opts.search)
 	params := result.Parameters[:0]
@@ -373,8 +371,11 @@ func filterDiff(project core.Project, result rcdiff.Result, from, to *firebase.R
 		if group == "" {
 			group = "default"
 		}
-		match, valid := shared.MatchParameterByCompiledExpr(compiled, project, cfg, change.Key, group)
-		if valid && match {
+		match, err := shared.MatchParameterByCompiledExpr(compiled, project, cfg, change.Key, group)
+		if err != nil {
+			return rcdiff.Result{}, err
+		}
+		if match {
 			params = append(params, change)
 		}
 	}
@@ -388,5 +389,5 @@ func filterDiff(project core.Project, result rcdiff.Result, from, to *firebase.R
 		}
 		result.GroupDescriptions = groups
 	}
-	return result
+	return result, nil
 }

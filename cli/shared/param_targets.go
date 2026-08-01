@@ -51,7 +51,7 @@ func CollectParamTargets(cfg *firebase.RemoteConfig) []ParamTarget {
 }
 
 // CollectMatchingParamTargets filters parameters by name filters, search, and expression.
-func CollectMatchingParamTargets(project core.Project, cfg *firebase.RemoteConfig, rawFilters []string, search ParameterSearch, compiledExpr *filter.Expression, defaultGroupLabel string) []ParamTarget {
+func CollectMatchingParamTargets(project core.Project, cfg *firebase.RemoteConfig, rawFilters []string, search ParameterSearch, compiledExpr *filter.Expression, defaultGroupLabel string) ([]ParamTarget, error) {
 	all := CollectParamTargets(cfg)
 	filters := ParseFilters(rawFilters)
 
@@ -63,13 +63,16 @@ func CollectMatchingParamTargets(project core.Project, cfg *firebase.RemoteConfi
 		if !MatchParameterSearch(target.Key, target.Param, cfg, search) {
 			continue
 		}
-		match, ok := MatchParameterByCompiledExpr(compiledExpr, project, cfg, target.Key, target.GroupOrDefault(defaultGroupLabel))
-		if !ok || !match {
+		match, err := MatchParameterByCompiledExpr(compiledExpr, project, cfg, target.Key, target.GroupOrDefault(defaultGroupLabel))
+		if err != nil {
+			return nil, err
+		}
+		if !match {
 			continue
 		}
 		filtered = append(filtered, target)
 	}
-	return filtered
+	return filtered, nil
 }
 
 // RemoveParamSlot removes a parameter from the root or a group.

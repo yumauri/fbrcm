@@ -75,7 +75,10 @@ func loadStdinParameterRows(cmd *cobra.Command, compiledExpr *filter.Expression,
 		Name:      "<stdin>",
 		ProjectID: "<stdin>",
 	}
-	rows := flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)
+	rows, err := flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)
+	if err != nil {
+		return nil, nil, err
+	}
 	corelog.For("get").Info("parsed stdin remote config", "parameters", len(rows), "version", version)
 	return cfg, rows, nil
 }
@@ -101,9 +104,9 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectFilters []string
 	names = filterJSONFileNames(names)
 	strfold.Sort(names)
 
-	compiledExpr, ok := shared.CompileExpr(projectExpr, "<stdin-dir>")
-	if !ok {
-		return true, nil, nil
+	compiledExpr, err := shared.CompileExpr(projectExpr, "<stdin-dir>")
+	if err != nil {
+		return true, nil, err
 	}
 
 	rows := make([]parameterRow, 0)
@@ -144,7 +147,11 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectFilters []string
 		}
 
 		version := stdinVersion(remoteConfigRaw)
-		rows = append(rows, flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)...)
+		projectRows, err := flattenParameters(project, cfg, time.Time{}, "", version, compiledExpr, search)
+		if err != nil {
+			return true, nil, err
+		}
+		rows = append(rows, projectRows...)
 	}
 	corelog.For("get").Info("parsed remote configs from stdin directory", "files", len(names), "parameters", len(rows))
 	return true, rows, nil

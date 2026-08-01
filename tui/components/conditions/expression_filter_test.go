@@ -44,3 +44,41 @@ func TestConditionsExpressionFilterUsesConditionContext(t *testing.T) {
 		t.Fatalf("visible conditions = %v, want unused", names)
 	}
 }
+
+func TestConditionsExpressionEvaluationErrorKeepsPreviousResults(t *testing.T) {
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	cfg := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{
+		{Name: "used", Expression: "true"},
+		{Name: "unused", Expression: "false"},
+	}}
+	tree := coreconditions.BuildTree(cfg, time.Time{}, "")
+	m := New(nil)
+	m.projects = []projectState{{project: project, tree: tree}}
+	m.projectIndex[project.ProjectID] = 0
+	m.filter = conditionExpressionFilter(`name == "unused"`)
+	m.syncVisible()
+
+	m.filter = conditionExpressionFilter(`jq(name, ".[" ) == true`)
+	m.syncVisible()
+
+	if m.filter.ExpressionValid() {
+		t.Fatal("runtime-invalid condition expression is valid")
+	}
+	var names []string
+	for _, node := range m.visible {
+		if node.kind == nodeCondition {
+			names = append(names, node.conditionName)
+		}
+	}
+	if len(names) != 1 || names[0] != "unused" {
+		t.Fatalf("evaluation error changed previous results: %v", names)
+	}
+}
+
+func conditionExpressionFilter(expression string) filterbox.Model {
+	box := filterbox.New()
+	box.ActivateExpression()
+	box, _ = box.Update(tea.PasteMsg{Content: expression})
+	box.Blur()
+	return box
+}

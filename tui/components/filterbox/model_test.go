@@ -107,6 +107,31 @@ func TestInvalidExpressionDiagnosticOverlaysBottomBorderWithoutChangingHeight(t 
 	}
 }
 
+func TestExpressionEvaluationErrorIsVisibleAndClearsOnEdit(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	m := New()
+	m.ActivateExpression()
+	m, _ = m.Update(tea.PasteMsg{Content: `name == "login"`})
+	m.SetExpressionEvaluationError(assertionError("evaluation failed"))
+
+	if m.ExpressionValid() {
+		t.Fatal("expression with an evaluation error is valid")
+	}
+	view := m.OverlayExpressionError("╰"+strings.Repeat("─", 48)+"╯", 0)
+	if !strings.Contains(view, "Expression error: evaluation failed") {
+		t.Fatalf("evaluation error overlay = %q", view)
+	}
+
+	m, _ = m.Update(tea.PasteMsg{Content: " "})
+	if !m.ExpressionValid() {
+		t.Fatal("editing did not clear the evaluation error")
+	}
+}
+
+type assertionError string
+
+func (e assertionError) Error() string { return string(e) }
+
 func TestFilterboxClearAndBlur(t *testing.T) {
 	m := New()
 	m.Activate(filter.ModeIncludes)

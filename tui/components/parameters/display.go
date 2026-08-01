@@ -10,7 +10,7 @@ import (
 	"github.com/yumauri/fbrcm/core/rootgroup"
 )
 
-func (m Model) buildVisible() []visibleNode {
+func (m Model) buildVisible() ([]visibleNode, error) {
 	nodes := make([]visibleNode, 0)
 	query := m.filter.Value()
 	filtering := query != ""
@@ -73,7 +73,11 @@ func (m Model) buildVisible() []visibleNode {
 			}
 			matchedParams := group.Parameters
 			if filtering {
-				matchedParams = m.matchedParameters(project, tree, group)
+				var err error
+				matchedParams, err = m.matchedParameters(project, tree, group)
+				if err != nil {
+					return nil, err
+				}
 				created := m.transientNew
 				hasTransientNew := created != nil &&
 					created.projectID == project.project.ProjectID &&
@@ -180,10 +184,10 @@ func (m Model) buildVisible() []visibleNode {
 	if m.history && m.historyChangesOnly {
 		return m.historyChangesOnlyNodes(nodes)
 	}
-	return nodes
+	return nodes, nil
 }
 
-func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
+func (m Model) historyChangesOnlyNodes(nodes []visibleNode) ([]visibleNode, error) {
 	changedParams := make(map[string]bool)
 	changedGroups := make(map[string]int)
 	changedProjects := make(map[string]bool)
@@ -207,7 +211,10 @@ func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
 			continue
 		}
 		for _, group := range tree.Groups {
-			params := m.matchedParameters(project, tree, group)
+			params, err := m.matchedParameters(project, tree, group)
+			if err != nil {
+				return nil, err
+			}
 			for _, param := range params {
 				if !isVisibleHistoryChange(state.paramKinds[historyParamKey(group.Key, param.Key)]) {
 					continue
@@ -249,7 +256,7 @@ func (m Model) historyChangesOnlyNodes(nodes []visibleNode) []visibleNode {
 			}
 		}
 	}
-	return out
+	return out, nil
 }
 
 func isVisibleHistoryChange(kind diff.ChangeKind) bool {
@@ -298,13 +305,13 @@ func matchedParameters(params []core.ParametersEntry, query string, mode filter.
 	return out
 }
 
-func (m Model) matchedParameters(project projectState, tree *core.ParametersTree, group core.ParametersGroup) []core.ParametersEntry {
+func (m Model) matchedParameters(project projectState, tree *core.ParametersTree, group core.ParametersGroup) ([]core.ParametersEntry, error) {
 	query := m.filter.Value()
 	if query == "" {
-		return group.Parameters
+		return group.Parameters, nil
 	}
 	if !m.filter.ExpressionMode() {
-		return matchedParameters(group.Parameters, query, m.filter.Mode())
+		return matchedParameters(group.Parameters, query, m.filter.Mode()), nil
 	}
 
 	out := make([]core.ParametersEntry, 0, len(group.Parameters))
@@ -317,11 +324,14 @@ func (m Model) matchedParameters(project projectState, tree *core.ParametersTree
 			param.Key,
 			group.Label,
 		)
-		if err == nil && matched {
+		if err != nil {
+			return nil, fmt.Errorf("evaluate expression for parameter %s in project %s: %w", param.Key, project.project.ProjectID, err)
+		}
+		if matched {
 			out = append(out, param)
 		}
 	}
-	return out
+	return out, nil
 }
 
 func (m Model) parameterExpressionTree(projectID string, fallback *core.ParametersTree, groupKey, paramKey string) *core.ParametersTree {

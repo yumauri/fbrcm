@@ -514,6 +514,14 @@ Parameter-context commands also support `--search <text>`. It searches parameter
 
 `--expr` uses expr-lang and must evaluate to boolean. See [EXPR.md](EXPR.md) for full context fields and helper functions.
 
+Expression errors are never treated as an empty successful result. A syntax or
+type error fails before filtering begins. If evaluation fails for a project,
+parameter, condition, diff entry, or import entry, the command reports the
+affected target and returns nonzero. Multi-target `update` and `delete`
+continue processing independent targets, record an evaluation failure as
+`preparation-failed` for that target, and return nonzero after printing all
+results; no candidate is published or drafted for the failed target.
+
 Parameter-context commands:
 
 ```text

@@ -6,8 +6,17 @@ import (
 )
 
 func (m *Model) syncVisible() {
+	m.filter.SetExpressionEvaluationError(nil)
+	if m.filter.ExpressionMode() && !m.filter.ExpressionValid() {
+		return
+	}
+	visible, err := m.buildVisible()
+	if err != nil {
+		m.filter.SetExpressionEvaluationError(err)
+		return
+	}
 	m.parameterNameWidth = m.computeMaxParameterNameWidth()
-	m.visible = m.buildVisible()
+	m.visible = visible
 	m.visibleParamCount = 0
 	for _, node := range m.visible {
 		if node.kind == nodeParameter {

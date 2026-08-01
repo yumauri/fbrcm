@@ -52,7 +52,10 @@ func newListCommand(svc *core.Core) *cobra.Command {
 			search, _ := cmd.Flags().GetString("search")
 			rawExpr, _ := cmd.Flags().GetString("expr")
 			entries := filterEntries(loaded.Tree.Conditions, filters, search)
-			entries = filterEntriesByExpr(loaded.Project, entries, rawExpr)
+			entries, err = filterEntriesByExpr(loaded.Project, entries, rawExpr)
+			if err != nil {
+				return err
+			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
 				return shared.WriteJSON(cmd, entries)
@@ -166,19 +169,22 @@ func filterEntries(entries []core.ConditionEntry, rawFilters []string, search st
 	return out
 }
 
-func filterEntriesByExpr(project core.Project, entries []core.ConditionEntry, rawExpr string) []core.ConditionEntry {
-	compiled, ok := shared.CompileExpr(rawExpr, project.ProjectID)
-	if !ok {
-		return nil
+func filterEntriesByExpr(project core.Project, entries []core.ConditionEntry, rawExpr string) ([]core.ConditionEntry, error) {
+	compiled, err := shared.CompileExpr(rawExpr, project.ProjectID)
+	if err != nil {
+		return nil, err
 	}
 	out := make([]core.ConditionEntry, 0, len(entries))
 	for _, entry := range entries {
-		match, ok := shared.MatchConditionByCompiledExpr(compiled, project, entry)
-		if ok && match {
+		match, err := shared.MatchConditionByCompiledExpr(compiled, project, entry)
+		if err != nil {
+			return nil, err
+		}
+		if match {
 			out = append(out, entry)
 		}
 	}
-	return out
+	return out, nil
 }
 
 func findCondition(tree *core.ConditionsTree, name string) (core.ConditionEntry, bool) {

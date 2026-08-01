@@ -50,6 +50,27 @@ func TestHistoryExpressionFilterUsesPreviousConfigForRemovedParameter(t *testing
 	}
 }
 
+func TestParametersExpressionEvaluationErrorKeepsPreviousResults(t *testing.T) {
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
+		"enabled":  {ValueType: "BOOLEAN", DefaultValue: &firebase.RemoteConfigValue{Value: "true"}},
+		"disabled": {ValueType: "BOOLEAN", DefaultValue: &firebase.RemoteConfigValue{Value: "false"}},
+	}}
+	tree := coreparameters.BuildTree(cfg, timeZero, "")
+	m := expressionParameterModel(project, tree, `default == true`)
+
+	m.filter = expressionFilter(`jq(value, ".[" ) == true`)
+	m.syncVisible()
+
+	if m.filter.ExpressionValid() {
+		t.Fatal("runtime-invalid parameter expression is valid")
+	}
+	parameters := expressionVisibleParameterKeys(m.visible)
+	if len(parameters) != 1 || parameters[0] != "enabled" {
+		t.Fatalf("evaluation error changed previous results: %v", parameters)
+	}
+}
+
 var timeZero = time.Time{}
 
 func expressionParameterModel(project core.Project, tree *core.ParametersTree, expression string) Model {

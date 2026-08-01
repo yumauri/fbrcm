@@ -172,43 +172,63 @@ func TestCompileExprAndMatchProjectByExpr(t *testing.T) {
 	}
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 
-	compiled, ok := CompileExpr(`project_id == "demo"`, "")
-	if !ok || compiled == nil {
-		t.Fatal("CompileExpr failed")
+	compiled, err := CompileExpr(`project_id == "demo"`, "")
+	if err != nil || compiled == nil {
+		t.Fatalf("CompileExpr failed: %v", err)
 	}
-	match, ok := MatchProjectByCompiledExpr(compiled, project, cfg)
-	if !ok || !match {
-		t.Fatalf("MatchProjectByCompiledExpr = %v/%v", match, ok)
+	match, err := MatchProjectByCompiledExpr(compiled, project, cfg)
+	if err != nil || !match {
+		t.Fatalf("MatchProjectByCompiledExpr = %v, %v", match, err)
 	}
-	if !MatchProjectByExpr(project, cfg, `project_id == "demo"`) {
+	if match, err = MatchProjectByExpr(project, cfg, `project_id == "demo"`); err != nil || !match {
 		t.Fatal("MatchProjectByExpr should match")
 	}
-	if MatchProjectByExpr(project, cfg, `project_id == "other"`) {
+	if match, err = MatchProjectByExpr(project, cfg, `project_id == "other"`); err != nil || match {
 		t.Fatal("MatchProjectByExpr should not match other id")
 	}
 }
 
 func TestProjectExpressionUsesUnderlyingProjectIDForServerTarget(t *testing.T) {
-	compiled, ok := CompileExpr(`project_id == "demo"`, "")
-	if !ok {
-		t.Fatal("CompileExpr failed")
+	compiled, err := CompileExpr(`project_id == "demo"`, "")
+	if err != nil {
+		t.Fatalf("CompileExpr failed: %v", err)
 	}
-	match, valid := MatchProjectByCompiledExpr(compiled, core.Project{ProjectID: "server@demo", Name: "Demo"}, &firebase.RemoteConfig{})
-	if !valid || !match {
-		t.Fatalf("MatchProjectByCompiledExpr = %t/%t", match, valid)
+	match, err := MatchProjectByCompiledExpr(compiled, core.Project{ProjectID: "server@demo", Name: "Demo"}, &firebase.RemoteConfig{})
+	if err != nil || !match {
+		t.Fatalf("MatchProjectByCompiledExpr = %t, %v", match, err)
 	}
 }
 
 func TestMatchConditionByCompiledExpr(t *testing.T) {
-	compiled, ok := CompileExpr(`usage_count == 0 && priority == 1`, "demo")
-	if !ok || compiled == nil {
-		t.Fatal("CompileExpr failed")
+	compiled, err := CompileExpr(`usage_count == 0 && priority == 1`, "demo")
+	if err != nil || compiled == nil {
+		t.Fatalf("CompileExpr failed: %v", err)
 	}
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	entry := core.ConditionEntry{Name: "unused", Priority: 1}
-	match, ok := MatchConditionByCompiledExpr(compiled, project, entry)
-	if !ok || !match {
-		t.Fatalf("MatchConditionByCompiledExpr = %v/%v", match, ok)
+	match, err := MatchConditionByCompiledExpr(compiled, project, entry)
+	if err != nil || !match {
+		t.Fatalf("MatchConditionByCompiledExpr = %v, %v", match, err)
+	}
+}
+
+func TestCompileExprReturnsError(t *testing.T) {
+	if _, err := CompileExpr(`project_id ==`, "demo"); err == nil {
+		t.Fatal("CompileExpr error is nil")
+	}
+}
+
+func TestMatchParameterByCompiledExprReturnsEvaluationError(t *testing.T) {
+	compiled, err := CompileExpr(`jq(value, ".[" ) == true`, "demo")
+	if err != nil {
+		t.Fatalf("CompileExpr: %v", err)
+	}
+	project := core.Project{ProjectID: "demo", Name: "Demo"}
+	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
+		"flag": {DefaultValue: &firebase.RemoteConfigValue{Value: `{}`}},
+	}}
+	if _, err := MatchParameterByCompiledExpr(compiled, project, cfg, "flag", DefaultRootGroupLabel); err == nil {
+		t.Fatal("evaluation error is nil")
 	}
 }
 

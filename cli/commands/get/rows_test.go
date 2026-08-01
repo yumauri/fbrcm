@@ -43,7 +43,10 @@ func TestFlattenParametersOrdersGroupsAndRootParams(t *testing.T) {
 		Version: firebase.RemoteConfigVersion{VersionNumber: " 42 "},
 	}
 
-	rows := flattenParameters(core.Project{Name: "Project A", ProjectID: "project-a"}, cfg, cachedAt, "cache", "", nil, shared.NewParameterSearch(""))
+	rows, err := flattenParameters(core.Project{Name: "Project A", ProjectID: "project-a"}, cfg, cachedAt, "cache", "", nil, shared.NewParameterSearch(""))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if got, want := rowKeys(rows), []string{"shared_key", "alpha_key"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("row keys = %#v, want %#v", got, want)

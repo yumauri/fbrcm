@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"charm.land/bubbles/v2/spinner"
@@ -386,7 +387,7 @@ func (m Model) loadExpressionConfigsCmd() tea.Cmd {
 		for _, project := range projects {
 			cfg, err := m.svc.LoadCachedRemoteConfig(project.ProjectID)
 			if err != nil {
-				continue
+				return messages.ProjectExpressionConfigsLoadedMsg{Err: fmt.Errorf("load expression context for project %s: %w", project.ProjectID, err)}
 			}
 			configs[project.ProjectID] = cfg
 		}

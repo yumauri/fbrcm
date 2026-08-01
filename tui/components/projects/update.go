@@ -38,6 +38,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		return m, tea.Batch(cmds...)
 	case messages.ProjectExpressionConfigsLoadedMsg:
+		if msg.Err != nil {
+			m.filter.SetExpressionEvaluationError(msg.Err)
+			m.syncViewport()
+			return m, nil
+		}
 		m.expressionConfigs = msg.Configs
 		maps.Copy(m.expressionConfigs, m.expressionOverrides)
 		m.expressionConfigsReady = true

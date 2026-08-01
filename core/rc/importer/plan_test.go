@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -130,5 +131,47 @@ func TestTransformAppliesScopeAndConditionPolicy(t *testing.T) {
 	}
 	if _, ok := param.ConditionalValues["platform"]; !ok {
 		t.Fatal("portable conditional value removed")
+	}
+}
+
+func TestTransformReturnsExpressionCompileErrorWithoutChangingConfig(t *testing.T) {
+	cfg := expressionTransformConfig()
+	want := expressionTransformConfig()
+
+	err := Transform("demo", "Demo", cfg, Options{Groups: []string{"group"}, Expr: `name ==`})
+	if err == nil || !strings.Contains(err.Error(), "compile import expression") {
+		t.Fatalf("Transform error = %v, want compile error", err)
+	}
+	if !reflect.DeepEqual(cfg, want) {
+		t.Fatalf("config changed after compile error:\n got: %#v\nwant: %#v", cfg, want)
+	}
+}
+
+func TestTransformReturnsExpressionEvaluationErrorWithoutChangingConfig(t *testing.T) {
+	cfg := expressionTransformConfig()
+	want := expressionTransformConfig()
+
+	err := Transform("demo", "Demo", cfg, Options{Expr: `jq(value, ".[" ) == true`})
+	if err == nil || !strings.Contains(err.Error(), "evaluate import expression for parameter root in project demo") {
+		t.Fatalf("Transform error = %v, want evaluation error", err)
+	}
+	if !reflect.DeepEqual(cfg, want) {
+		t.Fatalf("config changed after evaluation error:\n got: %#v\nwant: %#v", cfg, want)
+	}
+}
+
+func expressionTransformConfig() *firebase.RemoteConfig {
+	return &firebase.RemoteConfig{
+		Parameters: map[string]firebase.RemoteConfigParam{
+			"root": {DefaultValue: &firebase.RemoteConfigValue{Value: "root-value"}},
+		},
+		ParameterGroups: map[string]firebase.RemoteConfigGroup{
+			"group": {
+				Description: "keep me",
+				Parameters: map[string]firebase.RemoteConfigParam{
+					"grouped": {DefaultValue: &firebase.RemoteConfigValue{Value: "group-value"}},
+				},
+			},
+		},
 	}
 }

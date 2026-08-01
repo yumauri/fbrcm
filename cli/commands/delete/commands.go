@@ -96,13 +96,16 @@ func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr strin
 	if err != nil {
 		return err
 	}
-	compiledExpr, ok := shared.CompileExpr(projectExpr, "<stdin>")
-	if !ok {
-		return nil
+	compiledExpr, err := shared.CompileExpr(projectExpr, "<stdin>")
+	if err != nil {
+		return err
 	}
 
 	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
-	matched := shared.CollectMatchingParamTargets(project, cfg, paramFilters, search, compiledExpr, shared.DefaultRootGroupLabel)
+	matched, err := shared.CollectMatchingParamTargets(project, cfg, paramFilters, search, compiledExpr, shared.DefaultRootGroupLabel)
+	if err != nil {
+		return err
+	}
 	deleted, finalCfg, err := confirmAndDeleteProject(cmd, "<stdin>", cfg, matched, true, cmd.ErrOrStderr())
 	if err != nil {
 		return err

@@ -21,6 +21,7 @@ type Model struct {
 	expressionValue string
 	compiled        *filter.Expression
 	expressionErr   error
+	evaluationErr   error
 	input           textinput.Model
 }
 
@@ -53,7 +54,14 @@ func (m Model) CompiledExpression() *filter.Expression {
 }
 
 func (m Model) ExpressionValid() bool {
-	return !m.expression || m.expressionErr == nil
+	return !m.expression || m.expressionError() == nil
+}
+
+// SetExpressionEvaluationError reports an error encountered while applying a
+// successfully compiled expression. Passing nil clears the runtime error.
+func (m *Model) SetExpressionEvaluationError(err error) {
+	m.evaluationErr = err
+	m.applyInputStyle()
 }
 
 func (m Model) Value() string {
@@ -113,6 +121,7 @@ func (m *Model) ClearAndBlur() {
 		m.expressionValue = ""
 		m.compiled = nil
 		m.expressionErr = nil
+		m.evaluationErr = nil
 	} else {
 		m.textValue = ""
 	}
@@ -156,6 +165,7 @@ func (m *Model) valueChanged() {
 func (m *Model) validateExpression() {
 	compiled, err := filter.CompileExpression(m.input.Value())
 	m.expressionErr = err
+	m.evaluationErr = nil
 	if err == nil {
 		m.compiled = compiled
 	}
@@ -164,7 +174,7 @@ func (m *Model) validateExpression() {
 
 func (m *Model) applyInputStyle() {
 	inputStyle := inputstyles.TextInput()
-	if m.expression && m.expressionErr != nil {
+	if m.expression && m.expressionError() != nil {
 		errorStyle := lipgloss.NewStyle().Foreground(styles.PaletteError)
 		inputStyle.Focused.Text = errorStyle
 		inputStyle.Blurred.Text = errorStyle
@@ -208,7 +218,8 @@ func (m Model) View(width int, active bool, count int) []string {
 // rendered panel's bottom border without changing the filter or panel height.
 // leftInset is the number of cells before the filter label in the panel.
 func (m Model) OverlayExpressionError(panel string, leftInset int) string {
-	if panel == "" || !m.expression || m.expressionErr == nil {
+	err := m.expressionError()
+	if panel == "" || !m.expression || err == nil {
 		return panel
 	}
 
@@ -220,13 +231,20 @@ func (m Model) OverlayExpressionError(panel string, leftInset int) string {
 		return panel
 	}
 
-	message := "Expression error: " + firstLine(m.expressionErr.Error())
+	message := "Expression error: " + firstLine(err.Error())
 	message = ansi.Truncate(message, available, "…")
 	message = lipgloss.NewStyle().Foreground(styles.PaletteError).Render(message)
 	return lipgloss.NewCompositor(
 		lipgloss.NewLayer(panel).ID("filter-panel"),
 		lipgloss.NewLayer(message).ID("filter-expression-error").X(x).Y(height-1).Z(1),
 	).Render()
+}
+
+func (m Model) expressionError() error {
+	if m.expressionErr != nil {
+		return m.expressionErr
+	}
+	return m.evaluationErr
 }
 
 func firstLine(value string) string {

@@ -190,7 +190,10 @@ func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if err != nil {
 		return err
 	}
-	result := filterVersionDiff(project, rcdiff.CompareRemoteConfigs(fromCfg.Config, toCfg.Config), fromCfg.Config, toCfg.Config, opts)
+	result, err := filterVersionDiff(project, rcdiff.CompareRemoteConfigs(fromCfg.Config, toCfg.Config), fromCfg.Config, toCfg.Config, opts)
+	if err != nil {
+		return err
+	}
 	changed := result.HasChanges()
 	if opts.json {
 		if err := shared.WriteJSON(cmd, map[string]any{"project": project, "from_version": fromCfg.Version.VersionNumber, "to_version": toCfg.Version.VersionNumber, "changed": changed, "diff": result}); err != nil {
@@ -245,25 +248,23 @@ func readVersionDiffOptions(cmd *cobra.Command) versionDiffOptions {
 	return o
 }
 
-func filterVersionDiff(project core.Project, result rcdiff.Result, from, to *firebase.RemoteConfig, opts versionDiffOptions) rcdiff.Result {
+func filterVersionDiff(project core.Project, result rcdiff.Result, from, to *firebase.RemoteConfig, opts versionDiffOptions) (rcdiff.Result, error) {
 	if opts.parameters {
 		result.Conditions = nil
 	}
 	if opts.conditions {
 		result.Parameters = nil
 		result.GroupDescriptions = nil
-		return result
+		return result, nil
 	}
 	filters := shared.ParseFilters(opts.filters)
 	groupSet := map[string]bool{}
 	for _, g := range opts.groups {
 		groupSet[g] = true
 	}
-	compiledExpr, exprOK := shared.CompileExpr(strings.TrimSpace(opts.expr), project.ProjectID)
-	if strings.TrimSpace(opts.expr) != "" && !exprOK {
-		result.Parameters = nil
-		result.GroupDescriptions = nil
-		return result
+	compiledExpr, err := shared.CompileExpr(strings.TrimSpace(opts.expr), project.ProjectID)
+	if err != nil {
+		return rcdiff.Result{}, err
 	}
 	search := shared.NewParameterSearch(opts.search)
 	params := result.Parameters[:0]
@@ -287,8 +288,11 @@ func filterVersionDiff(project core.Project, result rcdiff.Result, from, to *fir
 		if group == "" {
 			group = "default"
 		}
-		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, change.Key, group)
-		if !ok || !match {
+		match, err := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, change.Key, group)
+		if err != nil {
+			return rcdiff.Result{}, err
+		}
+		if !match {
 			continue
 		}
 		params = append(params, change)
@@ -303,7 +307,7 @@ func filterVersionDiff(project core.Project, result rcdiff.Result, from, to *fir
 		}
 		result.GroupDescriptions = groups
 	}
-	return result
+	return result, nil
 }
 
 func newVersionsExportCommand(svc *core.Core) *cobra.Command {

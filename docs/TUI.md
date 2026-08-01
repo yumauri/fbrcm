@@ -460,9 +460,10 @@ with `:`. Promote and A/B Tests use only the four text modes above. A/B Tests
 matches experiment display names only; it does not search descriptions or
 resource IDs.
 
-Text and expression filters remember separate input. While an expression is
-temporarily invalid, the input turns red, a compact compiler error appears on
-the panel border, and the last valid result remains visible.
+Text and expression filters remember separate input. When an expression cannot
+be compiled or evaluated, the input turns red, a compact error appears on the
+panel border, and the last successfully filtered result remains visible.
+Editing the expression clears an evaluation error and retries the filter.
 
 Expression context depends on the panel:
 

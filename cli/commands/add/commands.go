@@ -230,7 +230,11 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 		return err
 	}
 
-	if !shared.MatchProjectByExpr(core.Project{Name: "<stdin>", ProjectID: "<stdin>"}, cfg, projectExpr) {
+	match, err := shared.MatchProjectByExpr(core.Project{Name: "<stdin>", ProjectID: "<stdin>"}, cfg, projectExpr)
+	if err != nil {
+		return err
+	}
+	if !match {
 		return nil
 	}
 

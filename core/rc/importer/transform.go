@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -14,6 +15,15 @@ import (
 func Transform(projectID, projectName string, cfg *firebase.RemoteConfig, opts Options) error {
 	if cfg == nil {
 		return nil
+	}
+	rawExpr := strings.TrimSpace(opts.Expr)
+	var compiledExpr *filter.Expression
+	if rawExpr != "" {
+		var err error
+		compiledExpr, err = filter.CompileExpression(rawExpr)
+		if err != nil {
+			return fmt.Errorf("compile import expression %q: %w", rawExpr, err)
+		}
 	}
 	groups := normalizeNames(opts.Groups)
 	if len(groups) > 0 {
@@ -35,18 +45,10 @@ func Transform(projectID, projectName string, cfg *firebase.RemoteConfig, opts O
 		})
 		PruneUnusedConditions(cfg)
 	}
-	if rawExpr := strings.TrimSpace(opts.Expr); rawExpr != "" {
-		compiled, err := filter.CompileExpression(rawExpr)
-		if err != nil {
-			cfg.Parameters = map[string]firebase.RemoteConfigParam{}
-			cfg.ParameterGroups = map[string]firebase.RemoteConfigGroup{}
-			cfg.Conditions = nil
-			return nil
+	if compiledExpr != nil {
+		if err := filterParametersByExpression(cfg, compiledExpr, projectID, projectName); err != nil {
+			return err
 		}
-		filterParameterMaps(cfg, func(name, group string, _ firebase.RemoteConfigParam) bool {
-			match, matchErr := compiled.MatchParameter(projectID, projectName, cfg, name, group)
-			return matchErr == nil && match
-		})
 		PruneUnusedConditions(cfg)
 	}
 
@@ -58,6 +60,39 @@ func Transform(projectID, projectName string, cfg *firebase.RemoteConfig, opts O
 	}
 
 	Cleanup(cfg)
+	return nil
+}
+
+func filterParametersByExpression(cfg *firebase.RemoteConfig, compiled *filter.Expression, projectID, projectName string) error {
+	rootMatches := make(map[string]bool, len(cfg.Parameters))
+	for _, name := range strfold.SortedKeys(cfg.Parameters) {
+		match, err := compiled.MatchParameter(projectID, projectName, cfg, name, rootgroup.Label)
+		if err != nil {
+			return fmt.Errorf("evaluate import expression for parameter %s in project %s: %w", name, projectID, err)
+		}
+		rootMatches[name] = match
+	}
+
+	groupMatches := make(map[string]map[string]bool, len(cfg.ParameterGroups))
+	for _, groupName := range strfold.SortedKeys(cfg.ParameterGroups) {
+		group := cfg.ParameterGroups[groupName]
+		matches := make(map[string]bool, len(group.Parameters))
+		for _, name := range strfold.SortedKeys(group.Parameters) {
+			match, err := compiled.MatchParameter(projectID, projectName, cfg, name, groupName)
+			if err != nil {
+				return fmt.Errorf("evaluate import expression for parameter %s in project %s: %w", name, projectID, err)
+			}
+			matches[name] = match
+		}
+		groupMatches[groupName] = matches
+	}
+
+	filterParameterMaps(cfg, func(name, group string, _ firebase.RemoteConfigParam) bool {
+		if group == rootgroup.Label {
+			return rootMatches[name]
+		}
+		return groupMatches[group][name]
+	})
 	return nil
 }
 

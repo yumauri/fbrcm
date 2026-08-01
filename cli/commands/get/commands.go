@@ -112,9 +112,9 @@ func runGetStdin(cmd *cobra.Command, opts getOptions) error {
 		return printGetRows(cmd, "table-stdin-dir", rows, opts.paramFilters, opts.jsonOut, false, true)
 	}
 	corelog.For("get").Info("stdin mode enabled; using remote config from stdin")
-	compiledExpr, ok := shared.CompileExpr(opts.projectExpr, "<stdin>")
-	if !ok {
-		return nil
+	compiledExpr, err := shared.CompileExpr(opts.projectExpr, "<stdin>")
+	if err != nil {
+		return err
 	}
 	_, rows, err := loadStdinParameterRows(cmd, compiledExpr, opts.search)
 	if err != nil {
@@ -141,13 +141,13 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	} else {
 		progress.Start("Loading Remote Config…")
 	}
-	loaded, err := loadProjectsParameters(context.Background(), svc, projects, opts.update)
+	compiledExpr, err := shared.CompileExpr(opts.projectExpr, "")
 	if err != nil {
 		return err
 	}
-	compiledExpr, ok := shared.CompileExpr(opts.projectExpr, "")
-	if !ok {
-		return nil
+	loaded, err := loadProjectsParameters(context.Background(), svc, projects, opts.update)
+	if err != nil {
+		return err
 	}
 
 	rows := make([]parameterRow, 0)
@@ -155,7 +155,11 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 		if item.cfg == nil || item.cache == nil {
 			continue
 		}
-		rows = append(rows, flattenParameters(item.project, item.cfg, item.cache.CachedAt, item.status, "", compiledExpr, opts.search)...)
+		projectRows, err := flattenParameters(item.project, item.cfg, item.cache.CachedAt, item.status, "", compiledExpr, opts.search)
+		if err != nil {
+			return err
+		}
+		rows = append(rows, projectRows...)
 	}
 
 	rows = filterParameterRows(rows, opts.paramFilters)

@@ -19,6 +19,7 @@ type ProjectTemplatePreferencesUpdatedMsg struct {
 
 type ProjectExpressionConfigsLoadedMsg struct {
 	Configs map[string]*firebase.RemoteConfig
+	Err     error
 }
 
 type ProjectsSelectionChangedMsg struct {

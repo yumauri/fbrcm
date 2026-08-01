@@ -12,6 +12,21 @@ fbrcm get --expr 'value | jq(.enabled == true)'
 
 In the TUI, press `:` while one of the supported panels is active and type the expression without a prefix. A temporarily invalid expression is shown in red with a single-line compiler diagnostic overlaid on the panel's bottom border while the panel retains the last valid result. The diagnostic does not change the filter or panel height. Text filters and expression filters use separate remembered input values.
 
+## Error Behavior
+
+An invalid expression is an error, not a query that matched nothing. CLI
+commands return nonzero for compilation, context-loading, and evaluation
+failures and print the failing project and item when available. Commands do not
+emit an empty success result for these failures. Multi-target `update` and
+`delete` may still complete independent targets, but mark each target whose
+expression could not be evaluated as `preparation-failed`; that target is not
+published or saved as a draft.
+
+In the TUI, both compilation and evaluation errors turn the expression input
+red and appear on the panel border. The attempted filter is rejected and the
+last successfully filtered result remains visible. Editing the expression
+clears the evaluation diagnostic and tries the new expression.
+
 ## Language Overview
 
 Expr-lang is a small expression language. `--expr` must evaluate to a boolean.

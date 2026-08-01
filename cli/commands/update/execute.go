@@ -29,12 +29,15 @@ func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramExpr string,
 	if err != nil {
 		return err
 	}
-	compiledExpr, ok := shared.CompileExpr(paramExpr, "<stdin>")
-	if !ok {
-		return nil
+	compiledExpr, err := shared.CompileExpr(paramExpr, "<stdin>")
+	if err != nil {
+		return err
 	}
 	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
-	matched := shared.CollectMatchingParamTargets(project, cfg, paramFilters, search, compiledExpr, shared.DefaultRootGroupLabel)
+	matched, err := shared.CollectMatchingParamTargets(project, cfg, paramFilters, search, compiledExpr, shared.DefaultRootGroupLabel)
+	if err != nil {
+		return err
+	}
 	updated, finalCfg, err := confirmAndUpdateProject(cmd, "<stdin>", cfg, matched, spec, true, cmd.ErrOrStderr())
 	if err != nil {
 		return err

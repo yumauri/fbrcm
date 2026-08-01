@@ -54,20 +54,30 @@ func TestFilterEntriesByExprUsesConditionContext(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		expr string
-		want []string
+		name    string
+		expr    string
+		want    []string
+		wantErr bool
 	}{
 		{name: "empty", want: []string{"unused", "used"}},
 		{name: "unused", expr: `usage_count == 0`, want: []string{"unused"}},
 		{name: "priority and color", expr: `priority == 2 && color == "BLUE"`, want: []string{"used"}},
 		{name: "usage parameter", expr: `any(usages, #.parameter == "flag")`, want: []string{"used"}},
 		{name: "project", expr: `project_id == "demo"`, want: []string{"unused", "used"}},
-		{name: "invalid", expr: `priority ==`, want: nil},
+		{name: "invalid", expr: `priority ==`, wantErr: true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			gotEntries := filterEntriesByExpr(project, entries, tc.expr)
+			gotEntries, err := filterEntriesByExpr(project, entries, tc.expr)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("filterEntriesByExpr error is nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("filterEntriesByExpr: %v", err)
+			}
 			got := make([]string, len(gotEntries))
 			for i, entry := range gotEntries {
 				got[i] = entry.Name
@@ -88,7 +98,10 @@ func TestConditionFiltersComposeWithAnd(t *testing.T) {
 	}
 
 	filtered := filterEntries(entries, []string{"^u"}, "release")
-	filtered = filterEntriesByExpr(project, filtered, `usage_count > 0`)
+	filtered, err := filterEntriesByExpr(project, filtered, `usage_count > 0`)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(filtered) != 1 || filtered[0].Name != "used" {
 		t.Fatalf("combined condition filters = %#v, want used", filtered)
 	}

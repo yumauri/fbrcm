@@ -10,7 +10,6 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
-	corelog "github.com/yumauri/fbrcm/core/log"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -258,21 +257,23 @@ func FilterProjectsByExpr(ctx context.Context, svc *core.Core, projects []core.P
 		return projects, nil
 	}
 
-	compiled, ok := CompileExpr(rawExpr, "")
-	if !ok {
-		return nil, nil
+	compiled, err := CompileExpr(rawExpr, "")
+	if err != nil {
+		return nil, err
 	}
 
 	filtered := make([]core.Project, 0, len(projects))
 	for _, project := range projects {
 		cfg, err := loadProjectExprConfig(ctx, svc, project)
 		if err != nil {
-			corelog.For("filter").Error("project expression context load failed; skipping project", "project_id", project.ProjectID, "expr", rawExpr, "err", err)
-			continue
+			return nil, fmt.Errorf("load expression context for project %s: %w", project.ProjectID, err)
 		}
 
-		match, ok := MatchProjectByCompiledExpr(compiled, project, cfg)
-		if ok && match {
+		match, err := MatchProjectByCompiledExpr(compiled, project, cfg)
+		if err != nil {
+			return nil, err
+		}
+		if match {
 			filtered = append(filtered, project)
 		}
 	}
@@ -289,101 +290,96 @@ func FilterProjectsByCachedExpr(svc *core.Core, projects []core.Project, rawExpr
 		return projects, nil
 	}
 
-	compiled, ok := CompileExpr(rawExpr, "")
-	if !ok {
-		return nil, nil
+	compiled, err := CompileExpr(rawExpr, "")
+	if err != nil {
+		return nil, err
 	}
 
 	filtered := make([]core.Project, 0, len(projects))
 	for _, project := range projects {
 		cfg, err := loadCachedProjectExprConfig(svc, project)
 		if err != nil {
-			corelog.For("filter").Error("cached project expression context load failed; skipping project", "project_id", project.ProjectID, "expr", rawExpr, "err", err)
-			continue
+			return nil, fmt.Errorf("load cached expression context for project %s: %w", project.ProjectID, err)
 		}
-		match, ok := MatchProjectByCompiledExpr(compiled, project, cfg)
-		if ok && match {
+		match, err := MatchProjectByCompiledExpr(compiled, project, cfg)
+		if err != nil {
+			return nil, err
+		}
+		if match {
 			filtered = append(filtered, project)
 		}
 	}
 	return filtered, nil
 }
 
-func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExpr string) bool {
+func MatchProjectByExpr(project core.Project, cfg *firebase.RemoteConfig, rawExpr string) (bool, error) {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
-		return true
+		return true, nil
 	}
 
-	compiled, ok := CompileExpr(rawExpr, project.ProjectID)
-	if !ok {
-		return false
+	compiled, err := CompileExpr(rawExpr, project.ProjectID)
+	if err != nil {
+		return false, err
 	}
 
-	match, ok := MatchProjectByCompiledExpr(compiled, project, cfg)
-	return ok && match
+	return MatchProjectByCompiledExpr(compiled, project, cfg)
 }
 
-func CompileExpr(rawExpr, projectID string) (*filter.Expression, bool) {
+func CompileExpr(rawExpr, projectID string) (*filter.Expression, error) {
 	rawExpr = strings.TrimSpace(rawExpr)
 	if rawExpr == "" {
-		return nil, true
+		return nil, nil
 	}
 
 	compiled, err := filter.CompileExpression(rawExpr)
 	if err != nil {
-		logger := corelog.For("filter")
 		if projectID == "" {
-			logger.Error("expression compile failed", "expr", rawExpr, "err", err)
-		} else {
-			logger.Error("expression compile failed", "project_id", projectID, "expr", rawExpr, "err", err)
+			return nil, fmt.Errorf("compile expression %q: %w", rawExpr, err)
 		}
-		return nil, false
+		return nil, fmt.Errorf("compile expression %q for project %s: %w", rawExpr, projectID, err)
 	}
 
-	return compiled, true
+	return compiled, nil
 }
 
-func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig) (bool, bool) {
+func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig) (bool, error) {
 	if compiled == nil {
-		return true, true
+		return true, nil
 	}
 
 	match, err := compiled.MatchProject(templateProjectID(project.ProjectID), project.Name, cfg)
 	if err != nil {
-		corelog.For("filter").Error("project expression evaluation failed; skipping project", "project_id", project.ProjectID, "err", err)
-		return false, false
+		return false, fmt.Errorf("evaluate expression for project %s: %w", project.ProjectID, err)
 	}
 
-	return match, true
+	return match, nil
 }
 
-func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig, name, group string) (bool, bool) {
+func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Project, cfg *firebase.RemoteConfig, name, group string) (bool, error) {
 	if compiled == nil {
-		return true, true
+		return true, nil
 	}
 
 	match, err := compiled.MatchParameter(templateProjectID(project.ProjectID), project.Name, cfg, name, group)
 	if err != nil {
-		corelog.For("filter").Error("parameter expression evaluation failed; skipping parameter", "project_id", project.ProjectID, "name", name, "group", group, "err", err)
-		return false, false
+		return false, fmt.Errorf("evaluate expression for parameter %s in project %s: %w", name, project.ProjectID, err)
 	}
 
-	return match, true
+	return match, nil
 }
 
-func MatchConditionByCompiledExpr(compiled *filter.Expression, project core.Project, entry core.ConditionEntry) (bool, bool) {
+func MatchConditionByCompiledExpr(compiled *filter.Expression, project core.Project, entry core.ConditionEntry) (bool, error) {
 	if compiled == nil {
-		return true, true
+		return true, nil
 	}
 
 	match, err := compiled.MatchCondition(templateProjectID(project.ProjectID), project.Name, entry)
 	if err != nil {
-		corelog.For("filter").Error("condition expression evaluation failed; skipping condition", "project_id", project.ProjectID, "condition", entry.Name, "err", err)
-		return false, false
+		return false, fmt.Errorf("evaluate expression for condition %s in project %s: %w", entry.Name, project.ProjectID, err)
 	}
 
-	return match, true
+	return match, nil
 }
 
 func templateProjectID(value string) string {

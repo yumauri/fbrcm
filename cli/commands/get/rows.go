@@ -14,9 +14,9 @@ import (
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
-func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedAt time.Time, status, version string, compiledExpr *filter.Expression, search shared.ParameterSearch) []parameterRow {
+func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedAt time.Time, status, version string, compiledExpr *filter.Expression, search shared.ParameterSearch) ([]parameterRow, error) {
 	if cfg == nil {
-		return nil
+		return nil, nil
 	}
 
 	if version == "" {
@@ -37,8 +37,11 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 		paramKeys := strfold.SortedKeys(group.Parameters)
 		for _, key := range paramKeys {
 			param := group.Parameters[key]
-			match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, groupKey)
-			if !ok || !match {
+			match, err := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, groupKey)
+			if err != nil {
+				return nil, err
+			}
+			if !match {
 				continue
 			}
 			if !shared.MatchParameterSearch(key, param, cfg, search) {
@@ -58,8 +61,11 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 	}
 	for _, key := range strfold.SortedKeys(rootParams) {
 		param := rootParams[key]
-		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, shared.DefaultRootGroupLabel)
-		if !ok || !match {
+		match, err := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, key, shared.DefaultRootGroupLabel)
+		if err != nil {
+			return nil, err
+		}
+		if !match {
 			continue
 		}
 		if !shared.MatchParameterSearch(key, param, cfg, search) {
@@ -68,7 +74,7 @@ func flattenParameters(project core.Project, cfg *firebase.RemoteConfig, cachedA
 		rows = append(rows, buildParameterRow(project, shared.DefaultRootGroupLabel, key, param, version, cachedAt, status, conditionOrder, conditionColors))
 	}
 
-	return rows
+	return rows, nil
 }
 
 func buildParameterRow(project core.Project, group, key string, param firebase.RemoteConfigParam, version string, cachedAt time.Time, status string, conditionOrder map[string]int, conditionColors map[string]string) parameterRow {

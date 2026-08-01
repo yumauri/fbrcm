@@ -237,7 +237,10 @@ func runDiff(cmd *cobra.Command, svc *core.Core, query string) error {
 	if err != nil {
 		return err
 	}
-	result := filterDiff(project, rcdiff.CompareRemoteConfigs(fromCfg, toCfg), fromCfg, toCfg, opts)
+	result, err := filterDiff(project, rcdiff.CompareRemoteConfigs(fromCfg, toCfg), fromCfg, toCfg, opts)
+	if err != nil {
+		return err
+	}
 	if opts.json {
 		if err := shared.WriteJSON(cmd, map[string]any{"project": project, "against": opts.against, "base_version": stored.BaseVersion, "current_version": currentVersion, "changed": result.HasChanges(), "diff": result}); err != nil {
 			return err

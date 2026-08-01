@@ -167,26 +167,31 @@ func (m Model) ViewWithBorder(active, borderActive bool) string {
 }
 
 func (m *Model) applyFilter() {
+	m.filter.SetExpressionEvaluationError(nil)
+	if m.filter.ExpressionMode() && !m.filter.ExpressionValid() {
+		return
+	}
 	currentID := ""
 	if m.cursor >= 0 && m.cursor < len(m.projects) {
 		currentID = m.projects[m.cursor].ProjectID
 	}
 
 	query := m.filter.Value()
-	m.projects = m.projects[:0]
+	projects := make([]core.Project, 0, len(m.allProjects))
 	for _, project := range m.allProjects {
 		if m.filter.ExpressionMode() {
-			cfg, ok := m.expressionConfigs[project.ProjectID]
-			if m.expressionConfigsReady && !ok {
-				continue
-			}
+			cfg := m.expressionConfigs[project.ProjectID]
 			projectID := project.ProjectID
 			if target, err := rctarget.Parse(projectID); err == nil {
 				projectID = target.ProjectID
 			}
 			matched, err := m.filter.CompiledExpression().MatchProject(projectID, project.Name, cfg)
-			if err == nil && matched {
-				m.projects = append(m.projects, project)
+			if err != nil {
+				m.filter.SetExpressionEvaluationError(fmt.Errorf("evaluate expression for project %s: %w", project.ProjectID, err))
+				return
+			}
+			if matched {
+				projects = append(projects, project)
 			}
 			continue
 		}
@@ -200,9 +205,10 @@ func (m *Model) applyFilter() {
 			}
 		}
 		if nameMatch || idMatch || aliasMatch {
-			m.projects = append(m.projects, project)
+			projects = append(projects, project)
 		}
 	}
+	m.projects = projects
 
 	m.cursor = 0
 	if currentID != "" {

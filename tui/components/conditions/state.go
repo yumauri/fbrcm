@@ -67,28 +67,37 @@ func (m *Model) updateLoaded(msg messages.ConditionsLoadedMsg) {
 
 func (m *Model) syncVisible() {
 	selected := m.currentIdentity()
-	m.visible = m.visible[:0]
+	m.filter.SetExpressionEvaluationError(nil)
+	if m.filter.ExpressionMode() && !m.filter.ExpressionValid() {
+		return
+	}
+	visible := make([]visibleNode, 0, len(m.visible))
 	query := m.filter.Value()
 	for projectIndex, project := range m.projects {
 		if projectIndex > 0 {
-			m.visible = append(m.visible, visibleNode{kind: nodeGap, conditionIndex: -1})
+			visible = append(visible, visibleNode{kind: nodeGap, conditionIndex: -1})
 		}
-		m.visible = append(m.visible, visibleNode{kind: nodeProject, projectID: project.project.ProjectID, conditionIndex: -1})
+		visible = append(visible, visibleNode{kind: nodeProject, projectID: project.project.ProjectID, conditionIndex: -1})
 		if project.tree == nil {
 			continue
 		}
 		for i, condition := range project.tree.Conditions {
 			if m.filter.ExpressionMode() {
 				matched, err := m.filter.CompiledExpression().MatchCondition(project.project.ProjectID, project.project.Name, condition)
-				if err != nil || !matched {
+				if err != nil {
+					m.filter.SetExpressionEvaluationError(fmt.Errorf("evaluate expression for condition %s in project %s: %w", condition.Name, project.project.ProjectID, err))
+					return
+				}
+				if !matched {
 					continue
 				}
 			} else if !conditionMatches(condition, query, m.filter.Mode()) {
 				continue
 			}
-			m.visible = append(m.visible, visibleNode{kind: nodeCondition, projectID: project.project.ProjectID, conditionIndex: i, conditionName: condition.Name})
+			visible = append(visible, visibleNode{kind: nodeCondition, projectID: project.project.ProjectID, conditionIndex: i, conditionName: condition.Name})
 		}
 	}
+	m.visible = visible
 	if len(m.visible) == 0 {
 		m.cursor, m.offset = 0, 0
 		return

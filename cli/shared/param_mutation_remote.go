@@ -106,13 +106,16 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 		return rc.RemoteMutationTotals{}, err
 	}
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
-	compiledExpr, ok := CompileExpr(opts.ParamExpr, "")
-	if !ok {
-		return rc.RemoteMutationTotals{}, nil
+	compiledExpr, err := CompileExpr(opts.ParamExpr, "")
+	if err != nil {
+		return rc.RemoteMutationTotals{}, err
 	}
 
 	plan := func(project core.Project, cfg *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
-		matched := CollectMatchingParamTargets(project, cfg.Config, opts.ParamFilters, opts.Search, compiledExpr, DefaultRootGroupLabel)
+		matched, err := CollectMatchingParamTargets(project, cfg.Config, opts.ParamFilters, opts.Search, compiledExpr, DefaultRootGroupLabel)
+		if err != nil {
+			return nil, err
+		}
 		if len(matched) == 0 {
 			return nil, nil
 		}

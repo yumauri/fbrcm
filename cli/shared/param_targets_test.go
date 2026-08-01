@@ -3,6 +3,8 @@ package shared
 import (
 	"testing"
 
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -33,6 +35,28 @@ func TestCollectParamTargetsSortsByKeyThenGroup(t *testing.T) {
 		if got[i].Key != want[i].key || got[i].Group != want[i].group {
 			t.Fatalf("target[%d] = (%q, %q), want (%q, %q)", i, got[i].Key, got[i].Group, want[i].key, want[i].group)
 		}
+	}
+}
+
+func TestCollectMatchingParamTargetsReturnsExpressionEvaluationError(t *testing.T) {
+	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
+		"flag": {DefaultValue: &firebase.RemoteConfigValue{Value: `{}`}},
+	}}
+	compiled, err := filter.CompileExpression(`jq(value, ".[" ) == true`)
+	if err != nil {
+		t.Fatalf("CompileExpression: %v", err)
+	}
+
+	_, err = CollectMatchingParamTargets(
+		core.Project{ProjectID: "demo", Name: "Demo"},
+		cfg,
+		nil,
+		ParameterSearch{},
+		compiled,
+		DefaultRootGroupLabel,
+	)
+	if err == nil {
+		t.Fatal("CollectMatchingParamTargets evaluation error is nil")
 	}
 }
 

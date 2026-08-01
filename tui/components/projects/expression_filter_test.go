@@ -58,3 +58,27 @@ func TestProjectsExpressionErrorRendersAboveUnchangedBottomBorder(t *testing.T) 
 		t.Fatalf("expression error was not overlaid on the bottom border: %q", bottom)
 	}
 }
+
+func TestProjectsExpressionEvaluationErrorKeepsPreviousResults(t *testing.T) {
+	m := loadedProjectsModel()
+	m.expressionConfigsReady = true
+	m.expressionConfigs = map[string]*firebase.RemoteConfig{}
+	m.filter.ActivateExpression()
+	m.filter, _ = m.filter.Update(tea.PasteMsg{Content: `project == "Alpha Project"`})
+	m.applyFilter()
+	if len(m.projects) != 1 || m.projects[0].ProjectID != "alpha" {
+		t.Fatalf("initial expression-filtered projects = %+v, want alpha", m.projects)
+	}
+
+	m.filter.ClearAndBlur()
+	m.filter.ActivateExpression()
+	m.filter, _ = m.filter.Update(tea.PasteMsg{Content: `jq(name, ".[" ) == true`})
+	m.applyFilter()
+
+	if m.filter.ExpressionValid() {
+		t.Fatal("runtime-invalid project expression is valid")
+	}
+	if len(m.projects) != 1 || m.projects[0].ProjectID != "alpha" {
+		t.Fatalf("evaluation error changed previous results: %+v", m.projects)
+	}
+}

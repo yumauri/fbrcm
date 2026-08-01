@@ -174,7 +174,10 @@ func runProjectsDiff(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuer
 	if err != nil {
 		return err
 	}
-	result := filterDiffResult(source, sourceCfg, target, targetCfg, rcdiff.CompareRemoteConfigs(targetCfg, sourceCfg), opts)
+	result, err := filterDiffResult(source, sourceCfg, target, targetCfg, rcdiff.CompareRemoteConfigs(targetCfg, sourceCfg), opts)
+	if err != nil {
+		return err
+	}
 	if opts.JSON {
 		if err := shared.WriteJSON(cmd, compareJSON(source, target, result)); err != nil {
 			return err
@@ -211,7 +214,10 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	}
 
 	plan := rcpromote.BuildPlan(sourceCfg, targetCfg, rcpromote.Options{Prune: opts.Prune})
-	plan.Diff = filterDiffResult(source, sourceCfg, target, targetCfg, plan.Diff, opts)
+	plan.Diff, err = filterDiffResult(source, sourceCfg, target, targetCfg, plan.Diff, opts)
+	if err != nil {
+		return err
+	}
 	plan.Items = filterPromotionItems(plan.Items, plan.Diff, opts)
 	if len(plan.Items) == 0 {
 		return writePromoteNoChanges(cmd, source, target, opts)
@@ -470,23 +476,21 @@ func filterPromotionItems(items []rcpromote.Item, result rcdiff.Result, opts com
 	return out
 }
 
-func filterDiffResult(source core.Project, sourceCfg *firebase.RemoteConfig, target core.Project, targetCfg *firebase.RemoteConfig, result rcdiff.Result, opts compareOptions) rcdiff.Result {
+func filterDiffResult(source core.Project, sourceCfg *firebase.RemoteConfig, target core.Project, targetCfg *firebase.RemoteConfig, result rcdiff.Result, opts compareOptions) (rcdiff.Result, error) {
 	if opts.ParametersOnly && !opts.ConditionsOnly {
 		result.Conditions = nil
 	}
 	if opts.ConditionsOnly && !opts.ParametersOnly {
 		result.Parameters = nil
 		result.GroupDescriptions = nil
-		return result
+		return result, nil
 	}
 
 	filters := shared.ParseFilters(opts.ParamFilters)
 	groups := groupsSet(opts.Groups)
-	compiledExpr, exprOK := shared.CompileExpr(opts.Expr, source.ProjectID)
-	if opts.Expr != "" && !exprOK {
-		result.Parameters = nil
-		result.GroupDescriptions = nil
-		return result
+	compiledExpr, err := shared.CompileExpr(opts.Expr, source.ProjectID)
+	if err != nil {
+		return rcdiff.Result{}, err
 	}
 
 	params := make([]rcdiff.ParameterChange, 0, len(result.Parameters))
@@ -512,8 +516,11 @@ func filterDiffResult(source core.Project, sourceCfg *firebase.RemoteConfig, tar
 		if !shared.MatchParameterSearch(change.Key, *param, cfg, opts.Search) {
 			continue
 		}
-		match, ok := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, change.Key, groupOrDefault(group))
-		if !ok || !match {
+		match, err := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, change.Key, groupOrDefault(group))
+		if err != nil {
+			return rcdiff.Result{}, err
+		}
+		if !match {
 			continue
 		}
 		params = append(params, change)
@@ -532,7 +539,7 @@ func filterDiffResult(source core.Project, sourceCfg *firebase.RemoteConfig, tar
 	if len(filters) > 0 || !opts.Search.Empty() || opts.Expr != "" {
 		result.GroupDescriptions = nil
 	}
-	return result
+	return result, nil
 }
 
 func groupsSet(groups []string) map[string]bool {
