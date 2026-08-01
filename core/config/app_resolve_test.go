@@ -80,6 +80,30 @@ delete = ["D"]
 	}
 }
 
+func TestResolveAppConfigHooksUseDeepMergeAndArrayReplacement(t *testing.T) {
+	setupTestDirs(t)
+	root := t.TempDir()
+	withWorkingDirectory(t, root)
+	if err := SaveAppConfig(&AppConfig{Hooks: &HooksConfig{
+		Timeout: "30s", PrePublish: []string{"global-pre"}, PostPublish: []string{"global-post"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(root, LocalConfigFileName), `[hooks]
+pre_publish = ["local-pre"]
+`, 0o644)
+
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved.Effective.Hooks == nil || resolved.Effective.Hooks.Timeout != "30s" ||
+		!reflect.DeepEqual(resolved.Effective.Hooks.PrePublish, []string{"local-pre"}) ||
+		!reflect.DeepEqual(resolved.Effective.Hooks.PostPublish, []string{"global-post"}) {
+		t.Fatalf("effective hooks = %+v", resolved.Effective.Hooks)
+	}
+}
+
 func TestResolveAppConfigCanDisableLocalOverlay(t *testing.T) {
 	setupTestDirs(t)
 	root := t.TempDir()

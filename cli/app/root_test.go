@@ -42,7 +42,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "personalizations", "profile", "project", "projects", "rollouts", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "hooks", "personalizations", "profile", "project", "projects", "rollouts", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -66,7 +66,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{19, 19, 19}) {
+	if !reflect.DeepEqual(counts, []int{20, 20, 20}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }
@@ -135,6 +135,25 @@ func TestRootCommandTreatsConfigAsLocalRecoverySurface(t *testing.T) {
 	cmd.SetArgs([]string{"config", "show", "powerline_glyphs"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute config: %v", err)
+	}
+	if calls != 0 {
+		t.Fatalf("connectivity probe calls = %d, want 0", calls)
+	}
+}
+
+func TestRootCommandTreatsHooksAsLocalRecoverySurface(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "../invalid")
+
+	calls := 0
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"hooks", "status", "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute hooks: %v", err)
 	}
 	if calls != 0 {
 		t.Fatalf("connectivity probe calls = %d, want 0", calls)

@@ -19,6 +19,7 @@ import (
 	duplicatecmd "github.com/yumauri/fbrcm/cli/commands/duplicate"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
 	groupscmd "github.com/yumauri/fbrcm/cli/commands/groups"
+	hookscmd "github.com/yumauri/fbrcm/cli/commands/hooks"
 	managedfeaturescmd "github.com/yumauri/fbrcm/cli/commands/managedfeatures"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
@@ -44,6 +45,10 @@ func isConfigCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "config" || strings.HasPrefix(cmd.CommandPath(), "fbrcm config")
 }
 
+func isHooksCommand(cmd *cobra.Command) bool {
+	return cmd.Name() == "hooks" || strings.HasPrefix(cmd.CommandPath(), "fbrcm hooks")
+}
+
 func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	return newRootCommandWithOfflineInit(s, version, commit, date, firebase.InitOfflineMode)
 }
@@ -53,12 +58,15 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 		Use:   "fbrcm",
 		Short: "Firebase Remote Config manager",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if s != nil {
+				s.SetHookOutput(cmd.ErrOrStderr())
+			}
 			noLocalConfig, err := cmd.Flags().GetBool("no-local-config")
 			if err != nil {
 				return err
 			}
 			config.SetLocalConfigDisabled(noLocalConfig)
-			if cmd.Name() == "help" || isConfigCommand(cmd) {
+			if cmd.Name() == "help" || isConfigCommand(cmd) || isHooksCommand(cmd) {
 				return nil
 			}
 			progress.Start(commandProgressMessage(cmd))
@@ -103,6 +111,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(managedfeaturescmd.NewExperiments(s))
 	rootCmd.AddCommand(getcmd.New(s))
 	rootCmd.AddCommand(groupscmd.New(s))
+	rootCmd.AddCommand(hookscmd.New())
 	rootCmd.AddCommand(managedfeaturescmd.NewPersonalizations(s))
 	rootCmd.AddCommand(profilecmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))

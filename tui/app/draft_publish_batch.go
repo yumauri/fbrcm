@@ -223,9 +223,12 @@ func (m Model) updateDraftPublishExecuted(msg draftPublishExecutedMsg) (Model, t
 		result.published = msg.cache != nil
 		var cleanupErr *core.DraftPublishedCleanupError
 		var cacheErr *core.RemoteConfigPublishedCacheError
+		var hookErr *core.RemoteConfigPublishedHookError
 		switch {
 		case errors.As(msg.err, &cleanupErr):
 			result.status = "published; cleanup failed"
+		case errors.As(msg.err, &hookErr):
+			result.status = "published; post_publish hook failed"
 		case errors.As(msg.err, &cacheErr):
 			result.status = "published; cache update failed"
 		case result.published:

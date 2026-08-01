@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -251,6 +252,18 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 
 	published, err := publishPromotePlan(ctx, cmd, svc, target, sourceCfg, opts, selected)
 	if err != nil {
+		if published {
+			if opts.JSON {
+				payload := promoteJSON(source, target, opts, true, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)).(map[string]any)
+				payload["status"] = "published-hook-failed"
+				payload["error"] = map[string]any{"stage": "post_publish_hook", "message": err.Error()}
+				if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
+					return writeErr
+				}
+			} else {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ promoted, post_publish hook failed: %s -> %s: %v\n", source.ProjectID, target.ProjectID, err)
+			}
+		}
 		return err
 	}
 	if opts.JSON {
@@ -341,6 +354,10 @@ func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		}
 		retry, err := rc.ValidateAndPublishRemoteConfig(ctx, svc, target.ProjectID, finalRaw, etag, "promote", cmd.ErrOrStderr())
 		if err != nil {
+			var hookErr *core.RemoteConfigPublishedHookError
+			if errors.As(err, &hookErr) {
+				return true, err
+			}
 			return false, err
 		}
 		if retry {

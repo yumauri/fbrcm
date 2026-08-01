@@ -375,6 +375,16 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		if publishErr != nil {
 			var cleanupErr *core.DraftPublishedCleanupError
 			var cacheErr *core.RemoteConfigPublishedCacheError
+			var hookErr *core.RemoteConfigPublishedHookError
+			if errors.As(publishErr, &hookErr) && cache != nil {
+				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
+				result.Status = "published-hook-failed"
+				result.PublishedVersion = publishedCfg.Version.VersionNumber
+				result.Error = publishErr.Error()
+				results = append(results, result)
+				failed = true
+				continue
+			}
 			if errors.As(publishErr, &cleanupErr) && cache != nil {
 				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
 				result.Status = "published-cleanup-failed"
@@ -433,7 +443,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	}
 	var retryIDs []string
 	for _, result := range results {
-		if result.Error != "" && result.Status != "published-cleanup-failed" && result.Status != "published-cache-failed" {
+		if result.Error != "" && result.Status != "published-cleanup-failed" && result.Status != "published-cache-failed" && result.Status != "published-hook-failed" {
 			retryIDs = append(retryIDs, result.ProjectID)
 		}
 	}

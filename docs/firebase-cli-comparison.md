@@ -9,10 +9,11 @@ publish Firebase Remote Config. They are optimized for different workflows:
   aliases, and deployment hooks for several Firebase products.
 - **fbrcm** is a Remote Config workbench. It is designed for interactive
   inspection, targeted edits, local drafts, comparisons, and promotion across
-  many projects and both client and server templates.
+  many projects and both client and server templates. Repository hooks can
+  enforce policy across every fbrcm publication path.
 
 This comparison covers the documented Firebase CLI surface and
-`firebase-tools` 15.25.1 as of July 31, 2026. Consult the
+`firebase-tools` 15.25.1 as of August 1, 2026. Consult the
 [current Firebase CLI reference](https://firebase.google.com/docs/cli) when
 using a later release.
 
@@ -23,6 +24,8 @@ Use Firebase CLI when:
 - Remote Config is one part of a larger Firebase deployment;
 - the complete client template is maintained in source control;
 - the team already relies on Firebase project aliases and deploy hooks;
+- hooks must coordinate Remote Config with deployments of other Firebase
+  products;
 - one command should deploy Hosting, Functions, Rules, Remote Config, and
   other Firebase resources.
 
@@ -33,6 +36,8 @@ Use fbrcm when:
 - changes should be staged in local drafts and rebased safely before publish;
 - you compare or promote Remote Config between environments;
 - you manage client and server templates from the same terminal workspace;
+- repository hooks should validate the exact generated Remote Config candidate
+  before any direct, draft, import, promotion, restore, or rollback publication;
 - you want an interactive TUI as well as automation-friendly CLI commands.
 
 The tools can be used together. A team can keep its canonical template in a
@@ -80,7 +85,8 @@ that the other tool approaches the same concern differently.
 | Credential health and permission diagnostics | ⚠️ Partial | ✅ Yes | `fbrcm doctor` checks identities, storage, connectivity, APIs, and Remote Config read/update permissions. |
 | Multiple local authentication identities | ✅ Yes | ✅ Yes | Firebase CLI selects accounts globally; fbrcm binds cached projects to identities inside isolated profiles. |
 | Repository project aliases | ✅ Yes | ➖ No direct equivalent | Firebase CLI stores aliases in `.firebaserc`; fbrcm resolves cached projects by name, ID, filters, and profiles. |
-| Predeploy and postdeploy hooks | ✅ Yes | ❌ No | Firebase CLI integrates hooks through `firebase.json`. |
+| Repository-local configuration | ✅ Yes | ✅ Yes | Firebase CLI uses `firebase.json` and `.firebaserc`; fbrcm discovers the nearest `.fbrcm.toml` and deeply overlays it on user-wide `config.toml`. |
+| Pre- and post-publication hooks | ✅ Yes | ✅ Yes | Firebase CLI defines `predeploy` and `postdeploy` hooks for deployable resources in `firebase.json`. fbrcm defines Remote Config `pre_publish` and `post_publish` hooks, supplies current/candidate/context JSON files, and requires explicit trust for repository hooks. |
 | Deploy other Firebase products | ✅ Yes | ❌ No | fbrcm intentionally focuses on Remote Config. |
 | User-authored Remote Config change note | ❌ No | ✅ Yes | fbrcm exposes `--change-note`, stores `change_note` with drafts, prompts in TUI publication reviews, and maps it to the REST API's writable `version.description`. Firebase CLI's `--message` is used for Hosting release comments. |
 
@@ -104,6 +110,9 @@ template; use `client@project-id` or `server@project-id` when needed.
 | Publish template file | `firebase --project PROJECT deploy --only remoteconfig` | `fbrcm project import PROJECT --from FILE [--change-note TEXT]` |
 | Preview template-file deployment | `firebase --project PROJECT deploy --only remoteconfig --dry-run` | `fbrcm project import PROJECT --from FILE --dry-run` |
 | Stage template file without publishing | No equivalent | `fbrcm project import PROJECT --from FILE --draft` |
+| Configure publication hooks | Add `predeploy` or `postdeploy` under the resource in `firebase.json` | Add `hooks.pre_publish` or `hooks.post_publish` to `.fbrcm.toml` or global `config.toml` |
+| Inspect repository hook trust | No explicit trust workflow | `fbrcm hooks status` or `fbrcm hooks fingerprint` |
+| Trust repository hooks | Repository configuration executes as part of deployment | `fbrcm hooks trust`, or pin `FBRCM_HOOK_TRUST` to the expected fingerprint in CI |
 | Roll back to version | `firebase --project PROJECT remoteconfig:rollback -v VERSION` | `fbrcm versions rollback PROJECT VERSION` |
 | Restore cached version | No equivalent | `fbrcm versions restore PROJECT VERSION` |
 | List experiments | `firebase --project PROJECT remoteconfig:experiments:list` | `fbrcm experiments list PROJECT` |
@@ -178,6 +187,30 @@ fbrcm projects diff client@backend-project server@backend-project
 Client and server targets have independent template caches, drafts, and version
 histories.
 
+### Enforce repository publication policy
+
+Commit a local `.fbrcm.toml`:
+
+```toml
+[hooks]
+timeout = "2m"
+pre_publish = ["./scripts/validate-remote-config.sh"]
+post_publish = ["./scripts/notify-remote-config-published.sh"]
+```
+
+The validation script reads the exact candidate through
+`FBRCM_CANDIDATE_FILE`. After reviewing the commands, each developer explicitly
+trusts that definition:
+
+```sh
+fbrcm hooks status
+fbrcm hooks trust
+```
+
+`pre_publish` also runs for publication dry runs, so the same policy can be
+exercised in CI without writing Firebase state. Saving a local draft does not
+run hooks; publishing it does.
+
 ## Important behavioral differences
 
 ### Complete-template deployment vs. targeted operations
@@ -200,6 +233,26 @@ Both tools use Firebase ETags. fbrcm additionally keeps local drafts and
 historical snapshots. Immediate fbrcm writes refuse to bypass an existing
 draft, and draft publication rebases local intent rather than silently
 overwriting unrelated remote changes.
+
+### Hook scope and trust
+
+Firebase CLI deployment hooks belong to deployable resources in
+`firebase.json` and can coordinate several Firebase products. fbrcm hooks are
+intentionally narrower: they run around every Remote Config publication made by
+fbrcm, including the TUI, direct mutations, draft publication, imports,
+promotions, restores, and native rollbacks.
+
+Because fbrcm builds candidates in memory, it gives hooks private temporary
+`current.json`, `candidate.json`, and `context.json` files; post-hooks also
+receive `published.json`. Hooks validate or perform side effects and cannot
+transform the published candidate. A failed pre-hook prevents publication. A
+failed post-hook is reported as a published partial success and is not safe to
+retry blindly.
+
+Global fbrcm hooks are user-owned and trusted automatically. Hooks introduced
+by `.fbrcm.toml` require an explicit path-and-content fingerprint trust record,
+which is invalidated when the local hook definition changes. CI can pin that
+fingerprint with `FBRCM_HOOK_TRUST`.
 
 ### Scope
 

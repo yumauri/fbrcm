@@ -10,6 +10,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
@@ -65,6 +66,7 @@ func ValidateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigP
 }
 
 func validateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigPublisher, projectID string, raw json.RawMessage, etag, operation string, errOut io.Writer) (RemoteConfigMutationPublishResult, error) {
+	ctx = corehooks.WithOperation(ctx, operation)
 	progress.Start("Validating Remote Config for " + projectID + "…")
 	if err := publisher.ValidateRemoteConfigWithETag(ctx, projectID, raw, etag); err != nil {
 		if IsRemoteConfigConflict(err) {
@@ -84,7 +86,12 @@ func validateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigP
 			writeRemoteConfigRetry(errOut, operation, projectID)
 			return RemoteConfigMutationPublishResult{Retry: true, FailureStage: "publication"}, nil
 		}
-		return RemoteConfigMutationPublishResult{PublishedRaw: publishedRaw}, err
+		failureStage := ""
+		var hookErr *corehooks.Error
+		if errors.As(err, &hookErr) {
+			failureStage = string(hookErr.Event) + "_hook"
+		}
+		return RemoteConfigMutationPublishResult{PublishedRaw: publishedRaw, FailureStage: failureStage}, err
 	}
 	result := RemoteConfigMutationPublishResult{PublishedRaw: publishedRaw}
 	if !firebase.IsDryRun(ctx) {

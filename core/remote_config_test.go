@@ -13,6 +13,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 )
 
 func TestExportRemoteConfig(t *testing.T) {
@@ -216,4 +217,89 @@ func TestPublishRemoteConfigWithETagRejectsInvalidJSON(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "decode remote config") {
 		t.Fatalf("PublishRemoteConfigWithETag invalid = %v, want decode error", err)
 	}
+}
+
+func TestPublishRemoteConfigWithETagDryRunRunsOnlyPrePublishHooks(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	markerDir := t.TempDir()
+	preMarker := filepath.Join(markerDir, "pre")
+	postMarker := filepath.Join(markerDir, "post")
+	if err := config.SaveAppConfig(&config.AppConfig{Hooks: &config.HooksConfig{
+		PrePublish:  []string{"printf pre > " + shellQuote(preMarker)},
+		PostPublish: []string{"printf post > " + shellQuote(postMarker)},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	payload := remoteConfigRaw("2", map[string]string{"flag": "published"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodPut {
+			return jsonResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+		}
+		return nil, io.EOF
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	if _, _, err := svc.PublishRemoteConfigWithETag(firebase.WithDryRun(context.Background()), "demo", payload, "etag-1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(preMarker); err != nil {
+		t.Fatalf("pre hook did not run: %v", err)
+	}
+	if _, err := os.Stat(postMarker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("post hook ran during dry-run: %v", err)
+	}
+}
+
+func TestPublishRemoteConfigWithETagPreHookFailurePreventsWrite(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	if err := config.SaveAppConfig(&config.AppConfig{Hooks: &config.HooksConfig{PrePublish: []string{"exit 17"}}}); err != nil {
+		t.Fatal(err)
+	}
+	writes := 0
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+		writes++
+		return jsonResponse(http.StatusOK, `{}`, `"etag-2"`), nil
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	_, _, err := svc.PublishRemoteConfigWithETag(context.Background(), "demo", remoteConfigRaw("2", nil), "etag-1")
+	var hookErr *corehooks.Error
+	if !errors.As(err, &hookErr) || hookErr.Event != corehooks.PrePublish || hookErr.ExitCode != 17 {
+		t.Fatalf("publish error = %v", err)
+	}
+	if writes != 0 {
+		t.Fatalf("Firebase writes = %d, want zero", writes)
+	}
+}
+
+func TestPublishRemoteConfigWithETagPostHookFailureReportsPublishedState(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	if err := config.SaveAppConfig(&config.AppConfig{Hooks: &config.HooksConfig{PostPublish: []string{"exit 23"}}}); err != nil {
+		t.Fatal(err)
+	}
+	payload := remoteConfigRaw("2", map[string]string{"flag": "published"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodPut {
+			return jsonResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+		}
+		return nil, io.EOF
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	raw, etag, err := svc.PublishRemoteConfigWithETag(context.Background(), "demo", payload, "etag-1")
+	var publishedErr *RemoteConfigPublishedHookError
+	var hookErr *corehooks.Error
+	if !errors.As(err, &publishedErr) || !errors.As(err, &hookErr) || hookErr.Event != corehooks.PostPublish {
+		t.Fatalf("publish error = %v", err)
+	}
+	if len(raw) == 0 || etag != `"etag-2"` || string(publishedErr.RemoteConfig) != string(payload) {
+		t.Fatalf("published state = %s/%s, typed=%+v", raw, etag, publishedErr)
+	}
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }

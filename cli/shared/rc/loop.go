@@ -28,6 +28,7 @@ const (
 	RemoteMutationConflict             RemoteMutationStatus = "conflict"
 	RemoteMutationPublishFailed        RemoteMutationStatus = "publish-failed"
 	RemoteMutationPublishedCacheFailed RemoteMutationStatus = "published-cache-failed"
+	RemoteMutationPublishedHookFailed  RemoteMutationStatus = "published-hook-failed"
 	RemoteMutationDrafted              RemoteMutationStatus = "drafted"
 	RemoteMutationWouldDraft           RemoteMutationStatus = "would-draft"
 	RemoteMutationWouldPublish         RemoteMutationStatus = "would-publish"
@@ -197,8 +198,13 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 			result.Status = RemoteMutationConflict
 			result.Err = fmt.Errorf("remote config changed during %s; rerun the command to review a fresh candidate", operation)
 		case err != nil:
+			var hookPublishErr *core.RemoteConfigPublishedHookError
 			var cacheErr *core.RemoteConfigPublishedCacheError
-			if errors.As(err, &cacheErr) {
+			if errors.As(err, &hookPublishErr) {
+				result.Status, result.Published, result.Err = RemoteMutationPublishedHookFailed, true, err
+				totals.ModifiedProjects++
+				totals.ChangedParams += result.ChangedCount
+			} else if errors.As(err, &cacheErr) {
 				result.Status, result.Published, result.Err = RemoteMutationPublishedCacheFailed, true, err
 				totals.ModifiedProjects++
 				totals.ChangedParams += result.ChangedCount
@@ -325,6 +331,8 @@ func remoteMutationErrorStage(result RemoteMutationResult) string {
 		return "publication"
 	case RemoteMutationPublishedCacheFailed:
 		return "cache"
+	case RemoteMutationPublishedHookFailed:
+		return "post_publish_hook"
 	case RemoteMutationDraftFailed:
 		return "draft"
 	default:
@@ -345,6 +353,8 @@ func writeMutationResult(cmd *cobra.Command, result RemoteMutationResult, publis
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "⏭️ unchanged: %s\n", projectID)
 	case RemoteMutationPublishedCacheFailed:
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ published, cache update failed: %s: %v\n", projectID, result.Err)
+	case RemoteMutationPublishedHookFailed:
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ published, post_publish hook failed: %s: %v\n", projectID, result.Err)
 	default:
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ %s: %s: %v\n", strings.ReplaceAll(string(result.Status), "-", " "), projectID, result.Err)
 	}

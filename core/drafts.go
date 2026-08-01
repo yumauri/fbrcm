@@ -8,6 +8,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/draft"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
@@ -119,6 +120,7 @@ func (s *Core) PrepareDraftPublish(ctx context.Context, projectID string) (*Draf
 }
 
 func (s *Core) ExecuteDraftPublish(ctx context.Context, projectID string, plan *DraftPublishPlan) (*ParametersCache, *ParametersTree, error) {
+	ctx = corehooks.WithOperation(ctx, "draft-publish")
 	cache, _, publishErr := draft.ExecutePublish(ctx, s.draftDeps(), projectID, plan)
 	if publishErr != nil && cache == nil {
 		return nil, nil, publishErr

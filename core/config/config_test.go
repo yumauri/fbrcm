@@ -113,6 +113,22 @@ func TestDecodeAppConfigStrictRejectsUnknownFields(t *testing.T) {
 	}
 }
 
+func TestDecodeAppConfigValidatesHooks(t *testing.T) {
+	for _, raw := range []string{
+		"[hooks]\ntimeout = \"later\"\n",
+		"[hooks]\ntimeout = \"0s\"\n",
+		"[hooks]\npre_publish = [\"  \"]\n",
+	} {
+		if _, err := DecodeAppConfig([]byte(raw), true); err == nil {
+			t.Fatalf("DecodeAppConfig(%q) succeeded", raw)
+		}
+	}
+	cfg, err := DecodeAppConfig([]byte("[hooks]\ntimeout = \"2m\"\npre_publish = [\"./check\"]\n"), true)
+	if err != nil || cfg.Hooks == nil || cfg.Hooks.PrePublish[0] != "./check" {
+		t.Fatalf("DecodeAppConfig valid = %+v, %v", cfg, err)
+	}
+}
+
 func TestSaveAppConfigAtomicallyReplacesPrivateFile(t *testing.T) {
 	setupTestDirs(t)
 	enabled := true

@@ -170,6 +170,12 @@ fbrcm [--help] [--version] [--profile <name>] [--no-local-config]
 │   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
 │   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
 │
+├── hooks
+│   ├── status [--json]
+│   ├── fingerprint
+│   ├── trust [--yes|-y] [--json]
+│   └── untrust [--json]
+│
 ├── personalizations
 │   ├── list <project> [--update] [--json]
 │   └── show <project> <personalization-id> [--update] [--json]
@@ -334,9 +340,9 @@ fbrcm [--help] [--version] [--profile <name>] [--no-local-config]
 
 All commands support `--help`. Root also supports `--version`.
 
-When `FBRCM_OFFLINE` is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before executing a network-capable CLI command and automatically enables offline mode if the probe fails. Help, version, and all `config` commands skip this probe. The probe and other standard HTTP requests honor `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`, including their lowercase forms. Defining `FBRCM_OFFLINE`, including with an empty value or `0`, enables offline mode without probing.
+When `FBRCM_OFFLINE` is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before executing a network-capable CLI command and automatically enables offline mode if the probe fails. Help, version, and all `config` and `hooks` commands skip this probe. The probe and other standard HTTP requests honor `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`, including their lowercase forms. Defining `FBRCM_OFFLINE`, including with an empty value or `0`, enables offline mode without probing.
 
-Most commands require a selected profile. `profile`, `config`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
+Most commands require a selected profile. `profile`, `config`, `hooks`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
 
 At startup, fbrcm searches the current directory and every parent through the
 filesystem root for `.fbrcm.toml`. The nearest match deeply overlays the global
@@ -379,6 +385,7 @@ FBRCM_PROFILE
 | `FBRCM_LOG_LEVEL` | Set logging to `debug`, `info`, `warn`, `error`, `fatal`, or `silent`, case-insensitively. The default is `info`. |
 | `FBRCM_EDITOR` | Select the command used by `config edit`, after `--editor` and before `VISUAL` or `EDITOR`. Arguments are supported. |
 | `FBRCM_NO_LOCAL_CONFIG` | Ignore repository `.fbrcm.toml` discovery when set to a non-empty value. The root `--no-local-config` flag provides the same behavior for one invocation. |
+| `FBRCM_HOOK_TRUST` | Trust local hooks for this invocation only when the value exactly matches `fbrcm hooks fingerprint`. Intended for CI. |
 | `NO_COLOR` | Disable CLI, prompt, log, and TUI colors when set to a non-empty value. |
 | `COLUMNS` | Supply a positive terminal width for human-readable CLI output. Invalid values are ignored. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Select an Application Default Credentials JSON file for gcloud identities and diagnostics. |
@@ -502,6 +509,83 @@ Drafts are profile-scoped, target-specific, self-contained records. Each version
 Immediate Remote Config writes refuse to proceed when the target has an unpublished draft. This guard applies to add, duplicate, update, delete, condition mutations, project import, version rollback/restore, and project promotion. Resolve the draft with `draft publish` or `draft discard`, or add the intended mutation to it with `--draft`.
 
 Multi-project Remote Config publication is non-atomic: Firebase accepts a separate validated write for each project. Commands process every selected project even when an independent project fails, collect one outcome per project, and print the complete `Results:` block after operation logging has finished. They return nonzero after the batch if any project failed. Successful projects are not rolled back. Conflicts are reported for a fresh explicit retry instead of silently recalculating and publishing a different candidate. Failed-project output includes exact `-p '=project-id'` filters for retrying only projects that were not published.
+
+### Publication hooks
+
+Global `config.toml` and repository `.fbrcm.toml` files may define commands that
+run around every Remote Config publication:
+
+```toml
+[hooks]
+timeout = "2m"
+pre_publish = [
+  "./scripts/validate-parameter-names.sh",
+  "go run ./tools/validate-remote-config",
+]
+post_publish = ["./scripts/notify-remote-config-published.sh"]
+```
+
+Commands run sequentially through `/bin/sh -c` on Unix-like systems and
+`cmd.exe /S /C` on Windows. The timeout applies to each command and defaults to
+five minutes. An empty command, invalid duration, or non-positive duration
+makes the configuration invalid. Hook arrays follow normal configuration merge
+rules: a local array replaces the corresponding global array rather than
+concatenating with it.
+
+`pre_publish` runs after the final candidate and Firebase validation have been
+prepared, immediately before the publication request. A nonzero exit, timeout,
+signal, or shell error prevents publication. It also runs for publication
+`--dry-run` operations, allowing CI to exercise policy checks. `post_publish`
+runs only after Firebase accepts a real publication; it does not run for dry
+runs or failed writes. A failed post-hook cannot undo the publication, so fbrcm
+reports the operation as published with a post-hook failure and returns nonzero.
+Do not blindly retry that outcome because doing so can create another Remote
+Config version.
+
+Saving or previewing a draft does not run hooks. Publishing a draft does.
+Direct mutations, imports, promotions, version restores, native rollbacks, and
+their TUI equivalents use the same publication lifecycle. No-op operations do
+not run hooks. Multi-target commands run hooks sequentially for each target and
+continue with independent targets after a target-specific failure.
+
+For each publication fbrcm creates a private temporary directory containing
+read-only `current.json` and `candidate.json` files plus `context.json`.
+Post-hooks also receive `published.json`. Hooks validate or perform side
+effects; editing these files never transforms the candidate sent to Firebase.
+The directory is removed after the operation.
+
+Every hook inherits the fbrcm process environment and receives:
+
+```text
+FBRCM_HOOK_EVENT       pre_publish or post_publish
+FBRCM_OPERATION        originating operation
+FBRCM_TARGET           canonical client or server template target
+FBRCM_PROJECT_ID       physical Firebase project ID
+FBRCM_TEMPLATE_KIND    client or server
+FBRCM_PROFILE          selected profile
+FBRCM_DRY_RUN          true or false
+FBRCM_CHANGE_NOTE      publication change note, possibly empty
+FBRCM_CONFIG_FILE      config file supplying this hook array
+FBRCM_PROJECT_DIR      directory containing that config file
+FBRCM_CURRENT_FILE     current.json path
+FBRCM_CANDIDATE_FILE   candidate.json path
+FBRCM_CONTEXT_FILE     context.json path
+FBRCM_PUBLISHED_FILE   published.json path, empty before publication
+GCLOUD_PROJECT         alias of FBRCM_PROJECT_ID
+PROJECT_DIR            alias of FBRCM_PROJECT_DIR
+```
+
+The command working directory is the directory containing the config file that
+supplied its effective hook array. Hook output is written to stderr in CLI mode,
+preserving JSON stdout, and to the Logs panel in TUI mode.
+
+Global hooks are trusted automatically. Repository hooks execute local code and
+must be trusted explicitly with `fbrcm hooks trust`. Trust is stored outside the
+repository as the canonical local config path plus a SHA-256 fingerprint of the
+effective hook commands and timeout. Changing the path, commands, or timeout
+invalidates trust. Noninteractive publication with untrusted hooks fails before
+any Firebase write. CI can pin the exact value printed by `fbrcm hooks
+fingerprint` in `FBRCM_HOOK_TRUST`; a mismatched value fails closed.
 
 ### Mutation JSON automation contract
 
@@ -1505,8 +1589,8 @@ Shows the effective layered configuration after applying keybinding migration
 and built-in defaults. With no key, human output is TOML and includes the
 complete effective key map. `--scope global` or `--scope local` instead shows
 only values physically stored in that layer. Supported keys are `profile`,
-`powerline_glyphs`, `keys`, `keys.<block>`, and
-`keys.<block>.<action>`. A selected scalar prints as plain text; a selected
+`powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
+`hooks.timeout`, `hooks.pre_publish`, and `hooks.post_publish`. A selected scalar prints as plain text; a selected
 keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
 
 Flags:
@@ -1569,7 +1653,8 @@ Flags:
 
 ### `fbrcm config validate`
 
-Strictly validates TOML structure, profile references, and keybindings. By
+Strictly validates TOML structure, profile references, keybindings, hook
+commands, and hook timeout syntax. By
 default, it validates both stored layers and their effective merged result.
 Use `--scope` to isolate a stored layer or the effective configuration. It
 reports all keybinding diagnostics in stable order. Missing files are valid
@@ -1595,7 +1680,8 @@ when valid. If editing or validation fails, the original remains unchanged and
 the staged path is preserved for recovery.
 
 When the target does not exist, the editor starts with a sparse commented file.
-`--full` instead stages a complete generated keybinding template. Saving that
+`--full` instead stages a complete generated keybinding template and commented
+hook examples. Saving that
 template makes every retained entry an explicit override, so remove entries
 that should continue following future built-in defaults. Normal startup never
 materializes defaults into either config file.
@@ -1608,6 +1694,51 @@ Flags:
 --scope global|local   select the stored layer; default global
 --full                 stage a complete generated keybinding template
 --editor <command>     override the editor command
+```
+
+Hook arrays are authored through `config edit`; `config set` intentionally does
+not split command strings into array elements.
+
+### `fbrcm hooks status`
+
+Shows the effective pre- and post-publication commands, timeout, local config
+path, fingerprint, and whether local hooks are currently trusted.
+
+Flags:
+
+```text
+--json   print structured hook status
+```
+
+### `fbrcm hooks fingerprint`
+
+Prints the SHA-256 fingerprint of the current effective local hook definition.
+Returns nonzero when the repository config does not define a hook array. Pin
+this value in `FBRCM_HOOK_TRUST` for noninteractive CI execution.
+
+### `fbrcm hooks trust`
+
+Displays the local config path, hook working directory, fingerprint, and every
+effective command, then asks whether to trust it. Trust is stored in the global
+private `hook-trust.json` file and becomes invalid when the hook definition or
+canonical local config path changes. Yes is selected by default.
+
+Flags:
+
+```text
+-y, --yes   trust without confirmation
+    --json  print structured hook status
+```
+
+### `fbrcm hooks untrust`
+
+Removes stored trust for the currently discovered local config. It does not
+edit either config layer.
+
+Flags:
+
+```text
+--json   print the local path and whether a record changed
 ```
 
 ### `fbrcm auth list`

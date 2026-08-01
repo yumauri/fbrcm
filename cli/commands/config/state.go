@@ -127,6 +127,13 @@ func cloneAppConfig(cfg *coreconfig.AppConfig) *coreconfig.AppConfig {
 	if out.Keys == nil {
 		out.Keys = map[string]map[string][]string{}
 	}
+	if cfg.Hooks != nil {
+		out.Hooks = &coreconfig.HooksConfig{
+			Timeout:     cfg.Hooks.Timeout,
+			PrePublish:  append([]string(nil), cfg.Hooks.PrePublish...),
+			PostPublish: append([]string(nil), cfg.Hooks.PostPublish...),
+		}
+	}
 	return out
 }
 
@@ -141,6 +148,22 @@ func configValue(state configState, key string) (any, string, error) {
 		return *state.Effective.PowerlineGlyphs, source, nil
 	case key == "keys":
 		return state.Effective.Keys, keySource(state, parts), nil
+	case key == "hooks":
+		return state.Effective.Hooks, hookSource(state, ""), nil
+	case len(parts) == 2 && parts[0] == "hooks":
+		if state.Effective.Hooks == nil {
+			return nil, "default", nil
+		}
+		switch parts[1] {
+		case "timeout":
+			return state.Effective.Hooks.Timeout, hookSource(state, parts[1]), nil
+		case "pre_publish":
+			return append([]string(nil), state.Effective.Hooks.PrePublish...), hookSource(state, parts[1]), nil
+		case "post_publish":
+			return append([]string(nil), state.Effective.Hooks.PostPublish...), hookSource(state, parts[1]), nil
+		default:
+			return nil, "", fmt.Errorf("unknown hook key %q", parts[1])
+		}
 	case len(parts) == 2 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {
 			return nil, "", fmt.Errorf("unknown keybinding block %q", parts[1])
@@ -157,6 +180,25 @@ func configValue(state configState, key string) (any, string, error) {
 	default:
 		return nil, "", fmt.Errorf("unknown config key %q", key)
 	}
+}
+
+func hookSource(state configState, key string) string {
+	has := func(cfg *coreconfig.AppConfig) bool {
+		if cfg == nil || cfg.Hooks == nil {
+			return false
+		}
+		switch key {
+		case "timeout":
+			return strings.TrimSpace(cfg.Hooks.Timeout) != ""
+		case "pre_publish":
+			return cfg.Hooks.PrePublish != nil
+		case "post_publish":
+			return cfg.Hooks.PostPublish != nil
+		default:
+			return true
+		}
+	}
+	return scalarSource(has(state.Local), has(state.Global))
 }
 
 func keySource(state configState, parts []string) string {

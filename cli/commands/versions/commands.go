@@ -2,6 +2,7 @@ package versions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -443,9 +444,12 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	progress.Start(action + project.ProjectID + "…")
 	if dry {
 		if restore {
-			if _, err := svc.RestoreRemoteConfigVersion(ctx, project.ProjectID, target.Version.VersionNumber); err != nil {
-				return err
-			}
+			_, err = svc.RestoreRemoteConfigVersion(ctx, project.ProjectID, target.Version.VersionNumber)
+		} else {
+			_, err = svc.RollbackRemoteConfig(ctx, project.ProjectID, target.Version.VersionNumber)
+		}
+		if err != nil {
+			return err
 		}
 		result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, true, true)
 		if jsonOut {
@@ -465,20 +469,40 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	if restore {
 		result, err = svc.RestoreRemoteConfigVersion(ctx, project.ProjectID, target.Version.VersionNumber)
 	} else {
-		result, err = svc.RollbackRemoteConfig(context.Background(), project.ProjectID, target.Version.VersionNumber)
+		result, err = svc.RollbackRemoteConfig(ctx, project.ProjectID, target.Version.VersionNumber)
 	}
-	if err != nil {
+	publishErr := err
+	if publishErr != nil && result.PublishedVersion == "" {
 		if !restore && target.Cached {
-			return fmt.Errorf("%w; if Firebase no longer retains version %s, republish the local snapshot with: fbrcm versions restore %s %s", err, target.Version.VersionNumber, project.ProjectID, target.Version.VersionNumber)
+			return fmt.Errorf("%w; if Firebase no longer retains version %s, republish the local snapshot with: fbrcm versions restore %s %s", publishErr, target.Version.VersionNumber, project.ProjectID, target.Version.VersionNumber)
 		}
-		return err
+		return publishErr
 	}
 	payload := versionPublishJSON(project.ProjectID, restore, result.PreviousVersion, result.SourceVersion, result.PublishedVersion, changeNote, false, true)
+	if publishErr != nil {
+		status := "published-local-update-failed"
+		var hookErr *core.RemoteConfigPublishedHookError
+		var cacheErr *core.RemoteConfigPublishedCacheError
+		switch {
+		case errors.As(publishErr, &hookErr):
+			status = "published-hook-failed"
+		case errors.As(publishErr, &cacheErr):
+			status = "published-cache-failed"
+		}
+		payload["status"] = status
+		payload["error"] = map[string]any{"stage": map[bool]string{true: "post_publish_hook", false: "cache"}[status == "published-hook-failed"], "message": publishErr.Error()}
+	}
 	if jsonOut {
-		return shared.WriteJSON(cmd, payload)
+		if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
+			return writeErr
+		}
+		return publishErr
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s v%s → v%s, using v%s\n", map[bool]string{true: "♻️ restored", false: "⏪ rolled back"}[restore], project.ProjectID, result.PreviousVersion, result.PublishedVersion, result.SourceVersion)
-	return nil
+	if publishErr != nil {
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Published with warning: %v\n", publishErr)
+	}
+	return publishErr
 }
 
 func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, changeNote *string, dryRun, changed bool) map[string]any {

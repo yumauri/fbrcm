@@ -105,6 +105,34 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 		return *cfg.PowerlineGlyphs, source, nil
 	case key == "keys":
 		return cfg.Keys, source, nil
+	case key == "hooks":
+		if cfg.Hooks == nil {
+			return nil, "absent", nil
+		}
+		return cfg.Hooks, source, nil
+	case len(parts) == 2 && parts[0] == "hooks":
+		if cfg.Hooks == nil {
+			return nil, "absent", nil
+		}
+		switch parts[1] {
+		case "timeout":
+			if strings.TrimSpace(cfg.Hooks.Timeout) == "" {
+				return nil, "absent", nil
+			}
+			return cfg.Hooks.Timeout, source, nil
+		case "pre_publish":
+			if cfg.Hooks.PrePublish == nil {
+				return nil, "absent", nil
+			}
+			return append([]string(nil), cfg.Hooks.PrePublish...), source, nil
+		case "post_publish":
+			if cfg.Hooks.PostPublish == nil {
+				return nil, "absent", nil
+			}
+			return append([]string(nil), cfg.Hooks.PostPublish...), source, nil
+		default:
+			return nil, "", fmt.Errorf("unknown hook key %q", parts[1])
+		}
 	case len(parts) == 2 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {
 			return nil, "", fmt.Errorf("unknown keybinding block %q", parts[1])

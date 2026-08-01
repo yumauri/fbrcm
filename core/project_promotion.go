@@ -10,6 +10,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/draft"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
@@ -292,6 +293,7 @@ func (s *Core) SaveProjectPromotionDraft(preview *ProjectPromotionPreview) (*Pro
 }
 
 func (s *Core) PublishProjectPromotion(ctx context.Context, preview *ProjectPromotionPreview) (*ProjectPromotionResult, error) {
+	ctx = corehooks.WithOperation(ctx, "promotion")
 	if err := validatePromotionPreview(preview); err != nil {
 		return nil, err
 	}

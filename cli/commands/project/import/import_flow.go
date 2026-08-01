@@ -15,6 +15,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/core/rc/importer"
 )
 
@@ -25,6 +26,8 @@ type importResult struct {
 	Draft      bool    `json:"draft"`
 	DryRun     bool    `json:"dry_run"`
 	ChangeNote *string `json:"change_note"`
+	Published  bool    `json:"published,omitempty"`
+	Error      string  `json:"error,omitempty"`
 }
 
 // Run executes the project import command pipeline.
@@ -214,10 +217,23 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	} else {
 		progress.Start("Publishing Remote Config import for " + project.ProjectID + "…")
 	}
-	if _, _, err := svc.PublishRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
-		return err
+	ctx = corehooks.WithOperation(ctx, "import")
+	publishedRaw, _, publishErr := svc.PublishRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag)
+	if publishErr != nil {
+		var hookErr *core.RemoteConfigPublishedHookError
+		if !errors.As(publishErr, &hookErr) || len(publishedRaw) == 0 {
+			return publishErr
+		}
+		result.Status = "imported-hook-failed"
+		result.Published = true
+		result.Error = publishErr.Error()
+		if writeErr := writeImportResult(cmd, jsonOut, result); writeErr != nil {
+			return writeErr
+		}
+		return publishErr
 	}
 	result.Status = "imported"
+	result.Published = !dryRun
 	if dryRun {
 		result.Status = "would-import"
 	}
@@ -235,6 +251,8 @@ func writeImportResult(cmd *cobra.Command, jsonOut bool, result importResult) er
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📝 %s: %s\n", strings.ReplaceAll(result.Status, "-", " "), result.ProjectID)
 	case "imported", "would-import":
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📥 %s: %s\n", strings.ReplaceAll(result.Status, "-", " "), result.ProjectID)
+	case "imported-hook-failed":
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ imported, post_publish hook failed: %s: %s\n", result.ProjectID, result.Error)
 	}
 	return nil
 }

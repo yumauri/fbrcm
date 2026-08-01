@@ -298,10 +298,6 @@ func ExecutePublish(ctx context.Context, deps Deps, projectID string, plan *Publ
 			return nil, nil, err
 		}
 	}
-	if firebase.IsDryRun(ctx) {
-		return &config.ParametersCache{ETag: plan.Latest.ETag, CachedAt: plan.Latest.CachedAt, RemoteConfig: plan.Candidate}, plan.Candidate, nil
-	}
-
 	updatedRaw, nextETag, publishErr := deps.PublishRemoteConfigWithETag(ctx, projectID, plan.Candidate, plan.Latest.ETag)
 	if publishErr != nil && (len(updatedRaw) == 0 || nextETag == "") {
 		return nil, nil, publishErr
@@ -317,9 +313,11 @@ func ExecutePublish(ctx context.Context, deps Deps, projectID string, plan *Publ
 	if publishErr != nil {
 		return updatedCache, updatedRaw, publishErr
 	}
-	if err := Delete(projectID); err != nil {
-		logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
-		return updatedCache, updatedRaw, &PublishedCleanupError{Err: err}
+	if !firebase.IsDryRun(ctx) {
+		if err := Delete(projectID); err != nil {
+			logger.Warn("remove draft after publish failed", "project_id", projectID, "err", err)
+			return updatedCache, updatedRaw, &PublishedCleanupError{Err: err}
+		}
 	}
 	return updatedCache, updatedRaw, nil
 }

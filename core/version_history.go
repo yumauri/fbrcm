@@ -12,6 +12,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 )
 
 type VersionListOptions struct {
@@ -266,13 +267,36 @@ func currentRelativeDistance(selector string) (int, bool, error) {
 }
 
 func (s *Core) RollbackRemoteConfig(ctx context.Context, projectID, sourceVersion string) (VersionPublishResult, error) {
-	currentRaw, _, err := s.ExportRemoteConfig(ctx, projectID)
+	ctx = corehooks.WithOperation(ctx, "rollback")
+	currentRaw, currentETag, err := s.ExportRemoteConfig(ctx, projectID)
 	if err != nil {
 		return VersionPublishResult{}, err
 	}
 	current, err := firebase.ParseRemoteConfig(currentRaw)
 	if err != nil {
 		return VersionPublishResult{}, err
+	}
+	source, err := s.GetRemoteConfigVersion(ctx, projectID, sourceVersion, false)
+	if err != nil {
+		return VersionPublishResult{}, err
+	}
+	candidateRaw, err := firebase.PrepareRemoteConfigUpdate(source.Cache.RemoteConfig)
+	if err != nil {
+		return VersionPublishResult{}, fmt.Errorf("prepare rollback candidate: %w", err)
+	}
+	if err := s.ValidateRemoteConfigWithETag(ctx, projectID, candidateRaw, currentETag); err != nil {
+		return VersionPublishResult{}, err
+	}
+	hookSession, err := s.preparePublicationHooks(ctx, projectID, currentRaw, candidateRaw)
+	if err != nil {
+		return VersionPublishResult{}, err
+	}
+	defer hookSession.Close()
+	if err := hookSession.Run(ctx, corehooks.PrePublish, nil); err != nil {
+		return VersionPublishResult{}, err
+	}
+	if firebase.IsDryRun(ctx) {
+		return VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion}, nil
 	}
 	fb, err := s.firebaseServiceForProject(ctx, projectID)
 	if err != nil {
@@ -286,15 +310,22 @@ func (s *Core) RollbackRemoteConfig(ctx context.Context, projectID, sourceVersio
 	if err != nil {
 		return VersionPublishResult{}, err
 	}
-	if !firebase.IsDryRun(ctx) {
-		if err := config.SaveParametersCache(projectID, &config.ParametersCache{ETag: etag, CachedAt: time.Now().UTC(), RemoteConfig: raw}); err != nil {
-			return VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion, PublishedVersion: published.Version.VersionNumber, RemoteConfig: raw, ETag: etag}, fmt.Errorf("rollback succeeded but cache update failed: %w", err)
-		}
+	result := VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion, PublishedVersion: published.Version.VersionNumber, RemoteConfig: raw, ETag: etag}
+	var cacheErr error
+	if err := config.SaveParametersCache(projectID, &config.ParametersCache{ETag: etag, CachedAt: time.Now().UTC(), RemoteConfig: raw}); err != nil {
+		cacheErr = err
 	}
-	return VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion, PublishedVersion: published.Version.VersionNumber, RemoteConfig: raw, ETag: etag}, nil
+	if err := hookSession.Run(ctx, corehooks.PostPublish, raw); err != nil {
+		return result, &RemoteConfigPublishedHookError{ProjectID: projectID, RemoteConfig: raw, ETag: etag, HookErr: err, CacheErr: cacheErr}
+	}
+	if cacheErr != nil {
+		return result, &RemoteConfigPublishedCacheError{ProjectID: projectID, RemoteConfig: raw, ETag: etag, Err: cacheErr}
+	}
+	return result, nil
 }
 
 func (s *Core) RestoreRemoteConfigVersion(ctx context.Context, projectID, sourceVersion string) (VersionPublishResult, error) {
+	ctx = corehooks.WithOperation(ctx, "restore")
 	source, err := s.GetRemoteConfigVersion(ctx, projectID, sourceVersion, true)
 	if err != nil {
 		return VersionPublishResult{}, err

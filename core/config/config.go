@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
@@ -13,6 +15,48 @@ type AppConfig struct {
 	Profile         string                         `toml:"profile,omitempty" json:"profile"`
 	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty" json:"powerline_glyphs"`
 	Keys            map[string]map[string][]string `toml:"keys,omitempty" json:"keys"`
+	Hooks           *HooksConfig                   `toml:"hooks,omitempty" json:"hooks,omitempty"`
+}
+
+const DefaultHookTimeout = 5 * time.Minute
+
+// HooksConfig configures commands around Remote Config publication.
+type HooksConfig struct {
+	Timeout     string   `toml:"timeout,omitempty" json:"timeout,omitempty"`
+	PrePublish  []string `toml:"pre_publish,omitempty" json:"pre_publish,omitempty"`
+	PostPublish []string `toml:"post_publish,omitempty" json:"post_publish,omitempty"`
+}
+
+// HookTimeout parses the configured per-command timeout.
+func (c *HooksConfig) HookTimeout() (time.Duration, error) {
+	if c == nil || strings.TrimSpace(c.Timeout) == "" {
+		return DefaultHookTimeout, nil
+	}
+	timeout, err := time.ParseDuration(strings.TrimSpace(c.Timeout))
+	if err != nil {
+		return 0, fmt.Errorf("hooks.timeout must be a duration such as 30s or 2m: %w", err)
+	}
+	if timeout <= 0 {
+		return 0, fmt.Errorf("hooks.timeout must be positive")
+	}
+	return timeout, nil
+}
+
+func validateHooksConfig(hooks *HooksConfig) error {
+	if hooks == nil {
+		return nil
+	}
+	if _, err := hooks.HookTimeout(); err != nil {
+		return err
+	}
+	for name, commands := range map[string][]string{"pre_publish": hooks.PrePublish, "post_publish": hooks.PostPublish} {
+		for i, command := range commands {
+			if strings.TrimSpace(command) == "" {
+				return fmt.Errorf("hooks.%s[%d] must not be empty", name, i)
+			}
+		}
+	}
+	return nil
 }
 
 func GetGlobalConfigFilePath() string {
@@ -57,6 +101,9 @@ func LoadAppConfigStrict() (*AppConfig, error) {
 func DecodeAppConfig(raw []byte, strict bool) (*AppConfig, error) {
 	cfg := &AppConfig{}
 	if err := decodeTOMLWithOptions(raw, cfg, strict); err != nil {
+		return nil, err
+	}
+	if err := validateHooksConfig(cfg.Hooks); err != nil {
 		return nil, err
 	}
 	return cfg, nil

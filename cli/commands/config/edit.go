@@ -164,7 +164,12 @@ func loadConfigStateForEdit(state configState, scope string, full bool) ([]byte,
 		if err != nil {
 			return nil, fmt.Errorf("encode full config template: %w", err)
 		}
-		return append([]byte("# Complete generated template. Remove entries you do not want to override.\n# View effective bindings with: fbrcm config show keys\n\n"), raw...), nil
+		header := []byte("# Complete generated template. Remove entries you do not want to override.\n# View effective bindings with: fbrcm config show keys\n\n")
+		full := append(header, raw...)
+		if template.Hooks == nil {
+			full = append(full, []byte("\n# Publication hooks run sequentially using the platform shell.\n# [hooks]\n# timeout = \"5m\"\n# pre_publish = [\"./scripts/validate-remote-config.sh\"]\n# post_publish = [\"./scripts/notify-remote-config.sh\"]\n")...)
+		}
+		return full, nil
 	}
 	if !exists {
 		return []byte("# Add only values you want to override.\n# View valid key names with: fbrcm config show keys\n"), nil

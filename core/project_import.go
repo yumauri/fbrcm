@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/yumauri/fbrcm/core/firebase"
+	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	"github.com/yumauri/fbrcm/core/rc/importer"
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
@@ -143,6 +144,7 @@ func (s *Core) ExecuteProjectImport(ctx context.Context, plan *ProjectImportPlan
 		return nil, fmt.Errorf("project %s has an unpublished draft; update the draft or publish it separately", plan.Project.ProjectID)
 	}
 	if publish {
+		ctx = corehooks.WithOperation(ctx, "import")
 		latest, _, err := s.GetParameters(ctx, plan.Project.ProjectID, true)
 		if err != nil {
 			return nil, err

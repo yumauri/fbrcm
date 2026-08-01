@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -34,6 +35,9 @@ type Core struct {
 	oauthFlowID     atomic.Uint64
 	// versionHistory deduplicates concurrent version-pair reads per project and selectors.
 	versionHistory singleflight.Group
+	// hookOutput is nil in the TUI so output is routed through the shared log sink.
+	hookMu     sync.RWMutex
+	hookOutput io.Writer
 }
 
 func NewService(ctx context.Context) (*Core, error) {
