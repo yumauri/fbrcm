@@ -49,6 +49,21 @@ brew install --cask fbrcm
 
 ### Windows
 
+Install the latest release from PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/yumauri/fbrcm/main/install.ps1 | iex
+```
+
+The installer places `fbrcm.exe` in
+`%LOCALAPPDATA%\Programs\fbrcm\bin` by default and adds that directory to your
+user `PATH`. To use another directory:
+
+```powershell
+$env:INSTALL_DIR = 'C:\Tools\fbrcm'
+irm https://raw.githubusercontent.com/yumauri/fbrcm/main/install.ps1 | iex
+```
+
 With [Scoop](https://scoop.sh):
 
 ```powershell
