@@ -56,34 +56,38 @@ func LocalConfigDisabled() bool {
 // FindLocalConfig searches startDir and each ancestor through the filesystem
 // root. If no file exists, candidate is startDir/.fbrcm.toml.
 func FindLocalConfig(startDir string) (candidate string, found bool, err error) {
+	return findAncestorFile(startDir, LocalConfigFileName)
+}
+
+func findAncestorFile(startDir, name string) (candidate string, found bool, err error) {
 	if strings.TrimSpace(startDir) == "" {
-		return "", false, fmt.Errorf("local config start directory is empty")
+		return "", false, fmt.Errorf("file search start directory is empty")
 	}
 	startDir, err = filepath.Abs(startDir)
 	if err != nil {
-		return "", false, fmt.Errorf("resolve local config start directory: %w", err)
+		return "", false, fmt.Errorf("resolve file search start directory: %w", err)
 	}
 	info, err := os.Stat(startDir)
 	if err != nil {
-		return "", false, fmt.Errorf("inspect local config start directory %s: %w", startDir, err)
+		return "", false, fmt.Errorf("inspect file search start directory %s: %w", startDir, err)
 	}
 	if !info.IsDir() {
-		return "", false, fmt.Errorf("local config start path is not a directory: %s", startDir)
+		return "", false, fmt.Errorf("file search start path is not a directory: %s", startDir)
 	}
-	first := filepath.Join(startDir, LocalConfigFileName)
+	first := filepath.Join(startDir, name)
 	for dir := startDir; ; dir = filepath.Dir(dir) {
-		path := filepath.Join(dir, LocalConfigFileName)
+		path := filepath.Join(dir, name)
 		info, statErr := os.Stat(path)
 		switch {
 		case statErr == nil:
 			if !info.Mode().IsRegular() {
-				return "", false, fmt.Errorf("local config is not a regular file: %s", path)
+				return "", false, fmt.Errorf("repository file is not a regular file: %s", path)
 			}
 			return path, true, nil
 		case errors.Is(statErr, os.ErrNotExist):
 			// Continue to the parent.
 		default:
-			return "", false, fmt.Errorf("inspect local config %s: %w", path, statErr)
+			return "", false, fmt.Errorf("inspect repository file %s: %w", path, statErr)
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {

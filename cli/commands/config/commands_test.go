@@ -198,6 +198,30 @@ unknown = ["x"]
 	}
 }
 
+func TestConfigValidateReportsFirebaseRCAliasErrors(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	withCommandWorkingDirectory(t, root)
+	if err := os.WriteFile(filepath.Join(root, coreconfig.FirebaseConfigFileName), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, coreconfig.FirebaseRCFileName), []byte(`{"projects":{"Prod":"acme-production-42"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _, err := executeConfigCommand(t, New(), "validate", "--scope", "effective", "--json")
+	var exitErr *shared.ExitError
+	if !errors.As(err, &exitErr) || exitErr.Code != 1 {
+		t.Fatalf("validate error = %#v", err)
+	}
+	var report configValidationResult
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Valid || len(report.Errors) != 1 || report.Errors[0].Code != "project_alias_source" || !strings.Contains(report.Errors[0].Message, coreconfig.FirebaseRCFileName) {
+		t.Fatalf("Firebase RC validation report = %+v", report)
+	}
+}
+
 func TestConfigEditStagesValidChanges(t *testing.T) {
 	setupConfigCommandTest(t)
 	var gotEditor string

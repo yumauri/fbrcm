@@ -85,7 +85,7 @@ that the other tool approaches the same concern differently.
 | Cache and offline inspection | ❌ | ✅ | fbrcm keeps project, template, and immutable version snapshots for offline work. |
 | Credential health and permission diagnostics | ⚠️ | ✅ | `fbrcm doctor` checks identities, storage, connectivity, APIs, and Remote Config read/update permissions. |
 | Multiple local authentication identities | ✅ | ✅ | Firebase CLI selects accounts globally; fbrcm binds cached projects to identities inside isolated profiles. |
-| Repository project aliases | ✅ | ✅ | Firebase CLI stores aliases in `.firebaserc`; fbrcm stores profile-independent aliases in `.fbrcm.toml` and composes them with client/server template targets. |
+| Repository project aliases | ✅ | ✅ | fbrcm reads Firebase CLI aliases from `.firebaserc`, merges native `.fbrcm.toml` aliases with conflict detection, supports explicit import, and composes aliases with client/server template targets. |
 | Repository-local configuration | ✅ | ✅ | Firebase CLI uses `firebase.json` and `.firebaserc`; fbrcm discovers the nearest `.fbrcm.toml` and deeply overlays it on user-wide `config.toml`. |
 | Pre- and post-publication hooks | ✅ | ✅ | Firebase CLI defines `predeploy` and `postdeploy` hooks for deployable resources in `firebase.json`. fbrcm defines Remote Config `pre_publish` and `post_publish` hooks, supplies current/candidate/context JSON files, and requires explicit trust for repository hooks. |
 | User-authored Remote Config change note | ❌ | ✅ | fbrcm exposes `--change-note`, stores `change_note` with drafts, prompts in TUI publication reviews, and maps it to the REST API's writable `version.description`. Firebase CLI's `--message` is used for Hosting release comments. |
@@ -224,12 +224,13 @@ and condition-level operations with a generated diff before publication.
 ### Project selection
 
 Firebase CLI is directory-oriented and uses an active project, `--project`, and
-shared aliases in `.firebaserc`. fbrcm stores shared aliases in `.fbrcm.toml`,
-discovers accessible projects, caches them per profile, and supports selecting
-multiple projects or template targets within one invocation. An fbrcm alias
-does not create an implicit active project: unqualified aliases use the active
-profile's configured primary template, while `client@alias` and `server@alias`
-are deterministic.
+shared aliases in `.firebaserc`. fbrcm reads those aliases and merges them with
+native aliases in `.fbrcm.toml`, rejecting conflicting targets. It discovers
+accessible projects, caches them per profile, and supports selecting multiple
+projects or template targets within one invocation. An fbrcm alias does not
+create an implicit active project: unqualified aliases use the active profile's
+configured primary template, while `client@alias` and `server@alias` are
+deterministic.
 
 ### Safety and local state
 

@@ -61,6 +61,7 @@ func validationReportForScope(scope string) (configValidationResult, error) {
 		if err != nil {
 			return configValidationResult{}, err
 		}
+		appendProjectAliasSourceValidation(&state.Report)
 		return state.Report, nil
 	}
 
@@ -96,11 +97,25 @@ func validationReportForScope(scope string) (configValidationResult, error) {
 			diagnostic.Key = scopedDiagnosticKey(scopeEffective, diagnostic.Key)
 			report.Warnings = append(report.Warnings, diagnostic)
 		}
+		appendProjectAliasSourceValidation(&report)
 	}
 	sortDiagnostics(report.Errors)
 	sortDiagnostics(report.Warnings)
 	report.Valid = len(report.Errors) == 0
 	return report, nil
+}
+
+func appendProjectAliasSourceValidation(report *configValidationResult) {
+	if _, err := coreconfig.LoadProjectAliasRegistry(); err != nil {
+		report.Errors = append(report.Errors, configDiagnostic{
+			Severity: "error",
+			Code:     "project_alias_source",
+			Key:      "projects.aliases",
+			Message:  err.Error(),
+		})
+		report.Valid = false
+		sortDiagnostics(report.Errors)
+	}
 }
 
 func scopedDiagnosticKey(scope, key string) string {

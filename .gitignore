@@ -32,3 +32,4 @@ client_secret.json
 projects-config.json
 token.json
 .fbrcm.toml
+.firebaserc

@@ -110,6 +110,29 @@ func TestResolveCachedProjectTargetArgUsesAliasAndConfiguredPrimary(t *testing.T
 	}
 }
 
+func TestResolveCachedProjectArgUsesFirebaseRCAlias(t *testing.T) {
+	root := setupProjectAliasResolutionTest(t, "")
+	if err := os.WriteFile(filepath.Join(root, config.FirebaseConfigFileName), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, config.FirebaseRCFileName), []byte(`{"projects":{"prod":"acme-production-42"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveProjects([]config.Project{{Name: "Production", ProjectID: "acme-production-42", AuthID: "main"}}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	cmd := &cobra.Command{Use: "show"}
+	cmd.SetOut(&bytes.Buffer{})
+
+	project, err := ResolveCachedProjectArg(cmd, "prod")
+	if err != nil || project.ProjectID != "acme-production-42" {
+		t.Fatalf("Firebase RC alias resolution = %#v, %v", project, err)
+	}
+}
+
 func TestResolveCachedProjectArgReportsDanglingAlias(t *testing.T) {
 	setupProjectAliasResolutionTest(t, "[projects.aliases]\nprod = \"acme-production-42\"\n")
 	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {

@@ -166,12 +166,13 @@ Accounts and Profiles cannot open while Details contains unsaved edits.
 Selecting one project shows its parameters. Marking several projects combines
 their trees for comparison.
 
-Repository aliases from `.fbrcm.toml` appear after the project name, for example
-`Production [prod, production]`. Normal project filters match and highlight
-aliases with the selected exact, prefix, contains, or fuzzy mode. Aliases name
-physical projects, so expanded client/server rows show the same aliases. The
-TUI reloads aliases when projects are loaded or synchronized; manage mappings
-with `fbrcm projects aliases` or the local config commands.
+Repository aliases from `.fbrcm.toml` and `.firebaserc` appear after the project
+name, for example `Production [prod, production]`. Normal project filters match
+and highlight aliases with the selected exact, prefix, contains, or fuzzy mode.
+Aliases name physical projects, so expanded client/server rows show the same
+aliases. The TUI reloads aliases when projects are loaded or synchronized;
+manage native mappings or import Firebase mappings with `fbrcm projects
+aliases`.
 
 | Default key | Action |
 | --- | --- |
@@ -513,15 +514,21 @@ Mutating commands default to the global file. Pass `--scope local` explicitly
 to edit the discovered repository file, or to create `.fbrcm.toml` in the
 current directory when none is found.
 
-Project aliases are the exception: `[projects.aliases]` is valid only in the
-repository file. It maps shared names to physical Firebase project IDs and is
-normally committed for the team and CI:
+Native project aliases are the exception: `[projects.aliases]` is valid only in
+the repository file. It maps shared names to physical Firebase project IDs and
+is normally committed for the team and CI:
 
 ```toml
 [projects.aliases]
 staging = "acme-staging-42"
 prod = "acme-production-42"
 ```
+
+Firebase CLI aliases from the discovered `.firebaserc` are merged at runtime.
+Identical aliases may exist in both files; conflicting targets are rejected.
+Use `fbrcm projects aliases list` to inspect effective sources and `fbrcm
+projects aliases import --from .firebaserc` to snapshot Firebase aliases into
+the native table.
 
 `config edit` resolves the editor in this order:
 

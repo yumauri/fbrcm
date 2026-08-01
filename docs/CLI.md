@@ -308,7 +308,12 @@ fbrcm [--help] [--version] [--profile <name>] [--no-local-config]
 │   ├── aliases
 │   │   ├── list [--json]
 │   │   ├── set <alias> <project-id> [--yes|-y] [--json]
-│   │   └── remove <alias> [--yes|-y] [--json]
+│   │   ├── remove <alias> [--yes|-y] [--json]
+│   │   └── import --from <path>
+│   │       ├── --conflict error|keep|overwrite
+│   │       ├── --dry-run
+│   │       ├── --yes, -y
+│   │       └── --json
 │   ├── path [--json]
 │   └── reset [--yes|-y]
 │
@@ -357,8 +362,8 @@ Use `--no-local-config` or set `FBRCM_NO_LOCAL_CONFIG` to ignore repository
 configuration. Config commands ignore `--profile`, but honor their own explicit
 configuration scope.
 
-Repository project aliases live only in `.fbrcm.toml` and are normally committed
-with the repository:
+Native repository project aliases live only in `.fbrcm.toml` and are normally
+committed with the repository:
 
 ```toml
 [projects.aliases]
@@ -366,10 +371,20 @@ staging = "acme-staging-42"
 prod = "acme-production-42"
 ```
 
+fbrcm also discovers Firebase CLI aliases from the top-level `projects` object
+in `.firebaserc`. It uses the file beside the nearest ancestor `firebase.json`,
+or `.firebaserc` in the current directory when no Firebase project root exists.
+Comments and trailing commas are accepted; unrelated Firebase targets and ETags
+are ignored. Identical aliases in both files are deduplicated, while different
+project IDs for the same alias are a configuration error. Imported Firebase
+alias names must satisfy the same lowercase, selector-safe fbrcm rules.
+
 Aliases are independent of profiles and map to physical Firebase project IDs.
-They are invalid in global `config.toml`. Project synchronization, forgetting,
-and registry reset never modify them. `--no-local-config` disables alias
-resolution together with the rest of the repository overlay.
+Native aliases are invalid in global `config.toml`. Project synchronization,
+forgetting, and registry reset never modify either repository alias file.
+`--no-local-config` disables both alias sources together with the rest of the
+repository overlay. Firebase CLI active-project state and its special `default`
+selection behavior are not imported.
 
 Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
 
@@ -1537,10 +1552,11 @@ Non-interactive promote requires explicit selection intent: `--all`, `--filter`,
 
 ### `fbrcm projects aliases list`
 
-Lists the project aliases stored in the nearest repository `.fbrcm.toml`. This
-local operation requires neither a profile nor network connectivity. Human
-output is a naturally sized Alias/Project ID table; narrow terminals crop the
-Alias column first. JSON is a sorted array of `alias` and `project_id` objects,
+Lists effective aliases from `.fbrcm.toml` and `.firebaserc`. This local
+operation requires neither a profile nor network connectivity. Human output is
+a naturally sized Alias/Project ID/Source table; narrow terminals crop Alias
+and then Project ID while retaining Source. JSON is a sorted array containing
+`alias`, `project_id`, and `source`; source is `fbrcm`, `firebase`, or `both`,
 and an empty mapping is `[]`.
 
 Flags:
@@ -1551,30 +1567,61 @@ Flags:
 
 ### `fbrcm projects aliases set <alias> <project-id>`
 
-Creates or updates one repository alias. Alias names use 1-63 lowercase letters,
+Creates or updates one native `.fbrcm.toml` alias. Alias names use 1-63 lowercase letters,
 digits, hyphens, or underscores and must start with a letter. Targets are literal
 physical project IDs; template prefixes, filter prefixes, whitespace, and alias
 chaining are not supported. The target need not be accessible to the current
-profile. Remapping an existing alias asks for confirmation with Yes selected by
-default; setting the same value is an unchanged success.
+profile. Remapping an existing native alias asks for confirmation with Yes
+selected by default; setting the same effective value is an unchanged success.
+An alias owned by `.firebaserc` cannot be remapped by this command; change it
+with Firebase CLI or edit that file instead. Import creates a native snapshot
+but does not transfer ownership while the Firebase definition remains.
 
 Flags:
 
 ```text
 -y, --yes   replace an existing alias without confirmation
-    --json  print alias, previous_project_id, project_id, and changed
+    --json  print alias, previous_project_id, project_id, changed, and source
 ```
 
 ### `fbrcm projects aliases remove <alias>`
 
-Removes one repository alias without changing any profile registry, cache,
-draft, or Firebase resource. Removing an absent alias is an idempotent success.
+Removes one native alias without changing any profile registry, cache, draft,
+Firebase resource, or `.firebaserc`. Removing an absent alias is an idempotent
+success. A Firebase-only alias must be removed with Firebase CLI. If an
+identical definition exists in both files, only the native definition is
+removed and the alias remains effective from `.firebaserc`; JSON reports
+`removed_native` and `remaining_source`.
 
 Flags:
 
 ```text
 -y, --yes   remove the alias without confirmation
-    --json  print alias, previous_project_id, status, and changed
+    --json  print alias, previous_project_id, status, changed, and source metadata
+```
+
+### `fbrcm projects aliases import --from <path>`
+
+Reads the top-level Firebase CLI `projects` object from the exact supplied path
+and snapshots its aliases into the nearest `.fbrcm.toml`. The command preserves
+unrelated native configuration and never changes the source file. It renders a
+preview table before confirmation. Identical mappings are unchanged; new
+mappings are added.
+
+Conflicts fail without writing by default. `--conflict keep` retains the native
+value, while `--conflict overwrite` replaces it with the imported value. When
+the source is the automatically discovered `.firebaserc`, keeping a different
+native value leaves a live cross-source conflict that effective alias loading
+will continue to reject. `--dry-run` previews without confirmation or writes.
+
+Flags:
+
+```text
+    --from <path>                       Firebase RC file; required
+    --conflict error|keep|overwrite     conflict policy; default error
+    --dry-run                           preview without writing
+-y, --yes                              import without confirmation
+    --json                              print paths, policy, dry_run, changed, and item actions
 ```
 
 ### `fbrcm projects path`
@@ -1676,6 +1723,10 @@ only values physically stored in that layer. Supported keys are `profile`,
 `projects.aliases`, and `projects.aliases.<alias>`. A selected scalar prints as plain text; a selected
 keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
 
+The `projects.aliases` config keys describe native `.fbrcm.toml` state only.
+Use `fbrcm projects aliases list` for the effective union with `.firebaserc` and
+per-alias source metadata.
+
 Flags:
 
 ```text
@@ -1740,7 +1791,8 @@ Flags:
 
 Strictly validates TOML structure, profile references, project aliases,
 keybindings, hook commands, and hook timeout syntax. Project aliases are
-rejected in global scope. By
+rejected in global scope. Effective and all-scope validation also checks the
+discovered `.firebaserc` and cross-source alias conflicts. By
 default, it validates both stored layers and their effective merged result.
 Use `--scope` to isolate a stored layer or the effective configuration. It
 reports all keybinding diagnostics in stable order. Missing files are valid

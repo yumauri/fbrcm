@@ -1,10 +1,8 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"maps"
-	"os"
 	"regexp"
 	"slices"
 	"strings"
@@ -169,14 +167,11 @@ func RemoveProjectAlias(cfg *AppConfig, alias string) (string, bool, error) {
 // LoadProjectAliases loads effective repository aliases. Missing configuration
 // is equivalent to an empty mapping.
 func LoadProjectAliases() (map[string]string, error) {
-	cfg, err := LoadAppConfig()
+	registry, err := LoadProjectAliasRegistry()
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return map[string]string{}, nil
-		}
 		return nil, err
 	}
-	return CloneProjectAliases(cfg), nil
+	return maps.Clone(registry.Aliases), nil
 }
 
 // ResolveProjectAlias resolves an exact case-insensitive alias.
