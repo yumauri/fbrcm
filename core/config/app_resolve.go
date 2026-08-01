@@ -107,6 +107,9 @@ func ResolveAppConfig() (AppConfigResolution, error) {
 	if err != nil {
 		return AppConfigResolution{}, err
 	}
+	if err := RejectGlobalProjectAliases(global.Config); err != nil {
+		return AppConfigResolution{}, fmt.Errorf("decode global config %s: %w", globalPath, err)
+	}
 
 	local := AppConfigLayer{Config: &AppConfig{}, values: map[string]any{}}
 	if !LocalConfigDisabled() {
@@ -139,6 +142,9 @@ func ResolveAppConfig() (AppConfigResolution, error) {
 // MergeAppConfigs deeply overlays local on global while preserving absent
 // scalar fields. Built-in defaults are intentionally not applied here.
 func MergeAppConfigs(global, local *AppConfig) (*AppConfig, error) {
+	if err := RejectGlobalProjectAliases(global); err != nil {
+		return nil, err
+	}
 	globalValues, err := appConfigValues(global)
 	if err != nil {
 		return nil, fmt.Errorf("encode global config values: %w", err)

@@ -47,6 +47,9 @@ func newSetCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := requireLocalProjectAliasScope(args[0], scope); err != nil {
+				return err
+			}
 			candidate := mutationCandidate(state, scope)
 			previous, _, err := scopedConfigValue(state, scope, args[0])
 			if err != nil {
@@ -110,6 +113,21 @@ func setConfigValue(cfg *coreconfig.AppConfig, key string, values []string) (any
 		}
 		cfg.Keys[block][action] = append([]string(nil), values...)
 		return append([]string(nil), values...), nil
+	case len(parts) == 3 && parts[0] == "projects" && parts[1] == "aliases":
+		if len(values) != 1 {
+			return nil, fmt.Errorf("project alias requires exactly one physical project ID")
+		}
+		alias, projectID := parts[2], values[0]
+		if err := coreconfig.ValidateProjectAliasName(alias); err != nil {
+			return nil, err
+		}
+		if err := coreconfig.ValidateProjectAliasProjectID(projectID); err != nil {
+			return nil, fmt.Errorf("project alias %q: %w", alias, err)
+		}
+		if _, _, err := coreconfig.SetProjectAlias(cfg, alias, projectID); err != nil {
+			return nil, err
+		}
+		return projectID, nil
 	default:
 		return nil, fmt.Errorf("unknown or non-settable config key %q", key)
 	}
@@ -135,6 +153,13 @@ func newResetCommand() *cobra.Command {
 			}
 			scope, err := readConfigScope(cmd, scopeGlobal, scopeGlobal, scopeLocal)
 			if err != nil {
+				return err
+			}
+			keyArg := ""
+			if len(args) == 1 {
+				keyArg = args[0]
+			}
+			if err := requireLocalProjectAliasScope(keyArg, scope); err != nil {
 				return err
 			}
 			candidate := mutationCandidate(state, scope)
@@ -177,6 +202,13 @@ func newResetCommand() *cobra.Command {
 	return cmd
 }
 
+func requireLocalProjectAliasScope(key, scope string) error {
+	if scope == scopeGlobal && (key == "projects.aliases" || strings.HasPrefix(key, "projects.aliases.")) {
+		return fmt.Errorf("projects.aliases: project aliases are repository-scoped; use --scope local")
+	}
+	return nil
+}
+
 func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreferences bool) (bool, error) {
 	if allPreferences {
 		changed := candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0
@@ -217,6 +249,26 @@ func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreference
 		delete(actions, action)
 		if len(actions) == 0 {
 			delete(candidate.Keys, block)
+		}
+		return changed, nil
+	case key == "projects.aliases":
+		changed := len(coreconfig.CloneProjectAliases(candidate)) > 0
+		if candidate.Projects != nil {
+			candidate.Projects.Aliases = nil
+			candidate.Projects = nil
+		}
+		return changed, nil
+	case len(parts) == 3 && parts[0] == "projects" && parts[1] == "aliases":
+		if err := coreconfig.ValidateProjectAliasName(parts[2]); err != nil {
+			return false, err
+		}
+		if candidate.Projects == nil || candidate.Projects.Aliases == nil {
+			return false, nil
+		}
+		_, changed := candidate.Projects.Aliases[parts[2]]
+		delete(candidate.Projects.Aliases, parts[2])
+		if len(candidate.Projects.Aliases) == 0 {
+			candidate.Projects = nil
 		}
 		return changed, nil
 	default:

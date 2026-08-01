@@ -305,6 +305,10 @@ fbrcm [--help] [--version] [--profile <name>] [--no-local-config]
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
 │   │   └── --json
+│   ├── aliases
+│   │   ├── list [--json]
+│   │   ├── set <alias> <project-id> [--yes|-y] [--json]
+│   │   └── remove <alias> [--yes|-y] [--json]
 │   ├── path [--json]
 │   └── reset [--yes|-y]
 │
@@ -342,7 +346,7 @@ All commands support `--help`. Root also supports `--version`.
 
 When `FBRCM_OFFLINE` is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before executing a network-capable CLI command and automatically enables offline mode if the probe fails. Help, version, and all `config` and `hooks` commands skip this probe. The probe and other standard HTTP requests honor `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`, including their lowercase forms. Defining `FBRCM_OFFLINE`, including with an empty value or `0`, enables offline mode without probing.
 
-Most commands require a selected profile. `profile`, `config`, `hooks`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
+Most commands require a selected profile. `profile`, `config`, `hooks`, `projects aliases`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
 
 At startup, fbrcm searches the current directory and every parent through the
 filesystem root for `.fbrcm.toml`. The nearest match deeply overlays the global
@@ -352,6 +356,20 @@ values. Built-in defaults apply after both stored layers. Profile precedence is
 Use `--no-local-config` or set `FBRCM_NO_LOCAL_CONFIG` to ignore repository
 configuration. Config commands ignore `--profile`, but honor their own explicit
 configuration scope.
+
+Repository project aliases live only in `.fbrcm.toml` and are normally committed
+with the repository:
+
+```toml
+[projects.aliases]
+staging = "acme-staging-42"
+prod = "acme-production-42"
+```
+
+Aliases are independent of profiles and map to physical Firebase project IDs.
+They are invalid in global `config.toml`. Project synchronization, forgetting,
+and registry reset never modify them. `--no-local-config` disables alias
+resolution together with the rest of the repository overlay.
 
 Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
 
@@ -408,7 +426,11 @@ Flags named `--project` or `--filter` use mode-prefixed query strings:
 =query   exact case-insensitive match
 ```
 
-Project filters match project display name or project ID. Parameter filters match parameter key. `--project` and `--filter` may be repeated; repeated values are ORed and must be passed as separate flags.
+Project filters match project display name, project ID, or any repository alias.
+Alias matching follows the requested filter mode, so `=prod` is the recommended
+exact selector for scripts. Parameter filters match parameter key. `--project`
+and `--filter` may be repeated; repeated values are ORed and must be passed as
+separate flags.
 
 ### Client and Server Template Targets
 
@@ -444,12 +466,30 @@ Client and server templates have independent Firebase histories. CLI output uses
 Template-aware commands first parse the optional `client@` or `server@` prefix, then resolve the remaining positional `<project>` in this order:
 
 1. Exact case-insensitive project ID.
-2. Exact case-insensitive project display name.
-3. Case-insensitive substring match against project ID or display name.
+2. Exact case-insensitive repository alias.
+3. Exact case-insensitive project display name.
+4. Case-insensitive substring match against project ID or display name.
 
-A single match is selected. Multiple exact-name or substring matches print only the ambiguous projects and return an error. No match prints the known-project table and returns an error. Exact ID always wins, including when another project's display name has the same text.
+A single match is selected. Multiple exact-name or substring matches print only
+the ambiguous projects and return an error. No match prints the known-project
+table and returns an error. Exact ID always wins over a colliding alias, and an
+alias wins over a colliding display name. Once a configured alias is recognized,
+an unavailable target reports the alias, canonical ID, and selected profile
+instead of falling through to another match.
 
-Draft commands resolve only locally stored drafts and never synchronize projects as a side effect. An explicit prefix selects that template kind. An unqualified query selects the configured primary template when the project is still registered, and falls back to the client template for an unregistered project. The query must uniquely match the locally known project ID or display name. This also permits `show --raw` and `discard` for drafts whose project is no longer present in the projects cache.
+Aliases name physical projects and compose with template prefixes. `prod` uses
+the active profile's configured primary template, `client@prod` selects the
+client template, and `server@prod` selects the server template. Operational
+output, caches, drafts, retry filters, and API requests continue using canonical
+target IDs.
+
+Draft commands resolve only locally stored drafts and never synchronize projects
+as a side effect. An explicit prefix selects that template kind. An unqualified
+query or alias selects the configured primary template when the project is still
+registered, and falls back to the client template for an unregistered project.
+Aliases therefore remain usable for drafts that outlive the project registry.
+This also permits `show --raw` and `discard` for drafts whose project is no
+longer present in the projects cache.
 
 ### Parameter Search
 
@@ -1425,7 +1465,7 @@ Flags:
 --auth <auth-id>       sync projects for one auth identity
 ```
 
-Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project JSON includes `disabled`, `templates`, and `primary_template`; human project listings mark disabled identities in the Auth column.
+Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project JSON includes `aliases`, `disabled`, `templates`, and `primary_template`; `aliases` is always a sorted array. Human project listings include an Aliases column and mark disabled identities in the Auth column.
 
 ### `fbrcm projects forget`
 
@@ -1494,6 +1534,48 @@ Flags:
 Promotion JSON includes `change_note` and `changed`; `changed` reports whether the selected result contains changes independently of whether it was a dry run or was published.
 
 Non-interactive promote requires explicit selection intent: `--all`, `--filter`, `--group`, `--expr`, or `--search`. Command reloads the target before publishing, validates with Firebase, publishes using the latest target ETag, and retries if the target changes during promotion.
+
+### `fbrcm projects aliases list`
+
+Lists the project aliases stored in the nearest repository `.fbrcm.toml`. This
+local operation requires neither a profile nor network connectivity. Human
+output is a naturally sized Alias/Project ID table; narrow terminals crop the
+Alias column first. JSON is a sorted array of `alias` and `project_id` objects,
+and an empty mapping is `[]`.
+
+Flags:
+
+```text
+--json   print project aliases as JSON
+```
+
+### `fbrcm projects aliases set <alias> <project-id>`
+
+Creates or updates one repository alias. Alias names use 1-63 lowercase letters,
+digits, hyphens, or underscores and must start with a letter. Targets are literal
+physical project IDs; template prefixes, filter prefixes, whitespace, and alias
+chaining are not supported. The target need not be accessible to the current
+profile. Remapping an existing alias asks for confirmation with Yes selected by
+default; setting the same value is an unchanged success.
+
+Flags:
+
+```text
+-y, --yes   replace an existing alias without confirmation
+    --json  print alias, previous_project_id, project_id, and changed
+```
+
+### `fbrcm projects aliases remove <alias>`
+
+Removes one repository alias without changing any profile registry, cache,
+draft, or Firebase resource. Removing an absent alias is an idempotent success.
+
+Flags:
+
+```text
+-y, --yes   remove the alias without confirmation
+    --json  print alias, previous_project_id, status, and changed
+```
 
 ### `fbrcm projects path`
 
@@ -1590,7 +1672,8 @@ and built-in defaults. With no key, human output is TOML and includes the
 complete effective key map. `--scope global` or `--scope local` instead shows
 only values physically stored in that layer. Supported keys are `profile`,
 `powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
-`hooks.timeout`, `hooks.pre_publish`, and `hooks.post_publish`. A selected scalar prints as plain text; a selected
+`hooks.timeout`, `hooks.pre_publish`, `hooks.post_publish`, `projects`,
+`projects.aliases`, and `projects.aliases.<alias>`. A selected scalar prints as plain text; a selected
 keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
 
 Flags:
@@ -1616,6 +1699,7 @@ is found. Supported forms are:
 ```text
 powerline_glyphs true|false
 keys.<block>.<action> <key>...
+projects.aliases.<alias> <project-id>   requires --scope local
 ```
 
 The active `profile` is read-only here; use `fbrcm profile switch <name>` or edit
@@ -1639,7 +1723,8 @@ Removes a stored override from the selected layer. Removing a local override
 reveals the global value; removing a global override reveals the built-in
 default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or
 `keys.<block>.<action>`. With no key, it removes all stored preferences while
-preserving that layer's `profile`. Reset can repair an invalid key map by
+preserving that layer's `profile`. The optional key also accepts
+`projects.aliases` or `projects.aliases.<alias>` in local scope. Reset can repair an invalid key map by
 discarding the requested obsolete subtree. A changed reset asks for
 confirmation; Yes is selected by default. Writes are validated and atomic.
 
@@ -1653,8 +1738,9 @@ Flags:
 
 ### `fbrcm config validate`
 
-Strictly validates TOML structure, profile references, keybindings, hook
-commands, and hook timeout syntax. By
+Strictly validates TOML structure, profile references, project aliases,
+keybindings, hook commands, and hook timeout syntax. Project aliases are
+rejected in global scope. By
 default, it validates both stored layers and their effective merged result.
 Use `--scope` to isolate a stored layer or the effective configuration. It
 reports all keybinding diagnostics in stable order. Missing files are valid

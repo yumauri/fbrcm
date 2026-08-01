@@ -62,6 +62,32 @@ func TestFilteredTemplateDoesNotRenderPartialConnector(t *testing.T) {
 	}
 }
 
+func TestProjectAliasesRenderAndFilter(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	m := templatePairViewModel(rctarget.Client)
+	m.aliasesByID = map[string][]string{"pulseforge-fitness-f60f7": {"prod", "production"}}
+	m.applyFilter()
+	m.syncViewport()
+
+	got := normalizedProjectContent(m)
+	if !strings.Contains(got, "PulseForge Fitness [prod, production]") {
+		t.Fatalf("alias content = %q", got)
+	}
+	wantMeta := "[prod, production]"
+	if len(m.lineMeta) == 0 || len(m.lineMeta[0]) != len([]rune(wantMeta)) {
+		t.Fatalf("alias metadata = %#v, want bracketed suffix %q", m.lineMeta, wantMeta)
+	}
+	m, _ = m.Update(keyText("="))
+	m, _ = m.Update(tea.PasteMsg{Content: "prod"})
+	if len(m.projects) != 2 || m.projects[0].ProjectID != "pulseforge-fitness-f60f7" || m.projects[1].ProjectID != "server@pulseforge-fitness-f60f7" {
+		t.Fatalf("alias-filtered projects = %#v", m.projects)
+	}
+	m.contentLines()
+	if len(m.lineHighlights) == 0 || len(m.lineHighlights[0]) != len("prod") {
+		t.Fatalf("alias highlights = %#v", m.lineHighlights)
+	}
+}
+
 func templatePairViewModel(primary rctarget.Kind) Model {
 	m := New(nil).SetBounds(0, 0, 40, 14).SetActive(true)
 	m, _ = m.Update(messages.ProjectsLoadedMsg{

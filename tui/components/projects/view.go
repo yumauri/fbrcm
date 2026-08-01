@@ -2,6 +2,7 @@ package projects
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
@@ -23,6 +24,7 @@ func (m *Model) contentLines() []string {
 	var lineKinds []lineKind
 	var lineProjects []int
 	var lineHighlights [][]int
+	var lineMeta [][]int
 	var projectStarts []int
 	var projectEnds []int
 	if m.notice != "" {
@@ -30,6 +32,7 @@ func (m *Model) contentLines() []string {
 		lineKinds = append(lineKinds, lineKindMeta, lineKindProjectSpacer)
 		lineProjects = append(lineProjects, -1, -1)
 		lineHighlights = append(lineHighlights, nil, nil)
+		lineMeta = append(lineMeta, nil, nil)
 	}
 
 	if m.err != nil && len(m.projects) == 0 {
@@ -37,6 +40,7 @@ func (m *Model) contentLines() []string {
 		lineKinds = append(lineKinds, lineKindPlain)
 		lineProjects = append(lineProjects, -1)
 		lineHighlights = append(lineHighlights, nil)
+		lineMeta = append(lineMeta, nil)
 	} else if len(m.projects) == 0 {
 		if m.loading {
 			lines = append(lines, "Loading projects...")
@@ -48,20 +52,39 @@ func (m *Model) contentLines() []string {
 		lineKinds = append(lineKinds, lineKindPlain)
 		lineProjects = append(lineProjects, -1)
 		lineHighlights = append(lineHighlights, nil)
+		lineMeta = append(lineMeta, nil)
 	} else {
 		for i, project := range m.projects {
 			var nameHighlights, idHighlights []int
+			aliases := m.projectAliases(project.ProjectID)
+			nameLine := project.Name
+			var nameMeta []int
+			if len(aliases) > 0 {
+				nameLine += " [" + strings.Join(aliases, ", ") + "]"
+				for index := len([]rune(project.Name)) + 1; index < len([]rune(nameLine)); index++ {
+					nameMeta = append(nameMeta, index)
+				}
+			}
 			if !m.filter.ExpressionMode() {
 				_, nameHighlights = filter.Match(project.Name, m.filter.Value(), m.filter.Mode())
+				aliasOffset := len([]rune(project.Name)) + 2
+				for _, alias := range aliases {
+					matched, highlights := filter.Match(alias, m.filter.Value(), m.filter.Mode())
+					if matched {
+						nameHighlights = append(nameHighlights, offsetIndices(highlights, aliasOffset)...)
+					}
+					aliasOffset += len([]rune(alias)) + 2
+				}
 				_, idHighlights = filter.Match(project.ProjectID, m.filter.Value(), m.filter.Mode())
 			}
 			idHighlights = offsetIndices(idHighlights, 1)
 
 			projectStarts = append(projectStarts, len(lines))
-			lines = append(lines, project.Name)
+			lines = append(lines, nameLine)
 			lineKinds = append(lineKinds, lineKindProjectName)
 			lineProjects = append(lineProjects, i)
 			lineHighlights = append(lineHighlights, nameHighlights)
+			lineMeta = append(lineMeta, nameMeta)
 			projectID := " " + project.ProjectID
 			if project.Disabled {
 				projectID += " · disabled"
@@ -70,6 +93,7 @@ func (m *Model) contentLines() []string {
 			lineKinds = append(lineKinds, lineKindProjectID)
 			lineProjects = append(lineProjects, i)
 			lineHighlights = append(lineHighlights, idHighlights)
+			lineMeta = append(lineMeta, nil)
 
 			projectEnds = append(projectEnds, len(lines)-1)
 			if i < len(m.projects)-1 {
@@ -77,6 +101,7 @@ func (m *Model) contentLines() []string {
 				lineKinds = append(lineKinds, lineKindProjectSpacer)
 				lineProjects = append(lineProjects, -1)
 				lineHighlights = append(lineHighlights, nil)
+				lineMeta = append(lineMeta, nil)
 			}
 		}
 	}
@@ -85,6 +110,7 @@ func (m *Model) contentLines() []string {
 	m.lineKinds = lineKinds
 	m.lineProjects = lineProjects
 	m.lineHighlights = lineHighlights
+	m.lineMeta = lineMeta
 	m.lineConnectors = templateGroupConnectors(m.projects, projectStarts, len(lines))
 	m.projectStarts = projectStarts
 	m.projectEnds = projectEnds
@@ -166,7 +192,14 @@ func (m *Model) applyFilter() {
 		}
 		nameMatch, _ := filter.Match(project.Name, query, m.filter.Mode())
 		idMatch, _ := filter.Match(project.ProjectID, query, m.filter.Mode())
-		if nameMatch || idMatch {
+		aliasMatch := false
+		for _, alias := range m.projectAliases(project.ProjectID) {
+			if matched, _ := filter.Match(alias, query, m.filter.Mode()); matched {
+				aliasMatch = true
+				break
+			}
+		}
+		if nameMatch || idMatch || aliasMatch {
 			m.projects = append(m.projects, project)
 		}
 	}

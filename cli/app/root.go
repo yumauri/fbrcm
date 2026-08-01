@@ -49,6 +49,10 @@ func isHooksCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "hooks" || strings.HasPrefix(cmd.CommandPath(), "fbrcm hooks")
 }
 
+func isProjectAliasesCommand(cmd *cobra.Command) bool {
+	return strings.HasPrefix(cmd.CommandPath(), "fbrcm projects aliases")
+}
+
 func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
 	return newRootCommandWithOfflineInit(s, version, commit, date, firebase.InitOfflineMode)
 }
@@ -66,7 +70,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 				return err
 			}
 			config.SetLocalConfigDisabled(noLocalConfig)
-			if cmd.Name() == "help" || isConfigCommand(cmd) || isHooksCommand(cmd) {
+			if cmd.Name() == "help" || isConfigCommand(cmd) || isHooksCommand(cmd) || isProjectAliasesCommand(cmd) {
 				return nil
 			}
 			progress.Start(commandProgressMessage(cmd))

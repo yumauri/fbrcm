@@ -10,6 +10,7 @@ import (
 type ProjectJSON struct {
 	Project         string          `json:"project"`
 	ProjectID       string          `json:"project_id"`
+	Aliases         []string        `json:"aliases"`
 	Number          string          `json:"number,omitempty"`
 	State           string          `json:"state,omitempty"`
 	ETag            string          `json:"etag,omitempty"`
@@ -25,10 +26,16 @@ type ProjectJSON struct {
 
 // NewProjectJSON copies a project into its CLI JSON representation.
 func NewProjectJSON(project core.Project, withURL bool) ProjectJSON {
+	return NewProjectJSONWithAliases(project, nil, withURL)
+}
+
+// NewProjectJSONWithAliases includes sorted repository aliases in a project representation.
+func NewProjectJSONWithAliases(project core.Project, aliases []string, withURL bool) ProjectJSON {
 	_ = project.NormalizeTemplatePreferences()
 	out := ProjectJSON{
 		Project:         project.Name,
 		ProjectID:       project.ProjectID,
+		Aliases:         append([]string{}, aliases...),
 		Number:          project.ProjectNumber,
 		State:           project.State,
 		ETag:            project.ETag,

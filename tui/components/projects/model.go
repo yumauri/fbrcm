@@ -2,6 +2,7 @@ package projects
 
 import (
 	"context"
+	"strings"
 
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/viewport"
@@ -9,6 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
@@ -41,11 +43,13 @@ type Model struct {
 	cursor                 int
 	selected               map[string]struct{}
 	lastClick              mouseutil.ClickTracker
+	aliasesByID            map[string][]string
 
 	lines          []string
 	lineKinds      []lineKind
 	lineProjects   []int
 	lineHighlights [][]int
+	lineMeta       [][]int
 	lineConnectors []string
 	projectStarts  []int
 	projectEnds    []int
@@ -67,7 +71,8 @@ func New(svc *core.Core) Model {
 		spinner: spinner.New(
 			spinner.WithSpinner(spinner.Line),
 		),
-		selected: make(map[string]struct{}),
+		selected:    make(map[string]struct{}),
+		aliasesByID: make(map[string][]string),
 	}
 }
 
@@ -139,7 +144,11 @@ func (m Model) PreferredWidth() int {
 	key := panelTitleKey()
 	longest := lipgloss.Width(key + panelTitleLabel)
 	for _, project := range m.allProjects {
-		longest = max(longest, lipgloss.Width(project.Name))
+		name := project.Name
+		if aliases := m.projectAliases(project.ProjectID); len(aliases) > 0 {
+			name += " [" + strings.Join(aliases, ", ") + "]"
+		}
+		longest = max(longest, lipgloss.Width(name))
 		projectID := " " + project.ProjectID
 		if project.Disabled {
 			projectID += " · disabled"
@@ -153,6 +162,22 @@ func (m Model) PreferredWidth() int {
 
 	// left padding + right padding + right border
 	return max(max(longest+3, headerWidth), 25)
+}
+
+func (m Model) projectAliases(projectID string) []string {
+	target, err := rctarget.Parse(projectID)
+	if err != nil {
+		return nil
+	}
+	return m.aliasesByID[target.ProjectID]
+}
+
+func loadProjectAliasesByID() (map[string][]string, error) {
+	aliases, err := coreconfig.LoadProjectAliases()
+	if err != nil {
+		return nil, err
+	}
+	return coreconfig.ProjectAliasesByID(aliases), nil
 }
 
 // HasCurrentProject reports whether project actions have a current target.

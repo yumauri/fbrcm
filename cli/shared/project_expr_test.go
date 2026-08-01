@@ -30,9 +30,49 @@ func TestFilterProjects(t *testing.T) {
 		{Name: "Alpha", ProjectID: "alpha"},
 		{Name: "Beta Prod", ProjectID: "beta"},
 	}
-	got := FilterProjects(projects, []string{"=alpha"})
+	got, err := FilterProjects(projects, []string{"=alpha"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(got) != 1 || got[0].ProjectID != "alpha" {
 		t.Fatalf("FilterProjects = %+v", got)
+	}
+}
+
+func TestProjectFiltersMatchRepositoryAliases(t *testing.T) {
+	setupProjectAliasResolutionTest(t, `[projects.aliases]
+prod = "acme-production-42"
+production = "acme-production-42"
+stage = "acme-staging-42"
+`)
+	projects := []core.Project{
+		{Name: "Production", ProjectID: "acme-production-42"},
+		{Name: "Staging", ProjectID: "acme-staging-42"},
+	}
+	for _, raw := range []string{"=prod", "^prod", "/duct", "~prd"} {
+		got, err := FilterProjects(projects, []string{raw})
+		if err != nil || len(got) != 1 || got[0].ProjectID != "acme-production-42" {
+			t.Fatalf("FilterProjects(%q) = %#v, %v", raw, got, err)
+		}
+	}
+}
+
+func TestTargetFiltersMatchAliasesAndDeduplicateTemplates(t *testing.T) {
+	setupProjectAliasResolutionTest(t, `[projects.aliases]
+prod = "acme-production-42"
+production = "acme-production-42"
+`)
+	projects := []core.Project{{
+		Name: "Production", ProjectID: "acme-production-42",
+		Templates: []rctarget.Kind{rctarget.Client, rctarget.Server}, PrimaryTemplate: rctarget.Client,
+	}}
+	got, err := FilterProjectTargets(projects, []string{"=prod", "=production"})
+	if err != nil || len(got) != 2 || got[0].ProjectID != "acme-production-42" || got[1].ProjectID != "server@acme-production-42" {
+		t.Fatalf("unqualified aliases = %#v, %v", got, err)
+	}
+	got, err = FilterProjectTargets(projects, []string{"server@=prod"})
+	if err != nil || len(got) != 1 || got[0].ProjectID != "server@acme-production-42" {
+		t.Fatalf("server alias = %#v, %v", got, err)
 	}
 }
 

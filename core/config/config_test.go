@@ -16,6 +16,18 @@ import (
 func setupTestDirs(t *testing.T) {
 	t.Helper()
 	root := t.TempDir()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
 	t.Setenv(env.Profile, "")

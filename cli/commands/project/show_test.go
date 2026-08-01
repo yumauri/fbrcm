@@ -84,3 +84,15 @@ func TestShowCommandJSONUsesProjectListContract(t *testing.T) {
 		t.Fatalf("show templates = %v/%q, want client/client", got.Templates, got.PrimaryTemplate)
 	}
 }
+
+func TestRenderProjectDetailsShowsRepositoryAliases(t *testing.T) {
+	project := config.Project{Name: "Production", ProjectID: "acme-production-42", AuthID: "main"}
+	output := renderProjectDetailsWithAliases(project, []string{"prod", "production"})
+	if !strings.Contains(output, "Aliases: prod, production") {
+		t.Fatalf("project details = %q", output)
+	}
+	without := renderProjectDetailsWithAliases(project, nil)
+	if !strings.Contains(without, "Aliases: —") {
+		t.Fatalf("project details without aliases = %q", without)
+	}
+}

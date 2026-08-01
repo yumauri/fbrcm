@@ -51,6 +51,19 @@ func TestMergeProjectsPreservesTemplatePreferences(t *testing.T) {
 	}
 }
 
+func TestMatchProjectFilterMatchesAliases(t *testing.T) {
+	project := Project{Name: "Production", ProjectID: "acme-production-42"}
+	aliases := []string{"prod", "production"}
+	for _, raw := range []string{"=prod", "^prod", "/duct", "~prd"} {
+		if !matchProjectFilter(project, aliases, []string{raw}) {
+			t.Fatalf("matchProjectFilter(%q) = false", raw)
+		}
+	}
+	if matchProjectFilter(project, aliases, []string{"=stage"}) {
+		t.Fatal("unrelated alias matched")
+	}
+}
+
 func TestMergeProjectsDisablesProjectMissingFromFullDiscovery(t *testing.T) {
 	now := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
 	existing := []config.Project{{

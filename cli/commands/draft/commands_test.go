@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -135,6 +136,68 @@ func TestListShowDiffAndDiscardLocalDraft(t *testing.T) {
 	}
 	if _, err := config.LoadDraft("demo"); err == nil {
 		t.Fatal("draft still exists after discard")
+	}
+}
+
+func TestResolveDraftUsesRepositoryAliases(t *testing.T) {
+	setupCommandTest(t)
+	if err := os.WriteFile(filepath.Join(mustGetwd(t), config.LocalConfigFileName), []byte(`[projects.aliases]
+prod = "acme-production-42"
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	project := config.Project{
+		Name: "Production", ProjectID: "acme-production-42", AuthID: "main",
+		Templates: []rctarget.Kind{rctarget.Client, rctarget.Server}, PrimaryTemplate: rctarget.Server,
+	}
+	if err := config.SaveProjects([]config.Project{project}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	saveResolutionDraft(t, "acme-production-42")
+	saveResolutionDraft(t, "server@acme-production-42")
+
+	for query, want := range map[string]string{
+		"prod": "server@acme-production-42", "client@prod": "acme-production-42", "server@prod": "server@acme-production-42",
+	} {
+		got, _, err := resolveDraft(query)
+		if err != nil || got != want {
+			t.Fatalf("resolveDraft(%q) = %q, %v; want %q", query, got, err, want)
+		}
+	}
+
+	if err := config.SaveProjects(nil, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	got, _, err := resolveDraft("prod")
+	if err != nil || got != "acme-production-42" {
+		t.Fatalf("unregistered alias draft = %q, %v", got, err)
+	}
+}
+
+func TestResolveDraftExactProjectIDWinsOverAlias(t *testing.T) {
+	setupCommandTest(t)
+	if err := os.WriteFile(filepath.Join(mustGetwd(t), config.LocalConfigFileName), []byte(`[projects.aliases]
+prod = "acme-production-42"
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	saveResolutionDraft(t, "prod")
+	saveResolutionDraft(t, "acme-production-42")
+	got, _, err := resolveDraft("prod")
+	if err != nil || got != "prod" {
+		t.Fatalf("exact draft precedence = %q, %v", got, err)
+	}
+}
+
+func saveResolutionDraft(t *testing.T, projectID string) {
+	t.Helper()
+	now := time.Now().UTC()
+	raw := commandRemoteConfig("1", "value")
+	if err := config.SaveDraft(&config.Draft{
+		FormatVersion: config.DraftFormatVersion, ProjectID: projectID, BaseVersion: "1", BaseETag: "etag-1",
+		CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: raw, RemoteConfig: raw,
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -269,9 +332,30 @@ func setupCommandTest(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, root+"/config")
 	t.Setenv(env.CacheDir, root+"/cache")
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
 	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
 		t.Fatalf("SwitchProfile returned error: %v", err)
 	}
+}
+
+func mustGetwd(t *testing.T) string {
+	t.Helper()
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dir
 }
 
 func executeCommand(t *testing.T, args ...string) string {

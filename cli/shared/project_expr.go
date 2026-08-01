@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -87,24 +88,30 @@ func HighlightFilters(value string, filters []QueryFilter) []int {
 }
 
 // FilterProjects filters projects by mode-prefixed queries. Multiple queries are ORed.
-func FilterProjects(projects []core.Project, rawFilters []string) []core.Project {
+func FilterProjects(projects []core.Project, rawFilters []string) ([]core.Project, error) {
 	filters := ParseFilters(rawFilters)
 	if len(filters) == 0 {
-		return projects
+		return projects, nil
 	}
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return nil, err
+	}
+	aliasesByID := config.ProjectAliasesByID(aliases)
 
 	filtered := make([]core.Project, 0, len(projects))
 	for _, project := range projects {
 		for _, item := range filters {
 			nameMatch, _ := filter.Match(project.Name, item.Query, item.Mode)
 			idMatch, _ := filter.Match(project.ProjectID, item.Query, item.Mode)
-			if nameMatch || idMatch {
+			aliasMatch := matchAnyProjectAlias(aliasesByID[project.ProjectID], item)
+			if nameMatch || idMatch || aliasMatch {
 				filtered = append(filtered, project)
 				break
 			}
 		}
 	}
-	return filtered
+	return filtered, nil
 }
 
 // FilterProjectTargets applies project filters after parsing an optional
@@ -135,6 +142,11 @@ func FilterProjectTargets(projects []core.Project, rawFilters []string) ([]core.
 			filter:   QueryFilter{Mode: mode, Query: query},
 		})
 	}
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return nil, err
+	}
+	aliasesByID := config.ProjectAliasesByID(aliases)
 
 	filtered := make([]core.Project, 0, len(projects)*2)
 	seen := make(map[string]struct{})
@@ -146,7 +158,8 @@ func FilterProjectTargets(projects []core.Project, rawFilters []string) ([]core.
 		for _, item := range filters {
 			nameMatch, _ := filter.Match(project.Name, item.filter.Query, item.filter.Mode)
 			idMatch, _ := filter.Match(project.ProjectID, item.filter.Query, item.filter.Mode)
-			if !nameMatch && !idMatch {
+			aliasMatch := matchAnyProjectAlias(aliasesByID[project.ProjectID], item.filter)
+			if !nameMatch && !idMatch && !aliasMatch {
 				continue
 			}
 			if !item.explicit {
@@ -157,6 +170,16 @@ func FilterProjectTargets(projects []core.Project, rawFilters []string) ([]core.
 		}
 	}
 	return filtered, nil
+}
+
+func matchAnyProjectAlias(aliases []string, query QueryFilter) bool {
+	for _, alias := range aliases {
+		matched, _ := filter.Match(alias, query.Query, query.Mode)
+		if matched {
+			return true
+		}
+	}
+	return false
 }
 
 func appendConfiguredProjectTargets(out *[]core.Project, seen map[string]struct{}, project core.Project) {

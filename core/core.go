@@ -88,8 +88,13 @@ type ProjectAuthBindingResult struct {
 
 // BindProjectsAuth binds matched projects that were discovered by auth id.
 func (s *Core) BindProjectsAuth(filters []string, authID string) (ProjectAuthBindingResult, error) {
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return ProjectAuthBindingResult{}, err
+	}
+	aliasesByID := config.ProjectAliasesByID(aliases)
 	return s.bindProjectsAuth(authID, func(project Project) bool {
-		return matchProjectFilter(project, filters)
+		return matchProjectFilter(project, aliasesByID[project.ProjectID], filters)
 	})
 }
 

@@ -23,7 +23,7 @@ Use Firebase CLI when:
 
 - Remote Config is one part of a larger Firebase deployment;
 - the complete client template is maintained in source control;
-- the team already relies on Firebase project aliases and deploy hooks;
+- the team relies on Firebase's active-project workflow and deploy hooks;
 - hooks must coordinate Remote Config with deployments of other Firebase
   products;
 - one command should deploy Hosting, Functions, Rules, Remote Config, and
@@ -35,6 +35,7 @@ Use fbrcm when:
 - you want to review typed, item-level changes without editing template JSON;
 - changes should be staged in local drafts and rebased safely before publish;
 - you compare or promote Remote Config between environments;
+- you want repository aliases without introducing an implicit active project;
 - you manage client and server templates from the same terminal workspace;
 - repository hooks should validate the exact generated Remote Config candidate
   before any direct, draft, import, promotion, restore, or rollback publication;
@@ -84,7 +85,7 @@ that the other tool approaches the same concern differently.
 | Cache and offline inspection | ❌ No | ✅ Yes | fbrcm keeps project, template, and immutable version snapshots for offline work. |
 | Credential health and permission diagnostics | ⚠️ Partial | ✅ Yes | `fbrcm doctor` checks identities, storage, connectivity, APIs, and Remote Config read/update permissions. |
 | Multiple local authentication identities | ✅ Yes | ✅ Yes | Firebase CLI selects accounts globally; fbrcm binds cached projects to identities inside isolated profiles. |
-| Repository project aliases | ✅ Yes | ➖ No direct equivalent | Firebase CLI stores aliases in `.firebaserc`; fbrcm resolves cached projects by name, ID, filters, and profiles. |
+| Repository project aliases | ✅ Yes | ✅ Yes | Firebase CLI stores aliases in `.firebaserc`; fbrcm stores profile-independent aliases in `.fbrcm.toml` and composes them with client/server template targets. |
 | Repository-local configuration | ✅ Yes | ✅ Yes | Firebase CLI uses `firebase.json` and `.firebaserc`; fbrcm discovers the nearest `.fbrcm.toml` and deeply overlays it on user-wide `config.toml`. |
 | Pre- and post-publication hooks | ✅ Yes | ✅ Yes | Firebase CLI defines `predeploy` and `postdeploy` hooks for deployable resources in `firebase.json`. fbrcm defines Remote Config `pre_publish` and `post_publish` hooks, supplies current/candidate/context JSON files, and requires explicit trust for repository hooks. |
 | Deploy other Firebase products | ✅ Yes | ❌ No | fbrcm intentionally focuses on Remote Config. |
@@ -223,9 +224,12 @@ and condition-level operations with a generated diff before publication.
 ### Project selection
 
 Firebase CLI is directory-oriented and uses an active project, `--project`, and
-shared aliases in `.firebaserc`. fbrcm discovers accessible projects, caches
-them per profile, and supports selecting multiple projects or template targets
-within one invocation.
+shared aliases in `.firebaserc`. fbrcm stores shared aliases in `.fbrcm.toml`,
+discovers accessible projects, caches them per profile, and supports selecting
+multiple projects or template targets within one invocation. An fbrcm alias
+does not create an implicit active project: unqualified aliases use the active
+profile's configured primary template, while `client@alias` and `server@alias`
+are deterministic.
 
 ### Safety and local state
 

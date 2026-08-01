@@ -110,6 +110,23 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 			return nil, "absent", nil
 		}
 		return cfg.Hooks, source, nil
+	case key == "projects":
+		if cfg.Projects == nil {
+			return nil, "absent", nil
+		}
+		return cfg.Projects, source, nil
+	case key == "projects.aliases":
+		aliases := coreconfig.CloneProjectAliases(cfg)
+		if len(aliases) == 0 {
+			return nil, "absent", nil
+		}
+		return aliases, source, nil
+	case len(parts) == 3 && parts[0] == "projects" && parts[1] == "aliases":
+		value, ok := coreconfig.CloneProjectAliases(cfg)[parts[2]]
+		if !ok {
+			return nil, "absent", nil
+		}
+		return value, source, nil
 	case len(parts) == 2 && parts[0] == "hooks":
 		if cfg.Hooks == nil {
 			return nil, "absent", nil

@@ -165,7 +165,7 @@ func contains(values []string, value string) bool {
 	return slices.Contains(values, value)
 }
 
-func matchProjectFilter(project Project, rawFilters []string) bool {
+func matchProjectFilter(project Project, aliases, rawFilters []string) bool {
 	if len(rawFilters) == 0 {
 		return true
 	}
@@ -176,7 +176,14 @@ func matchProjectFilter(project Project, rawFilters []string) bool {
 		}
 		nameMatch, _ := filter.Match(project.Name, query, mode)
 		idMatch, _ := filter.Match(project.ProjectID, query, mode)
-		if nameMatch || idMatch {
+		aliasMatch := false
+		for _, alias := range aliases {
+			if matched, _ := filter.Match(alias, query, mode); matched {
+				aliasMatch = true
+				break
+			}
+		}
+		if nameMatch || idMatch || aliasMatch {
 			return true
 		}
 	}

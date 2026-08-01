@@ -16,6 +16,12 @@ type AppConfig struct {
 	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty" json:"powerline_glyphs"`
 	Keys            map[string]map[string][]string `toml:"keys,omitempty" json:"keys"`
 	Hooks           *HooksConfig                   `toml:"hooks,omitempty" json:"hooks,omitempty"`
+	Projects        *ProjectsConfig                `toml:"projects,omitempty" json:"projects,omitempty"`
+}
+
+// ProjectsConfig contains repository-scoped project selection metadata.
+type ProjectsConfig struct {
+	Aliases map[string]string `toml:"aliases,omitempty" json:"aliases,omitempty"`
 }
 
 const DefaultHookTimeout = 5 * time.Minute
@@ -74,6 +80,9 @@ func LoadGlobalAppConfig() (*AppConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decode global config %s: %w", path, err)
 	}
+	if err := RejectGlobalProjectAliases(cfg); err != nil {
+		return nil, fmt.Errorf("decode global config %s: %w", path, err)
+	}
 	return cfg, nil
 }
 
@@ -106,6 +115,9 @@ func DecodeAppConfig(raw []byte, strict bool) (*AppConfig, error) {
 	if err := validateHooksConfig(cfg.Hooks); err != nil {
 		return nil, err
 	}
+	if err := ValidateProjectAliases(projectAliases(cfg)); err != nil {
+		return nil, err
+	}
 	return cfg, nil
 }
 
@@ -125,6 +137,9 @@ func MarshalTOML(value any) ([]byte, error) {
 func SaveAppConfig(cfg *AppConfig) error {
 	if cfg == nil {
 		cfg = &AppConfig{}
+	}
+	if err := RejectGlobalProjectAliases(cfg); err != nil {
+		return err
 	}
 	if err := EnsurePrivateDir(GetConfigRootDirPath()); err != nil {
 		return fmt.Errorf("create config root: %w", err)

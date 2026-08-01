@@ -160,6 +160,25 @@ func TestRootCommandTreatsHooksAsLocalRecoverySurface(t *testing.T) {
 	}
 }
 
+func TestRootCommandTreatsProjectAliasesAsLocalRecoverySurface(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "../invalid")
+
+	calls := 0
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"projects", "aliases", "list", "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute project aliases: %v", err)
+	}
+	if calls != 0 {
+		t.Fatalf("connectivity probe calls = %d, want 0", calls)
+	}
+}
+
 func TestRootCommandProbesBeforeExecution(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))

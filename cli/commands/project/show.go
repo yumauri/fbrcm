@@ -9,6 +9,7 @@ import (
 
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -38,10 +39,18 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if jsonOut {
-				return shared.WriteJSON(cmd, shared.NewProjectJSON(project, true))
+				aliases, aliasErr := projectAliases(project.ProjectID)
+				if aliasErr != nil {
+					return aliasErr
+				}
+				return shared.WriteJSON(cmd, shared.NewProjectJSONWithAliases(project, aliases, true))
 			}
 
-			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderProjectDetails(project))
+			aliases, aliasErr := projectAliases(project.ProjectID)
+			if aliasErr != nil {
+				return aliasErr
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderProjectDetailsWithAliases(project, aliases))
 			return err
 		},
 	}
@@ -50,16 +59,21 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 	return cmd
 }
 
-func renderProjectDetails(project core.Project) string {
+func renderProjectDetailsWithAliases(project core.Project, aliases []string) string {
 	_ = project.NormalizeTemplatePreferences()
 	authIdentities := strings.Join(project.DiscoveredBy, ", ")
 	if authIdentities == "" {
 		authIdentities = "none recorded"
 	}
+	aliasLabel := strings.Join(aliases, ", ")
+	if aliasLabel == "" {
+		aliasLabel = "—"
+	}
 
 	return strings.Join([]string{
 		"Project: " + displayProjectValue(project.Name),
 		"Project ID: " + project.ProjectID,
+		"Aliases: " + aliasLabel,
 		"Status: " + projectStatus(project),
 		"Number: " + displayProjectValue(project.ProjectNumber),
 		"State: " + displayProjectValue(project.State),
@@ -72,6 +86,14 @@ func renderProjectDetails(project core.Project) string {
 		"ETag: " + displayProjectValue(project.ETag),
 		"URL: " + firebase.RemoteConfigConsoleURL(project.ProjectID),
 	}, "\n")
+}
+
+func projectAliases(projectID string) ([]string, error) {
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return nil, err
+	}
+	return config.ProjectAliasesByID(aliases)[projectID], nil
 }
 
 func projectTemplatesLabel(project core.Project) string {

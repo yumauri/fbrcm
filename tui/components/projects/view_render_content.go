@@ -55,21 +55,25 @@ func (m Model) renderContentLine(index int, line string, width int) string {
 
 func (m Model) renderProjectLine(line string, lineIndex, projectIndex, width int, base lipgloss.Style) string {
 	normal := m.projectLineStyle(base, projectIndex)
-	highlight := normal
-	if !m.projects[projectIndex].Disabled {
-		highlight = normal.Foreground(styles.PaletteYellow)
-	}
 	highlighted := indicesSet(nil)
 	if lineIndex >= 0 && lineIndex < len(m.lineHighlights) {
 		highlighted = indicesSet(m.lineHighlights[lineIndex])
 	}
+	meta := indicesSet(nil)
+	if lineIndex >= 0 && lineIndex < len(m.lineMeta) {
+		meta = indicesSet(m.lineMeta[lineIndex])
+	}
+	muted := m.projectLineStyle(metaStyle, projectIndex)
 
 	var builder strings.Builder
 	builder.WriteString(m.renderLinePrefix(lineIndex, normal, m.projectLineStyle(metaStyle, projectIndex)))
 	for i, r := range []rune(line) {
 		style := normal
-		if highlighted[i] {
-			style = highlight
+		if meta[i] {
+			style = muted
+		}
+		if highlighted[i] && !m.projects[projectIndex].Disabled {
+			style = style.Foreground(styles.PaletteYellow)
 		}
 		builder.WriteString(style.Render(string(r)))
 	}

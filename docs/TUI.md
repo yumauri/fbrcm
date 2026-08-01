@@ -166,6 +166,13 @@ Accounts and Profiles cannot open while Details contains unsaved edits.
 Selecting one project shows its parameters. Marking several projects combines
 their trees for comparison.
 
+Repository aliases from `.fbrcm.toml` appear after the project name, for example
+`Production [prod, production]`. Normal project filters match and highlight
+aliases with the selected exact, prefix, contains, or fuzzy mode. Aliases name
+physical projects, so expanded client/server rows show the same aliases. The
+TUI reloads aliases when projects are loaded or synchronized; manage mappings
+with `fbrcm projects aliases` or the local config commands.
+
 | Default key | Action |
 | --- | --- |
 | `Enter` | Select the focused project |
@@ -505,6 +512,16 @@ fbrcm config edit
 Mutating commands default to the global file. Pass `--scope local` explicitly
 to edit the discovered repository file, or to create `.fbrcm.toml` in the
 current directory when none is found.
+
+Project aliases are the exception: `[projects.aliases]` is valid only in the
+repository file. It maps shared names to physical Firebase project IDs and is
+normally committed for the team and CI:
+
+```toml
+[projects.aliases]
+staging = "acme-staging-42"
+prod = "acme-production-42"
+```
 
 `config edit` resolves the editor in this order:
 

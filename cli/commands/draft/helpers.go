@@ -215,6 +215,26 @@ func resolveDraft(query string) (string, core.Project, error) {
 		return "", core.Project{}, err
 	}
 	mode, value := filter.ParseModePrefixedQuery(requested.ProjectID)
+	if matches := exactDraftMatches(ids, value, requested.Kind, explicit); len(matches) == 1 {
+		return matches[0], projectForID(matches[0]), nil
+	}
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return "", core.Project{}, err
+	}
+	aliasQueryAllowed := mode == filter.ModeExact || mode == filter.ModeFuzzy && strings.TrimSpace(requested.ProjectID) == value
+	if aliasQueryAllowed {
+		if alias, projectID, ok := config.ResolveProjectAlias(aliases, value); ok {
+			matches := exactDraftMatches(ids, projectID, requested.Kind, explicit)
+			if len(matches) == 1 {
+				return matches[0], projectForID(matches[0]), nil
+			}
+			if len(matches) == 0 {
+				return "", core.Project{}, fmt.Errorf("draft not found for alias %q (%s)", alias, projectID)
+			}
+			return "", core.Project{}, fmt.Errorf("several drafts match alias %q (%s): %s", alias, projectID, strings.Join(matches, ", "))
+		}
+	}
 	matches := make([]string, 0)
 	for _, id := range ids {
 		candidate, targetErr := rctarget.Parse(id)
@@ -242,6 +262,25 @@ func resolveDraft(query string) (string, core.Project, error) {
 		return "", core.Project{}, fmt.Errorf("draft not found for %q", query)
 	}
 	return "", core.Project{}, fmt.Errorf("several drafts match %q: %s", query, strings.Join(matches, ", "))
+}
+
+func exactDraftMatches(ids []string, physicalProjectID string, requestedKind rctarget.Kind, explicit bool) []string {
+	matches := make([]string, 0, 1)
+	for _, id := range ids {
+		candidate, err := rctarget.Parse(id)
+		if err != nil || !strings.EqualFold(candidate.ProjectID, physicalProjectID) {
+			continue
+		}
+		project := projectForID(id)
+		requiredKind := requestedKind
+		if !explicit {
+			requiredKind = project.TemplateKinds()[0]
+		}
+		if candidate.Kind == requiredKind {
+			matches = append(matches, id)
+		}
+	}
+	return matches
 }
 
 func projectForID(projectID string) core.Project {

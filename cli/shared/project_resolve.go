@@ -7,6 +7,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/progress"
@@ -76,6 +77,33 @@ func resolveProjectTargetArg(cmd *cobra.Command, projects []core.Project, query 
 }
 
 func resolveProjectArg(cmd *cobra.Command, projects []core.Project, query string) (core.Project, error) {
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectArgWithAliases(cmd, projects, query, aliases)
+}
+
+func resolveProjectArgWithAliases(cmd *cobra.Command, projects []core.Project, query string, aliases map[string]string) (core.Project, error) {
+	query = strings.TrimSpace(query)
+	for _, project := range projects {
+		if strings.EqualFold(project.ProjectID, query) {
+			return project, nil
+		}
+	}
+	if alias, projectID, ok := config.ResolveProjectAlias(aliases, query); ok {
+		for _, project := range projects {
+			if strings.EqualFold(project.ProjectID, projectID) {
+				return project, nil
+			}
+		}
+		return core.Project{}, fmt.Errorf(
+			"project alias %q resolves to %q, but that project is not available in profile %q",
+			alias,
+			projectID,
+			config.GetActiveProfileName(),
+		)
+	}
 	matches := matchProjectsForArg(projects, query)
 
 	switch len(matches) {
@@ -127,13 +155,46 @@ func matchProjectsForArg(projects []core.Project, query string) []core.Project {
 }
 
 func RenderProjectsChoiceTable(projects []core.Project) string {
+	return renderProjectsChoiceTableAtWidth(projects, TerminalWidth())
+}
+
+func renderProjectsChoiceTableAtWidth(projects []core.Project, terminalWidth int) string {
+	aliases, _ := config.LoadProjectAliases()
+	aliasesByID := config.ProjectAliasesByID(aliases)
+	headers := []string{"Project", "Project ID", "Aliases"}
 	rows := make([][]string, 0, len(projects))
-	projectWidth := lipgloss.Width("Project")
-	idWidth := lipgloss.Width("Project ID")
+	widths := []int{lipgloss.Width(headers[0]), lipgloss.Width(headers[1]), lipgloss.Width(headers[2])}
 	for _, project := range projects {
-		rows = append(rows, []string{project.Name, project.ProjectID})
-		projectWidth = max(projectWidth, lipgloss.Width(project.Name))
-		idWidth = max(idWidth, lipgloss.Width(project.ProjectID))
+		aliasLabel := strings.Join(aliasesByID[project.ProjectID], ", ")
+		if aliasLabel == "" {
+			aliasLabel = "—"
+		}
+		rows = append(rows, []string{project.Name, project.ProjectID, aliasLabel})
+		for column, value := range rows[len(rows)-1] {
+			widths[column] = max(widths[column], lipgloss.Width(value))
+		}
+	}
+	tableWidth := func() int { return widths[0] + widths[1] + widths[2] + 10 }
+	if terminalWidth > 0 && tableWidth() > terminalWidth {
+		for _, minimumMode := range []bool{true, false} {
+			for _, column := range []int{2, 0, 1} {
+				minimum := 1
+				if minimumMode {
+					minimum = lipgloss.Width(headers[column])
+				}
+				for widths[column] > minimum && tableWidth() > terminalWidth {
+					widths[column]--
+				}
+			}
+		}
+		for column := range headers {
+			headers[column] = ansi.Truncate(headers[column], widths[column], "…")
+		}
+		for row := range rows {
+			for column := range rows[row] {
+				rows[row][column] = ansi.Truncate(rows[row][column], widths[column], "…")
+			}
+		}
 	}
 
 	styleFunc := func(row, col int) lipgloss.Style {
@@ -151,9 +212,9 @@ func RenderProjectsChoiceTable(projects []core.Project) string {
 	}
 
 	tbl := table.New().
-		Headers("Project", "Project ID").
+		Headers(headers...).
 		Rows(rows...).
-		Width(projectWidth + idWidth + 7).
+		Width(tableWidth()).
 		Border(lipgloss.NormalBorder()).
 		BorderHeader(true).
 		BorderRow(false).

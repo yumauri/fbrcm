@@ -77,6 +77,14 @@ func stateFromConfig(path string, exists bool, stored *coreconfig.AppConfig) con
 
 func validateAppConfig(path string, exists bool, cfg *coreconfig.AppConfig) configValidationResult {
 	report := configValidationResult{Path: path, Exists: exists, Valid: true, Errors: []configDiagnostic{}, Warnings: []configDiagnostic{}}
+	if path == coreconfig.GetGlobalConfigFilePath() && len(coreconfig.CloneProjectAliases(cfg)) > 0 {
+		report.Errors = append(report.Errors, configDiagnostic{
+			Severity: "error",
+			Code:     "repository_scope_required",
+			Key:      "projects.aliases",
+			Message:  "project aliases are repository-scoped; move them to .fbrcm.toml",
+		})
+	}
 	if profile := strings.TrimSpace(cfg.Profile); profile != "" {
 		if err := coreconfig.ValidateProfileName(cfg.Profile); err != nil {
 			report.Errors = append(report.Errors, configDiagnostic{Severity: "error", Code: "invalid_profile", Key: "profile", Message: err.Error()})
@@ -116,23 +124,10 @@ func decodeConfigForValidation(path string) (configState, error) {
 }
 
 func cloneAppConfig(cfg *coreconfig.AppConfig) *coreconfig.AppConfig {
-	if cfg == nil {
-		cfg = &coreconfig.AppConfig{}
-	}
-	out := &coreconfig.AppConfig{Profile: cfg.Profile, Keys: tuiconfig.CloneConfigMap(cfg.Keys)}
-	if cfg.PowerlineGlyphs != nil {
-		value := *cfg.PowerlineGlyphs
-		out.PowerlineGlyphs = &value
-	}
+	out := coreconfig.CloneAppConfig(cfg)
+	out.Keys = tuiconfig.CloneConfigMap(out.Keys)
 	if out.Keys == nil {
 		out.Keys = map[string]map[string][]string{}
-	}
-	if cfg.Hooks != nil {
-		out.Hooks = &coreconfig.HooksConfig{
-			Timeout:     cfg.Hooks.Timeout,
-			PrePublish:  append([]string(nil), cfg.Hooks.PrePublish...),
-			PostPublish: append([]string(nil), cfg.Hooks.PostPublish...),
-		}
 	}
 	return out
 }
@@ -150,6 +145,16 @@ func configValue(state configState, key string) (any, string, error) {
 		return state.Effective.Keys, keySource(state, parts), nil
 	case key == "hooks":
 		return state.Effective.Hooks, hookSource(state, ""), nil
+	case key == "projects":
+		return state.Effective.Projects, projectAliasSource(state, ""), nil
+	case key == "projects.aliases":
+		return coreconfig.CloneProjectAliases(state.Effective), projectAliasSource(state, ""), nil
+	case len(parts) == 3 && parts[0] == "projects" && parts[1] == "aliases":
+		value, ok := coreconfig.CloneProjectAliases(state.Effective)[parts[2]]
+		if !ok {
+			return nil, "default", nil
+		}
+		return value, projectAliasSource(state, parts[2]), nil
 	case len(parts) == 2 && parts[0] == "hooks":
 		if state.Effective.Hooks == nil {
 			return nil, "default", nil
@@ -180,6 +185,20 @@ func configValue(state configState, key string) (any, string, error) {
 	default:
 		return nil, "", fmt.Errorf("unknown config key %q", key)
 	}
+}
+
+func projectAliasSource(state configState, alias string) string {
+	aliases := coreconfig.CloneProjectAliases(state.Local)
+	if alias == "" {
+		if len(aliases) > 0 {
+			return "local"
+		}
+		return "default"
+	}
+	if _, ok := aliases[alias]; ok {
+		return "local"
+	}
+	return "default"
 }
 
 func hookSource(state configState, key string) string {

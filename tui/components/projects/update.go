@@ -80,6 +80,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m *Model) updateLoaded(msg messages.ProjectsLoadedMsg) tea.Cmd {
+	aliasesByID, aliasErr := loadProjectAliasesByID()
+	if aliasErr != nil && msg.Err == nil {
+		msg.Err = aliasErr
+	}
+	if aliasesByID != nil {
+		m.aliasesByID = aliasesByID
+	}
 	m.baseProjects = msg.Projects
 	selectionChanged := m.rebuildTargets()
 	m.source = msg.Source

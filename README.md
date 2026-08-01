@@ -122,6 +122,19 @@ fbrcm draft diff my-app --against current
 fbrcm draft publish my-app
 ```
 
+Repositories can give stable environment names to physical Firebase projects:
+
+```sh
+fbrcm projects aliases set staging acme-staging-42
+fbrcm projects aliases set prod acme-production-42
+fbrcm projects diff staging prod
+fbrcm projects promote client@staging server@prod --dry-run
+```
+
+Aliases are stored in the nearest `.fbrcm.toml`, are normally committed for the
+team and CI, and work across authentication profiles. Canonical project IDs
+remain in Firebase requests, caches, drafts, and automation output.
+
 Direct Remote Config mutations support a shared automation contract. Add
 `--json` to `add`, `update`, `delete`, `duplicate`, condition mutations, or
 group mutations to receive one structured result per target, including changed
@@ -183,6 +196,15 @@ fbrcm config set powerline_glyphs false
 fbrcm config set keys.projects.refresh u ctrl+r
 fbrcm config validate
 fbrcm config edit --scope local
+```
+
+Repository project aliases use a local-only table and can also be edited
+directly:
+
+```toml
+[projects.aliases]
+staging = "acme-staging-42"
+prod = "acme-production-42"
 ```
 
 Configuration files stay sparse: built-in keybindings are applied in memory

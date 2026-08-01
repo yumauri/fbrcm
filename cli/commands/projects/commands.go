@@ -18,7 +18,7 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "projects",
 		Short: "Manage Firebase projects for Remote Config",
 	}
-	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newForgetCommand(svc), newDiffCommand(svc), newPromoteCommand(svc), newPathCommand(), newResetCommand(svc))
+	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newForgetCommand(svc), newDiffCommand(svc), newPromoteCommand(svc), newAliasesCommand(), newPathCommand(), newResetCommand(svc))
 	return projectsCmd
 }
 
@@ -36,7 +36,10 @@ func newForgetCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			projects = shared.FilterProjects(projects, filters)
+			projects, err = shared.FilterProjects(projects, filters)
+			if err != nil {
+				return err
+			}
 			rawExpr, err := cmd.Flags().GetString("expr")
 			if err != nil {
 				return err

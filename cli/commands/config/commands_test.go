@@ -375,6 +375,43 @@ func TestConfigLocalMutationDoesNotMaterializeEffectiveValues(t *testing.T) {
 	}
 }
 
+func TestConfigProjectAliasKeysAreRepositoryScoped(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	work := filepath.Join(root, "repo")
+	if err := os.MkdirAll(work, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	withCommandWorkingDirectory(t, work)
+
+	if _, _, err := executeConfigCommand(t, New(), "set", "projects.aliases.prod", "acme-production-42", "--scope", "local"); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _, err := executeConfigCommand(t, New(), "show", "projects.aliases.prod", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var result configValueResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Value != "acme-production-42" || result.Source != "local" {
+		t.Fatalf("alias result = %+v", result)
+	}
+
+	_, _, err = executeConfigCommand(t, New(), "set", "projects.aliases.prod", "other-production-42", "--scope", "global")
+	if err == nil || !strings.Contains(err.Error(), "repository-scoped") {
+		t.Fatalf("global alias error = %v", err)
+	}
+
+	if _, _, err := executeConfigCommand(t, New(), "reset", "projects.aliases.prod", "--scope", "local", "--yes"); err != nil {
+		t.Fatal(err)
+	}
+	aliases, err := coreconfig.LoadProjectAliases()
+	if err != nil || len(aliases) != 0 {
+		t.Fatalf("aliases after reset = %#v, %v", aliases, err)
+	}
+}
+
 func TestConfigEditFullProvidesGeneratedKeyReference(t *testing.T) {
 	root := setupConfigCommandTest(t)
 	withCommandWorkingDirectory(t, root)
