@@ -426,6 +426,11 @@ FBRCM_PROFILE
 | `XDG_CACHE_HOME` | Supply the Unix user-cache home where supported when `FBRCM_CACHE_DIR` is unset; fbrcm appends `fbrcm`. |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Configure Go's HTTP transport and startup connectivity probe. Lowercase forms are also honored. |
 
+`NO_COLOR` follows the [NO_COLOR standard](https://no-color.org/): every
+non-empty value disables color, including `0`, `false`, arbitrary text, and
+whitespace. It does not disable non-color terminal decoration such as bold,
+faint, italic, underline, or reverse video.
+
 `config edit` also consults `VISUAL`, `EDITOR`, and on Unix-like systems
 `SHELL`. Directory discovery follows the operating system and may use `HOME`,
 `USERPROFILE`, `LOCALAPPDATA`, or `APPDATA`.

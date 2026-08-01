@@ -125,6 +125,37 @@ func TestStopWriterPreservesTerminalFileCapabilities(t *testing.T) {
 	}
 }
 
+func TestStopWriterRemovesOnlyColorForAnyNonEmptyNoColorValue(t *testing.T) {
+	for _, value := range []string{"1", "0", "false", "custom", " "} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("NO_COLOR", value)
+			var out bytes.Buffer
+			r := newRenderer(io.Discard, false)
+			input := "\x1b[1;38;2;255;0;0;48;5;22mstyled\x1b[0m"
+			if _, err := r.stopWriter(&out).Write([]byte(input)); err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := out.String(), "\x1b[1mstyled\x1b[m"; got != want {
+				t.Fatalf("filtered output = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+func TestStopWriterKeepsColorWhenNoColorIsEmpty(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	var out bytes.Buffer
+	r := newRenderer(io.Discard, false)
+	input := "\x1b[38;5;203mstyled\x1b[m"
+	if _, err := r.stopWriter(&out).Write([]byte(input)); err != nil {
+		t.Fatal(err)
+	}
+	if got := out.String(); got != input {
+		t.Fatalf("output = %q, want unchanged %q", got, input)
+	}
+}
+
 func TestRendererStylesWholeLineGray(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	var out bytes.Buffer

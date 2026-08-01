@@ -9,8 +9,10 @@ import (
 
 	"charm.land/bubbles/v2/spinner"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/colorprofile"
 
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
+	"github.com/yumauri/fbrcm/core/env"
 )
 
 var (
@@ -75,22 +77,31 @@ func StopWriter(out io.Writer) io.Writer {
 }
 
 func (r *renderer) logWriter(out io.Writer) io.Writer {
+	colorAwareOut := colorAwareWriter(out)
 	return &coordinatedWriter{
 		out: out,
 		write: func(p []byte) (int, error) {
-			return r.writeLog(out, p)
+			return r.writeLog(colorAwareOut, p)
 		},
 	}
 }
 
 func (r *renderer) stopWriter(out io.Writer) io.Writer {
+	colorAwareOut := colorAwareWriter(out)
 	return &coordinatedWriter{
 		out: out,
 		write: func(p []byte) (int, error) {
 			r.stopProgress()
-			return out.Write(p)
+			return colorAwareOut.Write(p)
 		},
 	}
+}
+
+func colorAwareWriter(out io.Writer) io.Writer {
+	if !env.NoColorEnabled() {
+		return out
+	}
+	return &colorprofile.Writer{Forward: out, Profile: colorprofile.ASCII}
 }
 
 func (r *renderer) start(message string) {

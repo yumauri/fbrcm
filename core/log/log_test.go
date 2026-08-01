@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/colorprofile"
+
 	"github.com/yumauri/fbrcm/core/env"
 )
 
@@ -41,5 +43,28 @@ func TestCLIOutputsKeepLogsAndTerminalGuidanceSeparate(t *testing.T) {
 	}
 	if !strings.Contains(terminal.String(), "still visible") {
 		t.Fatalf("terminal guidance was suppressed with silent logs: %q", terminal.String())
+	}
+}
+
+func TestNoColorLoggerRemovesColorButKeepsTextDecoration(t *testing.T) {
+	t.Setenv(env.NoColor, "custom")
+	m := newManager()
+	m.init(ModeCLI)
+
+	var logs bytes.Buffer
+	m.configureCLIOutput(&logs, io.Discard)
+	m.defaultLogger().Info("loaded project", "component", "config")
+	got := logs.String()
+
+	var filtered bytes.Buffer
+	w := colorprofile.Writer{Forward: &filtered, Profile: colorprofile.ASCII}
+	if _, err := w.Write([]byte(got)); err != nil {
+		t.Fatal(err)
+	}
+	if filtered.String() != got {
+		t.Fatalf("NO_COLOR log contains color sequences: %q", got)
+	}
+	if !strings.Contains(got, "\x1b[2m") {
+		t.Fatalf("NO_COLOR log lost allowed faint styling: %q", got)
 	}
 }

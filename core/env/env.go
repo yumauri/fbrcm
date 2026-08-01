@@ -32,6 +32,6 @@ func LookupTrimmed(name string) (string, bool) {
 }
 
 func NoColorEnabled() bool {
-	_, ok := LookupTrimmed(NoColor)
-	return ok
+	value, ok := os.LookupEnv(NoColor)
+	return ok && value != ""
 }
