@@ -5,7 +5,7 @@
 ## Command Tree
 
 ```text
-fbrcm [--help] [--version] [--profile <name>]
+fbrcm [--help] [--version] [--profile <name>] [--no-local-config]
 │
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
@@ -28,12 +28,12 @@ fbrcm [--help] [--version] [--profile <name>]
 │   └── clear [--yes|-y]
 │
 ├── config
-│   ├── path [--json]
-│   ├── show [key] [--json]
-│   ├── set <key> <value>... [--json]
-│   ├── reset [key] [--yes|-y] [--json]
-│   ├── validate [--json]
-│   └── edit [--editor <command>]
+│   ├── path [--scope global|local] [--json]
+│   ├── show [key] [--scope effective|global|local] [--json]
+│   ├── set <key> <value>... [--scope global|local] [--json]
+│   ├── reset [key] [--scope global|local] [--yes|-y] [--json]
+│   ├── validate [--scope all|effective|global|local] [--json]
+│   └── edit [--scope global|local] [--full] [--editor <command>]
 │
 ├── completion
 │   ├── bash [--no-descriptions]
@@ -336,7 +336,16 @@ All commands support `--help`. Root also supports `--version`.
 
 When `FBRCM_OFFLINE` is unset, fbrcm performs a proxy-aware HTTPS connectivity probe before executing a network-capable CLI command and automatically enables offline mode if the probe fails. Help, version, and all `config` commands skip this probe. The probe and other standard HTTP requests honor `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`, including their lowercase forms. Defining `FBRCM_OFFLINE`, including with an empty value or `0`, enables offline mode without probing.
 
-Most commands require a selected profile. `profile`, `config`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable. Config commands ignore the per-process profile override because they manage the global file, including its persisted active-profile field.
+Most commands require a selected profile. `profile`, `config`, `doctor`, and `help` do not require profile initialization. Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable.
+
+At startup, fbrcm searches the current directory and every parent through the
+filesystem root for `.fbrcm.toml`. The nearest match deeply overlays the global
+`config.toml`: nested tables merge, while scalars and arrays replace lower-layer
+values. Built-in defaults apply after both stored layers. Profile precedence is
+`--profile`, `FBRCM_PROFILE`, local config, global config, then `default`.
+Use `--no-local-config` or set `FBRCM_NO_LOCAL_CONFIG` to ignore repository
+configuration. Config commands ignore `--profile`, but honor their own explicit
+configuration scope.
 
 Interactive yes/no confirmations select **Yes** by default. Use the arrow keys to select No, or pass `--yes` where available to skip the prompt.
 
@@ -369,6 +378,7 @@ FBRCM_PROFILE
 | `FBRCM_OFFLINE` | Enable offline mode whenever the variable is defined, including as an empty string or `0`. If it is unset, network-capable commands perform a short, proxy-aware connectivity probe and may enable offline mode automatically. |
 | `FBRCM_LOG_LEVEL` | Set logging to `debug`, `info`, `warn`, `error`, `fatal`, or `silent`, case-insensitively. The default is `info`. |
 | `FBRCM_EDITOR` | Select the command used by `config edit`, after `--editor` and before `VISUAL` or `EDITOR`. Arguments are supported. |
+| `FBRCM_NO_LOCAL_CONFIG` | Ignore repository `.fbrcm.toml` discovery when set to a non-empty value. The root `--no-local-config` flag provides the same behavior for one invocation. |
 | `NO_COLOR` | Disable CLI, prompt, log, and TUI colors when set to a non-empty value. |
 | `COLUMNS` | Supply a positive terminal width for human-readable CLI output. Invalid values are ignored. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Select an Application Default Credentials JSON file for gcloud identities and diagnostics. |
@@ -1476,78 +1486,128 @@ Use `fbrcm draft discard` or `fbrcm draft discard --all` for explicit draft dele
 
 ### `fbrcm config path`
 
-Prints global config file path.
+Prints the global config file path by default. `--scope local` prints the nearest
+discovered `.fbrcm.toml`. When none exists, it returns a nonzero error with the
+current-directory creation candidate and suggests `config edit --scope local`.
 
 Flags:
 
 ```text
---json   print {"path": "..."}
+--scope global|local   select the stored layer; default global
+--json                 print {"scope": "...", "path": "...", "exists": true|false}
 ```
 
 All `config` subcommands are local operations. They neither initialize a profile nor run the startup connectivity probe.
 
 ### `fbrcm config show [key]`
 
-Shows the effective global configuration after applying built-in defaults and keybinding migration. With no key, human output is TOML and includes the complete effective key map. Supported keys are `profile`, `powerline_glyphs`, `keys`, `keys.<block>`, and `keys.<block>.<action>`. A selected scalar prints as plain text; a selected keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
+Shows the effective layered configuration after applying keybinding migration
+and built-in defaults. With no key, human output is TOML and includes the
+complete effective key map. `--scope global` or `--scope local` instead shows
+only values physically stored in that layer. Supported keys are `profile`,
+`powerline_glyphs`, `keys`, `keys.<block>`, and
+`keys.<block>.<action>`. A selected scalar prints as plain text; a selected
+keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
 
 Flags:
 
 ```text
---json   print structured JSON
+--scope effective|global|local   select the view; default effective
+--json                           print structured JSON
 ```
 
-Full JSON output has `path`, `exists`, and `config` fields. Selected-key JSON has `key`, `value`, and `source`; `source` is `configured`, `default`, or `migrated`. A missing config file is not created.
+Full JSON output includes `scope`, `path`, `exists`, both stored source paths,
+and `config`. Selected-key JSON has `key`, `value`, and `source`; effective
+sources are `local`, `global`, `default`, `mixed`, or `migrated`. A missing
+config file is not created. Use `fbrcm config show keys` as the authoritative
+reference for every configurable keybinding block and action.
 
 ### `fbrcm config set <key> <value>...`
 
-Sets a typed preference and atomically replaces the global config file with private permissions. Supported forms are:
+Sets a typed preference. It atomically replaces the global config file with
+private permissions by default. `--scope local` explicitly targets the nearest
+repository config, or creates `.fbrcm.toml` in the current directory when none
+is found. Supported forms are:
 
 ```text
 powerline_glyphs true|false
 keys.<block>.<action> <key>...
 ```
 
-The active `profile` is read-only here; use `fbrcm profile switch <name>`. The complete candidate configuration is validated before writing, including unknown blocks/actions, empty or duplicate bindings, unsupported key names, and conflicts with configured or default actions. Failed validation leaves the file unchanged.
+The active `profile` is read-only here; use `fbrcm profile switch <name>` or edit
+the local TOML. Only explicit overrides are stored: inherited values and
+built-in defaults are never copied into the target layer. The complete effective
+candidate configuration is validated before writing, including unknown
+blocks/actions, empty or duplicate bindings, unsupported key names, and
+conflicts with configured or default actions. Failed validation leaves the file
+unchanged.
 
 Flags:
 
 ```text
---json   print {"key": "...", "previous": ..., "value": ..., "changed": true|false}
+--scope global|local   select the stored layer; default global
+--json                 print the scoped update result
 ```
 
 ### `fbrcm config reset [key]`
 
-Resets a preference to its built-in default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or `keys.<block>.<action>`. With no key, it resets all preferences while preserving the persisted active profile. Reset can repair an invalid key map: obsolete blocks and actions are discarded while the requested value is restored, and the resulting configuration must be valid before it is saved. A changed reset asks for confirmation; Yes is selected by default. Writes are validated and atomic.
+Removes a stored override from the selected layer. Removing a local override
+reveals the global value; removing a global override reveals the built-in
+default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or
+`keys.<block>.<action>`. With no key, it removes all stored preferences while
+preserving that layer's `profile`. Reset can repair an invalid key map by
+discarding the requested obsolete subtree. A changed reset asks for
+confirmation; Yes is selected by default. Writes are validated and atomic.
 
 Flags:
 
 ```text
--y, --yes   reset without confirmation
-    --json  print {"key": "...", "status": "reset|unchanged|canceled", "changed": true|false}
+-y, --yes             reset without confirmation
+    --scope global|local   select the stored layer; default global
+    --json             print the scoped reset result
 ```
 
 ### `fbrcm config validate`
 
-Strictly validates TOML structure, profile references, and the complete effective key map. It reports all keybinding diagnostics in stable order. A missing file is valid because built-in defaults apply. Invalid configuration returns exit status 1; operational failures also return nonzero.
+Strictly validates TOML structure, profile references, and keybindings. By
+default, it validates both stored layers and their effective merged result.
+Use `--scope` to isolate a stored layer or the effective configuration. It
+reports all keybinding diagnostics in stable order. Missing files are valid
+because lower layers and built-in defaults apply. Invalid configuration returns
+exit status 1; operational failures also return nonzero.
 
 Flags:
 
 ```text
---json   print {"path": "...", "exists": true|false, "valid": true|false, "errors": [...], "warnings": [...]}
+--scope all|effective|global|local   select validation scope; default all
+--json                              print the validation report
 ```
 
 Each diagnostic contains `severity`, `code`, `key`, and `message`.
 
 ### `fbrcm config edit`
 
-Opens a staged copy of the global config in an editor. After the editor exits, fbrcm strictly validates the staged file and atomically replaces the original only when it is valid. If editing or validation fails, the original remains unchanged and the staged file path is preserved for recovery. When the config file does not exist, the editor starts with the complete default configuration.
+Opens a staged copy of the global config in an editor by default. `--scope
+local` explicitly edits the nearest repository file or creates `.fbrcm.toml` in
+the current directory. After the editor exits, fbrcm strictly validates the
+staged file and effective result, then atomically replaces the original only
+when valid. If editing or validation fails, the original remains unchanged and
+the staged path is preserved for recovery.
+
+When the target does not exist, the editor starts with a sparse commented file.
+`--full` instead stages a complete generated keybinding template. Saving that
+template makes every retained entry an explicit override, so remove entries
+that should continue following future built-in defaults. Normal startup never
+materializes defaults into either config file.
 
 Editor resolution order is `--editor`, `FBRCM_EDITOR`, `VISUAL`, `EDITOR`, then `vi` on Unix-like systems or `notepad.exe` on Windows. Commands may include arguments; GUI editors generally need their wait flag, for example `--editor "code --wait"`.
 
 Flags:
 
 ```text
---editor <command>   override the editor command
+--scope global|local   select the stored layer; default global
+--full                 stage a complete generated keybinding template
+--editor <command>     override the editor command
 ```
 
 ### `fbrcm auth list`
@@ -1673,11 +1733,16 @@ Flags:
 
 ### `fbrcm profile switch <name>`
 
-Switches to profile, creating it if needed.
+Switches the global profile, creating it if needed. If repository configuration
+selects another profile, the command reports that the local selection remains
+effective. A profile switch performed inside the TUI remains active for that
+session; repository selection applies again on the next launch.
 
 ### `fbrcm profile rename <old-name> <new-name>`
 
-Renames existing profile.
+Renames an existing profile. fbrcm refuses to rename a profile selected by the
+nearest `.fbrcm.toml`, because it never rewrites repository configuration as a
+side effect of profile management.
 
 ### `fbrcm profile path <profile>`
 
@@ -1691,7 +1756,9 @@ Flags:
 
 ### `fbrcm profile delete <profile>`
 
-Deletes profile config and cache directories. Confirmation defaults to yes. The active profile cannot be deleted.
+Deletes profile config and cache directories. Confirmation defaults to yes.
+Neither the global persisted profile nor the currently effective repository or
+session profile can be deleted.
 
 Flags:
 

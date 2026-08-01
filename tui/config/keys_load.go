@@ -3,13 +3,13 @@ package config
 import (
 	"errors"
 	"os"
-	"reflect"
 	"slices"
 
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 )
 
-// Load reads global config, merges missing keys, writes complete map if needed.
+// Load reads the effective layered config and applies built-in defaults without
+// materializing them into either stored config file.
 func Load() (State, error) {
 	cfg, err := coreconfig.LoadAppConfig()
 	if err != nil {
@@ -18,24 +18,13 @@ func Load() (State, error) {
 		}
 		cfg = &coreconfig.AppConfig{}
 	}
-	changed := MigrateAdminShortcuts(cfg.Keys)
+	MigrateAdminShortcuts(cfg.Keys)
 	if cfg.PowerlineGlyphs == nil {
 		enabled := true
 		cfg.PowerlineGlyphs = &enabled
-		changed = true
 	}
 	powerlineGlyphs = *cfg.PowerlineGlyphs
 	merged := Merge(DefaultKeyMap(), cfg.Keys)
-	nextConfig := ToConfigMap(merged)
-	if !reflect.DeepEqual(cfg.Keys, nextConfig) {
-		cfg.Keys = nextConfig
-		changed = true
-	}
-	if changed {
-		if err := coreconfig.SaveAppConfig(cfg); err != nil {
-			return State{}, err
-		}
-	}
 	active = validate(merged)
 	logConflicts(active)
 	return Current(), nil

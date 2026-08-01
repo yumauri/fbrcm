@@ -54,5 +54,5 @@ func (s *Core) InspectStartupState() (StartupState, error) {
 // clients are cached with the active profile in their key, so identities with
 // the same name in different profiles remain isolated.
 func (s *Core) SwitchProfile(name string) error {
-	return config.SwitchProfile(name)
+	return config.SwitchProfileForSession(name)
 }

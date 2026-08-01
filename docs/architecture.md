@@ -152,6 +152,10 @@ profile detection.
   level. `core/rc/promote` is the source of truth for dependencies and pruning.
 - Files containing credentials, drafts, caches, or exported Remote Config use
   the private-file helpers in `core/config`.
+- Application configuration is layered: the nearest repository `.fbrcm.toml`
+  deeply overlays the global `config.toml`. Stored layers remain sparse;
+  built-in keybindings and values are applied in memory and must never be
+  materialized or copied between layers during startup.
 - Human CLI tables use the shared Lip Gloss conventions and never rely on
   terminal soft wrapping.
 - Selectable TUI rows support click selection and double-click activation;

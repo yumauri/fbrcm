@@ -31,13 +31,14 @@ func EnsureActiveProfile() error {
 		corelog.For("config").Info("current profile", "profile", profile, "override", true)
 		return nil
 	}
-	profile, err := loadActiveProfile()
+	resolved, err := ResolveAppConfig()
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return SwitchProfile(DefaultProfileName)
-		}
 		return err
 	}
+	if !resolved.Global.Exists && !resolved.Local.Exists {
+		return SwitchProfile(DefaultProfileName)
+	}
+	profile := resolved.Effective.Profile
 	if strings.TrimSpace(profile) == "" {
 		return SwitchProfile(DefaultProfileName)
 	}
@@ -45,7 +46,11 @@ func EnsureActiveProfile() error {
 		return err
 	}
 	if !profileConfigDirExists(profile) {
-		err := fmt.Errorf("active profile %q does not exist in config directory", profile)
+		source := resolved.Global.Path
+		if strings.TrimSpace(resolved.Local.Config.Profile) != "" {
+			source = resolved.Local.Path
+		}
+		err := fmt.Errorf("active profile %q selected by %s does not exist in config directory; create it with `fbrcm profile switch %s`", profile, source, profile)
 		corelog.For("config").Error("active profile missing", "profile", profile, "config_dir", profileConfigDir(profile), "err", err)
 		return err
 	}
@@ -116,11 +121,14 @@ func EnsureProfileCanDelete(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
 	}
-	active, err := loadActiveProfile()
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if active, overridden := selectedProfileOverride(); overridden && active == name {
+		return fmt.Errorf("cannot delete active profile %q", name)
+	}
+	resolved, err := ResolveAppConfig()
+	if err != nil {
 		return err
 	}
-	if active == name {
+	if resolved.Global.Config.Profile == name || resolved.Effective.Profile == name {
 		err := fmt.Errorf("cannot delete active profile %q", name)
 		corelog.For("config").Error("active profile deletion rejected", "profile", name, "err", err)
 		return err
@@ -146,6 +154,23 @@ func SwitchProfile(name string) error {
 	return nil
 }
 
+// SwitchProfileForSession persists the global selection and keeps the chosen
+// profile active for the remainder of an interactive process, above a local
+// repository selection.
+func SwitchProfileForSession(name string) error {
+	if err := SwitchProfile(name); err != nil {
+		return err
+	}
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		return err
+	}
+	if resolved.Local.Exists && strings.TrimSpace(resolved.Local.Config.Profile) != "" {
+		setSessionProfile(name)
+	}
+	return nil
+}
+
 func RenameProfile(oldName, newName string) error {
 	if err := ValidateProfileName(oldName); err != nil {
 		return fmt.Errorf("old profile: %w", err)
@@ -155,6 +180,13 @@ func RenameProfile(oldName, newName string) error {
 	}
 	if oldName == newName {
 		return nil
+	}
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		return err
+	}
+	if resolved.Local.Exists && strings.TrimSpace(resolved.Local.Config.Profile) == oldName {
+		return fmt.Errorf("profile %q is selected by local config %s; update that file before renaming the profile", oldName, resolved.Local.Path)
 	}
 
 	oldConfigDir := filepath.Join(GetConfigRootDirPath(), oldName)
@@ -253,7 +285,7 @@ func loadActiveProfile() (string, error) {
 }
 
 func saveActiveProfile(name string) error {
-	cfg, err := LoadAppConfig()
+	cfg, err := LoadGlobalAppConfig()
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return err

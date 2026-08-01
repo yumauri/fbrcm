@@ -15,6 +15,7 @@ import (
 )
 
 type configSetResult struct {
+	Scope    string `json:"scope"`
 	Key      string `json:"key"`
 	Previous any    `json:"previous"`
 	Value    any    `json:"value"`
@@ -22,6 +23,7 @@ type configSetResult struct {
 }
 
 type configResetResult struct {
+	Scope   string `json:"scope"`
 	Key     string `json:"key"`
 	Status  string `json:"status"`
 	Changed bool   `json:"changed"`
@@ -41,11 +43,12 @@ func newSetCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if !state.Report.Valid {
-				return invalidConfigError(state.Report)
+			scope, err := readConfigScope(cmd, scopeGlobal, scopeGlobal, scopeLocal)
+			if err != nil {
+				return err
 			}
-			candidate := mutableConfig(state)
-			previous, _, err := configValue(state, args[0])
+			candidate := mutationCandidate(state, scope)
+			previous, _, err := scopedConfigValue(state, scope, args[0])
 			if err != nil {
 				return err
 			}
@@ -55,11 +58,11 @@ func newSetCommand() *cobra.Command {
 			}
 			changed := !reflect.DeepEqual(previous, value)
 			if changed {
-				if err := validateAndSave(candidate); err != nil {
+				if err := validateAndSaveScoped(state, candidate, scope); err != nil {
 					return err
 				}
 			}
-			result := configSetResult{Key: args[0], Previous: previous, Value: value, Changed: changed}
+			result := configSetResult{Scope: scope, Key: args[0], Previous: previous, Value: value, Changed: changed}
 			if jsonOut {
 				return shared.WriteJSON(cmd, result)
 			}
@@ -72,6 +75,7 @@ func newSetCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool("json", false, "Print update result as JSON")
+	addScopeFlag(cmd, scopeGlobal)
 	return cmd
 }
 
@@ -129,21 +133,25 @@ func newResetCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			candidate := mutableConfig(state)
+			scope, err := readConfigScope(cmd, scopeGlobal, scopeGlobal, scopeLocal)
+			if err != nil {
+				return err
+			}
+			candidate := mutationCandidate(state, scope)
 			key := "preferences"
 			if len(args) == 1 {
 				key = args[0]
 			}
-			changed, err := resetConfigValue(candidate, state, key, len(args) == 0)
+			changed, err := resetConfigValue(candidate, key, len(args) == 0)
 			if err != nil {
 				return err
 			}
-			result := configResetResult{Key: key, Status: "unchanged", Changed: changed}
+			result := configResetResult{Scope: scope, Key: key, Status: "unchanged", Changed: changed}
 			if !changed {
 				return writeResetResult(cmd, jsonOut, result)
 			}
 			if !yes {
-				confirm := shared.NewConfirmation("Reset "+key+" to built-in defaults?", shared.ConfirmationOptions{Destructive: true})
+				confirm := shared.NewConfirmation(fmt.Sprintf("Remove %s override from %s configuration?", key, scope), shared.ConfirmationOptions{Destructive: true})
 				confirm.Input = cmd.InOrStdin()
 				confirm.Output = cmd.ErrOrStderr()
 				ok, err := confirm.RunPrompt()
@@ -156,7 +164,7 @@ func newResetCommand() *cobra.Command {
 					return writeResetResult(cmd, jsonOut, result)
 				}
 			}
-			if err := validateAndSave(candidate); err != nil {
+			if err := validateAndSaveScoped(state, candidate, scope); err != nil {
 				return err
 			}
 			result.Status = "reset"
@@ -165,16 +173,15 @@ func newResetCommand() *cobra.Command {
 	}
 	shared.AddYesFlag(cmd, "Reset without confirmation")
 	cmd.Flags().Bool("json", false, "Print reset result as JSON")
+	addScopeFlag(cmd, scopeGlobal)
 	return cmd
 }
 
-func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key string, allPreferences bool) (bool, error) {
-	defaults := tuiconfig.ToConfigMap(tuiconfig.DefaultKeyMap())
+func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreferences bool) (bool, error) {
 	if allPreferences {
-		changed := !state.Report.Valid || candidate.PowerlineGlyphs == nil || !*candidate.PowerlineGlyphs || !reflect.DeepEqual(candidate.Keys, defaults)
-		enabled := true
-		candidate.PowerlineGlyphs = &enabled
-		candidate.Keys = defaults
+		changed := candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0
+		candidate.PowerlineGlyphs = nil
+		candidate.Keys = map[string]map[string][]string{}
 		return changed, nil
 	}
 	parts := strings.Split(strings.TrimSpace(key), ".")
@@ -182,21 +189,20 @@ func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key st
 	case key == "profile":
 		return false, fmt.Errorf("profile is managed by `fbrcm profile switch <name>`")
 	case key == "powerline_glyphs":
-		previous := *state.Effective.PowerlineGlyphs
-		enabled := true
-		candidate.PowerlineGlyphs = &enabled
-		return !state.Report.Valid || previous != enabled, nil
+		changed := candidate.PowerlineGlyphs != nil
+		candidate.PowerlineGlyphs = nil
+		return changed, nil
 	case key == "keys":
-		changed := !state.Report.Valid || !reflect.DeepEqual(candidate.Keys, defaults)
-		candidate.Keys = defaults
+		changed := len(candidate.Keys) > 0
+		candidate.Keys = map[string]map[string][]string{}
 		return changed, nil
 	case len(parts) == 2 && parts[0] == "keys":
 		block := parts[1]
 		if !tuiconfig.KnownBlock(block) {
 			return false, fmt.Errorf("unknown keybinding block %q", block)
 		}
-		changed := !state.Report.Valid || !reflect.DeepEqual(candidate.Keys[block], defaults[block])
-		candidate.Keys[block] = cloneActionMap(defaults[block])
+		_, changed := candidate.Keys[block]
+		delete(candidate.Keys, block)
 		return changed, nil
 	case len(parts) == 3 && parts[0] == "keys":
 		block, action := parts[1], parts[2]
@@ -206,8 +212,12 @@ func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key st
 		if !tuiconfig.KnownAction(block, action) {
 			return false, fmt.Errorf("unknown action %q in block %q", action, block)
 		}
-		changed := !state.Report.Valid || !reflect.DeepEqual(candidate.Keys[block][action], defaults[block][action])
-		candidate.Keys[block][action] = append([]string(nil), defaults[block][action]...)
+		actions := candidate.Keys[block]
+		_, changed := actions[action]
+		delete(actions, action)
+		if len(actions) == 0 {
+			delete(candidate.Keys, block)
+		}
 		return changed, nil
 	default:
 		return false, fmt.Errorf("unknown or non-resettable config key %q", key)
@@ -215,17 +225,50 @@ func resetConfigValue(candidate *coreconfig.AppConfig, state configState, key st
 }
 
 func mutableConfig(state configState) *coreconfig.AppConfig {
-	candidate := cloneAppConfig(state.Effective)
-	candidate.Profile = state.Stored.Profile
-	return candidate
+	return cloneAppConfig(state.Global)
 }
 
-func validateAndSave(candidate *coreconfig.AppConfig) error {
-	report := validateAppConfig(coreconfig.GetGlobalConfigFilePath(), true, candidate)
+func mutationCandidate(state configState, scope string) *coreconfig.AppConfig {
+	if scope == scopeLocal {
+		return cloneAppConfig(state.Local)
+	}
+	return mutableConfig(state)
+}
+
+func validateAndSaveScoped(state configState, candidate *coreconfig.AppConfig, scope string) error {
+	if err := validateScopedCandidate(state, candidate, scope); err != nil {
+		return err
+	}
+	if scope == scopeGlobal {
+		return coreconfig.SaveAppConfig(candidate)
+	}
+	raw, err := coreconfig.MarshalAppConfig(candidate)
+	if err != nil {
+		return fmt.Errorf("encode local config: %w", err)
+	}
+	return coreconfig.SaveLocalAppConfigRaw(state.LocalPath, raw)
+}
+
+func validateScopedCandidate(state configState, candidate *coreconfig.AppConfig, scope string) error {
+	path := state.GlobalPath
+	global, local := candidate, state.Local
+	if scope == scopeLocal {
+		path = state.LocalPath
+		global, local = state.Global, candidate
+	}
+	report := validateAppConfig(path, true, candidate)
 	if !report.Valid {
 		return invalidConfigError(report)
 	}
-	return coreconfig.SaveAppConfig(candidate)
+	merged, err := coreconfig.MergeAppConfigs(global, local)
+	if err != nil {
+		return err
+	}
+	report = validateAppConfig("effective configuration", true, merged)
+	if !report.Valid {
+		return invalidConfigError(report)
+	}
+	return nil
 }
 
 func invalidConfigError(report configValidationResult) error {
@@ -250,12 +293,4 @@ func formatConfigValue(value any) string {
 		return fmt.Sprint(value)
 	}
 	return string(raw)
-}
-
-func cloneActionMap(actions map[string][]string) map[string][]string {
-	out := make(map[string][]string, len(actions))
-	for action, keys := range actions {
-		out[action] = append([]string(nil), keys...)
-	}
-	return out
 }

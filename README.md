@@ -164,12 +164,16 @@ Use an explicit target such as `client@my-project` or
 
 ## Configuration
 
-The TUI key map and active-profile preference live in the global `config.toml`.
-Inspect the effective configuration and its path with:
+The TUI key map and active-profile preference can be stored in the global
+`config.toml` or a repository `.fbrcm.toml`. fbrcm searches from the current
+directory to the filesystem root, then deeply overlays the nearest local file
+on the global configuration. Inspect the effective configuration and its
+sources with:
 
 ```sh
 fbrcm config show
 fbrcm config path
+fbrcm config path --scope local
 ```
 
 For example:
@@ -178,7 +182,13 @@ For example:
 fbrcm config set powerline_glyphs false
 fbrcm config set keys.projects.refresh u ctrl+r
 fbrcm config validate
+fbrcm config edit --scope local
 ```
+
+Configuration files stay sparse: built-in keybindings are applied in memory
+and are not written during startup. Use `fbrcm config show keys` as the
+authoritative key-name reference, or `fbrcm config edit --full` to stage a
+complete generated template.
 
 Profiles keep authentication, project selection, drafts, and caches separate.
 Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.

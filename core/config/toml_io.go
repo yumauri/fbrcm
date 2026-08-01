@@ -8,10 +8,6 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-func decodeTOML(data []byte, dest any) error {
-	return toml.Unmarshal(data, dest)
-}
-
 func decodeTOMLWithOptions(data []byte, dest any, strict bool) error {
 	decoder := toml.NewDecoder(bytes.NewReader(data))
 	if strict {
@@ -27,15 +23,4 @@ func decodeTOMLWithOptions(data []byte, dest any, strict bool) error {
 
 func encodeTOML(v any) ([]byte, error) {
 	return toml.Marshal(v)
-}
-
-func readTOMLFile(path string, dest any) error {
-	data, err := readFileBytes(path)
-	if err != nil {
-		return err
-	}
-	if err := decodeTOML(data, dest); err != nil {
-		return &decodeError{err: err}
-	}
-	return nil
 }

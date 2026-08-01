@@ -1,7 +1,11 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"slices"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -12,7 +16,7 @@ import (
 func New() *cobra.Command {
 	configCmd := &cobra.Command{
 		Use:   "config",
-		Short: "Manage global config file",
+		Short: "Manage global and repository configuration",
 	}
 	configCmd.AddCommand(newPathCommand(), newShowCommand(), newSetCommand(), newResetCommand(), newValidateCommand(), newEditCommand(runEditor))
 	return configCmd
@@ -21,16 +25,35 @@ func New() *cobra.Command {
 func newPathCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "path",
-		Short: "Print global config file path",
+		Short: "Print a configuration file path",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
 				return err
 			}
 
+			scope, err := readConfigScope(cmd, scopeGlobal, scopeGlobal, scopeLocal)
+			if err != nil {
+				return err
+			}
 			path := coreconfig.GetGlobalConfigFilePath()
+			_, statErr := os.Stat(path)
+			exists := statErr == nil
+			if statErr != nil && !errors.Is(statErr, os.ErrNotExist) {
+				return statErr
+			}
+			if scope == scopeLocal {
+				path, exists, err = coreconfig.GetLocalConfigFilePath()
+				if err != nil {
+					return err
+				}
+				if !exists {
+					cmd.Root().SilenceUsage = true
+					return fmt.Errorf("no local config found from the current directory to the filesystem root; create one with `fbrcm config edit --scope local` (candidate: %s)", path)
+				}
+			}
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]string{"path": path})
+				return shared.WriteJSON(cmd, map[string]any{"scope": scope, "path": path, "exists": exists})
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
@@ -38,5 +61,32 @@ func newPathCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool("json", false, "Print path as JSON")
+	addScopeFlag(cmd, scopeGlobal)
 	return cmd
+}
+
+const (
+	scopeAll       = "all"
+	scopeEffective = "effective"
+	scopeGlobal    = "global"
+	scopeLocal     = "local"
+)
+
+func addScopeFlag(cmd *cobra.Command, defaultScope string) {
+	cmd.Flags().String("scope", defaultScope, "Configuration scope")
+}
+
+func readConfigScope(cmd *cobra.Command, defaultScope string, allowed ...string) (string, error) {
+	scope, err := cmd.Flags().GetString("scope")
+	if err != nil {
+		return "", err
+	}
+	scope = strings.ToLower(strings.TrimSpace(scope))
+	if scope == "" {
+		scope = defaultScope
+	}
+	if slices.Contains(allowed, scope) {
+		return scope, nil
+	}
+	return "", fmt.Errorf("unsupported config scope %q; use %s", scope, strings.Join(allowed, ", "))
 }

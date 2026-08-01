@@ -13,6 +13,7 @@ const (
 	ConfigDir     = "FBRCM_CONFIG_DIR"
 	CacheDir      = "FBRCM_CACHE_DIR"
 	Editor        = "FBRCM_EDITOR"
+	NoLocalConfig = "FBRCM_NO_LOCAL_CONFIG"
 	XDGConfigHome = "XDG_CONFIG_HOME"
 )
 

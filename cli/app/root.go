@@ -53,6 +53,11 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 		Use:   "fbrcm",
 		Short: "Firebase Remote Config manager",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			noLocalConfig, err := cmd.Flags().GetBool("no-local-config")
+			if err != nil {
+				return err
+			}
+			config.SetLocalConfigDisabled(noLocalConfig)
 			if cmd.Name() == "help" || isConfigCommand(cmd) {
 				return nil
 			}
@@ -84,6 +89,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.SetVersionTemplate(versionTemplate)
 	profileDefault, _ := env.LookupTrimmed(env.Profile)
 	rootCmd.PersistentFlags().String("profile", profileDefault, "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)")
+	rootCmd.PersistentFlags().Bool("no-local-config", false, "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)")
 
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(authcmd.New(s))

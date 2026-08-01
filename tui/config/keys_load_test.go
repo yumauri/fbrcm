@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -45,7 +47,7 @@ func TestCleanKeysDedupesAndDropsEmpty(t *testing.T) {
 	}
 }
 
-func TestLoadMergesAndPersistsMissingKeys(t *testing.T) {
+func TestLoadMergesDefaultsWithoutPersistingThem(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
@@ -58,21 +60,8 @@ func TestLoadMergesAndPersistsMissingKeys(t *testing.T) {
 		t.Fatal("expected default quit binding after load")
 	}
 
-	cfg, err := config.LoadAppConfig()
-	if err != nil {
-		t.Fatalf("LoadAppConfig = %v", err)
-	}
-	if _, ok := cfg.Keys[string(BlockGlobal)]; !ok {
-		t.Fatalf("config keys = %+v, want global block persisted", cfg.Keys)
-	}
-	if _, ok := cfg.Keys[string(BlockHistoryPicker)]; !ok {
-		t.Fatalf("config keys = %+v, want history picker block persisted", cfg.Keys)
-	}
-	if got := cfg.Keys[string(BlockFilter)][string(ActionFilterExpression)]; len(got) != 1 || got[0] != ":" {
-		t.Fatalf("expression filter keys = %v, want [:]", got)
-	}
-	if cfg.PowerlineGlyphs == nil || !*cfg.PowerlineGlyphs {
-		t.Fatalf("powerline_glyphs = %v, want default true", cfg.PowerlineGlyphs)
+	if _, err := os.Stat(config.GetGlobalConfigFilePath()); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("Load persisted generated defaults: %v", err)
 	}
 }
 

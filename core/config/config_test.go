@@ -19,6 +19,8 @@ func setupTestDirs(t *testing.T) {
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
 	t.Setenv(env.Profile, "")
+	t.Setenv(env.NoLocalConfig, "")
+	SetLocalConfigDisabled(false)
 	if err := SetProfileOverride(""); err != nil {
 		t.Fatalf("clear profile override: %v", err)
 	}

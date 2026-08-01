@@ -80,6 +80,10 @@ func TestRootCommandDefinesProfileOverride(t *testing.T) {
 	if !strings.Contains(flag.Usage, "FBRCM_PROFILE") || !strings.Contains(flag.Usage, "without changing") {
 		t.Fatalf("profile usage = %q", flag.Usage)
 	}
+	localFlag := cmd.PersistentFlags().Lookup("no-local-config")
+	if localFlag == nil || !strings.Contains(localFlag.Usage, "FBRCM_NO_LOCAL_CONFIG") {
+		t.Fatalf("no-local-config flag = %#v", localFlag)
+	}
 }
 
 func TestCommandProgressMessageUsesMeaningfulPhases(t *testing.T) {

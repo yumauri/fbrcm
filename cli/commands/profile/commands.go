@@ -60,6 +60,11 @@ func newSwitchCommand() *cobra.Command {
 			if err := config.SwitchProfile(args[0]); err != nil {
 				return err
 			}
+			effective := config.GetActiveProfileName()
+			if effective != args[0] {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ switched global profile: %s\neffective profile remains %s because repository configuration overrides it\n", args[0], effective)
+				return nil
+			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ switched: %s\n", args[0])
 			return nil
 		},

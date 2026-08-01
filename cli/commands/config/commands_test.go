@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
-	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 func setupConfigCommandTest(t *testing.T) string {
@@ -135,11 +135,11 @@ func TestConfigResetPreservesProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Profile != "work" || cfg.PowerlineGlyphs == nil || !*cfg.PowerlineGlyphs {
+	if cfg.Profile != "work" || cfg.PowerlineGlyphs != nil {
 		t.Fatalf("config after reset = %+v", cfg)
 	}
-	if !reflect.DeepEqual(cfg.Keys, tuiconfig.ToConfigMap(tuiconfig.DefaultKeyMap())) {
-		t.Fatal("reset did not restore default key map")
+	if len(cfg.Keys) != 0 {
+		t.Fatal("reset did not remove stored key overrides")
 	}
 }
 
@@ -169,8 +169,8 @@ compare = ["v"]
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(cfg.Keys, tuiconfig.ToConfigMap(tuiconfig.DefaultKeyMap())) {
-		t.Fatalf("keys after reset = %#v, want defaults", cfg.Keys)
+	if len(cfg.Keys) != 0 {
+		t.Fatalf("keys after reset = %#v, want no stored overrides", cfg.Keys)
 	}
 }
 
@@ -260,4 +260,195 @@ func TestResolveEditorPrecedence(t *testing.T) {
 	if got := resolveEditor("explicit"); got != "explicit" {
 		t.Fatalf("explicit editor = %q", got)
 	}
+}
+
+func TestRunEditorUsesProcessTerminalStreams(t *testing.T) {
+	process := &exec.Cmd{}
+	attachEditorTerminal(process)
+	if process.Stdin != os.Stdin || process.Stdout != os.Stdout || process.Stderr != os.Stderr {
+		t.Fatalf("editor streams = stdin:%T stdout:%T stderr:%T", process.Stdin, process.Stdout, process.Stderr)
+	}
+}
+
+func TestConfigShowMergesNearestLocalConfigAndReportsSource(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	work := filepath.Join(root, "repo", "nested")
+	if err := os.MkdirAll(work, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	withCommandWorkingDirectory(t, work)
+	enabled := true
+	if err := coreconfig.SaveAppConfig(&coreconfig.AppConfig{
+		PowerlineGlyphs: &enabled,
+		Keys:            map[string]map[string][]string{"projects": {"refresh": {"r"}}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	localPath := filepath.Join(root, "repo", coreconfig.LocalConfigFileName)
+	if err := os.WriteFile(localPath, []byte("powerline_glyphs = false\n\n[keys.projects]\ndelete = ['D']\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout, _, err := executeConfigCommand(t, New(), "show", "powerline_glyphs", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var result configValueResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Value != false || result.Source != "local" {
+		t.Fatalf("result = %+v", result)
+	}
+
+	stdout, _, err = executeConfigCommand(t, New(), "show", "keys.projects.refresh", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Source != "global" {
+		t.Fatalf("refresh source = %+v", result)
+	}
+}
+
+func TestConfigPathLocalRequiresDiscoveredFile(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	work := filepath.Join(root, "repo", "nested")
+	if err := os.MkdirAll(work, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	withCommandWorkingDirectory(t, work)
+
+	stdout, _, err := executeConfigCommand(t, New(), "path", "--scope", "local")
+	if err == nil || !strings.Contains(err.Error(), "no local config found") || !strings.Contains(err.Error(), "config edit --scope local") {
+		t.Fatalf("path error = %v", err)
+	}
+	if stdout != "" {
+		t.Fatalf("path wrote nonexistent candidate to stdout: %q", stdout)
+	}
+
+	path := filepath.Join(root, "repo", coreconfig.LocalConfigFileName)
+	if err := os.WriteFile(path, []byte("powerline_glyphs = false\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _, err = executeConfigCommand(t, New(), "path", "--scope", "local")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotInfo, gotErr := os.Stat(strings.TrimSpace(stdout))
+	wantInfo, wantErr := os.Stat(path)
+	if gotErr != nil || wantErr != nil || !os.SameFile(gotInfo, wantInfo) {
+		t.Fatalf("local path = %q, want %q (got stat: %v, want stat: %v)", stdout, path, gotErr, wantErr)
+	}
+}
+
+func TestConfigLocalMutationDoesNotMaterializeEffectiveValues(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	work := filepath.Join(root, "repo")
+	if err := os.MkdirAll(work, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	withCommandWorkingDirectory(t, work)
+	if err := coreconfig.SaveAppConfigRaw([]byte("[keys.projects]\nrefresh = ['r']\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, _, err := executeConfigCommand(t, New(), "set", "powerline_glyphs", "false", "--scope", "local"); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(work, coreconfig.LocalConfigFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(raw)
+	if !strings.Contains(text, "powerline_glyphs = false") || strings.Contains(text, "refresh") || strings.Contains(text, "[keys") {
+		t.Fatalf("local config materialized inherited values:\n%s", text)
+	}
+	global, err := coreconfig.LoadGlobalAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if global.PowerlineGlyphs != nil {
+		t.Fatalf("local mutation changed global config: %+v", global)
+	}
+}
+
+func TestConfigEditFullProvidesGeneratedKeyReference(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	withCommandWorkingDirectory(t, root)
+	var staged string
+	edit := newEditCommand(func(cmd *cobra.Command, editor, path string) error {
+		raw, err := os.ReadFile(path)
+		staged = string(raw)
+		return err
+	})
+	command := &cobra.Command{Use: "config"}
+	command.AddCommand(edit)
+	if _, _, err := executeConfigCommand(t, command, "edit", "--full"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(staged, "Complete generated template") || !strings.Contains(staged, "[keys.projects]") || !strings.Contains(staged, "refresh") {
+		t.Fatalf("full staged config lacks generated key reference:\n%s", staged)
+	}
+}
+
+func TestConfigEditMissingStartsSparse(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	withCommandWorkingDirectory(t, root)
+	var staged string
+	edit := newEditCommand(func(cmd *cobra.Command, editor, path string) error {
+		raw, err := os.ReadFile(path)
+		staged = string(raw)
+		return err
+	})
+	command := &cobra.Command{Use: "config"}
+	command.AddCommand(edit)
+	if _, _, err := executeConfigCommand(t, command, "edit"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(staged, "Add only values") || strings.Contains(staged, "[keys.") {
+		t.Fatalf("sparse staged config = %q", staged)
+	}
+}
+
+func TestConfigEditLocalCanRepairInvalidTOML(t *testing.T) {
+	root := setupConfigCommandTest(t)
+	withCommandWorkingDirectory(t, root)
+	path := filepath.Join(root, coreconfig.LocalConfigFileName)
+	if err := os.WriteFile(path, []byte("unknown = true\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	edit := newEditCommand(func(cmd *cobra.Command, editor, stagedPath string) error {
+		return os.WriteFile(stagedPath, []byte("powerline_glyphs = false\n"), 0o600)
+	})
+	command := &cobra.Command{Use: "config"}
+	command.AddCommand(edit)
+	if _, _, err := executeConfigCommand(t, command, "edit", "--scope", "local"); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(raw) != "powerline_glyphs = false\n" {
+		t.Fatalf("repaired local config = %q", raw)
+	}
+}
+
+func withCommandWorkingDirectory(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
 }

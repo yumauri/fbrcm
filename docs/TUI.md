@@ -488,14 +488,23 @@ Scrolling and popup hit regions follow their rendered positions.
 ## Configuration
 
 The global TUI configuration is stored in `config.toml` under the fbrcm config
-root. Use the local-only `config` commands to inspect and edit it:
+root. A repository can provide a partial `.fbrcm.toml`; fbrcm searches the
+current directory and its parents to the filesystem root, uses the nearest
+match, and deeply overlays it on the global file. Use the local-only `config`
+commands to inspect the effective result and either stored layer:
 
 ```sh
 fbrcm config path
+fbrcm config path --scope local
 fbrcm config show
+fbrcm config show --scope local
 fbrcm config validate
 fbrcm config edit
 ```
+
+Mutating commands default to the global file. Pass `--scope local` explicitly
+to edit the discovered repository file, or to create `.fbrcm.toml` in the
+current directory when none is found.
 
 `config edit` resolves the editor in this order:
 
@@ -514,6 +523,11 @@ FBRCM_EDITOR="code --wait" fbrcm config edit
 
 If the edited file is invalid, the original remains unchanged and fbrcm reports
 the staged recovery file.
+
+Stored config remains sparse. Startup applies built-in bindings without writing
+them to either file. `fbrcm config show keys` prints every effective block and
+action name. `fbrcm config edit --full` opens a complete generated reference;
+remove entries that should continue following future built-in defaults.
 
 Every binding shown by `fbrcm config show` can be replaced. For example:
 

@@ -24,6 +24,7 @@ var (
 	pathsInstance   *paths
 	pathsOnce       sync.Once
 	profileOverride string
+	sessionProfile  string
 )
 
 // Get application used paths, resolving them once per process
@@ -78,7 +79,18 @@ func selectedProfileOverride() (string, bool) {
 	if profileOverride != "" {
 		return profileOverride, true
 	}
-	return env.LookupTrimmed(env.Profile)
+	if profile, ok := env.LookupTrimmed(env.Profile); ok {
+		return profile, true
+	}
+	if sessionProfile != "" {
+		return sessionProfile, true
+	}
+	return "", false
+}
+
+func setSessionProfile(name string) {
+	sessionProfile = name
+	resetPaths()
 }
 
 // GetProfileOverride reports the profile pinned for this process by an

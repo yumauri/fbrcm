@@ -61,14 +61,24 @@ func WritePrivateFileExclusive(path string, data []byte) error {
 // WritePrivateFileAtomic replaces a file through a private temporary file in
 // the same directory.
 func WritePrivateFileAtomic(path string, data []byte) error {
+	if err := writeFileAtomicMode(path, data, PrivateFileMode); err != nil {
+		return err
+	}
+	return EnsurePrivateFile(path)
+}
+
+func writeFileAtomicMode(path string, data []byte, mode os.FileMode) error {
 	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
 	temp, err := os.CreateTemp(dir, "."+filepath.Base(path)+"-*")
 	if err != nil {
 		return err
 	}
 	tempPath := temp.Name()
 	defer func() { _ = os.Remove(tempPath) }()
-	if err := temp.Chmod(PrivateFileMode); err != nil {
+	if err := temp.Chmod(mode); err != nil {
 		_ = temp.Close()
 		return err
 	}
@@ -89,7 +99,7 @@ func WritePrivateFileAtomic(path string, data []byte) error {
 	if err := os.Rename(tempPath, path); err != nil {
 		return err
 	}
-	return EnsurePrivateFile(path)
+	return os.Chmod(path, mode)
 }
 
 // Ensure file is private to the user

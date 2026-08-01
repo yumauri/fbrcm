@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,34 +10,17 @@ import (
 )
 
 type AppConfig struct {
-	Profile         string                         `toml:"profile" json:"profile"`
+	Profile         string                         `toml:"profile,omitempty" json:"profile"`
 	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty" json:"powerline_glyphs"`
-	Keys            map[string]map[string][]string `toml:"keys" json:"keys"`
+	Keys            map[string]map[string][]string `toml:"keys,omitempty" json:"keys"`
 }
 
 func GetGlobalConfigFilePath() string {
 	return filepath.Join(GetConfigRootDirPath(), "config.toml")
 }
 
-func LoadAppConfig() (*AppConfig, error) {
-	path := GetGlobalConfigFilePath()
-	logger := corelog.For("config")
-	logger.Debug("read global config", "path", path)
-
-	cfg := &AppConfig{}
-	if err := readTOMLFile(path, cfg); err != nil {
-		logger.Debug("read global config failed", "path", path, "err", err)
-		if isDecodeError(err) {
-			return nil, fmt.Errorf("decode global config: %w", err)
-		}
-		return nil, err
-	}
-	logger.Debug("loaded global config", "path", path, "profile", cfg.Profile)
-	return cfg, nil
-}
-
-// LoadAppConfigStrict reads global config and rejects unknown TOML fields.
-func LoadAppConfigStrict() (*AppConfig, error) {
+// LoadGlobalAppConfig reads only the user-wide configuration file.
+func LoadGlobalAppConfig() (*AppConfig, error) {
 	path := GetGlobalConfigFilePath()
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -44,9 +28,29 @@ func LoadAppConfigStrict() (*AppConfig, error) {
 	}
 	cfg, err := DecodeAppConfig(raw, true)
 	if err != nil {
-		return nil, fmt.Errorf("decode global config: %w", err)
+		return nil, fmt.Errorf("decode global config %s: %w", path, err)
 	}
 	return cfg, nil
+}
+
+// LoadAppConfig resolves the user-wide configuration and the nearest local
+// .fbrcm.toml overlay. It returns os.ErrNotExist when neither file exists.
+func LoadAppConfig() (*AppConfig, error) {
+	logger := corelog.For("config")
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		return nil, err
+	}
+	if !resolved.Global.Exists && !resolved.Local.Exists {
+		return nil, os.ErrNotExist
+	}
+	logger.Debug("loaded effective config", "global_path", resolved.Global.Path, "local_path", resolved.Local.Path, "local_exists", resolved.Local.Exists, "profile", resolved.Effective.Profile)
+	return resolved.Effective, nil
+}
+
+// LoadAppConfigStrict reads global config and rejects unknown TOML fields.
+func LoadAppConfigStrict() (*AppConfig, error) {
+	return LoadGlobalAppConfig()
 }
 
 // DecodeAppConfig decodes global TOML, optionally rejecting unknown fields.
@@ -97,6 +101,22 @@ func SaveAppConfigRaw(raw []byte) error {
 	}
 	if err := WritePrivateFileAtomic(GetGlobalConfigFilePath(), raw); err != nil {
 		return fmt.Errorf("write global config: %w", err)
+	}
+	return nil
+}
+
+// SaveLocalAppConfigRaw atomically writes already validated local TOML. New
+// repository configuration files use ordinary shared-file permissions, while
+// existing permissions are preserved.
+func SaveLocalAppConfigRaw(path string, raw []byte) error {
+	mode := os.FileMode(0o644)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode().Perm()
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("stat local config %s: %w", path, err)
+	}
+	if err := writeFileAtomicMode(path, raw, mode); err != nil {
+		return fmt.Errorf("write local config %s: %w", path, err)
 	}
 	return nil
 }

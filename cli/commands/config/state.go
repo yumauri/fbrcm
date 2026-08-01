@@ -15,12 +15,19 @@ import (
 type configDiagnostic = tuiconfig.Diagnostic
 
 type configState struct {
-	Path      string
-	Exists    bool
-	Stored    *coreconfig.AppConfig
-	Effective *coreconfig.AppConfig
-	Migrated  *coreconfig.AppConfig
-	Report    configValidationResult
+	Path         string
+	Exists       bool
+	Stored       *coreconfig.AppConfig
+	GlobalPath   string
+	GlobalExists bool
+	Global       *coreconfig.AppConfig
+	LocalPath    string
+	LocalExists  bool
+	Local        *coreconfig.AppConfig
+	Merged       *coreconfig.AppConfig
+	Effective    *coreconfig.AppConfig
+	Migrated     *coreconfig.AppConfig
+	Report       configValidationResult
 }
 
 type configValidationResult struct {
@@ -32,19 +39,23 @@ type configValidationResult struct {
 }
 
 func loadConfigState() (configState, error) {
-	path := coreconfig.GetGlobalConfigFilePath()
-	raw, err := os.ReadFile(path)
+	resolved, err := coreconfig.ResolveAppConfig()
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return configState{}, fmt.Errorf("read global config: %w", err)
-		}
-		return stateFromConfig(path, false, &coreconfig.AppConfig{}), nil
+		return configState{}, err
 	}
-	cfg, err := coreconfig.DecodeAppConfig(raw, true)
-	if err != nil {
-		return configState{}, fmt.Errorf("decode global config: %w", err)
-	}
-	return stateFromConfig(path, true, cfg), nil
+	state := stateFromConfig("effective", resolved.Global.Exists || resolved.Local.Exists, resolved.Effective)
+	state.GlobalPath = resolved.Global.Path
+	state.GlobalExists = resolved.Global.Exists
+	state.Global = cloneAppConfig(resolved.Global.Config)
+	state.LocalPath = resolved.Local.Path
+	state.LocalExists = resolved.Local.Exists
+	state.Local = cloneAppConfig(resolved.Local.Config)
+	state.Path = resolved.Global.Path
+	state.Exists = resolved.Global.Exists
+	state.Stored = state.Global
+	state.Merged = cloneAppConfig(resolved.Effective)
+	state.Report = validateAppConfig("effective configuration", state.GlobalExists || state.LocalExists, state.Merged)
+	return state, nil
 }
 
 func stateFromConfig(path string, exists bool, stored *coreconfig.AppConfig) configState {
@@ -61,7 +72,7 @@ func stateFromConfig(path string, exists bool, stored *coreconfig.AppConfig) con
 	}
 	effective.Keys = tuiconfig.ToConfigMap(tuiconfig.Merge(tuiconfig.DefaultKeyMap(), effective.Keys))
 	report := validateAppConfig(path, exists, stored)
-	return configState{Path: path, Exists: exists, Stored: stored, Migrated: migrated, Effective: effective, Report: report}
+	return configState{Path: path, Exists: exists, Stored: stored, GlobalPath: path, GlobalExists: exists, Global: stored, Local: &coreconfig.AppConfig{Keys: map[string]map[string][]string{}}, Merged: stored, Migrated: migrated, Effective: effective, Report: report}
 }
 
 func validateAppConfig(path string, exists bool, cfg *coreconfig.AppConfig) configValidationResult {
@@ -123,16 +134,10 @@ func configValue(state configState, key string) (any, string, error) {
 	parts := strings.Split(strings.TrimSpace(key), ".")
 	switch {
 	case key == "profile":
-		source := "configured"
-		if strings.TrimSpace(state.Stored.Profile) == "" {
-			source = "default"
-		}
+		source := scalarSource(strings.TrimSpace(state.Local.Profile) != "", strings.TrimSpace(state.Global.Profile) != "")
 		return state.Effective.Profile, source, nil
 	case key == "powerline_glyphs":
-		source := "configured"
-		if state.Stored.PowerlineGlyphs == nil {
-			source = "default"
-		}
+		source := scalarSource(state.Local.PowerlineGlyphs != nil, state.Global.PowerlineGlyphs != nil)
 		return *state.Effective.PowerlineGlyphs, source, nil
 	case key == "keys":
 		return state.Effective.Keys, keySource(state, parts), nil
@@ -155,15 +160,28 @@ func configValue(state configState, key string) (any, string, error) {
 }
 
 func keySource(state configState, parts []string) string {
-	configured := subtreeValue(state.Stored.Keys, parts[1:])
-	if configured == nil {
-		return "default"
+	local := subtreeValue(state.Local.Keys, parts[1:])
+	global := subtreeValue(state.Global.Keys, parts[1:])
+	source := scalarSource(local != nil, global != nil)
+	if len(parts) < 3 && local != nil && global != nil {
+		source = "mixed"
 	}
+	configured := subtreeValue(state.Merged.Keys, parts[1:])
 	migrated := subtreeValue(state.Migrated.Keys, parts[1:])
-	if !reflect.DeepEqual(configured, migrated) {
+	if configured != nil && !reflect.DeepEqual(configured, migrated) {
 		return "migrated"
 	}
-	return "configured"
+	return source
+}
+
+func scalarSource(local, global bool) string {
+	if local {
+		return "local"
+	}
+	if global {
+		return "global"
+	}
+	return "default"
 }
 
 func subtreeValue(keys map[string]map[string][]string, parts []string) any {
