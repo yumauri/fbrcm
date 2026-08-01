@@ -286,6 +286,8 @@ type publishResult struct {
 	Changed          bool    `json:"changed"`
 	DraftDeleted     bool    `json:"draft_deleted"`
 	DryRun           bool    `json:"dry_run"`
+	Validated        bool    `json:"validated"`
+	ValidationSource string  `json:"validation_source"`
 	Error            string  `json:"error,omitempty"`
 	ChangeNote       *string `json:"change_note"`
 }
@@ -313,7 +315,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	failed := false
 	for _, projectID := range ids {
 		progress.Start("Preparing draft for " + projectID + "…")
-		result := publishResult{ProjectID: projectID, DryRun: dry}
+		result := publishResult{ProjectID: projectID, DryRun: dry, ValidationSource: core.ValidationSourceLocal}
 		plan, prepareErr := svc.PrepareDraftPublish(ctx, projectID)
 		if prepareErr != nil {
 			result.Status, result.Error = "failed", prepareErr.Error()
@@ -329,6 +331,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		result.ChangeNote = optionalString(effectiveNote)
 		result.Rebased = plan.Rebased
 		result.Changed = plan.HasChanges
+		result.Validated = true
 		latestCfg, _ := firebase.ParseRemoteConfig(plan.Latest.RemoteConfig)
 		result.PreviousVersion = latestCfg.Version.VersionNumber
 		if plan.HasChanges && !jsonOut {
@@ -376,6 +379,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		}
 		cache, _, publishErr := svc.ExecuteDraftPublish(ctx, projectID, plan)
 		if publishErr != nil {
+			if source, ok := core.RemoteConfigValidationSource(publishErr); ok {
+				result.Validated = false
+				result.ValidationSource = source
+			}
 			var cleanupErr *core.DraftPublishedCleanupError
 			var cacheErr *core.RemoteConfigPublishedCacheError
 			var hookErr *core.RemoteConfigPublishedHookError
@@ -418,6 +425,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			failed = true
 			continue
 		}
+		if plan.HasChanges {
+			result.Validated = true
+			result.ValidationSource = core.ValidationSourceFirebase
+		}
 		if dry {
 			result.Status = "would-publish"
 		} else if !plan.HasChanges {
@@ -438,10 +449,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		}
 		for _, result := range results {
 			if result.Error != "" {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s: %s\n", result.ProjectID, result.Error)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s: %s\nvalidated: %t · validation_source: %s\n", result.ProjectID, result.Error, result.Validated, result.ValidationSource)
 				continue
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", result.Status, result.ProjectID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\nvalidated: %t · validation_source: %s\n", result.Status, result.ProjectID, result.Validated, result.ValidationSource)
 		}
 	}
 	var retryIDs []string

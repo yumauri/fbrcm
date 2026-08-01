@@ -20,14 +20,16 @@ import (
 )
 
 type importResult struct {
-	ProjectID  string  `json:"project_id"`
-	Status     string  `json:"status"`
-	Changed    bool    `json:"changed"`
-	Draft      bool    `json:"draft"`
-	DryRun     bool    `json:"dry_run"`
-	ChangeNote *string `json:"change_note"`
-	Published  bool    `json:"published,omitempty"`
-	Error      string  `json:"error,omitempty"`
+	ProjectID        string  `json:"project_id"`
+	Status           string  `json:"status"`
+	Changed          bool    `json:"changed"`
+	Draft            bool    `json:"draft"`
+	DryRun           bool    `json:"dry_run"`
+	Validated        bool    `json:"validated"`
+	ValidationSource string  `json:"validation_source"`
+	ChangeNote       *string `json:"change_note"`
+	Published        bool    `json:"published,omitempty"`
+	Error            string  `json:"error,omitempty"`
 }
 
 // Run executes the project import command pipeline.
@@ -52,7 +54,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if err != nil {
 		return err
 	}
-	result := importResult{ProjectID: project.ProjectID, Draft: draftMode, DryRun: dryRun}
+	result := importResult{ProjectID: project.ProjectID, Draft: draftMode, DryRun: dryRun, ValidationSource: core.ValidationSourceLocal}
 	ctx := context.Background()
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
@@ -149,6 +151,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	if err != nil {
 		return err
 	}
+	result.Validated = true
 
 	diffText, hasChanges := rc.RenderRemoteConfigDiff(currentCfg, finalCfg)
 	if !hasChanges {
@@ -158,9 +161,20 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	result.Changed = true
 	if !draftMode {
 		progress.Start("Validating Remote Config for " + project.ProjectID + "…")
+		result.Validated = false
+		result.ValidationSource = core.ValidationSourceFirebase
 		if err := svc.ValidateRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag); err != nil {
+			if source, ok := core.RemoteConfigValidationSource(err); ok {
+				result.ValidationSource = source
+			}
+			result.Status = "validation-failed"
+			result.Error = err.Error()
+			if writeErr := writeImportResult(cmd, jsonOut, result); writeErr != nil {
+				return writeErr
+			}
 			return err
 		}
+		result.Validated = true
 	}
 
 	if !jsonOut {
@@ -253,7 +267,14 @@ func writeImportResult(cmd *cobra.Command, jsonOut bool, result importResult) er
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📥 %s: %s\n", strings.ReplaceAll(result.Status, "-", " "), result.ProjectID)
 	case "imported-hook-failed":
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ imported, post_publish hook failed: %s: %s\n", result.ProjectID, result.Error)
+	case "validation-failed":
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ validation failed: %s: %s\n", result.ProjectID, result.Error)
 	}
+	out := cmd.OutOrStdout()
+	if result.Error != "" {
+		out = cmd.ErrOrStderr()
+	}
+	_, _ = fmt.Fprintf(out, "validated: %t · validation_source: %s\n", result.Validated, result.ValidationSource)
 	return nil
 }
 

@@ -43,6 +43,8 @@ type RemoteMutationResult struct {
 	PreviousVersion  string
 	PublishedVersion string
 	ErrorStage       string
+	Validated        bool
+	ValidationSource string
 	Published        bool
 	Err              error
 	ChangeNote       *string
@@ -85,7 +87,7 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 	var totals RemoteMutationTotals
 	for _, project := range projects {
 		progress.Start("Preparing draft for " + project.ProjectID + "…")
-		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx)}
+		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx), ValidationSource: core.ValidationSourceLocal}
 		cfg, err := RevalidateProjectConfig(ctx, svc, project)
 		if err == nil {
 			if draftRaw, hasDraft, loadErr := svc.LoadDraft(project.ProjectID); loadErr != nil {
@@ -106,6 +108,7 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 			mutate, err = plan(project, cfg)
 		}
 		if err == nil && mutate == nil {
+			result.Validated = true
 			result.Status = RemoteMutationUnchanged
 			totals.Results = append(totals.Results, result)
 			continue
@@ -118,6 +121,7 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 			err = rcmutate.EnsureOpaqueValuesUnchanged(cfg.Config, finalCfg)
 		}
 		if err == nil && result.ChangedCount == 0 {
+			result.Validated = true
 			result.Status = RemoteMutationUnchanged
 			totals.Results = append(totals.Results, result)
 			continue
@@ -125,6 +129,9 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		var finalRaw []byte
 		if err == nil {
 			finalRaw, err = firebase.MarshalRemoteConfig(finalCfg)
+		}
+		if err == nil {
+			result.Validated = true
 		}
 		if err == nil && !firebase.IsDryRun(ctx) {
 			progress.Start("Saving draft for " + project.ProjectID + "…")
@@ -163,7 +170,7 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 
 	for _, project := range projects {
 		progress.Start("Preparing Remote Config for " + project.ProjectID + "…")
-		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx)}
+		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx), ValidationSource: core.ValidationSourceLocal}
 		preparationFailed := false
 		hasDraft, err := svc.HasDraft(project.ProjectID)
 		if err == nil && hasDraft {
@@ -182,6 +189,7 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 		}
 		preparationFailed = err != nil
 		if err == nil && mutate == nil {
+			result.Validated = true
 			result.Status = RemoteMutationUnchanged
 			totals.Results = append(totals.Results, result)
 			continue
@@ -192,6 +200,8 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 			result.ChangedCount = publishResult.ChangedCount
 			result.PublishedVersion = publishResult.PublishedVersion
 			result.ErrorStage = publishResult.FailureStage
+			result.Validated = publishResult.Validated
+			result.ValidationSource = publishResult.ValidationSource
 		}
 		switch {
 		case publishResult.Retry:
@@ -252,6 +262,8 @@ type RemoteMutationJSONResult struct {
 	PublishedVersion *string                  `json:"published_version"`
 	Draft            bool                     `json:"draft"`
 	DryRun           bool                     `json:"dry_run"`
+	Validated        bool                     `json:"validated"`
+	ValidationSource string                   `json:"validation_source"`
 	Error            *RemoteMutationJSONError `json:"error"`
 	RetrySelector    *string                  `json:"retry_selector"`
 	ChangeNote       *string                  `json:"change_note"`
@@ -286,6 +298,8 @@ func writeRemoteMutationJSON(cmd *cobra.Command, totals RemoteMutationTotals, dr
 			ChangedItemCount: result.ChangedCount,
 			Draft:            draft,
 			DryRun:           dryRun,
+			Validated:        result.Validated,
+			ValidationSource: result.ValidationSource,
 			ChangeNote:       result.ChangeNote,
 		}
 		if result.PreviousVersion != "" {
@@ -358,6 +372,11 @@ func writeMutationResult(cmd *cobra.Command, result RemoteMutationResult, publis
 	default:
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ %s: %s: %v\n", strings.ReplaceAll(string(result.Status), "-", " "), projectID, result.Err)
 	}
+	out := cmd.OutOrStdout()
+	if result.Err != nil {
+		out = cmd.ErrOrStderr()
+	}
+	_, _ = fmt.Fprintf(out, "   validated: %t · validation_source: %s\n", result.Validated, result.ValidationSource)
 }
 
 func writeMutationRecoveryHints(cmd *cobra.Command, totals RemoteMutationTotals, operation string) {

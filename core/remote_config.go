@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,30 @@ import (
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
+
+const (
+	ValidationSourceLocal    = "local"
+	ValidationSourceFirebase = "firebase"
+)
+
+// RemoteConfigValidationError identifies whether validation failed before or
+// after the candidate reached Firebase.
+type RemoteConfigValidationError struct {
+	Source string
+	Err    error
+}
+
+func (e *RemoteConfigValidationError) Error() string { return e.Err.Error() }
+func (e *RemoteConfigValidationError) Unwrap() error { return e.Err }
+
+// RemoteConfigValidationSource returns validation failure provenance.
+func RemoteConfigValidationSource(err error) (string, bool) {
+	var validationErr *RemoteConfigValidationError
+	if !errors.As(err, &validationErr) {
+		return "", false
+	}
+	return validationErr.Source, true
+}
 
 // RemoteConfigPublishedCacheError reports that Firebase accepted a Remote
 // Config publish, but the returned config could not be persisted locally.
@@ -107,12 +132,12 @@ func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID strin
 	}
 	if err != nil {
 		logger.Error("remote config validation payload decode failed", "project_id", projectID, "err", err)
-		return fmt.Errorf("decode remote config: %w", err)
+		return &RemoteConfigValidationError{Source: ValidationSourceLocal, Err: fmt.Errorf("decode remote config: %w", err)}
 	}
 
 	if err := fb.ValidateRemoteConfig(ctx, projectID, updateRaw, etag); err != nil {
 		logger.Error("firebase remote config validation failed", "project_id", projectID, "err", err)
-		return fmt.Errorf("firebase error: %w", err)
+		return &RemoteConfigValidationError{Source: ValidationSourceFirebase, Err: fmt.Errorf("firebase error: %w", err)}
 	}
 
 	return nil

@@ -256,28 +256,33 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 		}
 	}
 
-	published, err := publishPromotePlan(ctx, cmd, svc, target, sourceCfg, opts, selected)
+	published, validated, validationSource, err := publishPromotePlan(ctx, cmd, svc, target, sourceCfg, opts, selected)
 	if err != nil {
+		status, stage := "failed", "publication"
 		if published {
-			if opts.JSON {
-				payload := promoteJSON(source, target, opts, true, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)).(map[string]any)
-				payload["status"] = "published-hook-failed"
-				payload["error"] = map[string]any{"stage": "post_publish_hook", "message": err.Error()}
-				if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
-					return writeErr
-				}
-			} else {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ promoted, post_publish hook failed: %s -> %s: %v\n", source.ProjectID, target.ProjectID, err)
+			status, stage = "published-hook-failed", "post_publish_hook"
+		} else if rc.IsValidationError(err) {
+			status, stage = "validation-failed", "validation"
+		}
+		if opts.JSON {
+			payload := promoteJSON(source, target, opts, published, validated, validationSource, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)).(map[string]any)
+			payload["status"] = status
+			payload["error"] = map[string]any{"stage": stage, "message": err.Error()}
+			if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
+				return writeErr
 			}
+		} else {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ %s: %s -> %s: %v\nvalidated: %t · validation_source: %s\n", strings.ReplaceAll(status, "-", " "), source.ProjectID, target.ProjectID, err, validated, validationSource)
 		}
 		return err
 	}
 	if opts.JSON {
-		return shared.WriteJSON(cmd, promoteJSON(source, target, opts, published, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)))
+		return shared.WriteJSON(cmd, promoteJSON(source, target, opts, published, validated, validationSource, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)))
 	}
 	if published {
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🚀 promoted: %s -> %s\n", source.ProjectID, target.ProjectID)
 	}
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "validated: %t · validation_source: %s\n", validated, validationSource)
 	return nil
 }
 
@@ -327,50 +332,50 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 	return firebase.ParseCloneRemoteConfig(raw)
 }
 
-func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, error) {
+func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, bool, string, error) {
 	progress.Start("Preparing promotion to " + target.ProjectID + "…")
 	if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
-		return false, err
+		return false, false, core.ValidationSourceLocal, err
 	} else if hasDraft {
-		return false, fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)
+		return false, false, core.ValidationSourceLocal, fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)
 	}
 	for {
 		raw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)
 		if err != nil {
-			return false, err
+			return false, false, core.ValidationSourceLocal, err
 		}
 		latestTarget, err := firebase.ParseCloneRemoteConfig(raw)
 		if err != nil {
-			return false, err
+			return false, false, core.ValidationSourceLocal, err
 		}
 		latestTarget.Version = firebase.RemoteConfigVersion{}
 		plan := rcpromote.BuildPlan(sourceCfg, latestTarget, rcpromote.Options{Prune: opts.Prune})
 		finalCfg, _, err := rcpromote.Apply(plan, selected, rcpromote.Options{Prune: opts.Prune})
 		if err != nil {
-			return false, err
+			return false, false, core.ValidationSourceLocal, err
 		}
 		diffText, hasChanges := rc.RenderRemoteConfigDiff(latestTarget, finalCfg)
 		if !hasChanges {
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
-			return false, nil
+			return false, true, core.ValidationSourceLocal, nil
 		}
 		finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
 		if err != nil {
-			return false, err
+			return false, false, core.ValidationSourceLocal, err
 		}
-		retry, err := rc.ValidateAndPublishRemoteConfig(ctx, svc, target.ProjectID, finalRaw, etag, "promote", cmd.ErrOrStderr())
+		publishResult, err := rc.ValidateAndPublishRemoteConfigResult(ctx, svc, target.ProjectID, finalRaw, etag, "promote", cmd.ErrOrStderr())
 		if err != nil {
 			var hookErr *core.RemoteConfigPublishedHookError
 			if errors.As(err, &hookErr) {
-				return true, err
+				return true, publishResult.Validated, publishResult.ValidationSource, err
 			}
-			return false, err
+			return false, publishResult.Validated, publishResult.ValidationSource, err
 		}
-		if retry {
+		if publishResult.Retry {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 			continue
 		}
-		return true, nil
+		return !firebase.IsDryRun(ctx), publishResult.Validated, publishResult.ValidationSource, nil
 	}
 }
 
@@ -576,9 +581,9 @@ func hasSelectionIntent(opts compareOptions) bool {
 
 func writePromoteNoChanges(cmd *cobra.Command, source, target core.Project, opts compareOptions) error {
 	if opts.JSON {
-		return shared.WriteJSON(cmd, promoteJSON(source, target, opts, false, nil, rcdiff.Result{}))
+		return shared.WriteJSON(cmd, promoteJSON(source, target, opts, false, true, core.ValidationSourceLocal, nil, rcdiff.Result{}))
 	}
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes\nvalidated: true · validation_source: local")
 	return nil
 }
 
@@ -624,15 +629,17 @@ func compareJSON(source, target core.Project, result rcdiff.Result) any {
 	}
 }
 
-func promoteJSON(source, target core.Project, opts compareOptions, published bool, applied []rcpromote.Item, result rcdiff.Result) any {
+func promoteJSON(source, target core.Project, opts compareOptions, published, validated bool, validationSource string, applied []rcpromote.Item, result rcdiff.Result) any {
 	return map[string]any{
-		"source_project": source.ProjectID,
-		"target_project": target.ProjectID,
-		"changed":        result.HasChanges(),
-		"dry_run":        opts.DryRun,
-		"published":      published,
-		"selected":       len(applied),
-		"change_note":    opts.ChangeNote,
+		"source_project":    source.ProjectID,
+		"target_project":    target.ProjectID,
+		"changed":           result.HasChanges(),
+		"dry_run":           opts.DryRun,
+		"published":         published,
+		"validated":         validated,
+		"validation_source": validationSource,
+		"selected":          len(applied),
+		"change_note":       opts.ChangeNote,
 		"summary": map[string]rcdiff.Summary{
 			"conditions":         result.ConditionSummary(),
 			"parameters":         result.ParameterSummary(),

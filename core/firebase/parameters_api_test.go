@@ -185,6 +185,54 @@ func TestUpdateRemoteConfigValidateOnly(t *testing.T) {
 	}
 }
 
+func TestDryRunValidatesWithFirebaseAndSuppressesPublication(t *testing.T) {
+	payload := []byte(`{"parameters":{"flag":{"defaultValue":{"value":"x"}}}}`)
+	validationCalls := 0
+	publicationCalls := 0
+	base := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodPut && req.URL.Query().Get("validateOnly") == "true" {
+			validationCalls++
+			return jsonHTTPResponse(http.StatusOK, string(payload), `"etag-1"`), nil
+		}
+		publicationCalls++
+		return jsonHTTPResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+	})
+	svc := NewServiceWithHTTPClient(&http.Client{Transport: newResilientTransport(base)})
+	ctx := WithDryRun(context.Background())
+
+	if err := svc.ValidateRemoteConfig(ctx, "demo", payload, "etag-1"); err != nil {
+		t.Fatalf("ValidateRemoteConfig = %v", err)
+	}
+	if _, _, err := svc.UpdateRemoteConfig(ctx, "demo", payload, "etag-1"); err != nil {
+		t.Fatalf("UpdateRemoteConfig = %v", err)
+	}
+	if validationCalls != 1 || publicationCalls != 0 {
+		t.Fatalf("validation calls = %d, publication calls = %d; want 1/0", validationCalls, publicationCalls)
+	}
+}
+
+func TestDryRunReturnsFirebaseValidationFailure(t *testing.T) {
+	payload := []byte(`{"parameters":{"flag":{"defaultValue":{"value":"invalid"}}}}`)
+	publicationCalls := 0
+	base := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Query().Get("validateOnly") == "true" {
+			return jsonHTTPResponse(http.StatusBadRequest, `{"error":"invalid template"}`, ""), nil
+		}
+		publicationCalls++
+		return jsonHTTPResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+	})
+	svc := NewServiceWithHTTPClient(&http.Client{Transport: newResilientTransport(base)})
+	ctx := WithDryRun(context.Background())
+
+	err := svc.ValidateRemoteConfig(ctx, "demo", payload, "etag-1")
+	if err == nil || !strings.Contains(err.Error(), "validate remote config api returned Bad Request") {
+		t.Fatalf("ValidateRemoteConfig error = %v", err)
+	}
+	if publicationCalls != 0 {
+		t.Fatalf("publication calls = %d, want zero", publicationCalls)
+	}
+}
+
 func TestGetRemoteConfigNon200(t *testing.T) {
 	svc := NewServiceWithHTTPClient(&http.Client{
 		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {

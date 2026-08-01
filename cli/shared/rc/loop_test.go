@@ -216,13 +216,16 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 			ChangedCount:     2,
 			PreviousVersion:  "41",
 			PublishedVersion: "",
+			Validated:        true,
+			ValidationSource: core.ValidationSourceFirebase,
 		},
 		{
-			Project:         core.Project{ProjectID: "server@demo"},
-			Status:          RemoteMutationValidationFailed,
-			ChangedCount:    1,
-			PreviousVersion: "41",
-			Err:             errors.New("invalid candidate"),
+			Project:          core.Project{ProjectID: "server@demo"},
+			Status:           RemoteMutationValidationFailed,
+			ChangedCount:     1,
+			PreviousVersion:  "41",
+			ValidationSource: core.ValidationSourceFirebase,
+			Err:              errors.New("invalid candidate"),
 		},
 		{
 			Project:          core.Project{ProjectID: "published"},
@@ -230,6 +233,8 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 			ChangedCount:     1,
 			PreviousVersion:  "41",
 			PublishedVersion: publishedVersion,
+			Validated:        true,
+			ValidationSource: core.ValidationSourceFirebase,
 			Published:        true,
 		},
 	}}
@@ -245,11 +250,14 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 	}
 	if got[0].Target != "demo" || got[0].Status != RemoteMutationWouldPublish || got[0].ChangedItemCount != 2 ||
 		got[0].PreviousVersion == nil || *got[0].PreviousVersion != "41" || got[0].PublishedVersion != nil || got[0].Draft || !got[0].DryRun ||
-		got[0].Error != nil || got[0].RetrySelector != nil {
+		got[0].Error != nil || got[0].RetrySelector != nil || !got[0].Validated || got[0].ValidationSource != core.ValidationSourceFirebase {
 		t.Fatalf("dry-run result = %+v", got[0])
 	}
 	if got[1].Error == nil || got[1].Error.Stage != "validation" || got[1].Error.Message != "invalid candidate" {
 		t.Fatalf("validation error = %+v", got[1].Error)
+	}
+	if got[1].Validated || got[1].ValidationSource != core.ValidationSourceFirebase {
+		t.Fatalf("failed validation metadata = %t/%q", got[1].Validated, got[1].ValidationSource)
 	}
 	if got[1].RetrySelector == nil || *got[1].RetrySelector != "server@=demo" {
 		t.Fatalf("retry selector = %v, want server@=demo", got[1].RetrySelector)

@@ -407,17 +407,17 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	}
 	if current.Version.VersionNumber == target.Version.VersionNumber {
 		if jsonOut {
-			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, dry, false))
+			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, dry, false, true, core.ValidationSourceLocal))
 		}
-		_, err := fmt.Fprintf(cmd.OutOrStdout(), "version %s is already current; no operation performed\n", target.Version.VersionNumber)
+		_, err := fmt.Fprintf(cmd.OutOrStdout(), "version %s is already current; no operation performed\nvalidated: true · validation_source: local\n", target.Version.VersionNumber)
 		return err
 	}
 	diffText, changed := rc.RenderRemoteConfigDiff(current.Config, target.Config)
 	if !changed {
 		if jsonOut {
-			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, dry, false))
+			return shared.WriteJSON(cmd, versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, dry, false, true, core.ValidationSourceLocal))
 		}
-		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences\nvalidated: true · validation_source: local")
 		return err
 	}
 	if !jsonOut {
@@ -453,13 +453,30 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 			_, err = svc.RollbackRemoteConfig(ctx, project.ProjectID, target.Version.VersionNumber)
 		}
 		if err != nil {
+			validated := false
+			validationSource := core.ValidationSourceLocal
+			status, stage := "failed", "preparation"
+			if source, ok := core.RemoteConfigValidationSource(err); ok {
+				validationSource = source
+				status, stage = "validation-failed", "validation"
+			}
+			if jsonOut {
+				result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, true, true, validated, validationSource)
+				result["status"] = status
+				result["error"] = map[string]any{"stage": stage, "message": err.Error()}
+				if writeErr := shared.WriteJSON(cmd, result); writeErr != nil {
+					return writeErr
+				}
+			} else {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "validated: false · validation_source: %s\n", validationSource)
+			}
 			return err
 		}
-		result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, true, true)
+		result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, true, true, true, core.ValidationSourceFirebase)
 		if jsonOut {
 			return shared.WriteJSON(cmd, result)
 		}
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧪 dry run: %s would use version %s\n", project.ProjectID, target.Version.VersionNumber)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧪 dry run: %s would use version %s\nvalidated: true · validation_source: firebase\n", project.ProjectID, target.Version.VersionNumber)
 		return nil
 	}
 	latest, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, "current", false)
@@ -482,7 +499,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 		}
 		return publishErr
 	}
-	payload := versionPublishJSON(project.ProjectID, restore, result.PreviousVersion, result.SourceVersion, result.PublishedVersion, changeNote, false, true)
+	payload := versionPublishJSON(project.ProjectID, restore, result.PreviousVersion, result.SourceVersion, result.PublishedVersion, changeNote, false, true, true, core.ValidationSourceFirebase)
 	if publishErr != nil {
 		status := "published-local-update-failed"
 		var hookErr *core.RemoteConfigPublishedHookError
@@ -509,7 +526,7 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	return publishErr
 }
 
-func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, changeNote *string, dryRun, changed bool) map[string]any {
+func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, changeNote *string, dryRun, changed, validated bool, validationSource string) map[string]any {
 	var published any
 	if publishedVersion != "" {
 		published = publishedVersion
@@ -522,6 +539,8 @@ func versionPublishJSON(projectID string, restore bool, previousVersion, sourceV
 		"published_version": published,
 		"dry_run":           dryRun,
 		"changed":           changed,
+		"validated":         validated,
+		"validation_source": validationSource,
 	}
 	if restore {
 		result["change_note"] = changeNote

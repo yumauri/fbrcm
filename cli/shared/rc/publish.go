@@ -55,6 +55,8 @@ type RemoteConfigMutationPublishResult struct {
 	ChangedCount     int
 	Retry            bool
 	FailureStage     string
+	Validated        bool
+	ValidationSource string
 	PublishedRaw     json.RawMessage
 	PublishedVersion string
 }
@@ -65,16 +67,29 @@ func ValidateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigP
 	return result.Retry, err
 }
 
+// ValidateAndPublishRemoteConfigResult returns validation provenance together
+// with the publication outcome.
+func ValidateAndPublishRemoteConfigResult(ctx context.Context, publisher RemoteConfigPublisher, projectID string, raw json.RawMessage, etag, operation string, errOut io.Writer) (RemoteConfigMutationPublishResult, error) {
+	return validateAndPublishRemoteConfig(ctx, publisher, projectID, raw, etag, operation, errOut)
+}
+
 func validateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigPublisher, projectID string, raw json.RawMessage, etag, operation string, errOut io.Writer) (RemoteConfigMutationPublishResult, error) {
 	ctx = corehooks.WithOperation(ctx, operation)
+	result := RemoteConfigMutationPublishResult{ValidationSource: core.ValidationSourceFirebase}
 	progress.Start("Validating Remote Config for " + projectID + "…")
 	if err := publisher.ValidateRemoteConfigWithETag(ctx, projectID, raw, etag); err != nil {
+		if source, ok := core.RemoteConfigValidationSource(err); ok {
+			result.ValidationSource = source
+		}
 		if IsRemoteConfigConflict(err) {
 			writeRemoteConfigRetry(errOut, operation, projectID)
-			return RemoteConfigMutationPublishResult{Retry: true, FailureStage: "validation"}, nil
+			result.Retry = true
+			result.FailureStage = "validation"
+			return result, nil
 		}
-		return RemoteConfigMutationPublishResult{}, &RemoteConfigValidationError{Err: err}
+		return result, &RemoteConfigValidationError{Err: err}
 	}
+	result.Validated = true
 	if firebase.IsDryRun(ctx) {
 		progress.Start("Previewing Remote Config for " + projectID + "…")
 	} else {
@@ -84,16 +99,20 @@ func validateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigP
 	if err != nil {
 		if IsRemoteConfigConflict(err) {
 			writeRemoteConfigRetry(errOut, operation, projectID)
-			return RemoteConfigMutationPublishResult{Retry: true, FailureStage: "publication"}, nil
+			result.Retry = true
+			result.FailureStage = "publication"
+			return result, nil
 		}
 		failureStage := ""
 		var hookErr *corehooks.Error
 		if errors.As(err, &hookErr) {
 			failureStage = string(hookErr.Event) + "_hook"
 		}
-		return RemoteConfigMutationPublishResult{PublishedRaw: publishedRaw, FailureStage: failureStage}, err
+		result.PublishedRaw = publishedRaw
+		result.FailureStage = failureStage
+		return result, err
 	}
-	result := RemoteConfigMutationPublishResult{PublishedRaw: publishedRaw}
+	result.PublishedRaw = publishedRaw
 	if !firebase.IsDryRun(ctx) {
 		if published, parseErr := firebase.ParseRemoteConfig(publishedRaw); parseErr == nil {
 			result.PublishedVersion = published.Version.VersionNumber
@@ -111,24 +130,27 @@ func PublishProjectConfigMutation(ctx context.Context, publisher RemoteConfigPub
 // PublishProjectConfigMutationResult applies one mutation and returns the
 // machine-readable publication details used by batch commands.
 func PublishProjectConfigMutationResult(ctx context.Context, publisher RemoteConfigPublisher, projectCfg *ProjectConfig, operation string, errOut io.Writer, mutate RemoteConfigMutation) (RemoteConfigMutationPublishResult, error) {
+	localResult := RemoteConfigMutationPublishResult{ValidationSource: core.ValidationSourceLocal}
 	if projectCfg == nil || projectCfg.Cache == nil {
-		return RemoteConfigMutationPublishResult{}, &RemoteConfigPreparationError{Err: fmt.Errorf("project config is incomplete")}
+		return localResult, &RemoteConfigPreparationError{Err: fmt.Errorf("project config is incomplete")}
 	}
 
 	changedCount, finalCfg, err := mutate(projectCfg.Config)
+	localResult.ChangedCount = changedCount
 	if err != nil {
-		return RemoteConfigMutationPublishResult{}, &RemoteConfigPreparationError{Err: err}
+		return localResult, &RemoteConfigPreparationError{Err: err}
 	}
 	if changedCount == 0 {
-		return RemoteConfigMutationPublishResult{}, nil
+		localResult.Validated = true
+		return localResult, nil
 	}
 	if err := rcmutate.EnsureOpaqueValuesUnchanged(projectCfg.Config, finalCfg); err != nil {
-		return RemoteConfigMutationPublishResult{}, &RemoteConfigPreparationError{Err: err}
+		return localResult, &RemoteConfigPreparationError{Err: err}
 	}
 
 	finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
 	if err != nil {
-		return RemoteConfigMutationPublishResult{}, &RemoteConfigPreparationError{Err: err}
+		return localResult, &RemoteConfigPreparationError{Err: err}
 	}
 	result, err := validateAndPublishRemoteConfig(ctx, publisher, projectCfg.Project.ProjectID, finalRaw, projectCfg.Cache.ETag, operation, errOut)
 	result.ChangedCount = changedCount

@@ -569,6 +569,15 @@ Drafts are profile-scoped, target-specific, self-contained records. Each version
 
 `add`, `duplicate`, `update`, `delete`, `project import`, and the condition mutation commands accept `--draft`. In draft mode they apply changes on top of an existing project draft or create a new draft from freshly revalidated Remote Config. They do not validate or publish to Firebase. Combining `--draft` with `--dry-run` previews the change without writing either draft or Firebase state.
 
+A publication `--dry-run` performs the real Firebase validation-only `PUT`
+against the current ETag, then suppresses the separate publication `PUT` and
+all local state writes. It therefore requires Firebase credentials and network
+access and can fail on the same template validation rules as a real publish.
+Results expose `validated` and `validation_source`: `firebase` means Firebase's
+validation endpoint was used, while `local` means only local candidate
+validation was applicable, as with draft previews and no-op results. A failed
+validation reports `validated: false` and returns nonzero.
+
 Immediate Remote Config writes refuse to proceed when the target has an unpublished draft. This guard applies to add, duplicate, update, delete, condition mutations, project import, version rollback/restore, and project promotion. Resolve the draft with `draft publish` or `draft discard`, or add the intended mutation to it with `--draft`.
 
 Multi-project Remote Config publication is non-atomic: Firebase accepts a separate validated write for each project. Commands process every selected project even when an independent project fails, collect one outcome per project, and print the complete `Results:` block after operation logging has finished. They return nonzero after the batch if any project failed. Successful projects are not rolled back. Conflicts are reported for a fresh explicit retry instead of silently recalculating and publishing a different candidate. Failed-project output includes exact `-p '=project-id'` filters for retrying only projects that were not published.
@@ -664,6 +673,8 @@ Direct Remote Config mutations—`add`, `update`, `delete`, `duplicate`, all con
     "published_version": "42",
     "draft": false,
     "dry_run": false,
+    "validated": true,
+    "validation_source": "firebase",
     "change_note": "Enable checkout v2",
     "error": null,
     "retry_selector": null
@@ -671,7 +682,7 @@ Direct Remote Config mutations—`add`, `update`, `delete`, `duplicate`, all con
 ]
 ```
 
-`previous_version`, `published_version`, and `change_note` are `null` when unavailable or omitted. `error` is either `null` or an object with `stage` (`preparation`, `validation`, `publication`, `draft`, or `cache`) and `message`. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. JSON mode keeps stdout machine-readable but does not imply `--yes`; prompts and review output continue on stderr. In stdin transformation mode, `add`, `update`, and `delete` continue to emit the transformed Remote Config JSON itself; `--change-note` is unavailable because no publication or draft write occurs.
+`validated` and `validation_source` are always present. `previous_version`, `published_version`, and `change_note` are `null` when unavailable or omitted. `error` is either `null` or an object with `stage` (`preparation`, `validation`, `publication`, `draft`, or `cache`) and `message`. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. JSON mode keeps stdout machine-readable but does not imply `--yes`; prompts and review output continue on stderr. In stdin transformation mode, `add`, `update`, and `delete` continue to emit the transformed Remote Config JSON itself; `--change-note` is unavailable because no publication or draft write occurs.
 
 If Firebase accepts a publish but the returned state cannot be saved locally, the outcome is reported as `published-cache-failed`, not as an unpublished project. Refresh that project's cache instead of blindly retrying the mutation. For coordinated changes, `--draft` provides reviewable and recoverable intent, but publishing those drafts is still non-atomic across projects.
 
@@ -1049,7 +1060,7 @@ For each project, the command fetches current Firebase state, merges local inten
 
 If current Firebase state already contains the effective draft changes, no new version is created and the draft is removed as `already-applied`. Batch mode is non-atomic, continues after independent project failures, prints its collected results together at the end followed by a targeted retry command, and returns nonzero if any item failed.
 
-JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, `change_note`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, `conflict`, `published-cache-failed`, and `published-cleanup-failed`. Prompts, warnings, retry hints, and human diffs are kept off JSON stdout.
+JSON output is an array of results. Each result includes project ID, status, base/previous/published versions, `rebased`, `changed`, `draft_deleted`, `dry_run`, `validated`, `validation_source`, `change_note`, and an optional error. Status values include `published`, `would-publish`, `already-applied`, `canceled`, `failed`, `conflict`, `published-cache-failed`, and `published-cleanup-failed`. Prompts, warnings, retry hints, and human diffs are kept off JSON stdout.
 
 ### `fbrcm draft discard [project...]`
 
@@ -1194,7 +1205,7 @@ If current config is empty, import replaces it. If current config has content an
 
 After import transform, the CLI reports how many source conditions are kept and removed. `--keep-portable-conditions-only` removes conditions tied to destination-specific resources such as Analytics audiences or user properties, experiments, Firebase App IDs, custom signals, and installation IDs. Unused conditions and unknown condition references are also removed. Groups that become empty are preserved, including their descriptions; only an explicit group-level selection or replacement removes a group. Normal mode removes version metadata, validates, prints a diff, asks for confirmation, and publishes. Draft mode retains the working version identity, prints the same diff and confirmation, then saves locally without Firebase validation or publication.
 
-JSON output is one object containing `project_id`, `status`, `changed`, `draft`, `dry_run`, and `change_note`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, or `canceled`. JSON mode suppresses human condition summaries and diffs but does not imply `--yes` or choose an import strategy.
+JSON output is one object containing `project_id`, `status`, `changed`, `draft`, `dry_run`, `validated`, `validation_source`, and `change_note`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, `canceled`, or `validation-failed`. JSON mode suppresses human condition summaries and diffs but does not imply `--yes` or choose an import strategy.
 
 ### Remote Config managed features
 
@@ -1458,7 +1469,7 @@ Flags:
 
 Restore JSON includes `change_note`. Native rollback does not accept a change note and leaves its Firebase-defined rollback semantics unchanged.
 
-Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, and `changed`, including no-op results where `changed` is `false`. Human previews are written separately from JSON data so stdout remains machine-readable.
+Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, `changed`, `validated`, and `validation_source`, including no-op results where `changed` is `false`. Human previews are written separately from JSON data so stdout remains machine-readable.
 
 ### `fbrcm projects list`
 
@@ -1554,7 +1565,7 @@ Flags:
 --json                 print promotion result JSON
 ```
 
-Promotion JSON includes `change_note` and `changed`; `changed` reports whether the selected result contains changes independently of whether it was a dry run or was published.
+Promotion JSON includes `change_note`, `changed`, `validated`, and `validation_source`; `changed` reports whether the selected result contains changes independently of whether it was a dry run or was published.
 
 Non-interactive promote requires explicit selection intent: `--all`, `--filter`, `--group`, `--expr`, or `--search`. Command reloads the target before publishing, validates with Firebase, publishes using the latest target ETag, and retries if the target changes during promotion.
 

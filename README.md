@@ -167,7 +167,8 @@ Remote Config publication replaces a complete template, so fbrcm treats review
 as part of the write workflow:
 
 - write commands show a diff and normally ask for confirmation;
-- `--dry-run` previews without changing Firebase or local drafts;
+- publication `--dry-run` uses Firebase's validation endpoint, then suppresses
+  publication and local writes;
 - `--draft` stages supported mutations in the active profile;
 - draft publication rebases local intent onto current Firebase state and stops
   on conflicts;

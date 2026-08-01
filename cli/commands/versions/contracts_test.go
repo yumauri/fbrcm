@@ -1,9 +1,13 @@
 package versions
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/yumauri/fbrcm/core"
+)
 
 func TestVersionPublishJSONRepresentsNoOp(t *testing.T) {
-	payload := versionPublishJSON("demo", false, "7", "7", "", nil, true, false)
+	payload := versionPublishJSON("demo", false, "7", "7", "", nil, true, false, true, core.ValidationSourceLocal)
 	if payload["operation"] != "rollback" || payload["changed"] != false || payload["dry_run"] != true {
 		t.Fatalf("no-op payload = %#v", payload)
 	}
@@ -14,11 +18,14 @@ func TestVersionPublishJSONRepresentsNoOp(t *testing.T) {
 		t.Fatalf("rollback payload unexpectedly contains change_note: %#v", payload)
 	}
 
-	payload = versionPublishJSON("demo", true, "7", "3", "8", nil, false, true)
+	payload = versionPublishJSON("demo", true, "7", "3", "8", nil, false, true, true, core.ValidationSourceFirebase)
 	if payload["operation"] != "restore" || payload["changed"] != true || payload["published_version"] != "8" {
 		t.Fatalf("changed payload = %#v", payload)
 	}
 	if value, ok := payload["change_note"]; !ok || value != (*string)(nil) {
 		t.Fatalf("restore change_note = %#v, present=%v", value, ok)
+	}
+	if payload["validated"] != true || payload["validation_source"] != core.ValidationSourceFirebase {
+		t.Fatalf("validation metadata = %#v/%#v", payload["validated"], payload["validation_source"])
 	}
 }

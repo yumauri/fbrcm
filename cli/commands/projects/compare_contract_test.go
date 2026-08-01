@@ -23,9 +23,12 @@ func TestCompareJSONUsesChangedContract(t *testing.T) {
 
 func TestPromoteJSONIncludesChanged(t *testing.T) {
 	result := rcdiff.Result{Conditions: []rcdiff.ConditionChange{{Name: "mobile", Kind: rcdiff.ChangeAdded}}}
-	payload := promoteJSON(core.Project{ProjectID: "source"}, core.Project{ProjectID: "target"}, compareOptions{DryRun: true}, false, nil, result).(map[string]any)
+	payload := promoteJSON(core.Project{ProjectID: "source"}, core.Project{ProjectID: "target"}, compareOptions{DryRun: true}, false, true, core.ValidationSourceFirebase, nil, result).(map[string]any)
 	if changed, ok := payload["changed"].(bool); !ok || !changed {
 		t.Fatalf("changed = %#v, want true", payload["changed"])
+	}
+	if payload["validated"] != true || payload["validation_source"] != core.ValidationSourceFirebase {
+		t.Fatalf("validation metadata = %#v/%#v", payload["validated"], payload["validation_source"])
 	}
 }
 

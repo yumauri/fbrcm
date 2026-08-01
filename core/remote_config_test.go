@@ -112,6 +112,20 @@ func TestValidateRemoteConfigWithETagNormalizesUpdatePayload(t *testing.T) {
 	}
 }
 
+func TestValidateRemoteConfigWithETagReportsFirebaseValidationSource(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return jsonResponse(http.StatusBadRequest, `{"error":"invalid template"}`, ""), nil
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	err := svc.ValidateRemoteConfigWithETag(firebase.WithDryRun(context.Background()), "demo", remoteConfigRaw("2", nil), "etag-1")
+	if source, ok := RemoteConfigValidationSource(err); !ok || source != ValidationSourceFirebase {
+		t.Fatalf("validation source = %q/%t for error %v", source, ok, err)
+	}
+}
+
 func TestPublishRemoteConfigWithETagDryRunSkipsCache(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	seedAuthAndProject(t, svc, "main", "demo")

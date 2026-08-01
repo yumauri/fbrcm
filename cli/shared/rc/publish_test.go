@@ -73,7 +73,7 @@ func TestPublishProjectConfigMutationResultCapturesPublishedVersion(t *testing.T
 	if err != nil {
 		t.Fatalf("PublishProjectConfigMutationResult = %v", err)
 	}
-	if result.ChangedCount != 1 || result.Retry || result.FailureStage != "" || result.PublishedVersion != "42" {
+	if result.ChangedCount != 1 || result.Retry || result.FailureStage != "" || result.PublishedVersion != "42" || !result.Validated || result.ValidationSource != core.ValidationSourceFirebase {
 		t.Fatalf("result = %+v, want changed count 1 and published version 42", result)
 	}
 }
@@ -91,7 +91,7 @@ func TestPublishProjectConfigMutationResultIdentifiesValidationConflictStage(t *
 	if err != nil {
 		t.Fatalf("PublishProjectConfigMutationResult = %v", err)
 	}
-	if !result.Retry || result.FailureStage != "validation" {
+	if !result.Retry || result.FailureStage != "validation" || result.Validated || result.ValidationSource != core.ValidationSourceFirebase {
 		t.Fatalf("result = %+v, want retryable validation conflict", result)
 	}
 }

@@ -92,6 +92,9 @@ func shouldDryRun(req *http.Request) bool {
 	if !IsDryRun(req.Context()) {
 		return false
 	}
+	if isRemoteConfigValidationRequest(req) {
+		return false
+	}
 
 	switch req.Method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions:
@@ -99,6 +102,15 @@ func shouldDryRun(req *http.Request) bool {
 	default:
 		return true
 	}
+}
+
+func isRemoteConfigValidationRequest(req *http.Request) bool {
+	if req == nil || req.URL == nil || req.Method != http.MethodPut {
+		return false
+	}
+	return strings.EqualFold(req.URL.Hostname(), "firebaseremoteconfig.googleapis.com") &&
+		strings.HasSuffix(req.URL.Path, "/remoteConfig") &&
+		strings.EqualFold(strings.TrimSpace(req.URL.Query().Get("validateOnly")), "true")
 }
 
 func dryRunResponse(req *http.Request) (*http.Response, error) {

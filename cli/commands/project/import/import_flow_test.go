@@ -199,6 +199,9 @@ func TestRunYesJSONDraftProducesStructuredResultWithoutPrompt(t *testing.T) {
 	if result.ProjectID != "demo" || result.Status != "drafted" || !result.Changed || !result.Draft || result.DryRun {
 		t.Fatalf("result = %+v", result)
 	}
+	if !result.Validated || result.ValidationSource != core.ValidationSourceLocal {
+		t.Fatalf("validation metadata = %t/%q", result.Validated, result.ValidationSource)
+	}
 	if _, ok, err := svc.LoadDraft("demo"); err != nil || !ok {
 		t.Fatalf("LoadDraft = ok %v, err %v", ok, err)
 	}

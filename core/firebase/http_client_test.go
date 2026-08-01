@@ -48,9 +48,59 @@ func TestShouldDryRun(t *testing.T) {
 	if !shouldDryRun(putReq) {
 		t.Fatal("PUT in dry-run context should dry-run")
 	}
+	validateReq, _ := http.NewRequestWithContext(ctx, http.MethodPut, "https://firebaseremoteconfig.googleapis.com/v1/projects/demo/remoteConfig?validateOnly=true", strings.NewReader(`{}`))
+	if shouldDryRun(validateReq) {
+		t.Fatal("Remote Config validation PUT should reach Firebase during dry-run")
+	}
+	unrelatedValidateReq, _ := http.NewRequestWithContext(ctx, http.MethodPut, "https://example.com/write?validateOnly=true", strings.NewReader(`{}`))
+	if !shouldDryRun(unrelatedValidateReq) {
+		t.Fatal("unrelated validateOnly write should remain suppressed")
+	}
 	plainPut, _ := http.NewRequest(http.MethodPut, "https://example.com", strings.NewReader(`{}`))
 	if shouldDryRun(plainPut) {
 		t.Fatal("PUT without dry-run context should not dry-run")
+	}
+}
+
+func TestResilientTransportDryRunSendsValidationButSuppressesPublication(t *testing.T) {
+	requests := make([]string, 0, 1)
+	base := roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		requests = append(requests, req.Method+" "+req.URL.String())
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     make(http.Header),
+			Body:       io.NopCloser(strings.NewReader(`{}`)),
+			Request:    req,
+		}, nil
+	})
+	transport := newResilientTransport(base)
+	ctx := WithDryRun(context.Background())
+
+	validation, err := http.NewRequestWithContext(ctx, http.MethodPut, "https://firebaseremoteconfig.googleapis.com/v1/projects/demo/remoteConfig?validateOnly=true", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	validation.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(`{}`)), nil }
+	validationResp, err := transport.RoundTrip(validation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = validationResp.Body.Close()
+
+	publication, err := http.NewRequestWithContext(ctx, http.MethodPut, "https://firebaseremoteconfig.googleapis.com/v1/projects/demo/remoteConfig", strings.NewReader(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	publication.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(`{}`)), nil }
+	publicationResp, err := transport.RoundTrip(publication)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = publicationResp.Body.Close()
+
+	if len(requests) != 1 || !strings.Contains(requests[0], "validateOnly=true") {
+		t.Fatalf("network requests = %v, want validation only", requests)
 	}
 }
 
