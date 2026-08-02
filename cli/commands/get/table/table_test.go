@@ -89,8 +89,9 @@ func TestValueFormattingHelpers(t *testing.T) {
 	}{
 		{name: "in app default", value: firebase.RemoteConfigValue{UseInAppDefault: true}, want: "(in-app default)"},
 		{name: "personalization", value: firebase.RemoteConfigValue{PersonalizationValue: json.RawMessage(`{"x":1}`)}, want: "◈ (personalization)"},
-		{name: "experiment", value: firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"x":1}`)}, want: "⚗ (a/b test)"},
-		{name: "rollout", value: firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"value":"20","percent":10}`)}, want: "◐ 10% → 20 / ◑ (no change)"},
+		{name: "experiment", value: firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"variantValue":[{"value":"true"},{"value":"false"}],"exposurePercent":15}`)}, valueType: "BOOLEAN", want: "⚗ 15% : true | false"},
+		{name: "opaque experiment", value: firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"x":1}`)}, want: "⚗ (a/b test)"},
+		{name: "rollout", value: firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"value":"20","percent":10}`)}, want: "◐ 10% → 20 | (no change)"},
 		{name: "unknown", value: firebase.RemoteConfigValue{UnknownValueOption: "futureValue", UnknownValue: json.RawMessage(`{}`)}, want: "(futureValue)"},
 		{name: "empty typed", value: firebase.RemoteConfigValue{}, valueType: "NUMBER", want: "(empty number)"},
 		{name: "newline", value: firebase.RemoteConfigValue{Value: "a\nb"}, want: `a\nb`},
@@ -135,7 +136,7 @@ func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
 	}
 }
 
-func TestManagedValuesUseMutedAndRolloutFragmentStyles(t *testing.T) {
+func TestManagedValuesUseStructuredFragmentStyles(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	rollout := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
 		RolloutValue: json.RawMessage(`{"value":"20","percent":10}`),
@@ -148,11 +149,30 @@ func TestManagedValuesUseMutedAndRolloutFragmentStyles(t *testing.T) {
 		"percentage": lipgloss.NewStyle().Foreground(clistyles.PaletteGold).Render("10%"),
 		"arrow":      clistyles.PanelMuted.Render(" → "),
 		"value":      corestyles.ValueTextStyle("20", "NUMBER").Render("20"),
-		"control":    clistyles.PanelMuted.Render(" / ◑ (no change)"),
+		"separator":  clistyles.PanelMuted.Render(" | "),
+		"control":    clistyles.PanelMuted.Render("(no change)"),
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("rollout does not use the %s style: %q", fragment, got)
 		}
+	}
+
+	experiment := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+		ExperimentValue: json.RawMessage(`{"variantValue":[{"value":""},{"noChange":true},{"value":"new value"}],"exposurePercent":15}`),
+	}, "STRING")
+	got = renderValueLineText(ValueLine{
+		Value: experiment.Text, ValueType: "STRING", Display: experiment,
+	}, experiment.Text, nil)
+	wantExperiment := clistyles.PanelMuted.Render("⚗ ") +
+		lipgloss.NewStyle().Foreground(clistyles.PaletteGold).Render("15%") +
+		clistyles.PanelMuted.Render(" : ") +
+		clistyles.PanelMuted.Render("(empty string)") +
+		clistyles.PanelMuted.Render(" | ") +
+		clistyles.PanelMuted.Render("(no change)") +
+		clistyles.PanelMuted.Render(" | ") +
+		corestyles.ValueTextStyle("new value", "STRING").Render("new value")
+	if got != wantExperiment {
+		t.Fatalf("experiment render = %q, want %q", got, wantExperiment)
 	}
 
 	for name, display := range map[string]rcdisplay.ValueSummary{
@@ -181,45 +201,63 @@ func TestManagedValuesRespectNoColor(t *testing.T) {
 	got := renderValueLineText(ValueLine{
 		Value: display.Text, ValueType: "NUMBER", Display: display,
 	}, display.Text, nil)
-	if got != "◐ 10% → 20 / ◑ (no change)" {
+	if got != "◐ 10% → 20 | (no change)" {
 		t.Fatalf("no-color rollout = %q", got)
 	}
 }
 
-func TestManagedRolloutTableRespectsNaturalAndNarrowWidths(t *testing.T) {
-	t.Setenv("NO_COLOR", "1")
-	display := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
-		RolloutValue: json.RawMessage(`{"value":"20","percent":10}`),
-	}, "NUMBER")
-	rows := []Row{{
-		Group: "onboarding",
-		Key:   "funding_minimum_amount",
-		Type:  "NUMBER",
-		ValueLines: []ValueLine{{
-			Label: "android_beta_10", Value: display.Text, ValueType: "NUMBER", Display: display,
-		}},
-	}}
-
-	t.Setenv("COLUMNS", "120")
-	natural := Render(rows, nil, true, false)
-	if !strings.Contains(natural, display.Text) {
-		t.Fatalf("natural rollout table missing complete summary:\n%s", natural)
-	}
-	for index, line := range strings.Split(natural, "\n") {
-		if width := lipgloss.Width(line); width > 120 {
-			t.Fatalf("natural line %d width = %d, want at most 120:\n%s", index, width, natural)
-		}
+func TestManagedValueTablesRespectNaturalAndNarrowWidths(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       string
+		value     firebase.RemoteConfigValue
+		valueType string
+	}{
+		{
+			name: "rollout", key: "funding_minimum_amount", valueType: "NUMBER",
+			value: firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"value":"20","percent":10}`)},
+		},
+		{
+			name: "experiment", key: "show_income_question", valueType: "BOOLEAN",
+			value: firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"variantValue":[{"value":"true"},{"value":"false"},{"value":"true"}],"exposurePercent":15}`)},
+		},
 	}
 
-	t.Setenv("COLUMNS", "24")
-	narrow := Render(rows, nil, true, false)
-	for index, line := range strings.Split(narrow, "\n") {
-		if width := lipgloss.Width(line); width > 24 {
-			t.Fatalf("narrow line %d width = %d, want at most 24:\n%s", index, width, narrow)
-		}
-	}
-	if !strings.Contains(narrow, "…") {
-		t.Fatalf("narrow rollout table does not crop with an ellipsis:\n%s", narrow)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv("NO_COLOR", "1")
+			display := core.SummarizeRemoteConfigDisplayValue(test.value, test.valueType)
+			rows := []Row{{
+				Group: "onboarding",
+				Key:   test.key,
+				Type:  test.valueType,
+				ValueLines: []ValueLine{{
+					Label: "android_beta_10", Value: display.Text, ValueType: test.valueType, Display: display,
+				}},
+			}}
+
+			t.Setenv("COLUMNS", "120")
+			natural := Render(rows, nil, true, false)
+			if !strings.Contains(natural, display.Text) {
+				t.Fatalf("natural %s table missing complete summary:\n%s", test.name, natural)
+			}
+			for index, line := range strings.Split(natural, "\n") {
+				if width := lipgloss.Width(line); width > 120 {
+					t.Fatalf("natural line %d width = %d, want at most 120:\n%s", index, width, natural)
+				}
+			}
+
+			t.Setenv("COLUMNS", "24")
+			narrow := Render(rows, nil, true, false)
+			for index, line := range strings.Split(narrow, "\n") {
+				if width := lipgloss.Width(line); width > 24 {
+					t.Fatalf("narrow line %d width = %d, want at most 24:\n%s", index, width, narrow)
+				}
+			}
+			if !strings.Contains(narrow, "…") {
+				t.Fatalf("narrow %s table does not crop with an ellipsis:\n%s", test.name, narrow)
+			}
+		})
 	}
 }
 

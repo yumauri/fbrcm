@@ -58,16 +58,40 @@ func TestFormatSummary(t *testing.T) {
 			want:      "◈ (personalization)",
 		},
 		{
-			name:      "experiment",
+			name:      "opaque experiment",
 			value:     firebase.RemoteConfigValue{ExperimentValue: []byte(`{}`)},
 			valueType: "BOOLEAN",
 			want:      "⚗ (a/b test)",
 		},
 		{
+			name:      "experiment",
+			value:     firebase.RemoteConfigValue{ExperimentValue: []byte(`{"variantValue":[{"variantId":"0","value":"true"},{"variantId":"1","value":"false"},{"variantId":"2","value":"true"}],"exposurePercent":15}`)},
+			valueType: "BOOLEAN",
+			want:      "⚗ 15% : true | false | true",
+		},
+		{
+			name:      "experiment no change",
+			value:     firebase.RemoteConfigValue{ExperimentValue: []byte(`{"variantValue":[{"noChange":true},{"value":"false"}],"exposurePercent":15}`)},
+			valueType: "BOOLEAN",
+			want:      "⚗ 15% : (no change) | false",
+		},
+		{
+			name:      "experiment empty string",
+			value:     firebase.RemoteConfigValue{ExperimentValue: []byte(`{"variantValue":[{"value":""},{"value":"new value"}],"exposurePercent":15}`)},
+			valueType: "STRING",
+			want:      "⚗ 15% : (empty string) | new value",
+		},
+		{
+			name:      "experiment without exposure",
+			value:     firebase.RemoteConfigValue{ExperimentValue: []byte(`{"variantValue":[{"value":"true"},{"value":"false"}]}`)},
+			valueType: "BOOLEAN",
+			want:      "⚗ true | false",
+		},
+		{
 			name:      "rollout",
 			value:     firebase.RemoteConfigValue{RolloutValue: []byte(`{"rolloutId":"rollout-1","value":"20","percent":10}`)},
 			valueType: "NUMBER",
-			want:      "◐ 10% → 20 / ◑ (no change)",
+			want:      "◐ 10% → 20 | (no change)",
 		},
 		{
 			name:      "malformed rollout",
@@ -122,6 +146,27 @@ func TestFormatSummary(t *testing.T) {
 	}
 }
 
+func TestSummarizeValueRetainsExperimentFragments(t *testing.T) {
+	summary := SummarizeValue(firebase.RemoteConfigValue{
+		ExperimentValue: []byte(`{"variantValue":[{"value":""},{"noChange":true},{"value":"new value"}],"exposurePercent":0}`),
+	}, "STRING")
+	if summary.Kind != ValueSummaryExperiment || summary.Experiment == nil {
+		t.Fatalf("experiment summary = %#v, want structured experiment", summary)
+	}
+	if summary.Experiment.Percentage != "0%" {
+		t.Fatalf("experiment percentage = %q, want 0%%", summary.Experiment.Percentage)
+	}
+	wantValues := []string{"(empty string)", "(no change)", "new value"}
+	if len(summary.Experiment.Values) != len(wantValues) {
+		t.Fatalf("experiment values = %#v, want %#v", summary.Experiment.Values, wantValues)
+	}
+	for index, want := range wantValues {
+		if got := summary.Experiment.Values[index]; got != want {
+			t.Fatalf("experiment value %d = %q, want %q", index, got, want)
+		}
+	}
+}
+
 func TestSummarizeValueRetainsRolloutFragments(t *testing.T) {
 	summary := SummarizeValue(firebase.RemoteConfigValue{
 		RolloutValue: []byte(`{"rolloutId":"rollout-1","value":"","percent":0}`),
@@ -129,10 +174,10 @@ func TestSummarizeValueRetainsRolloutFragments(t *testing.T) {
 	if summary.Kind != ValueSummaryRollout || summary.Rollout == nil {
 		t.Fatalf("rollout summary = %#v, want structured rollout", summary)
 	}
-	if summary.Rollout.Percentage != "0%" || summary.Rollout.Value != `""` {
+	if summary.Rollout.Percentage != "0%" || summary.Rollout.Value != "(empty string)" {
 		t.Fatalf("rollout fragments = %#v, want 0%% and empty-string value", summary.Rollout)
 	}
-	if summary.Text != `◐ 0% → "" / ◑ (no change)` {
+	if summary.Text != "◐ 0% → (empty string) | (no change)" {
 		t.Fatalf("rollout text = %q", summary.Text)
 	}
 }
@@ -150,6 +195,19 @@ func TestEmptyValueType(t *testing.T) {
 	for _, tt := range tests {
 		if got := EmptyValueType(tt.in); got != tt.want {
 			t.Fatalf("EmptyValueType(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestIsManagedValuePlaceholder(t *testing.T) {
+	for _, value := range []string{"(no change)", "(empty string)", "(empty boolean)"} {
+		if !IsManagedValuePlaceholder(value) {
+			t.Fatalf("IsManagedValuePlaceholder(%q) = false, want true", value)
+		}
+	}
+	for _, value := range []string{"true", "new value", "(personalization)"} {
+		if IsManagedValuePlaceholder(value) {
+			t.Fatalf("IsManagedValuePlaceholder(%q) = true, want false", value)
 		}
 	}
 }

@@ -306,28 +306,6 @@ func (s *Core) loadManagedFeatureTemplate(ctx context.Context, projectID string,
 	return cfg, ManagedFeatureTemplate{Version: cfg.Version.VersionNumber, Source: source}, nil
 }
 
-type rolloutValue struct {
-	RolloutID string   `json:"rolloutId"`
-	Value     *string  `json:"value"`
-	Percent   *float64 `json:"percent"`
-}
-
-type personalizationValue struct {
-	PersonalizationID string `json:"personalizationId"`
-}
-
-type experimentValue struct {
-	ExperimentID    string                   `json:"experimentId"`
-	VariantValues   []experimentVariantValue `json:"variantValue"`
-	ExposurePercent *float64                 `json:"exposurePercent"`
-}
-
-type experimentVariantValue struct {
-	VariantID string  `json:"variantId"`
-	Value     *string `json:"value"`
-	NoChange  *bool   `json:"noChange"`
-}
-
 type decodedManagedValue struct {
 	ID         string
 	Value      *string
@@ -340,7 +318,7 @@ func collectExperimentReferences(cfg *firebase.RemoteConfig) (map[string][]Manag
 		if len(raw) == 0 {
 			return decodedManagedValue{}, nil
 		}
-		var value experimentValue
+		var value firebase.RemoteConfigExperimentValue
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return decodedManagedValue{}, fmt.Errorf("decode experiment value: %w", err)
 		}
@@ -364,7 +342,7 @@ func collectRolloutReferences(cfg *firebase.RemoteConfig) (map[string][]ManagedV
 		if len(raw) == 0 {
 			return decodedManagedValue{}, nil
 		}
-		var value rolloutValue
+		var value firebase.RemoteConfigRolloutValue
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return decodedManagedValue{}, fmt.Errorf("decode rollout value: %w", err)
 		}
@@ -381,7 +359,7 @@ func collectPersonalizationReferences(cfg *firebase.RemoteConfig) (map[string][]
 		if len(raw) == 0 {
 			return decodedManagedValue{}, nil
 		}
-		var value personalizationValue
+		var value firebase.RemoteConfigPersonalizationValue
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return decodedManagedValue{}, fmt.Errorf("decode personalization value: %w", err)
 		}

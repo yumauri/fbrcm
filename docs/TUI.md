@@ -211,6 +211,15 @@ The Parameters tree keeps groups, parameters, default values, and conditional
 values visible in their hierarchy. Empty and description-only groups remain
 first-class items.
 
+Published experiment variants appear inline as `⚗ 15% : true | false | true`,
+or as `⚗ true | false` when no exposure percentage is available. Incomplete
+experiment data falls back to `⚗ (a/b test)`. Rollouts use
+`◐ 10% → 20 | (no change)`. The vertical bar groups values belonging to one
+experiment or rollout, while a slash separates collapsed conditional values.
+Concrete managed values use the parameter type's value color. Placeholders
+such as `(no change)` and `(empty string)` use the same muted gray as the
+surrounding chrome.
+
 | Default key | Action |
 | --- | --- |
 | `Enter` | Open Details |

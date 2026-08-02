@@ -39,10 +39,10 @@ func TestManagedNumberValueHasNoEditorAnchor(t *testing.T) {
 	m := parityTestModel()
 	project := &m.projects[0]
 	project.tree.Groups[0].Parameters[0].Values = []core.ParametersValue{{
-		Label: "default", Value: "◐ 10% → 20 / ◑ (no change)", ValueType: "NUMBER",
+		Label: "default", Value: "◐ 10% → 20 | (no change)", ValueType: "NUMBER",
 		Display: rcdisplay.ValueSummary{
 			Kind: rcdisplay.ValueSummaryRollout,
-			Text: "◐ 10% → 20 / ◑ (no change)",
+			Text: "◐ 10% → 20 | (no change)",
 			Rollout: &rcdisplay.RolloutSummary{
 				Percentage: "10%",
 				Value:      "20",

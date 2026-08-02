@@ -26,11 +26,35 @@ func TestRenderManagedValueSummaryUsesSharedTUIStyles(t *testing.T) {
 		"percentage": styles.SecondaryTitleCount.Render("10%"),
 		"arrow":      styles.PanelMuted.Render(" → "),
 		"value":      corestyles.ValueTextStyle("20", "NUMBER").Render("20"),
-		"control":    styles.PanelMuted.Render(" / ◑ (no change)"),
+		"separator":  styles.PanelMuted.Render(" | "),
+		"control":    styles.PanelMuted.Render("(no change)"),
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("rollout does not use the %s style: %q", fragment, got)
 		}
+	}
+}
+
+func TestRenderManagedExperimentSummaryUsesTypeStyles(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	experiment := core.SummarizeRemoteConfigDisplayValue(firebase.RemoteConfigValue{
+		ExperimentValue: json.RawMessage(`{"variantValue":[{"value":""},{"noChange":true},{"value":"new value"}],"exposurePercent":15}`),
+	}, "STRING")
+
+	got, ok := RenderManagedValueSummary(experiment, "STRING")
+	if !ok {
+		t.Fatal("experiment was not recognized as a managed value")
+	}
+	want := styles.PanelMuted.Render("⚗ ") +
+		styles.SecondaryTitleCount.Render("15%") +
+		styles.PanelMuted.Render(" : ") +
+		styles.PanelMuted.Render("(empty string)") +
+		styles.PanelMuted.Render(" | ") +
+		styles.PanelMuted.Render("(no change)") +
+		styles.PanelMuted.Render(" | ") +
+		corestyles.ValueTextStyle("new value", "STRING").Render("new value")
+	if got != want {
+		t.Fatalf("experiment render = %q, want %q", got, want)
 	}
 }
 
@@ -56,7 +80,7 @@ func TestRenderManagedValueSummaryRespectsNoColor(t *testing.T) {
 		RolloutValue: json.RawMessage(`{"value":"20","percent":10}`),
 	}, "NUMBER")
 	got, ok := RenderManagedValueSummary(summary, "NUMBER")
-	if !ok || got != "◐ 10% → 20 / ◑ (no change)" {
+	if !ok || got != "◐ 10% → 20 | (no change)" {
 		t.Fatalf("no-color rollout = %q, %t", got, ok)
 	}
 }

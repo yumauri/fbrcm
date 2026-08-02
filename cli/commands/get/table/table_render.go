@@ -11,6 +11,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/strfold"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 func renderHighlightedText(value string, base lipgloss.Style, highlights []int, rowBG color.Color) string {
@@ -191,21 +192,47 @@ func renderValueLineText(line ValueLine, value string, rowBG color.Color) string
 		return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
 	}
 	switch line.Display.Kind {
+	case rcdisplay.ValueSummaryExperiment:
+		if line.Display.Experiment == nil {
+			return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
+		}
+		muted := applyBackground(clistyles.PanelMuted, rowBG)
+		percentage := applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteGold), rowBG)
+		var rendered strings.Builder
+		rendered.WriteString(muted.Render("⚗ "))
+		if line.Display.Experiment.Percentage != "" {
+			rendered.WriteString(percentage.Render(line.Display.Experiment.Percentage))
+			rendered.WriteString(muted.Render(" : "))
+		}
+		for index, variant := range line.Display.Experiment.Values {
+			if index > 0 {
+				rendered.WriteString(muted.Render(" | "))
+			}
+			rendered.WriteString(renderManagedValueText(variant, line.ValueType, rowBG))
+		}
+		return rendered.String()
 	case rcdisplay.ValueSummaryRollout:
 		if line.Display.Rollout == nil {
 			return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
 		}
 		muted := applyBackground(clistyles.PanelMuted, rowBG)
 		percentage := applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteGold), rowBG)
-		enabled := applyBackground(valueTextStyle(line.Display.Rollout.Value, line.ValueType), rowBG)
 		return muted.Render("◐ ") +
 			percentage.Render(line.Display.Rollout.Percentage) +
 			muted.Render(" → ") +
-			enabled.Render(line.Display.Rollout.Value) +
-			muted.Render(" / ◑ (no change)")
+			renderManagedValueText(line.Display.Rollout.Value, line.ValueType, rowBG) +
+			muted.Render(" | ") +
+			renderManagedValueText("(no change)", line.ValueType, rowBG)
 	default:
 		return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
 	}
+}
+
+func renderManagedValueText(value, valueType string, rowBG color.Color) string {
+	if rcdisplay.IsManagedValuePlaceholder(value) {
+		return applyBackground(clistyles.PanelMuted, rowBG).Render(value)
+	}
+	return applyBackground(corestyles.ValueTextStyle(value, valueType), rowBG).Render(value)
 }
 
 func valueTextStyle(value, valueType string) lipgloss.Style {

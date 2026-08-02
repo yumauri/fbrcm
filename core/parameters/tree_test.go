@@ -165,7 +165,8 @@ func TestBuildTreeGroupedOnlyNoRootBucket(t *testing.T) {
 func TestBuildTreeRetainsManagedValueDisplayStructure(t *testing.T) {
 	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
 		"experiment": {
-			DefaultValue: &firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"experimentId":"exp-1"}`)},
+			DefaultValue: &firebase.RemoteConfigValue{ExperimentValue: json.RawMessage(`{"experimentId":"exp-1","variantValue":[{"value":"true"},{"value":"false"},{"value":"true"}],"exposurePercent":15}`)},
+			ValueType:    "BOOLEAN",
 		},
 		"personalization": {
 			DefaultValue: &firebase.RemoteConfigValue{PersonalizationValue: json.RawMessage(`{"personalizationId":"p-1"}`)},
@@ -190,9 +191,9 @@ func TestBuildTreeRetainsManagedValueDisplayStructure(t *testing.T) {
 		kind rcdisplay.ValueSummaryKind
 		text string
 	}{
-		"experiment":      {kind: rcdisplay.ValueSummaryExperiment, text: "⚗ (a/b test)"},
+		"experiment":      {kind: rcdisplay.ValueSummaryExperiment, text: "⚗ 15% : true | false | true"},
 		"personalization": {kind: rcdisplay.ValueSummaryPersonalization, text: "◈ (personalization)"},
-		"rollout":         {kind: rcdisplay.ValueSummaryRollout, text: "◐ 10% → 20 / ◑ (no change)"},
+		"rollout":         {kind: rcdisplay.ValueSummaryRollout, text: "◐ 10% → 20 | (no change)"},
 		"unknown":         {kind: rcdisplay.ValueSummaryUnknown, text: "(futureValue)"},
 	}
 	for _, entry := range root.Parameters {
@@ -202,6 +203,9 @@ func TestBuildTreeRetainsManagedValueDisplayStructure(t *testing.T) {
 		expected := want[entry.Key]
 		if got := entry.Values[0].Display; got.Kind != expected.kind || got.Text != expected.text || entry.Values[0].Value != expected.text {
 			t.Fatalf("%s display = %#v, value %q; want %s %q", entry.Key, got, entry.Values[0].Value, expected.kind, expected.text)
+		}
+		if entry.Key == "experiment" && entry.Values[0].Display.Experiment == nil {
+			t.Fatalf("experiment display = %#v, want structured experiment", entry.Values[0].Display)
 		}
 	}
 }

@@ -26,9 +26,15 @@ const (
 // values consistently while keeping a plain-text representation for JSON and
 // no-color output.
 type ValueSummary struct {
-	Kind    ValueSummaryKind
-	Text    string
-	Rollout *RolloutSummary
+	Kind       ValueSummaryKind
+	Text       string
+	Experiment *ExperimentSummary
+	Rollout    *RolloutSummary
+}
+
+type ExperimentSummary struct {
+	Percentage string
+	Values     []string
 }
 
 type RolloutSummary struct {
@@ -104,9 +110,9 @@ func SummarizeValue(value firebase.RemoteConfigValue, valueType string) ValueSum
 	case len(value.PersonalizationValue) > 0:
 		return ValueSummary{Kind: ValueSummaryPersonalization, Text: "◈ (personalization)"}
 	case len(value.ExperimentValue) > 0:
-		return ValueSummary{Kind: ValueSummaryExperiment, Text: "⚗ (a/b test)"}
+		return summarizeExperiment(value.ExperimentValue, valueType)
 	case len(value.RolloutValue) > 0:
-		return summarizeRollout(value.RolloutValue)
+		return summarizeRollout(value.RolloutValue, valueType)
 	case value.UnknownValueOption != "":
 		return ValueSummary{Kind: ValueSummaryUnknown, Text: "(" + value.UnknownValueOption + ")"}
 	case value.Value == "":
@@ -116,27 +122,60 @@ func SummarizeValue(value firebase.RemoteConfigValue, valueType string) ValueSum
 	}
 }
 
-func summarizeRollout(raw json.RawMessage) ValueSummary {
-	var value struct {
-		Value   *string  `json:"value"`
-		Percent *float64 `json:"percent"`
+func summarizeExperiment(raw json.RawMessage, valueType string) ValueSummary {
+	var value firebase.RemoteConfigExperimentValue
+	if err := json.Unmarshal(raw, &value); err != nil || len(value.VariantValues) == 0 {
+		return ValueSummary{Kind: ValueSummaryExperiment, Text: "⚗ (a/b test)"}
 	}
+
+	values := make([]string, 0, len(value.VariantValues))
+	for _, variant := range value.VariantValues {
+		switch {
+		case variant.Value != nil:
+			values = append(values, FormatRawValue(*variant.Value, valueType))
+		case variant.NoChange != nil && *variant.NoChange:
+			values = append(values, "(no change)")
+		default:
+			return ValueSummary{Kind: ValueSummaryExperiment, Text: "⚗ (a/b test)"}
+		}
+	}
+
+	experiment := &ExperimentSummary{Values: values}
+	prefix := "⚗ "
+	if value.ExposurePercent != nil {
+		experiment.Percentage = formatPercentage(*value.ExposurePercent)
+		prefix += experiment.Percentage + " : "
+	}
+	return ValueSummary{
+		Kind:       ValueSummaryExperiment,
+		Text:       prefix + strings.Join(values, " | "),
+		Experiment: experiment,
+	}
+}
+
+func summarizeRollout(raw json.RawMessage, valueType string) ValueSummary {
+	var value firebase.RemoteConfigRolloutValue
 	if err := json.Unmarshal(raw, &value); err != nil || value.Value == nil || value.Percent == nil {
 		return ValueSummary{Kind: ValueSummaryRollout, Text: "(rollout)"}
 	}
-	displayValue := *value.Value
-	if displayValue == "" {
-		displayValue = `""`
-	} else {
-		displayValue = strings.ReplaceAll(displayValue, "\n", "\\n")
-	}
-	percentage := strconv.FormatFloat(*value.Percent, 'f', -1, 64) + "%"
+	displayValue := FormatRawValue(*value.Value, valueType)
+	percentage := formatPercentage(*value.Percent)
 	rollout := &RolloutSummary{Percentage: percentage, Value: displayValue}
 	return ValueSummary{
 		Kind:    ValueSummaryRollout,
-		Text:    "◐ " + percentage + " → " + displayValue + " / ◑ (no change)",
+		Text:    "◐ " + percentage + " → " + displayValue + " | (no change)",
 		Rollout: rollout,
 	}
+}
+
+func formatPercentage(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64) + "%"
+}
+
+// IsManagedValuePlaceholder reports whether text represents an implicit or
+// empty managed value rather than a concrete typed value.
+func IsManagedValuePlaceholder(value string) bool {
+	return value == "(no change)" || strings.HasPrefix(value, "(empty ") && strings.HasSuffix(value, ")")
 }
 
 // EmptyValueType normalizes a parameter value type for empty-value labels.
