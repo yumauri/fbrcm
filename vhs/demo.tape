@@ -40,12 +40,26 @@ Wait+Screen@30s /Projects/
 Down
 Enter
 Wait+Screen@30s /account_nickname_max_length/
+
+# Compose a useful cover frame before revealing the recording. Expand three
+# onboarding parameters, collapse Insights, and leave the Projects cursor at
+# the first row while Northstar Wallet remains selected.
+Down 23
+Space
+Up 4
+Space
+Up
+Space
+Up 9
+Left
+Type "1"
+Up
 Show
 
-# Start on Northstar Wallet, then navigate to PulseForge Fitness.
+# Start with Northstar Wallet's prepared parameter tree, then navigate to
+# PulseForge Fitness.
 Sleep 1 s
-Type "1"
-Down@350ms 1
+Down@350ms 2
 Enter
 Wait+Screen@30s /enable_visual_search/
 Sleep 700 ms
