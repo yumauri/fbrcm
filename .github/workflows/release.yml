@@ -23,6 +23,23 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Generate machine contract
+        run: go run ./cmd/schemagen
+
+      - name: Verify generated files are current
+        run: git diff --exit-code
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -count=1 ./...
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
