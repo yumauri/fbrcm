@@ -1,0 +1,26 @@
+# fbrcm
+
+> Terminal manager for Firebase Remote Config. Ships both an interactive TUI and a scriptable CLI with a versioned JSON automation contract built for agents and CI, not just humans.
+
+fbrcm is not a thin wrapper around Firebase's Remote Config API. It adds cross-project comparison and promotion, local drafts for staging changes before publish, and a stable machine-readable output contract (`--json`) with typed errors, retry selectors, and command self-description — designed so scripts and LLM agents can drive it safely without scraping human-formatted output.
+
+## Start here for automation
+
+- [Agent quickstart](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/agent-quickstart.md): fastest path for an agent to discover commands, validate output, and make safe changes
+- [CLI machine contract](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/cli-contract.md): full JSON envelope schema, error categories, exit statuses, retry semantics
+- [CLI reference](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/CLI.md): complete command tree, flags, and per-command behavior
+- [Expression filters](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/EXPR.md): expr-lang syntax and context fields for `--expr`
+
+Self-describing at runtime: `fbrcm capabilities --json` lists every command with its schema URNs, side-effect level, and destructive marker; exact command lookup returns detailed effects and conditions. `fbrcm schema list --json` and `fbrcm schema show <id> --json` return the embedded JSON Schemas directly, so an agent does not need separately shipped schema files to validate output shape.
+
+## Reference
+
+- [README](https://raw.githubusercontent.com/yumauri/fbrcm/main/README.md): overview, installation, first run
+- [TUI guide](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/TUI.md): interactive workflow, setup and authentication
+- [Architecture](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/architecture.md): package boundaries and maintainer invariants
+- [fbrcm vs. Firebase CLI](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/firebase-cli-comparison.md): feature parity and command equivalents
+- [Repository conventions](https://raw.githubusercontent.com/yumauri/fbrcm/main/AGENTS.md): for coding agents contributing to this codebase (distinct from using fbrcm as a tool)
+
+## Optional
+
+- [Root group keys](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/root-group-key.md): internal root-parameter representation, rarely needed

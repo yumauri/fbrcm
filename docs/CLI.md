@@ -1,6 +1,6 @@
 # fbrcm CLI
 
-`fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode. See the [TUI guide](TUI.md) for the interactive workflow. For agents and scripts, the global `--json` flag enables the versioned [machine contract](cli-contract.md).
+`fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode. See the [TUI guide](TUI.md) for the interactive workflow. Agents and scripts should start with the [agent quickstart](agent-quickstart.md); the global `--json` flag enables the versioned [machine contract](cli-contract.md).
 
 ## Command Tree
 

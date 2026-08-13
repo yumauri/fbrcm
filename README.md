@@ -4,6 +4,12 @@
 TUI to explore and edit projects, or use the CLI for scripts, repeatable
 operations, and machine-readable output.
 
+> [!TIP]
+> Using `fbrcm` from an LLM agent, script, or CI runner? Start with the
+> [agent quickstart](https://github.com/yumauri/fbrcm/blob/main/docs/agent-quickstart.md).
+> Machine-readable command discovery is also available through
+> `fbrcm capabilities --json`.
+
 ![fbrcm TUI demo](https://raw.githubusercontent.com/yumauri/fbrcm/main/vhs/demo.gif)
 
 > [!CAUTION]
@@ -241,6 +247,7 @@ Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 
 | Guide | Use it for |
 | --- | --- |
+| [Agent quickstart](https://github.com/yumauri/fbrcm/blob/main/docs/agent-quickstart.md) | Noninteractive discovery, safe mutation, structured recovery, and automation pitfalls |
 | [TUI guide](https://github.com/yumauri/fbrcm/blob/main/docs/TUI.md) | Setup, panels, shortcuts, editing, drafts, history, promotion, and key configuration |
 | [CLI reference](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md) | Complete command tree, flags, output contracts, template targets, and write behavior |
 | [Expression filters](https://github.com/yumauri/fbrcm/blob/main/docs/EXPR.md) | Expression contexts, typed values, helper functions, and `jq` queries |

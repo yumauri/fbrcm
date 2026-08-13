@@ -4,6 +4,9 @@ This document defines the stable machine interface used by agents, CI, and
 scripts. Contract version `1.0.0` applies whenever the global `--json` flag is
 present. Human output is unchanged when `--json` is absent.
 
+For a concise integration workflow and safe usage examples, start with the
+[agent quickstart](agent-quickstart.md).
+
 The normative definition of “authoritative for agents,” the finite audit
 matrix, required evidence, and pass/fail criteria are in
 [`cli-contract-audit.md`](cli-contract-audit.md). Contract reviews MUST use a
