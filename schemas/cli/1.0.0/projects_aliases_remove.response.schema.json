@@ -1,0 +1,282 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_found"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "previous_project_id"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "source"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "remaining_source"
+                  ]
+                }
+              }
+            ],
+            "properties": {
+              "changed": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "removed"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "remaining_source"
+                  ]
+                }
+              }
+            ],
+            "properties": {
+              "changed": {
+                "const": true
+              },
+              "previous_project_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "source": {
+                "const": "fbrcm"
+              }
+            },
+            "required": [
+              "previous_project_id",
+              "source"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "removed_native"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "changed": {
+                "const": true
+              },
+              "previous_project_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "remaining_source": {
+                "const": "firebase"
+              },
+              "source": {
+                "const": "both"
+              }
+            },
+            "required": [
+              "previous_project_id",
+              "source",
+              "remaining_source"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "alias": {
+          "type": "string"
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "previous_project_id": {
+          "type": "string"
+        },
+        "remaining_source": {
+          "enum": [
+            "fbrcm",
+            "firebase",
+            "both"
+          ],
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "fbrcm",
+            "firebase",
+            "both"
+          ],
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "not_found",
+            "removed",
+            "removed_native"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "alias",
+        "changed",
+        "status"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "projects.aliases.remove"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "additionalProperties": false,
+          "properties": {
+            "auth_id": {
+              "type": "string"
+            },
+            "disabled": {
+              "type": "boolean"
+            },
+            "discovered_by": {
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "etag": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "primary_template": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "project_number": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "synced_at": {
+              "type": "string"
+            },
+            "templates": {
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "updated_at": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "auth_id",
+            "name",
+            "project_id"
+          ],
+          "type": "object"
+        },
+        "source": {
+          "enum": [
+            "draft",
+            "firebase"
+          ],
+          "type": "string"
+        },
+        "valid": {
+          "const": true
+        }
+      },
+      "required": [
+        "project",
+        "source",
+        "valid"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "conditions.validate"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

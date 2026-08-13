@@ -31,7 +31,7 @@ type projectAliasImportItem struct {
 type projectAliasImportResult struct {
 	From           string                   `json:"from"`
 	Destination    string                   `json:"destination"`
-	ConflictPolicy string                   `json:"conflict_policy"`
+	ConflictPolicy string                   `json:"conflict_policy" contract:"enum=error|keep|overwrite"`
 	DryRun         bool                     `json:"dry_run"`
 	Changed        bool                     `json:"changed"`
 	Items          []projectAliasImportItem `json:"items"`
@@ -39,7 +39,7 @@ type projectAliasImportResult struct {
 
 func newAliasesImportCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "import --from <path>",
+		Use:   "import",
 		Short: "Import Firebase CLI project aliases into .fbrcm.toml",
 		Args:  cobra.NoArgs,
 		RunE:  runAliasesImport,
@@ -55,7 +55,7 @@ func newAliasesImportCommand() *cobra.Command {
 
 func runAliasesImport(cmd *cobra.Command, _ []string) error {
 	if coreconfig.LocalConfigDisabled() {
-		return fmt.Errorf("project aliases are disabled by --no-local-config or FBRCM_NO_LOCAL_CONFIG")
+		return &shared.ValidationError{Code: "configuration.local_disabled", Source: "configuration", Stage: "preparation", Err: fmt.Errorf("project aliases are disabled by --no-local-config or FBRCM_NO_LOCAL_CONFIG")}
 	}
 	from, _ := cmd.Flags().GetString("from")
 	from, err := filepath.Abs(from)
@@ -64,7 +64,7 @@ func runAliasesImport(cmd *cobra.Command, _ []string) error {
 	}
 	policy, _ := cmd.Flags().GetString("conflict")
 	if !slices.Contains([]string{aliasImportConflictError, aliasImportConflictKeep, aliasImportConflictOverwrite}, policy) {
-		return fmt.Errorf("invalid --conflict value %q: use error, keep, or overwrite", policy)
+		return shared.InvalidArgument(fmt.Errorf("invalid --conflict value %q: use error, keep, or overwrite", policy))
 	}
 	imported, err := coreconfig.LoadFirebaseProjectAliasesFile(from)
 	if err != nil {
@@ -76,10 +76,13 @@ func runAliasesImport(cmd *cobra.Command, _ []string) error {
 	}
 	items, conflicts := planProjectAliasImport(coreconfig.CloneProjectAliases(cfg), imported, policy)
 	if len(conflicts) > 0 {
-		return fmt.Errorf(
+		return &shared.ConflictError{Code: "project_alias.conflict", Resource: "project_alias", Remediation: []shared.Remediation{
+			{Description: "keep existing alias mappings", Strategy: shared.RemediationRetryWithArguments, Argv: []string{"--conflict", "keep"}},
+			{Description: "overwrite existing alias mappings", Strategy: shared.RemediationRetryWithArguments, Argv: []string{"--conflict", "overwrite"}},
+		}, Err: fmt.Errorf(
 			"project alias import has conflicts for %s; use --conflict keep or --conflict overwrite",
 			strings.Join(conflicts, ", "),
-		)
+		)}
 	}
 
 	changedCount := 0
@@ -121,6 +124,9 @@ func runAliasesImport(cmd *cobra.Command, _ []string) error {
 
 	yes, _ := cmd.Flags().GetBool("yes")
 	if !yes {
+		if err := shared.RequireYesInMachineMode(cmd, yes, "importing project aliases", false); err != nil {
+			return err
+		}
 		confirm := shared.NewConfirmation(
 			fmt.Sprintf("Import %s into %s?", rcdisplay.FormatCount(changedCount, "project alias", "project aliases"), destination),
 			shared.ConfirmationOptions{},

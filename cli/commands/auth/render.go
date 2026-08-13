@@ -66,23 +66,22 @@ func renderAuthTable(entries []config.AuthEntry, defaultAuthID string) string {
 	return tbl.String()
 }
 
-func authPathPayload(auth config.AuthEntry, paths core.AuthPaths) map[string]string {
-	payload := map[string]string{
-		"id":                  auth.ID,
-		"type":                auth.Type,
-		"auth_config_path":    paths.AuthConfigPath,
-		"profile_config_path": paths.ProfileConfigPath,
+type authPathResult struct {
+	ID                 string `json:"id"`
+	Type               string `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	AuthConfigPath     string `json:"auth_config_path"`
+	ProfileConfigPath  string `json:"profile_config_path"`
+	ClientSecretPath   string `json:"client_secret_path,omitempty"`
+	TokenPath          string `json:"token_path,omitempty"`
+	ServiceAccountPath string `json:"service_account_path,omitempty"`
+}
+
+func authPathPayload(auth config.AuthEntry, paths core.AuthPaths) authPathResult {
+	return authPathResult{
+		ID: auth.ID, Type: auth.Type,
+		AuthConfigPath: paths.AuthConfigPath, ProfileConfigPath: paths.ProfileConfigPath,
+		ClientSecretPath: paths.ClientSecretPath, TokenPath: paths.TokenPath, ServiceAccountPath: paths.ServiceAccountPath,
 	}
-	if paths.ClientSecretPath != "" {
-		payload["client_secret_path"] = paths.ClientSecretPath
-	}
-	if paths.TokenPath != "" {
-		payload["token_path"] = paths.TokenPath
-	}
-	if paths.ServiceAccountPath != "" {
-		payload["service_account_path"] = paths.ServiceAccountPath
-	}
-	return payload
 }
 
 func authPathLines(auth config.AuthEntry, paths core.AuthPaths) []string {

@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/progress"
+	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
@@ -26,6 +27,9 @@ func newEditCommand(run editorRunner) *cobra.Command {
 		Short: "Edit global or repository configuration in a text editor",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if shared.MachineMode(cmd) {
+				return shared.InteractionRequired("config edit requires an interactive editor", false, "")
+			}
 			explicit, err := cmd.Flags().GetString("editor")
 			if err != nil {
 				return err

@@ -167,7 +167,8 @@ func TestBindProjectsAuthNoMatches(t *testing.T) {
 	}
 
 	_, err := svc.BindProjectsAuth([]string{"=missing"}, "main")
-	if err == nil || !strings.Contains(err.Error(), "no projects matched") {
+	var lookupErr *ProjectLookupError
+	if err == nil || !errors.As(err, &lookupErr) || lookupErr.Query != "=missing" || !strings.Contains(err.Error(), "no projects matched") {
 		t.Fatalf("BindProjectsAuth = %v, want no projects matched", err)
 	}
 }
@@ -278,11 +279,23 @@ func TestResetProjectsDeletesRegistry(t *testing.T) {
 		t.Fatalf("SaveProjects = %v", err)
 	}
 
-	if err := svc.ResetProjects(); err != nil {
+	changed, err := svc.ResetProjects()
+	if err != nil {
 		t.Fatalf("ResetProjects = %v", err)
 	}
-	_, err := config.LoadProjects()
+	if !changed {
+		t.Fatal("ResetProjects changed = false, want true")
+	}
+	_, err = config.LoadProjects()
 	if err == nil {
 		t.Fatal("LoadProjects after reset = nil, want error")
+	}
+
+	changed, err = svc.ResetProjects()
+	if err != nil {
+		t.Fatalf("second ResetProjects = %v", err)
+	}
+	if changed {
+		t.Fatal("second ResetProjects changed = true, want false")
 	}
 }

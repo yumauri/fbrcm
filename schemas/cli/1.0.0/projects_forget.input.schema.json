@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "expression": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/expression"
+        }
+      ],
+      "x-fbrcm-expression-context": "project"
+    },
+    "filter_query": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "trim_unicode_whitespace",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "expr": {
+          "$ref": "#/$defs/expression",
+          "description": "Filter projects by expr-lang expression using local cache only",
+          "pattern": ".*\\S.*",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "filter": {
+          "description": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/filter_query"
+              }
+            ],
+            "x-fbrcm-matching": [
+              {
+                "comparison": "unicode_case_insensitive",
+                "default_mode": "fuzzy",
+                "fields": [
+                  "project_id",
+                  "display_name",
+                  "repository_aliases"
+                ],
+                "mode_prefixes": {
+                  "/": "includes",
+                  "=": "exact",
+                  "^": "starts-with",
+                  "~": "fuzzy"
+                },
+                "operator": "mode_prefixed_query",
+                "query_normalization": "trim_unicode_whitespace"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "yes": {
+          "description": "Skip confirmation dialog",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.filter",
+        "options.expr"
+      ],
+      "target_defaults": []
+    }
+  ]
+}

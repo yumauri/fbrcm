@@ -42,3 +42,11 @@ func TestAuthorizeDesktopClientHonorsCanceledContext(t *testing.T) {
 		t.Fatalf("completion event = %#v, want canceled completion", events[1])
 	}
 }
+
+func TestAuthorizeDesktopClientRejectsNonInteractiveContextBeforeListening(t *testing.T) {
+	ctx := WithOAuthInteractionAllowed(t.Context(), false)
+	_, err := authorizeDesktopClient(ctx, &oauth2.Config{}, true, true)
+	if !errors.Is(err, ErrOAuthInteractionRequired) {
+		t.Fatalf("authorizeDesktopClient = %v, want OAuth interaction required", err)
+	}
+}

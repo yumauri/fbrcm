@@ -1,0 +1,1287 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "unchanged"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "const": 0
+                    },
+                    "error": {
+                      "type": "null"
+                    },
+                    "no_op_reason": {
+                      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/no_op_reason"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "local"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "type": "null"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "drafted"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "type": "null"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "local"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "would-draft"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "type": "null"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "local"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "would-publish"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "type": "null"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published-cache-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "cache"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published-hook-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "post_publish_hook"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "retry_selector": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "preparation-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "preparation"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": false
+                    },
+                    "validation_source": {
+                      "const": "local"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "validation-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "validation"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": false
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "publish-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "enum": [
+                            "publication",
+                            "pre_publish_hook"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "draft-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "draft"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    },
+                    "validation_source": {
+                      "const": "local"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "conflict"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "enum": [
+                            "preparation",
+                            "validation",
+                            "publication"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "no_op_reason": {
+                      "type": "null"
+                    },
+                    "published_version": {
+                      "type": "null"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "preparation"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "status": {
+                      "const": "conflict"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "error"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "validated": {
+                      "const": false
+                    },
+                    "validation_source": {
+                      "const": "local"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "validation"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "status": {
+                      "const": "conflict"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "error"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "validated": {
+                      "const": false
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "error": {
+                      "properties": {
+                        "stage": {
+                          "const": "publication"
+                        }
+                      },
+                      "required": [
+                        "stage"
+                      ],
+                      "type": "object"
+                    },
+                    "status": {
+                      "const": "conflict"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "error"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "changed_item_count": {
+                      "minimum": 1
+                    },
+                    "validated": {
+                      "const": true
+                    },
+                    "validation_source": {
+                      "const": "firebase"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "would-draft"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "dry_run": {
+                      "const": true
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "would-publish"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "dry_run": {
+                      "const": true
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "dry_run": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published-cache-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "dry_run": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published-hook-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "dry_run": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "drafted"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "dry_run": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "drafted"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": true
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "would-draft"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": true
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "draft-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": true
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published-cache-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "published-hook-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "would-publish"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "preparation-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "validation-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "conflict"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "publish-failed"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "draft": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "change_note": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "changed_item_count": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "draft": {
+                "type": "boolean"
+              },
+              "dry_run": {
+                "type": "boolean"
+              },
+              "error": {
+                "additionalProperties": false,
+                "properties": {
+                  "message": {
+                    "maxLength": 4097,
+                    "type": "string",
+                    "x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated"
+                  },
+                  "stage": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message",
+                  "stage"
+                ],
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "no_op_reason": {
+                "oneOf": [
+                  {
+                    "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/no_op_reason"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "previous_version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "published_version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "retry_selector": {
+                "pattern": "^(?:server@)?=.+$",
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-fbrcm-grammar": "exact target-aware retry selector"
+              },
+              "selection": {
+                "additionalProperties": false,
+                "properties": {
+                  "default_scope": {
+                    "type": "boolean"
+                  },
+                  "matched_item_count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "resolved_target_count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "default_scope",
+                  "matched_item_count",
+                  "resolved_target_count"
+                ],
+                "type": "object"
+              },
+              "status": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/remote_mutation_status"
+              },
+              "target": {
+                "type": "string"
+              },
+              "validated": {
+                "type": "boolean"
+              },
+              "validation_source": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_source"
+              }
+            },
+            "required": [
+              "change_note",
+              "changed_item_count",
+              "draft",
+              "dry_run",
+              "error",
+              "no_op_reason",
+              "previous_version",
+              "published_version",
+              "retry_selector",
+              "selection",
+              "status",
+              "target",
+              "validated",
+              "validation_source"
+            ],
+            "type": "object",
+            "x-fbrcm-invariants": [
+              {
+                "if": {
+                  "left": {
+                    "field": "no_op_reason"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "const": "no_match"
+                  }
+                },
+                "op": "implies",
+                "then": {
+                  "left": {
+                    "field": "selection.matched_item_count"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "const": 0
+                  }
+                }
+              },
+              {
+                "if": {
+                  "left": {
+                    "field": "no_op_reason"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "const": "already_applied"
+                  }
+                },
+                "op": "implies",
+                "then": {
+                  "left": {
+                    "field": "selection.matched_item_count"
+                  },
+                  "op": "gt",
+                  "right": {
+                    "const": 0
+                  }
+                }
+              },
+              {
+                "left": {
+                  "op": "and",
+                  "values": [
+                    {
+                      "op": "in",
+                      "set": [
+                        "preparation-failed",
+                        "validation-failed",
+                        "conflict",
+                        "publish-failed",
+                        "draft-failed"
+                      ],
+                      "value": {
+                        "field": "status"
+                      }
+                    },
+                    {
+                      "op": "is_non_null",
+                      "value": {
+                        "field": "error"
+                      }
+                    }
+                  ]
+                },
+                "op": "iff",
+                "right": {
+                  "op": "is_non_null",
+                  "value": {
+                    "field": "retry_selector"
+                  }
+                }
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "count",
+        "items"
+      ],
+      "type": "object",
+      "x-fbrcm-invariants": [
+        {
+          "left": {
+            "field": "count"
+          },
+          "op": "eq",
+          "right": {
+            "op": "length",
+            "value": {
+              "field": "items"
+            }
+          }
+        },
+        {
+          "left": {
+            "field": "count"
+          },
+          "op": "eq",
+          "right": {
+            "op": "length",
+            "value": {
+              "field": "items"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "partial_success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "publication.cache_stale",
+                      "publication.post_publish_hook_failed"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "conditions.rename"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

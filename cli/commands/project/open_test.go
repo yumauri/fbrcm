@@ -1,6 +1,8 @@
 package project
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/yumauri/fbrcm/core/config"
@@ -22,9 +24,8 @@ func TestOpenCommandResolvesProjectAndOpensRemoteConfigConsole(t *testing.T) {
 		query     string
 		projectID string
 	}{
-		{name: "exact project id wins", query: "PRODUCTION-PROJECT", projectID: "production-project"},
-		{name: "exact project name wins", query: "production", projectID: "production-us"},
-		{name: "substring match", query: "stag", projectID: "staging-project"},
+		{name: "exact project id wins", query: "production-project", projectID: "production-project"},
+		{name: "exact project name wins", query: "Production", projectID: "production-us"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -43,5 +44,44 @@ func TestOpenCommandResolvesProjectAndOpensRemoteConfigConsole(t *testing.T) {
 				t.Fatalf("opened URL = %q, want %q", openedURL, want)
 			}
 		})
+	}
+	for _, query := range []string{"PRODUCTION-PROJECT", "production", "stag", " staging-project"} {
+		cmd := newOpenCommand(svc, func(string) error { return nil })
+		cmd.SetOut(&bytes.Buffer{})
+		cmd.SetArgs([]string{query})
+		if err := cmd.Execute(); err == nil {
+			t.Fatalf("non-exact project selector %q unexpectedly resolved", query)
+		}
+	}
+}
+
+func TestOpenCommandJSONReturnsURLWithoutOpeningBrowser(t *testing.T) {
+	svc := saveProjectsForTest(t, []config.Project{{Name: "Production", ProjectID: "production-project", AuthID: "main"}})
+	opened := false
+	cmd := newOpenCommand(svc, func(string) error {
+		opened = true
+		return nil
+	})
+	cmd.Flags().Bool("json", false, "")
+	cmd.SetArgs([]string{"production-project", "--json"})
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute open command: %v", err)
+	}
+	if opened {
+		t.Fatal("JSON mode opened a browser")
+	}
+	var result struct {
+		ProjectID string `json:"project_id"`
+		URL       string `json:"url"`
+		Opened    bool   `json:"opened"`
+	}
+	if err := json.Unmarshal(output.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.ProjectID != "production-project" || result.URL != firebase.RemoteConfigConsoleURL("production-project") || result.Opened {
+		t.Fatalf("result = %#v", result)
 	}
 }

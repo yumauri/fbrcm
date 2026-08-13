@@ -3,6 +3,7 @@ package deletecmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -13,6 +14,26 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
+func TestReadDeleteOptionsRejectsBlankPositionalParameterOnlyWhenSupplied(t *testing.T) {
+	cmd := New(nil)
+	if _, err := readDeleteOptions(cmd, []string{" \t "}); err == nil {
+		t.Fatal("readDeleteOptions accepted a whitespace-only positional parameter")
+	} else {
+		var argument *shared.ArgumentError
+		if !errors.As(err, &argument) {
+			t.Fatalf("blank positional error = %T, want ArgumentError", err)
+		}
+	}
+
+	opts, err := readDeleteOptions(cmd, nil)
+	if err != nil {
+		t.Fatalf("readDeleteOptions without a positional parameter = %v", err)
+	}
+	if len(opts.ParamFilters) != 0 {
+		t.Fatalf("omitted positional parameter filters = %#v, want none", opts.ParamFilters)
+	}
+}
+
 func TestRunDeleteStdinDeletesRootParameter(t *testing.T) {
 	cmd := &cobra.Command{}
 	var out bytes.Buffer
@@ -21,7 +42,7 @@ func TestRunDeleteStdinDeletesRootParameter(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
 
-	err := runDeleteStdin(cmd, []string{"=remove_me"}, "", shared.ParameterSearch{})
+	err := runDeleteStdin(cmd, []string{"=remove_me"}, nil, "", shared.ParameterSearch{})
 	if err != nil {
 		t.Fatalf("runDeleteStdin returned error: %v", err)
 	}
@@ -45,7 +66,7 @@ func TestRunDeleteStdinRejectsManagedParameter(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
 
-	err := runDeleteStdin(cmd, []string{"=flag"}, "", shared.ParameterSearch{})
+	err := runDeleteStdin(cmd, []string{"=flag"}, nil, "", shared.ParameterSearch{})
 	if err == nil || !strings.Contains(err.Error(), "A/B test value is read-only") {
 		t.Fatalf("error = %v, want read-only A/B test error", err)
 	}

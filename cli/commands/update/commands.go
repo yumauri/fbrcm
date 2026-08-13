@@ -6,7 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
+	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
@@ -52,6 +54,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 
 	addUpdateFlags(cmd)
+	contract.RegisterResponse(cmd, []sharedrc.RemoteMutationJSONResult{}, contract.ArtifactData{})
 	return cmd
 }
 
@@ -86,19 +89,19 @@ func runUpdateCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	if shared.StdinAvailable(cmd.InOrStdin()) {
-		if opts.Draft {
-			return fmt.Errorf("--draft is unavailable in stdin mode")
-		}
-		if opts.ChangeNote != nil {
-			return fmt.Errorf("--change-note is unavailable in stdin mode")
+		if err := shared.RejectChangedFlags(cmd, "stdin mode", "project", "dry-run", "draft", "change-note"); err != nil {
+			return err
 		}
 		corelog.For("update").Info("stdin mode enabled; using remote config from stdin")
-		return runUpdateStdin(cmd, opts.ParamFilters, opts.ParamExpr, opts.Search, opts.spec)
+		return runUpdateStdin(cmd, opts.ParamFilters, opts.ParamArgument, opts.ParamExpr, opts.Search, opts.spec)
 	}
 	return runUpdateRemote(cmd, svc, opts)
 }
 
 func readUpdateOptions(cmd *cobra.Command, args []string) (updateOptions, error) {
+	if len(args) > 0 && strings.TrimSpace(args[0]) == "" {
+		return updateOptions{}, shared.InvalidArgument(fmt.Errorf("parameter argument cannot be empty"))
+	}
 	mutationOpts, err := shared.ReadParameterMutationOpts(cmd, args)
 	if err != nil {
 		return updateOptions{}, err
@@ -149,10 +152,10 @@ func readUpdateSpec(cmd *cobra.Command) (updateSpec, error) {
 	conditionChanged := cmd.Flags().Changed("condition")
 	condition = strings.TrimSpace(condition)
 	if conditionChanged && condition == "" {
-		return updateSpec{}, fmt.Errorf("--condition cannot be empty")
+		return updateSpec{}, shared.InvalidArgument(fmt.Errorf("--condition cannot be empty"))
 	}
 	if conditionChanged && value == nil {
-		return updateSpec{}, fmt.Errorf("--condition requires --value or --use-in-app-default")
+		return updateSpec{}, shared.InvalidArgument(fmt.Errorf("--condition requires --value or --use-in-app-default"))
 	}
 
 	groupChanged := cmd.Flags().Changed("group")
@@ -165,7 +168,7 @@ func readUpdateSpec(cmd *cobra.Command) (updateSpec, error) {
 	groupName = strings.TrimSpace(groupName)
 	name = strings.TrimSpace(name)
 	if nameChanged && name == "" {
-		return updateSpec{}, fmt.Errorf("--name cannot be empty")
+		return updateSpec{}, shared.InvalidArgument(fmt.Errorf("--name cannot be empty"))
 	}
 
 	return updateSpec{
@@ -192,7 +195,7 @@ func readRemoveConditionalValues(cmd *cobra.Command) ([]string, error) {
 	for _, value := range values {
 		value = strings.TrimSpace(value)
 		if value == "" {
-			return nil, fmt.Errorf("--remove-conditional-value cannot be empty")
+			return nil, shared.InvalidArgument(fmt.Errorf("--remove-conditional-value cannot be empty"))
 		}
 		if _, ok := seen[value]; ok {
 			continue

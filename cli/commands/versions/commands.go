@@ -1,7 +1,6 @@
 package versions
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -9,38 +8,54 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 // New constructs the top-level versions command.
 func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "versions", Short: "Inspect and recover project Remote Config versions", Long: "Inspect Firebase Remote Config version history and immutable local snapshots. Version selectors accept a number, current, latest, previous, current~N, or latest~N. Rollback uses Firebase history; restore republishes a locally cached snapshot."}
 	cmd.AddCommand(newVersionsListCommand(svc), newVersionsShowCommand(svc), newVersionsDiffCommand(svc), newVersionsExportCommand(svc), newVersionsRollbackCommand(svc, false), newVersionsRollbackCommand(svc, true))
+	contract.MustRegisterResponsePath(cmd, "list", []versionJSON{})
+	contract.MustRegisterResponsePath(cmd, "show", versionShowResult{})
+	contract.MustRegisterResponsePath(cmd, "diff", versionDiffResult{})
+	contract.MustRegisterResponsePath(cmd, "export", contract.ArtifactData{})
+	contract.MustRegisterResponsePath(cmd, "rollback", versionPublishResult{})
+	contract.MustRegisterResponsePath(cmd, "restore", versionPublishResult{})
 	return cmd
 }
 
-func resolveVersionProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
-	return shared.ResolveProjectTargetArg(context.Background(), cmd, svc, query)
+func resolveVersionProject(cmd *cobra.Command, svc *core.Core, query string, cachedOnly bool) (core.Project, error) {
+	if cachedOnly {
+		return shared.ResolveCachedProjectTargetArg(cmd, query)
+	}
+	return shared.ResolveProjectTargetArg(shared.CommandContext(cmd), cmd, svc, query)
 }
 
 func newVersionsListCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "list <project>", Short: "List Remote Config versions", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := resolveVersionProject(cmd, svc, args[0])
+		cached, _ := cmd.Flags().GetBool("cached")
+		before, _ := cmd.Flags().GetString("before")
+		if cmd.Flags().Changed("before") {
+			if err := validateBeforeVersion(before); err != nil {
+				return err
+			}
+		}
+		project, err := resolveVersionProject(cmd, svc, args[0], cached)
 		if err != nil {
 			return err
 		}
 		limit, _ := cmd.Flags().GetInt("limit")
 		if limit < 1 {
-			return fmt.Errorf("--limit must be greater than zero")
+			return shared.InvalidArgument(fmt.Errorf("--limit must be greater than zero"))
 		}
 		all, _ := cmd.Flags().GetBool("all")
-		cached, _ := cmd.Flags().GetBool("cached")
-		before, _ := cmd.Flags().GetString("before")
 		since, err := timeFlag(cmd, "since")
 		if err != nil {
 			return err
@@ -49,7 +64,7 @@ func newVersionsListCommand(svc *core.Core) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		result, err := svc.ListRemoteConfigVersions(context.Background(), project.ProjectID, core.VersionListOptions{Limit: limit, All: all, Before: before, Since: since, Until: until, CachedOnly: cached})
+		result, err := svc.ListRemoteConfigVersions(shared.CommandContext(cmd), project.ProjectID, core.VersionListOptions{Limit: limit, All: all, Before: before, Since: since, Until: until, CachedOnly: cached})
 		if err != nil {
 			return err
 		}
@@ -72,9 +87,21 @@ func newVersionsListCommand(svc *core.Core) *cobra.Command {
 	return cmd
 }
 
+func validateBeforeVersion(value string) error {
+	if value == "" || value[0] < '1' || value[0] > '9' {
+		return shared.InvalidArgument(fmt.Errorf("--before must be a canonical positive version number"))
+	}
+	for index := 1; index < len(value); index++ {
+		if value[index] < '0' || value[index] > '9' {
+			return shared.InvalidArgument(fmt.Errorf("--before must be a canonical positive version number"))
+		}
+	}
+	return nil
+}
+
 type versionJSON struct {
 	VersionNumber  string                    `json:"versionNumber,omitempty"`
-	UpdateTime     string                    `json:"updateTime,omitempty"`
+	UpdateTime     string                    `json:"updateTime,omitempty" contract:"format=date-time"`
 	UpdateUser     firebase.RemoteConfigUser `json:"updateUser,omitzero"`
 	ChangeNote     *string                   `json:"change_note"`
 	UpdateOrigin   string                    `json:"updateOrigin,omitempty"`
@@ -119,26 +146,26 @@ func timeFlag(cmd *cobra.Command, name string) (time.Time, error) {
 	}
 	value, err := time.Parse(time.RFC3339, raw)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid --%s time %q: use RFC3339", name, raw)
+		return time.Time{}, shared.InvalidArgument(fmt.Errorf("invalid --%s time %q: use RFC3339", name, raw))
 	}
 	return value, nil
 }
 
 func newVersionsShowCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "show <project> <version>", Short: "Show Remote Config version metadata or JSON", Args: cobra.ExactArgs(2), RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := resolveVersionProject(cmd, svc, args[0])
+		cached, _ := cmd.Flags().GetBool("cached")
+		project, err := resolveVersionProject(cmd, svc, args[0], cached)
 		if err != nil {
 			return err
 		}
-		cached, _ := cmd.Flags().GetBool("cached")
-		resolved, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, args[1], cached)
+		resolved, err := svc.GetRemoteConfigVersion(shared.CommandContext(cmd), project.ProjectID, args[1], cached)
 		if err != nil {
 			return err
 		}
 		jsonOut, _ := cmd.Flags().GetBool("json")
 		if jsonOut {
 			entry := core.RemoteConfigVersionEntry{RemoteConfigVersion: resolved.Version, Cached: resolved.Cached}
-			return shared.WriteJSON(cmd, map[string]any{"project": project, "version": versionEntryJSON(entry), "cached": resolved.Cached})
+			return shared.WriteJSON(cmd, versionShowResult{Project: project, Version: versionEntryJSON(entry), Cached: resolved.Cached})
 		}
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\nVersion: %s\nPublished: %s\nUpdated by: %s\nOrigin: %s\nType: %s\nChange note: %s\nRollback source: %s\nCached: %t\n", project.Name, project.ProjectID, resolved.Version.VersionNumber, resolved.Version.UpdateTime, resolved.Version.UpdateUser.Email, resolved.Version.UpdateOrigin, resolved.Version.UpdateType, resolved.Version.ChangeNote, resolved.Version.RollbackSource, resolved.Cached)
 		return nil
@@ -156,7 +183,7 @@ type versionDiffOptions struct {
 
 func newVersionsDiffCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "diff <project> <from> [<to>]", Short: "Compare two Remote Config versions", Args: cobra.RangeArgs(2, 3), RunE: func(cmd *cobra.Command, args []string) error {
-		return shared.DiffCommandError(cmd, runVersionsDiff(cmd, svc, args))
+		return runVersionsDiff(cmd, svc, args)
 	}}
 	addVersionDiffFlags(cmd)
 	return cmd
@@ -171,13 +198,13 @@ func addVersionDiffFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("cached", false, "Require local snapshots and do not contact Firebase")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
 	cmd.Flags().Bool("side-by-side", false, "Print a two-column terminal diff")
-	shared.AddDiffExitCodeFlag(cmd)
 	cmd.MarkFlagsMutuallyExclusive("parameters", "conditions")
 	cmd.MarkFlagsMutuallyExclusive("json", "side-by-side")
 }
 
 func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
-	project, err := resolveVersionProject(cmd, svc, args[0])
+	opts := readVersionDiffOptions(cmd)
+	project, err := resolveVersionProject(cmd, svc, args[0], opts.cached)
 	if err != nil {
 		return err
 	}
@@ -185,8 +212,7 @@ func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if len(args) == 3 {
 		to = args[2]
 	}
-	opts := readVersionDiffOptions(cmd)
-	fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(context.Background(), project.ProjectID, args[1], to, opts.cached)
+	fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(shared.CommandContext(cmd), project.ProjectID, args[1], to, opts.cached)
 	if err != nil {
 		return err
 	}
@@ -196,7 +222,7 @@ func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
 	}
 	changed := result.HasChanges()
 	if opts.json {
-		if err := shared.WriteJSON(cmd, map[string]any{"project": project, "from_version": fromCfg.Version.VersionNumber, "to_version": toCfg.Version.VersionNumber, "changed": changed, "diff": result}); err != nil {
+		if err := shared.WriteJSON(cmd, versionDiffResult{Project: project, FromVersion: fromCfg.Version.VersionNumber, ToVersion: toCfg.Version.VersionNumber, Changed: changed, Diff: result}); err != nil {
 			return err
 		}
 		if changed {
@@ -312,7 +338,8 @@ func filterVersionDiff(project core.Project, result rcdiff.Result, from, to *fir
 
 func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "export <project> <version>", Short: "Export historical Remote Config JSON", Args: cobra.ExactArgs(2), RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := resolveVersionProject(cmd, svc, args[0])
+		cached, _ := cmd.Flags().GetBool("cached")
+		project, err := resolveVersionProject(cmd, svc, args[0], cached)
 		if err != nil {
 			return err
 		}
@@ -326,13 +353,16 @@ func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 		}
-		cached, _ := cmd.Flags().GetBool("cached")
-		resolved, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, args[1], cached)
+		resolved, err := svc.GetRemoteConfigVersion(shared.CommandContext(cmd), project.ProjectID, args[1], cached)
 		if err != nil {
 			return err
 		}
+		body := rc.NormalizeExportBytes(resolved.Cache.RemoteConfig)
 		if to == "" {
-			body := rc.TrimTrailingLineBreaks(rc.NormalizeExportJSON(resolved.Cache.RemoteConfig))
+			if contract.Enabled(cmd) {
+				target := project.ProjectID
+				return shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", body, nil, false))
+			}
 			_, err = cmd.OutOrStdout().Write(body)
 			return err
 		}
@@ -340,8 +370,12 @@ func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 		if overwrite {
 			write = rc.WriteRemoteConfigFile
 		}
-		if err := write(to, resolved.Cache.RemoteConfig); err != nil {
+		if err := write(to, body); err != nil {
 			return err
+		}
+		if contract.Enabled(cmd) {
+			target, destination := project.ProjectID, to
+			return shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", body, &destination, overwrite))
 		}
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported version %s: %s\n", resolved.Version.VersionNumber, to)
 		return nil
@@ -370,7 +404,7 @@ func newVersionsRollbackCommand(svc *core.Core, restore bool) *cobra.Command {
 }
 
 func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector string, restore bool) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	dry, _ := cmd.Flags().GetBool("dry-run")
 	jsonOut, _ := cmd.Flags().GetBool("json")
 	if dry {
@@ -388,14 +422,17 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 			return err
 		}
 	}
-	project, err := resolveVersionProject(cmd, svc, query)
+	project, err := resolveVersionProject(cmd, svc, query, false)
 	if err != nil {
 		return err
 	}
 	if hasDraft, draftErr := svc.HasDraft(project.ProjectID); draftErr != nil {
 		return draftErr
 	} else if hasDraft {
-		return fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)
+		return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []shared.Remediation{
+			{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
+			{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
+		}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)}
 	}
 	target, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, selector, restore)
 	if err != nil {
@@ -431,7 +468,10 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	}
 	yes, _ := cmd.Flags().GetBool("yes")
 	if !yes && !dry {
-		confirm := shared.NewConfirmation(fmt.Sprintf("Publish this %s to %s?", map[bool]string{true: "restore", false: "rollback"}[restore], project.ProjectID), shared.ConfirmationOptions{})
+		if err := shared.RequireYesInMachineMode(cmd, yes, "publishing the version change to "+project.ProjectID, true); err != nil {
+			return err
+		}
+		confirm := shared.NewConfirmation(fmt.Sprintf("Publish this %s to %s?", map[bool]string{true: "restore", false: "rollback"}[restore], project.ProjectID), shared.ConfirmationOptions{Destructive: true})
 		confirm.Output = cmd.ErrOrStderr()
 		ok, err := confirm.RunPrompt()
 		if err != nil || !ok {
@@ -462,8 +502,8 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 			}
 			if jsonOut {
 				result := versionPublishJSON(project.ProjectID, restore, current.Version.VersionNumber, target.Version.VersionNumber, "", changeNote, true, true, validated, validationSource)
-				result["status"] = status
-				result["error"] = map[string]any{"stage": stage, "message": err.Error()}
+				result.Status = status
+				result.Error = &versionOperationError{Stage: stage, Message: shared.SafeErrorText(err)}
 				if writeErr := shared.WriteJSON(cmd, result); writeErr != nil {
 					return writeErr
 				}
@@ -479,12 +519,12 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧪 dry run: %s would use version %s\nvalidated: true · validation_source: firebase\n", project.ProjectID, target.Version.VersionNumber)
 		return nil
 	}
-	latest, err := svc.GetRemoteConfigVersion(context.Background(), project.ProjectID, "current", false)
+	latest, err := svc.GetRemoteConfigVersion(shared.CommandContext(cmd), project.ProjectID, "current", false)
 	if err != nil {
 		return err
 	}
 	if latest.Version.VersionNumber != current.Version.VersionNumber {
-		return fmt.Errorf("remote config changed from version %s to %s during preview; rerun the command", current.Version.VersionNumber, latest.Version.VersionNumber)
+		return &shared.ConflictError{Code: "remote_config.conflict", Resource: "remote_config", Target: project.ProjectID, Retryable: true, Err: fmt.Errorf("remote config changed from version %s to %s during preview; rerun the command", current.Version.VersionNumber, latest.Version.VersionNumber)}
 	}
 	var result core.VersionPublishResult
 	if restore {
@@ -507,11 +547,18 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 		switch {
 		case errors.As(publishErr, &hookErr):
 			status = "published-hook-failed"
+			shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the version publication, but a post_publish hook failed.", Target: project.ProjectID, Details: struct {
+				Stage string `json:"stage"`
+			}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
 		case errors.As(publishErr, &cacheErr):
 			status = "published-cache-failed"
+			filter, _ := rctarget.ExactFilter(project.ProjectID)
+			shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the version publication, but the local cache update failed.", Target: project.ProjectID, Details: struct {
+				Stage string `json:"stage"`
+			}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the published target instead of republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", filter}}}})
 		}
-		payload["status"] = status
-		payload["error"] = map[string]any{"stage": map[bool]string{true: "post_publish_hook", false: "cache"}[status == "published-hook-failed"], "message": publishErr.Error()}
+		payload.Status = status
+		payload.Error = &versionOperationError{Stage: map[bool]string{true: "post_publish_hook", false: "cache"}[status == "published-hook-failed"], Message: shared.SafeErrorText(publishErr)}
 	}
 	if jsonOut {
 		if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
@@ -526,24 +573,48 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	return publishErr
 }
 
-func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, changeNote *string, dryRun, changed, validated bool, validationSource string) map[string]any {
-	var published any
+func versionPublishJSON(projectID string, restore bool, previousVersion, sourceVersion, publishedVersion string, changeNote *string, dryRun, changed, validated bool, validationSource string) versionPublishResult {
+	var published *string
 	if publishedVersion != "" {
-		published = publishedVersion
+		published = &publishedVersion
 	}
-	result := map[string]any{
-		"project_id":        projectID,
-		"operation":         map[bool]string{true: "restore", false: "rollback"}[restore],
-		"previous_version":  previousVersion,
-		"source_version":    sourceVersion,
-		"published_version": published,
-		"dry_run":           dryRun,
-		"changed":           changed,
-		"validated":         validated,
-		"validation_source": validationSource,
+	status := "unchanged"
+	if changed {
+		status = map[bool]string{true: "would-publish", false: "published"}[dryRun]
 	}
-	if restore {
-		result["change_note"] = changeNote
-	}
-	return result
+	return versionPublishResult{ProjectID: projectID, Operation: map[bool]string{true: "restore", false: "rollback"}[restore], PreviousVersion: previousVersion, SourceVersion: sourceVersion, PublishedVersion: published, DryRun: dryRun, Changed: changed, Validated: validated, ValidationSource: validationSource, ChangeNote: changeNote, Status: status}
+}
+
+type versionShowResult struct {
+	Project core.Project `json:"project"`
+	Version versionJSON  `json:"version"`
+	Cached  bool         `json:"cached"`
+}
+
+type versionDiffResult struct {
+	Project     core.Project  `json:"project"`
+	FromVersion string        `json:"from_version"`
+	ToVersion   string        `json:"to_version"`
+	Changed     bool          `json:"changed"`
+	Diff        rcdiff.Result `json:"diff"`
+}
+
+type versionOperationError struct {
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
+}
+
+type versionPublishResult struct {
+	ProjectID        string                 `json:"project_id"`
+	Operation        string                 `json:"operation" contract:"enum=restore|rollback"`
+	Status           string                 `json:"status" contract:"enum=unchanged|would-publish|published|failed|validation-failed|published-local-update-failed|published-hook-failed|published-cache-failed"`
+	PreviousVersion  string                 `json:"previous_version"`
+	SourceVersion    string                 `json:"source_version"`
+	PublishedVersion *string                `json:"published_version"`
+	DryRun           bool                   `json:"dry_run"`
+	Changed          bool                   `json:"changed"`
+	Validated        bool                   `json:"validated"`
+	ValidationSource string                 `json:"validation_source"`
+	ChangeNote       *string                `json:"change_note"`
+	Error            *versionOperationError `json:"error"`
 }

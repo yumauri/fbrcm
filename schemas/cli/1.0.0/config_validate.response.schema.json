@@ -1,0 +1,232 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "valid": {
+                "const": false
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "errors": {
+                "maxItems": 0
+              }
+            },
+            "required": [
+              "errors"
+            ]
+          },
+          "then": {
+            "properties": {
+              "valid": {
+                "const": true
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "errors": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "enum": [
+                  "duplicate_binding",
+                  "empty_binding",
+                  "invalid_binding",
+                  "invalid_profile",
+                  "keybinding_conflict",
+                  "legacy_bindings",
+                  "missing_profile",
+                  "project_alias_source",
+                  "repository_scope_required",
+                  "toml_decode",
+                  "unknown_action",
+                  "unknown_block"
+                ],
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "const": "error"
+              }
+            },
+            "required": [
+              "code",
+              "key",
+              "message",
+              "severity"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "exists": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "warnings": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "enum": [
+                  "duplicate_binding",
+                  "empty_binding",
+                  "invalid_binding",
+                  "invalid_profile",
+                  "keybinding_conflict",
+                  "legacy_bindings",
+                  "missing_profile",
+                  "project_alias_source",
+                  "repository_scope_required",
+                  "toml_decode",
+                  "unknown_action",
+                  "unknown_block"
+                ],
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "const": "warning"
+              }
+            },
+            "required": [
+              "code",
+              "key",
+              "message",
+              "severity"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "errors",
+        "exists",
+        "path",
+        "valid",
+        "warnings"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "config.validate"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

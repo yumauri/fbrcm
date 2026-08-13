@@ -1,0 +1,217 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "target_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "anyOf": [
+            {
+              "required": [
+                "description"
+              ]
+            },
+            {
+              "properties": {
+                "no-description": {
+                  "const": true
+                }
+              },
+              "required": [
+                "no-description"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "properties": {
+              "no-description": {
+                "const": true
+              }
+            },
+            "required": [
+              "description",
+              "no-description"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "operator": "group_name_resolution"
+            }
+          ]
+        }
+      },
+      "required": [
+        "group"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "change-note": {
+          "description": "Change note for publication or the stored draft",
+          "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ],
+          "x-fbrcm-validation": [
+            {
+              "allow_empty": true,
+              "operator": "reject_raw_whitespace_only"
+            }
+          ]
+        },
+        "description": {
+          "description": "New group description",
+          "maxLength": 256,
+          "pattern": "^(?:$|.*\\S.*)$",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ],
+          "x-fbrcm-validation": [
+            {
+              "allow_empty": true,
+              "operator": "reject_raw_whitespace_only"
+            }
+          ]
+        },
+        "draft": {
+          "description": "Save changes to a local draft instead of publishing",
+          "type": "boolean"
+        },
+        "dry-run": {
+          "description": "Preview the requested mutation without applying it",
+          "type": "boolean"
+        },
+        "no-description": {
+          "description": "Remove the group description",
+          "type": "boolean"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "project": {
+          "description": "Filter template targets by optional client@ or server@ project query; may be repeated",
+          "items": {
+            "$ref": "#/$defs/target_selector"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "yes": {
+          "description": "Print diff and apply without confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.project"
+      ],
+      "target_defaults": [
+        {
+          "selection": "all_configured_projects_enabled_templates",
+          "source": "options.project"
+        }
+      ]
+    }
+  ]
+}

@@ -58,7 +58,13 @@ func newManager() *manager {
 }
 
 func Init(mode Mode) {
-	global.init(mode)
+	global.init(mode, charmlog.InfoLevel)
+}
+
+// InitWithDefault initializes logging with a mode-specific default. A valid
+// FBRCM_LOG_LEVEL value still takes precedence over this default.
+func InitWithDefault(mode Mode, level charmlog.Level) {
+	global.init(mode, level)
 }
 
 func Default() *charmlog.Logger {
@@ -115,15 +121,19 @@ func LevelColor(level charmlog.Level) string {
 	return corestyles.LogLevelColor(level)
 }
 
-func (m *manager) init(mode Mode) {
+func (m *manager) init(mode Mode, defaults ...charmlog.Level) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	defaultLevel := charmlog.InfoLevel
+	if len(defaults) > 0 {
+		defaultLevel = defaults[0]
+	}
 	m.mode = mode
 	m.logger.SetFormatter(charmlog.TextFormatter)
 	m.logger.SetReportTimestamp(true)
 	m.logger.SetTimeFormat("15:04:05")
-	m.setLevelLocked(charmlog.InfoLevel)
+	m.setLevelLocked(defaultLevel)
 	if env.NoColorEnabled() {
 		m.logger.SetColorProfile(colorprofile.Ascii)
 	} else {
@@ -134,7 +144,7 @@ func (m *manager) init(mode Mode) {
 	if raw, ok := env.LookupTrimmed(env.LogLevel); ok {
 		level, err := parseLevel(raw)
 		if err != nil {
-			m.logger.Warn("invalid log level override; using default", "env", env.LogLevel, "value", raw, "default", charmlog.InfoLevel.String())
+			m.logger.Warn("invalid log level override; using default", "env", env.LogLevel, "value", raw, "default", levelLabel(defaultLevel))
 		} else {
 			m.setLevelLocked(level)
 		}

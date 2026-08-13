@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/fileoutput"
 	"github.com/yumauri/fbrcm/core"
@@ -32,9 +33,9 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 			}
 			format, err := firebase.ParseDefaultsFormat(formatName)
 			if err != nil {
-				return err
+				return shared.InvalidArgument(err)
 			}
-			ctx := cmd.Context()
+			ctx := shared.CommandContext(cmd)
 			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
@@ -62,6 +63,10 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 				return err
 			}
 			if toPath == "" {
+				if contract.Enabled(cmd) {
+					target := project.ProjectID
+					return shared.WriteJSON(cmd, contract.NewArtifact(&target, defaultsMediaType(format), defaults, nil, false))
+				}
 				_, err = cmd.OutOrStdout().Write(defaults)
 				return err
 			}
@@ -73,6 +78,10 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 			if err := write(toPath, defaults); err != nil {
 				return err
 			}
+			if contract.Enabled(cmd) {
+				target, destination := project.ProjectID, toPath
+				return shared.WriteJSON(cmd, contract.NewArtifact(&target, defaultsMediaType(format), defaults, &destination, overwrite))
+			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "downloaded defaults: %s\n", toPath)
 			return err
 		},
@@ -81,4 +90,15 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 	cmd.Flags().String("to", "", "Write application defaults to file path")
 	shared.AddYesFlag(cmd, "Overwrite an existing destination without confirmation")
 	return cmd
+}
+
+func defaultsMediaType(format firebase.DefaultsFormat) string {
+	switch format {
+	case firebase.DefaultsFormatXML:
+		return "application/xml"
+	case firebase.DefaultsFormatPlist:
+		return "application/x-plist"
+	default:
+		return "application/json"
+	}
 }

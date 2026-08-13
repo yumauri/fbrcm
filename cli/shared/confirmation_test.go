@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/x/term"
 	"github.com/erikgeiser/promptkit/confirmation"
+	"github.com/spf13/cobra"
 )
 
 func TestNewConfirmationIncludesNotes(t *testing.T) {
@@ -53,5 +54,18 @@ func TestRunConfirmationPromptUsesFallbackWriter(t *testing.T) {
 	}
 	if !strings.Contains(confirm.Template, "Prompt") {
 		t.Fatal("confirmation template missing prompt marker")
+	}
+}
+
+func TestPrintDiffAndConfirmSuppressesMachinePreview(t *testing.T) {
+	SetMachineMode(true)
+	t.Cleanup(func() { SetMachineMode(false) })
+	var output bytes.Buffer
+	ok, err := PrintDiffAndConfirm(&cobra.Command{}, true, &output, "human diff", "Proceed?", false)
+	if err != nil || !ok {
+		t.Fatalf("PrintDiffAndConfirm = %t, %v", ok, err)
+	}
+	if output.Len() != 0 {
+		t.Fatalf("machine preview leaked: %q", output.String())
 	}
 }

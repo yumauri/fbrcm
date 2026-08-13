@@ -21,6 +21,22 @@ type RemoteConfig struct {
 	Version         RemoteConfigVersion          `json:"version,omitzero"`
 }
 
+// UnmarshalJSON keeps the permissive forward-field behavior of encoding/json
+// while rejecting null where the published Remote Config contract requires a
+// concrete object.
+func (c *RemoteConfig) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config", "version"); err != nil {
+		return err
+	}
+	type wireRemoteConfig RemoteConfig
+	var decoded wireRemoteConfig
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*c = RemoteConfig(decoded)
+	return nil
+}
+
 type RemoteConfigCondition struct {
 	Name       string `json:"name,omitempty"`
 	Expression string `json:"expression,omitempty"`
@@ -39,6 +55,9 @@ func ConditionTagColorsByName(conditions []RemoteConfigCondition) map[string]str
 // UnmarshalJSON rejects fields outside Firebase's condition schema instead of
 // silently discarding unsupported condition metadata.
 func (c *RemoteConfigCondition) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config condition", "name", "expression", "tagColor"); err != nil {
+		return err
+	}
 	type wireCondition RemoteConfigCondition
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -55,11 +74,37 @@ type RemoteConfigGroup struct {
 	Parameters  map[string]RemoteConfigParam `json:"parameters,omitempty"`
 }
 
+func (g *RemoteConfigGroup) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config parameter group", "description"); err != nil {
+		return err
+	}
+	type wireGroup RemoteConfigGroup
+	var decoded wireGroup
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*g = RemoteConfigGroup(decoded)
+	return nil
+}
+
 type RemoteConfigParam struct {
 	DefaultValue      *RemoteConfigValue           `json:"defaultValue,omitempty"`
 	ConditionalValues map[string]RemoteConfigValue `json:"conditionalValues,omitempty"`
 	Description       string                       `json:"description,omitempty"`
 	ValueType         string                       `json:"valueType,omitempty"`
+}
+
+func (p *RemoteConfigParam) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config parameter", "description", "valueType"); err != nil {
+		return err
+	}
+	type wireParam RemoteConfigParam
+	var decoded wireParam
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*p = RemoteConfigParam(decoded)
+	return nil
 }
 
 type RemoteConfigValue struct {
@@ -74,7 +119,7 @@ type RemoteConfigValue struct {
 
 type RemoteConfigVersion struct {
 	VersionNumber  string           `json:"versionNumber,omitempty"`
-	UpdateTime     string           `json:"updateTime,omitempty"`
+	UpdateTime     string           `json:"updateTime,omitempty" contract:"format=date-time"`
 	UpdateUser     RemoteConfigUser `json:"updateUser,omitzero"`
 	ChangeNote     string           `json:"description,omitempty"`
 	UpdateOrigin   string           `json:"updateOrigin,omitempty"`
@@ -83,10 +128,56 @@ type RemoteConfigVersion struct {
 	IsLegacy       bool             `json:"isLegacy,omitempty"`
 }
 
+func (v *RemoteConfigVersion) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config version", "versionNumber", "updateTime", "updateUser", "description", "updateOrigin", "updateType", "rollbackSource", "isLegacy"); err != nil {
+		return err
+	}
+	type wireVersion RemoteConfigVersion
+	var decoded wireVersion
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*v = RemoteConfigVersion(decoded)
+	return nil
+}
+
 type RemoteConfigUser struct {
 	Name     string `json:"name,omitempty"`
-	Email    string `json:"email,omitempty"`
-	ImageURL string `json:"imageUrl,omitempty"`
+	Email    string `json:"email,omitempty" contract:"format=email"`
+	ImageURL string `json:"imageUrl,omitempty" contract:"format=uri"`
+}
+
+func (u *RemoteConfigUser) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config user", "name", "email", "imageUrl"); err != nil {
+		return err
+	}
+	type wireUser RemoteConfigUser
+	var decoded wireUser
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*u = RemoteConfigUser(decoded)
+	return nil
+}
+
+func rejectNullJSONFields(data []byte, objectName string, fields ...string) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		return fmt.Errorf("decode %s: expected object, got null", objectName)
+	}
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(data, &object); err != nil {
+		return fmt.Errorf("decode %s: %w", objectName, err)
+	}
+	if object == nil {
+		return fmt.Errorf("decode %s: expected object", objectName)
+	}
+	for _, field := range fields {
+		raw, ok := object[field]
+		if ok && bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+			return fmt.Errorf("decode %s: field %q cannot be null", objectName, field)
+		}
+	}
+	return nil
 }
 
 type listVersionsResponse struct {
@@ -166,7 +257,7 @@ func (s *Service) GetRemoteConfig(ctx context.Context, projectID string, version
 	}
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("remote config api returned non-200", "project_id", projectID, "status", resp.Status)
-		return nil, "", fmt.Errorf("remote config api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return nil, "", newAPIError("firebase_remote_config", "get", resp, body)
 	}
 
 	body = normalizeRemoteConfigRaw(body)
@@ -245,7 +336,7 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 		if validateOnly {
 			action = "validate"
 		}
-		return nil, "", fmt.Errorf("%s remote config api returned %s: %s", action, resp.Status, strings.TrimSpace(string(respBody)))
+		return nil, "", newAPIError("firebase_remote_config", action, resp, respBody)
 	}
 
 	respBody = normalizeRemoteConfigRaw(respBody)
@@ -326,7 +417,7 @@ func (s *Service) ListRemoteConfigVersions(ctx context.Context, projectID string
 	}
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("remote config versions api returned non-200", "project_id", projectID, "status", resp.Status)
-		return RemoteConfigVersionsPage{}, fmt.Errorf("remote config versions api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return RemoteConfigVersionsPage{}, newAPIError("firebase_remote_config", "list_versions", resp, body)
 	}
 
 	var payload listVersionsResponse
@@ -369,7 +460,7 @@ func (s *Service) RollbackRemoteConfig(ctx context.Context, projectID, versionNu
 		return nil, "", fmt.Errorf("read rollback response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("rollback remote config api returned %s: %s", resp.Status, strings.TrimSpace(string(respBody)))
+		return nil, "", newAPIError("firebase_remote_config", "rollback", resp, respBody)
 	}
 	respBody = normalizeRemoteConfigRaw(respBody)
 	if !json.Valid(respBody) {

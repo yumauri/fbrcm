@@ -1,0 +1,231 @@
+{
+  "$defs": {
+    "expression": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/expression"
+        }
+      ],
+      "x-fbrcm-expression-context": "parameter"
+    },
+    "filter_query": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "trim_unicode_whitespace",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "target_positional_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_positional_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_positional_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "source_project": {
+          "$ref": "#/$defs/target_positional_selector"
+        },
+        "target_project": {
+          "$ref": "#/$defs/target_positional_selector"
+        }
+      },
+      "required": [
+        "source_project",
+        "target_project"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "cached": {
+          "description": "Use cached Remote Config instead of live Firebase fetch",
+          "type": "boolean"
+        },
+        "conditions": {
+          "description": "Include only condition changes",
+          "type": "boolean"
+        },
+        "expr": {
+          "$ref": "#/$defs/expression",
+          "description": "Filter parameter changes by expr-lang expression",
+          "pattern": ".*\\S.*",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "filter": {
+          "description": "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/filter_query"
+              }
+            ],
+            "x-fbrcm-matching": [
+              {
+                "comparison": "unicode_case_insensitive",
+                "default_mode": "fuzzy",
+                "fields": [
+                  "parameter_key"
+                ],
+                "mode_prefixes": {
+                  "/": "includes",
+                  "=": "exact",
+                  "^": "starts-with",
+                  "~": "fuzzy"
+                },
+                "operator": "mode_prefixed_query",
+                "query_normalization": "trim_unicode_whitespace"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "group": {
+          "description": "Select parameters in group; may be repeated",
+          "items": {
+            "pattern": ".*\\S.*",
+            "type": "string",
+            "x-fbrcm-normalization": [
+              {
+                "operator": "trim_unicode_whitespace",
+                "source": "argv",
+                "target": "normalized_invocation"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "deduplicate_preserve_first",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "parameters": {
+          "description": "Include only parameter and group description changes",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "search": {
+          "description": "Search parameters by name, description, values, and conditions",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "combination": "or",
+              "match": "substring",
+              "normalized_fields": [
+                "name",
+                "description",
+                "condition_names"
+              ],
+              "normalized_query": "lowercase_alphanumeric_words",
+              "operator": "parameter_search",
+              "raw_fields": [
+                "default_value",
+                "conditional_values",
+                "condition_expressions"
+              ],
+              "raw_query": "collapse_unicode_whitespace"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.filter",
+        "options.search",
+        "options.expr",
+        "options.group"
+      ],
+      "target_defaults": []
+    }
+  ]
+}

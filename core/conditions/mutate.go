@@ -50,8 +50,8 @@ func NormalizeTagColor(color string) (string, error) {
 	return firebase.NormalizeConditionTagColor(color)
 }
 
-// ResolveName returns the canonical condition name using exact, then
-// case-insensitive matching.
+// ResolveName returns the canonical condition name using exact matching first,
+// then case-insensitive matching for non-positional callers.
 func ResolveName(cfg *firebase.RemoteConfig, requested string) (string, bool) {
 	if cfg == nil {
 		return "", false
@@ -63,6 +63,20 @@ func ResolveName(cfg *firebase.RemoteConfig, requested string) (string, bool) {
 	}
 	for _, condition := range cfg.Conditions {
 		if strings.EqualFold(condition.Name, requested) {
+			return condition.Name, true
+		}
+	}
+	return "", false
+}
+
+// ResolveNameExact returns the canonical condition name only when the
+// positional selector matches it exactly and case-sensitively.
+func ResolveNameExact(cfg *firebase.RemoteConfig, requested string) (string, bool) {
+	if cfg == nil {
+		return "", false
+	}
+	for _, condition := range cfg.Conditions {
+		if condition.Name == requested {
 			return condition.Name, true
 		}
 	}

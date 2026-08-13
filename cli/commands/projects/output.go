@@ -1,7 +1,6 @@
 package projects
 
 import (
-	"context"
 	"fmt"
 	"image/color"
 	"strings"
@@ -48,7 +47,7 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 	if err != nil {
 		return err
 	}
-	projects, err = shared.FilterProjectsByExpr(context.Background(), svc, projects, projectExpr)
+	projects, err = shared.FilterProjectsByExpr(shared.CommandContext(cmd), svc, projects, projectExpr)
 	if err != nil {
 		return err
 	}

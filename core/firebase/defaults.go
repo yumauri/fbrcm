@@ -70,7 +70,7 @@ func (s *Service) DownloadRemoteConfigDefaults(ctx context.Context, projectID st
 	}
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("remote config defaults api returned non-200", "project_id", projectID, "format", parsedFormat, "status", resp.Status)
-		return nil, fmt.Errorf("remote config defaults api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return nil, newAPIError("firebase_remote_config", "download_defaults", resp, body)
 	}
 
 	logger.Info("remote config defaults downloaded", "project_id", projectID, "format", parsedFormat, "bytes", len(body))

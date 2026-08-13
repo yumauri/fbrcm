@@ -3,6 +3,7 @@ package firebase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -225,7 +226,8 @@ func TestDryRunReturnsFirebaseValidationFailure(t *testing.T) {
 	ctx := WithDryRun(context.Background())
 
 	err := svc.ValidateRemoteConfig(ctx, "demo", payload, "etag-1")
-	if err == nil || !strings.Contains(err.Error(), "validate remote config api returned Bad Request") {
+	var apiErr *APIError
+	if err == nil || !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusBadRequest || apiErr.Operation != "validate" {
 		t.Fatalf("ValidateRemoteConfig error = %v", err)
 	}
 	if publicationCalls != 0 {

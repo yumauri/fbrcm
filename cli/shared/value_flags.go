@@ -22,27 +22,27 @@ func ReadValueFlag(cmd *cobra.Command, required bool) (*ValueFlag, error) {
 	valueChanged := cmd.Flags().Changed("value")
 	useInAppDefault, err := cmd.Flags().GetBool("use-in-app-default")
 	if err != nil {
-		return nil, err
+		return nil, InvalidArgument(err)
 	}
 	useInAppDefault = cmd.Flags().Changed("use-in-app-default") && useInAppDefault
 	if valueChanged && useInAppDefault {
-		return nil, fmt.Errorf("--value and --use-in-app-default are mutually exclusive")
+		return nil, InvalidArgument(fmt.Errorf("--value and --use-in-app-default are mutually exclusive"))
 	}
 	if !valueChanged && !useInAppDefault {
 		if cmd.Flags().Changed("type") {
-			return nil, fmt.Errorf("--type requires --value or --use-in-app-default")
+			return nil, InvalidArgument(fmt.Errorf("--type requires --value or --use-in-app-default"))
 		}
 		if required {
-			return nil, fmt.Errorf("one of --value or --use-in-app-default is required")
+			return nil, InvalidArgument(fmt.Errorf("one of --value or --use-in-app-default is required"))
 		}
 		return nil, nil
 	}
 	if !cmd.Flags().Changed("type") {
-		return nil, fmt.Errorf("--type is required with %s", map[bool]string{true: "--use-in-app-default", false: "--value"}[useInAppDefault])
+		return nil, InvalidArgument(fmt.Errorf("--type is required with %s", map[bool]string{true: "--use-in-app-default", false: "--value"}[useInAppDefault]))
 	}
 	typeName, err := cmd.Flags().GetString("type")
 	if err != nil {
-		return nil, err
+		return nil, InvalidArgument(err)
 	}
 	valueType, err := ParseValueType(typeName)
 	if err != nil {
@@ -53,10 +53,10 @@ func ReadValueFlag(cmd *cobra.Command, required bool) (*ValueFlag, error) {
 	}
 	value, err := cmd.Flags().GetString("value")
 	if err != nil {
-		return nil, err
+		return nil, InvalidArgument(err)
 	}
 	if err := validateTypedValue(valueType, value); err != nil {
-		return nil, err
+		return nil, InvalidArgument(err)
 	}
 	return &ValueFlag{Value: value, Type: valueType}, nil
 }
@@ -91,6 +91,6 @@ func ParseValueType(value string) (string, error) {
 	case "json":
 		return "JSON", nil
 	default:
-		return "", fmt.Errorf("--type must be one of string, boolean, number, or json")
+		return "", InvalidArgument(fmt.Errorf("--type must be one of string, boolean, number, or json"))
 	}
 }

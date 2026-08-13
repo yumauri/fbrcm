@@ -44,6 +44,9 @@ func (v RemoteConfigValue) IsOpaque() bool {
 // Managed payloads remain opaque so nested fields survive read-modify-write
 // cycles even when fbrcm does not interpret them.
 func (v *RemoteConfigValue) UnmarshalJSON(data []byte) error {
+	if err := rejectNullJSONFields(data, "remote config parameter value", remoteConfigValueField); err != nil {
+		return err
+	}
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil {
 		return fmt.Errorf("decode remote config parameter value: %w", err)

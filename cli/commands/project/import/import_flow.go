@@ -1,7 +1,6 @@
 package importpkg
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,19 +16,28 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/core/rc/importer"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 type importResult struct {
-	ProjectID        string  `json:"project_id"`
-	Status           string  `json:"status"`
-	Changed          bool    `json:"changed"`
-	Draft            bool    `json:"draft"`
-	DryRun           bool    `json:"dry_run"`
-	Validated        bool    `json:"validated"`
-	ValidationSource string  `json:"validation_source"`
-	ChangeNote       *string `json:"change_note"`
-	Published        bool    `json:"published,omitempty"`
-	Error            string  `json:"error,omitempty"`
+	ProjectID        string       `json:"project_id"`
+	Status           string       `json:"status" contract:"enum=unchanged|validation-failed|drafted|would-draft|imported|would-import|imported-hook-failed|imported-cache-failed"`
+	Changed          bool         `json:"changed"`
+	Draft            bool         `json:"draft"`
+	DryRun           bool         `json:"dry_run"`
+	Validated        bool         `json:"validated"`
+	ValidationSource string       `json:"validation_source"`
+	ChangeNote       *string      `json:"change_note"`
+	Published        bool         `json:"published,omitempty"`
+	Error            *importError `json:"error"`
+}
+
+// Result is the machine response DTO registered by the parent project command.
+type Result = importResult
+
+type importError struct {
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
 }
 
 // Run executes the project import command pipeline.
@@ -55,7 +63,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return err
 	}
 	result := importResult{ProjectID: project.ProjectID, Draft: draftMode, DryRun: dryRun, ValidationSource: core.ValidationSourceLocal}
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -74,7 +82,11 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 			return draftErr
 		}
 		if hasDraft {
-			return fmt.Errorf("project %s has an unpublished draft; use --draft, publish it, or discard it first", project.ProjectID)
+			return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []shared.Remediation{
+				{Description: "import into the existing draft", Strategy: shared.RemediationRetryWithArguments, Argv: []string{"--draft"}},
+				{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
+				{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
+			}, Err: fmt.Errorf("project %s has an unpublished draft; use --draft, publish it, or discard it first", project.ProjectID)}
 		}
 	}
 
@@ -88,7 +100,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	}
 	source, err := importer.ParseSource(raw)
 	if err != nil {
-		return err
+		return shared.InvalidInput("remote_config.invalid", "stdin", err)
 	}
 	importCfg := source.Config
 	sourceConditionCount := len(importCfg.Conditions)
@@ -168,7 +180,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 				result.ValidationSource = source
 			}
 			result.Status = "validation-failed"
-			result.Error = err.Error()
+			result.Error = &importError{Stage: "validation", Message: shared.SafeErrorText(err)}
 			if writeErr := writeImportResult(cmd, jsonOut, result); writeErr != nil {
 				return writeErr
 			}
@@ -186,9 +198,12 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		action = "Save Remote Config draft for"
 	}
 	if !yes {
+		if err := shared.RequireYesInMachineMode(cmd, yes, strings.ToLower(action)+" "+project.ProjectID, true); err != nil {
+			return err
+		}
 		confirm := shared.NewConfirmation(
 			fmt.Sprintf("%s %s?", action, project.ProjectID),
-			shared.ConfirmationOptions{},
+			shared.ConfirmationOptions{Destructive: true},
 		)
 		promptInput, closePromptInput, err := shared.OpenPromptInput(cmd.InOrStdin())
 		if err != nil {
@@ -235,12 +250,25 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	publishedRaw, _, publishErr := svc.PublishRemoteConfigWithETag(ctx, project.ProjectID, finalRaw, currentETag)
 	if publishErr != nil {
 		var hookErr *core.RemoteConfigPublishedHookError
-		if !errors.As(publishErr, &hookErr) || len(publishedRaw) == 0 {
+		var cacheErr *core.RemoteConfigPublishedCacheError
+		if len(publishedRaw) == 0 || !errors.As(publishErr, &hookErr) && !errors.As(publishErr, &cacheErr) {
 			return publishErr
 		}
-		result.Status = "imported-hook-failed"
 		result.Published = true
-		result.Error = publishErr.Error()
+		if errors.As(publishErr, &hookErr) {
+			result.Status = "imported-hook-failed"
+			result.Error = &importError{Stage: "post_publish_hook", Message: shared.SafeErrorText(publishErr)}
+			shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the import, but a post_publish hook failed.", Target: project.ProjectID, Details: struct {
+				Stage string `json:"stage"`
+			}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
+		} else {
+			result.Status = "imported-cache-failed"
+			result.Error = &importError{Stage: "cache", Message: shared.SafeErrorText(publishErr)}
+			filter, _ := rctarget.ExactFilter(project.ProjectID)
+			shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the import, but the local cache update failed.", Target: project.ProjectID, Details: struct {
+				Stage string `json:"stage"`
+			}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the imported target instead of republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", filter}}}})
+		}
 		if writeErr := writeImportResult(cmd, jsonOut, result); writeErr != nil {
 			return writeErr
 		}
@@ -266,12 +294,12 @@ func writeImportResult(cmd *cobra.Command, jsonOut bool, result importResult) er
 	case "imported", "would-import":
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📥 %s: %s\n", strings.ReplaceAll(result.Status, "-", " "), result.ProjectID)
 	case "imported-hook-failed":
-		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ imported, post_publish hook failed: %s: %s\n", result.ProjectID, result.Error)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "⚠️ imported, post_publish hook failed: %s: %s\n", result.ProjectID, result.Error.Message)
 	case "validation-failed":
-		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ validation failed: %s: %s\n", result.ProjectID, result.Error)
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ validation failed: %s: %s\n", result.ProjectID, result.Error.Message)
 	}
 	out := cmd.OutOrStdout()
-	if result.Error != "" {
+	if result.Error != nil {
 		out = cmd.ErrOrStderr()
 	}
 	_, _ = fmt.Fprintf(out, "validated: %t · validation_source: %s\n", result.Validated, result.ValidationSource)
@@ -325,10 +353,10 @@ func readImportOptions(cmd *cobra.Command) (importOptions, error) {
 	}
 	opts.mergeResolve = strings.TrimSpace(strings.ToLower(opts.mergeResolve))
 	if opts.mergeResolve != "" && opts.mergeResolve != string(conflictResolutionCurrent) && opts.mergeResolve != string(conflictResolutionImport) {
-		return opts, fmt.Errorf("invalid --merge-resolve value %q; expected current or import", opts.mergeResolve)
+		return opts, shared.InvalidArgument(fmt.Errorf("invalid --merge-resolve value %q; expected current or import", opts.mergeResolve))
 	}
 	if opts.mergeResolve != "" && !opts.merge {
-		return opts, fmt.Errorf("--merge-resolve requires --merge")
+		return opts, shared.InvalidArgument(fmt.Errorf("--merge-resolve requires --merge"))
 	}
 
 	opts.groups = normalizeGroups(opts.groups)
@@ -367,6 +395,9 @@ func chooseImportStrategy(cmd *cobra.Command, opts importOptions) (importStrateg
 	case opts.merge:
 		return importStrategyMerge, nil
 	default:
+		if shared.MachineMode(cmd) {
+			return "", shared.InteractionRequiredWithArguments("an import strategy is required; pass --merge or --override", "selection_required", false, "--merge", "--merge")
+		}
 		prompt := selection.New("Current config exists. How to apply import?", []mergeChoice{
 			{label: "Merge imported config into current config", value: string(importStrategyMerge)},
 			{label: "Override current config with imported config", value: string(importStrategyOverride)},

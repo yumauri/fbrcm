@@ -7,7 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
+	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 )
 
@@ -17,6 +19,14 @@ type loadedConditions struct {
 	Source   string               `json:"source"`
 	HasDraft bool                 `json:"hasDraft"`
 	Tree     *core.ConditionsTree `json:"-"`
+}
+
+type conditionShowResult struct {
+	Project   core.Project        `json:"project"`
+	Version   string              `json:"version"`
+	Source    string              `json:"source" contract:"enum=cache|cache-verified|firebase|draft"`
+	HasDraft  bool                `json:"has_draft"`
+	Condition core.ConditionEntry `json:"condition"`
 }
 
 func New(svc *core.Core) *cobra.Command {
@@ -35,6 +45,12 @@ func New(svc *core.Core) *cobra.Command {
 		newDeleteCommand(svc),
 		newValidateCommand(svc),
 	)
+	contract.MustRegisterResponsePath(cmd, "list", []core.ConditionEntry{})
+	contract.MustRegisterResponsePath(cmd, "show", conditionShowResult{})
+	for _, path := range []string{"add", "edit", "rename", "move", "delete"} {
+		contract.MustRegisterResponsePath(cmd, path, []sharedrc.RemoteMutationJSONResult{})
+	}
+	contract.MustRegisterResponsePath(cmd, "validate", conditionValidationResult{})
 	return cmd
 }
 
@@ -84,17 +100,11 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 			}
 			condition, ok := findCondition(loaded.Tree, args[1])
 			if !ok {
-				return fmt.Errorf("condition %q not found in project %s", args[1], loaded.Project.ProjectID)
+				return &shared.SelectionError{Resource: "condition", Kind: "not_found", Query: args[1], Err: fmt.Errorf("condition %q not found in project %s", args[1], loaded.Project.ProjectID)}
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{
-					"project":   loaded.Project,
-					"version":   loaded.Version,
-					"source":    loaded.Source,
-					"has_draft": loaded.HasDraft,
-					"condition": condition,
-				})
+				return shared.WriteJSON(cmd, conditionShowResult{Project: loaded.Project, Version: loaded.Version, Source: loaded.Source, HasDraft: loaded.HasDraft, Condition: condition})
 			}
 			printContext(cmd, loaded)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderConditionDetails(condition))
@@ -111,12 +121,12 @@ func addReadFlags(cmd *cobra.Command) {
 }
 
 func load(cmd *cobra.Command, svc *core.Core, query string) (loadedConditions, error) {
-	project, err := shared.ResolveProjectTargetArg(context.Background(), cmd, svc, query)
+	project, err := shared.ResolveProjectTargetArg(shared.CommandContext(cmd), cmd, svc, query)
 	if err != nil {
 		return loadedConditions{}, err
 	}
 	update, _ := cmd.Flags().GetBool("update")
-	cache, source, err := loadCache(context.Background(), svc, project.ProjectID, update)
+	cache, source, err := loadCache(shared.CommandContext(cmd), svc, project.ProjectID, update)
 	if err != nil {
 		return loadedConditions{}, err
 	}
@@ -188,15 +198,7 @@ func filterEntriesByExpr(project core.Project, entries []core.ConditionEntry, ra
 }
 
 func findCondition(tree *core.ConditionsTree, name string) (core.ConditionEntry, bool) {
-	if condition, ok := tree.Find(name); ok {
-		return condition, true
-	}
-	for _, condition := range tree.Conditions {
-		if strings.EqualFold(condition.Name, name) {
-			return condition, true
-		}
-	}
-	return core.ConditionEntry{}, false
+	return tree.Find(name)
 }
 
 func printContext(cmd *cobra.Command, loaded loadedConditions) {

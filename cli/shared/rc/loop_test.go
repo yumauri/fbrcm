@@ -8,12 +8,14 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
@@ -33,11 +35,12 @@ func TestRunRemotePublishLoopPublishesMatchedProjects(t *testing.T) {
 	saveLoopParametersCache(t, raw, "etag-1")
 
 	cmd := &cobra.Command{}
+	cmd.SetContext(machine.WithState(context.Background()))
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 
-	totals, err := RunRemotePublishLoop(context.Background(), cmd, svc, []core.Project{project}, "update", "✅", func(_ core.Project, cfg *ProjectConfig) (RemoteConfigMutation, error) {
-		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+	totals, err := RunRemotePublishLoop(context.Background(), cmd, svc, []core.Project{project}, true, "update", "✅", func(_ core.Project, cfg *ProjectConfig) (RemoteMutationPlan, error) {
+		return RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			next, err := firebase.CloneRemoteConfig(current)
 			if err != nil {
 				return 0, nil, err
@@ -46,7 +49,7 @@ func TestRunRemotePublishLoopPublishesMatchedProjects(t *testing.T) {
 				DefaultValue: &firebase.RemoteConfigValue{Value: "new"},
 			}
 			return 1, next, nil
-		}, nil
+		}}, nil
 	})
 	if err != nil {
 		t.Fatalf("RunRemotePublishLoop = %v", err)
@@ -75,14 +78,49 @@ func TestRunRemotePublishLoopSkipsNilMutation(t *testing.T) {
 	}))
 
 	cmd := &cobra.Command{}
-	totals, err := RunRemotePublishLoop(context.Background(), cmd, svc, []core.Project{project}, "update", "✅", func(_ core.Project, _ *ProjectConfig) (RemoteConfigMutation, error) {
-		return nil, nil
+	totals, err := RunRemotePublishLoop(context.Background(), cmd, svc, []core.Project{project}, true, "update", "✅", func(_ core.Project, _ *ProjectConfig) (RemoteMutationPlan, error) {
+		return RemoteMutationPlan{}, nil
 	})
 	if err != nil {
 		t.Fatalf("RunRemotePublishLoop = %v", err)
 	}
 	if totals.ModifiedProjects != 0 || totals.ChangedParams != 0 {
 		t.Fatalf("totals = %+v, want zero", totals)
+	}
+	if totals.ResolvedTargets != 1 || !totals.DefaultScope || len(totals.Results) != 1 || totals.Results[0].MatchedItemCount != 0 || totals.Results[0].NoOpReason == nil || *totals.Results[0].NoOpReason != NoOpNoMatch {
+		t.Fatalf("selection provenance = %+v", totals)
+	}
+}
+
+func TestWriteRemoteMutationResultsJSONDistinguishesNoMatchFromAlreadyApplied(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.Flags().Bool("json", true, "")
+	cmd.Flags().Bool("draft", false, "")
+	cmd.Flags().Bool("dry-run", false, "")
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	noMatch := NoOpNoMatch
+	alreadyApplied := NoOpAlreadyApplied
+	totals := RemoteMutationTotals{
+		DefaultScope:    true,
+		ResolvedTargets: 2,
+		Results: []RemoteMutationResult{
+			{Project: core.Project{ProjectID: "empty"}, Status: RemoteMutationUnchanged, MatchedItemCount: 0, NoOpReason: &noMatch},
+			{Project: core.Project{ProjectID: "current"}, Status: RemoteMutationUnchanged, MatchedItemCount: 17, NoOpReason: &alreadyApplied},
+		},
+	}
+	if err := WriteRemoteMutationResults(cmd, totals, "publish", "✅"); err != nil {
+		t.Fatal(err)
+	}
+	var got []RemoteMutationJSONResult
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].NoOpReason == nil || *got[0].NoOpReason != NoOpNoMatch || got[0].Selection.MatchedItemCount != 0 || !got[0].Selection.DefaultScope || got[0].Selection.ResolvedTargetCount != 2 {
+		t.Fatalf("no-match result = %+v", got)
+	}
+	if got[1].NoOpReason == nil || *got[1].NoOpReason != NoOpAlreadyApplied || got[1].Selection.MatchedItemCount != 17 {
+		t.Fatalf("already-applied result = %+v", got[1])
 	}
 }
 
@@ -134,21 +172,29 @@ func TestRunRemotePublishLoopContinuesAfterProjectFailure(t *testing.T) {
 	})}))
 
 	cmd := &cobra.Command{}
+	cmd.SetContext(machine.WithState(context.Background()))
 	var out, errOut bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
-	totals, err := RunRemotePublishLoop(context.Background(), cmd, svc, projects, "update", "✅", func(_ core.Project, cfg *ProjectConfig) (RemoteConfigMutation, error) {
-		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+	totals, err := RunRemotePublishLoop(context.Background(), cmd, svc, projects, true, "update", "✅", func(_ core.Project, cfg *ProjectConfig) (RemoteMutationPlan, error) {
+		return RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			next, cloneErr := firebase.CloneRemoteConfig(current)
 			if cloneErr != nil {
 				return 0, nil, cloneErr
 			}
 			next.Parameters["flag"] = firebase.RemoteConfigParam{DefaultValue: &firebase.RemoteConfigValue{Value: "new"}}
 			return 1, next, nil
-		}, nil
+		}}, nil
 	})
 	if err == nil {
 		t.Fatal("RunRemotePublishLoop returned nil error")
+	}
+	var batchErr *machine.BatchError
+	if !errors.As(err, &batchErr) || batchErr.SuccessfulTargetCount != 2 || len(batchErr.FailedTargets) != 2 || len(batchErr.Failures) != 2 || batchErr.Failures[0].Target != "project-b" || batchErr.Failures[0].Err == nil {
+		t.Fatalf("batch error = %#v, err = %v", batchErr, err)
+	}
+	if len(batchErr.Remediation) != 1 || !slices.Contains(batchErr.Remediation[0].Argv, "=project-b") || !slices.Contains(batchErr.Remediation[0].Argv, "=project-d") {
+		t.Fatalf("batch remediation = %#v", batchErr.Remediation)
 	}
 	if published["project-a"] != 1 || published["project-b"] != 0 || published["project-c"] != 1 || published["project-d"] != 0 {
 		t.Fatalf("published = %#v, want a/c only", published)
@@ -171,6 +217,10 @@ func TestRunRemotePublishLoopContinuesAfterProjectFailure(t *testing.T) {
 	}
 	if strings.LastIndex(out.String(), "Results:") < strings.LastIndex(out.String(), "INFO total") {
 		t.Fatalf("stdout = %q, want results after final log", out.String())
+	}
+	warnings := machine.FromContext(cmd.Context()).Warnings()
+	if len(warnings) != 1 || warnings[0].Code != "publication.non_atomic" || len(warnings[0].Remediation) != 1 || warnings[0].Remediation[0].Argv[0] != "--draft" {
+		t.Fatalf("warnings = %#v", warnings)
 	}
 }
 
@@ -209,7 +259,7 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 	cmd.SetOut(&out)
 	cmd.SetErr(&errOut)
 	publishedVersion := "42"
-	totals := RemoteMutationTotals{Results: []RemoteMutationResult{
+	totals := RemoteMutationTotals{DefaultScope: true, ResolvedTargets: 3, Results: []RemoteMutationResult{
 		{
 			Project:          core.Project{ProjectID: "demo"},
 			Status:           RemoteMutationWouldPublish,
@@ -218,6 +268,7 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 			PublishedVersion: "",
 			Validated:        true,
 			ValidationSource: core.ValidationSourceFirebase,
+			MatchedItemCount: 2,
 		},
 		{
 			Project:          core.Project{ProjectID: "server@demo"},
@@ -226,6 +277,7 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 			PreviousVersion:  "41",
 			ValidationSource: core.ValidationSourceFirebase,
 			Err:              errors.New("invalid candidate"),
+			MatchedItemCount: 1,
 		},
 		{
 			Project:          core.Project{ProjectID: "published"},
@@ -236,6 +288,7 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 			Validated:        true,
 			ValidationSource: core.ValidationSourceFirebase,
 			Published:        true,
+			MatchedItemCount: 1,
 		},
 	}}
 	if err := WriteRemoteMutationResults(cmd, totals, "publish", "✅"); err != nil {
@@ -250,7 +303,8 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 	}
 	if got[0].Target != "demo" || got[0].Status != RemoteMutationWouldPublish || got[0].ChangedItemCount != 2 ||
 		got[0].PreviousVersion == nil || *got[0].PreviousVersion != "41" || got[0].PublishedVersion != nil || got[0].Draft || !got[0].DryRun ||
-		got[0].Error != nil || got[0].RetrySelector != nil || !got[0].Validated || got[0].ValidationSource != core.ValidationSourceFirebase {
+		got[0].Error != nil || got[0].RetrySelector != nil || !got[0].Validated || got[0].ValidationSource != core.ValidationSourceFirebase ||
+		!got[0].Selection.DefaultScope || got[0].Selection.ResolvedTargetCount != 3 || got[0].Selection.MatchedItemCount != 2 {
 		t.Fatalf("dry-run result = %+v", got[0])
 	}
 	if got[1].Error == nil || got[1].Error.Stage != "validation" || got[1].Error.Message != "invalid candidate" {
@@ -267,6 +321,30 @@ func TestWriteRemoteMutationResultsJSONUsesStableStructuredContract(t *testing.T
 	}
 	if errOut.Len() != 0 {
 		t.Fatalf("JSON stderr = %q, want empty", errOut.String())
+	}
+}
+
+func TestWriteRemoteMutationResultsJSONSanitizesTargetErrors(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.Flags().Bool("json", true, "")
+	cmd.Flags().Bool("draft", false, "")
+	cmd.Flags().Bool("dry-run", false, "")
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	secret := "super-secret-value"
+	totals := RemoteMutationTotals{ResolvedTargets: 1, Results: []RemoteMutationResult{{
+		Project: core.Project{ProjectID: "demo"}, Status: RemoteMutationPublishFailed,
+		Err: errors.New(`request failed: {"access_token":"` + secret + `"} ` + strings.Repeat("x", machine.MaxSafeTextRunes+100)),
+	}}}
+	if err := WriteRemoteMutationResults(cmd, totals, "publish", "✅"); err != nil {
+		t.Fatal(err)
+	}
+	var got []RemoteMutationJSONResult
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Error == nil || strings.Contains(got[0].Error.Message, secret) || !strings.Contains(got[0].Error.Message, "[REDACTED]") || len([]rune(got[0].Error.Message)) != machine.MaxSafeTextRunes+1 {
+		t.Fatalf("unsafe target error = %#v", got)
 	}
 }
 

@@ -16,7 +16,6 @@ import (
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
-	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
@@ -29,7 +28,7 @@ type listItem struct {
 	CreatedAt     *time.Time     `json:"created_at,omitempty"`
 	UpdatedAt     *time.Time     `json:"updated_at,omitempty"`
 	Size          int64          `json:"size"`
-	Status        string         `json:"status"`
+	Status        string         `json:"status" contract:"enum=invalid|ready|unchanged"`
 	Valid         bool           `json:"valid"`
 	BaseAvailable bool           `json:"base_available"`
 	Path          string         `json:"path"`
@@ -210,11 +209,11 @@ func resolveDraft(query string) (string, core.Project, error) {
 	if err != nil {
 		return "", core.Project{}, err
 	}
-	requested, explicit, err := rctarget.ParseSelector(query)
+	requested, explicit, err := rctarget.ParsePositionalSelector(query)
 	if err != nil {
 		return "", core.Project{}, err
 	}
-	mode, value := filter.ParseModePrefixedQuery(requested.ProjectID)
+	value := requested.ProjectID
 	if matches := exactDraftMatches(ids, value, requested.Kind, explicit); len(matches) == 1 {
 		return matches[0], projectForID(matches[0]), nil
 	}
@@ -222,18 +221,15 @@ func resolveDraft(query string) (string, core.Project, error) {
 	if err != nil {
 		return "", core.Project{}, err
 	}
-	aliasQueryAllowed := mode == filter.ModeExact || mode == filter.ModeFuzzy && strings.TrimSpace(requested.ProjectID) == value
-	if aliasQueryAllowed {
-		if alias, projectID, ok := config.ResolveProjectAlias(aliases, value); ok {
-			matches := exactDraftMatches(ids, projectID, requested.Kind, explicit)
-			if len(matches) == 1 {
-				return matches[0], projectForID(matches[0]), nil
-			}
-			if len(matches) == 0 {
-				return "", core.Project{}, fmt.Errorf("draft not found for alias %q (%s)", alias, projectID)
-			}
-			return "", core.Project{}, fmt.Errorf("several drafts match alias %q (%s): %s", alias, projectID, strings.Join(matches, ", "))
+	if alias, projectID, ok := config.ResolveProjectAlias(aliases, value); ok {
+		matches := exactDraftMatches(ids, projectID, requested.Kind, explicit)
+		if len(matches) == 1 {
+			return matches[0], projectForID(matches[0]), nil
 		}
+		if len(matches) == 0 {
+			return "", core.Project{}, &shared.SelectionError{Resource: "draft", Kind: "not_found", Query: query, Err: fmt.Errorf("draft not found for alias %q (%s)", alias, projectID)}
+		}
+		return "", core.Project{}, &shared.SelectionError{Resource: "draft", Kind: "ambiguous", Query: query, Candidates: draftCandidates(matches), Err: fmt.Errorf("several drafts match alias %q (%s): %s", alias, projectID, strings.Join(matches, ", "))}
 	}
 	matches := make([]string, 0)
 	for _, id := range ids {
@@ -249,9 +245,7 @@ func resolveDraft(query string) (string, core.Project, error) {
 		if candidate.Kind != requiredKind {
 			continue
 		}
-		nameMatch, _ := filter.Match(project.Name, value, mode)
-		idMatch, _ := filter.Match(candidate.ProjectID, value, mode)
-		if nameMatch || idMatch {
+		if project.Name == value {
 			matches = append(matches, id)
 		}
 	}
@@ -259,16 +253,25 @@ func resolveDraft(query string) (string, core.Project, error) {
 		return matches[0], projectForID(matches[0]), nil
 	}
 	if len(matches) == 0 {
-		return "", core.Project{}, fmt.Errorf("draft not found for %q", query)
+		return "", core.Project{}, &shared.SelectionError{Resource: "draft", Kind: "not_found", Query: query, Err: fmt.Errorf("draft not found for %q", query)}
 	}
-	return "", core.Project{}, fmt.Errorf("several drafts match %q: %s", query, strings.Join(matches, ", "))
+	return "", core.Project{}, &shared.SelectionError{Resource: "draft", Kind: "ambiguous", Query: query, Candidates: draftCandidates(matches), Err: fmt.Errorf("several drafts match %q: %s", query, strings.Join(matches, ", "))}
+}
+
+func draftCandidates(ids []string) []shared.SelectionCandidate {
+	candidates := make([]shared.SelectionCandidate, 0, len(ids))
+	for _, id := range ids {
+		project := projectForID(id)
+		candidates = append(candidates, shared.SelectionCandidate{Name: project.Name, ID: project.ProjectID})
+	}
+	return candidates
 }
 
 func exactDraftMatches(ids []string, physicalProjectID string, requestedKind rctarget.Kind, explicit bool) []string {
 	matches := make([]string, 0, 1)
 	for _, id := range ids {
 		candidate, err := rctarget.Parse(id)
-		if err != nil || !strings.EqualFold(candidate.ProjectID, physicalProjectID) {
+		if err != nil || candidate.ProjectID != physicalProjectID {
 			continue
 		}
 		project := projectForID(id)
@@ -301,10 +304,10 @@ func projectForID(projectID string) core.Project {
 func selectedDraftIDs(cmd *cobra.Command, args []string) ([]string, error) {
 	all, _ := cmd.Flags().GetBool("all")
 	if all && len(args) > 0 {
-		return nil, fmt.Errorf("project arguments cannot be used with --all")
+		return nil, shared.InvalidArgument(fmt.Errorf("project arguments cannot be used with --all"))
 	}
 	if !all && len(args) == 0 {
-		return nil, fmt.Errorf("provide at least one project or use --all")
+		return nil, shared.InvalidArgument(fmt.Errorf("provide at least one project or use --all"))
 	}
 	if all {
 		return config.ListDraftProjectIDs()

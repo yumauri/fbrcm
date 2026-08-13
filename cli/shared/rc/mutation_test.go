@@ -3,7 +3,6 @@ package rc
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"testing"
 
@@ -108,7 +107,7 @@ func TestPublishProjectConfigMutationRejectsManagedValueChanges(t *testing.T) {
 }
 
 func TestPublishProjectConfigMutationConflictRetries(t *testing.T) {
-	publisher := &fakeRemoteConfigPublisher{validateErr: errors.New("returned 412")}
+	publisher := &fakeRemoteConfigPublisher{validateErr: &firebase.APIError{StatusCode: 412}}
 	projectCfg := &ProjectConfig{
 		Project: core.Project{ProjectID: "project-a"},
 		Cache:   &core.ParametersCache{ETag: "etag"},

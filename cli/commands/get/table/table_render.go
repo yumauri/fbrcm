@@ -170,7 +170,7 @@ func renderMissingLabel(status string, rowBG color.Color) string {
 }
 
 func isErrorStatus(status string) bool {
-	return status == "staled" || status == "missing"
+	return status == "stale" || status == "missing"
 }
 
 func renderValueText(value, valueType string, rowBG color.Color) string {

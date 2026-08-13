@@ -193,7 +193,7 @@ func TestCurrentConditionalValueAnchorFirstConditional(t *testing.T) {
 }
 
 const parametersViewSnapshot = `╭─ ²Parameters ── \≡ ── ³Conditions ───────────────────────╮
-│Demo Prod demo-prod                             v12 staled│
+│Demo Prod demo-prod                              v12 stale│
 │▾ (root)                                                  │
 │  feature_login                                           │
 │  ╰ Default ╌╌╌╌╌╌╌ on                                    │

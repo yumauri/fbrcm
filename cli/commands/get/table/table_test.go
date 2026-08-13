@@ -72,7 +72,7 @@ func TestTableHelpers(t *testing.T) {
 	if rowStatus(rows, -1) != "" || rowStatus(rows, 2) != "" || rowStatus(rows, 1) != "missing" {
 		t.Fatalf("rowStatus returned unexpected value")
 	}
-	if !isErrorStatus("missing") || !isErrorStatus("staled") || isErrorStatus("cache") {
+	if !isErrorStatus("missing") || !isErrorStatus("stale") || isErrorStatus("cache") {
 		t.Fatalf("isErrorStatus classification changed")
 	}
 	if tableOverhead(3) != 10 {

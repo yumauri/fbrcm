@@ -57,17 +57,17 @@ func loadStdinParameterRows(cmd *cobra.Command, compiledExpr *filter.Expression,
 	}
 	corelog.For("get").Info("loaded remote config from stdin", "bytes", len(raw))
 	if !json.Valid(raw) {
-		return nil, nil, fmt.Errorf("stdin remote config is not valid json")
+		return nil, nil, shared.InvalidInput("remote_config.invalid", "stdin", fmt.Errorf("stdin remote config is not valid json"))
 	}
 
 	remoteConfigRaw, err := rc.ExtractRemoteConfigJSON(raw)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, shared.InvalidInput("remote_config.invalid", "stdin", err)
 	}
 
 	cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("decode stdin remote config: %w", err)
+		return nil, nil, shared.InvalidInput("remote_config.invalid", "stdin", fmt.Errorf("decode stdin remote config: %w", err))
 	}
 
 	version := stdinVersion(remoteConfigRaw)
@@ -133,17 +133,17 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectFilters []string
 			return true, nil, fmt.Errorf("read stdin directory file %q: %w", name, err)
 		}
 		if !json.Valid(raw) {
-			return true, nil, fmt.Errorf("stdin directory file %q is not valid json", name)
+			return true, nil, shared.InvalidInput("remote_config.invalid", "stdin_directory", fmt.Errorf("stdin directory file %q is not valid json", name))
 		}
 
 		remoteConfigRaw, err := rc.ExtractRemoteConfigJSON(raw)
 		if err != nil {
-			return true, nil, fmt.Errorf("extract remote config from stdin directory file %q: %w", name, err)
+			return true, nil, shared.InvalidInput("remote_config.invalid", "stdin_directory", fmt.Errorf("extract remote config from stdin directory file %q: %w", name, err))
 		}
 
 		cfg, err := firebase.ParseRemoteConfig(remoteConfigRaw)
 		if err != nil {
-			return true, nil, fmt.Errorf("decode stdin directory file %q: %w", name, err)
+			return true, nil, shared.InvalidInput("remote_config.invalid", "stdin_directory", fmt.Errorf("decode stdin directory file %q: %w", name, err))
 		}
 
 		version := stdinVersion(remoteConfigRaw)

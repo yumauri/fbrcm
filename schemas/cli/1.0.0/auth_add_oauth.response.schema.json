@@ -1,0 +1,318 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "auth_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "paths": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "oauth"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              },
+              "then": {
+                "allOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "service_account_path"
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "client_secret_path": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "token_path": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "client_secret_path",
+                  "token_path"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "service-account"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              },
+              "then": {
+                "allOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "client_secret_path"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "token_path"
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "service_account_path": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service_account_path"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "gcloud"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              },
+              "then": {
+                "allOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "client_secret_path"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "token_path"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "service_account_path"
+                      ]
+                    }
+                  }
+                ],
+                "properties": {}
+              }
+            }
+          ],
+          "properties": {
+            "auth_config_path": {
+              "type": "string"
+            },
+            "client_secret_path": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "profile_config_path": {
+              "type": "string"
+            },
+            "service_account_path": {
+              "type": "string"
+            },
+            "token_path": {
+              "type": "string"
+            },
+            "type": {
+              "const": "oauth"
+            }
+          },
+          "required": [
+            "auth_config_path",
+            "id",
+            "profile_config_path",
+            "type"
+          ],
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "added"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "const": "oauth"
+        }
+      },
+      "required": [
+        "auth_id",
+        "label",
+        "paths",
+        "status",
+        "type"
+      ],
+      "type": "object",
+      "x-fbrcm-invariants": [
+        {
+          "left": {
+            "field": "auth_id"
+          },
+          "op": "eq",
+          "right": {
+            "field": "paths.id"
+          }
+        },
+        {
+          "left": {
+            "field": "type"
+          },
+          "op": "eq",
+          "right": {
+            "field": "paths.type"
+          }
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "auth.add.oauth"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

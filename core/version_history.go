@@ -54,6 +54,26 @@ type VersionPublishResult struct {
 	ETag             string `json:"-"`
 }
 
+// RemoteConfigVersionLookupError identifies invalid or unavailable version
+// selectors without relying on error-message text.
+type RemoteConfigVersionLookupError struct {
+	Kind      string
+	ProjectID string
+	Selector  string
+	Err       error
+}
+
+func (e *RemoteConfigVersionLookupError) Error() string { return e.Err.Error() }
+func (e *RemoteConfigVersionLookupError) Unwrap() error { return e.Err }
+
+func invalidVersionSelector(projectID, selector string, err error) error {
+	return &RemoteConfigVersionLookupError{Kind: "invalid_argument", ProjectID: projectID, Selector: selector, Err: err}
+}
+
+func versionNotFound(projectID, selector string, err error) error {
+	return &RemoteConfigVersionLookupError{Kind: "not_found", ProjectID: projectID, Selector: selector, Err: err}
+}
+
 func (s *Core) ListRemoteConfigVersions(ctx context.Context, projectID string, opts VersionListOptions) (RemoteConfigVersionList, error) {
 	snapshots, err := config.ListParametersCacheSnapshotsForProject(projectID)
 	if err != nil {
@@ -124,11 +144,6 @@ func (s *Core) ListRemoteConfigVersions(ctx context.Context, projectID string, o
 			break
 		}
 		token = page.NextPageToken
-	}
-	if len(result.Versions) > 0 {
-		for i := range result.Versions {
-			result.Versions[i].Current = i == 0
-		}
 	}
 	return result, nil
 }
@@ -202,7 +217,11 @@ func (s *Core) getRemoteConfigVersionPair(ctx context.Context, projectID, fromSe
 		return nil, nil, err
 	}
 	if len(page.Versions) <= maxDistance {
-		return nil, nil, fmt.Errorf("project %s has no Remote Config version %d publications before current", projectID, maxDistance)
+		missingSelector := fromSelector
+		if toDistance > fromDistance {
+			missingSelector = toSelector
+		}
+		return nil, nil, versionNotFound(projectID, missingSelector, fmt.Errorf("project %s has no Remote Config version %d publications before current", projectID, maxDistance))
 	}
 	from, err := s.getRemoteConfigVersionNumber(ctx, projectID, page.Versions[fromDistance].VersionNumber, false)
 	if err != nil {
@@ -228,7 +247,7 @@ func (s *Core) getRemoteConfigVersionNumber(ctx context.Context, projectID, vers
 		return nil, err
 	}
 	if cachedOnly {
-		return nil, fmt.Errorf("cached Remote Config version %s was not found for project %s", version, projectID)
+		return nil, versionNotFound(projectID, version, fmt.Errorf("cached Remote Config version %s was not found for project %s", version, projectID))
 	}
 	fb, err := s.firebaseServiceForProject(ctx, projectID)
 	if err != nil {
@@ -236,6 +255,10 @@ func (s *Core) getRemoteConfigVersionNumber(ctx context.Context, projectID, vers
 	}
 	raw, etag, err := fb.GetRemoteConfig(ctx, projectID, version)
 	if err != nil {
+		var apiErr *firebase.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+			return nil, versionNotFound(projectID, version, fmt.Errorf("firebase Remote Config version %s was not found for project %s: %w", version, projectID, err))
+		}
 		return nil, fmt.Errorf("firebase Remote Config version %s: %w", version, err)
 	}
 	cfg, err := firebase.ParseCloneRemoteConfig(raw)
@@ -255,7 +278,6 @@ func (s *Core) getRemoteConfigVersionNumber(ctx context.Context, projectID, vers
 }
 
 func currentRelativeDistance(selector string) (int, bool, error) {
-	selector = strings.TrimSpace(selector)
 	if selector == "current" || selector == "latest" {
 		return 0, true, nil
 	}
@@ -366,16 +388,18 @@ func (s *Core) RestoreRemoteConfigVersion(ctx context.Context, projectID, source
 }
 
 func (s *Core) resolveVersionSelector(ctx context.Context, projectID, selector string, cachedOnly bool) (string, error) {
-	selector = strings.TrimSpace(selector)
 	if _, distance, ok, err := parseRelativeVersionSelector(selector); err != nil {
-		return "", err
+		return "", invalidVersionSelector(projectID, selector, err)
 	} else if ok {
-		return s.resolveRelativeVersion(ctx, projectID, distance, cachedOnly)
+		return s.resolveRelativeVersion(ctx, projectID, selector, distance, cachedOnly)
 	}
 	if selector == "current" || selector == "latest" {
 		if cachedOnly {
 			cache, err := config.LoadParametersCache(projectID)
 			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					return "", versionNotFound(projectID, selector, fmt.Errorf("cached current Remote Config version was not found for project %s", projectID))
+				}
 				return "", err
 			}
 			cfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
@@ -395,11 +419,11 @@ func (s *Core) resolveVersionSelector(ctx context.Context, projectID, selector s
 		return latest.VersionNumber, nil
 	}
 	if selector == "previous" {
-		return s.resolveRelativeVersion(ctx, projectID, 1, cachedOnly)
+		return s.resolveRelativeVersion(ctx, projectID, selector, 1, cachedOnly)
 	}
 	n, err := strconv.ParseInt(selector, 10, 64)
 	if err != nil || n <= 0 {
-		return "", fmt.Errorf("invalid Remote Config version %q", selector)
+		return "", invalidVersionSelector(projectID, selector, fmt.Errorf("invalid Remote Config version %q", selector))
 	}
 	return selector, nil
 }
@@ -425,9 +449,9 @@ func parseRelativeVersionSelector(selector string) (base string, distance int, o
 	return base, int(distance64), true, nil
 }
 
-func (s *Core) resolveRelativeVersion(ctx context.Context, projectID string, distance int, cachedOnly bool) (string, error) {
+func (s *Core) resolveRelativeVersion(ctx context.Context, projectID, selector string, distance int, cachedOnly bool) (string, error) {
 	if cachedOnly {
-		return relativeCachedVersion(projectID, distance)
+		return relativeCachedVersion(projectID, selector, distance)
 	}
 	fb, err := s.firebaseServiceForProject(ctx, projectID)
 	if err != nil {
@@ -438,14 +462,17 @@ func (s *Core) resolveRelativeVersion(ctx context.Context, projectID string, dis
 		return "", err
 	}
 	if len(page.Versions) <= distance {
-		return "", fmt.Errorf("project %s has no Remote Config version %d publications before current", projectID, distance)
+		return "", versionNotFound(projectID, selector, fmt.Errorf("project %s has no Remote Config version %d publications before current", projectID, distance))
 	}
 	return page.Versions[distance].VersionNumber, nil
 }
 
-func relativeCachedVersion(projectID string, distance int) (string, error) {
+func relativeCachedVersion(projectID, selector string, distance int) (string, error) {
 	currentCache, err := config.LoadParametersCache(projectID)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", versionNotFound(projectID, selector, fmt.Errorf("cached current Remote Config version was not found for project %s", projectID))
+		}
 		return "", err
 	}
 	currentConfig, err := firebase.ParseRemoteConfig(currentCache.RemoteConfig)
@@ -477,7 +504,7 @@ func relativeCachedVersion(projectID string, distance int) (string, error) {
 		return 0
 	})
 	if len(versions) < distance {
-		return "", fmt.Errorf("project %s has no cached Remote Config version %d snapshots before current", projectID, distance)
+		return "", versionNotFound(projectID, selector, fmt.Errorf("project %s has no cached Remote Config version %d snapshots before current", projectID, distance))
 	}
 	return strconv.FormatInt(versions[distance-1], 10), nil
 }

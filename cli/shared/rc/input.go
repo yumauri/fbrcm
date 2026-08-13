@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/importer"
 )
@@ -21,17 +22,17 @@ func ReadRemoteConfigInput(in io.Reader) (*firebase.RemoteConfig, []byte, error)
 		return nil, nil, fmt.Errorf("read stdin: %w", err)
 	}
 	if !json.Valid(raw) {
-		return nil, nil, fmt.Errorf("stdin remote config is not valid json")
+		return nil, nil, machine.InvalidInput("remote_config.invalid", "stdin", fmt.Errorf("stdin remote config is not valid json"))
 	}
 
 	remoteConfigRaw, err := ExtractRemoteConfigJSON(raw)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, machine.InvalidInput("remote_config.invalid", "stdin", err)
 	}
 
 	cloned, err := firebase.ParseCloneRemoteConfig(remoteConfigRaw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("decode stdin remote config: %w", err)
+		return nil, nil, machine.InvalidInput("remote_config.invalid", "stdin", fmt.Errorf("decode stdin remote config: %w", err))
 	}
 	return cloned, remoteConfigRaw, nil
 }

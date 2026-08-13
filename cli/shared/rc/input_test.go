@@ -40,3 +40,22 @@ func TestReadRemoteConfigInputRejectsInvalidJSON(t *testing.T) {
 		t.Fatalf("error = %q, want %q", got, want)
 	}
 }
+
+func TestReadRemoteConfigInputRejectsTypedNulls(t *testing.T) {
+	for _, input := range []string{
+		`null`,
+		`{"version":null}`,
+		`{"conditions":[null]}`,
+		`{"conditions":[{"name":null,"expression":"true"}]}`,
+		`{"parameters":{"flag":null}}`,
+		`{"parameters":{"flag":{"valueType":null}}}`,
+		`{"parameters":{"flag":{"defaultValue":{"value":null}}}}`,
+		`{"parameterGroups":{"checkout":null}}`,
+	} {
+		t.Run(input, func(t *testing.T) {
+			if _, _, err := ReadRemoteConfigInput(strings.NewReader(input)); err == nil {
+				t.Fatalf("ReadRemoteConfigInput(%s) error = %v, want typed null rejection", input, err)
+			}
+		})
+	}
+}

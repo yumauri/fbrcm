@@ -26,7 +26,7 @@ var requiredFirebasePermissions = []string{
 // DoctorCheck is one independently actionable application health check.
 type DoctorCheck struct {
 	ID     string `json:"id"`
-	Status string `json:"status"`
+	Status string `json:"status" contract:"enum=pass|warn|fail"`
 	Check  string `json:"check"`
 	Detail string `json:"detail"`
 }

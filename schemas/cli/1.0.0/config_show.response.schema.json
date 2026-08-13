@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "success_data": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "config": {
+              "additionalProperties": false,
+              "properties": {
+                "hooks": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "post_publish": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "pre_publish": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "timeout": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "keys": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "powerline_glyphs": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "profile": {
+                  "type": "string"
+                },
+                "projects": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "aliases": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "keys",
+                "powerline_glyphs",
+                "profile"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "exists": {
+              "type": "boolean"
+            },
+            "global_exists": {
+              "type": "boolean"
+            },
+            "global_path": {
+              "type": "string"
+            },
+            "local_exists": {
+              "type": "boolean"
+            },
+            "local_path": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "scope": {
+              "enum": [
+                "effective",
+                "global",
+                "local"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "config",
+            "exists",
+            "path",
+            "scope"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "source": {
+              "enum": [
+                "absent",
+                "default",
+                "global",
+                "local",
+                "mixed",
+                "migrated"
+              ],
+              "type": "string"
+            },
+            "value": {}
+          },
+          "required": [
+            "key",
+            "source",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "config.show"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

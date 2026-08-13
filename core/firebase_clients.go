@@ -55,7 +55,10 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 		authCtx, autoOpen := s.oauthAuthorizationContext(serviceCtx, authID, true)
 		fb, err := firebase.NewServiceForAuth(authCtx, auth, autoOpen)
 		if err != nil {
-			return nil, err
+			if errors.Is(err, firebase.ErrOAuthInteractionRequired) {
+				return nil, &OAuthInteractionError{AuthID: authID, Err: err}
+			}
+			return nil, withAuthFailureID(authID, err)
 		}
 		s.firebaseMu.Lock()
 		s.firebase[clientKey] = fb
@@ -68,9 +71,17 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 	return result.(*firebase.Service), nil
 }
 
+func withAuthFailureID(authID string, err error) error {
+	var authentication *firebase.AuthenticationError
+	if errors.As(err, &authentication) {
+		return &AuthError{Kind: authentication.Kind, AuthID: authID, Err: err}
+	}
+	return err
+}
+
 func (s *Core) authEntry(authID string) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
-		return config.AuthEntry{}, err
+		return config.AuthEntry{}, &AuthError{Kind: "invalid_argument", AuthID: authID, Err: err}
 	}
 	authFile, err := loadAuthWithSetupHint()
 	if err != nil {

@@ -129,11 +129,11 @@ func FilterProjectTargets(projects []core.Project, rawFilters []string) ([]core.
 		}
 		target, explicit, err := rctarget.ParseSelector(raw)
 		if err != nil {
-			return nil, err
+			return nil, InvalidArgument(err)
 		}
 		mode, query := filter.ParseModePrefixedQuery(target.ProjectID)
 		if strings.TrimSpace(query) == "" {
-			return nil, fmt.Errorf("%s template target requires a project filter", target.Kind)
+			return nil, InvalidArgument(fmt.Errorf("%s template target requires a project filter", target.Kind))
 		}
 		filters = append(filters, targetFilter{
 			target:   target,
@@ -335,9 +335,9 @@ func CompileExpr(rawExpr, projectID string) (*filter.Expression, error) {
 	compiled, err := filter.CompileExpression(rawExpr)
 	if err != nil {
 		if projectID == "" {
-			return nil, fmt.Errorf("compile expression %q: %w", rawExpr, err)
+			return nil, &ExpressionError{Expression: rawExpr, Context: "project_or_item", Err: fmt.Errorf("compile expression %q: %w", rawExpr, err)}
 		}
-		return nil, fmt.Errorf("compile expression %q for project %s: %w", rawExpr, projectID, err)
+		return nil, &ExpressionError{Expression: rawExpr, Context: "project_or_item", Target: projectID, Err: fmt.Errorf("compile expression %q for project %s: %w", rawExpr, projectID, err)}
 	}
 
 	return compiled, nil
@@ -350,7 +350,7 @@ func MatchProjectByCompiledExpr(compiled *filter.Expression, project core.Projec
 
 	match, err := compiled.MatchProject(templateProjectID(project.ProjectID), project.Name, cfg)
 	if err != nil {
-		return false, fmt.Errorf("evaluate expression for project %s: %w", project.ProjectID, err)
+		return false, &ExpressionError{Context: "project", Target: project.ProjectID, Err: fmt.Errorf("evaluate expression for project %s: %w", project.ProjectID, err)}
 	}
 
 	return match, nil
@@ -363,7 +363,7 @@ func MatchParameterByCompiledExpr(compiled *filter.Expression, project core.Proj
 
 	match, err := compiled.MatchParameter(templateProjectID(project.ProjectID), project.Name, cfg, name, group)
 	if err != nil {
-		return false, fmt.Errorf("evaluate expression for parameter %s in project %s: %w", name, project.ProjectID, err)
+		return false, &ExpressionError{Context: "parameter", Target: project.ProjectID + ":" + name, Err: fmt.Errorf("evaluate expression for parameter %s in project %s: %w", name, project.ProjectID, err)}
 	}
 
 	return match, nil
@@ -376,7 +376,7 @@ func MatchConditionByCompiledExpr(compiled *filter.Expression, project core.Proj
 
 	match, err := compiled.MatchCondition(templateProjectID(project.ProjectID), project.Name, entry)
 	if err != nil {
-		return false, fmt.Errorf("evaluate expression for condition %s in project %s: %w", entry.Name, project.ProjectID, err)
+		return false, &ExpressionError{Context: "condition", Target: project.ProjectID + ":" + entry.Name, Err: fmt.Errorf("evaluate expression for condition %s in project %s: %w", entry.Name, project.ProjectID, err)}
 	}
 
 	return match, nil

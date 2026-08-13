@@ -13,6 +13,27 @@ import (
 
 const DefaultProfileName = "default"
 
+const (
+	ProfileErrorInvalidArgument = "invalid_argument"
+	ProfileErrorNotFound        = "not_found"
+	ProfileErrorConflict        = "conflict"
+)
+
+// ProfileError classifies profile selection and mutation failures without
+// requiring machine-output callers to interpret user-facing text.
+type ProfileError struct {
+	Kind    string
+	Profile string
+	Err     error
+}
+
+func (e *ProfileError) Error() string { return e.Err.Error() }
+func (e *ProfileError) Unwrap() error { return e.Err }
+
+func profileError(kind, profile string, err error) error {
+	return &ProfileError{Kind: kind, Profile: profile, Err: err}
+}
+
 func GetActiveProfileName() string {
 	return getPaths().profile
 }
@@ -23,7 +44,7 @@ func EnsureActiveProfile() error {
 			return fmt.Errorf("selected profile: %w", err)
 		}
 		if !profileConfigDirExists(profile) {
-			return fmt.Errorf("selected profile %q does not exist; create it with `fbrcm profile switch %s`", profile, profile)
+			return profileError(ProfileErrorNotFound, profile, fmt.Errorf("selected profile %q does not exist; create it with `fbrcm profile switch %s`", profile, profile))
 		}
 		if err := ensureProfileDirs(profile, false); err != nil {
 			return err
@@ -52,7 +73,7 @@ func EnsureActiveProfile() error {
 		}
 		err := fmt.Errorf("active profile %q selected by %s does not exist in config directory; create it with `fbrcm profile switch %s`", profile, source, profile)
 		corelog.For("config").Error("active profile missing", "profile", profile, "config_dir", profileConfigDir(profile), "err", err)
-		return err
+		return profileError(ProfileErrorNotFound, profile, err)
 	}
 	if err := ensureProfileDirs(profile, false); err != nil {
 		return err
@@ -122,7 +143,7 @@ func EnsureProfileCanDelete(name string) error {
 		return err
 	}
 	if active, overridden := selectedProfileOverride(); overridden && active == name {
-		return fmt.Errorf("cannot delete active profile %q", name)
+		return profileError(ProfileErrorConflict, name, fmt.Errorf("cannot delete active profile %q", name))
 	}
 	resolved, err := ResolveAppConfig()
 	if err != nil {
@@ -131,10 +152,10 @@ func EnsureProfileCanDelete(name string) error {
 	if resolved.Global.Config.Profile == name || resolved.Effective.Profile == name {
 		err := fmt.Errorf("cannot delete active profile %q", name)
 		corelog.For("config").Error("active profile deletion rejected", "profile", name, "err", err)
-		return err
+		return profileError(ProfileErrorConflict, name, err)
 	}
 	if !profileConfigDirExists(name) {
-		return fmt.Errorf("profile %q does not exist", name)
+		return profileError(ProfileErrorNotFound, name, fmt.Errorf("profile %q does not exist", name))
 	}
 	return nil
 }
@@ -179,6 +200,9 @@ func RenameProfile(oldName, newName string) error {
 		return fmt.Errorf("new profile: %w", err)
 	}
 	if oldName == newName {
+		if !profileConfigDirExists(oldName) {
+			return profileError(ProfileErrorNotFound, oldName, fmt.Errorf("profile %q does not exist", oldName))
+		}
 		return nil
 	}
 	resolved, err := ResolveAppConfig()
@@ -186,7 +210,7 @@ func RenameProfile(oldName, newName string) error {
 		return err
 	}
 	if resolved.Local.Exists && strings.TrimSpace(resolved.Local.Config.Profile) == oldName {
-		return fmt.Errorf("profile %q is selected by local config %s; update that file before renaming the profile", oldName, resolved.Local.Path)
+		return profileError(ProfileErrorConflict, oldName, fmt.Errorf("profile %q is selected by local config %s; update that file before renaming the profile", oldName, resolved.Local.Path))
 	}
 
 	oldConfigDir := filepath.Join(GetConfigRootDirPath(), oldName)
@@ -194,11 +218,11 @@ func RenameProfile(oldName, newName string) error {
 	newConfigDir := filepath.Join(GetConfigRootDirPath(), newName)
 	newCacheDir := filepath.Join(GetCacheRootDirPath(), newName)
 
-	if !dirExists(oldConfigDir) {
-		return fmt.Errorf("profile %q does not exist", oldName)
+	if !profileConfigDirExists(oldName) {
+		return profileError(ProfileErrorNotFound, oldName, fmt.Errorf("profile %q does not exist", oldName))
 	}
 	if dirExists(newConfigDir) {
-		return fmt.Errorf("profile %q already exists", newName)
+		return profileError(ProfileErrorConflict, newName, fmt.Errorf("profile %q already exists", newName))
 	}
 
 	if err := EnsurePrivateDir(GetConfigRootDirPath()); err != nil {
@@ -233,7 +257,10 @@ func RenameProfile(oldName, newName string) error {
 }
 
 func ValidateProfileName(name string) error {
-	return validatePathSegment(name, "profile name")
+	if err := validatePathSegment(name, "profile name"); err != nil {
+		return profileError(ProfileErrorInvalidArgument, name, err)
+	}
+	return nil
 }
 
 func activeProfileOrDefault() string {
@@ -305,7 +332,16 @@ func profileCacheDir(name string) string {
 }
 
 func profileConfigDirExists(name string) bool {
-	return dirExists(profileConfigDir(name))
+	entries, err := os.ReadDir(GetConfigRootDirPath())
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if entry.Name() == name {
+			return dirExists(profileConfigDir(name))
+		}
+	}
+	return false
 }
 
 // ProfileExists reports whether a profile config directory exists.

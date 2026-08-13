@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -48,6 +49,8 @@ type RemoteMutationResult struct {
 	Published        bool
 	Err              error
 	ChangeNote       *string
+	MatchedItemCount int
+	NoOpReason       *NoOpReason
 }
 
 // RemoteMutationTotals contains aggregate counts and ordered project results.
@@ -55,6 +58,8 @@ type RemoteMutationTotals struct {
 	ModifiedProjects int
 	ChangedParams    int
 	Results          []RemoteMutationResult
+	DefaultScope     bool
+	ResolvedTargets  int
 }
 
 func (t RemoteMutationTotals) failedProjectIDs() []string {
@@ -79,12 +84,20 @@ func (t RemoteMutationTotals) failureCount() int {
 
 // RemoteMutationPlanner builds the per-project mutation from a freshly revalidated
 // config. Returning a nil mutation leaves the project untouched.
-type RemoteMutationPlanner func(project core.Project, cfg *ProjectConfig) (RemoteConfigMutation, error)
+type RemoteMutationPlanner func(project core.Project, cfg *ProjectConfig) (RemoteMutationPlan, error)
+
+// NoOpReason distinguishes an empty selection from an already-applied change.
+type NoOpReason string
+
+const (
+	NoOpNoMatch        NoOpReason = "no_match"
+	NoOpAlreadyApplied NoOpReason = "already_applied"
+)
 
 // RunRemoteDraftLoop applies mutations on top of each project's draft and records
 // failures independently. It never writes to Firebase.
-func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, operation string, plan RemoteMutationPlanner) (RemoteMutationTotals, error) {
-	var totals RemoteMutationTotals
+func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, defaultScope bool, operation string, plan RemoteMutationPlanner) (RemoteMutationTotals, error) {
+	totals := RemoteMutationTotals{DefaultScope: defaultScope, ResolvedTargets: len(projects)}
 	for _, project := range projects {
 		progress.Start("Preparing draft for " + project.ProjectID + "…")
 		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx), ValidationSource: core.ValidationSourceLocal}
@@ -103,19 +116,22 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		if cfg != nil && cfg.Config != nil {
 			result.PreviousVersion = cfg.Config.Version.VersionNumber
 		}
-		var mutate RemoteConfigMutation
+		var mutationPlan RemoteMutationPlan
 		if err == nil {
-			mutate, err = plan(project, cfg)
+			mutationPlan, err = plan(project, cfg)
+			result.MatchedItemCount = mutationPlan.MatchedItemCount
 		}
-		if err == nil && mutate == nil {
+		if err == nil && mutationPlan.Mutation == nil {
 			result.Validated = true
 			result.Status = RemoteMutationUnchanged
+			reason := NoOpNoMatch
+			result.NoOpReason = &reason
 			totals.Results = append(totals.Results, result)
 			continue
 		}
 		var finalCfg *firebase.RemoteConfig
 		if err == nil {
-			result.ChangedCount, finalCfg, err = mutate(cfg.Config)
+			result.ChangedCount, finalCfg, err = mutationPlan.Mutation(cfg.Config)
 		}
 		if err == nil {
 			err = rcmutate.EnsureOpaqueValuesUnchanged(cfg.Config, finalCfg)
@@ -123,6 +139,8 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		if err == nil && result.ChangedCount == 0 {
 			result.Validated = true
 			result.Status = RemoteMutationUnchanged
+			reason := NoOpAlreadyApplied
+			result.NoOpReason = &reason
 			totals.Results = append(totals.Results, result)
 			continue
 		}
@@ -156,16 +174,22 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 			break
 		}
 	}
-	return totals, mutationBatchError(totals)
+	return totals, mutationBatchError(totals, operation)
 }
 
 // RunRemotePublishLoop validates and publishes every selected project
 // independently. Project-scoped failures are reported and do not stop later
 // projects. Conflicts are left for a fresh, explicitly reviewed retry.
-func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, operation, publishedEmoji string, plan RemoteMutationPlanner) (RemoteMutationTotals, error) {
-	var totals RemoteMutationTotals
+func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, defaultScope bool, operation, publishedEmoji string, plan RemoteMutationPlanner) (RemoteMutationTotals, error) {
+	totals := RemoteMutationTotals{DefaultScope: defaultScope, ResolvedTargets: len(projects)}
 	if len(projects) > 1 && !firebase.IsDryRun(ctx) {
-		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: Remote Config is published independently for each project. Some projects may succeed while others fail. For coordinated changes, consider staging with --draft first.")
+		jsonOut, _ := cmd.Flags().GetBool("json")
+		if !jsonOut {
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: Remote Config is published independently for each project. Some projects may succeed while others fail. For coordinated changes, consider staging with --draft first.")
+		}
+		machine.FromContext(cmd.Context()).AddWarning(machine.Warning{Code: "publication.non_atomic", Message: "Remote Config is published independently for each target; successful publications are not rolled back when another target fails.", Details: struct {
+			TargetCount int `json:"target_count"`
+		}{TargetCount: len(projects)}, Remediation: []machine.Remediation{{Description: "stage the changes as drafts before publishing", Strategy: machine.RemediationRetryWithArguments, Argv: []string{"--draft"}}}})
 	}
 
 	for _, project := range projects {
@@ -174,7 +198,11 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 		preparationFailed := false
 		hasDraft, err := svc.HasDraft(project.ProjectID)
 		if err == nil && hasDraft {
-			err = fmt.Errorf("project has an unpublished draft; use --draft, publish it, or discard it first")
+			err = &machine.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []machine.Remediation{
+				{Description: "apply the mutation to the existing draft", Strategy: machine.RemediationRetryWithArguments, Argv: []string{"--draft"}},
+				{Description: "publish the existing draft", Strategy: machine.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
+				{Description: "discard the existing draft", Strategy: machine.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
+			}, Err: fmt.Errorf("project has an unpublished draft; use --draft, publish it, or discard it first")}
 		}
 		var cfg *ProjectConfig
 		if err == nil {
@@ -183,20 +211,23 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 		if cfg != nil && cfg.Config != nil {
 			result.PreviousVersion = cfg.Config.Version.VersionNumber
 		}
-		var mutate RemoteConfigMutation
+		var mutationPlan RemoteMutationPlan
 		if err == nil {
-			mutate, err = plan(project, cfg)
+			mutationPlan, err = plan(project, cfg)
+			result.MatchedItemCount = mutationPlan.MatchedItemCount
 		}
 		preparationFailed = err != nil
-		if err == nil && mutate == nil {
+		if err == nil && mutationPlan.Mutation == nil {
 			result.Validated = true
 			result.Status = RemoteMutationUnchanged
+			reason := NoOpNoMatch
+			result.NoOpReason = &reason
 			totals.Results = append(totals.Results, result)
 			continue
 		}
 		var publishResult RemoteConfigMutationPublishResult
 		if err == nil {
-			publishResult, err = PublishProjectConfigMutationResult(ctx, svc, cfg, operation, nil, mutate)
+			publishResult, err = PublishProjectConfigMutationResult(ctx, svc, cfg, operation, nil, mutationPlan.Mutation)
 			result.ChangedCount = publishResult.ChangedCount
 			result.PublishedVersion = publishResult.PublishedVersion
 			result.ErrorStage = publishResult.FailureStage
@@ -206,16 +237,23 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 		switch {
 		case publishResult.Retry:
 			result.Status = RemoteMutationConflict
-			result.Err = fmt.Errorf("remote config changed during %s; rerun the command to review a fresh candidate", operation)
+			result.Err = &machine.ConflictError{Code: "remote_config.conflict", Resource: "remote_config", Target: project.ProjectID, Retryable: true, Err: fmt.Errorf("remote config changed during %s; rerun the command to review a fresh candidate", operation)}
 		case err != nil:
 			var hookPublishErr *core.RemoteConfigPublishedHookError
 			var cacheErr *core.RemoteConfigPublishedCacheError
 			if errors.As(err, &hookPublishErr) {
 				result.Status, result.Published, result.Err = RemoteMutationPublishedHookFailed, true, err
+				machine.FromContext(cmd.Context()).AddWarning(machine.Warning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the publication, but a post_publish hook failed.", Target: project.ProjectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "post_publish_hook"}, Remediation: []machine.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: machine.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
 				totals.ModifiedProjects++
 				totals.ChangedParams += result.ChangedCount
 			} else if errors.As(err, &cacheErr) {
 				result.Status, result.Published, result.Err = RemoteMutationPublishedCacheFailed, true, err
+				selector, _ := rctarget.ExactFilter(project.ProjectID)
+				machine.FromContext(cmd.Context()).AddWarning(machine.Warning{Code: "publication.cache_stale", Message: "Firebase accepted the publication, but the local cache update failed.", Target: project.ProjectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "cache"}, Remediation: []machine.Remediation{{Description: "refresh the successfully published target instead of retrying the mutation", Strategy: machine.RemediationRunCommand, Argv: []string{"get", "--update", "--project", selector}}}})
 				totals.ModifiedProjects++
 				totals.ChangedParams += result.ChangedCount
 			} else if preparationFailed || IsPreparationError(err) {
@@ -229,6 +267,8 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 			}
 		case result.ChangedCount == 0:
 			result.Status = RemoteMutationUnchanged
+			reason := NoOpAlreadyApplied
+			result.NoOpReason = &reason
 		default:
 			result.Status, result.Published = RemoteMutationPublished, true
 			if firebase.IsDryRun(ctx) {
@@ -242,7 +282,7 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 			break
 		}
 	}
-	return totals, mutationBatchError(totals)
+	return totals, mutationBatchError(totals, operation)
 }
 
 // RemoteMutationJSONError is the stable structured failure payload for a
@@ -267,6 +307,15 @@ type RemoteMutationJSONResult struct {
 	Error            *RemoteMutationJSONError `json:"error"`
 	RetrySelector    *string                  `json:"retry_selector"`
 	ChangeNote       *string                  `json:"change_note"`
+	Selection        SelectionMetadata        `json:"selection"`
+	NoOpReason       *NoOpReason              `json:"no_op_reason"`
+}
+
+// SelectionMetadata explains the scope and cardinality resolved for a result.
+type SelectionMetadata struct {
+	DefaultScope        bool `json:"default_scope"`
+	ResolvedTargetCount int  `json:"resolved_target_count"`
+	MatchedItemCount    int  `json:"matched_item_count"`
 }
 
 // WriteRemoteMutationResults renders a collected batch after command logging
@@ -301,6 +350,8 @@ func writeRemoteMutationJSON(cmd *cobra.Command, totals RemoteMutationTotals, dr
 			Validated:        result.Validated,
 			ValidationSource: result.ValidationSource,
 			ChangeNote:       result.ChangeNote,
+			Selection:        SelectionMetadata{DefaultScope: totals.DefaultScope, ResolvedTargetCount: totals.ResolvedTargets, MatchedItemCount: result.MatchedItemCount},
+			NoOpReason:       result.NoOpReason,
 		}
 		if result.PreviousVersion != "" {
 			item.PreviousVersion = &result.PreviousVersion
@@ -311,7 +362,7 @@ func writeRemoteMutationJSON(cmd *cobra.Command, totals RemoteMutationTotals, dr
 		if result.Err != nil {
 			item.Error = &RemoteMutationJSONError{
 				Stage:   remoteMutationErrorStage(result),
-				Message: result.Err.Error(),
+				Message: machine.SafeErrorText(result.Err),
 			}
 		}
 		if result.Err != nil && !result.Published {
@@ -412,12 +463,44 @@ func writeMutationRecoveryHints(cmd *cobra.Command, totals RemoteMutationTotals,
 	}
 }
 
-func mutationBatchError(totals RemoteMutationTotals) error {
+func mutationBatchError(totals RemoteMutationTotals, operation string) error {
 	failures := totals.failureCount()
 	if failures == 0 {
 		return nil
 	}
-	return fmt.Errorf("%s failed", display.FormatCount(failures, "template target", "template targets"))
+	if len(totals.Results) == 1 && totals.Results[0].Err != nil && !totals.Results[0].Published {
+		return totals.Results[0].Err
+	}
+	failedTargets := make([]string, 0, failures)
+	targetFailures := make([]machine.BatchFailure, 0, failures)
+	publishedTargets := 0
+	successfulTargets := 0
+	for _, result := range totals.Results {
+		if result.Published {
+			publishedTargets++
+		}
+		if result.Err != nil {
+			failedTargets = append(failedTargets, result.Project.ProjectID)
+			targetFailures = append(targetFailures, machine.BatchFailure{Target: result.Project.ProjectID, Err: result.Err})
+		}
+		if result.Err == nil || result.Published {
+			successfulTargets++
+		}
+	}
+	remediation := make([]machine.Remediation, 0, 1)
+	if ids := totals.failedProjectIDs(); len(ids) > 0 {
+		argv := make([]string, 0, len(ids)*2)
+		for _, id := range ids {
+			selector, err := rctarget.ExactFilter(id)
+			if err == nil {
+				argv = append(argv, "--project", selector)
+			}
+		}
+		if len(argv) > 0 {
+			remediation = append(remediation, machine.Remediation{Description: "retry only targets that did not complete", Strategy: machine.RemediationRetryWithArguments, Argv: argv})
+		}
+	}
+	return &machine.BatchError{Operation: operation, FailedTargets: failedTargets, Failures: targetFailures, SuccessfulTargetCount: successfulTargets, PublishedTargetCount: publishedTargets, Remediation: remediation, Err: fmt.Errorf("%s failed", display.FormatCount(failures, "template target", "template targets"))}
 }
 
 func batchMustStop(ctx context.Context, err error) bool {

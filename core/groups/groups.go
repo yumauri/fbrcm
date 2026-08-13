@@ -36,14 +36,8 @@ func ResolveName(cfg *firebase.RemoteConfig, requested string) (string, bool) {
 	if cfg == nil {
 		return "", false
 	}
-	requested = strings.TrimSpace(requested)
 	if _, ok := cfg.ParameterGroups[requested]; ok {
 		return requested, true
-	}
-	for name := range cfg.ParameterGroups {
-		if strings.EqualFold(name, requested) {
-			return name, true
-		}
 	}
 	return "", false
 }

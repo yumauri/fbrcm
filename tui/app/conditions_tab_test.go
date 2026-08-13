@@ -214,7 +214,7 @@ func TestConditionsUsesParameterReloadBindings(t *testing.T) {
 		if !handled || cmd == nil {
 			t.Fatalf("%s from Conditions: handled=%v cmd=%v; want refresh command", key, handled, cmd)
 		}
-		if got := next.conditions.ViewWithBorder(true, true); strings.Contains(got, "staled") {
+		if got := next.conditions.ViewWithBorder(true, true); strings.Contains(got, "stale") {
 			t.Fatalf("%s did not mark Conditions project as reloading:\n%s", key, got)
 		}
 	}

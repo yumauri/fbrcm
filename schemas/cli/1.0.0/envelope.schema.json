@@ -1,0 +1,2434 @@
+{
+  "$defs": {
+    "error": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "argument.invalid",
+                  "argument.unknown_command",
+                  "auth.id_invalid",
+                  "command.not_executable",
+                  "condition.ambiguous",
+                  "draft.ambiguous",
+                  "parameter.ambiguous",
+                  "project.ambiguous"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "argument"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "auth.configuration_invalid",
+                  "auth.credentials_invalid",
+                  "auth.setup_required"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "auth"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "command.canceled"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "canceled"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "configuration.invalid",
+                  "configuration.local_disabled",
+                  "configuration.local_not_found",
+                  "configuration.project_aliases_invalid",
+                  "hooks.not_configured"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "configuration"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "draft.exists",
+                  "hooks.changed",
+                  "parameter.exists",
+                  "profile.conflict",
+                  "project_alias.conflict",
+                  "project_alias.read_only",
+                  "remote_config.conflict",
+                  "resource.conflict"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "conflict"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "hook.failed"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "hook"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "interaction.required"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "interaction"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "internal.contract_violation",
+                  "internal.unclassified"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "internal"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "file.io_failed"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "io"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "auth.not_found",
+                  "command.not_found",
+                  "condition.not_found",
+                  "draft.not_found",
+                  "group.not_found",
+                  "parameter.not_found",
+                  "parameters_cache.not_found",
+                  "personalization.not_found",
+                  "profile.not_found",
+                  "project.not_found",
+                  "resource.not_found",
+                  "schema.not_found",
+                  "version.not_found"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "not_found"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "batch.partial_success",
+                  "publication.cache_failed",
+                  "publication.hook_failed"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "partial_success"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "firebase.permission_denied",
+                  "filesystem.permission_denied"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "permission"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "profile.invalid"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "profile"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "command.timeout",
+                  "firebase.timeout",
+                  "network.timeout"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "timeout"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "firebase.rate_limited",
+                  "firebase.service_unavailable",
+                  "network.offline",
+                  "network.unavailable"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "unavailable"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "condition.invalid",
+                  "diagnostic.failed",
+                  "expression.invalid",
+                  "firebase.request_failed",
+                  "remote_config.invalid",
+                  "remote_config.validation_failed",
+                  "result.unsuccessful",
+                  "stdin.remote_config.invalid",
+                  "validation.failed"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "category": {
+                "const": "validation"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "command.timeout",
+                  "firebase.rate_limited",
+                  "firebase.service_unavailable",
+                  "firebase.timeout",
+                  "hooks.changed",
+                  "network.offline",
+                  "network.timeout",
+                  "network.unavailable"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryable": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "argument.unknown_command"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "invocation"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "interaction.required"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "interaction",
+                      "oauth_authorization"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "expression.invalid"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "expression"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "hook.failed"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "hook"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "firebase.permission_denied",
+                  "firebase.rate_limited",
+                  "firebase.request_failed",
+                  "firebase.service_unavailable",
+                  "firebase.timeout"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "remote_api"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "resource.not_found"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "remote_api",
+                      "selection"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "condition.ambiguous",
+                  "condition.not_found",
+                  "draft.ambiguous",
+                  "draft.not_found",
+                  "group.not_found",
+                  "parameter.ambiguous",
+                  "parameter.not_found",
+                  "parameters_cache.not_found",
+                  "personalization.not_found",
+                  "profile.not_found",
+                  "project.ambiguous",
+                  "project.not_found",
+                  "version.not_found"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "selection"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "configuration.invalid",
+                  "configuration.local_disabled",
+                  "configuration.local_not_found",
+                  "configuration.project_aliases_invalid",
+                  "hooks.not_configured",
+                  "profile.invalid",
+                  "condition.invalid",
+                  "remote_config.invalid",
+                  "remote_config.validation_failed",
+                  "stdin.remote_config.invalid"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "validation"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "auth.credentials_invalid"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "remote_api",
+                      "validation"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "auth.configuration_invalid",
+                  "auth.id_invalid",
+                  "auth.not_found",
+                  "auth.setup_required"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "auth"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "draft.exists",
+                  "hooks.changed",
+                  "parameter.exists",
+                  "profile.conflict",
+                  "project_alias.conflict",
+                  "project_alias.read_only",
+                  "resource.conflict"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "conflict"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "remote_config.conflict"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "conflict",
+                      "remote_api"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "batch.failed",
+                  "batch.partial_success"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "batch"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "file.io_failed",
+                  "filesystem.permission_denied"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "file"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "const": "remote_config.validation_failed"
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "const": "validation"
+                  },
+                  "source": {
+                    "enum": [
+                      "local",
+                      "firebase"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "source"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "argument.invalid",
+                  "argument.unknown_command",
+                  "auth.configuration_invalid",
+                  "auth.credentials_invalid",
+                  "auth.id_invalid",
+                  "auth.not_found",
+                  "auth.setup_required",
+                  "command.canceled",
+                  "command.not_executable",
+                  "command.not_found",
+                  "condition.ambiguous",
+                  "condition.invalid",
+                  "condition.not_found",
+                  "configuration.invalid",
+                  "configuration.local_disabled",
+                  "configuration.local_not_found",
+                  "configuration.project_aliases_invalid",
+                  "diagnostic.failed",
+                  "draft.ambiguous",
+                  "draft.exists",
+                  "draft.not_found",
+                  "expression.invalid",
+                  "file.io_failed",
+                  "filesystem.permission_denied",
+                  "firebase.permission_denied",
+                  "firebase.request_failed",
+                  "group.not_found",
+                  "hooks.not_configured",
+                  "interaction.required",
+                  "internal.contract_violation",
+                  "internal.unclassified",
+                  "parameter.ambiguous",
+                  "parameter.exists",
+                  "parameter.not_found",
+                  "parameters_cache.not_found",
+                  "personalization.not_found",
+                  "profile.conflict",
+                  "profile.invalid",
+                  "profile.not_found",
+                  "project.ambiguous",
+                  "project.not_found",
+                  "project_alias.conflict",
+                  "project_alias.read_only",
+                  "publication.cache_failed",
+                  "publication.hook_failed",
+                  "remote_config.invalid",
+                  "remote_config.validation_failed",
+                  "resource.conflict",
+                  "resource.not_found",
+                  "result.unsuccessful",
+                  "schema.not_found",
+                  "stdin.remote_config.invalid",
+                  "validation.failed",
+                  "version.not_found"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "retryable": {
+                "const": false
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "category": {
+          "enum": [
+            "argument",
+            "configuration",
+            "profile",
+            "auth",
+            "permission",
+            "not_found",
+            "conflict",
+            "validation",
+            "timeout",
+            "interaction",
+            "unavailable",
+            "partial_success",
+            "io",
+            "hook",
+            "canceled",
+            "internal"
+          ]
+        },
+        "code": {
+          "enum": [
+            "argument.invalid",
+            "argument.unknown_command",
+            "auth.configuration_invalid",
+            "auth.credentials_invalid",
+            "auth.id_invalid",
+            "auth.not_found",
+            "auth.setup_required",
+            "batch.failed",
+            "batch.partial_success",
+            "command.canceled",
+            "command.not_executable",
+            "command.not_found",
+            "command.timeout",
+            "condition.ambiguous",
+            "condition.invalid",
+            "condition.not_found",
+            "configuration.invalid",
+            "configuration.local_disabled",
+            "configuration.local_not_found",
+            "configuration.project_aliases_invalid",
+            "diagnostic.failed",
+            "draft.ambiguous",
+            "draft.exists",
+            "draft.not_found",
+            "expression.invalid",
+            "file.io_failed",
+            "filesystem.permission_denied",
+            "firebase.permission_denied",
+            "firebase.rate_limited",
+            "firebase.request_failed",
+            "firebase.service_unavailable",
+            "firebase.timeout",
+            "group.not_found",
+            "hook.failed",
+            "hooks.changed",
+            "hooks.not_configured",
+            "interaction.required",
+            "internal.contract_violation",
+            "internal.unclassified",
+            "network.offline",
+            "network.timeout",
+            "network.unavailable",
+            "parameter.ambiguous",
+            "parameter.exists",
+            "parameter.not_found",
+            "parameters_cache.not_found",
+            "personalization.not_found",
+            "profile.conflict",
+            "profile.invalid",
+            "profile.not_found",
+            "project.ambiguous",
+            "project.not_found",
+            "project_alias.conflict",
+            "project_alias.read_only",
+            "publication.cache_failed",
+            "publication.hook_failed",
+            "remote_config.conflict",
+            "remote_config.invalid",
+            "remote_config.validation_failed",
+            "resource.conflict",
+            "resource.not_found",
+            "result.unsuccessful",
+            "schema.not_found",
+            "stdin.remote_config.invalid",
+            "validation.failed",
+            "version.not_found"
+          ],
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+          "type": "string"
+        },
+        "details": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "destructive": {
+                  "type": "boolean"
+                },
+                "interaction_type": {
+                  "enum": [
+                    "confirmation",
+                    "destination_conflict",
+                    "external_input",
+                    "input_required",
+                    "selection_required"
+                  ]
+                },
+                "kind": {
+                  "const": "interaction"
+                },
+                "required_option": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "interaction_type",
+                "required_option",
+                "destructive"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "auth_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "const": "oauth_authorization"
+                }
+              },
+              "required": [
+                "kind",
+                "auth_id"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "context": {
+                  "type": "string"
+                },
+                "expression": {
+                  "type": "string"
+                },
+                "kind": {
+                  "const": "expression"
+                }
+              },
+              "required": [
+                "kind",
+                "expression",
+                "context"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "validation"
+                },
+                "source": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "source"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "auth"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "conflict"
+                },
+                "resource": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "resource"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "candidates": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "id"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "const": "selection"
+                },
+                "query": {
+                  "type": "string"
+                },
+                "resource": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "resource",
+                "query",
+                "candidates"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "invocation"
+                },
+                "requested_command": {
+                  "type": "string"
+                },
+                "resolved_command": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "requested_command",
+                "resolved_command"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "failed_targets": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "failures": {
+                  "items": {
+                    "$ref": "#/$defs/error"
+                  },
+                  "type": "array"
+                },
+                "kind": {
+                  "const": "batch"
+                },
+                "operation": {
+                  "type": "string"
+                },
+                "published_target_count": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "successful_target_count": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "kind",
+                "operation",
+                "failed_targets",
+                "failures",
+                "successful_target_count",
+                "published_target_count"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "event": {
+                  "type": "string"
+                },
+                "exit_code": {
+                  "type": "integer"
+                },
+                "index": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "kind": {
+                  "const": "hook"
+                },
+                "output": {
+                  "type": "string"
+                },
+                "timed_out": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "event",
+                "index",
+                "exit_code",
+                "timed_out",
+                "output"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "http_status": {
+                  "maximum": 599,
+                  "minimum": 100,
+                  "type": "integer"
+                },
+                "kind": {
+                  "const": "remote_api"
+                },
+                "operation": {
+                  "type": "string"
+                },
+                "remote_code": {
+                  "type": "string"
+                },
+                "remote_status": {
+                  "type": "string"
+                },
+                "retry_after_ms": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "service": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "service",
+                "operation",
+                "http_status",
+                "remote_status",
+                "remote_code",
+                "retry_after_ms"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "file"
+                },
+                "operation": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "operation",
+                "path"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        "message": {
+          "maxLength": 4097,
+          "type": "string"
+        },
+        "remediation": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "argv": {
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "description": {
+                "type": "string"
+              },
+              "strategy": {
+                "enum": [
+                  "retry_with_arguments",
+                  "replace_selector",
+                  "run_command"
+                ]
+              }
+            },
+            "required": [
+              "description",
+              "strategy",
+              "argv"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "stage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "message",
+        "retryable",
+        "target",
+        "stage",
+        "details",
+        "remediation"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:envelope",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "success"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "not": {
+              "type": "null"
+            }
+          },
+          "errors": {
+            "maxItems": 0
+          },
+          "exit_code": {
+            "enum": [
+              0,
+              1
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "partial_success"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "not": {
+              "type": "null"
+            }
+          },
+          "errors": {
+            "minItems": 1
+          },
+          "exit_code": {
+            "const": 12
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome": {
+            "const": "failure"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "errors": {
+            "minItems": 1
+          },
+          "exit_code": {
+            "not": {
+              "const": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "argument"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              2
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "configuration",
+                      "profile"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              3
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "auth"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              4
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "permission"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              5
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              6
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "conflict"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              7
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "validation"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              8,
+              1
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "timeout"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "interaction"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              10
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "unavailable"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              11
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "partial_success"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              12
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "io"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              13
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "hook"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              14
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "internal"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              15
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "errors": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "category": {
+                    "enum": [
+                      "canceled"
+                    ]
+                  }
+                },
+                "required": [
+                  "category"
+                ]
+              }
+            ]
+          },
+          "outcome": {
+            "const": "failure"
+          }
+        },
+        "required": [
+          "outcome",
+          "errors"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exit_code": {
+            "enum": [
+              130
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "command": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "context": {
+      "additionalProperties": false,
+      "properties": {
+        "draft": {
+          "type": "boolean"
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "offline": {
+          "type": "boolean"
+        },
+        "profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "profile",
+        "offline",
+        "dry_run",
+        "draft"
+      ],
+      "type": "object"
+    },
+    "contract_version": {
+      "const": "1.0.0"
+    },
+    "data": true,
+    "errors": {
+      "items": {
+        "$ref": "#/$defs/error"
+      },
+      "type": "array"
+    },
+    "exit_code": {
+      "maximum": 255,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "partial_success",
+        "failure"
+      ]
+    },
+    "producer": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "const": "fbrcm"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "type": "object"
+    },
+    "requested_command": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "warnings": {
+      "items": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "cache.stale"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "source": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "source"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "publication.cache_stale"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "stage": {
+                      "const": "cache"
+                    }
+                  },
+                  "required": [
+                    "stage"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "publication.draft_cleanup_failed"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "stage": {
+                      "const": "cleanup"
+                    }
+                  },
+                  "required": [
+                    "stage"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "publication.non_atomic"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "target_count": {
+                      "minimum": 2,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "target_count"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "publication.post_publish_hook_failed"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "stage": {
+                      "const": "post_publish_hook"
+                    }
+                  },
+                  "required": [
+                    "stage"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "code": {
+            "enum": [
+              "cache.stale",
+              "publication.cache_stale",
+              "publication.draft_cleanup_failed",
+              "publication.non_atomic",
+              "publication.post_publish_hook_failed"
+            ],
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+            "type": "string"
+          },
+          "details": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "message": {
+            "maxLength": 4097,
+            "type": "string"
+          },
+          "remediation": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "argv": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "strategy": {
+                  "enum": [
+                    "retry_with_arguments",
+                    "replace_selector",
+                    "run_command"
+                  ]
+                }
+              },
+              "required": [
+                "description",
+                "strategy",
+                "argv"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "target",
+          "details",
+          "remediation"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "contract_version",
+    "command",
+    "requested_command",
+    "outcome",
+    "exit_code",
+    "producer",
+    "context",
+    "data",
+    "errors",
+    "warnings"
+  ],
+  "type": "object"
+}

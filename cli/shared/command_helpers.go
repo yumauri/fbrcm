@@ -1,18 +1,33 @@
 package shared
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 )
 
+// CommandContext returns Cobra's root-owned invocation context and falls back
+// only for standalone command tests and embedders that did not set one.
+func CommandContext(cmd *cobra.Command) context.Context {
+	if cmd != nil && cmd.Context() != nil {
+		return cmd.Context()
+	}
+	return context.Background()
+}
+
 // WriteJSON encodes v as indented JSON to the command's stdout. Callers wrap
 // the returned error with their own context when needed.
 func WriteJSON(cmd *cobra.Command, v any) error {
+	value := reflect.ValueOf(v)
+	if value.IsValid() && value.Kind() == reflect.Slice && value.IsNil() {
+		v = reflect.MakeSlice(value.Type(), 0, 0).Interface()
+	}
 	encoder := json.NewEncoder(cmd.OutOrStdout())
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(v)
@@ -23,15 +38,17 @@ func HasFilters(rawFilters []string) bool {
 	return len(ParseFilters(rawFilters)) > 0
 }
 
-// ResolveParameterArgFilters turns an optional parameter argument into an exact filter.
-func ResolveParameterArgFilters(args []string, rawFilters []string) ([]string, error) {
+// ResolveParameterArgument returns an optional literal positional parameter
+// selector and rejects combining it with query filters.
+func ResolveParameterArgument(args []string, rawFilters []string) (*string, error) {
 	if len(args) == 0 {
-		return rawFilters, nil
+		return nil, nil
 	}
 	if HasFilters(rawFilters) {
-		return nil, fmt.Errorf("parameter argument cannot be used together with --filter")
+		return nil, InvalidArgument(fmt.Errorf("parameter argument cannot be used together with --filter"))
 	}
-	return []string{"=" + args[0]}, nil
+	value := args[0]
+	return &value, nil
 }
 
 // StdinAvailable reports whether the given reader is a non-terminal file.

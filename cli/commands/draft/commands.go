@@ -1,18 +1,18 @@
 package draft
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/cli/shared/fileoutput"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -24,6 +24,13 @@ import (
 func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "draft", Short: "Inspect, publish, and discard Remote Config drafts"}
 	cmd.AddCommand(newListCommand(), newPathCommand(), newShowCommand(), newChangeNoteCommand(svc), newDiffCommand(svc), newPublishCommand(svc), newDiscardCommand())
+	contract.MustRegisterResponsePath(cmd, "list", []listItem{})
+	contract.MustRegisterResponsePath(cmd, "path", shared.PathResult{})
+	contract.MustRegisterResponsePath(cmd, "show", contract.ArtifactData{})
+	contract.MustRegisterResponsePath(cmd, "change-note", draftChangeNoteResult{})
+	contract.MustRegisterResponsePath(cmd, "diff", draftDiffResult{})
+	contract.MustRegisterResponsePath(cmd, "publish", []publishResult{})
+	contract.MustRegisterResponsePath(cmd, "discard", []draftDiscardResult{})
 	return cmd
 }
 
@@ -39,7 +46,7 @@ func newPathCommand() *cobra.Command {
 				return err
 			}
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]string{"path": path})
+				return shared.WriteJSON(cmd, shared.PathResult{Path: path})
 			}
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
 			return nil
@@ -89,7 +96,7 @@ func newChangeNoteCommand(svc *core.Core) *cobra.Command {
 			}
 			clear, _ := cmd.Flags().GetBool("clear")
 			if clear && len(args) == 2 {
-				return fmt.Errorf("change note text cannot be used with --clear")
+				return shared.InvalidArgument(fmt.Errorf("change note text cannot be used with --clear"))
 			}
 			if clear || len(args) == 2 {
 				value := ""
@@ -106,7 +113,7 @@ func newChangeNoteCommand(svc *core.Core) *cobra.Command {
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{"project_id": projectID, "change_note": optionalString(stored.ChangeNote)})
+				return shared.WriteJSON(cmd, draftChangeNoteResult{ProjectID: projectID, ChangeNote: optionalString(stored.ChangeNote)})
 			}
 			_, err = fmt.Fprintln(cmd.OutOrStdout(), stored.ChangeNote)
 			return err
@@ -145,19 +152,30 @@ func runShow(cmd *cobra.Command, args []string) error {
 	}
 	to, _ := cmd.Flags().GetString("to")
 	if to == "" {
+		if contract.Enabled(cmd) {
+			target := projectID
+			return shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", body, nil, false))
+		}
 		_, err = cmd.OutOrStdout().Write(body)
 		return err
 	}
-	if dir := filepath.Dir(to); dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("create destination dir: %w", err)
-		}
+	overwrite, proceed, err := shared.ConfirmFileOverwriteWithoutBypass(cmd, to)
+	if err != nil {
+		return err
 	}
-	if err := os.WriteFile(to, body, 0o600); err != nil {
-		return fmt.Errorf("write destination file: %w", err)
+	if !proceed {
+		return nil
 	}
-	if err := os.Chmod(to, 0o600); err != nil {
-		return fmt.Errorf("set destination permissions: %w", err)
+	write := fileoutput.Create
+	if overwrite {
+		write = fileoutput.Write
+	}
+	if err := write(to, body); err != nil {
+		return err
+	}
+	if contract.Enabled(cmd) {
+		target, destination := projectID, to
+		return shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", body, &destination, overwrite))
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported draft: %s\n", to)
 	return nil
@@ -172,7 +190,7 @@ type diffOptions struct {
 
 func newDiffCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "diff <project>", Short: "Compare a draft with its base or current Remote Config", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		return shared.DiffCommandError(cmd, runDiff(cmd, svc, args[0]))
+		return runDiff(cmd, svc, args[0])
 	}}
 	cmd.Flags().String("against", "base", "Comparison target: base or current")
 	cmd.Flags().Bool("cached", false, "Use the latest local snapshot and do not contact Firebase")
@@ -182,7 +200,6 @@ func newDiffCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("parameters", false, "Include only parameter and group description changes")
 	cmd.Flags().Bool("conditions", false, "Include only condition changes")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
-	shared.AddDiffExitCodeFlag(cmd)
 	cmd.MarkFlagsMutuallyExclusive("parameters", "conditions")
 	return cmd
 }
@@ -205,10 +222,10 @@ func runDiff(cmd *cobra.Command, svc *core.Core, query string) error {
 		if opts.cached {
 			cache, _, err = svc.InspectParametersCache(projectID)
 			if err == nil && cache == nil {
-				err = fmt.Errorf("parameters cache not found")
+				err = &shared.SelectionError{Resource: "parameters_cache", Kind: "not_found", Query: projectID}
 			}
 		} else {
-			cache, _, err = svc.GetParameters(context.Background(), projectID, true)
+			cache, _, err = svc.GetParameters(shared.CommandContext(cmd), projectID, true)
 		}
 		if err != nil {
 			return err
@@ -225,9 +242,9 @@ func runDiff(cmd *cobra.Command, svc *core.Core, query string) error {
 		currentCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
 		currentVersion = currentCfg.Version.VersionNumber
 	} else if opts.against != "base" {
-		return fmt.Errorf("--against must be base or current")
+		return shared.InvalidArgument(fmt.Errorf("--against must be base or current"))
 	} else if opts.cached {
-		return fmt.Errorf("--cached requires --against current")
+		return shared.InvalidArgument(fmt.Errorf("--cached requires --against current"))
 	}
 	fromCfg, err := firebase.ParseRemoteConfig(fromRaw)
 	if err != nil {
@@ -242,7 +259,7 @@ func runDiff(cmd *cobra.Command, svc *core.Core, query string) error {
 		return err
 	}
 	if opts.json {
-		if err := shared.WriteJSON(cmd, map[string]any{"project": project, "against": opts.against, "base_version": stored.BaseVersion, "current_version": currentVersion, "changed": result.HasChanges(), "diff": result}); err != nil {
+		if err := shared.WriteJSON(cmd, draftDiffResult{Project: project, Against: opts.against, BaseVersion: stored.BaseVersion, CurrentVersion: currentVersion, Changed: result.HasChanges(), Diff: result}); err != nil {
 			return err
 		}
 		if result.HasChanges() {
@@ -277,19 +294,25 @@ func newPublishCommand(svc *core.Core) *cobra.Command {
 }
 
 type publishResult struct {
-	ProjectID        string  `json:"project_id"`
-	Status           string  `json:"status"`
-	BaseVersion      string  `json:"base_version,omitempty"`
-	PreviousVersion  string  `json:"previous_version,omitempty"`
-	PublishedVersion string  `json:"published_version,omitempty"`
-	Rebased          bool    `json:"rebased"`
-	Changed          bool    `json:"changed"`
-	DraftDeleted     bool    `json:"draft_deleted"`
-	DryRun           bool    `json:"dry_run"`
-	Validated        bool    `json:"validated"`
-	ValidationSource string  `json:"validation_source"`
-	Error            string  `json:"error,omitempty"`
-	ChangeNote       *string `json:"change_note"`
+	ProjectID        string             `json:"project_id"`
+	Status           string             `json:"status" contract:"enum=failed|unchanged|would-publish|already-applied|published|published-hook-failed|published-cache-failed|published-cleanup-failed|conflict"`
+	BaseVersion      string             `json:"base_version,omitempty"`
+	PreviousVersion  string             `json:"previous_version,omitempty"`
+	PublishedVersion string             `json:"published_version,omitempty"`
+	Rebased          bool               `json:"rebased"`
+	Changed          bool               `json:"changed"`
+	DraftDeleted     bool               `json:"draft_deleted"`
+	DryRun           bool               `json:"dry_run"`
+	Validated        bool               `json:"validated"`
+	ValidationSource string             `json:"validation_source"`
+	Error            *draftPublishError `json:"error"`
+	ChangeNote       *string            `json:"change_note"`
+	Cause            error              `json:"-"`
+}
+
+type draftPublishError struct {
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
 }
 
 func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
@@ -304,12 +327,17 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if dry {
 		ctx = firebase.WithDryRun(ctx)
 	}
 	if len(ids) > 1 && !dry {
-		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: drafts are published independently for each project. Failures do not roll back projects already published.")
+		if !jsonOut {
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: drafts are published independently for each project. Failures do not roll back projects already published.")
+		}
+		shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.non_atomic", Message: "Drafts are published independently; successful publications are not rolled back when another target fails.", Details: struct {
+			TargetCount int `json:"target_count"`
+		}{TargetCount: len(ids)}})
 	}
 	results := make([]publishResult, 0, len(ids))
 	failed := false
@@ -318,7 +346,8 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		result := publishResult{ProjectID: projectID, DryRun: dry, ValidationSource: core.ValidationSourceLocal}
 		plan, prepareErr := svc.PrepareDraftPublish(ctx, projectID)
 		if prepareErr != nil {
-			result.Status, result.Error = "failed", prepareErr.Error()
+			result.Status, result.Error = "failed", &draftPublishError{Stage: "preparation", Message: shared.SafeErrorText(prepareErr)}
+			result.Cause = prepareErr
 			results = append(results, result)
 			failed = true
 			continue
@@ -341,7 +370,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Publish draft for %s\n%s\n", projectID, diffText)
 		}
 		if plan.HasChanges && !dry && !yes {
-			confirm := shared.NewConfirmation(fmt.Sprintf("Publish this draft to %s?", projectID), shared.ConfirmationOptions{})
+			if err := shared.RequireYesInMachineMode(cmd, yes, "publishing draft "+projectID, true); err != nil {
+				return err
+			}
+			confirm := shared.NewConfirmation(fmt.Sprintf("Publish this draft to %s?", projectID), shared.ConfirmationOptions{Destructive: true})
 			confirm.Output = cmd.ErrOrStderr()
 			ok, confirmErr := confirm.RunPrompt()
 			if confirmErr != nil {
@@ -363,14 +395,16 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 				plan.ChangeNote = *changeNote
 			} else {
 				if setErr := svc.SetDraftChangeNote(projectID, *changeNote); setErr != nil {
-					result.Status, result.Error = "failed", setErr.Error()
+					result.Status, result.Error = "failed", &draftPublishError{Stage: "draft", Message: shared.SafeErrorText(setErr)}
+					result.Cause = setErr
 					results = append(results, result)
 					failed = true
 					continue
 				}
 				plan, prepareErr = svc.PrepareDraftPublish(ctx, projectID)
 				if prepareErr != nil {
-					result.Status, result.Error = "failed", prepareErr.Error()
+					result.Status, result.Error = "failed", &draftPublishError{Stage: "preparation", Message: shared.SafeErrorText(prepareErr)}
+					result.Cause = prepareErr
 					results = append(results, result)
 					failed = true
 					continue
@@ -379,6 +413,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		}
 		cache, _, publishErr := svc.ExecuteDraftPublish(ctx, projectID, plan)
 		if publishErr != nil {
+			result.Cause = publishErr
 			if source, ok := core.RemoteConfigValidationSource(publishErr); ok {
 				result.Validated = false
 				result.ValidationSource = source
@@ -387,40 +422,57 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			var cacheErr *core.RemoteConfigPublishedCacheError
 			var hookErr *core.RemoteConfigPublishedHookError
 			if errors.As(publishErr, &hookErr) && cache != nil {
+				markDraftFirebaseValidated(&result)
 				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
 				result.Status = "published-hook-failed"
 				result.PublishedVersion = publishedCfg.Version.VersionNumber
-				result.Error = publishErr.Error()
+				result.Error = &draftPublishError{Stage: "post_publish_hook", Message: shared.SafeErrorText(publishErr)}
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the draft publication, but a post_publish hook failed.", Target: projectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
 				results = append(results, result)
 				failed = true
 				continue
 			}
 			if errors.As(publishErr, &cleanupErr) && cache != nil {
+				markDraftFirebaseValidated(&result)
 				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
 				result.Status = "published-cleanup-failed"
 				result.PublishedVersion = publishedCfg.Version.VersionNumber
-				result.Error = publishErr.Error()
+				result.Error = &draftPublishError{Stage: "cleanup", Message: shared.SafeErrorText(publishErr)}
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.draft_cleanup_failed", Message: "Firebase accepted the publication, but the local draft could not be removed.", Target: projectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "cleanup"}, Remediation: []shared.Remediation{{Description: "retry safe draft cleanup", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", projectID}}}})
 				results = append(results, result)
 				failed = true
 				continue
 			}
 			if errors.As(publishErr, &cacheErr) && cache != nil {
+				markDraftFirebaseValidated(&result)
 				publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
 				result.Status = "published-cache-failed"
 				result.PublishedVersion = publishedCfg.Version.VersionNumber
-				result.Error = publishErr.Error()
+				result.Error = &draftPublishError{Stage: "cache", Message: shared.SafeErrorText(publishErr)}
+				filter, _ := rctarget.ExactFilter(projectID)
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the draft publication, but the local cache update failed.", Target: projectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the published target instead of republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", filter}}}})
 				results = append(results, result)
 				failed = true
 				continue
 			}
 			if rc.IsRemoteConfigConflict(publishErr) {
 				result.Status = "conflict"
-				result.Error = publishErr.Error()
+				result.Error = &draftPublishError{Stage: "publication", Message: shared.SafeErrorText(publishErr)}
 				results = append(results, result)
 				failed = true
 				continue
 			}
-			result.Status, result.Error = "failed", publishErr.Error()
+			stage := "publication"
+			if !result.Validated {
+				stage = "validation"
+			}
+			result.Status, result.Error = "failed", &draftPublishError{Stage: stage, Message: shared.SafeErrorText(publishErr)}
 			results = append(results, result)
 			failed = true
 			continue
@@ -429,13 +481,10 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			result.Validated = true
 			result.ValidationSource = core.ValidationSourceFirebase
 		}
-		if dry {
-			result.Status = "would-publish"
-		} else if !plan.HasChanges {
-			result.Status, result.DraftDeleted = "already-applied", true
-		} else {
+		result.Status, result.DraftDeleted = successfulPublishStatus(dry, plan.HasChanges)
+		if result.Status == "published" {
 			publishedCfg, _ := firebase.ParseRemoteConfig(cache.RemoteConfig)
-			result.Status, result.PublishedVersion, result.DraftDeleted = "published", publishedCfg.Version.VersionNumber, true
+			result.PublishedVersion = publishedCfg.Version.VersionNumber
 		}
 		results = append(results, result)
 	}
@@ -448,8 +497,8 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Results:")
 		}
 		for _, result := range results {
-			if result.Error != "" {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s: %s\nvalidated: %t · validation_source: %s\n", result.ProjectID, result.Error, result.Validated, result.ValidationSource)
+			if result.Error != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "%s: %s\nvalidated: %t · validation_source: %s\n", result.ProjectID, result.Error.Message, result.Validated, result.ValidationSource)
 				continue
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\nvalidated: %t · validation_source: %s\n", result.Status, result.ProjectID, result.Validated, result.ValidationSource)
@@ -457,7 +506,7 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 	}
 	var retryIDs []string
 	for _, result := range results {
-		if result.Error != "" && result.Status != "published-cleanup-failed" && result.Status != "published-cache-failed" && result.Status != "published-hook-failed" {
+		if result.Error != nil && result.Status != "published-cleanup-failed" && result.Status != "published-cache-failed" && result.Status != "published-hook-failed" {
 			retryIDs = append(retryIDs, result.ProjectID)
 		}
 	}
@@ -489,9 +538,47 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		}
 	}
 	if failed {
-		return fmt.Errorf("one or more drafts failed")
+		failedTargets := make([]string, 0)
+		targetFailures := make([]shared.BatchFailure, 0)
+		successfulTargets := 0
+		publishedTargets := 0
+		for _, result := range results {
+			if result.Error != nil {
+				failedTargets = append(failedTargets, result.ProjectID)
+				targetFailures = append(targetFailures, shared.BatchFailure{Target: result.ProjectID, Err: result.Cause})
+			}
+			if result.Error == nil || strings.HasPrefix(result.Status, "published-") {
+				successfulTargets++
+			}
+			if result.Status == "published" || strings.HasPrefix(result.Status, "published-") {
+				publishedTargets++
+			}
+		}
+		remediation := []shared.Remediation{}
+		if len(retryIDs) > 0 {
+			remediation = append(remediation, shared.Remediation{Description: "retry only drafts that did not publish", Strategy: shared.RemediationRunCommand, Argv: append([]string{"draft", "publish"}, retryIDs...)})
+		}
+		return &shared.BatchError{Operation: "draft.publish", FailedTargets: failedTargets, Failures: targetFailures, SuccessfulTargetCount: successfulTargets, PublishedTargetCount: publishedTargets, Remediation: remediation, Err: fmt.Errorf("%d drafts failed", len(failedTargets))}
 	}
 	return nil
+}
+
+func markDraftFirebaseValidated(result *publishResult) {
+	result.Validated = true
+	result.ValidationSource = core.ValidationSourceFirebase
+}
+
+func successfulPublishStatus(dryRun, changed bool) (string, bool) {
+	switch {
+	case !changed && dryRun:
+		return "unchanged", false
+	case !changed:
+		return "already-applied", true
+	case dryRun:
+		return "would-publish", false
+	default:
+		return "published", true
+	}
 }
 
 func optionalString(value string) *string {
@@ -516,7 +603,7 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 	}
 	yes, _ := cmd.Flags().GetBool("yes")
 	jsonOut, _ := cmd.Flags().GetBool("json")
-	results := make([]map[string]any, 0, len(ids))
+	results := make([]draftDiscardResult, 0, len(ids))
 	for _, projectID := range ids {
 		stored, loadErr := config.LoadDraft(projectID)
 		if !jsonOut {
@@ -533,6 +620,9 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if !yes {
+			if err := shared.RequireYesInMachineMode(cmd, yes, "discarding draft "+projectID, true); err != nil {
+				return err
+			}
 			confirm := shared.NewConfirmation(fmt.Sprintf("Discard draft for %s?", projectID), shared.ConfirmationOptions{Destructive: true})
 			confirm.Output = cmd.ErrOrStderr()
 			ok, confirmErr := confirm.RunPrompt()
@@ -540,7 +630,7 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 				return confirmErr
 			}
 			if !ok {
-				results = append(results, map[string]any{"project_id": projectID, "status": "canceled"})
+				results = append(results, draftDiscardResult{ProjectID: projectID, Status: "canceled"})
 				continue
 			}
 		}
@@ -551,7 +641,7 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 		if stored != nil {
 			baseVersion = stored.BaseVersion
 		}
-		results = append(results, map[string]any{"project_id": projectID, "status": "discarded", "base_version": baseVersion})
+		results = append(results, draftDiscardResult{ProjectID: projectID, Status: "discarded", BaseVersion: baseVersion})
 	}
 	if jsonOut {
 		return shared.WriteJSON(cmd, results)
@@ -560,7 +650,27 @@ func runDiscard(cmd *cobra.Command, args []string) error {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Results:")
 	}
 	for _, result := range results {
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", result["status"], result["project_id"])
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", result.Status, result.ProjectID)
 	}
 	return nil
+}
+
+type draftChangeNoteResult struct {
+	ProjectID  string  `json:"project_id"`
+	ChangeNote *string `json:"change_note"`
+}
+
+type draftDiffResult struct {
+	Project        core.Project  `json:"project"`
+	Against        string        `json:"against" contract:"enum=base|current"`
+	BaseVersion    string        `json:"base_version"`
+	CurrentVersion string        `json:"current_version"`
+	Changed        bool          `json:"changed"`
+	Diff           rcdiff.Result `json:"diff"`
+}
+
+type draftDiscardResult struct {
+	ProjectID   string `json:"project_id"`
+	Status      string `json:"status" contract:"enum=discarded"`
+	BaseVersion string `json:"base_version"`
 }

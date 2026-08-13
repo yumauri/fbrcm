@@ -25,6 +25,14 @@
 - Update `docs/CLI.md` in the same change whenever the CLI interface surface changes, including commands, subcommands, positional arguments, flags, defaults, output contracts, confirmations, or other user-visible behavior.
 - Keep both the command tree and the detailed command sections synchronized with the implemented Cobra command structure and its tests.
 
+## CLI machine contract
+
+- Every new executable CLI command must follow `docs/cli-contract.md`: it must participate in the global versioned `--json` envelope for success and failure, emit typed DTOs and structured problems, remain non-interactive in JSON mode, use the documented semantic exit statuses, register every successful data DTO with `cli/contract` (or explicitly register no successful data), and expose accurate capability metadata for arguments, flags, schemas, side effects, destructive behavior, idempotency, dry-run/draft support, stdin, and interaction requirements.
+- Create machine errors as typed errors at their source and classify them with `errors.As`; never infer a problem code, category, retryability, or exit status from message wording. Collect non-fatal machine warnings in command context with structured details and safe remediation argv. Mutation DTOs must preserve selection breadth, matched-item count, and no-op provenance.
+- Keep generated input and response schemas semantic: model enums, bounds, formats, mutual exclusions, conditional requirements, concrete stdin payloads, selector/filter/expression grammars, and reusable definitions. Runtime conformance tests must validate actual success, empty/no-op, typed failure, interaction, partial-publication, warning, redaction, and boundary envelopes against the published Draft 2020-12 schemas.
+- Do not add command-local JSON formats, `map[string]any` machine payloads, human tables or usage text on JSON stdout, or prompts, editors, file pickers, and browser launches in JSON mode. Raw content must use the contract artifact DTO.
+- For every new command or machine-contract change, update `docs/CLI.md` and `docs/cli-contract.md`, run `go run ./cmd/schemagen`, review the generated schemas and `cli/app/testdata/contract_v1_capabilities.golden.json`, and add success, failure, interaction, exit-code, and schema/golden coverage appropriate to the command.
+
 ## User-visible wording
 
 - Use grammatically correct singular and plural forms in all CLI, TUI, error, log, and documentation text. Never display shortcuts such as `project(s)`.

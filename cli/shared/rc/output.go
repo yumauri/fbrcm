@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/cli/shared/fileoutput"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
@@ -21,12 +22,18 @@ func CreateRemoteConfigFile(path string, raw []byte) error {
 }
 
 func writeRemoteConfigFile(path string, raw []byte, exclusive bool) error {
-	raw = TrimTrailingLineBreaks(NormalizeExportJSON(raw))
+	raw = NormalizeExportBytes(raw)
 	write := fileoutput.Write
 	if exclusive {
 		write = fileoutput.Create
 	}
 	return write(path, raw)
+}
+
+// NormalizeExportBytes returns the exact stable bytes written by Remote Config
+// export commands and described by their artifact metadata.
+func NormalizeExportBytes(raw []byte) []byte {
+	return TrimTrailingLineBreaks(NormalizeExportJSON(raw))
 }
 
 // OrderMutator adjusts member order after a stdin mutation.
@@ -40,14 +47,7 @@ func WriteOrderPreservingRemoteConfigStdout(cmd *cobra.Command, finalCfg *fireba
 // WriteOrderPreservingRemoteConfigStdoutWithOrder writes finalCfg to stdout using member order
 // from raw input, optionally adjusted by mutate.
 func WriteOrderPreservingRemoteConfigStdoutWithOrder(cmd *cobra.Command, finalCfg *firebase.RemoteConfig, remoteConfigRaw []byte, mutate OrderMutator) error {
-	order, err := ParseRemoteConfigOrder(remoteConfigRaw)
-	if err != nil {
-		return fmt.Errorf("parse stdin remote config order: %w", err)
-	}
-	if mutate != nil {
-		mutate(&order)
-	}
-	out, err := MarshalPrettyRemoteConfigWithOrder(finalCfg, order)
+	out, err := MarshalOrderPreservingRemoteConfig(finalCfg, remoteConfigRaw, mutate)
 	if err != nil {
 		return err
 	}
@@ -58,4 +58,21 @@ func WriteOrderPreservingRemoteConfigStdoutWithOrder(cmd *cobra.Command, finalCf
 		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 	return nil
+}
+
+// MarshalOrderPreservingRemoteConfig returns the transformed JSON bytes using
+// member order from the raw input, optionally adjusted by mutate.
+func MarshalOrderPreservingRemoteConfig(finalCfg *firebase.RemoteConfig, remoteConfigRaw []byte, mutate OrderMutator) ([]byte, error) {
+	order, err := ParseRemoteConfigOrder(remoteConfigRaw)
+	if err != nil {
+		return nil, machine.InvalidInput("stdin.remote_config.invalid", "stdin", fmt.Errorf("parse stdin remote config order: %w", err))
+	}
+	if mutate != nil {
+		mutate(&order)
+	}
+	out, err := MarshalPrettyRemoteConfigWithOrder(finalCfg, order)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }

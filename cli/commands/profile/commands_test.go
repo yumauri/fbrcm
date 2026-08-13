@@ -2,9 +2,12 @@ package profile
 
 import (
 	"bytes"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
@@ -81,5 +84,29 @@ func TestProfilePathCommand(t *testing.T) {
 	text := out.String()
 	if !strings.Contains(text, filepath.Join("config", "paths")) {
 		t.Fatalf("output = %q, want config path", text)
+	}
+}
+
+func TestProfileRenameSameNameReportsUnchangedJSON(t *testing.T) {
+	setupProfileTest(t)
+	if err := config.SwitchProfile("same"); err != nil {
+		t.Fatal(err)
+	}
+
+	root := &cobra.Command{Use: "fbrcm"}
+	root.PersistentFlags().Bool("json", false, "")
+	root.AddCommand(New())
+	root.SetArgs([]string{"profile", "rename", "same", "same", "--json"})
+	var out bytes.Buffer
+	root.SetOut(&out)
+	if err := root.Execute(); err != nil {
+		t.Fatalf("profile rename same = %v", err)
+	}
+	var result profileRenameResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("decode profile rename result: %v; output=%q", err, out.String())
+	}
+	if result.Changed || result.OldProfile != "same" || result.NewProfile != "same" {
+		t.Fatalf("profile rename result = %#v", result)
 	}
 }

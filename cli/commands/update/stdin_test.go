@@ -22,7 +22,7 @@ func TestRunUpdateStdinPreservesParameterOrder(t *testing.T) {
 	spec := updateSpec{
 		value: &valueSpec{value: "new-b", valueType: "STRING"},
 	}
-	err := runUpdateStdin(cmd, []string{"=b"}, "", shared.ParameterSearch{}, spec)
+	err := runUpdateStdin(cmd, []string{"=b"}, nil, "", shared.ParameterSearch{}, spec)
 	if err != nil {
 		t.Fatalf("runUpdateStdin returned error: %v", err)
 	}

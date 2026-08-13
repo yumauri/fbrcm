@@ -37,6 +37,9 @@ func resolveConflict(cmd *cobra.Command, opts importOptions, label string, curre
 	if opts.mergeResolve != "" {
 		return conflictResolution(opts.mergeResolve), nil
 	}
+	if shared.MachineMode(cmd) {
+		return "", shared.InteractionRequiredWithArguments("a merge conflict resolution is required; pass --merge-resolve=current or --merge-resolve=import", "selection_required", false, "--merge-resolve")
+	}
 
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\nConflict: %s\n", label)
 	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rc.RenderConflictPreview(label, currentValue, importValue))

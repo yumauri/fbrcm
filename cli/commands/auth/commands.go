@@ -1,14 +1,15 @@
 package auth
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
@@ -19,6 +20,14 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Manage auth identities",
 	}
 	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newDeleteCommand(svc), newBindCommand(svc))
+	contract.MustRegisterResponsePath(authCmd, "list", []authListItem{})
+	for _, path := range []string{"add oauth", "add service-account", "add gcloud"} {
+		contract.MustRegisterResponsePath(authCmd, path, authMutationResult{})
+	}
+	contract.MustRegisterResponsePath(authCmd, "login", authLoginResult{})
+	contract.MustRegisterResponsePath(authCmd, "path", authPathResult{})
+	contract.MustRegisterResponsePath(authCmd, "delete", authDeleteResult{})
+	contract.MustRegisterResponsePath(authCmd, "bind", authBindResult{})
 	return authCmd
 }
 
@@ -61,6 +70,9 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 		Short: "Add OAuth auth identity",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := config.ValidateAuthID(args[0]); err != nil {
+				return shared.InvalidArgument(err)
+			}
 			fromPath, err := cmd.Flags().GetString("from")
 			if err != nil {
 				return err
@@ -73,6 +85,9 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := firebase.ValidateOAuthClientSecret(data); err != nil {
+				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
+			}
 			entry, err := svc.AddOAuthAuth(args[0], label, data)
 			if err != nil {
 				return err
@@ -80,6 +95,9 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 			_, paths, err := svc.AuthPaths(entry.ID)
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, newAuthMutationResult(entry, "added", paths))
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔐 added auth: %s\n", entry.ID)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "secret: %s\n", paths.ClientSecretPath)
@@ -97,6 +115,9 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 		Short: "Add service account auth identity",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := config.ValidateAuthID(args[0]); err != nil {
+				return shared.InvalidArgument(err)
+			}
 			fromPath, err := cmd.Flags().GetString("from")
 			if err != nil {
 				return err
@@ -109,6 +130,9 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if err := firebase.ValidateServiceAccountKey(data); err != nil {
+				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
+			}
 			entry, err := svc.AddServiceAccountAuth(args[0], label, data)
 			if err != nil {
 				return err
@@ -116,6 +140,9 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 			_, paths, err := svc.AuthPaths(entry.ID)
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, newAuthMutationResult(entry, "added", paths))
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔐 added auth: %s\n", entry.ID)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "service account: %s\n", paths.ServiceAccountPath)
@@ -133,6 +160,9 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 		Short: "Add gcloud ADC auth identity",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := config.ValidateAuthID(args[0]); err != nil {
+				return shared.InvalidArgument(err)
+			}
 			label, err := cmd.Flags().GetString("label")
 			if err != nil {
 				return err
@@ -140,6 +170,9 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 			entry, err := svc.AddGCloudAuth(args[0], label)
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, newAuthMutationResult(entry, "added", core.AuthPaths{}))
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔐 added auth: %s\n", entry.ID)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "adc: application default credentials")
@@ -160,12 +193,15 @@ func newLoginCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := svc.EnsureAuthLogin(context.Background(), args[0], noOpen); err != nil {
+			if err := svc.EnsureAuthLogin(shared.CommandContext(cmd), args[0], noOpen); err != nil {
 				return err
 			}
 			auth, paths, err := svc.AuthPaths(args[0])
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, authLoginResult{AuthID: auth.ID, Type: auth.Type, Status: "authenticated", Paths: authPathPayload(auth, paths)})
 			}
 			switch auth.Type {
 			case config.AuthTypeOAuth:
@@ -223,6 +259,9 @@ func newDeleteCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if !yes {
+				if err := shared.RequireYesInMachineMode(cmd, yes, "deleting auth identity "+args[0], true); err != nil {
+					return err
+				}
 				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Delete auth identity %s and its files?", args[0]),
 					shared.ConfirmationOptions{Destructive: true},
@@ -240,6 +279,9 @@ func newDeleteCommand(svc *core.Core) *cobra.Command {
 			auth, paths, err := svc.DeleteAuth(args[0])
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, authDeleteResult{AuthID: auth.ID, Type: auth.Type, Status: "deleted", DeletedPaths: authPathLines(auth, paths)})
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 deleted auth: %s\n", auth.ID)
 			for _, path := range authPathLines(auth, paths) {
@@ -263,15 +305,29 @@ func newBindCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if authID == "" {
-				return fmt.Errorf("--auth is required")
+				return shared.InvalidArgument(fmt.Errorf("--auth is required"))
 			}
 			filters, err := cmd.Flags().GetStringArray("project")
 			if err != nil {
 				return err
 			}
+			if err := shared.RejectTemplateProjectFilters(filters); err != nil {
+				return err
+			}
 			result, err := svc.BindProjectsAuth(filters, authID)
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				items := make([]authBindItem, 0, len(result.Bound)+len(result.Skipped))
+				for _, project := range result.Bound {
+					items = append(items, authBindItem{ProjectID: project.ProjectID, Status: "bound", Reason: nil})
+				}
+				for _, skipped := range result.Skipped {
+					reason := skipped.Reason
+					items = append(items, authBindItem{ProjectID: skipped.Project.ProjectID, Status: "skipped", Reason: &reason})
+				}
+				return shared.WriteJSON(cmd, authBindResult{AuthID: authID, Bound: len(result.Bound), Skipped: len(result.Skipped), Items: items})
 			}
 			for _, project := range result.Bound {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔗 bound: %s -> %s\n", project.ProjectID, authID)
@@ -285,6 +341,46 @@ func newBindCommand(svc *core.Core) *cobra.Command {
 		},
 	}
 	cmd.Flags().String("auth", "", "Auth id to bind")
+	_ = cmd.MarkFlagRequired("auth")
 	shared.AddProjectFilterFlag(cmd)
 	return cmd
+}
+
+type authMutationResult struct {
+	AuthID string         `json:"auth_id"`
+	Type   string         `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Label  string         `json:"label"`
+	Status string         `json:"status" contract:"enum=added"`
+	Paths  authPathResult `json:"paths"`
+}
+
+func newAuthMutationResult(entry config.AuthEntry, status string, paths core.AuthPaths) authMutationResult {
+	return authMutationResult{AuthID: entry.ID, Type: entry.Type, Label: entry.Label, Status: status, Paths: authPathPayload(entry, paths)}
+}
+
+type authLoginResult struct {
+	AuthID string         `json:"auth_id"`
+	Type   string         `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Status string         `json:"status" contract:"enum=authenticated"`
+	Paths  authPathResult `json:"paths"`
+}
+
+type authDeleteResult struct {
+	AuthID       string   `json:"auth_id"`
+	Type         string   `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Status       string   `json:"status" contract:"enum=deleted"`
+	DeletedPaths []string `json:"deleted_paths"`
+}
+
+type authBindItem struct {
+	ProjectID string  `json:"project_id"`
+	Status    string  `json:"status" contract:"enum=bound|skipped"`
+	Reason    *string `json:"reason"`
+}
+
+type authBindResult struct {
+	AuthID  string         `json:"auth_id"`
+	Bound   int            `json:"bound"`
+	Skipped int            `json:"skipped"`
+	Items   []authBindItem `json:"items"`
 }

@@ -78,10 +78,10 @@ func LoadGlobalAppConfig() (*AppConfig, error) {
 	}
 	cfg, err := DecodeAppConfig(raw, true)
 	if err != nil {
-		return nil, fmt.Errorf("decode global config %s: %w", path, err)
+		return nil, invalidConfiguration(path, "decoding", fmt.Errorf("decode global config %s: %w", path, err))
 	}
 	if err := RejectGlobalProjectAliases(cfg); err != nil {
-		return nil, fmt.Errorf("decode global config %s: %w", path, err)
+		return nil, invalidConfiguration(path, "validation", fmt.Errorf("decode global config %s: %w", path, err))
 	}
 	return cfg, nil
 }

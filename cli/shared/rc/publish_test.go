@@ -79,7 +79,7 @@ func TestPublishProjectConfigMutationResultCapturesPublishedVersion(t *testing.T
 }
 
 func TestPublishProjectConfigMutationResultIdentifiesValidationConflictStage(t *testing.T) {
-	publisher := &fakeRemoteConfigPublisher{validateErr: errors.New("returned 412")}
+	publisher := &fakeRemoteConfigPublisher{validateErr: &firebase.APIError{StatusCode: 412}}
 	projectCfg := &ProjectConfig{
 		Project: core.Project{ProjectID: "demo"},
 		Cache:   &core.ParametersCache{ETag: "etag-41"},
@@ -97,7 +97,7 @@ func TestPublishProjectConfigMutationResultIdentifiesValidationConflictStage(t *
 }
 
 func TestValidateAndPublishRemoteConfigValidateConflict(t *testing.T) {
-	publisher := &fakeRemoteConfigPublisher{validateErr: errors.New("returned 412")}
+	publisher := &fakeRemoteConfigPublisher{validateErr: &firebase.APIError{StatusCode: 412}}
 	var errOut bytes.Buffer
 
 	retry, err := ValidateAndPublishRemoteConfig(context.Background(), publisher, "demo", []byte(`{}`), "etag", "delete", &errOut)
@@ -116,7 +116,7 @@ func TestValidateAndPublishRemoteConfigValidateConflict(t *testing.T) {
 }
 
 func TestValidateAndPublishRemoteConfigPublishConflict(t *testing.T) {
-	publisher := &fakeRemoteConfigPublisher{publishErr: errors.New("etag mismatch")}
+	publisher := &fakeRemoteConfigPublisher{publishErr: &firebase.APIError{StatusCode: 412}}
 
 	retry, err := ValidateAndPublishRemoteConfig(context.Background(), publisher, "demo", []byte(`{}`), "etag", "add", nil)
 	if err != nil {

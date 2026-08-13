@@ -1,10 +1,12 @@
 package versions
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	cmdtest "github.com/yumauri/fbrcm/cli/commands/testutil"
+	"github.com/yumauri/fbrcm/cli/shared"
 )
 
 func TestNewCommandStructure(t *testing.T) {
@@ -20,7 +22,7 @@ func TestNewCommandStructure(t *testing.T) {
 	if show.Flags().Lookup("config") != nil {
 		t.Fatal("versions show still exposes removed --config flag")
 	}
-	for _, flag := range []string{"filter", "search", "group", "expr", "parameters", "conditions", "cached", "json", "side-by-side", "exit-code"} {
+	for _, flag := range []string{"filter", "search", "group", "expr", "parameters", "conditions", "cached", "json", "side-by-side"} {
 		cmdtest.AssertNestedFlag(t, cmd, []string{"diff"}, flag)
 	}
 	diff := cmdtest.FindCommand(t, cmd, "diff")
@@ -47,5 +49,30 @@ func TestVersionDiffRejectsJSONWithSideBySide(t *testing.T) {
 	err := cmd.Execute()
 	if err == nil || !strings.Contains(err.Error(), "if any flags in the group") {
 		t.Fatalf("Execute() error = %v, want mutually exclusive flag error", err)
+	}
+}
+
+func TestValidateBeforeVersionRequiresCanonicalPositiveDecimal(t *testing.T) {
+	for _, value := range []string{"1", "10", strings.Repeat("9", 100)} {
+		if err := validateBeforeVersion(value); err != nil {
+			t.Errorf("validateBeforeVersion(%q) = %v, want nil", value, err)
+		}
+	}
+	for _, value := range []string{"", "0", "01", "+1", "-1", " 1", "1 ", "1.0", "one"} {
+		err := validateBeforeVersion(value)
+		var argumentErr *shared.ArgumentError
+		if !errors.As(err, &argumentErr) {
+			t.Errorf("validateBeforeVersion(%q) = %v, want ArgumentError", value, err)
+		}
+	}
+}
+
+func TestVersionsListRejectsExplicitEmptyBefore(t *testing.T) {
+	cmd := New(nil)
+	cmd.SetArgs([]string{"list", "demo", "--before="})
+	err := cmd.Execute()
+	var argumentErr *shared.ArgumentError
+	if !errors.As(err, &argumentErr) {
+		t.Fatalf("Execute() error = %v, want ArgumentError", err)
 	}
 }

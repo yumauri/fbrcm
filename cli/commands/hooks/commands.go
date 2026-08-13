@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 )
@@ -23,6 +24,10 @@ type statusResult struct {
 func New() *cobra.Command {
 	cmd := &cobra.Command{Use: "hooks", Short: "Inspect and trust publication hooks"}
 	cmd.AddCommand(newStatusCommand(), newFingerprintCommand(), newTrustCommand(), newUntrustCommand())
+	contract.MustRegisterResponsePath(cmd, "status", statusResult{})
+	contract.MustRegisterResponsePath(cmd, "fingerprint", fingerprintResult{})
+	contract.MustRegisterResponsePath(cmd, "trust", statusResult{})
+	contract.MustRegisterResponsePath(cmd, "untrust", untrustResult{})
 	return cmd
 }
 
@@ -66,13 +71,20 @@ func newFingerprintCommand() *cobra.Command {
 				return err
 			}
 			if !resolution.LocalHooks {
-				return fmt.Errorf("the effective configuration does not define local hooks")
+				return hooksNotConfiguredError()
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, fingerprintResult{Fingerprint: resolution.Fingerprint})
 			}
 			_, err = fmt.Fprintln(cmd.OutOrStdout(), resolution.Fingerprint)
 			return err
 		},
 	}
 	return cmd
+}
+
+type fingerprintResult struct {
+	Fingerprint string `json:"fingerprint"`
 }
 
 func newTrustCommand() *cobra.Command {
@@ -85,11 +97,14 @@ func newTrustCommand() *cobra.Command {
 				return err
 			}
 			if !resolution.LocalHooks {
-				return fmt.Errorf("the effective configuration does not define local hooks")
+				return hooksNotConfiguredError()
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			yes, _ := cmd.Flags().GetBool("yes")
 			if !yes {
+				if err := shared.RequireYesInMachineMode(cmd, yes, "trusting local hooks", false); err != nil {
+					return err
+				}
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Local config: %s\nWorking directory: %s\nFingerprint: %s\n", resolution.LocalPath, filepath.Dir(resolution.LocalPath), resolution.Fingerprint)
 				writeCommandsTo(cmd.ErrOrStderr(), "pre_publish", resolution.Hooks.PrePublish)
 				writeCommandsTo(cmd.ErrOrStderr(), "post_publish", resolution.Hooks.PostPublish)
@@ -110,7 +125,7 @@ func newTrustCommand() *cobra.Command {
 			}
 			if trusted.Fingerprint != resolution.Fingerprint {
 				_, _, _ = corehooks.UntrustCurrent()
-				return fmt.Errorf("local hooks changed while trust was being granted; review them and try again")
+				return &shared.ConflictError{Code: "hooks.changed", Resource: "hooks", Retryable: true, Remediation: []shared.Remediation{{Description: "review the current hook definition", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}, Err: fmt.Errorf("local hooks changed while trust was being granted; review them and try again")}
 			}
 			result := hookStatusResult(trusted)
 			if jsonOut {
@@ -125,6 +140,10 @@ func newTrustCommand() *cobra.Command {
 	return cmd
 }
 
+func hooksNotConfiguredError() error {
+	return &shared.ValidationError{Code: "hooks.not_configured", Source: "configuration", Stage: "selection", Err: fmt.Errorf("the effective configuration does not define local hooks")}
+}
+
 func newUntrustCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "untrust",
@@ -136,7 +155,7 @@ func newUntrustCommand() *cobra.Command {
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{"local_config": resolution.LocalPath, "changed": changed, "trusted": false})
+				return shared.WriteJSON(cmd, untrustResult{LocalConfig: resolution.LocalPath, Changed: changed, Trusted: false})
 			}
 			if changed {
 				_, err = fmt.Fprintf(cmd.OutOrStdout(), "Removed trust for %s\n", resolution.LocalPath)
@@ -148,6 +167,12 @@ func newUntrustCommand() *cobra.Command {
 	}
 	cmd.Flags().Bool("json", false, "Print untrust result as JSON")
 	return cmd
+}
+
+type untrustResult struct {
+	LocalConfig string `json:"local_config"`
+	Changed     bool   `json:"changed"`
+	Trusted     bool   `json:"trusted"`
 }
 
 func hookStatusResult(resolution corehooks.Resolution) statusResult {

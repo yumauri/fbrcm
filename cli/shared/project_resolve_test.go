@@ -2,6 +2,7 @@ package shared
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -31,11 +32,11 @@ func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 		query string
 		want  []string
 	}{
-		{name: "exact id wins over name", query: "SETplex-production-A1B2", want: []string{"setplex-production-a1b2"}},
-		{name: "exact name precedes substring", query: "production", want: []string{"setplex-production-a1b2"}},
-		{name: "single substring", query: "stag", want: []string{"setplex-staging-e5f6"}},
-		{name: "ambiguous substring", query: "prod", want: []string{"setplex-production-a1b2", "name-collision", "setplex-production-eu-c3d4"}},
-		{name: "fuzzy-only does not match", query: "stg", want: nil},
+		{name: "exact id wins over name", query: "setplex-production-a1b2", want: []string{"setplex-production-a1b2"}},
+		{name: "case-mismatched id does not match", query: "SETplex-production-A1B2", want: nil},
+		{name: "exact name", query: "Production", want: []string{"setplex-production-a1b2"}},
+		{name: "case-mismatched name does not match", query: "production", want: nil},
+		{name: "substring does not match", query: "stag", want: nil},
 		{name: "missing", query: "unrelated", want: nil},
 		{name: "empty", query: "  ", want: nil},
 	}
@@ -76,9 +77,12 @@ release = "acme-production-42"
 	if err != nil || project.ProjectID != "prod" {
 		t.Fatalf("exact ID precedence = %#v, %v", project, err)
 	}
-	project, err = ResolveCachedProjectArg(cmd, "RELEASE")
+	project, err = ResolveCachedProjectArg(cmd, "release")
 	if err != nil || project.ProjectID != "acme-production-42" {
 		t.Fatalf("alias precedence = %#v, %v", project, err)
+	}
+	if _, err = ResolveCachedProjectArg(cmd, "RELEASE"); err == nil {
+		t.Fatal("case-mismatched repository alias unexpectedly resolved")
 	}
 
 	if _, err := os.Stat(filepath.Join(root, config.LocalConfigFileName)); err != nil {
@@ -146,6 +150,10 @@ func TestResolveCachedProjectArgReportsDanglingAlias(t *testing.T) {
 	_, err := ResolveCachedProjectArg(cmd, "prod")
 	if err == nil || !strings.Contains(err.Error(), `alias "prod"`) || !strings.Contains(err.Error(), "acme-production-42") || !strings.Contains(err.Error(), `profile "default"`) {
 		t.Fatalf("dangling alias error = %v", err)
+	}
+	var selection *ProjectResolutionError
+	if !errors.As(err, &selection) || selection.Resource != "project" || selection.Kind != "not_found" || selection.Query != "prod" || len(selection.Candidates) != 1 || selection.Candidates[0].ID != "other-project" {
+		t.Fatalf("dangling alias selection = %#v", selection)
 	}
 }
 

@@ -37,7 +37,7 @@ type getProjectV3Response struct {
 	DisplayName string `json:"displayName"`
 	State       string `json:"state"`
 	Etag        string `json:"etag"`
-	UpdateTime  string `json:"updateTime"`
+	UpdateTime  string `json:"updateTime" contract:"format=date-time"`
 }
 
 // Fetch all Firebase projects accessible to the authenticated user
@@ -86,7 +86,7 @@ func (s *Service) ListProjects(ctx context.Context) ([]Project, error) {
 		}
 		if resp.StatusCode != http.StatusOK {
 			logger.Error("projects api returned non-200", "page", page, "status", resp.Status)
-			return nil, fmt.Errorf("project list api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+			return nil, newAPIError("cloud_resource_manager", "list_projects", resp, body)
 		}
 
 		var payload listProjectsResponse
@@ -225,7 +225,7 @@ func (s *Service) GetProject(ctx context.Context, projectID string) (Project, er
 	}
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("project details api returned non-200", "project_id", projectID, "status", resp.Status)
-		return Project{}, fmt.Errorf("project details api returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return Project{}, newAPIError("cloud_resource_manager", "get_project", resp, body)
 	}
 
 	var payload getProjectV3Response

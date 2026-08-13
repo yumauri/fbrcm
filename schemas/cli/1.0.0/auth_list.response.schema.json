@@ -1,0 +1,274 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "client_secret_path": {
+                "type": "string"
+              },
+              "default": {
+                "type": "boolean"
+              },
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "service_account_path": {
+                "type": "string"
+              },
+              "token_path": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "oauth",
+                  "service-account",
+                  "gcloud"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "default",
+              "id",
+              "label",
+              "type"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "count",
+        "items"
+      ],
+      "type": "object",
+      "x-fbrcm-invariants": [
+        {
+          "left": {
+            "field": "count"
+          },
+          "op": "eq",
+          "right": {
+            "op": "length",
+            "value": {
+              "field": "items"
+            }
+          }
+        },
+        {
+          "left": {
+            "field": "count"
+          },
+          "op": "eq",
+          "right": {
+            "op": "length",
+            "value": {
+              "field": "items"
+            }
+          }
+        },
+        {
+          "if": {
+            "left": {
+              "op": "length",
+              "value": {
+                "field": "items"
+              }
+            },
+            "op": "gt",
+            "right": {
+              "const": 0
+            }
+          },
+          "op": "implies",
+          "then": {
+            "left": {
+              "collection": {
+                "field": "items"
+              },
+              "op": "count_where",
+              "where": {
+                "left": {
+                  "field": "item.default"
+                },
+                "op": "eq",
+                "right": {
+                  "const": true
+                }
+              }
+            },
+            "op": "eq",
+            "right": {
+              "const": 1
+            }
+          }
+        },
+        {
+          "if": {
+            "left": {
+              "op": "length",
+              "value": {
+                "field": "items"
+              }
+            },
+            "op": "eq",
+            "right": {
+              "const": 0
+            }
+          },
+          "op": "implies",
+          "then": {
+            "left": {
+              "collection": {
+                "field": "items"
+              },
+              "op": "count_where",
+              "where": {
+                "left": {
+                  "field": "item.default"
+                },
+                "op": "eq",
+                "right": {
+                  "const": true
+                }
+              }
+            },
+            "op": "eq",
+            "right": {
+              "const": 0
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "auth.list"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 package projects
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
@@ -19,6 +19,17 @@ func New(svc *core.Core) *cobra.Command {
 		Short: "Manage Firebase projects for Remote Config",
 	}
 	projectsCmd.AddCommand(newListCommand(svc), newUpdateCommand(svc), newForgetCommand(svc), newDiffCommand(svc), newPromoteCommand(svc), newAliasesCommand(), newPathCommand(), newResetCommand(svc))
+	contract.MustRegisterResponsePath(projectsCmd, "list", []shared.ProjectJSON{})
+	contract.MustRegisterResponsePath(projectsCmd, "update", []shared.ProjectJSON{})
+	contract.MustRegisterResponsePath(projectsCmd, "forget", projectsForgetResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "diff", compareResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "promote", promoteResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "aliases list", []projectAliasRow{})
+	contract.MustRegisterResponsePath(projectsCmd, "aliases set", projectAliasSetResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "aliases remove", projectAliasRemoveResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "aliases import", projectAliasImportResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "path", shared.PathResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "reset", projectsResetResult{})
 	return projectsCmd
 }
 
@@ -49,7 +60,7 @@ func newForgetCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if len(projects) == 0 {
-				return fmt.Errorf("no projects matched")
+				return &shared.SelectionError{Resource: "project", Kind: "not_found", Query: fmt.Sprintf("filters=%v expression=%q", filters, rawExpr), Err: fmt.Errorf("no projects matched")}
 			}
 
 			yes, err := cmd.Flags().GetBool("yes")
@@ -57,6 +68,9 @@ func newForgetCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if !yes {
+				if err := shared.RequireYesInMachineMode(cmd, yes, "forgetting matched projects and deleting their local data", true); err != nil {
+					return err
+				}
 				confirm := shared.NewConfirmation(
 					projectForgetConfirmationPrompt(len(projects)),
 					shared.ConfirmationOptions{
@@ -82,6 +96,13 @@ func newForgetCommand(svc *core.Core) *cobra.Command {
 			deleted, err := svc.DeleteProjectIDs(projectIDs)
 			if err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				items := make([]forgottenProject, 0, len(deleted))
+				for _, project := range deleted {
+					items = append(items, forgottenProject{Project: project.Name, ProjectID: project.ProjectID, Status: "forgotten"})
+				}
+				return shared.WriteJSON(cmd, projectsForgetResult{Count: len(items), Items: items})
 			}
 			for _, project := range deleted {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 forgot project: %s (%s)\n", project.Name, project.ProjectID)
@@ -116,9 +137,9 @@ func newListCommand(svc *core.Core) *cobra.Command {
 			var source string
 			if forceUpdate {
 				progress.Start("Syncing projects…")
-				projects, source, err = svc.SyncProjects(context.Background())
+				projects, source, err = svc.SyncProjects(shared.CommandContext(cmd))
 			} else {
-				projects, source, err = svc.ListProjects(context.Background())
+				projects, source, err = svc.ListProjects(shared.CommandContext(cmd))
 			}
 			if err != nil {
 				return err
@@ -144,9 +165,9 @@ func newUpdateCommand(svc *core.Core) *cobra.Command {
 			var projects []core.Project
 			var source string
 			if authID != "" {
-				projects, source, err = svc.SyncProjectsForAuth(context.Background(), authID)
+				projects, source, err = svc.SyncProjectsForAuth(shared.CommandContext(cmd), authID)
 			} else {
-				projects, source, err = svc.SyncProjects(context.Background())
+				projects, source, err = svc.SyncProjects(shared.CommandContext(cmd))
 			}
 			if err != nil {
 				return err
@@ -179,7 +200,7 @@ func newPathCommand() *cobra.Command {
 
 			path := config.GetProjectsFilePath()
 			if jsonOut {
-				if err := shared.WriteJSON(cmd, map[string]string{"path": path}); err != nil {
+				if err := shared.WriteJSON(cmd, shared.PathResult{Path: path}); err != nil {
 					return fmt.Errorf("encode projects path json: %w", err)
 				}
 				return nil
@@ -203,6 +224,9 @@ func newResetCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			if !yes {
+				if err := shared.RequireYesInMachineMode(cmd, yes, "resetting the cached projects registry", true); err != nil {
+					return err
+				}
 				confirm := shared.NewConfirmation(
 					fmt.Sprintf("Reset cached projects registry by deleting %s?", config.GetProjectsFilePath()),
 					shared.ConfirmationOptions{
@@ -221,14 +245,39 @@ func newResetCommand(svc *core.Core) *cobra.Command {
 				}
 			}
 
-			if err := svc.ResetProjects(); err != nil {
+			changed, err := svc.ResetProjects()
+			if err != nil {
 				return err
 			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, projectsResetResult{Path: config.GetProjectsFilePath(), Status: "reset", Changed: changed})
+			}
 
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 reset projects registry: %s\n", config.GetProjectsFilePath())
+			if changed {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 reset projects registry: %s\n", config.GetProjectsFilePath())
+			} else {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "projects registry already reset: %s\n", config.GetProjectsFilePath())
+			}
 			return nil
 		},
 	}
 	shared.AddYesFlag(cmd, "Skip confirmation dialog")
 	return cmd
+}
+
+type forgottenProject struct {
+	Project   string `json:"project"`
+	ProjectID string `json:"project_id"`
+	Status    string `json:"status" contract:"enum=forgotten"`
+}
+
+type projectsForgetResult struct {
+	Count int                `json:"count"`
+	Items []forgottenProject `json:"items"`
+}
+
+type projectsResetResult struct {
+	Path    string `json:"path"`
+	Status  string `json:"status" contract:"enum=reset"`
+	Changed bool   `json:"changed"`
 }

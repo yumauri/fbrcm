@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,5 +33,20 @@ func TestConfirmFileOverwriteRejectsDirectory(t *testing.T) {
 	_, _, err := ConfirmFileOverwrite(&cobra.Command{}, path, true)
 	if err == nil || !strings.Contains(err.Error(), "is a directory") {
 		t.Fatalf("directory error = %v", err)
+	}
+}
+
+func TestConfirmFileOverwriteWithoutBypassRequiresInteractionInMachineMode(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "existing.json")
+	if err := os.WriteFile(path, []byte("existing"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := &cobra.Command{}
+	SetMachineMode(true)
+	t.Cleanup(func() { SetMachineMode(false) })
+	_, _, err := ConfirmFileOverwriteWithoutBypass(cmd, path)
+	var interaction *InteractionError
+	if !errors.As(err, &interaction) || interaction.RequiredOption != "" || !interaction.Destructive {
+		t.Fatalf("overwrite error = %#v", err)
 	}
 }

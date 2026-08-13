@@ -12,25 +12,40 @@ import (
 
 const authSetupHint = "Set up authentication by running `fbrcm` for guided setup, or see `fbrcm auth add --help` for CLI options."
 
-type authSetupRequiredError struct {
-	cause error
+// AuthError classifies expected authentication registry and selection failures
+// without coupling core services to the CLI contract package.
+type AuthError struct {
+	Kind   string
+	AuthID string
+	Err    error
 }
 
-func (e authSetupRequiredError) Error() string {
-	return e.cause.Error() + "\n\n" + authSetupHint
+// OAuthInteractionError identifies an auth identity that must be authorized by
+// a human before a non-interactive command can use it.
+type OAuthInteractionError struct {
+	AuthID string
+	Err    error
 }
 
-func (e authSetupRequiredError) Unwrap() error {
-	return e.cause
+func (e *OAuthInteractionError) Error() string { return e.Err.Error() }
+func (e *OAuthInteractionError) Unwrap() error { return e.Err }
+
+func (e *AuthError) Error() string {
+	if e.Kind == "setup_required" {
+		return e.Err.Error() + "\n\n" + authSetupHint
+	}
+	return e.Err.Error()
 }
+
+func (e *AuthError) Unwrap() error { return e.Err }
 
 func loadAuthWithSetupHint() (*config.AuthFile, error) {
 	authFile, err := config.LoadAuth()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, authSetupRequiredError{cause: err}
+			return nil, &AuthError{Kind: "setup_required", Err: err}
 		}
-		return nil, err
+		return nil, &AuthError{Kind: "configuration", Err: err}
 	}
 	return authFile, nil
 }
@@ -41,7 +56,7 @@ func loadRequiredAuth() (*config.AuthFile, error) {
 		return nil, err
 	}
 	if len(authFile.Auth) == 0 {
-		return nil, authSetupRequiredError{cause: errors.New("no auth identities configured")}
+		return nil, &AuthError{Kind: "setup_required", Err: errors.New("no auth identities configured")}
 	}
 	return authFile, nil
 }
@@ -49,14 +64,22 @@ func loadRequiredAuth() (*config.AuthFile, error) {
 func authNotConfiguredError(authFile *config.AuthFile, authID string) error {
 	err := fmt.Errorf("auth %q is not configured", authID)
 	if len(authFile.Auth) == 0 {
-		return authSetupRequiredError{cause: err}
+		return &AuthError{Kind: "setup_required", AuthID: authID, Err: err}
 	}
-	return err
+	return &AuthError{Kind: "not_found", AuthID: authID, Err: err}
+}
+
+func loadAuthOrEmpty() (*config.AuthFile, error) {
+	authFile, err := config.LoadAuthOrEmpty()
+	if err != nil {
+		return nil, &AuthError{Kind: "configuration", Err: err}
+	}
+	return authFile, nil
 }
 
 // ListAuth lists configured auth identities.
 func (s *Core) ListAuth() ([]config.AuthEntry, string, error) {
-	auth, err := config.LoadAuthOrEmpty()
+	auth, err := loadAuthOrEmpty()
 	if err != nil {
 		return nil, "", err
 	}
@@ -71,7 +94,7 @@ func (s *Core) AddOAuthAuth(authID, label string, secret []byte) (config.AuthEnt
 	if err := firebase.ValidateOAuthClientSecret(secret); err != nil {
 		return config.AuthEntry{}, err
 	}
-	authFile, err := config.LoadAuthOrEmpty()
+	authFile, err := loadAuthOrEmpty()
 	if err != nil {
 		return config.AuthEntry{}, err
 	}
@@ -119,7 +142,7 @@ func (s *Core) AddServiceAccountAuth(authID, label string, key []byte) (config.A
 	if err := firebase.ValidateServiceAccountKey(key); err != nil {
 		return config.AuthEntry{}, err
 	}
-	authFile, err := config.LoadAuthOrEmpty()
+	authFile, err := loadAuthOrEmpty()
 	if err != nil {
 		return config.AuthEntry{}, err
 	}
@@ -150,7 +173,7 @@ func (s *Core) AddGCloudAuth(authID, label string) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
 		return config.AuthEntry{}, err
 	}
-	authFile, err := config.LoadAuthOrEmpty()
+	authFile, err := loadAuthOrEmpty()
 	if err != nil {
 		return config.AuthEntry{}, err
 	}
@@ -191,13 +214,16 @@ func (s *Core) AuthPaths(authID string) (config.AuthEntry, AuthPaths, error) {
 
 // DeleteAuth removes an auth identity's files and registry entry.
 func (s *Core) DeleteAuth(authID string) (config.AuthEntry, AuthPaths, error) {
-	authFile, err := config.LoadAuthOrEmpty()
+	if err := config.ValidateAuthID(authID); err != nil {
+		return config.AuthEntry{}, AuthPaths{}, &AuthError{Kind: "invalid_argument", AuthID: authID, Err: err}
+	}
+	authFile, err := loadAuthOrEmpty()
 	if err != nil {
 		return config.AuthEntry{}, AuthPaths{}, err
 	}
 	auth, ok := authFile.FindAuth(authID)
 	if !ok {
-		return config.AuthEntry{}, AuthPaths{}, fmt.Errorf("auth %q is not configured", authID)
+		return config.AuthEntry{}, AuthPaths{}, authNotConfiguredError(authFile, authID)
 	}
 	_, paths, err := s.AuthPaths(authID)
 	if err != nil {

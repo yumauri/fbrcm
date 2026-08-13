@@ -147,14 +147,30 @@ func TestDoctorPrintsReportAfterInterruptCancellation(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&out)
 	err := cmd.Execute()
-	var exitErr *shared.ExitError
-	if !errors.As(err, &exitErr) || exitErr.Code != 1 {
-		t.Fatalf("doctor error = %#v, want exit code 1", err)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("doctor error = %#v, want context canceled", err)
 	}
 	for _, want := range []string{"Status", "Profile", "default", "PASS"} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("interrupted output missing %q:\n%s", want, out.String())
 		}
+	}
+}
+
+func TestDoctorReturnsDeadlineExceededAfterPrintingReport(t *testing.T) {
+	cmd := newCommand(func(ctx context.Context) core.DoctorReport {
+		<-ctx.Done()
+		return core.DoctorReport{Checks: []core.DoctorCheck{{ID: "network", Status: core.DoctorFail, Check: "Network", Detail: "timed out"}}}
+	}, passthroughNotifyContext)
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetArgs([]string{"--json", "--timeout", "1ns"})
+	err := cmd.Execute()
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("doctor error = %#v, want deadline exceeded", err)
+	}
+	if !strings.Contains(out.String(), `"detail": "timed out"`) {
+		t.Fatalf("doctor did not print its timeout report: %s", out.String())
 	}
 }
 

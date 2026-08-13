@@ -40,3 +40,15 @@ func TestEditMetadataCanIntentionallyClearDescription(t *testing.T) {
 		t.Fatalf("cleared group = %#v", group)
 	}
 }
+
+func TestResolveNameRequiresExactCaseAndWhitespace(t *testing.T) {
+	cfg := &firebase.RemoteConfig{ParameterGroups: map[string]firebase.RemoteConfigGroup{"Canonical": {}}}
+	if got, ok := ResolveName(cfg, "Canonical"); !ok || got != "Canonical" {
+		t.Fatalf("exact ResolveName = %q, %t", got, ok)
+	}
+	for _, query := range []string{"canonical", " Canonical"} {
+		if got, ok := ResolveName(cfg, query); ok || got != "" {
+			t.Fatalf("ResolveName(%q) = %q, %t; want not found", query, got, ok)
+		}
+	}
+}

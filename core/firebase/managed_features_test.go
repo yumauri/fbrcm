@@ -3,6 +3,7 @@ package firebase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"reflect"
@@ -153,5 +154,23 @@ func TestManagedFeatureAPIReportsHTTPAndResourceErrors(t *testing.T) {
 func TestManagedFeatureID(t *testing.T) {
 	if got := ManagedFeatureID("projects/123/namespaces/firebase/rollouts/rollout_1"); got != "rollout_1" {
 		t.Fatalf("ManagedFeatureID = %q", got)
+	}
+}
+
+func TestManagedFeatureResourceRejectsMalformedFullNameWithTypedError(t *testing.T) {
+	_, err := managedFeatureResource("123", "experiments", "projects/other/namespaces/firebase/experiments/7")
+	var resourceErr *ManagedFeatureResourceError
+	if !errors.As(err, &resourceErr) || resourceErr.Collection != "experiments" || resourceErr.ItemID != "projects/other/namespaces/firebase/experiments/7" {
+		t.Fatalf("managedFeatureResource error = %#v, want typed resource error", err)
+	}
+}
+
+func TestManagedFeatureResourcePreservesBareIDWhitespace(t *testing.T) {
+	got, err := managedFeatureResource("123", "experiments", " experiment_1 ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "projects/123/namespaces/firebase/experiments/%20experiment_1%20" {
+		t.Fatalf("managedFeatureResource = %q", got)
 	}
 }

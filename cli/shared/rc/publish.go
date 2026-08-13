@@ -14,16 +14,9 @@ import (
 	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
 )
 
-// RemoteConfigValidationError identifies a project failure that occurred
-// before a publish request was sent.
-type RemoteConfigValidationError struct{ Err error }
-
-func (e *RemoteConfigValidationError) Error() string { return e.Err.Error() }
-func (e *RemoteConfigValidationError) Unwrap() error { return e.Err }
-
 // IsValidationError reports whether an error came from Firebase validation.
 func IsValidationError(err error) bool {
-	var validationErr *RemoteConfigValidationError
+	var validationErr *core.RemoteConfigValidationError
 	return errors.As(err, &validationErr)
 }
 
@@ -48,6 +41,12 @@ type RemoteConfigPublisher interface {
 
 // RemoteConfigMutation applies a command-specific change to a cloned config.
 type RemoteConfigMutation func(current *firebase.RemoteConfig) (changedCount int, finalCfg *firebase.RemoteConfig, err error)
+
+// RemoteMutationPlan retains selection provenance alongside the mutation.
+type RemoteMutationPlan struct {
+	Mutation         RemoteConfigMutation
+	MatchedItemCount int
+}
 
 // RemoteConfigMutationPublishResult records the observable outcome of applying
 // and attempting to publish one mutation.
@@ -87,7 +86,7 @@ func validateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigP
 			result.FailureStage = "validation"
 			return result, nil
 		}
-		return result, &RemoteConfigValidationError{Err: err}
+		return result, &core.RemoteConfigValidationError{Source: result.ValidationSource, Err: err}
 	}
 	result.Validated = true
 	if firebase.IsDryRun(ctx) {

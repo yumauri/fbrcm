@@ -1,7 +1,6 @@
 package groups
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -23,20 +22,26 @@ type mutationOptions struct {
 	ChangeNote     *string
 }
 
-type groupMutation func(*firebase.RemoteConfig) (bool, error)
+type groupMutationResult struct {
+	matched    bool
+	applicable bool
+}
+
+type groupMutation func(*firebase.RemoteConfig) (groupMutationResult, error)
 
 func newAddCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "add <name>", Short: "Add an empty parameter group across projects", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		name, err := coregroups.NormalizeName(args[0])
 		if err != nil {
-			return err
+			return shared.InvalidArgument(err)
 		}
 		description, _ := cmd.Flags().GetString("description")
-		return runGroupMutation(cmd, svc, readMutationOptions(cmd), "add group", "➕", false, func(cfg *firebase.RemoteConfig) (bool, error) {
+		return runGroupMutation(cmd, svc, readMutationOptions(cmd), "add group", "➕", false, func(cfg *firebase.RemoteConfig) (groupMutationResult, error) {
 			if _, exists := cfg.ParameterGroups[name]; exists {
-				return false, nil
+				return groupMutationResult{matched: true}, nil
 			}
-			return true, coregroups.Add(cfg, coregroups.Definition{Name: name, Description: description})
+			err := coregroups.Add(cfg, coregroups.Definition{Name: name, Description: description})
+			return groupMutationResult{matched: true, applicable: true}, err
 		})
 	}}
 	cmd.Flags().String("description", "", "Group description")
@@ -46,12 +51,9 @@ func newAddCommand(svc *core.Core) *cobra.Command {
 
 func newEditCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "edit <group>", Short: "Edit a group description across projects", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		if !cmd.Flags().Changed("description") && !cmd.Flags().Changed("no-description") {
-			return fmt.Errorf("one of --description or --no-description is required")
-		}
-		value, _ := cmd.Flags().GetString("description")
-		if noDescription, _ := cmd.Flags().GetBool("no-description"); noDescription {
-			value = ""
+		value, err := readDescriptionEdit(cmd)
+		if err != nil {
+			return err
 		}
 		return runNamedGroupMutation(cmd, svc, args[0], readMutationOptions(cmd), "edit group", "✏️", false, func(cfg *firebase.RemoteConfig, name string) (bool, error) {
 			if cfg.ParameterGroups[name].Description == strings.TrimSpace(value) {
@@ -62,16 +64,37 @@ func newEditCommand(svc *core.Core) *cobra.Command {
 	}}
 	cmd.Flags().String("description", "", "New group description")
 	cmd.Flags().Bool("no-description", false, "Remove the group description")
-	cmd.MarkFlagsMutuallyExclusive("description", "no-description")
 	addMutationFlags(cmd)
 	return cmd
+}
+
+func readDescriptionEdit(cmd *cobra.Command) (string, error) {
+	descriptionChanged := cmd.Flags().Changed("description")
+	noDescription, err := cmd.Flags().GetBool("no-description")
+	if err != nil {
+		return "", shared.InvalidArgument(err)
+	}
+	if !descriptionChanged && !noDescription {
+		return "", shared.InvalidArgument(fmt.Errorf("one of --description or --no-description is required"))
+	}
+	if descriptionChanged && noDescription {
+		return "", shared.InvalidArgument(fmt.Errorf("--description and --no-description are mutually exclusive"))
+	}
+	if noDescription {
+		return "", nil
+	}
+	value, err := cmd.Flags().GetString("description")
+	if err != nil {
+		return "", shared.InvalidArgument(err)
+	}
+	return value, nil
 }
 
 func newRenameCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "rename <group> <new-name>", Short: "Rename a parameter group across projects", Args: cobra.ExactArgs(2), RunE: func(cmd *cobra.Command, args []string) error {
 		nextName, err := coregroups.NormalizeName(args[1])
 		if err != nil {
-			return err
+			return shared.InvalidArgument(err)
 		}
 		return runNamedGroupMutation(cmd, svc, args[0], readMutationOptions(cmd), "rename group", "✏️", false, func(cfg *firebase.RemoteConfig, name string) (bool, error) {
 			if name == nextName {
@@ -121,17 +144,18 @@ func runNamedGroupMutation(cmd *cobra.Command, svc *core.Core, requested string,
 }
 
 func namedGroupMutation(requested string, mutate func(*firebase.RemoteConfig, string) (bool, error)) groupMutation {
-	return func(cfg *firebase.RemoteConfig) (bool, error) {
+	return func(cfg *firebase.RemoteConfig) (groupMutationResult, error) {
 		name, ok := coregroups.ResolveName(cfg, requested)
 		if !ok {
-			return false, nil
+			return groupMutationResult{}, nil
 		}
-		return mutate(cfg, name)
+		applicable, err := mutate(cfg, name)
+		return groupMutationResult{matched: true, applicable: applicable}, err
 	}
 }
 
 func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, operation, emoji string, destructive bool, mutate groupMutation) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -149,17 +173,28 @@ func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, 
 		return err
 	}
 	strfold.SortProjects(projects, func(project core.Project) string { return project.Name }, func(project core.Project) string { return project.ProjectID })
-	plan := func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteConfigMutation, error) {
-		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+	plan := func(project core.Project, cfg *sharedrc.ProjectConfig) (sharedrc.RemoteMutationPlan, error) {
+		probe, err := firebase.CloneRemoteConfig(cfg.Config)
+		if err != nil {
+			return sharedrc.RemoteMutationPlan{}, err
+		}
+		probeResult, err := mutate(probe)
+		if err != nil {
+			return sharedrc.RemoteMutationPlan{}, err
+		}
+		if !probeResult.matched {
+			return sharedrc.RemoteMutationPlan{}, nil
+		}
+		return sharedrc.RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			finalCfg, err := firebase.CloneRemoteConfig(current)
 			if err != nil {
 				return 0, nil, err
 			}
-			applicable, err := mutate(finalCfg)
+			result, err := mutate(finalCfg)
 			if err != nil {
 				return 0, nil, err
 			}
-			if !applicable {
+			if !result.applicable {
 				return 0, finalCfg, nil
 			}
 			diffText, changed := sharedrc.RenderRemoteConfigDiff(current, finalCfg)
@@ -171,13 +206,13 @@ func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, 
 				return 0, finalCfg, err
 			}
 			return 1, finalCfg, nil
-		}, nil
+		}}, nil
 	}
 	var totals sharedrc.RemoteMutationTotals
 	if opts.Draft {
-		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, operation, plan)
+		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, len(opts.ProjectFilters) == 0, operation, plan)
 	} else {
-		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
+		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, len(opts.ProjectFilters) == 0, operation, emoji, plan)
 	}
 	if writeErr := sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], emoji); writeErr != nil {
 		return writeErr

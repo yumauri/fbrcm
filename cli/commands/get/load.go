@@ -117,7 +117,7 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 			cache:   cache,
 			cfg:     cfg,
 			source:  "cache-stale",
-			status:  "staled",
+			status:  "stale",
 		}, nil
 	}
 

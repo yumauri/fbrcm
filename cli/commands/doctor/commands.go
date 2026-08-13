@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 )
@@ -17,9 +18,11 @@ type notifyContextFunc func(context.Context) (context.Context, context.CancelFun
 
 // New constructs the doctor command.
 func New(svc *core.Core) *cobra.Command {
-	return newCommand(svc.Doctor, func(parent context.Context) (context.Context, context.CancelFunc) {
+	cmd := newCommand(svc.Doctor, func(parent context.Context) (context.Context, context.CancelFunc) {
 		return signal.NotifyContext(parent, os.Interrupt)
 	})
+	contract.RegisterResponse(cmd, []doctorListItem{})
+	return cmd
 }
 
 func newCommand(runDoctor doctorFunc, notifyContext notifyContextFunc) *cobra.Command {
@@ -33,10 +36,10 @@ func newCommand(runDoctor doctorFunc, notifyContext notifyContextFunc) *cobra.Co
 				return err
 			}
 			if cmd.Flags().Changed("timeout") && timeout <= 0 {
-				return fmt.Errorf("--timeout must be greater than zero")
+				return shared.InvalidArgument(fmt.Errorf("--timeout must be greater than zero"))
 			}
 
-			ctx, stopInterrupt := notifyContext(cmd.Context())
+			ctx, stopInterrupt := notifyContext(shared.CommandContext(cmd))
 			defer stopInterrupt()
 			if cmd.Flags().Changed("timeout") {
 				var cancelTimeout context.CancelFunc
@@ -44,7 +47,7 @@ func newCommand(runDoctor doctorFunc, notifyContext notifyContextFunc) *cobra.Co
 				defer cancelTimeout()
 			}
 			report := runDoctor(ctx)
-			interrupted := ctx.Err() != nil
+			contextErr := ctx.Err()
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
 				return err
@@ -56,7 +59,10 @@ func newCommand(runDoctor doctorFunc, notifyContext notifyContextFunc) *cobra.Co
 			} else {
 				_, _ = cmd.OutOrStdout().Write([]byte(renderDoctorTable(report.Checks) + "\n"))
 			}
-			if report.Failed() || interrupted {
+			if contextErr != nil {
+				return contextErr
+			}
+			if report.Failed() {
 				cmd.Root().SilenceErrors = true
 				cmd.Root().SilenceUsage = true
 				return shared.WithExitCode(nil, 1)

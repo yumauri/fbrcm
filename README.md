@@ -153,19 +153,18 @@ normally committed for the team and CI. Conflicting definitions are rejected;
 identical definitions are shared. Canonical project IDs remain in Firebase
 requests, caches, drafts, and automation output.
 
-Direct Remote Config mutations support a shared automation contract. Add
-`--json` to `add`, `update`, `delete`, `duplicate`, condition mutations, or
-group mutations to receive one structured result per target, including changed
-item count, version transition, draft and dry-run state, structured errors, and
-an exact retry selector when retrying is safe:
+Every CLI command supports a shared versioned automation contract. Add
+`--json` to receive one envelope on success or failure, with typed data,
+structured errors, semantic exit status, and execution context:
 
 ```sh
 fbrcm update feature_enabled --project '=my-app' --type boolean --value true --yes --json
 ```
 
-Use `--type json --value '<json>'` when the parameter value is JSON. See the
-[CLI mutation JSON contract](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md#mutation-json-automation-contract) for
-the complete schema.
+Use `--type json --value '<json>'` when the parameter value is JSON. Agents can
+discover commands with `fbrcm capabilities --json` and embedded schemas with
+`fbrcm schema list --json`. See the [CLI machine contract](https://github.com/yumauri/fbrcm/blob/main/docs/cli-contract.md)
+for the envelope, errors, exit statuses, non-interactive rules, and schemas.
 
 Project and parameter filters support fuzzy, prefix, contains, and exact modes.
 Expression filters can also inspect typed values and complete Remote Config

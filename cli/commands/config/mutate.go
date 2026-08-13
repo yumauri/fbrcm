@@ -15,17 +15,17 @@ import (
 )
 
 type configSetResult struct {
-	Scope    string `json:"scope"`
-	Key      string `json:"key"`
-	Previous any    `json:"previous"`
-	Value    any    `json:"value"`
-	Changed  bool   `json:"changed"`
+	Scope    string          `json:"scope" contract:"enum=global|local"`
+	Key      string          `json:"key"`
+	Previous json.RawMessage `json:"previous"`
+	Value    json.RawMessage `json:"value"`
+	Changed  bool            `json:"changed"`
 }
 
 type configResetResult struct {
-	Scope   string `json:"scope"`
+	Scope   string `json:"scope" contract:"enum=global|local"`
 	Key     string `json:"key"`
-	Status  string `json:"status"`
+	Status  string `json:"status" contract:"enum=unchanged|reset"`
 	Changed bool   `json:"changed"`
 }
 
@@ -57,7 +57,7 @@ func newSetCommand() *cobra.Command {
 			}
 			value, err := setConfigValue(candidate, args[0], args[1:])
 			if err != nil {
-				return err
+				return shared.InvalidArgument(err)
 			}
 			changed := !reflect.DeepEqual(previous, value)
 			if changed {
@@ -65,7 +65,10 @@ func newSetCommand() *cobra.Command {
 					return err
 				}
 			}
-			result := configSetResult{Scope: scope, Key: args[0], Previous: previous, Value: value, Changed: changed}
+			result, err := newConfigSetResult(scope, args[0], previous, value, changed)
+			if err != nil {
+				return err
+			}
 			if jsonOut {
 				return shared.WriteJSON(cmd, result)
 			}
@@ -80,6 +83,18 @@ func newSetCommand() *cobra.Command {
 	cmd.Flags().Bool("json", false, "Print update result as JSON")
 	addScopeFlag(cmd, scopeGlobal)
 	return cmd
+}
+
+func newConfigSetResult(scope, key string, previous, value any, changed bool) (configSetResult, error) {
+	previousRaw, err := json.Marshal(previous)
+	if err != nil {
+		return configSetResult{}, fmt.Errorf("encode previous config value %s: %w", key, err)
+	}
+	valueRaw, err := json.Marshal(value)
+	if err != nil {
+		return configSetResult{}, fmt.Errorf("encode config value %s: %w", key, err)
+	}
+	return configSetResult{Scope: scope, Key: key, Previous: previousRaw, Value: valueRaw, Changed: changed}, nil
 }
 
 func setConfigValue(cfg *coreconfig.AppConfig, key string, values []string) (any, error) {
@@ -169,13 +184,16 @@ func newResetCommand() *cobra.Command {
 			}
 			changed, err := resetConfigValue(candidate, key, len(args) == 0)
 			if err != nil {
-				return err
+				return shared.InvalidArgument(err)
 			}
 			result := configResetResult{Scope: scope, Key: key, Status: "unchanged", Changed: changed}
 			if !changed {
 				return writeResetResult(cmd, jsonOut, result)
 			}
 			if !yes {
+				if err := shared.RequireYesInMachineMode(cmd, yes, "removing the configuration override", true); err != nil {
+					return err
+				}
 				confirm := shared.NewConfirmation(fmt.Sprintf("Remove %s override from %s configuration?", key, scope), shared.ConfirmationOptions{Destructive: true})
 				confirm.Input = cmd.InOrStdin()
 				confirm.Output = cmd.ErrOrStderr()
@@ -204,7 +222,7 @@ func newResetCommand() *cobra.Command {
 
 func requireLocalProjectAliasScope(key, scope string) error {
 	if scope == scopeGlobal && (key == "projects.aliases" || strings.HasPrefix(key, "projects.aliases.")) {
-		return fmt.Errorf("projects.aliases: project aliases are repository-scoped; use --scope local")
+		return shared.InvalidArgument(fmt.Errorf("projects.aliases: project aliases are repository-scoped; use --scope local"))
 	}
 	return nil
 }
@@ -328,7 +346,7 @@ func invalidConfigError(report configValidationResult) error {
 	for _, diagnostic := range report.Errors {
 		parts = append(parts, diagnosticKey(diagnostic)+": "+diagnostic.Message)
 	}
-	return fmt.Errorf("config is invalid: %s", strings.Join(parts, "; "))
+	return &shared.ValidationError{Code: "configuration.invalid", Source: "configuration", Stage: "validation", Err: fmt.Errorf("config is invalid: %s", strings.Join(parts, "; "))}
 }
 
 func writeResetResult(cmd *cobra.Command, jsonOut bool, result configResetResult) error {

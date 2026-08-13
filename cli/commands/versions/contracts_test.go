@@ -8,24 +8,28 @@ import (
 
 func TestVersionPublishJSONRepresentsNoOp(t *testing.T) {
 	payload := versionPublishJSON("demo", false, "7", "7", "", nil, true, false, true, core.ValidationSourceLocal)
-	if payload["operation"] != "rollback" || payload["changed"] != false || payload["dry_run"] != true {
+	if payload.Operation != "rollback" || payload.Status != "unchanged" || payload.Changed || !payload.DryRun {
 		t.Fatalf("no-op payload = %#v", payload)
 	}
-	if payload["published_version"] != nil {
-		t.Fatalf("published_version = %#v, want nil", payload["published_version"])
+	if payload.PublishedVersion != nil {
+		t.Fatalf("published_version = %#v, want nil", payload.PublishedVersion)
 	}
-	if _, ok := payload["change_note"]; ok {
-		t.Fatalf("rollback payload unexpectedly contains change_note: %#v", payload)
+	if payload.ChangeNote != nil {
+		t.Fatalf("rollback change_note = %#v, want nil", payload.ChangeNote)
+	}
+	payload = versionPublishJSON("demo", true, "7", "7", "", nil, false, false, true, core.ValidationSourceLocal)
+	if payload.Status != "unchanged" || payload.Changed || payload.DryRun || payload.PublishedVersion != nil {
+		t.Fatalf("live no-op payload = %#v", payload)
 	}
 
 	payload = versionPublishJSON("demo", true, "7", "3", "8", nil, false, true, true, core.ValidationSourceFirebase)
-	if payload["operation"] != "restore" || payload["changed"] != true || payload["published_version"] != "8" {
+	if payload.Operation != "restore" || payload.Status != "published" || !payload.Changed || payload.PublishedVersion == nil || *payload.PublishedVersion != "8" {
 		t.Fatalf("changed payload = %#v", payload)
 	}
-	if value, ok := payload["change_note"]; !ok || value != (*string)(nil) {
-		t.Fatalf("restore change_note = %#v, present=%v", value, ok)
+	if payload.ChangeNote != nil {
+		t.Fatalf("restore change_note = %#v", payload.ChangeNote)
 	}
-	if payload["validated"] != true || payload["validation_source"] != core.ValidationSourceFirebase {
-		t.Fatalf("validation metadata = %#v/%#v", payload["validated"], payload["validation_source"])
+	if !payload.Validated || payload.ValidationSource != core.ValidationSourceFirebase {
+		t.Fatalf("validation metadata = %#v/%#v", payload.Validated, payload.ValidationSource)
 	}
 }

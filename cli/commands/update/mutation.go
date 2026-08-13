@@ -47,7 +47,7 @@ func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec
 		} else {
 			condition, ok := coreconditions.ResolveName(cfg, spec.condition)
 			if !ok {
-				return fmt.Errorf("condition %q not found", spec.condition)
+				return &shared.SelectionError{Resource: "condition", Kind: "not_found", Query: spec.condition, Err: fmt.Errorf("condition %q not found", spec.condition)}
 			}
 			if param.ConditionalValues == nil {
 				param.ConditionalValues = make(map[string]firebase.RemoteConfigValue)
@@ -77,7 +77,7 @@ func updateParamSlot(cfg *firebase.RemoteConfig, target shared.ParamTarget, spec
 		nextKey = spec.name
 	}
 	if (target.Key != nextKey || target.Group != nextGroup) && shared.ParamSlotExists(cfg, nextKey, nextGroup) {
-		return fmt.Errorf("parameter %s already exists", rcdisplay.FormatParameterHeader(nextKey, nextGroup))
+		return &shared.ConflictError{Code: "parameter.exists", Resource: "parameter", Target: nextKey, Err: fmt.Errorf("parameter %s already exists", rcdisplay.FormatParameterHeader(nextKey, nextGroup))}
 	}
 	shared.RemoveParamSlot(cfg, target.Key, target.Group)
 	shared.SetParamSlot(cfg, nextKey, nextGroup, param)

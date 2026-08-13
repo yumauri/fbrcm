@@ -19,7 +19,7 @@ func TestTemplatesShowPrintsNormalizedClientDefault(t *testing.T) {
 	cmd := newTemplatesShowCommand()
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"northstar"})
+	cmd.SetArgs([]string{"northstar-wallet"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute templates show: %v", err)
@@ -47,7 +47,7 @@ func TestTemplatesShowJSON(t *testing.T) {
 	cmd := newTemplatesShowCommand()
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"northstar", "--json"})
+	cmd.SetArgs([]string{"northstar-wallet", "--json"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute templates show JSON: %v", err)
@@ -76,7 +76,7 @@ func TestTemplatesSetUpdatesBothTemplatesAndPrimary(t *testing.T) {
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetArgs([]string{
-		"northstar",
+		"northstar-wallet",
 		"--templates", "client,server",
 		"--primary", "server",
 	})
@@ -110,7 +110,7 @@ func TestTemplatesSetSingleTemplateMakesItPrimary(t *testing.T) {
 	}})
 	cmd := newTemplatesSetCommand(svc)
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetArgs([]string{"northstar", "--templates", "server"})
+	cmd.SetArgs([]string{"northstar-wallet", "--templates", "server"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute templates set server-only: %v", err)
@@ -136,7 +136,7 @@ func TestTemplatesSetJSONAcceptsRepeatedCaseInsensitiveTemplates(t *testing.T) {
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetArgs([]string{
-		"northstar",
+		"northstar-wallet",
 		"--templates", "Server",
 		"--templates", "CLIENT",
 		"--primary", "SERVER",
@@ -168,7 +168,7 @@ func TestTemplatesSetPrimaryOnlyPreservesEnabledTemplates(t *testing.T) {
 	}})
 	cmd := newTemplatesSetCommand(svc)
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetArgs([]string{"northstar", "--primary", "server"})
+	cmd.SetArgs([]string{"northstar-wallet", "--primary", "server"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute templates set primary-only: %v", err)
@@ -190,17 +190,17 @@ func TestTemplatesSetValidatesMutation(t *testing.T) {
 	}{
 		{
 			name: "requires mutation",
-			args: []string{"northstar"},
+			args: []string{"northstar-wallet"},
 			want: "at least one of --templates or --primary is required",
 		},
 		{
 			name: "rejects invalid template",
-			args: []string{"northstar", "--templates", "mobile"},
+			args: []string{"northstar-wallet", "--templates", "mobile"},
 			want: `template must be client or server, got "mobile"`,
 		},
 		{
 			name: "rejects disabled primary",
-			args: []string{"northstar", "--templates", "client", "--primary", "server"},
+			args: []string{"northstar-wallet", "--templates", "client", "--primary", "server"},
 			want: `primary template "server" is not enabled`,
 		},
 		{

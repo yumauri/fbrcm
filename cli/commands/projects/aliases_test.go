@@ -3,6 +3,7 @@ package projects
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,9 +11,20 @@ import (
 
 	"charm.land/lipgloss/v2"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 )
+
+func TestProjectAliasesRemoveRejectsInvalidAliasAsArgument(t *testing.T) {
+	cmd := newAliasesRemoveCommand()
+	cmd.SetArgs([]string{"../prod", "--json"})
+	err := cmd.Execute()
+	var argumentErr *shared.ArgumentError
+	if err == nil || !errors.As(err, &argumentErr) {
+		t.Fatalf("remove invalid alias error = %T %v", err, err)
+	}
+}
 
 func TestProjectAliasesCommandsRoundTrip(t *testing.T) {
 	root := setupAliasCommandTest(t)

@@ -1,0 +1,205 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "fingerprint": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "fingerprint",
+              "local_config"
+            ]
+          },
+          "if": {
+            "properties": {
+              "local_hooks": {
+                "const": false
+              }
+            },
+            "required": [
+              "local_hooks"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "fingerprint"
+              ]
+            },
+            "properties": {
+              "trusted": {
+                "const": true
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "fingerprint": {
+          "type": "string"
+        },
+        "local_config": {
+          "type": "string"
+        },
+        "local_hooks": {
+          "const": true
+        },
+        "post_publish": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "pre_publish": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "timeout": {
+          "type": "string"
+        },
+        "trusted": {
+          "const": true
+        }
+      },
+      "required": [
+        "local_hooks",
+        "post_publish",
+        "pre_publish",
+        "timeout",
+        "trusted"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "hooks.trust"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

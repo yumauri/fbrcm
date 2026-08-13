@@ -2,26 +2,21 @@ package rc
 
 import (
 	"errors"
-	"strings"
+
+	"github.com/yumauri/fbrcm/cli/machine"
+	"github.com/yumauri/fbrcm/core/firebase"
 )
 
-// IsRemoteConfigConflict reports whether err looks like an ETag/precondition conflict.
+// IsRemoteConfigConflict reports typed ETag/precondition conflicts.
 func IsRemoteConfigConflict(err error) bool {
 	if err == nil {
 		return false
 	}
 
-	target := err
-	for target != nil {
-		msg := strings.ToLower(target.Error())
-		if strings.Contains(msg, "returned 412") ||
-			strings.Contains(msg, "precondition failed") ||
-			strings.Contains(msg, "conditionnotmet") ||
-			strings.Contains(msg, "etag") ||
-			strings.Contains(msg, "if-match") {
-			return true
-		}
-		target = errors.Unwrap(target)
+	var conflict *machine.ConflictError
+	if errors.As(err, &conflict) {
+		return true
 	}
-	return false
+	var apiErr *firebase.APIError
+	return errors.As(err, &apiErr) && (apiErr.StatusCode == 409 || apiErr.StatusCode == 412)
 }

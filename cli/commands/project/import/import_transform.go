@@ -1,8 +1,10 @@
 package importpkg
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/importer"
@@ -30,5 +32,9 @@ func transformImportConfig(project core.Project, cfg *firebase.RemoteConfig, opt
 	if target, err := rctarget.Parse(projectID); err == nil {
 		projectID = target.ProjectID
 	}
-	return importer.Transform(projectID, project.Name, cfg, opts.plannerOptions())
+	err := importer.Transform(projectID, project.Name, cfg, opts.plannerOptions())
+	if err != nil && strings.TrimSpace(opts.expr) != "" {
+		return &shared.ExpressionError{Expression: opts.expr, Context: "import_parameter", Target: projectID, Err: fmt.Errorf("transform imported config: %w", err)}
+	}
+	return err
 }

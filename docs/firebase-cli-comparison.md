@@ -146,11 +146,13 @@ Remove `--dry-run` to review and publish each project, or replace it with
 ### Compare environments
 
 ```sh
-fbrcm projects diff staging-project production-project --exit-code
+fbrcm projects diff staging-project production-project
 ```
 
-The exit status is `0` for no differences, `1` for differences, and `2` for an
-error, making the command suitable for CI drift checks.
+The exit status is `0` for no differences and `1` for differences. Operational
+failures use fbrcm's semantic failure statuses, such as `2` for invalid
+arguments, `3` for configuration or profile failures, and `8` for an invalid
+expression, making the command suitable for CI drift checks.
 
 ### Promote selected changes
 

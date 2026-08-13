@@ -7,7 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
+	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/rootgroup"
 	"github.com/yumauri/fbrcm/core/strfold"
@@ -31,7 +33,7 @@ type groupListJSON struct {
 	Project   string `json:"project"`
 	ProjectID string `json:"project_id"`
 	Version   string `json:"version"`
-	Source    string `json:"source"`
+	Source    string `json:"source" contract:"enum=cache|cache-verified|firebase|draft"`
 	HasDraft  bool   `json:"has_draft"`
 	groupListEntry
 }
@@ -47,6 +49,10 @@ type projectGroup struct {
 func New(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{Use: "groups", Short: "Inspect and manage Remote Config parameter groups"}
 	cmd.AddCommand(newListCommand(svc), newAddCommand(svc), newEditCommand(svc), newRenameCommand(svc), newDeleteCommand(svc))
+	contract.MustRegisterResponsePath(cmd, "list", []groupListJSON{})
+	for _, path := range []string{"add", "edit", "rename", "delete"} {
+		contract.MustRegisterResponsePath(cmd, path, []sharedrc.RemoteMutationJSONResult{})
+	}
 	return cmd
 }
 
@@ -84,7 +90,7 @@ func addReadFlags(cmd *cobra.Command) {
 }
 
 func loadProjects(cmd *cobra.Command, svc *core.Core) ([]loadedGroups, error) {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	projectFilters, err := cmd.Flags().GetStringArray("project")
 	if err != nil {
 		return nil, err

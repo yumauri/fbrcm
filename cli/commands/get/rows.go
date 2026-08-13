@@ -139,15 +139,15 @@ func singleExactProjectFilter(rawFilters []string) bool {
 	return shared.SingleExactProjectTargetFilter(rawFilters)
 }
 
-func filterParameterRows(rows []parameterRow, rawFilters []string) []parameterRow {
+func filterParameterRows(rows []parameterRow, rawFilters []string, parameterArgument *string) []parameterRow {
 	filters := shared.ParseFilters(rawFilters)
-	if len(filters) == 0 {
+	if parameterArgument == nil && len(filters) == 0 {
 		return rows
 	}
 
 	filtered := make([]parameterRow, 0, len(rows))
 	for _, row := range rows {
-		if shared.MatchAnyFilter(row.Key, filters) {
+		if (parameterArgument != nil && row.Key == *parameterArgument) || (parameterArgument == nil && shared.MatchAnyFilter(row.Key, filters)) {
 			filtered = append(filtered, row)
 		}
 	}

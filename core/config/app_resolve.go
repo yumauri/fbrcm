@@ -112,7 +112,7 @@ func ResolveAppConfig() (AppConfigResolution, error) {
 		return AppConfigResolution{}, err
 	}
 	if err := RejectGlobalProjectAliases(global.Config); err != nil {
-		return AppConfigResolution{}, fmt.Errorf("decode global config %s: %w", globalPath, err)
+		return AppConfigResolution{}, invalidConfiguration(globalPath, "validation", fmt.Errorf("decode global config %s: %w", globalPath, err))
 	}
 
 	local := AppConfigLayer{Config: &AppConfig{}, values: map[string]any{}}
@@ -138,7 +138,7 @@ func ResolveAppConfig() (AppConfigResolution, error) {
 	}
 	effective, err := DecodeAppConfig(raw, true)
 	if err != nil {
-		return AppConfigResolution{}, fmt.Errorf("decode merged config: %w", err)
+		return AppConfigResolution{}, invalidConfiguration("effective", "validation", fmt.Errorf("decode merged config: %w", err))
 	}
 	return AppConfigResolution{Global: global, Local: local, Effective: effective}, nil
 }
@@ -191,11 +191,11 @@ func loadAppConfigLayer(path, label string) (AppConfigLayer, error) {
 	}
 	cfg, err := DecodeAppConfig(raw, true)
 	if err != nil {
-		return AppConfigLayer{}, fmt.Errorf("decode %s config %s: %w", label, path, err)
+		return AppConfigLayer{}, invalidConfiguration(path, "decoding", fmt.Errorf("decode %s config %s: %w", label, path, err))
 	}
 	values := map[string]any{}
 	if err := toml.Unmarshal(raw, &values); err != nil {
-		return AppConfigLayer{}, fmt.Errorf("decode %s config values %s: %w", label, path, err)
+		return AppConfigLayer{}, invalidConfiguration(path, "decoding", fmt.Errorf("decode %s config values %s: %w", label, path, err))
 	}
 	layer.Exists = true
 	layer.Config = cfg

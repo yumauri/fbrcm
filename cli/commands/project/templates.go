@@ -58,7 +58,7 @@ func newTemplatesSetCommand(svc *core.Core) *cobra.Command {
 			templatesChanged := cmd.Flags().Changed("templates")
 			primaryChanged := cmd.Flags().Changed("primary")
 			if !templatesChanged && !primaryChanged {
-				return fmt.Errorf("at least one of --templates or --primary is required")
+				return shared.InvalidArgument(fmt.Errorf("at least one of --templates or --primary is required"))
 			}
 
 			project, err := resolveTemplatePreferencesProject(cmd, args[0])
@@ -85,7 +85,7 @@ func newTemplatesSetCommand(svc *core.Core) *cobra.Command {
 				}
 				primary, err = parseTemplateKind(rawPrimary)
 				if err != nil {
-					return fmt.Errorf("invalid --primary: %w", err)
+					return shared.InvalidArgument(fmt.Errorf("invalid --primary: %w", err))
 				}
 			}
 
@@ -93,7 +93,7 @@ func newTemplatesSetCommand(svc *core.Core) *cobra.Command {
 				primary = templates[0]
 			}
 			if !slices.Contains(templates, primary) {
-				return fmt.Errorf("primary template %q is not enabled by --templates", primary)
+				return shared.InvalidArgument(fmt.Errorf("primary template %q is not enabled by --templates", primary))
 			}
 
 			updated, err := svc.SetProjectTemplatePreferences(project.ProjectID, templates, primary)
@@ -114,16 +114,16 @@ func newTemplatesSetCommand(svc *core.Core) *cobra.Command {
 }
 
 func resolveTemplatePreferencesProject(cmd *cobra.Command, query string) (core.Project, error) {
-	target, explicit, err := rctarget.ParseSelector(query)
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
 	if err != nil {
-		return core.Project{}, err
+		return core.Project{}, shared.InvalidArgument(err)
 	}
 	if explicit {
-		return core.Project{}, fmt.Errorf(
+		return core.Project{}, shared.InvalidArgument(fmt.Errorf(
 			"template preferences belong to physical project %q; omit the %s@ prefix",
 			target.ProjectID,
 			target.Kind,
-		)
+		))
 	}
 	return shared.ResolveCachedProjectArg(cmd, target.ProjectID)
 }
@@ -133,12 +133,12 @@ func parseTemplateKinds(values []string) ([]rctarget.Kind, error) {
 	for _, value := range values {
 		kind, err := parseTemplateKind(value)
 		if err != nil {
-			return nil, fmt.Errorf("invalid --templates value: %w", err)
+			return nil, shared.InvalidArgument(fmt.Errorf("invalid --templates value: %w", err))
 		}
 		seen[kind] = struct{}{}
 	}
 	if len(seen) == 0 {
-		return nil, fmt.Errorf("--templates requires client, server, or both")
+		return nil, shared.InvalidArgument(fmt.Errorf("--templates requires client, server, or both"))
 	}
 	templates := make([]rctarget.Kind, 0, len(seen))
 	for _, kind := range []rctarget.Kind{rctarget.Client, rctarget.Server} {

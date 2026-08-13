@@ -3,10 +3,12 @@ package projects
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
@@ -15,20 +17,20 @@ import (
 
 func TestCompareJSONUsesChangedContract(t *testing.T) {
 	result := rcdiff.Result{Parameters: []rcdiff.ParameterChange{{Key: "flag", Kind: rcdiff.ChangeChanged}}}
-	payload := compareJSON(core.Project{ProjectID: "source"}, core.Project{ProjectID: "target"}, result).(map[string]any)
-	if changed, ok := payload["changed"].(bool); !ok || !changed {
-		t.Fatalf("changed = %#v, want true", payload["changed"])
+	payload := compareJSON(core.Project{ProjectID: "source"}, core.Project{ProjectID: "target"}, result)
+	if !payload.Changed {
+		t.Fatalf("changed = false, want true")
 	}
 }
 
 func TestPromoteJSONIncludesChanged(t *testing.T) {
 	result := rcdiff.Result{Conditions: []rcdiff.ConditionChange{{Name: "mobile", Kind: rcdiff.ChangeAdded}}}
-	payload := promoteJSON(core.Project{ProjectID: "source"}, core.Project{ProjectID: "target"}, compareOptions{DryRun: true}, false, true, core.ValidationSourceFirebase, nil, result).(map[string]any)
-	if changed, ok := payload["changed"].(bool); !ok || !changed {
-		t.Fatalf("changed = %#v, want true", payload["changed"])
+	payload := promoteJSON(core.Project{ProjectID: "source"}, core.Project{ProjectID: "target"}, compareOptions{DryRun: true}, false, true, core.ValidationSourceFirebase, nil, result)
+	if !payload.Changed {
+		t.Fatalf("changed = false, want true")
 	}
-	if payload["validated"] != true || payload["validation_source"] != core.ValidationSourceFirebase {
-		t.Fatalf("validation metadata = %#v/%#v", payload["validated"], payload["validation_source"])
+	if !payload.Validated || payload.ValidationSource != core.ValidationSourceFirebase {
+		t.Fatalf("validation metadata = %#v/%#v", payload.Validated, payload.ValidationSource)
 	}
 }
 
@@ -41,7 +43,9 @@ func TestLoadProjectConfigCachedRequiresLocalCache(t *testing.T) {
 	}
 
 	svc := &core.Core{}
-	if _, err := loadProjectConfig(context.Background(), svc, "missing", true); err == nil || !strings.Contains(err.Error(), "parameters cache not found") {
+	_, err := loadProjectConfig(context.Background(), svc, "missing", true)
+	var selectionErr *shared.SelectionError
+	if !errors.As(err, &selectionErr) || selectionErr.Resource != "parameters_cache" || selectionErr.Kind != "not_found" || selectionErr.Query != "missing" || !strings.Contains(err.Error(), "parameters cache not found") {
 		t.Fatalf("missing cached config error = %v", err)
 	}
 

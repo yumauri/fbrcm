@@ -60,6 +60,23 @@ func TestCollectMatchingParamTargetsReturnsExpressionEvaluationError(t *testing.
 	}
 }
 
+func TestCollectMatchingParamTargetsWithArgumentIsExactAndCaseSensitive(t *testing.T) {
+	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{"Flag": {}, "flag": {}}}
+	argument := "Flag"
+	got, err := CollectMatchingParamTargetsWithArgument(core.Project{ProjectID: "demo"}, cfg, nil, &argument, ParameterSearch{}, nil, DefaultRootGroupLabel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Key != "Flag" {
+		t.Fatalf("matches = %#v, want only Flag", got)
+	}
+	argument = "FLAG"
+	got, err = CollectMatchingParamTargetsWithArgument(core.Project{ProjectID: "demo"}, cfg, nil, &argument, ParameterSearch{}, nil, DefaultRootGroupLabel)
+	if err != nil || len(got) != 0 {
+		t.Fatalf("case-mismatched matches = %#v, %v; want none", got, err)
+	}
+}
+
 func TestRemoveParamSlotPreservesEmptyGroup(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{

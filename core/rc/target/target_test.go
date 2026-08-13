@@ -53,6 +53,22 @@ func TestParseSelectorReportsExplicitKind(t *testing.T) {
 	}
 }
 
+func TestParsePositionalSelectorPreservesProjectID(t *testing.T) {
+	got, explicit, err := ParsePositionalSelector("SERVER@ Demo ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !explicit || got.Kind != Server || got.ProjectID != " Demo " || got.String() != "server@ Demo " {
+		t.Fatalf("ParsePositionalSelector = %#v, explicit %t", got, explicit)
+	}
+}
+
+func TestParsePositionalSelectorRejectsWhitespaceOnlyProject(t *testing.T) {
+	if _, _, err := ParsePositionalSelector("server@  "); err == nil {
+		t.Fatal("ParsePositionalSelector accepted a whitespace-only project")
+	}
+}
+
 func TestExactFilter(t *testing.T) {
 	for input, want := range map[string]string{
 		"demo":        "=demo",

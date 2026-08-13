@@ -3,6 +3,7 @@ package updatecmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 
@@ -23,7 +24,7 @@ func TestRunUpdateStdinUpdatesRootParameterValue(t *testing.T) {
 	spec := updateSpec{
 		value: &valueSpec{value: "new", valueType: "STRING"},
 	}
-	err := runUpdateStdin(cmd, []string{"=flag"}, "", shared.ParameterSearch{}, spec)
+	err := runUpdateStdin(cmd, []string{"=flag"}, nil, "", shared.ParameterSearch{}, spec)
 	if err != nil {
 		t.Fatalf("runUpdateStdin returned error: %v", err)
 	}
@@ -48,7 +49,7 @@ func TestRunUpdateStdinRejectsManagedValue(t *testing.T) {
 	cmd.SetOut(&out)
 	cmd.SetErr(&bytes.Buffer{})
 
-	err := runUpdateStdin(cmd, []string{"=flag"}, "", shared.ParameterSearch{}, updateSpec{
+	err := runUpdateStdin(cmd, []string{"=flag"}, nil, "", shared.ParameterSearch{}, updateSpec{
 		value: &valueSpec{value: "30", valueType: "NUMBER"},
 	})
 	if err == nil || !strings.Contains(err.Error(), "rollout value is read-only") {
@@ -56,6 +57,26 @@ func TestRunUpdateStdinRejectsManagedValue(t *testing.T) {
 	}
 	if out.Len() != 0 {
 		t.Fatalf("stdout = %q, want empty", out.String())
+	}
+}
+
+func TestReadUpdateOptionsRejectsBlankPositionalParameterOnlyWhenSupplied(t *testing.T) {
+	cmd := New(nil)
+	if _, err := readUpdateOptions(cmd, []string{" \t "}); err == nil {
+		t.Fatal("readUpdateOptions accepted a whitespace-only positional parameter")
+	} else {
+		var argument *shared.ArgumentError
+		if !errors.As(err, &argument) {
+			t.Fatalf("blank positional error = %T, want ArgumentError", err)
+		}
+	}
+
+	opts, err := readUpdateOptions(cmd, nil)
+	if err != nil {
+		t.Fatalf("readUpdateOptions without a positional parameter = %v", err)
+	}
+	if len(opts.ParamFilters) != 0 {
+		t.Fatalf("omitted positional parameter filters = %#v, want none", opts.ParamFilters)
 	}
 }
 
@@ -177,7 +198,7 @@ func TestUpdateParamSlotAssignsConditionalValueWithoutChangingDefault(t *testing
 	target := shared.ParamTarget{Key: "flag", Param: cfg.Parameters["flag"]}
 	spec := updateSpec{
 		value:     &valueSpec{value: "enabled", valueType: "STRING"},
-		condition: "beta users",
+		condition: "Beta Users",
 	}
 
 	if err := updateParamSlot(cfg, target, spec); err != nil {
@@ -215,7 +236,7 @@ func TestUpdateParamSlotSetsInAppDefaultAndExplicitType(t *testing.T) {
 	target := shared.ParamTarget{Key: "payload", Param: cfg.Parameters["payload"]}
 	spec := updateSpec{
 		value:     &valueSpec{valueType: "STRING", useInAppDefault: true},
-		condition: "beta",
+		condition: "Beta",
 	}
 
 	if err := updateParamSlot(cfg, target, spec); err != nil {

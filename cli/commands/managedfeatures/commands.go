@@ -1,11 +1,11 @@
 package managedfeatures
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
@@ -20,6 +20,9 @@ func NewExperiments(svc *core.Core) *cobra.Command {
 		Long:  "Inspect experiment metadata and its parameter bindings in the published Remote Config template, or explicitly delete an experiment.",
 	}
 	cmd.AddCommand(newExperimentsListCommand(svc), newExperimentsShowCommand(svc), newExperimentsDeleteCommand(svc))
+	contract.MustRegisterResponsePath(cmd, "list", []core.ExperimentEntry{})
+	contract.MustRegisterResponsePath(cmd, "show", experimentShowResult{})
+	contract.MustRegisterResponsePath(cmd, "delete", managedFeatureDeleteResult{})
 	return cmd
 }
 
@@ -30,6 +33,9 @@ func NewRollouts(svc *core.Core) *cobra.Command {
 		Long:  "Inspect rollout metadata and its parameter bindings in the published Remote Config template, or explicitly delete a rollout.",
 	}
 	cmd.AddCommand(newRolloutsListCommand(svc), newRolloutsShowCommand(svc), newRolloutsDeleteCommand(svc))
+	contract.MustRegisterResponsePath(cmd, "list", []core.RolloutEntry{})
+	contract.MustRegisterResponsePath(cmd, "show", rolloutShowResult{})
+	contract.MustRegisterResponsePath(cmd, "delete", managedFeatureDeleteResult{})
 	return cmd
 }
 
@@ -40,7 +46,27 @@ func NewPersonalizations(svc *core.Core) *cobra.Command {
 		Long:  "Inspect read-only personalization IDs and their parameter bindings in the published Remote Config template.",
 	}
 	cmd.AddCommand(newPersonalizationsListCommand(svc), newPersonalizationsShowCommand(svc))
+	contract.MustRegisterResponsePath(cmd, "list", []core.PersonalizationEntry{})
+	contract.MustRegisterResponsePath(cmd, "show", personalizationShowResult{})
 	return cmd
+}
+
+type experimentShowResult struct {
+	Project    core.Project                `json:"project"`
+	Template   core.ManagedFeatureTemplate `json:"template"`
+	Experiment core.ExperimentEntry        `json:"experiment"`
+}
+
+type rolloutShowResult struct {
+	Project  core.Project                `json:"project"`
+	Template core.ManagedFeatureTemplate `json:"template"`
+	Rollout  core.RolloutEntry           `json:"rollout"`
+}
+
+type personalizationShowResult struct {
+	Project         core.Project                `json:"project"`
+	Template        core.ManagedFeatureTemplate `json:"template"`
+	Personalization core.PersonalizationEntry   `json:"personalization"`
 }
 
 func newExperimentsListCommand(svc *core.Core) *cobra.Command {
@@ -54,7 +80,7 @@ func newExperimentsListCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigExperiments(cmd.Context(), project, update)
+			result, err := svc.ListRemoteConfigExperiments(shared.CommandContext(cmd), project, update)
 			if err != nil {
 				return err
 			}
@@ -99,15 +125,13 @@ func newExperimentsShowCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			experiment, template, err := svc.GetRemoteConfigExperiment(cmd.Context(), project, args[1], update)
+			experiment, template, err := svc.GetRemoteConfigExperiment(shared.CommandContext(cmd), project, args[1], update)
 			if err != nil {
 				return err
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{
-					"project": project, "template": template, "experiment": experiment,
-				})
+				return shared.WriteJSON(cmd, experimentShowResult{Project: project, Template: template, Experiment: experiment})
 			}
 			printTemplateContext(cmd, project, template)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderExperimentDetails(experiment))
@@ -128,13 +152,19 @@ func newExperimentsDeleteCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			experiment, err := svc.GetRemoteConfigExperimentMetadata(cmd.Context(), project, args[1])
+			experiment, err := svc.GetRemoteConfigExperimentMetadata(shared.CommandContext(cmd), project, args[1])
 			if err != nil {
 				return err
 			}
 			id := firebase.ManagedFeatureID(experiment.Name)
 			identity := managedFeatureIdentity(experiment.Definition.DisplayName, id)
 			yes, _ := cmd.Flags().GetBool("yes")
+			if contract.Enabled(cmd) && !yes {
+				if err := shared.WriteJSON(cmd, managedFeatureDeleteResult{Kind: "experiment", ID: id, DisplayName: experiment.Definition.DisplayName, ProjectID: project.ProjectID, Status: "would-delete"}); err != nil {
+					return err
+				}
+				return shared.InteractionRequired("confirmation is required before deleting the experiment", true, "--yes")
+			}
 			confirmed, err := confirmManagedFeatureDelete(cmd, yes, fmt.Sprintf("Delete experiment %s from %s?", identity, project.ProjectID))
 			if err != nil {
 				return err
@@ -143,8 +173,11 @@ func newExperimentsDeleteCommand(svc *core.Core) *cobra.Command {
 				return nil
 			}
 			progress.Start("Deleting experiment from " + project.ProjectID + "…")
-			if err := svc.DeleteRemoteConfigExperiment(cmd.Context(), project, id); err != nil {
+			if err := svc.DeleteRemoteConfigExperiment(shared.CommandContext(cmd), project, id); err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, managedFeatureDeleteResult{Kind: "experiment", ID: id, DisplayName: experiment.Definition.DisplayName, ProjectID: project.ProjectID, Status: "deleted"})
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🗑️ deleted experiment: %s from %s\n", identity, project.ProjectID)
 			return nil
@@ -165,7 +198,7 @@ func newRolloutsListCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigRollouts(cmd.Context(), project, update)
+			result, err := svc.ListRemoteConfigRollouts(shared.CommandContext(cmd), project, update)
 			if err != nil {
 				return err
 			}
@@ -193,15 +226,13 @@ func newRolloutsShowCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			rollout, template, err := svc.GetRemoteConfigRollout(cmd.Context(), project, args[1], update)
+			rollout, template, err := svc.GetRemoteConfigRollout(shared.CommandContext(cmd), project, args[1], update)
 			if err != nil {
 				return err
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{
-					"project": project, "template": template, "rollout": rollout,
-				})
+				return shared.WriteJSON(cmd, rolloutShowResult{Project: project, Template: template, Rollout: rollout})
 			}
 			printTemplateContext(cmd, project, template)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderRolloutDetails(rollout))
@@ -222,13 +253,19 @@ func newRolloutsDeleteCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			rollout, err := svc.GetRemoteConfigRolloutMetadata(cmd.Context(), project, args[1])
+			rollout, err := svc.GetRemoteConfigRolloutMetadata(shared.CommandContext(cmd), project, args[1])
 			if err != nil {
 				return err
 			}
 			id := firebase.ManagedFeatureID(rollout.Name)
 			identity := managedFeatureIdentity(rollout.Definition.DisplayName, id)
 			yes, _ := cmd.Flags().GetBool("yes")
+			if contract.Enabled(cmd) && !yes {
+				if err := shared.WriteJSON(cmd, managedFeatureDeleteResult{Kind: "rollout", ID: id, DisplayName: rollout.Definition.DisplayName, ProjectID: project.ProjectID, Status: "would-delete"}); err != nil {
+					return err
+				}
+				return shared.InteractionRequired("confirmation is required before deleting the rollout", true, "--yes")
+			}
 			confirmed, err := confirmManagedFeatureDelete(cmd, yes, fmt.Sprintf("Delete rollout %s from %s?", identity, project.ProjectID))
 			if err != nil {
 				return err
@@ -237,8 +274,11 @@ func newRolloutsDeleteCommand(svc *core.Core) *cobra.Command {
 				return nil
 			}
 			progress.Start("Deleting rollout from " + project.ProjectID + "…")
-			if err := svc.DeleteRemoteConfigRollout(cmd.Context(), project, id); err != nil {
+			if err := svc.DeleteRemoteConfigRollout(shared.CommandContext(cmd), project, id); err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, managedFeatureDeleteResult{Kind: "rollout", ID: id, DisplayName: rollout.Definition.DisplayName, ProjectID: project.ProjectID, Status: "deleted"})
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🗑️ deleted rollout: %s from %s\n", identity, project.ProjectID)
 			return nil
@@ -259,7 +299,7 @@ func newPersonalizationsListCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigPersonalizations(cmd.Context(), project, update)
+			result, err := svc.ListRemoteConfigPersonalizations(shared.CommandContext(cmd), project, update)
 			if err != nil {
 				return err
 			}
@@ -288,15 +328,13 @@ func newPersonalizationsShowCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			personalization, template, err := svc.GetRemoteConfigPersonalization(cmd.Context(), project, args[1], update)
+			personalization, template, err := svc.GetRemoteConfigPersonalization(shared.CommandContext(cmd), project, args[1], update)
 			if err != nil {
 				return err
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{
-					"project": project, "template": template, "personalization": personalization,
-				})
+				return shared.WriteJSON(cmd, personalizationShowResult{Project: project, Template: template, Personalization: personalization})
 			}
 			printTemplateContext(cmd, project, template)
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderPersonalizationDetails(personalization))
@@ -308,24 +346,21 @@ func newPersonalizationsShowCommand(svc *core.Core) *cobra.Command {
 }
 
 func resolveProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
-	target, explicit, err := rctarget.ParseSelector(query)
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
 	if err != nil {
-		return core.Project{}, err
+		return core.Project{}, shared.InvalidArgument(err)
 	}
 	if explicit {
 		if target.Kind == rctarget.Server {
-			return core.Project{}, fmt.Errorf(
+			return core.Project{}, shared.InvalidArgument(fmt.Errorf(
 				"managed features support only the client Remote Config namespace; omit the server@ prefix",
-			)
+			))
 		}
-		return core.Project{}, fmt.Errorf(
+		return core.Project{}, shared.InvalidArgument(fmt.Errorf(
 			"managed-feature commands are project-scoped; omit the client@ prefix",
-		)
+		))
 	}
-	ctx := cmd.Context()
-	if ctx == nil {
-		ctx = context.Background()
-	}
+	ctx := shared.CommandContext(cmd)
 	return shared.ResolveProjectArg(ctx, cmd, svc, target.ProjectID)
 }
 
@@ -338,10 +373,21 @@ func confirmManagedFeatureDelete(cmd *cobra.Command, yes bool, prompt string) (b
 	if yes {
 		return true, nil
 	}
+	if err := shared.RequireYesInMachineMode(cmd, yes, "deleting the managed feature", true); err != nil {
+		return false, err
+	}
 	confirm := shared.NewConfirmation(prompt, shared.ConfirmationOptions{Destructive: true})
 	confirm.Input = cmd.InOrStdin()
 	confirm.Output = cmd.ErrOrStderr()
 	return confirm.RunPrompt()
+}
+
+type managedFeatureDeleteResult struct {
+	Kind        string `json:"kind" contract:"enum=experiment|rollout"`
+	ID          string `json:"id"`
+	DisplayName string `json:"display_name"`
+	ProjectID   string `json:"project_id"`
+	Status      string `json:"status" contract:"enum=deleted|would-delete"`
 }
 
 func managedFeatureIdentity(displayName, id string) string {

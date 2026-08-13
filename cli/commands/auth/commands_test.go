@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
@@ -178,5 +179,28 @@ func TestAuthBindProjectFlagUsesModePrefixedFiltering(t *testing.T) {
 	}
 	if strings.Contains(out.String(), "beta") || !strings.Contains(out.String(), "Summary: 1 bound, 0 skipped") {
 		t.Fatalf("output = %q", out.String())
+	}
+}
+
+func TestAuthBindNoMatchesReturnsTypedProjectSelection(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	if _, err := svc.AddGCloudAuth("main", "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", AuthID: "main", DiscoveredBy: []string{"main"}}}, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newBindCommand(svc)
+	if err := cmd.Flags().Set("auth", "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("project", "=missing"); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, nil)
+	problem := contract.Classify(err)
+	details, ok := problem.Details.(contract.SelectionDetails)
+	if problem.Code != "project.not_found" || problem.Category != "not_found" || !ok || details.Resource != "project" || details.Query != "=missing" || len(details.Candidates) != 0 {
+		t.Fatalf("auth bind problem = %#v", problem)
 	}
 }

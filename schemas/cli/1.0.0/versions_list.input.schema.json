@@ -1,0 +1,146 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "target_positional_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_positional_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_positional_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "all",
+              "limit"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "$ref": "#/$defs/target_positional_selector"
+        }
+      },
+      "required": [
+        "project"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "all": {
+          "description": "Print all available Firebase versions",
+          "type": "boolean"
+        },
+        "before": {
+          "description": "Newest version number to include",
+          "pattern": "^[1-9]\\d*$",
+          "type": "string",
+          "x-fbrcm-grammar": "positive Firebase version number"
+        },
+        "cached": {
+          "description": "List local cached versions without contacting Firebase",
+          "type": "boolean"
+        },
+        "limit": {
+          "description": "Maximum versions to print",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "since": {
+          "description": "Only versions at or after RFC3339 time",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_time",
+              "specification": "Go time.RFC3339"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "until": {
+          "description": "Only versions before RFC3339 time",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_time",
+              "specification": "Go time.RFC3339"
+            }
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object"
+}

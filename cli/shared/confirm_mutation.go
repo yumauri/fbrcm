@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -11,11 +12,14 @@ import (
 
 // PrintDiffAndConfirm writes diff text and optionally prompts for confirmation.
 func PrintDiffAndConfirm(cmd *cobra.Command, yes bool, diffOut io.Writer, diffText, prompt string, destructive bool) (bool, error) {
-	if diffText != "" {
+	if diffText != "" && !MachineMode(cmd) {
 		_, _ = fmt.Fprintln(diffOut, diffText)
 	}
 	if yes {
 		return true, nil
+	}
+	if err := RequireYesInMachineMode(cmd, yes, strings.TrimSuffix(strings.ToLower(prompt), "?"), destructive); err != nil {
+		return false, err
 	}
 	return RunConfirmationPrompt(prompt, destructive, cmd.ErrOrStderr())
 }

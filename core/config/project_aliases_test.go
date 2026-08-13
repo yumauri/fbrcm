@@ -47,6 +47,16 @@ func TestProjectAliasValidation(t *testing.T) {
 	}
 }
 
+func TestResolveProjectAliasRequiresExactCase(t *testing.T) {
+	aliases := map[string]string{"prod": "acme-production-42"}
+	if alias, projectID, ok := ResolveProjectAlias(aliases, "prod"); !ok || alias != "prod" || projectID != "acme-production-42" {
+		t.Fatalf("exact alias = %q, %q, %t", alias, projectID, ok)
+	}
+	if _, _, ok := ResolveProjectAlias(aliases, "PROD"); ok {
+		t.Fatal("case-mismatched alias unexpectedly resolved")
+	}
+}
+
 func TestResolveAppConfigRejectsGlobalProjectAliases(t *testing.T) {
 	setupTestDirs(t)
 	if err := EnsurePrivateDir(GetConfigRootDirPath()); err != nil {

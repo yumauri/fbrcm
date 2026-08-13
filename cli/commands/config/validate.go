@@ -111,7 +111,7 @@ func appendProjectAliasSourceValidation(report *configValidationResult) {
 			Severity: "error",
 			Code:     "project_alias_source",
 			Key:      "projects.aliases",
-			Message:  err.Error(),
+			Message:  shared.SafeErrorText(err),
 		})
 		report.Valid = false
 		sortDiagnostics(report.Errors)

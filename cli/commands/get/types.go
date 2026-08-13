@@ -20,7 +20,7 @@ type parameterRowJSON struct {
 	Type         string                   `json:"type"`
 	Version      *string                  `json:"version"`
 	CachedAt     *time.Time               `json:"cached_at"`
-	Status       *string                  `json:"status"`
+	Status       *string                  `json:"status" contract:"enum=fetch|cached|stale|missing|error"`
 }
 
 type parameterRow = table.Row

@@ -48,6 +48,7 @@ func TestRemoteConfigValueRejectsInvalidUnion(t *testing.T) {
 		{name: "false in-app default", raw: `{"useInAppDefault":false}`, wantErr: "must be true"},
 		{name: "managed value is not object", raw: `{"experimentValue":"experiment-1"}`, wantErr: "cannot unmarshal string"},
 		{name: "managed value is null", raw: `{"rolloutValue":null}`, wantErr: "expected object"},
+		{name: "plain value is null", raw: `{"value":null}`, wantErr: "cannot be null"},
 	}
 
 	for _, tt := range tests {

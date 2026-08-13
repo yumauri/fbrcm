@@ -201,6 +201,23 @@ func TestCollectManagedFeatureReferencesIncludesGroupsDefaultsAndConditionOrder(
 	}
 }
 
+func TestGetRemoteConfigPersonalizationRequiresExactCase(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	saveParametersCacheRaw(t, "demo", "etag-1", json.RawMessage(`{
+		"version":{"versionNumber":"1"},
+		"parameters":{"flag":{"defaultValue":{"personalizationValue":{"personalizationId":"Personal_1"}}}}
+	}`))
+	project := Project{Name: "Demo", ProjectID: "demo"}
+	if got, _, err := svc.GetRemoteConfigPersonalization(context.Background(), project, "Personal_1", false); err != nil || got.ID != "Personal_1" {
+		t.Fatalf("exact personalization = %#v, %v", got, err)
+	}
+	_, _, err := svc.GetRemoteConfigPersonalization(context.Background(), project, "personal_1", false)
+	var lookup *ManagedFeatureLookupError
+	if !errors.As(err, &lookup) || lookup.ID != "personal_1" {
+		t.Fatalf("case-mismatched personalization error = %#v", err)
+	}
+}
+
 func TestCollectManagedFeatureReferencesRejectsUnexpectedWireShape(t *testing.T) {
 	cfg := &firebase.RemoteConfig{Parameters: map[string]firebase.RemoteConfigParam{
 		"flag": {DefaultValue: &firebase.RemoteConfigValue{RolloutValue: json.RawMessage(`{"percent":"ten"}`)}},

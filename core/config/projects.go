@@ -115,21 +115,21 @@ func LoadProjects() ([]Project, error) {
 	var file File
 	if err := decodeJSON(data, &file); err != nil {
 		logger.Error("decode projects config failed", "path", path, "err", err)
-		return nil, fmt.Errorf("decode projects config: %w", err)
+		return nil, invalidConfiguration(path, "decoding", fmt.Errorf("decode projects config: %w", err))
 	}
 	if file.Version != ProjectsConfigVersion {
-		return nil, fmt.Errorf("unsupported projects config version %d", file.Version)
+		return nil, invalidConfiguration(path, "validation", fmt.Errorf("unsupported projects config version %d", file.Version))
 	}
 	for i := range file.Projects {
 		project := &file.Projects[i]
 		if strings.TrimSpace(project.ProjectID) == "" {
-			return nil, fmt.Errorf("projects config contains project without project_id")
+			return nil, invalidConfiguration(path, "validation", fmt.Errorf("projects config contains project without project_id"))
 		}
 		if strings.TrimSpace(project.AuthID) == "" {
-			return nil, fmt.Errorf("project %s missing auth_id", project.ProjectID)
+			return nil, invalidConfiguration(path, "validation", fmt.Errorf("project %s missing auth_id", project.ProjectID))
 		}
 		if err := project.NormalizeTemplatePreferences(); err != nil {
-			return nil, err
+			return nil, invalidConfiguration(path, "validation", err)
 		}
 	}
 
@@ -172,16 +172,21 @@ func SaveProjects(projects []Project, updatedAt time.Time) error {
 	return nil
 }
 
-// ResetProjects deletes the saved projects registry file if it exists.
-func ResetProjects() error {
+// ResetProjects deletes the saved projects registry file and reports whether
+// one existed.
+func ResetProjects() (bool, error) {
 	path := GetProjectsFilePath()
 	logger := corelog.For("config")
 	logger.Debug("remove projects config", "path", path)
-	if err := os.Remove(path); err != nil && !isNotExist(err) {
+	if err := os.Remove(path); err != nil {
+		if isNotExist(err) {
+			logger.Info("projects config already absent", "path", path)
+			return false, nil
+		}
 		logger.Error("remove projects config failed", "path", path, "err", err)
-		return fmt.Errorf("remove projects config: %w", err)
+		return false, fmt.Errorf("remove projects config: %w", err)
 	}
 
 	logger.Info("projects config removed", "path", path)
-	return nil
+	return true, nil
 }

@@ -85,9 +85,14 @@ func TestFilterHelpers(t *testing.T) {
 		{Key: "alphabet"},
 	}
 
-	filtered := filterParameterRows(rows, []string{"=alpha"})
+	filtered := filterParameterRows(rows, []string{"=alpha"}, nil)
 	if got, want := rowKeys(filtered), []string{"alpha"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("exact filtered keys = %#v, want %#v", got, want)
+	}
+
+	argument := "Alpha"
+	if got := filterParameterRows(rows, nil, &argument); len(got) != 0 {
+		t.Fatalf("case-mismatched positional argument returned %#v, want no rows", rowKeys(got))
 	}
 
 	projectRows := []parameterRow{

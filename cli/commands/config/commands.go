@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 )
@@ -19,6 +20,12 @@ func New() *cobra.Command {
 		Short: "Manage global and repository configuration",
 	}
 	configCmd.AddCommand(newPathCommand(), newShowCommand(), newSetCommand(), newResetCommand(), newValidateCommand(), newEditCommand(runEditor))
+	contract.MustRegisterResponsePath(configCmd, "path", configPathResult{})
+	contract.MustRegisterResponsePath(configCmd, "show", configShowResult{}, configValueResult{})
+	contract.MustRegisterResponsePath(configCmd, "set", configSetResult{})
+	contract.MustRegisterResponsePath(configCmd, "reset", configResetResult{})
+	contract.MustRegisterResponsePath(configCmd, "validate", configValidationResult{})
+	contract.MustRegisterNoDataPath(configCmd, "edit")
 	return configCmd
 }
 
@@ -49,11 +56,11 @@ func newPathCommand() *cobra.Command {
 				}
 				if !exists {
 					cmd.Root().SilenceUsage = true
-					return fmt.Errorf("no local config found from the current directory to the filesystem root; create one with `fbrcm config edit --scope local` (candidate: %s)", path)
+					return &shared.ValidationError{Code: "configuration.local_not_found", Source: "configuration", Stage: "selection", Target: path, Err: fmt.Errorf("no local config found from the current directory to the filesystem root; create one with `fbrcm config edit --scope local` (candidate: %s)", path)}
 				}
 			}
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{"scope": scope, "path": path, "exists": exists})
+				return shared.WriteJSON(cmd, configPathResult{Scope: scope, Path: path, Exists: exists})
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
@@ -63,6 +70,12 @@ func newPathCommand() *cobra.Command {
 	cmd.Flags().Bool("json", false, "Print path as JSON")
 	addScopeFlag(cmd, scopeGlobal)
 	return cmd
+}
+
+type configPathResult struct {
+	Scope  string `json:"scope" contract:"enum=global|local"`
+	Path   string `json:"path"`
+	Exists bool   `json:"exists"`
 }
 
 const (
@@ -88,5 +101,5 @@ func readConfigScope(cmd *cobra.Command, defaultScope string, allowed ...string)
 	if slices.Contains(allowed, scope) {
 		return scope, nil
 	}
-	return "", fmt.Errorf("unsupported config scope %q; use %s", scope, strings.Join(allowed, ", "))
+	return "", shared.InvalidArgument(fmt.Errorf("unsupported config scope %q; use %s", scope, strings.Join(allowed, ", ")))
 }

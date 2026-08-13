@@ -1,13 +1,13 @@
 package addcmd
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -52,6 +52,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 
 	addFlags(cmd)
+	contract.RegisterResponse(cmd, []rc.RemoteMutationJSONResult{}, contract.ArtifactData{})
 	return cmd
 }
 
@@ -77,11 +78,8 @@ func runAddCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	if shared.StdinAvailable(cmd.InOrStdin()) {
-		if opts.draft {
-			return fmt.Errorf("--draft is unavailable in stdin mode")
-		}
-		if opts.changeNote != nil {
-			return fmt.Errorf("--change-note is unavailable in stdin mode")
+		if err := shared.RejectChangedFlags(cmd, "stdin mode", "project", "dry-run", "draft", "change-note"); err != nil {
+			return err
 		}
 		corelog.For("add").Info("stdin mode enabled; using remote config from stdin")
 		return runAddStdin(cmd, opts.key, opts.groupName, opts.description, opts.valueSpec, opts.projectExpr)
@@ -129,7 +127,7 @@ func readAddOptions(cmd *cobra.Command, args []string) (addOptions, error) {
 
 	key := strings.TrimSpace(args[0])
 	if key == "" {
-		return addOptions{}, fmt.Errorf("parameter key cannot be empty")
+		return addOptions{}, shared.InvalidArgument(fmt.Errorf("parameter key cannot be empty"))
 	}
 
 	return addOptions{
@@ -155,7 +153,7 @@ func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
 }
 
 func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -178,8 +176,8 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	}
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
-	plan := func(project core.Project, _ *rc.ProjectConfig) (rc.RemoteConfigMutation, error) {
-		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+	plan := func(project core.Project, _ *rc.ProjectConfig) (rc.RemoteMutationPlan, error) {
+		return rc.RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			if shared.ParamExists(current, opts.key) {
 				corelog.For("add").Error("parameter already exists; skipping", "project_id", project.ProjectID, "parameter", opts.key)
 				return 0, current, nil
@@ -192,13 +190,13 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 				return 0, finalCfg, nil
 			}
 			return 1, finalCfg, nil
-		}, nil
+		}}, nil
 	}
 	var totals rc.RemoteMutationTotals
 	if opts.draft {
-		totals, err = rc.RunRemoteDraftLoop(ctx, cmd, svc, projects, "add", plan)
+		totals, err = rc.RunRemoteDraftLoop(ctx, cmd, svc, projects, len(opts.projectFilters) == 0 && strings.TrimSpace(opts.projectExpr) == "", "add", plan)
 	} else {
-		totals, err = rc.RunRemotePublishLoop(ctx, cmd, svc, projects, "add", "➕", plan)
+		totals, err = rc.RunRemotePublishLoop(ctx, cmd, svc, projects, len(opts.projectFilters) == 0 && strings.TrimSpace(opts.projectExpr) == "", "add", "➕", plan)
 	}
 	logAddTotals("remote", addTotals{modifiedProjects: totals.ModifiedProjects, addedParams: totals.ChangedParams})
 	if writeErr := rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "➕"); writeErr != nil {
@@ -234,19 +232,19 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 	if err != nil {
 		return err
 	}
-	if !match {
-		return nil
-	}
-
-	changed, finalCfg, err := addParameter(cfg, key, groupName, description, spec)
-	if err != nil {
-		return err
+	changed := false
+	finalCfg := cfg
+	if match {
+		changed, finalCfg, err = addParameter(cfg, key, groupName, description, spec)
+		if err != nil {
+			return err
+		}
 	}
 	if !changed {
 		corelog.For("add").Error("parameter already exists; skipping", "project_id", "<stdin>", "parameter", key)
 	} else {
 		diffText, hasChanges := rc.RenderRemoteConfigDiff(cfg, finalCfg)
-		if hasChanges {
+		if hasChanges && !shared.MachineMode(cmd) {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 		}
 	}
@@ -264,7 +262,16 @@ func runAddStdin(cmd *cobra.Command, key, groupName, description string, spec ad
 			order.GroupParameters[groupName] = append(order.GroupParameters[groupName], key)
 		}
 	}
-	if err := rc.WriteOrderPreservingRemoteConfigStdoutWithOrder(cmd, finalCfg, remoteConfigRaw, mutate); err != nil {
+	out, err := rc.MarshalOrderPreservingRemoteConfig(finalCfg, remoteConfigRaw, mutate)
+	if err != nil {
+		return err
+	}
+	if contract.Enabled(cmd) {
+		target := "<stdin>"
+		if err := shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", out, nil, false)); err != nil {
+			return err
+		}
+	} else if err := rc.WriteOrderPreservingRemoteConfigStdoutWithOrder(cmd, finalCfg, remoteConfigRaw, mutate); err != nil {
 		return err
 	}
 

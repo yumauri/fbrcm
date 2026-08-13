@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core/config"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
@@ -17,6 +18,9 @@ func New() *cobra.Command {
 		Short: "Manage cached Remote Config snapshots",
 	}
 	cacheCmd.AddCommand(newPathCommand(), newClearCommand(), newListCommand())
+	contract.MustRegisterResponsePath(cacheCmd, "path", shared.PathResult{})
+	contract.MustRegisterResponsePath(cacheCmd, "clear", cacheClearResult{})
+	contract.MustRegisterResponsePath(cacheCmd, "list", []cacheEntry{})
 	return cacheCmd
 }
 
@@ -32,7 +36,7 @@ func newPathCommand() *cobra.Command {
 
 			path := config.GetParametersCacheDirPath()
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]string{"path": path})
+				return shared.WriteJSON(cmd, shared.PathResult{Path: path})
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), path)
@@ -58,6 +62,9 @@ func newClearCommand() *cobra.Command {
 				return err
 			}
 			if len(entries) == 0 {
+				if contract.Enabled(cmd) {
+					return shared.WriteJSON(cmd, cacheClearResult{Path: config.GetParametersCacheDirPath(), Status: "unchanged", SnapshotsDeleted: 0, TargetsAffected: 0, BytesDeleted: 0})
+				}
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 Nothing to clear")
 				return nil
 			}
@@ -71,6 +78,9 @@ func newClearCommand() *cobra.Command {
 			}
 			deleteCaches := snapshotCount > 0
 			if deleteCaches && !yes {
+				if err := shared.RequireYesInMachineMode(cmd, yes, "clearing cached Remote Config snapshots", true); err != nil {
+					return err
+				}
 				confirm := shared.NewConfirmation(
 					fmt.Sprintf(
 						"Delete %s (%s) across %s?",
@@ -92,6 +102,9 @@ func newClearCommand() *cobra.Command {
 				if err := config.ClearParametersCache(); err != nil {
 					return err
 				}
+				if contract.Enabled(cmd) {
+					return shared.WriteJSON(cmd, cacheClearResult{Path: config.GetParametersCacheDirPath(), Status: "cleared", SnapshotsDeleted: snapshotCount, TargetsAffected: len(projects), BytesDeleted: snapshotSize})
+				}
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 cleared caches: %s\n", config.GetParametersCacheDirPath())
 			}
 
@@ -100,6 +113,14 @@ func newClearCommand() *cobra.Command {
 	}
 	shared.AddYesFlag(cmd, "Skip confirmation dialog")
 	return cmd
+}
+
+type cacheClearResult struct {
+	Path             string `json:"path"`
+	Status           string `json:"status" contract:"enum=cleared|unchanged"`
+	SnapshotsDeleted int    `json:"snapshots_deleted"`
+	TargetsAffected  int    `json:"targets_affected"`
+	BytesDeleted     int64  `json:"bytes_deleted"`
 }
 
 func newListCommand() *cobra.Command {

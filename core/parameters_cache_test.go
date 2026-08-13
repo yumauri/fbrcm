@@ -235,7 +235,7 @@ func TestParametersStatusLabel(t *testing.T) {
 		{name: "firebase fetch", source: "firebase", cached: now, want: "fetch"},
 		{name: "recent cache", source: "cache", cached: now.Add(-30 * time.Second), want: "fetch"},
 		{name: "older cache", source: "cache", cached: now.Add(-5 * time.Minute), want: "cached"},
-		{name: "stale cache", source: "cache", cached: now.Add(-11 * time.Minute), want: "staled"},
+		{name: "stale cache", source: "cache", cached: now.Add(-11 * time.Minute), want: "stale"},
 		{name: "error with tree", source: "cache", cached: now, hasTree: true, err: errors.New("boom"), want: "error"},
 	}
 	for _, tc := range cases {

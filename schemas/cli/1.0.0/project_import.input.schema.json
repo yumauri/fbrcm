@@ -1,0 +1,1345 @@
+{
+  "$defs": {
+    "expression": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/expression"
+        }
+      ],
+      "x-fbrcm-expression-context": "parameter"
+    },
+    "filter_query": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "trim_unicode_whitespace",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "remote_config": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "properties": {
+            "conditions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "expression": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "tagColor": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "parameterGroups": {
+              "additionalProperties": {
+                "additionalProperties": true,
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "parameters": {
+                    "additionalProperties": {
+                      "additionalProperties": true,
+                      "properties": {
+                        "conditionalValues": {
+                          "additionalProperties": {
+                            "description": "Firebase RemoteConfigParameterValue union",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "value": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "value"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "useInAppDefault": {
+                                    "const": true
+                                  }
+                                },
+                                "required": [
+                                  "useInAppDefault"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "personalizationValue": {
+                                    "type": "object"
+                                  }
+                                },
+                                "required": [
+                                  "personalizationValue"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "experimentValue": {
+                                    "type": "object"
+                                  }
+                                },
+                                "required": [
+                                  "experimentValue"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "rolloutValue": {
+                                    "type": "object"
+                                  }
+                                },
+                                "required": [
+                                  "rolloutValue"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "description": "one unknown future value option preserved as opaque JSON",
+                                "maxProperties": 1,
+                                "minProperties": 1,
+                                "propertyNames": {
+                                  "not": {
+                                    "enum": [
+                                      "value",
+                                      "useInAppDefault",
+                                      "personalizationValue",
+                                      "experimentValue",
+                                      "rolloutValue"
+                                    ]
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "defaultValue": {
+                          "oneOf": [
+                            {
+                              "description": "Firebase RemoteConfigParameterValue union",
+                              "oneOf": [
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "value"
+                                  ],
+                                  "type": "object"
+                                },
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "useInAppDefault": {
+                                      "const": true
+                                    }
+                                  },
+                                  "required": [
+                                    "useInAppDefault"
+                                  ],
+                                  "type": "object"
+                                },
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "personalizationValue": {
+                                      "type": "object"
+                                    }
+                                  },
+                                  "required": [
+                                    "personalizationValue"
+                                  ],
+                                  "type": "object"
+                                },
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "experimentValue": {
+                                      "type": "object"
+                                    }
+                                  },
+                                  "required": [
+                                    "experimentValue"
+                                  ],
+                                  "type": "object"
+                                },
+                                {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "rolloutValue": {
+                                      "type": "object"
+                                    }
+                                  },
+                                  "required": [
+                                    "rolloutValue"
+                                  ],
+                                  "type": "object"
+                                },
+                                {
+                                  "description": "one unknown future value option preserved as opaque JSON",
+                                  "maxProperties": 1,
+                                  "minProperties": 1,
+                                  "propertyNames": {
+                                    "not": {
+                                      "enum": [
+                                        "value",
+                                        "useInAppDefault",
+                                        "personalizationValue",
+                                        "experimentValue",
+                                        "rolloutValue"
+                                      ]
+                                    }
+                                  },
+                                  "type": "object"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "valueType": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [],
+                      "type": "object"
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "parameters": {
+              "additionalProperties": {
+                "additionalProperties": true,
+                "properties": {
+                  "conditionalValues": {
+                    "additionalProperties": {
+                      "description": "Firebase RemoteConfigParameterValue union",
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "value": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "value"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "useInAppDefault": {
+                              "const": true
+                            }
+                          },
+                          "required": [
+                            "useInAppDefault"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "personalizationValue": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "personalizationValue"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "experimentValue": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "experimentValue"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "rolloutValue": {
+                              "type": "object"
+                            }
+                          },
+                          "required": [
+                            "rolloutValue"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "description": "one unknown future value option preserved as opaque JSON",
+                          "maxProperties": 1,
+                          "minProperties": 1,
+                          "propertyNames": {
+                            "not": {
+                              "enum": [
+                                "value",
+                                "useInAppDefault",
+                                "personalizationValue",
+                                "experimentValue",
+                                "rolloutValue"
+                              ]
+                            }
+                          },
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "defaultValue": {
+                    "oneOf": [
+                      {
+                        "description": "Firebase RemoteConfigParameterValue union",
+                        "oneOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "value": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "value"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "useInAppDefault": {
+                                "const": true
+                              }
+                            },
+                            "required": [
+                              "useInAppDefault"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "personalizationValue": {
+                                "type": "object"
+                              }
+                            },
+                            "required": [
+                              "personalizationValue"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "experimentValue": {
+                                "type": "object"
+                              }
+                            },
+                            "required": [
+                              "experimentValue"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "rolloutValue": {
+                                "type": "object"
+                              }
+                            },
+                            "required": [
+                              "rolloutValue"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "description": "one unknown future value option preserved as opaque JSON",
+                            "maxProperties": 1,
+                            "minProperties": 1,
+                            "propertyNames": {
+                              "not": {
+                                "enum": [
+                                  "value",
+                                  "useInAppDefault",
+                                  "personalizationValue",
+                                  "experimentValue",
+                                  "rolloutValue"
+                                ]
+                              }
+                            },
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "valueType": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "version": {
+              "additionalProperties": true,
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "isLegacy": {
+                  "type": "boolean"
+                },
+                "rollbackSource": {
+                  "type": "string"
+                },
+                "updateOrigin": {
+                  "type": "string"
+                },
+                "updateTime": {
+                  "type": "string"
+                },
+                "updateType": {
+                  "type": "string"
+                },
+                "updateUser": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "imageUrl": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                },
+                "versionNumber": {
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "type": "object"
+            }
+          },
+          "required": [],
+          "type": "object",
+          "x-fbrcm-validation": [
+            {
+              "operator": "local_validate",
+              "validator": "firebase.NormalizeRemoteConfigForUpdate"
+            }
+          ]
+        },
+        {
+          "additionalProperties": true,
+          "properties": {
+            "cached_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "etag": {
+              "type": "string"
+            },
+            "remote_config": {
+              "additionalProperties": true,
+              "properties": {
+                "conditions": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "expression": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "tagColor": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                },
+                "parameterGroups": {
+                  "additionalProperties": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "parameters": {
+                        "additionalProperties": {
+                          "additionalProperties": true,
+                          "properties": {
+                            "conditionalValues": {
+                              "additionalProperties": {
+                                "description": "Firebase RemoteConfigParameterValue union",
+                                "oneOf": [
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "value": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "value"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "useInAppDefault": {
+                                        "const": true
+                                      }
+                                    },
+                                    "required": [
+                                      "useInAppDefault"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "personalizationValue": {
+                                        "type": "object"
+                                      }
+                                    },
+                                    "required": [
+                                      "personalizationValue"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "experimentValue": {
+                                        "type": "object"
+                                      }
+                                    },
+                                    "required": [
+                                      "experimentValue"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "additionalProperties": false,
+                                    "properties": {
+                                      "rolloutValue": {
+                                        "type": "object"
+                                      }
+                                    },
+                                    "required": [
+                                      "rolloutValue"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  {
+                                    "description": "one unknown future value option preserved as opaque JSON",
+                                    "maxProperties": 1,
+                                    "minProperties": 1,
+                                    "propertyNames": {
+                                      "not": {
+                                        "enum": [
+                                          "value",
+                                          "useInAppDefault",
+                                          "personalizationValue",
+                                          "experimentValue",
+                                          "rolloutValue"
+                                        ]
+                                      }
+                                    },
+                                    "type": "object"
+                                  }
+                                ]
+                              },
+                              "type": [
+                                "object",
+                                "null"
+                              ]
+                            },
+                            "defaultValue": {
+                              "oneOf": [
+                                {
+                                  "description": "Firebase RemoteConfigParameterValue union",
+                                  "oneOf": [
+                                    {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "value": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "value"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "useInAppDefault": {
+                                          "const": true
+                                        }
+                                      },
+                                      "required": [
+                                        "useInAppDefault"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "personalizationValue": {
+                                          "type": "object"
+                                        }
+                                      },
+                                      "required": [
+                                        "personalizationValue"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "experimentValue": {
+                                          "type": "object"
+                                        }
+                                      },
+                                      "required": [
+                                        "experimentValue"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    {
+                                      "additionalProperties": false,
+                                      "properties": {
+                                        "rolloutValue": {
+                                          "type": "object"
+                                        }
+                                      },
+                                      "required": [
+                                        "rolloutValue"
+                                      ],
+                                      "type": "object"
+                                    },
+                                    {
+                                      "description": "one unknown future value option preserved as opaque JSON",
+                                      "maxProperties": 1,
+                                      "minProperties": 1,
+                                      "propertyNames": {
+                                        "not": {
+                                          "enum": [
+                                            "value",
+                                            "useInAppDefault",
+                                            "personalizationValue",
+                                            "experimentValue",
+                                            "rolloutValue"
+                                          ]
+                                        }
+                                      },
+                                      "type": "object"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "description": {
+                              "type": "string"
+                            },
+                            "valueType": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [],
+                          "type": "object"
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "parameters": {
+                  "additionalProperties": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "conditionalValues": {
+                        "additionalProperties": {
+                          "description": "Firebase RemoteConfigParameterValue union",
+                          "oneOf": [
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "useInAppDefault": {
+                                  "const": true
+                                }
+                              },
+                              "required": [
+                                "useInAppDefault"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "personalizationValue": {
+                                  "type": "object"
+                                }
+                              },
+                              "required": [
+                                "personalizationValue"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "experimentValue": {
+                                  "type": "object"
+                                }
+                              },
+                              "required": [
+                                "experimentValue"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "additionalProperties": false,
+                              "properties": {
+                                "rolloutValue": {
+                                  "type": "object"
+                                }
+                              },
+                              "required": [
+                                "rolloutValue"
+                              ],
+                              "type": "object"
+                            },
+                            {
+                              "description": "one unknown future value option preserved as opaque JSON",
+                              "maxProperties": 1,
+                              "minProperties": 1,
+                              "propertyNames": {
+                                "not": {
+                                  "enum": [
+                                    "value",
+                                    "useInAppDefault",
+                                    "personalizationValue",
+                                    "experimentValue",
+                                    "rolloutValue"
+                                  ]
+                                }
+                              },
+                              "type": "object"
+                            }
+                          ]
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "defaultValue": {
+                        "oneOf": [
+                          {
+                            "description": "Firebase RemoteConfigParameterValue union",
+                            "oneOf": [
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "value": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "value"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "useInAppDefault": {
+                                    "const": true
+                                  }
+                                },
+                                "required": [
+                                  "useInAppDefault"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "personalizationValue": {
+                                    "type": "object"
+                                  }
+                                },
+                                "required": [
+                                  "personalizationValue"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "experimentValue": {
+                                    "type": "object"
+                                  }
+                                },
+                                "required": [
+                                  "experimentValue"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "rolloutValue": {
+                                    "type": "object"
+                                  }
+                                },
+                                "required": [
+                                  "rolloutValue"
+                                ],
+                                "type": "object"
+                              },
+                              {
+                                "description": "one unknown future value option preserved as opaque JSON",
+                                "maxProperties": 1,
+                                "minProperties": 1,
+                                "propertyNames": {
+                                  "not": {
+                                    "enum": [
+                                      "value",
+                                      "useInAppDefault",
+                                      "personalizationValue",
+                                      "experimentValue",
+                                      "rolloutValue"
+                                    ]
+                                  }
+                                },
+                                "type": "object"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "valueType": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [],
+                    "type": "object"
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "description": {
+                      "type": "string"
+                    },
+                    "isLegacy": {
+                      "type": "boolean"
+                    },
+                    "rollbackSource": {
+                      "type": "string"
+                    },
+                    "updateOrigin": {
+                      "type": "string"
+                    },
+                    "updateTime": {
+                      "type": "string"
+                    },
+                    "updateType": {
+                      "type": "string"
+                    },
+                    "updateUser": {
+                      "additionalProperties": true,
+                      "properties": {
+                        "email": {
+                          "type": "string"
+                        },
+                        "imageUrl": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [],
+                      "type": "object"
+                    },
+                    "versionNumber": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "type": "object",
+              "x-fbrcm-validation": [
+                {
+                  "operator": "local_validate",
+                  "validator": "firebase.NormalizeRemoteConfigForUpdate"
+                }
+              ]
+            }
+          },
+          "required": [
+            "remote_config"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "Firebase Remote Config template or fbrcm parameters-cache object accepted for project import after local Remote Config validation"
+    },
+    "target_positional_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_positional_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_positional_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:project.import:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "remove-all-conditions",
+              "keep-portable-conditions-only"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "merge",
+              "override"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "if": {
+            "required": [
+              "merge-resolve"
+            ]
+          },
+          "then": {
+            "properties": {
+              "merge": {
+                "const": true
+              }
+            },
+            "required": [
+              "merge"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "$ref": "#/$defs/target_positional_selector"
+        }
+      },
+      "required": [
+        "project"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "change-note": {
+          "description": "Change note for publication or the stored draft",
+          "pattern": "^[^\\x00-\\x1f\\x7f-\\x9f]*$",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ],
+          "x-fbrcm-validation": [
+            {
+              "allow_empty": true,
+              "operator": "reject_raw_whitespace_only"
+            }
+          ]
+        },
+        "draft": {
+          "description": "Save changes to a local draft instead of publishing",
+          "type": "boolean"
+        },
+        "dry-run": {
+          "description": "Preview the requested mutation without applying it",
+          "type": "boolean"
+        },
+        "expr": {
+          "$ref": "#/$defs/expression",
+          "description": "Filter imported config by expr-lang expression",
+          "pattern": ".*\\S.*",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "filter": {
+          "description": "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/filter_query"
+              }
+            ],
+            "x-fbrcm-matching": [
+              {
+                "comparison": "unicode_case_insensitive",
+                "default_mode": "fuzzy",
+                "fields": [
+                  "parameter_key"
+                ],
+                "mode_prefixes": {
+                  "/": "includes",
+                  "=": "exact",
+                  "^": "starts-with",
+                  "~": "fuzzy"
+                },
+                "operator": "mode_prefixed_query",
+                "query_normalization": "trim_unicode_whitespace"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "from": {
+          "description": "Read Remote Config JSON from file path",
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
+        "group": {
+          "description": "Import only specified parameter group; may be repeated",
+          "items": {
+            "pattern": ".*\\S.*",
+            "type": "string",
+            "x-fbrcm-normalization": [
+              {
+                "operator": "trim_unicode_whitespace",
+                "source": "argv",
+                "target": "normalized_invocation"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "deduplicate_preserve_first",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "keep-portable-conditions-only": {
+          "description": "Keep only portable conditions and remove destination-specific usages",
+          "type": "boolean"
+        },
+        "merge": {
+          "description": "Merge imported config into current project config",
+          "type": "boolean"
+        },
+        "merge-resolve": {
+          "description": "Conflict resolution for merge: current or import",
+          "pattern": "^(?:[cC][uU][rR][rR][eE][nN][tT]|[iI][mM][pP][oO][rR][tT])$",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            },
+            {
+              "operator": "lowercase",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ],
+          "x-fbrcm-values": [
+            "current",
+            "import"
+          ]
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "override": {
+          "description": "Replace current project config with imported config",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "remove-all-conditions": {
+          "description": "Remove all conditions and conditional values from imported config",
+          "type": "boolean"
+        },
+        "search": {
+          "description": "Search parameters by name, description, values, and conditions",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "combination": "or",
+              "match": "substring",
+              "normalized_fields": [
+                "name",
+                "description",
+                "condition_names"
+              ],
+              "normalized_query": "lowercase_alphanumeric_words",
+              "operator": "parameter_search",
+              "raw_fields": [
+                "default_value",
+                "conditional_values",
+                "condition_expressions"
+              ],
+              "raw_query": "collapse_unicode_whitespace"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "yes": {
+          "description": "Skip final import confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/remote_config"
+        }
+      ]
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-input-selection": [
+    {
+      "later_sources": "ignored_without_consumption",
+      "on_missing": "interaction.required",
+      "operator": "first_available",
+      "sources": [
+        "options.from",
+        "stdin.document"
+      ]
+    }
+  ],
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.filter",
+        "options.search",
+        "options.expr",
+        "options.group"
+      ],
+      "target_defaults": []
+    }
+  ]
+}

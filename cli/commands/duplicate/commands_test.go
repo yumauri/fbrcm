@@ -29,7 +29,7 @@ func TestDuplicateParameterClonesCompleteGroupedParameter(t *testing.T) {
 		},
 	}}
 
-	changed, finalCfg, source, err := duplicateParameter(original, "source_flag", "target_flag")
+	changed, finalCfg, source, err := duplicateParameter(original, "Source_Flag", "target_flag")
 	if err != nil || !changed {
 		t.Fatalf("duplicateParameter = changed %v, err %v", changed, err)
 	}
@@ -60,9 +60,16 @@ func TestDuplicateParameterSkipsMissingSourceAndRejectsTargetCollision(t *testin
 	if err != nil || changed {
 		t.Fatalf("missing source = changed %v, err %v", changed, err)
 	}
-	changed, _, _, err = duplicateParameter(cfg, "source", "TARGET")
+	changed, _, _, err = duplicateParameter(cfg, "source", "target")
 	if err == nil || changed || !strings.Contains(err.Error(), "already exists") {
 		t.Fatalf("target collision = changed %v, err %v", changed, err)
+	}
+	changed, finalCfg, _, err := duplicateParameter(cfg, "source", "TARGET")
+	if err != nil || !changed {
+		t.Fatalf("case-distinct target = changed %v, err %v", changed, err)
+	}
+	if _, ok := finalCfg.Parameters["TARGET"]; !ok {
+		t.Fatal("case-distinct target was not created")
 	}
 }
 
@@ -90,7 +97,7 @@ func TestReadDuplicateOptionsIncludesProjectFiltersAndExpression(t *testing.T) {
 	if len(opts.projectFilters) != 1 || opts.projectFilters[0] != "^prod" || opts.projectExpr != `project.id contains "android"` {
 		t.Fatalf("project selection = %v, %q", opts.projectFilters, opts.projectExpr)
 	}
-	if !opts.dryRun || !opts.draft || !opts.yes || opts.source != "source" || opts.target != "target" {
+	if !opts.dryRun || !opts.draft || !opts.yes || opts.source != " source " || opts.target != "target" {
 		t.Fatalf("options = %#v", opts)
 	}
 }
@@ -99,7 +106,7 @@ func TestResolveSourceRejectsDuplicateKeysAcrossGroups(t *testing.T) {
 	cfg := &firebase.RemoteConfig{
 		Parameters: map[string]firebase.RemoteConfigParam{"flag": {}},
 		ParameterGroups: map[string]firebase.RemoteConfigGroup{
-			"group-a": {Parameters: map[string]firebase.RemoteConfigParam{"FLAG": {}}},
+			"group-a": {Parameters: map[string]firebase.RemoteConfigParam{"flag": {}}},
 		},
 	}
 	_, found, err := resolveSource(cfg, "flag")

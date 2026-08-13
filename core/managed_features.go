@@ -20,6 +20,18 @@ type ManagedFeatureTemplate struct {
 	Source  string `json:"source"`
 }
 
+// ManagedFeatureLookupError identifies an expected local managed-feature
+// lookup miss without relying on error-message wording.
+type ManagedFeatureLookupError struct {
+	Feature   string
+	ProjectID string
+	ID        string
+	Err       error
+}
+
+func (e *ManagedFeatureLookupError) Error() string { return e.Err.Error() }
+func (e *ManagedFeatureLookupError) Unwrap() error { return e.Err }
+
 type ManagedValueReference struct {
 	Group          string                `json:"group"`
 	Parameter      string                `json:"parameter"`
@@ -265,11 +277,14 @@ func (s *Core) GetRemoteConfigPersonalization(ctx context.Context, project Proje
 		return PersonalizationEntry{}, ManagedFeatureTemplate{}, err
 	}
 	for _, personalization := range result.Personalizations {
-		if strings.EqualFold(personalization.ID, personalizationID) {
+		if personalization.ID == personalizationID {
 			return personalization, result.Template, nil
 		}
 	}
-	return PersonalizationEntry{}, result.Template, fmt.Errorf("personalization %q not found in project %s", personalizationID, project.ProjectID)
+	return PersonalizationEntry{}, result.Template, &ManagedFeatureLookupError{
+		Feature: "personalization", ProjectID: project.ProjectID, ID: personalizationID,
+		Err: fmt.Errorf("personalization %q not found in project %s", personalizationID, project.ProjectID),
+	}
 }
 
 func (s *Core) managedFeatureService(ctx context.Context, project Project) (*firebase.Service, string, error) {

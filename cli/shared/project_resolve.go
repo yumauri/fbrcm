@@ -14,7 +14,6 @@ import (
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
-	"github.com/yumauri/fbrcm/core/filter"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -61,7 +60,7 @@ func ResolveCachedProjectTargetArg(cmd *cobra.Command, query string) (core.Proje
 }
 
 func resolveProjectTargetArg(cmd *cobra.Command, projects []core.Project, query string) (core.Project, error) {
-	target, explicit, err := rctarget.ParseSelector(query)
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
 	if err != nil {
 		return core.Project{}, err
 	}
@@ -85,24 +84,29 @@ func resolveProjectArg(cmd *cobra.Command, projects []core.Project, query string
 }
 
 func resolveProjectArgWithAliases(cmd *cobra.Command, projects []core.Project, query string, aliases map[string]string) (core.Project, error) {
-	query = strings.TrimSpace(query)
 	for _, project := range projects {
-		if strings.EqualFold(project.ProjectID, query) {
+		if project.ProjectID == query {
 			return project, nil
 		}
 	}
 	if alias, projectID, ok := config.ResolveProjectAlias(aliases, query); ok {
 		for _, project := range projects {
-			if strings.EqualFold(project.ProjectID, projectID) {
+			if project.ProjectID == projectID {
 				return project, nil
 			}
 		}
-		return core.Project{}, fmt.Errorf(
-			"project alias %q resolves to %q, but that project is not available in profile %q",
-			alias,
-			projectID,
-			config.GetActiveProfileName(),
-		)
+		return core.Project{}, &ProjectResolutionError{
+			Resource:   "project",
+			Kind:       "not_found",
+			Query:      query,
+			Candidates: selectionCandidates(projects),
+			Err: fmt.Errorf(
+				"project alias %q resolves to %q, but that project is not available in profile %q",
+				alias,
+				projectID,
+				config.GetActiveProfileName(),
+			),
+		}
 	}
 	matches := matchProjectsForArg(projects, query)
 
@@ -110,48 +114,46 @@ func resolveProjectArgWithAliases(cmd *cobra.Command, projects []core.Project, q
 	case 1:
 		return matches[0], nil
 	case 0:
-		if len(projects) > 0 {
+		if len(projects) > 0 && !MachineMode(cmd) {
 			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(projects)); err != nil {
 				return core.Project{}, err
 			}
 		}
-		return core.Project{}, fmt.Errorf("no project matches %q", query)
+		return core.Project{}, &ProjectResolutionError{Resource: "project", Kind: "not_found", Query: query, Candidates: selectionCandidates(projects)}
 	default:
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches)); err != nil {
-			return core.Project{}, err
+		if !MachineMode(cmd) {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches)); err != nil {
+				return core.Project{}, err
+			}
 		}
-		return core.Project{}, fmt.Errorf("several projects match %q", query)
+		return core.Project{}, &ProjectResolutionError{Resource: "project", Kind: "ambiguous", Query: query, Candidates: selectionCandidates(matches)}
 	}
 }
 
+func selectionCandidates(projects []core.Project) []SelectionCandidate {
+	result := make([]SelectionCandidate, 0, len(projects))
+	for _, project := range projects {
+		result = append(result, SelectionCandidate{Name: project.Name, ID: project.ProjectID})
+	}
+	return result
+}
+
 func matchProjectsForArg(projects []core.Project, query string) []core.Project {
-	query = strings.TrimSpace(query)
 	if query == "" {
 		return nil
 	}
 	for _, project := range projects {
-		if strings.EqualFold(project.ProjectID, query) {
+		if project.ProjectID == query {
 			return []core.Project{project}
 		}
 	}
 	exactNames := make([]core.Project, 0, 1)
 	for _, project := range projects {
-		if strings.EqualFold(project.Name, query) {
+		if project.Name == query {
 			exactNames = append(exactNames, project)
 		}
 	}
-	if len(exactNames) > 0 {
-		return exactNames
-	}
-	substringMatches := make([]core.Project, 0, 1)
-	for _, project := range projects {
-		nameMatch, _ := filter.Match(project.Name, query, filter.ModeIncludes)
-		idMatch, _ := filter.Match(project.ProjectID, query, filter.ModeIncludes)
-		if nameMatch || idMatch {
-			substringMatches = append(substringMatches, project)
-		}
-	}
-	return substringMatches
+	return exactNames
 }
 
 func RenderProjectsChoiceTable(projects []core.Project) string {

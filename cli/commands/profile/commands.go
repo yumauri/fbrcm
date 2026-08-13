@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core/config"
@@ -18,11 +19,21 @@ func New() *cobra.Command {
 		Short: "Manage profiles",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), config.GetActiveProfileName())
+			active := config.GetActiveProfileName()
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, profileCurrentResult{Profile: active})
+			}
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), active)
 			return nil
 		},
 	}
 	profileCmd.AddCommand(newListCommand(), newSwitchCommand(), newRenameCommand(), newPathCommand(), newDeleteCommand())
+	contract.RegisterResponse(profileCmd, profileCurrentResult{})
+	contract.MustRegisterResponsePath(profileCmd, "list", []profileListItem{})
+	contract.MustRegisterResponsePath(profileCmd, "switch", profileSwitchResult{})
+	contract.MustRegisterResponsePath(profileCmd, "rename", profileRenameResult{})
+	contract.MustRegisterResponsePath(profileCmd, "path", []profilePathItem{})
+	contract.MustRegisterResponsePath(profileCmd, "delete", profileDeleteResult{})
 	return profileCmd
 }
 
@@ -57,10 +68,14 @@ func newSwitchCommand() *cobra.Command {
 		Short: "Switch to a profile, creating it if needed",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			before := config.GetActiveProfileName()
 			if err := config.SwitchProfile(args[0]); err != nil {
 				return err
 			}
 			effective := config.GetActiveProfileName()
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, profileSwitchResult{RequestedProfile: args[0], PreviousProfile: before, EffectiveProfile: effective, Changed: before != args[0], Overridden: effective != args[0]})
+			}
 			if effective != args[0] {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "✅ switched global profile: %s\neffective profile remains %s because repository configuration overrides it\n", args[0], effective)
 				return nil
@@ -77,8 +92,16 @@ func newRenameCommand() *cobra.Command {
 		Short: "Rename an existing profile",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			changed := args[0] != args[1]
 			if err := config.RenameProfile(args[0], args[1]); err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, profileRenameResult{OldProfile: args[0], NewProfile: args[1], EffectiveProfile: config.GetActiveProfileName(), Changed: changed})
+			}
+			if !changed {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🤷 profile unchanged: %s\n", args[0])
+				return nil
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "➡️ renamed: %s -> %s\n", args[0], args[1])
 			return nil
@@ -149,6 +172,9 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 		return err
 	}
 	if !yes {
+		if err := shared.RequireYesInMachineMode(cmd, yes, "deleting profile "+profileName, true); err != nil {
+			return err
+		}
 		confirm := shared.NewConfirmation(
 			fmt.Sprintf("Delete profile %s folders?\n%s\n%s", profileName, configPath, cachePath),
 			shared.ConfirmationOptions{Destructive: true},
@@ -165,6 +191,9 @@ func deleteProfile(cmd *cobra.Command, profileName string) error {
 	}
 	if err := config.DeleteProfile(profileName); err != nil {
 		return err
+	}
+	if contract.Enabled(cmd) {
+		return shared.WriteJSON(cmd, profileDeleteResult{Profile: profileName, Status: "deleted", DeletedPaths: []string{configPath, cachePath}})
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🧹 deleted profile: %s\n", profileName)
 	return nil
@@ -185,6 +214,31 @@ func profilePaths(profileName string) (string, string, error) {
 type profileListItem struct {
 	Profile string `json:"profile"`
 	Active  bool   `json:"active"`
+}
+
+type profileCurrentResult struct {
+	Profile string `json:"profile"`
+}
+
+type profileSwitchResult struct {
+	RequestedProfile string `json:"requested_profile"`
+	PreviousProfile  string `json:"previous_profile"`
+	EffectiveProfile string `json:"effective_profile"`
+	Changed          bool   `json:"changed"`
+	Overridden       bool   `json:"overridden"`
+}
+
+type profileRenameResult struct {
+	OldProfile       string `json:"old_profile"`
+	NewProfile       string `json:"new_profile"`
+	EffectiveProfile string `json:"effective_profile"`
+	Changed          bool   `json:"changed"`
+}
+
+type profileDeleteResult struct {
+	Profile      string   `json:"profile"`
+	Status       string   `json:"status" contract:"enum=deleted"`
+	DeletedPaths []string `json:"deleted_paths"`
 }
 
 // newProfileListItems prepares profiles for JSON output.

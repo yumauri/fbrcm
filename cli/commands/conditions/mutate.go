@@ -1,8 +1,8 @@
 package conditions
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -55,21 +55,9 @@ func newEditCommand(svc *core.Core) *cobra.Command {
 		Short: "Edit a condition expression or color",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("expression") && !cmd.Flags().Changed("color") && !cmd.Flags().Changed("no-color") {
-				return fmt.Errorf("at least one edit flag is required")
-			}
-			var expression, color *string
-			if cmd.Flags().Changed("expression") {
-				value, _ := cmd.Flags().GetString("expression")
-				expression = &value
-			}
-			if cmd.Flags().Changed("color") {
-				value, _ := cmd.Flags().GetString("color")
-				color = &value
-			}
-			if noColor, _ := cmd.Flags().GetBool("no-color"); noColor {
-				value := ""
-				color = &value
+			expression, color, err := readConditionEdit(cmd)
+			if err != nil {
+				return err
 			}
 			return runNamedConditionMutation(cmd, svc, args[0], args[1], readMutationOptions(cmd), "edit condition", "✏️", false, func(cfg *firebase.RemoteConfig, name string) error {
 				return coreconditions.EditDefinition(cfg, name, core.ConditionEdit{Expression: expression, TagColor: color})
@@ -79,9 +67,43 @@ func newEditCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().String("expression", "", "New raw Firebase condition expression")
 	cmd.Flags().String("color", "", "New Firebase display color")
 	cmd.Flags().Bool("no-color", false, "Remove the display color")
-	cmd.MarkFlagsMutuallyExclusive("color", "no-color")
 	addMutationFlags(cmd)
 	return cmd
+}
+
+func readConditionEdit(cmd *cobra.Command) (*string, *string, error) {
+	expressionChanged := cmd.Flags().Changed("expression")
+	colorChanged := cmd.Flags().Changed("color")
+	noColor, err := cmd.Flags().GetBool("no-color")
+	if err != nil {
+		return nil, nil, shared.InvalidArgument(err)
+	}
+	if !expressionChanged && !colorChanged && !noColor {
+		return nil, nil, shared.InvalidArgument(fmt.Errorf("at least one edit flag is required"))
+	}
+	if colorChanged && noColor {
+		return nil, nil, shared.InvalidArgument(fmt.Errorf("--color and --no-color are mutually exclusive"))
+	}
+	var expression, color *string
+	if expressionChanged {
+		value, getErr := cmd.Flags().GetString("expression")
+		if getErr != nil {
+			return nil, nil, shared.InvalidArgument(getErr)
+		}
+		expression = &value
+	}
+	if colorChanged {
+		value, getErr := cmd.Flags().GetString("color")
+		if getErr != nil {
+			return nil, nil, shared.InvalidArgument(getErr)
+		}
+		color = &value
+	}
+	if noColor {
+		value := ""
+		color = &value
+	}
+	return expression, color, nil
 }
 
 func newRenameCommand(svc *core.Core) *cobra.Command {
@@ -107,7 +129,7 @@ func newMoveCommand(svc *core.Core) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			priority, err := strconv.Atoi(args[2])
 			if err != nil {
-				return fmt.Errorf("invalid condition priority %q", args[2])
+				return shared.InvalidArgument(fmt.Errorf("invalid condition priority %q", args[2]))
 			}
 			return runNamedConditionMutation(cmd, svc, args[0], args[1], readMutationOptions(cmd), "move condition", "↕️", false, func(cfg *firebase.RemoteConfig, name string) error {
 				tree := coreconditions.BuildTree(cfg, time.Time{}, "")
@@ -115,7 +137,9 @@ func newMoveCommand(svc *core.Core) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rcdisplay.FormatConditionMoveImpact(len(impact.CrossedConditions), len(impact.AffectedParameters)))
+				if !shared.MachineMode(cmd) {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rcdisplay.FormatConditionMoveImpact(len(impact.CrossedConditions), len(impact.AffectedParameters)))
+				}
 				return coreconditions.Move(cfg, name, priority)
 			})
 		},
@@ -136,7 +160,9 @@ func newDeleteCommand(svc *core.Core) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rcdisplay.FormatConditionDeleteImpact(len(impact.Usages), len(impact.RemovedParameters)))
+				if !shared.MachineMode(cmd) {
+					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rcdisplay.FormatConditionDeleteImpact(len(impact.Usages), len(impact.RemovedParameters)))
+				}
 				return coreconditions.Delete(cfg, name)
 			})
 		},
@@ -151,7 +177,7 @@ func newValidateCommand(svc *core.Core) *cobra.Command {
 		Short: "Validate the current draft or published conditions with Firebase",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := shared.CommandContext(cmd)
 			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
@@ -183,7 +209,7 @@ func newValidateCommand(svc *core.Core) *cobra.Command {
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, map[string]any{"project": project, "source": source, "valid": true})
+				return shared.WriteJSON(cmd, conditionValidationResult{Project: project, Source: source, Valid: true})
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Valid: %s (%s) · %s\n", project.Name, project.ProjectID, source)
 			return nil
@@ -191,6 +217,12 @@ func newValidateCommand(svc *core.Core) *cobra.Command {
 	}
 	cmd.Flags().Bool("json", false, "Print validation result as JSON")
 	return cmd
+}
+
+type conditionValidationResult struct {
+	Project core.Project `json:"project"`
+	Source  string       `json:"source" contract:"enum=draft|firebase"`
+	Valid   bool         `json:"valid"`
 }
 
 func addMutationFlags(cmd *cobra.Command) {
@@ -215,16 +247,16 @@ func readMutationOptions(cmd *cobra.Command) mutationOptions {
 
 func runNamedConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery, requestedName string, opts mutationOptions, operation, emoji string, destructive bool, mutate func(*firebase.RemoteConfig, string) error) error {
 	return runConditionMutation(cmd, svc, projectQuery, opts, operation, emoji, destructive, func(cfg *firebase.RemoteConfig) error {
-		name, ok := coreconditions.ResolveName(cfg, requestedName)
+		name, ok := coreconditions.ResolveNameExact(cfg, requestedName)
 		if !ok {
-			return fmt.Errorf("condition %q not found", requestedName)
+			return &shared.SelectionError{Resource: "condition", Kind: "not_found", Query: requestedName, Err: fmt.Errorf("condition %q not found", requestedName)}
 		}
 		return mutate(cfg, name)
 	})
 }
 
 func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery string, opts mutationOptions, operation, emoji string, destructive bool, mutate conditionMutation) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -237,14 +269,14 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 	if err != nil {
 		return err
 	}
-	plan := func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteConfigMutation, error) {
-		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+	plan := func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteMutationPlan, error) {
+		return sharedrc.RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			finalCfg, err := firebase.CloneRemoteConfig(current)
 			if err != nil {
 				return 0, nil, err
 			}
 			if err := mutate(finalCfg); err != nil {
-				return 0, nil, err
+				return 0, nil, typedConditionMutationError(project.ProjectID, err)
 			}
 			diffText, changed := sharedrc.RenderRemoteConfigDiff(current, finalCfg)
 			if !changed {
@@ -255,17 +287,27 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 				return 0, finalCfg, err
 			}
 			return 1, finalCfg, nil
-		}, nil
+		}}, nil
 	}
 	projects := []core.Project{project}
 	var totals sharedrc.RemoteMutationTotals
 	if opts.Draft {
-		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, operation, plan)
+		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, false, operation, plan)
 	} else {
-		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, operation, emoji, plan)
+		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, false, operation, emoji, plan)
 	}
 	if writeErr := sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], emoji); writeErr != nil {
 		return writeErr
 	}
 	return err
+}
+
+func typedConditionMutationError(projectID string, err error) error {
+	var conflict *shared.ConflictError
+	var selection *shared.SelectionError
+	var validation *shared.ValidationError
+	if errors.As(err, &conflict) || errors.As(err, &selection) || errors.As(err, &validation) {
+		return err
+	}
+	return &shared.ValidationError{Code: "condition.invalid", Source: "command", Stage: "mutation", Target: projectID, Err: err}
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 type compareOptions struct {
@@ -45,15 +46,14 @@ func newDiffCommand(svc *core.Core) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := readCompareOptions(cmd)
 			if err != nil {
-				return shared.DiffCommandError(cmd, err)
+				return err
 			}
-			return shared.DiffCommandError(cmd, runProjectsDiff(cmd, svc, args[0], args[1], opts))
+			return runProjectsDiff(cmd, svc, args[0], args[1], opts)
 		},
 	}
 	addCompareSelectionFlags(cmd)
 	cmd.Flags().Bool("cached", false, "Use cached Remote Config instead of live Firebase fetch")
 	cmd.Flags().Bool("json", false, "Print diff as JSON")
-	shared.AddDiffExitCodeFlag(cmd)
 	return cmd
 }
 
@@ -169,7 +169,7 @@ func readCompareOptions(cmd *cobra.Command) (compareOptions, error) {
 }
 
 func runProjectsDiff(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, opts compareOptions) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	source, target, sourceCfg, targetCfg, err := loadCompareConfigs(ctx, cmd, svc, sourceQuery, targetQuery, opts.Cached)
 	if err != nil {
 		return err
@@ -199,7 +199,7 @@ func runProjectsDiff(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuer
 }
 
 func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, opts compareOptions) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -244,9 +244,12 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
 	}
 	if !opts.Yes {
+		if err := shared.RequireYesInMachineMode(cmd, opts.Yes, "publishing selected Remote Config changes to "+target.ProjectID, true); err != nil {
+			return err
+		}
 		confirm := shared.NewConfirmation(
 			fmt.Sprintf("Publish selected Remote Config changes to %s?", target.ProjectID),
-			shared.ConfirmationOptions{},
+			shared.ConfirmationOptions{Destructive: true},
 		)
 		confirm.Input = cmd.InOrStdin()
 		confirm.Output = cmd.ErrOrStderr()
@@ -260,14 +263,26 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	if err != nil {
 		status, stage := "failed", "publication"
 		if published {
-			status, stage = "published-hook-failed", "post_publish_hook"
+			var cacheErr *core.RemoteConfigPublishedCacheError
+			if errors.As(err, &cacheErr) {
+				status, stage = "published-cache-failed", "cache"
+				filter, _ := rctarget.ExactFilter(target.ProjectID)
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the promotion, but the local cache update failed.", Target: target.ProjectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the published target instead of republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", filter}}}})
+			} else {
+				status, stage = "published-hook-failed", "post_publish_hook"
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the promotion, but a post_publish hook failed.", Target: target.ProjectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
+			}
 		} else if rc.IsValidationError(err) {
 			status, stage = "validation-failed", "validation"
 		}
 		if opts.JSON {
-			payload := promoteJSON(source, target, opts, published, validated, validationSource, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)).(map[string]any)
-			payload["status"] = status
-			payload["error"] = map[string]any{"stage": stage, "message": err.Error()}
+			payload := promoteJSON(source, target, opts, published, validated, validationSource, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg))
+			payload.Status = status
+			payload.Error = &promoteError{Stage: stage, Message: shared.SafeErrorText(err)}
 			if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
 				return writeErr
 			}
@@ -321,7 +336,10 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 			return nil, err
 		}
 		if cache == nil {
-			return nil, fmt.Errorf("parameters cache not found for project %s", projectID)
+			return nil, &shared.SelectionError{
+				Resource: "parameters_cache", Kind: "not_found", Query: projectID,
+				Err: fmt.Errorf("parameters cache not found for project %s", projectID),
+			}
 		}
 		return firebase.ParseCloneRemoteConfig(cache.RemoteConfig)
 	}
@@ -337,7 +355,10 @@ func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 	if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
 		return false, false, core.ValidationSourceLocal, err
 	} else if hasDraft {
-		return false, false, core.ValidationSourceLocal, fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)
+		return false, false, core.ValidationSourceLocal, &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Remediation: []shared.Remediation{
+			{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", target.ProjectID}},
+			{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", target.ProjectID}},
+		}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)}
 	}
 	for {
 		raw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)
@@ -356,7 +377,9 @@ func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		}
 		diffText, hasChanges := rc.RenderRemoteConfigDiff(latestTarget, finalCfg)
 		if !hasChanges {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
+			if !opts.JSON {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
+			}
 			return false, true, core.ValidationSourceLocal, nil
 		}
 		finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
@@ -366,13 +389,16 @@ func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 		publishResult, err := rc.ValidateAndPublishRemoteConfigResult(ctx, svc, target.ProjectID, finalRaw, etag, "promote", cmd.ErrOrStderr())
 		if err != nil {
 			var hookErr *core.RemoteConfigPublishedHookError
-			if errors.As(err, &hookErr) {
+			var cacheErr *core.RemoteConfigPublishedCacheError
+			if errors.As(err, &hookErr) || errors.As(err, &cacheErr) {
 				return true, publishResult.Validated, publishResult.ValidationSource, err
 			}
 			return false, publishResult.Validated, publishResult.ValidationSource, err
 		}
 		if publishResult.Retry {
-			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+			if !opts.JSON {
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+			}
 			continue
 		}
 		return !firebase.IsDryRun(ctx), publishResult.Validated, publishResult.ValidationSource, nil
@@ -383,8 +409,17 @@ func selectPromotionItems(cmd *cobra.Command, plan rcpromote.Plan, opts compareO
 	if opts.All {
 		return rcpromote.SelectAll(plan.Items), nil
 	}
+	if shared.MachineMode(cmd) {
+		if opts.Interactive {
+			return nil, shared.InteractionRequiredWithArguments("interactive promotion review is unavailable in JSON mode; use selection flags or --all", "selection_required", false, "--all", "--all")
+		}
+		if !hasSelectionIntent(opts) {
+			return nil, shared.InteractionRequiredWithArguments("promotion selection is required; pass --all or a selection filter", "selection_required", false, "--all", "--all")
+		}
+		return rcpromote.SelectAll(plan.Items), nil
+	}
 	if !opts.Interactive && !hasSelectionIntent(opts) && !isTerminal() {
-		return nil, fmt.Errorf("non-interactive promote requires --all, --filter, --group, --expr, or --search")
+		return nil, shared.InteractionRequiredWithArguments("non-interactive promotion requires --all, --filter, --group, --expr, or --search", "selection_required", false, "--all", "--all")
 	}
 	if opts.Interactive || isTerminal() {
 		return promptPromotionItems(cmd, plan)
@@ -615,35 +650,52 @@ func normalizeGroups(groups []string) []string {
 	return out
 }
 
-func compareJSON(source, target core.Project, result rcdiff.Result) any {
-	return map[string]any{
-		"source_project": source.ProjectID,
-		"target_project": target.ProjectID,
-		"changed":        result.HasChanges(),
-		"summary": map[string]rcdiff.Summary{
-			"conditions":         result.ConditionSummary(),
-			"parameters":         result.ParameterSummary(),
-			"group_descriptions": result.GroupDescriptionSummary(),
-		},
-		"changes": result,
-	}
+func compareJSON(source, target core.Project, result rcdiff.Result) compareResult {
+	return compareResult{SourceProject: source.ProjectID, TargetProject: target.ProjectID, Changed: result.HasChanges(), Summary: newCompareSummary(result), Changes: result}
 }
 
-func promoteJSON(source, target core.Project, opts compareOptions, published, validated bool, validationSource string, applied []rcpromote.Item, result rcdiff.Result) any {
-	return map[string]any{
-		"source_project":    source.ProjectID,
-		"target_project":    target.ProjectID,
-		"changed":           result.HasChanges(),
-		"dry_run":           opts.DryRun,
-		"published":         published,
-		"validated":         validated,
-		"validation_source": validationSource,
-		"selected":          len(applied),
-		"change_note":       opts.ChangeNote,
-		"summary": map[string]rcdiff.Summary{
-			"conditions":         result.ConditionSummary(),
-			"parameters":         result.ParameterSummary(),
-			"group_descriptions": result.GroupDescriptionSummary(),
-		},
+func promoteJSON(source, target core.Project, opts compareOptions, published, validated bool, validationSource string, applied []rcpromote.Item, result rcdiff.Result) promoteResult {
+	status := "unchanged"
+	if result.HasChanges() {
+		status = map[bool]string{true: "would-publish", false: "published"}[opts.DryRun]
 	}
+	return promoteResult{SourceProject: source.ProjectID, TargetProject: target.ProjectID, Status: status, Changed: result.HasChanges(), DryRun: opts.DryRun, Published: published, Validated: validated, ValidationSource: validationSource, Selected: len(applied), ChangeNote: opts.ChangeNote, Summary: newCompareSummary(result)}
+}
+
+type compareSummary struct {
+	Conditions        rcdiff.Summary `json:"conditions"`
+	Parameters        rcdiff.Summary `json:"parameters"`
+	GroupDescriptions rcdiff.Summary `json:"group_descriptions"`
+}
+
+func newCompareSummary(result rcdiff.Result) compareSummary {
+	return compareSummary{Conditions: result.ConditionSummary(), Parameters: result.ParameterSummary(), GroupDescriptions: result.GroupDescriptionSummary()}
+}
+
+type compareResult struct {
+	SourceProject string         `json:"source_project"`
+	TargetProject string         `json:"target_project"`
+	Changed       bool           `json:"changed"`
+	Summary       compareSummary `json:"summary"`
+	Changes       rcdiff.Result  `json:"changes"`
+}
+
+type promoteError struct {
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
+}
+
+type promoteResult struct {
+	SourceProject    string         `json:"source_project"`
+	TargetProject    string         `json:"target_project"`
+	Status           string         `json:"status" contract:"enum=unchanged|would-publish|published|failed|validation-failed|published-hook-failed|published-cache-failed"`
+	Changed          bool           `json:"changed"`
+	DryRun           bool           `json:"dry_run"`
+	Published        bool           `json:"published"`
+	Validated        bool           `json:"validated"`
+	ValidationSource string         `json:"validation_source"`
+	Selected         int            `json:"selected"`
+	ChangeNote       *string        `json:"change_note"`
+	Summary          compareSummary `json:"summary"`
+	Error            *promoteError  `json:"error"`
 }

@@ -3,6 +3,7 @@ package firebase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -108,6 +109,28 @@ func TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid(t *testi
 	}
 	if !strings.Contains(string(data), "recovered-access") || !strings.Contains(string(data), "recovered-refresh") {
 		t.Fatalf("persisted recovered token = %s", data)
+	}
+}
+
+func TestRecoverRejectedOAuthTokenPreservesTransientRefreshFailure(t *testing.T) {
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = io.WriteString(w, `{"error":"temporarily_unavailable"}`)
+	}))
+	defer provider.Close()
+
+	cfg := &oauth2.Config{ClientID: "client-id", ClientSecret: "client-secret", Endpoint: oauth2.Endpoint{TokenURL: provider.URL}}
+	cached := &oauth2.Token{AccessToken: "expired", RefreshToken: "refresh", Expiry: time.Unix(0, 0)}
+	ctx := WithOAuthInteractionAllowed(context.Background(), false)
+
+	_, _, err := recoverRejectedOAuthToken(ctx, cfg, cached, filepath.Join(t.TempDir(), "token.json"), true, false)
+	if errors.Is(err, ErrOAuthInteractionRequired) {
+		t.Fatalf("transient refresh failure became interaction required: %v", err)
+	}
+	var authentication *AuthenticationError
+	if !errors.As(err, &authentication) || authentication.Kind != AuthenticationRequestFailed || authentication.HTTPStatus != http.StatusServiceUnavailable || !authentication.Retryable {
+		t.Fatalf("recoverRejectedOAuthToken error = %#v, %v", authentication, err)
 	}
 }
 

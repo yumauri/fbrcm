@@ -19,13 +19,13 @@ func TestAuthPathPayloadAndLines(t *testing.T) {
 	}
 
 	payload := authPathPayload(auth, paths)
-	if payload["id"] != "main" || payload["type"] != config.AuthTypeOAuth {
+	if payload.ID != "main" || payload.Type != config.AuthTypeOAuth {
 		t.Fatalf("payload identity = %#v, want main/oauth", payload)
 	}
-	if payload["client_secret_path"] != "/auth/client.json" || payload["token_path"] != "/auth/token.json" {
+	if payload.ClientSecretPath != "/auth/client.json" || payload.TokenPath != "/auth/token.json" {
 		t.Fatalf("payload paths = %#v, want oauth paths", payload)
 	}
-	if _, ok := payload["service_account_path"]; ok {
+	if payload.ServiceAccountPath != "" {
 		t.Fatalf("payload includes service account path for oauth: %#v", payload)
 	}
 

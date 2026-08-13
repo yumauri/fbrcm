@@ -30,7 +30,7 @@ func (p *persistingTokenSource) Token() (*oauth2.Token, error) {
 	tok, err := p.base.Token()
 	if err != nil {
 		logger.Error("oauth token source failed", "err", err)
-		return nil, err
+		return nil, authenticationRequestError("oauth", "refresh_token", err)
 	}
 
 	if !tokensEqual(p.lastToken, tok) {

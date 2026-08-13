@@ -35,6 +35,9 @@ func ReadJSONInput(cmd *cobra.Command, fromPath, label string, onCancel error) (
 		}
 		return data, nil
 	default:
+		if MachineMode(cmd) {
+			return nil, InteractionRequiredWithArguments(fmt.Sprintf("%s input requires --from or piped stdin in JSON mode", label), "external_input", false, "--from")
+		}
 		progress.Stop()
 		selectedPath, err := pickJSONFile()
 		if err != nil {

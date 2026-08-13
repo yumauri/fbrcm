@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf8"
 )
 
 // ConditionDisplayColors contains the values accepted by Firebase's v1
@@ -53,13 +54,68 @@ func NormalizeRemoteConfigForUpdate(cfg *RemoteConfig, changeNote ...string) err
 		}
 		cfg.Version.ChangeNote = note
 	}
+	conditionNames := make(map[string]bool, len(cfg.Conditions))
 	for index := range cfg.Conditions {
 		condition := &cfg.Conditions[index]
+		if strings.TrimSpace(condition.Name) == "" {
+			return fmt.Errorf("condition %d has an empty name", index+1)
+		}
+		if strings.TrimSpace(condition.Expression) == "" {
+			return fmt.Errorf("condition %q has an empty expression", condition.Name)
+		}
+		if conditionNames[condition.Name] {
+			return fmt.Errorf("condition name %q is duplicated", condition.Name)
+		}
+		conditionNames[condition.Name] = true
 		color, err := NormalizeConditionTagColor(condition.TagColor)
 		if err != nil {
 			return fmt.Errorf("condition %q: %w", condition.Name, err)
 		}
 		condition.TagColor = color
+	}
+	parameterNames := make(map[string]bool, len(cfg.Parameters))
+	if err := validateRemoteConfigParameters(cfg.Parameters, parameterNames); err != nil {
+		return err
+	}
+	for groupName, group := range cfg.ParameterGroups {
+		if err := validateRemoteConfigName("parameter group", groupName); err != nil {
+			return err
+		}
+		if utf8.RuneCountInString(group.Description) > 256 {
+			return fmt.Errorf("parameter group %q description exceeds 256 characters", groupName)
+		}
+		if err := validateRemoteConfigParameters(group.Parameters, parameterNames); err != nil {
+			return fmt.Errorf("parameter group %q: %w", groupName, err)
+		}
+	}
+	return nil
+}
+
+func validateRemoteConfigParameters(parameters map[string]RemoteConfigParam, seen map[string]bool) error {
+	for name, parameter := range parameters {
+		if err := validateRemoteConfigName("parameter", name); err != nil {
+			return err
+		}
+		if seen[name] {
+			return fmt.Errorf("parameter %q appears more than once in the template", name)
+		}
+		seen[name] = true
+		if utf8.RuneCountInString(parameter.Description) > 256 {
+			return fmt.Errorf("parameter %q description exceeds 256 characters", name)
+		}
+		if parameter.ValueType != "" && !slices.Contains([]string{"PARAMETER_VALUE_TYPE_UNSPECIFIED", "STRING", "BOOLEAN", "NUMBER", "JSON"}, parameter.ValueType) {
+			return fmt.Errorf("parameter %q has unsupported valueType %q", name, parameter.ValueType)
+		}
+	}
+	return nil
+}
+
+func validateRemoteConfigName(kind, name string) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("%s name is empty", kind)
+	}
+	if utf8.RuneCountInString(name) > 256 {
+		return fmt.Errorf("%s name %q exceeds 256 characters", kind, name)
 	}
 	return nil
 }

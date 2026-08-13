@@ -13,13 +13,22 @@ type changeNoteContextValue struct {
 	value string
 }
 
+// InvalidChangeNoteError identifies a user-authored change note that cannot be
+// represented by Firebase's single-line version description field.
+type InvalidChangeNoteError struct {
+	Err error
+}
+
+func (e *InvalidChangeNoteError) Error() string { return e.Err.Error() }
+func (e *InvalidChangeNoteError) Unwrap() error { return e.Err }
+
 // NormalizeChangeNote validates and normalizes a user-authored Remote Config
 // change note.
 func NormalizeChangeNote(value string) (string, error) {
 	value = strings.TrimSpace(value)
 	for _, r := range value {
 		if r == '\n' || r == '\r' || unicode.IsControl(r) {
-			return "", fmt.Errorf("change note must be a single line without control characters")
+			return "", &InvalidChangeNoteError{Err: fmt.Errorf("change note must be a single line without control characters")}
 		}
 	}
 	return value, nil

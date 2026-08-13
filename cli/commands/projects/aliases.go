@@ -30,7 +30,7 @@ type projectAliasSetResult struct {
 type projectAliasRemoveResult struct {
 	Alias             string                        `json:"alias"`
 	PreviousProjectID string                        `json:"previous_project_id,omitempty"`
-	Status            string                        `json:"status"`
+	Status            string                        `json:"status" contract:"enum=not_found|removed|removed_native"`
 	Changed           bool                          `json:"changed"`
 	Source            coreconfig.ProjectAliasSource `json:"source,omitempty"`
 	RemainingSource   coreconfig.ProjectAliasSource `json:"remaining_source,omitempty"`
@@ -76,10 +76,10 @@ func newAliasesSetCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := coreconfig.ValidateProjectAliasName(args[0]); err != nil {
-				return err
+				return shared.InvalidArgument(err)
 			}
 			if err := coreconfig.ValidateProjectAliasProjectID(args[1]); err != nil {
-				return fmt.Errorf("project alias %q: %w", args[0], err)
+				return shared.InvalidArgument(fmt.Errorf("project alias %q: %w", args[0], err))
 			}
 			registry, err := loadAliasRegistryForCommand()
 			if err != nil {
@@ -106,6 +106,9 @@ func newAliasesSetCommand() *cobra.Command {
 			if previous != "" && previous != args[1] {
 				yes, _ := cmd.Flags().GetBool("yes")
 				if !yes {
+					if err := shared.RequireYesInMachineMode(cmd, yes, "changing project alias "+args[0], false); err != nil {
+						return err
+					}
 					confirm := shared.NewConfirmation(
 						fmt.Sprintf("Change project alias %s from %s to %s?", args[0], previous, args[1]),
 						shared.ConfirmationOptions{},
@@ -154,7 +157,7 @@ func newAliasesRemoveCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := coreconfig.ValidateProjectAliasName(args[0]); err != nil {
-				return err
+				return shared.InvalidArgument(err)
 			}
 			registry, err := loadAliasRegistryForCommand()
 			if err != nil {
@@ -172,6 +175,9 @@ func newAliasesRemoveCommand() *cobra.Command {
 			if previous != "" {
 				yes, _ := cmd.Flags().GetBool("yes")
 				if !yes {
+					if err := shared.RequireYesInMachineMode(cmd, yes, "removing project alias "+args[0], true); err != nil {
+						return err
+					}
 					message := fmt.Sprintf("Remove project alias %s for %s?", args[0], previous)
 					if exists && entry.Source == coreconfig.ProjectAliasSourceBoth {
 						message = fmt.Sprintf("Remove the .fbrcm.toml definition of project alias %s? It will remain available from .firebaserc.", args[0])
@@ -228,29 +234,35 @@ func newAliasesRemoveCommand() *cobra.Command {
 
 func loadAliasRegistryForCommand() (coreconfig.ProjectAliasRegistry, error) {
 	if coreconfig.LocalConfigDisabled() {
-		return coreconfig.ProjectAliasRegistry{}, fmt.Errorf("project aliases are disabled by --no-local-config or FBRCM_NO_LOCAL_CONFIG")
+		return coreconfig.ProjectAliasRegistry{}, projectAliasesDisabledError()
 	}
-	return coreconfig.LoadProjectAliasRegistry()
+	registry, err := coreconfig.LoadProjectAliasRegistry()
+	if err != nil {
+		return coreconfig.ProjectAliasRegistry{}, &shared.ValidationError{Code: "configuration.project_aliases_invalid", Source: "configuration", Stage: "loading", Err: err}
+	}
+	return registry, nil
 }
 
 func firebaseAliasMutationError(action string, entry coreconfig.ProjectAliasEntry, path string) error {
-	return fmt.Errorf(
-		"cannot %s project alias %q because it is defined in %s; use Firebase CLI or edit that file",
-		action,
-		entry.Alias,
-		path,
-	)
+	return &shared.ConflictError{
+		Code: "project_alias.read_only", Resource: "project_alias", Target: entry.Alias,
+		Err: fmt.Errorf("cannot %s project alias %q because it is defined in %s; use Firebase CLI or edit that file", action, entry.Alias, path),
+	}
 }
 
 func loadLocalAliasConfig() (*coreconfig.AppConfig, string, error) {
 	if coreconfig.LocalConfigDisabled() {
-		return nil, "", fmt.Errorf("project aliases are disabled by --no-local-config or FBRCM_NO_LOCAL_CONFIG")
+		return nil, "", projectAliasesDisabledError()
 	}
 	resolved, err := coreconfig.ResolveAppConfig()
 	if err != nil {
 		return nil, "", err
 	}
 	return coreconfig.CloneAppConfig(resolved.Local.Config), resolved.Local.Path, nil
+}
+
+func projectAliasesDisabledError() error {
+	return &shared.ValidationError{Code: "configuration.local_disabled", Source: "configuration", Stage: "selection", Err: fmt.Errorf("project aliases are disabled by --no-local-config or FBRCM_NO_LOCAL_CONFIG")}
 }
 
 func saveLocalAliasConfig(path string, cfg *coreconfig.AppConfig) error {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -86,6 +87,16 @@ type ProjectAuthBindingResult struct {
 	Skipped []ProjectAuthBindingFailure
 }
 
+// ProjectLookupError identifies a project-selection miss without relying on
+// the human-readable error text.
+type ProjectLookupError struct {
+	Query string
+	Err   error
+}
+
+func (e *ProjectLookupError) Error() string { return e.Err.Error() }
+func (e *ProjectLookupError) Unwrap() error { return e.Err }
+
 // BindProjectsAuth binds matched projects that were discovered by auth id.
 func (s *Core) BindProjectsAuth(filters []string, authID string) (ProjectAuthBindingResult, error) {
 	aliases, err := config.LoadProjectAliases()
@@ -93,9 +104,19 @@ func (s *Core) BindProjectsAuth(filters []string, authID string) (ProjectAuthBin
 		return ProjectAuthBindingResult{}, err
 	}
 	aliasesByID := config.ProjectAliasesByID(aliases)
-	return s.bindProjectsAuth(authID, func(project Project) bool {
+	result, err := s.bindProjectsAuth(authID, func(project Project) bool {
 		return matchProjectFilter(project, aliasesByID[project.ProjectID], filters)
 	})
+	if err != nil {
+		var lookupErr *ProjectLookupError
+		if errors.As(err, &lookupErr) {
+			lookupErr.Query = strings.Join(filters, ", ")
+			if lookupErr.Query == "" {
+				lookupErr.Query = "all projects"
+			}
+		}
+	}
+	return result, err
 }
 
 // BindProjectIDsAuth binds exact cached project IDs to an auth identity.
@@ -147,7 +168,7 @@ func (s *Core) bindProjectsAuth(authID string, match func(Project) bool) (Projec
 		result.Bound = append(result.Bound, projects[i])
 	}
 	if matched == 0 {
-		return ProjectAuthBindingResult{}, fmt.Errorf("no projects matched")
+		return ProjectAuthBindingResult{}, &ProjectLookupError{Err: fmt.Errorf("no projects matched")}
 	}
 	if len(result.Bound) > 0 {
 		if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
@@ -233,7 +254,10 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, autoOpen)
 	if err != nil {
 		logger.Error("login failed", "err", err)
-		return err
+		if errors.Is(err, firebase.ErrOAuthInteractionRequired) {
+			return &OAuthInteractionError{AuthID: authID, Err: err}
+		}
+		return withAuthFailureID(authID, err)
 	}
 	s.firebaseMu.Lock()
 	s.firebase[firebaseClientKey(authID)] = fb
@@ -242,16 +266,17 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	return nil
 }
 
-func (s *Core) ResetProjects() error {
+func (s *Core) ResetProjects() (bool, error) {
 	logger := corelog.For("core")
 	logger.Info("reset projects registry requested")
-	if err := config.ResetProjects(); err != nil {
+	changed, err := config.ResetProjects()
+	if err != nil {
 		logger.Error("reset projects registry failed", "err", err)
-		return fmt.Errorf("reset projects registry: %w", err)
+		return false, fmt.Errorf("reset projects registry: %w", err)
 	}
 
-	logger.Info("reset projects registry")
-	return nil
+	logger.Info("reset projects registry", "changed", changed)
+	return changed, nil
 }
 
 // DeleteProjectIDs removes projects and all of their local Remote Config

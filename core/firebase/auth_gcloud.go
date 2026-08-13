@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -19,11 +20,13 @@ func gcloudHTTPClient(ctx context.Context) (*http.Client, string, error) {
 	logger := corelog.For("firebase")
 	logger.Info("load gcloud application default credentials")
 
-	client, err := google.DefaultClient(ctx, cloudPlatformScope)
+	credentials, err := google.FindDefaultCredentials(ctx, cloudPlatformScope)
 	if err != nil {
 		logger.Error("load gcloud application default credentials failed", "err", err)
-		return nil, "", fmt.Errorf("loading gcloud application default credentials: %w; run `gcloud auth application-default login`", err)
+		return nil, "", setupAuthenticationError("gcloud", "discover_credentials", fmt.Errorf("loading gcloud application default credentials: %w; run `gcloud auth application-default login`", err))
 	}
+	tokenSource := authenticationTokenSource{base: credentials.TokenSource, authType: "gcloud", operation: "token_exchange"}
+	client := oauth2.NewClient(ctx, tokenSource)
 
 	quotaProjectID := adcQuotaProjectID()
 	logger.Debug("gcloud application default credentials http client ready", "quota_project_id", quotaProjectID != "")

@@ -1,18 +1,24 @@
 package project
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	importpkg "github.com/yumauri/fbrcm/cli/commands/project/import"
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/browser"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
+
+type projectOpenResult struct {
+	ProjectID string `json:"project_id"`
+	URL       string `json:"url" contract:"format=uri"`
+	Opened    bool   `json:"opened"`
+}
 
 // New constructs the project command.
 func New(svc *core.Core) *cobra.Command {
@@ -28,6 +34,13 @@ func New(svc *core.Core) *cobra.Command {
 		newImportCommand(svc),
 		newDefaultsCommand(svc),
 	)
+	contract.MustRegisterResponsePath(projectCmd, "show", shared.ProjectJSON{})
+	contract.MustRegisterResponsePath(projectCmd, "templates show", projectTemplatesJSON{})
+	contract.MustRegisterResponsePath(projectCmd, "templates set", projectTemplatesJSON{})
+	contract.MustRegisterResponsePath(projectCmd, "open", projectOpenResult{})
+	contract.MustRegisterResponsePath(projectCmd, "export", contract.ArtifactData{})
+	contract.MustRegisterResponsePath(projectCmd, "import", importpkg.Result{})
+	contract.MustRegisterResponsePath(projectCmd, "defaults", contract.ArtifactData{})
 	return projectCmd
 }
 
@@ -37,11 +50,18 @@ func newOpenCommand(svc *core.Core, openURL func(string) error) *cobra.Command {
 		Short: "Open project Remote Config in the Firebase console",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := shared.ResolveProjectArg(context.Background(), cmd, svc, args[0])
+			project, err := shared.ResolveProjectArg(shared.CommandContext(cmd), cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
-			return openURL(firebase.RemoteConfigConsoleURL(project.ProjectID))
+			url := firebase.RemoteConfigConsoleURL(project.ProjectID)
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, projectOpenResult{ProjectID: project.ProjectID, URL: url, Opened: false})
+			}
+			if err := openURL(url); err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 }
@@ -52,7 +72,7 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 		Short: "Export project Remote Config JSON",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := shared.ResolveProjectTargetArg(context.Background(), cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetArg(shared.CommandContext(cmd), cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -74,12 +94,16 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 				}
 			}
 
-			raw, _, err := svc.ExportRemoteConfig(context.Background(), project.ProjectID)
+			raw, _, err := svc.ExportRemoteConfig(shared.CommandContext(cmd), project.ProjectID)
 			if err != nil {
 				return err
 			}
+			body := rc.NormalizeExportBytes(raw)
 			if toPath == "" {
-				body := rc.TrimTrailingLineBreaks(rc.NormalizeExportJSON(raw))
+				if contract.Enabled(cmd) {
+					target := project.ProjectID
+					return shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", body, nil, false))
+				}
 				_, err = cmd.OutOrStdout().Write(body)
 				return err
 			}
@@ -88,8 +112,12 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 			if overwrite {
 				write = rc.WriteRemoteConfigFile
 			}
-			if err := write(toPath, raw); err != nil {
+			if err := write(toPath, body); err != nil {
 				return err
+			}
+			if contract.Enabled(cmd) {
+				target, destination := project.ProjectID, toPath
+				return shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", body, &destination, overwrite))
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "📤 exported: %s\n", toPath)
 			return nil
@@ -106,7 +134,7 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 		Short: "Import project Remote Config JSON",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := shared.CommandContext(cmd)
 			dryRun, err := cmd.Flags().GetBool("dry-run")
 			if err != nil {
 				return err

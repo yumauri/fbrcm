@@ -53,7 +53,7 @@ func TestProjectRowMatchesWorkspaceStyleAndRightAlignsMetadata(t *testing.T) {
 	if lipgloss.Width(got) != width {
 		t.Fatalf("project row width = %d, want %d: %q", lipgloss.Width(got), width, got)
 	}
-	if !strings.HasPrefix(got, "Demo demo") || !strings.HasSuffix(got, "v7 staled 2020-01-02 03:04:05") {
+	if !strings.HasPrefix(got, "Demo demo") || !strings.HasSuffix(got, "v7 stale 2020-01-02 03:04:05") {
 		t.Fatalf("project row does not match workspace layout: %q", got)
 	}
 	selected := m.renderProjectRow(project, true, width)

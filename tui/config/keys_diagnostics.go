@@ -137,7 +137,8 @@ func validKeyName(name string) bool {
 		}
 	}
 
-	if number, err := strconv.Atoi(strings.TrimPrefix(name, "f")); err == nil && strings.HasPrefix(name, "f") && number >= 1 && number <= 63 {
+	functionNumber := strings.TrimPrefix(name, "f")
+	if number, err := strconv.Atoi(functionNumber); err == nil && strings.HasPrefix(name, "f") && functionNumber == strconv.Itoa(number) && number >= 1 && number <= 63 {
 		return true
 	}
 	switch name {

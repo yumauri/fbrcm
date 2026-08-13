@@ -1,0 +1,2380 @@
+{
+  "$defs": {
+    "artifact_encoding": {
+      "enum": [
+        "none",
+        "json",
+        "utf-8",
+        "base64"
+      ],
+      "type": "string"
+    },
+    "draft_filter": {
+      "minLength": 1,
+      "not": {
+        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[=^/~]?\\s*$"
+      },
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?(?:[=^/~].+|.+)$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@][mode-prefix]draft-project-query",
+      "x-fbrcm-matching": [
+        {
+          "client_target_canonicalization": "unqualified_project_id",
+          "comparison": "unicode_case_insensitive",
+          "default_mode": "fuzzy",
+          "explicit_target_selection": "single_named_template",
+          "fields": [
+            "project_id",
+            "display_name",
+            "repository_aliases"
+          ],
+          "mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "operator": "mode_prefixed_query",
+          "query_normalization": "trim_unicode_whitespace",
+          "target_prefixes": [
+            "client",
+            "server"
+          ],
+          "unqualified_target_selection": "existing_drafts_in_configured_enabled_templates_or_client_fallback"
+        }
+      ]
+    },
+    "draft_selector": {
+      "minLength": 1,
+      "not": {
+        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?\\s*$"
+      },
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?.+$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@](exact draft project ID, exact repository alias, or exact display name); resource matching is case-sensitive and =, ^, /, and ~ are literal characters",
+      "x-fbrcm-matching": [
+        {
+          "candidate_source": "local_draft_target_ids",
+          "client_target_canonicalization": "unqualified_project_id",
+          "comparison": "exact_case_sensitive",
+          "explicit_target_selection": "single_named_template",
+          "fields": [
+            "project_id",
+            "display_name",
+            "repository_aliases"
+          ],
+          "multiple_result": "draft.ambiguous",
+          "operator": "draft_resolution",
+          "precedence": [
+            "exact_draft_project_id",
+            "exact_repository_alias",
+            "exact_display_name"
+          ],
+          "query_normalization": "preserve_argv",
+          "target_prefixes": [
+            "client",
+            "server"
+          ],
+          "unqualified_target_selection": "configured_primary_template_or_client_fallback",
+          "zero_result": "draft.not_found"
+        }
+      ]
+    },
+    "expression": {
+      "minLength": 1,
+      "pattern": ".*\\S.*",
+      "type": "string",
+      "x-fbrcm-grammar": "expr-lang v1.17.8 expression that compiles and evaluates to boolean",
+      "x-fbrcm-language": {
+        "contexts": {
+          "condition": [
+            {
+              "description": "Firebase project ID",
+              "name": "project_id",
+              "type": "string"
+            },
+            {
+              "description": "Firebase project display name",
+              "name": "project",
+              "type": "string"
+            },
+            {
+              "description": "current condition name",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "description": "one-based evaluation priority",
+              "name": "priority",
+              "type": "integer"
+            },
+            {
+              "description": "Firebase condition expression",
+              "name": "expression",
+              "type": "string"
+            },
+            {
+              "description": "condition tag color or empty string",
+              "name": "color",
+              "type": "string"
+            },
+            {
+              "description": "number of conditional-value usages",
+              "name": "usage_count",
+              "type": "integer"
+            },
+            {
+              "description": "usages with group, parameter, value, and value_type",
+              "name": "usages",
+              "type": "list\u003cusage\u003e"
+            }
+          ],
+          "parameter": [
+            {
+              "description": "Firebase project ID",
+              "name": "project_id",
+              "type": "string"
+            },
+            {
+              "description": "Firebase project display name",
+              "name": "project",
+              "type": "string"
+            },
+            {
+              "description": "sorted condition names",
+              "name": "conditions",
+              "type": "list\u003cstring\u003e"
+            },
+            {
+              "description": "sorted parameter-group names",
+              "name": "groups",
+              "type": "list\u003cstring\u003e"
+            },
+            {
+              "description": "parameters keyed by parameter name",
+              "name": "parameters",
+              "type": "map\u003cstring,parameter\u003e"
+            },
+            {
+              "description": "current parameter key",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "description": "current group; root compares equal to null and (root)",
+              "name": "group",
+              "type": "string|null"
+            },
+            {
+              "description": "typed default value",
+              "name": "default",
+              "type": "any"
+            },
+            {
+              "description": "typed default or conditional value",
+              "name": "value",
+              "type": "any"
+            },
+            {
+              "description": "typed conditional values by condition",
+              "name": "conditionals",
+              "type": "map\u003cstring,any\u003e"
+            }
+          ],
+          "project": [
+            {
+              "description": "Firebase project ID",
+              "name": "project_id",
+              "type": "string"
+            },
+            {
+              "description": "Firebase project display name",
+              "name": "project",
+              "type": "string"
+            },
+            {
+              "description": "sorted condition names",
+              "name": "conditions",
+              "type": "list\u003cstring\u003e"
+            },
+            {
+              "description": "sorted parameter-group names",
+              "name": "groups",
+              "type": "list\u003cstring\u003e"
+            },
+            {
+              "description": "parameters keyed by parameter name",
+              "name": "parameters",
+              "type": "map\u003cstring,parameter\u003e"
+            }
+          ]
+        },
+        "documentation": "docs/EXPR.md",
+        "functions": [
+          "all",
+          "any",
+          "filter",
+          "float",
+          "int",
+          "is_boolean",
+          "is_empty",
+          "is_json",
+          "is_number",
+          "is_string",
+          "jq",
+          "keys",
+          "len",
+          "map",
+          "none",
+          "string",
+          "type",
+          "values"
+        ],
+        "name": "expr-lang",
+        "operators": [
+          "==",
+          "!=",
+          "\u003c",
+          "\u003c=",
+          "\u003e",
+          "\u003e=",
+          "\u0026\u0026",
+          "||",
+          "!",
+          "in",
+          "contains",
+          "startsWith",
+          "endsWith",
+          "matches",
+          "|"
+        ],
+        "result_type": "boolean",
+        "value_typing": {
+          "BOOLEAN": "bool",
+          "JSON": "string",
+          "NUMBER": "float",
+          "STRING": "string"
+        },
+        "version": "1.17.8"
+      },
+      "x-fbrcm-validation": [
+        {
+          "language": "expr-lang",
+          "operator": "compile_expression",
+          "result_type": "boolean",
+          "version": "1.17.8"
+        }
+      ]
+    },
+    "expression_context": {
+      "enum": [
+        "project",
+        "parameter",
+        "condition"
+      ],
+      "type": "string"
+    },
+    "filter_mode": {
+      "enum": [
+        "fuzzy",
+        "starts-with",
+        "includes",
+        "exact"
+      ],
+      "type": "string"
+    },
+    "filter_query": {
+      "minLength": 1,
+      "not": {
+        "pattern": "^[=^/~]?\\s*$"
+      },
+      "pattern": "^(?:[=^/~])?.+$",
+      "type": "string",
+      "x-fbrcm-grammar": "optional mode prefix (= exact, ^ starts-with, / includes, ~ fuzzy) followed by query"
+    },
+    "input_selection_rule": {
+      "additionalProperties": false,
+      "properties": {
+        "later_sources": {
+          "const": "ignored_without_consumption"
+        },
+        "on_missing": {
+          "const": "interaction.required"
+        },
+        "operator": {
+          "const": "first_available"
+        },
+        "sources": {
+          "items": false,
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "const": "options.from"
+            },
+            {
+              "const": "stdin.document"
+            }
+          ],
+          "type": "array"
+        }
+      },
+      "required": [
+        "operator",
+        "sources",
+        "on_missing",
+        "later_sources"
+      ],
+      "type": "object"
+    },
+    "input_selection_rules": {
+      "items": {
+        "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/input_selection_rule"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "invariant_expression": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "const": {}
+          },
+          "required": [
+            "const"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "field"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "symbol": {
+              "enum": [
+                "canonical_artifact_bytes",
+                "existing_destination_replaced"
+              ]
+            }
+          },
+          "required": [
+            "symbol"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "and"
+            },
+            "values": {
+              "items": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "op",
+            "values"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "byte_length"
+            },
+            "value": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            },
+            "op": {
+              "const": "count_where"
+            },
+            "where": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "collection",
+            "where"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "left": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            },
+            "op": {
+              "const": "eq"
+            },
+            "right": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "left",
+            "right"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "left": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            },
+            "op": {
+              "const": "gt"
+            },
+            "right": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "left",
+            "right"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "left": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            },
+            "op": {
+              "const": "iff"
+            },
+            "right": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "left",
+            "right"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "if": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            },
+            "op": {
+              "const": "implies"
+            },
+            "then": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "if",
+            "then"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "in"
+            },
+            "set": {
+              "type": "array"
+            },
+            "value": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "value",
+            "set"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "is_non_null"
+            },
+            "value": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "length"
+            },
+            "value": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "lowercase_hex"
+            },
+            "value": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "sha256"
+            },
+            "value": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+            }
+          },
+          "required": [
+            "op",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "sum"
+            },
+            "values": {
+              "items": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "op",
+            "values"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "invariant_rules": {
+      "items": {
+        "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_expression"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "matching_rule": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "client_target_canonicalization": {
+              "const": "unqualified_project_id"
+            },
+            "comparison": {
+              "const": "unicode_case_insensitive"
+            },
+            "default_mode": {
+              "const": "fuzzy"
+            },
+            "explicit_target_selection": {
+              "const": "single_named_template"
+            },
+            "fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "mode_prefixes": {
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "const": "includes"
+                },
+                "=": {
+                  "const": "exact"
+                },
+                "^": {
+                  "const": "starts-with"
+                },
+                "~": {
+                  "const": "fuzzy"
+                }
+              },
+              "required": [
+                "~",
+                "^",
+                "/",
+                "="
+              ],
+              "type": "object"
+            },
+            "operator": {
+              "const": "mode_prefixed_query"
+            },
+            "query_normalization": {
+              "const": "trim_unicode_whitespace"
+            },
+            "target_prefixes": {
+              "items": {
+                "enum": [
+                  "client",
+                  "server"
+                ]
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "unqualified_target_selection": {
+              "enum": [
+                "all_configured_enabled_templates",
+                "existing_drafts_in_configured_enabled_templates_or_client_fallback"
+              ]
+            }
+          },
+          "required": [
+            "operator",
+            "fields",
+            "query_normalization",
+            "default_mode",
+            "mode_prefixes",
+            "comparison"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "client_target_canonicalization": {
+              "const": "unqualified_project_id"
+            },
+            "comparison": {
+              "const": "exact_case_sensitive"
+            },
+            "explicit_target_selection": {
+              "const": "single_named_template"
+            },
+            "fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "operator": {
+              "const": "project_positional_resolution"
+            },
+            "precedence": {
+              "items": false,
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "const": "exact_project_id"
+                },
+                {
+                  "const": "exact_repository_alias"
+                },
+                {
+                  "const": "exact_display_name"
+                }
+              ],
+              "type": "array"
+            },
+            "query_normalization": {
+              "const": "preserve_argv"
+            },
+            "target_prefixes": {
+              "items": {
+                "enum": [
+                  "client",
+                  "server"
+                ]
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "unqualified_target_selection": {
+              "const": "configured_primary_template"
+            }
+          },
+          "required": [
+            "operator",
+            "fields",
+            "query_normalization",
+            "comparison",
+            "precedence"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "candidate_source": {
+              "const": "local_draft_target_ids"
+            },
+            "client_target_canonicalization": {
+              "const": "unqualified_project_id"
+            },
+            "comparison": {
+              "const": "exact_case_sensitive"
+            },
+            "explicit_target_selection": {
+              "const": "single_named_template"
+            },
+            "fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "multiple_result": {
+              "const": "draft.ambiguous"
+            },
+            "operator": {
+              "const": "draft_resolution"
+            },
+            "precedence": {
+              "items": false,
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "const": "exact_draft_project_id"
+                },
+                {
+                  "const": "exact_repository_alias"
+                },
+                {
+                  "const": "exact_display_name"
+                }
+              ],
+              "type": "array"
+            },
+            "query_normalization": {
+              "const": "preserve_argv"
+            },
+            "target_prefixes": {
+              "items": {
+                "enum": [
+                  "client",
+                  "server"
+                ]
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "unqualified_target_selection": {
+              "const": "configured_primary_template_or_client_fallback"
+            },
+            "zero_result": {
+              "const": "draft.not_found"
+            }
+          },
+          "required": [
+            "operator",
+            "candidate_source",
+            "fields",
+            "query_normalization",
+            "comparison",
+            "precedence",
+            "target_prefixes",
+            "unqualified_target_selection",
+            "explicit_target_selection",
+            "client_target_canonicalization",
+            "zero_result",
+            "multiple_result"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "enum": [
+                "auth_id_resolution",
+                "condition_name_resolution",
+                "condition_positional_resolution",
+                "duplicate_source_resolution",
+                "group_name_resolution",
+                "help_path_resolution",
+                "parameter_argument_resolution",
+                "personalization_id_resolution",
+                "profile_name_resolution",
+                "project_alias_resolution",
+                "schema_id_resolution",
+                "version_resolution"
+              ]
+            }
+          },
+          "required": [
+            "operator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "candidate_source": {
+              "const": "executable_commands"
+            },
+            "comparison": {
+              "const": "exact_case_sensitive_argv_components"
+            },
+            "non_executable_result": {
+              "const": "command.not_executable"
+            },
+            "omitted_result": {
+              "const": "capability_index"
+            },
+            "operator": {
+              "const": "command_path_resolution"
+            },
+            "reserved_root_token": {
+              "const": "root"
+            },
+            "unknown_result": {
+              "const": "command.not_found"
+            }
+          },
+          "required": [
+            "operator",
+            "candidate_source",
+            "comparison",
+            "omitted_result",
+            "reserved_root_token",
+            "unknown_result",
+            "non_executable_result"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "all_source": {
+              "const": "options.all"
+            },
+            "canonical_order": {
+              "const": "deduplicate_then_sort_target_id"
+            },
+            "composition": {
+              "const": "exactly_one_source"
+            },
+            "operator": {
+              "const": "draft_batch_selection"
+            },
+            "project_source": {
+              "const": "arguments.project"
+            }
+          },
+          "required": [
+            "operator",
+            "project_source",
+            "all_source",
+            "composition",
+            "canonical_order"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "absent_source_behavior": {
+              "const": "match_all"
+            },
+            "across_source_combination": {
+              "const": "and"
+            },
+            "operator": {
+              "const": "selection_composition"
+            },
+            "repeated_source_combination": {
+              "const": "or"
+            },
+            "sources": {
+              "items": {
+                "pattern": "^(?:arguments|options)\\.[a-z][a-z0-9_-]*$",
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "target_defaults": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "selection": {
+                    "const": "all_configured_projects_enabled_templates"
+                  },
+                  "source": {
+                    "pattern": "^options\\.[a-z][a-z0-9_-]*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "source",
+                  "selection"
+                ],
+                "type": "object"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "operator",
+            "sources",
+            "repeated_source_combination",
+            "across_source_combination",
+            "absent_source_behavior",
+            "target_defaults"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "haystack_normalization": {
+              "const": "unicode_lowercase"
+            },
+            "operator": {
+              "const": "case_insensitive_substring"
+            },
+            "query_normalization": {
+              "const": "trim_then_unicode_lowercase"
+            },
+            "separator": {
+              "const": "\n"
+            }
+          },
+          "required": [
+            "operator",
+            "fields",
+            "query_normalization",
+            "haystack_normalization",
+            "separator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "combination": {
+              "const": "or"
+            },
+            "match": {
+              "const": "substring"
+            },
+            "normalized_fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "normalized_query": {
+              "const": "lowercase_alphanumeric_words"
+            },
+            "operator": {
+              "const": "parameter_search"
+            },
+            "raw_fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "raw_query": {
+              "const": "collapse_unicode_whitespace"
+            }
+          },
+          "required": [
+            "operator",
+            "normalized_fields",
+            "raw_fields",
+            "normalized_query",
+            "raw_query",
+            "match",
+            "combination"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "matching_rules": {
+      "items": {
+        "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/matching_rule"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "no_op_reason": {
+      "enum": [
+        "no_match",
+        "already_applied"
+      ],
+      "type": "string"
+    },
+    "normalization_rule": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "enum": [
+                "trim_unicode_whitespace",
+                "lowercase",
+                "uppercase",
+                "deduplicate_preserve_first",
+                "canonicalize_target_selector",
+                "canonicalize_positional_target_selector"
+              ]
+            },
+            "source": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "source",
+            "target"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "trim_unicode_whitespace_if_prefix"
+            },
+            "prefixes": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "source": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "source",
+            "target",
+            "prefixes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "sort_by_declared_order"
+            },
+            "order": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "source": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "source",
+            "target",
+            "order"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "normalization_rules": {
+      "items": {
+        "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/normalization_rule"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "path_segment": {
+      "not": {
+        "enum": [
+          ".",
+          ".."
+        ]
+      },
+      "pattern": "^[^/\\\\\\s](?:[^/\\\\]*[^/\\\\\\s])?$",
+      "type": "string",
+      "x-fbrcm-grammar": "nonempty single filesystem-safe path segment"
+    },
+    "physical_project_id": {
+      "pattern": "^[^=^/~@\\s][^@\\s]*$",
+      "type": "string",
+      "x-fbrcm-grammar": "literal physical project ID without target-selector syntax"
+    },
+    "physical_project_selector": {
+      "minLength": 1,
+      "not": {
+        "pattern": "^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@"
+      },
+      "pattern": ".*\\S.*",
+      "type": "string",
+      "x-fbrcm-grammar": "exact case-sensitive physical project ID, repository alias, or display name without a client@ or server@ template-target prefix; argv whitespace is preserved",
+      "x-fbrcm-matching": [
+        {
+          "comparison": "exact_case_sensitive",
+          "fields": [
+            "project_id",
+            "display_name",
+            "repository_aliases"
+          ],
+          "operator": "project_positional_resolution",
+          "precedence": [
+            "exact_project_id",
+            "exact_repository_alias",
+            "exact_display_name"
+          ],
+          "query_normalization": "preserve_argv"
+        }
+      ]
+    },
+    "project_alias": {
+      "pattern": "^[a-z][a-z0-9_-]{0,62}$",
+      "type": "string"
+    },
+    "project_positional_selector": {
+      "minLength": 1,
+      "pattern": ".*\\S.*",
+      "type": "string",
+      "x-fbrcm-grammar": "exact case-sensitive project ID, repository alias, or display name without template-target parsing; argv whitespace is preserved and all characters are literal",
+      "x-fbrcm-matching": [
+        {
+          "comparison": "exact_case_sensitive",
+          "fields": [
+            "project_id",
+            "display_name",
+            "repository_aliases"
+          ],
+          "operator": "project_positional_resolution",
+          "precedence": [
+            "exact_project_id",
+            "exact_repository_alias",
+            "exact_display_name"
+          ],
+          "query_normalization": "preserve_argv"
+        }
+      ]
+    },
+    "remote_mutation_status": {
+      "enum": [
+        "unchanged",
+        "preparation-failed",
+        "published",
+        "validation-failed",
+        "conflict",
+        "publish-failed",
+        "published-cache-failed",
+        "published-hook-failed",
+        "drafted",
+        "would-draft",
+        "would-publish",
+        "draft-failed"
+      ],
+      "type": "string"
+    },
+    "target_positional_selector": {
+      "minLength": 1,
+      "not": {
+        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?\\s*$"
+      },
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?.+$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@](exact project ID, exact repository alias, or exact display name); resource matching is case-sensitive and =, ^, /, and ~ are literal characters",
+      "x-fbrcm-matching": [
+        {
+          "client_target_canonicalization": "unqualified_project_id",
+          "comparison": "exact_case_sensitive",
+          "explicit_target_selection": "single_named_template",
+          "fields": [
+            "project_id",
+            "display_name",
+            "repository_aliases"
+          ],
+          "operator": "project_positional_resolution",
+          "precedence": [
+            "exact_project_id",
+            "exact_repository_alias",
+            "exact_display_name"
+          ],
+          "query_normalization": "preserve_argv",
+          "target_prefixes": [
+            "client",
+            "server"
+          ],
+          "unqualified_target_selection": "configured_primary_template"
+        }
+      ]
+    },
+    "target_selector": {
+      "minLength": 1,
+      "not": {
+        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[=^/~]?\\s*$"
+      },
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?(?:[=^/~].+|.+)$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@][mode-prefix]project-query",
+      "x-fbrcm-matching": [
+        {
+          "client_target_canonicalization": "unqualified_project_id",
+          "comparison": "unicode_case_insensitive",
+          "default_mode": "fuzzy",
+          "explicit_target_selection": "single_named_template",
+          "fields": [
+            "project_id",
+            "display_name",
+            "repository_aliases"
+          ],
+          "mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "operator": "mode_prefixed_query",
+          "query_normalization": "trim_unicode_whitespace",
+          "target_prefixes": [
+            "client",
+            "server"
+          ],
+          "unqualified_target_selection": "all_configured_enabled_templates"
+        }
+      ]
+    },
+    "validation_rule": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "accept"
+            }
+          },
+          "required": [
+            "operator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "language": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operator": {
+              "const": "compile_expression"
+            },
+            "result_type": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "version": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "language",
+            "version",
+            "result_type"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cases": {
+              "additionalProperties": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_rule"
+              },
+              "minProperties": 1,
+              "type": "object"
+            },
+            "field": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "normalized_case": {
+              "enum": [
+                "lowercase"
+              ]
+            },
+            "operator": {
+              "const": "dispatch_by_field"
+            }
+          },
+          "required": [
+            "operator",
+            "field",
+            "normalized_case",
+            "cases"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "comparison": {
+              "enum": [
+                "exact_codepoint",
+                "unicode_case_fold"
+              ]
+            },
+            "fields": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array"
+            },
+            "operator": {
+              "const": "fields_differ"
+            }
+          },
+          "required": [
+            "operator",
+            "fields",
+            "comparison"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "match_schema_pattern"
+            }
+          },
+          "required": [
+            "operator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "parse_email"
+            },
+            "parser": {
+              "const": "net/mail.ParseAddress"
+            },
+            "require_exact": {
+              "const": true
+            }
+          },
+          "required": [
+            "operator",
+            "parser",
+            "require_exact"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "consume": {
+              "enum": [
+                "entire_string"
+              ]
+            },
+            "operator": {
+              "const": "parse_json"
+            },
+            "specification": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "specification",
+            "consume"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "parse_duration"
+            },
+            "parser": {
+              "const": "time.ParseDuration"
+            },
+            "require_positive": {
+              "const": true
+            }
+          },
+          "required": [
+            "operator",
+            "parser",
+            "require_positive"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "normalization": {
+              "const": "trim_unicode_whitespace"
+            },
+            "operator": {
+              "const": "parse_uri"
+            },
+            "parser": {
+              "const": "net/url.ParseRequestURI"
+            },
+            "require_absolute": {
+              "const": true
+            }
+          },
+          "required": [
+            "operator",
+            "parser",
+            "normalization",
+            "require_absolute"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "allow_empty": {
+              "const": true
+            },
+            "operator": {
+              "const": "reject_raw_whitespace_only"
+            }
+          },
+          "required": [
+            "operator",
+            "allow_empty"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "parse_time"
+            },
+            "specification": {
+              "const": "Go time.RFC3339"
+            }
+          },
+          "required": [
+            "operator",
+            "specification"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "absolute_parser": {
+              "const": "strconv.ParseInt base 10 bitSize 64; require result \u003e 0"
+            },
+            "maximum_relative_distance": {
+              "const": 299
+            },
+            "operator": {
+              "const": "parse_version_selector"
+            },
+            "relative_parser": {
+              "const": "strconv.ParseInt base 10 bitSize 32; require result \u003e 0"
+            }
+          },
+          "required": [
+            "operator",
+            "absolute_parser",
+            "relative_parser",
+            "maximum_relative_distance"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "minimum": {
+              "const": 1
+            },
+            "operator": {
+              "const": "parse_positive_integer"
+            },
+            "parser": {
+              "const": "strconv.Atoi"
+            }
+          },
+          "required": [
+            "operator",
+            "parser",
+            "minimum"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "maximum": {
+              "const": "resolved_condition_count_plus_one"
+            },
+            "operation": {
+              "const": "add"
+            },
+            "operator": {
+              "const": "condition_priority"
+            },
+            "project_argument": {
+              "const": "arguments.project"
+            },
+            "zero_behavior": {
+              "const": "append"
+            }
+          },
+          "required": [
+            "operator",
+            "operation",
+            "project_argument",
+            "maximum",
+            "zero_behavior"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "maximum": {
+              "const": "resolved_condition_count"
+            },
+            "operation": {
+              "const": "move"
+            },
+            "operator": {
+              "const": "condition_priority"
+            },
+            "project_argument": {
+              "const": "arguments.project"
+            }
+          },
+          "required": [
+            "operator",
+            "operation",
+            "project_argument",
+            "maximum"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "local_validate"
+            },
+            "validator": {
+              "const": "firebase.NormalizeRemoteConfigForUpdate"
+            }
+          },
+          "required": [
+            "operator",
+            "validator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "grammar": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operator": {
+              "const": "remote_validate"
+            },
+            "service": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "service",
+            "grammar"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "accepted_forms": {
+              "items": {
+                "enum": [
+                  "bare_id",
+                  "resolved_project_resource_name"
+                ]
+              },
+              "maxItems": 2,
+              "minItems": 2,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "collection": {
+              "enum": [
+                "experiments",
+                "rollouts"
+              ]
+            },
+            "operator": {
+              "const": "managed_feature_id"
+            },
+            "project_argument": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "collection",
+            "project_argument",
+            "accepted_forms"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "operator": {
+              "const": "unique_by"
+            }
+          },
+          "required": [
+            "operator",
+            "field"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "unique_tokens"
+            },
+            "range": {
+              "enum": [
+                "all_but_last"
+              ]
+            },
+            "separator": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "operator",
+            "separator",
+            "range"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "validation_rules": {
+      "items": {
+        "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_rule"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "validation_source": {
+      "enum": [
+        "",
+        "local",
+        "firebase"
+      ],
+      "type": "string"
+    },
+    "version_selector": {
+      "pattern": "^(?:\\+?0*[1-9]\\d*|current|latest|previous|(?:current|latest)~\\+?0*(?:[1-9]\\d?|[12]\\d{2}))$",
+      "type": "string",
+      "x-fbrcm-grammar": "exact case-sensitive positive version number accepted by strconv.ParseInt, current, latest, previous, current~N, or latest~N; argv whitespace is not trimmed; numeric components accept an optional plus sign and leading zeroes",
+      "x-fbrcm-validation": [
+        {
+          "absolute_parser": "strconv.ParseInt base 10 bitSize 64; require result \u003e 0",
+          "maximum_relative_distance": 299,
+          "operator": "parse_version_selector",
+          "relative_parser": "strconv.ParseInt base 10 bitSize 32; require result \u003e 0"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:semantic",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-fbrcm-extension-language": {
+    "conditional_option_effectiveness": {
+      "keyword": "x-fbrcm-effective-when",
+      "semantics": "When present, argv accepts the option but applies it only when at least one listed condition clause is true; clauses use the same OR-of-AND predicate language as capability effective_when."
+    },
+    "input_selection": {
+      "keyword": "x-fbrcm-input-selection",
+      "operators": {
+        "first_available": {
+          "operands": [
+            "sources",
+            "on_missing",
+            "later_sources"
+          ],
+          "result": "selected_input_source_or_interaction",
+          "semantics": "Select options.from when its nonempty supplied value is present; otherwise select stdin.document when a redirected JSON document is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."
+        }
+      },
+      "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/input_selection_rules",
+      "semantics": "Evaluate sources in their declared order and select the first available source. Do not consume or apply later sources. If none is available, return the declared structured result."
+    },
+    "invariants": {
+      "keyword": "x-fbrcm-invariants",
+      "operators": {
+        "and": {
+          "operands": [
+            "values"
+          ],
+          "result": "boolean",
+          "semantics": "True exactly when every expression in values is true."
+        },
+        "byte_length": {
+          "operands": [
+            "value"
+          ],
+          "result": "integer",
+          "semantics": "Number of bytes in the byte-string operand."
+        },
+        "count_where": {
+          "operands": [
+            "collection",
+            "where"
+          ],
+          "result": "integer",
+          "semantics": "Number of collection members for which where evaluates true."
+        },
+        "eq": {
+          "operands": [
+            "left",
+            "right"
+          ],
+          "result": "boolean",
+          "semantics": "JSON-semantic equality of left and right."
+        },
+        "gt": {
+          "operands": [
+            "left",
+            "right"
+          ],
+          "result": "boolean",
+          "semantics": "Numeric left is greater than numeric right."
+        },
+        "iff": {
+          "operands": [
+            "left",
+            "right"
+          ],
+          "result": "boolean",
+          "semantics": "Left and right have the same Boolean truth value."
+        },
+        "implies": {
+          "operands": [
+            "if",
+            "then"
+          ],
+          "result": "boolean",
+          "semantics": "False only when if is true and then is false."
+        },
+        "in": {
+          "operands": [
+            "value",
+            "set"
+          ],
+          "result": "boolean",
+          "semantics": "Value equals at least one member of set."
+        },
+        "is_non_null": {
+          "operands": [
+            "value"
+          ],
+          "result": "boolean",
+          "semantics": "The value exists and is not JSON null."
+        },
+        "length": {
+          "operands": [
+            "value"
+          ],
+          "result": "integer",
+          "semantics": "Number of members in an array."
+        },
+        "lowercase_hex": {
+          "operands": [
+            "value"
+          ],
+          "result": "string",
+          "semantics": "Lowercase hexadecimal encoding of the byte-string operand."
+        },
+        "sha256": {
+          "operands": [
+            "value"
+          ],
+          "result": "bytes",
+          "semantics": "SHA-256 digest of the byte-string operand."
+        },
+        "sum": {
+          "operands": [
+            "values"
+          ],
+          "result": "number",
+          "semantics": "Arithmetic sum of the numeric operands."
+        }
+      },
+      "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/invariant_rules",
+      "semantics": "Evaluate each expression against the annotated DTO and require true. Fields are relative JSON member paths; item is bound to each array member by count_where.",
+      "symbols": {
+        "canonical_artifact_bytes": "Canonical bytes defined by the artifact encoding and media-type rules in docs/cli-contract.md.",
+        "existing_destination_replaced": "True exactly when an authorized artifact write replaced an existing destination."
+      },
+      "term_forms": {
+        "const": "The literal JSON value in const.",
+        "field": "The value at the dot-separated field path in the current evaluation scope.",
+        "symbol": "A contract-defined external value named by symbol."
+      }
+    },
+    "matching": {
+      "keyword": "x-fbrcm-matching",
+      "operators": {
+        "auth_id_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the positional auth ID exactly and case-sensitively against configured canonical auth IDs. No match returns auth.not_found; IDs are unique."
+        },
+        "case_insensitive_substring": {
+          "operands": [
+            "fields",
+            "query_normalization",
+            "haystack_normalization",
+            "separator"
+          ],
+          "result": "boolean",
+          "semantics": "Join the declared fields with separator, normalize the query and haystack as declared, and test whether the haystack contains the query."
+        },
+        "command_path_resolution": {
+          "operands": [
+            "candidate_source",
+            "comparison",
+            "omitted_result",
+            "reserved_root_token",
+            "unknown_result",
+            "non_executable_result"
+          ],
+          "result": "selection",
+          "semantics": "Resolve the supplied argv path components exactly and case-sensitively against the declared executable command inventory. Omission returns the capability index, the reserved single root token returns the executable root operation, unknown paths return the declared not-found problem, and navigational command groups return the declared non-executable problem."
+        },
+        "condition_name_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Resolve a condition by exact name first, then by Unicode case-insensitive equality in stored condition order. This operator is used by the non-positional update condition option; no match returns condition.not_found."
+        },
+        "condition_positional_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the untrimmed positional condition selector exactly and case-sensitively against canonical condition names. No match returns condition.not_found; duplicate exact names resolve to the first stored condition."
+        },
+        "draft_batch_selection": {
+          "operands": [
+            "project_source",
+            "all_source",
+            "composition",
+            "canonical_order"
+          ],
+          "result": "selection",
+          "semantics": "Require exactly one of explicit project selectors or the truthy all option. Resolve each project selector with draft_resolution, deduplicate canonical target IDs, and sort them lexicographically; all selects every existing local draft target ID."
+        },
+        "draft_resolution": {
+          "operands": [
+            "candidate_source",
+            "fields",
+            "query_normalization",
+            "comparison",
+            "precedence",
+            "target_prefixes",
+            "unqualified_target_selection",
+            "explicit_target_selection",
+            "client_target_canonicalization",
+            "zero_result",
+            "multiple_result"
+          ],
+          "result": "selection",
+          "semantics": "Resolve only existing local draft target IDs. Parse an optional template target without trimming its project selector, then compare exactly and case-sensitively in precedence order: draft physical project ID, repository alias, then display name. Unqualified queries select the configured primary template. Substrings and mode prefixes have no search meaning. Zero and multiple matches return the declared typed draft problems."
+        },
+        "duplicate_source_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the untrimmed positional source name exactly and case-sensitively against parameter keys across root and all groups, skip a target on zero matches, and return parameter.ambiguous with candidates on multiple exact matches."
+        },
+        "group_name_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the untrimmed positional group selector exactly and case-sensitively against canonical group map keys. Zero matches skip that target; multiple matches are impossible because group keys are unique."
+        },
+        "help_path_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Resolve the longest exact, case-sensitive existing command prefix, including navigational groups, and render its help. Ignore unmatched suffix components. With no existing first component or no components, render root help; this selector does not return not-found or ambiguity problems."
+        },
+        "mode_prefixed_query": {
+          "operands": [
+            "fields",
+            "query_normalization",
+            "default_mode",
+            "mode_prefixes",
+            "comparison",
+            "target_prefixes?",
+            "unqualified_target_selection?",
+            "explicit_target_selection?",
+            "client_target_canonicalization?"
+          ],
+          "result": "boolean_or_target_selection",
+          "semantics": "Match the declared resource fields after optional target-prefix parsing, using the first query rune as a declared mode prefix or the default mode. Fuzzy matches query runes as an ordered subsequence; starts-with, includes, and exact have their literal meanings. Target-aware rules additionally declare unqualified expansion, explicit single-template selection, and client target canonicalization."
+        },
+        "parameter_argument_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the untrimmed positional parameter selector exactly and case-sensitively against canonical parameter keys across root and groups. It conflicts with options.filter and composes with the other selector sources declared by selection_composition; zero matches produce the command's documented empty or no-op result."
+        },
+        "parameter_search": {
+          "operands": [
+            "normalized_fields",
+            "raw_fields",
+            "normalized_query",
+            "raw_query",
+            "match",
+            "combination"
+          ],
+          "result": "boolean",
+          "semantics": "Build both query variants. The normalized variant lowercases letters and digits, replaces every other rune with a space, and collapses Unicode whitespace; the raw variant only collapses Unicode whitespace. Match each against the corresponding joined fields and combine the results as declared."
+        },
+        "personalization_id_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the untrimmed positional personalization ID exactly and case-sensitively against canonical IDs and return personalization.not_found on zero matches."
+        },
+        "profile_name_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the positional existing-profile name exactly and case-sensitively against canonical profile directory names. No match returns profile.not_found; profile names are unique."
+        },
+        "project_alias_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the positional existing project-alias name exactly and case-sensitively against canonical repository alias keys. No match is a successful unchanged result because alias removal is idempotent; alias keys are unique."
+        },
+        "project_positional_resolution": {
+          "operands": [
+            "fields",
+            "query_normalization",
+            "comparison",
+            "precedence",
+            "target_prefixes?",
+            "unqualified_target_selection?",
+            "explicit_target_selection?",
+            "client_target_canonicalization?"
+          ],
+          "result": "selection",
+          "semantics": "Resolve the untrimmed literal project selector exactly and case-sensitively in precedence order: project ID, repository alias, then display name. Substrings and mode prefixes have no search meaning. Target-aware rules additionally declare primary-template resolution, explicit single-template selection, and client target canonicalization."
+        },
+        "schema_id_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Look up the complete schema ID by exact case-sensitive equality in the embedded schema registry and return schema.not_found on zero matches; multiple matches are impossible because schema IDs are unique."
+        },
+        "selection_composition": {
+          "operands": [
+            "sources",
+            "repeated_source_combination",
+            "across_source_combination",
+            "absent_source_behavior",
+            "target_defaults"
+          ],
+          "result": "selection",
+          "semantics": "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source is absent."
+        },
+        "version_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, and versions.diff defaults an omitted to argument to current."
+        }
+      },
+      "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/matching_rules",
+      "semantics": "Apply the declared query preparation and matching algorithm when predicting local selection. Matching metadata does not mutate the normalized invocation value unless a separate normalization rule says so."
+    },
+    "normalization": {
+      "keyword": "x-fbrcm-normalization",
+      "operators": {
+        "canonicalize_positional_target_selector": {
+          "operands": [
+            "source",
+            "target"
+          ],
+          "result": "string",
+          "semantics": "Recognize client@ and server@ case-insensitively, lowercase an explicit target prefix, omit an explicit client@ prefix from the canonical target identity, and preserve the project selector exactly without trimming whitespace."
+        },
+        "canonicalize_target_selector": {
+          "operands": [
+            "source",
+            "target"
+          ],
+          "result": "string",
+          "semantics": "Trim outer Unicode whitespace, recognize client@ and server@ case-insensitively, lowercase an explicit target prefix, trim Unicode whitespace around the remaining project query, and preserve whether client@ was explicit."
+        },
+        "deduplicate_preserve_first": {
+          "operands": [
+            "source",
+            "target"
+          ],
+          "result": "array",
+          "semantics": "Remove repeated array values after item normalization while preserving the first occurrence and its order."
+        },
+        "lowercase": {
+          "operands": [
+            "source",
+            "target"
+          ],
+          "result": "string",
+          "semantics": "Convert the source string to lowercase."
+        },
+        "sort_by_declared_order": {
+          "operands": [
+            "source",
+            "target",
+            "order"
+          ],
+          "result": "array",
+          "semantics": "Sort array values according to the complete declared order after item normalization and deduplication."
+        },
+        "trim_unicode_whitespace": {
+          "operands": [
+            "source",
+            "target"
+          ],
+          "result": "string",
+          "semantics": "Remove the leading and trailing Unicode White_Space code points from the source string."
+        },
+        "trim_unicode_whitespace_if_prefix": {
+          "operands": [
+            "source",
+            "target",
+            "prefixes"
+          ],
+          "result": "string",
+          "semantics": "Trim outer Unicode whitespace only when the trimmed value starts with one of the declared prefixes; otherwise preserve the source string."
+        },
+        "uppercase": {
+          "operands": [
+            "source",
+            "target"
+          ],
+          "result": "string",
+          "semantics": "Convert the source string to uppercase."
+        }
+      },
+      "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/normalization_rules",
+      "semantics": "Apply the listed operations in order when converting raw argv to the normalized invocation object, before validating that object."
+    },
+    "option_effectiveness": {
+      "keyword": "x-fbrcm-effective",
+      "semantics": "False means argv accepts the option but the selected command does not apply its value; absence means effective."
+    },
+    "validation": {
+      "keyword": "x-fbrcm-validation",
+      "operators": {
+        "accept": {
+          "operands": null,
+          "result": "accept",
+          "semantics": "Accept the instance without an additional check."
+        },
+        "compile_expression": {
+          "operands": [
+            "language",
+            "version",
+            "result_type"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Compile the complete string with the named language and require the declared result type."
+        },
+        "condition_priority": {
+          "operands": [
+            "operation",
+            "project_argument",
+            "maximum",
+            "zero_behavior?"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "After resolving the project template and loading its effective Remote Config, enforce the declared condition-count-dependent upper bound. Add accepts zero as append and otherwise accepts 1 through count plus one; move accepts 1 through count. Out-of-range values return condition.invalid."
+        },
+        "dispatch_by_field": {
+          "operands": [
+            "field",
+            "normalized_case",
+            "cases"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Read the sibling field, normalize its case as declared, and evaluate the matching case rule."
+        },
+        "fields_differ": {
+          "operands": [
+            "fields",
+            "comparison"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Read both named fields and require unequal values after the declared comparison normalization."
+        },
+        "local_validate": {
+          "operands": [
+            "validator"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Decode a clone of the Remote Config template and require firebase.NormalizeRemoteConfigForUpdate to succeed before import transformations are applied."
+        },
+        "managed_feature_id": {
+          "operands": [
+            "collection",
+            "project_argument",
+            "accepted_forms"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Without trimming argv, accept either a slash-free ID exactly as supplied or the exact case-sensitive Firebase resource name for the resolved project and declared managed-feature collection. Remote lookup succeeds only for a canonical existing ID."
+        },
+        "match_schema_pattern": {
+          "operands": null,
+          "result": "accept_or_reject",
+          "semantics": "Apply the pattern in the active conditional schema to the instance."
+        },
+        "parse_duration": {
+          "operands": [
+            "parser",
+            "require_positive"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Parse the complete duration with the named runtime parser, reject syntax and overflow errors, and require a result greater than zero when require_positive is true."
+        },
+        "parse_email": {
+          "operands": [
+            "parser",
+            "require_exact"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Parse the complete address with the named parser and require the parsed address to equal the input when require_exact is true."
+        },
+        "parse_json": {
+          "operands": [
+            "specification",
+            "consume"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Parse the string as JSON and, when consume is entire_string, reject trailing non-whitespace input."
+        },
+        "parse_positive_integer": {
+          "operands": [
+            "parser",
+            "minimum"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Parse the entire decimal string with the named runtime parser and require a result at least minimum; parser overflow is rejection."
+        },
+        "parse_time": {
+          "operands": [
+            "specification"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Parse the complete timestamp using the named runtime layout and parser semantics."
+        },
+        "parse_uri": {
+          "operands": [
+            "parser",
+            "normalization",
+            "require_absolute"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Normalize the string as declared, parse it with the named parser, and require an absolute URI with a nonempty scheme when require_absolute is true."
+        },
+        "parse_version_selector": {
+          "operands": [
+            "absolute_parser",
+            "relative_parser",
+            "maximum_relative_distance"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Apply the named runtime integer parsers to absolute and relative numeric components, require positive results, and reject a relative distance above the declared maximum."
+        },
+        "reject_raw_whitespace_only": {
+          "operands": [
+            "allow_empty"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Inspect the original argv string before normalization; accept an exact empty string when allow_empty is true, but reject every nonempty string made only of Unicode whitespace."
+        },
+        "remote_validate": {
+          "operands": [
+            "service",
+            "grammar"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Require the named remote service to accept the instance under the declared grammar."
+        },
+        "unique_by": {
+          "operands": [
+            "field"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Require the named field to be present and pairwise unique across all array members."
+        },
+        "unique_tokens": {
+          "operands": [
+            "separator",
+            "range"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Split the string by separator and require tokens in the selected range to be pairwise distinct."
+        }
+      },
+      "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_rules",
+      "semantics": "Every listed rule must accept the instance after x-fbrcm-normalization and standard Draft 2020-12 validation, except reject_raw_whitespace_only, which evaluates the original argv value before normalization."
+    },
+    "version": 1
+  }
+}

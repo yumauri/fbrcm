@@ -29,6 +29,34 @@ func TestParseCloneRemoteConfigRejectsInvalidJSON(t *testing.T) {
 	}
 }
 
+func TestParseCloneRemoteConfigRejectsTypedNulls(t *testing.T) {
+	tests := []string{
+		`null`,
+		`{"conditions":[null]}`,
+		`{"conditions":[{"name":null,"expression":"true"}]}`,
+		`{"parameters":{"flag":null}}`,
+		`{"parameters":{"flag":{"description":null}}}`,
+		`{"parameters":{"flag":{"defaultValue":{"value":null}}}}`,
+		`{"parameters":{"flag":{"conditionalValues":{"beta":null}}}}`,
+		`{"parameterGroups":{"group":null}}`,
+		`{"parameterGroups":{"group":{"description":null}}}`,
+		`{"version":null}`,
+		`{"version":{"versionNumber":null}}`,
+		`{"version":{"updateUser":null}}`,
+	}
+	for _, raw := range tests {
+		if _, err := ParseCloneRemoteConfig([]byte(raw)); err == nil {
+			t.Errorf("ParseCloneRemoteConfig accepted typed null: %s", raw)
+		}
+	}
+}
+
+func TestParseCloneRemoteConfigKeepsNullableContainers(t *testing.T) {
+	if _, err := ParseCloneRemoteConfig([]byte(`{"conditions":null,"parameters":null,"parameterGroups":null}`)); err != nil {
+		t.Fatalf("ParseCloneRemoteConfig rejected nullable containers: %v", err)
+	}
+}
+
 func TestCloneRemoteConfigDeepCopiesMaps(t *testing.T) {
 	original := &RemoteConfig{
 		Parameters: map[string]RemoteConfigParam{

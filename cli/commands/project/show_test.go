@@ -28,7 +28,7 @@ func TestShowCommandPrintsProjectDetailsAndAuthIdentities(t *testing.T) {
 	cmd := newShowCommand(svc)
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"alpha"})
+	cmd.SetArgs([]string{"alpha-project"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute show command: %v", err)
@@ -65,7 +65,7 @@ func TestShowCommandJSONUsesProjectListContract(t *testing.T) {
 	cmd := newShowCommand(svc)
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"alpha", "--json"})
+	cmd.SetArgs([]string{"alpha-project", "--json"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute show command: %v", err)

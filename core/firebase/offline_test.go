@@ -1,6 +1,7 @@
 package firebase
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -37,18 +38,36 @@ func TestInitOfflineModeFromConnectivityProbe(t *testing.T) {
 	t.Cleanup(func() { SetOfflineMode(false) })
 
 	t.Run("online", func(t *testing.T) {
-		initOfflineMode("", false, func() error { return nil })
+		initOfflineMode("", false, true, func() error { return nil })
 		if IsOffline() {
 			t.Fatal("successful connectivity probe enabled offline mode")
 		}
 	})
 
 	t.Run("offline", func(t *testing.T) {
-		initOfflineMode("", false, func() error { return errors.New("unreachable") })
+		initOfflineMode("", false, true, func() error { return errors.New("unreachable") })
 		if !IsOffline() {
 			t.Fatal("failed connectivity probe did not enable offline mode")
 		}
 	})
+}
+
+func TestInitOfflineModeWithoutProbeStillHonorsEnvironment(t *testing.T) {
+	t.Cleanup(func() { SetOfflineMode(false) })
+	t.Setenv(env.Offline, "1")
+	called := false
+	initOfflineMode("1", true, false, func() error { called = true; return nil })
+	if called || !IsOffline() {
+		t.Fatalf("local initialization = called:%t offline:%t, want false/true", called, IsOffline())
+	}
+}
+
+func TestDefaultConnectivityProbeUsesParentContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := defaultConnectivityProbe(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("defaultConnectivityProbe = %v, want context canceled", err)
+	}
 }
 
 func TestProbeConnectivityUsesHTTPHead(t *testing.T) {

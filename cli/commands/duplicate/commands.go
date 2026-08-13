@@ -1,12 +1,12 @@
 package duplicatecmd
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -48,6 +48,7 @@ func New(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and duplicate without confirmation")
 	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
+	contract.RegisterResponse(cmd, []sharedrc.RemoteMutationJSONResult{})
 	return cmd
 }
 
@@ -76,16 +77,16 @@ func readDuplicateOptions(cmd *cobra.Command, args []string) (duplicateOptions, 
 	if err != nil {
 		return duplicateOptions{}, err
 	}
-	source := strings.TrimSpace(args[0])
+	source := args[0]
 	target := strings.TrimSpace(args[1])
-	if source == "" {
-		return duplicateOptions{}, fmt.Errorf("source parameter key cannot be empty")
+	if strings.TrimSpace(source) == "" {
+		return duplicateOptions{}, shared.InvalidArgument(fmt.Errorf("source parameter key cannot be empty"))
 	}
 	if target == "" {
-		return duplicateOptions{}, fmt.Errorf("target parameter key cannot be empty")
+		return duplicateOptions{}, shared.InvalidArgument(fmt.Errorf("target parameter key cannot be empty"))
 	}
-	if strings.EqualFold(source, target) {
-		return duplicateOptions{}, fmt.Errorf("source and target parameter keys must differ")
+	if source == target {
+		return duplicateOptions{}, shared.InvalidArgument(fmt.Errorf("source and target parameter keys must differ"))
 	}
 	return duplicateOptions{
 		projectFilters: projectFilters,
@@ -100,7 +101,7 @@ func readDuplicateOptions(cmd *cobra.Command, args []string) (duplicateOptions, 
 }
 
 func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOptions) error {
-	ctx := context.Background()
+	ctx := shared.CommandContext(cmd)
 	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -122,8 +123,15 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 	}
 	strfold.SortProjects(projects, func(project core.Project) string { return project.Name }, func(project core.Project) string { return project.ProjectID })
 
-	plan := func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteConfigMutation, error) {
-		return func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+	plan := func(project core.Project, cfg *sharedrc.ProjectConfig) (sharedrc.RemoteMutationPlan, error) {
+		_, found, err := resolveSource(cfg.Config, opts.source)
+		if err != nil {
+			return sharedrc.RemoteMutationPlan{}, err
+		}
+		if !found {
+			return sharedrc.RemoteMutationPlan{}, nil
+		}
+		return sharedrc.RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			changed, finalCfg, err := duplicateProject(cmd, project, current, opts.source, opts.target, opts.yes)
 			if err != nil {
 				return 0, nil, err
@@ -132,13 +140,13 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 				return 0, finalCfg, nil
 			}
 			return 1, finalCfg, nil
-		}, nil
+		}}, nil
 	}
 	var totals sharedrc.RemoteMutationTotals
 	if opts.draft {
-		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, "duplicate", plan)
+		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, len(opts.projectFilters) == 0 && strings.TrimSpace(opts.projectExpr) == "", "duplicate", plan)
 	} else {
-		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, "duplicate", "📋", plan)
+		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, len(opts.projectFilters) == 0 && strings.TrimSpace(opts.projectExpr) == "", "duplicate", "📋", plan)
 	}
 	corelog.For("duplicate").Info("total", "projects", totals.ModifiedProjects, "parameters", totals.ChangedParams)
 	if writeErr := sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.draft], "📋"); writeErr != nil {
@@ -175,11 +183,14 @@ func duplicateParameter(cfg *firebase.RemoteConfig, source, target string) (bool
 		return false, nil, shared.ParamTarget{}, err
 	}
 	sourceTarget, found, err := resolveSource(finalCfg, source)
-	if err != nil || !found {
+	if err != nil {
 		return false, finalCfg, sourceTarget, err
 	}
-	if paramExistsFold(finalCfg, target) {
-		return false, finalCfg, sourceTarget, fmt.Errorf("target parameter %q already exists", target)
+	if !found {
+		return false, finalCfg, sourceTarget, nil
+	}
+	if paramExists(finalCfg, target) {
+		return false, finalCfg, sourceTarget, &shared.ConflictError{Code: "parameter.exists", Resource: "parameter", Target: target, Err: fmt.Errorf("target parameter %q already exists", target)}
 	}
 	if err := draft.DuplicateParameterNamed(sourceTarget.Group, sourceTarget.Key, target)(finalCfg); err != nil {
 		return false, finalCfg, sourceTarget, err
@@ -187,9 +198,9 @@ func duplicateParameter(cfg *firebase.RemoteConfig, source, target string) (bool
 	return true, finalCfg, sourceTarget, nil
 }
 
-func paramExistsFold(cfg *firebase.RemoteConfig, requested string) bool {
+func paramExists(cfg *firebase.RemoteConfig, requested string) bool {
 	for _, target := range shared.CollectParamTargets(cfg) {
-		if strings.EqualFold(target.Key, requested) {
+		if target.Key == requested {
 			return true
 		}
 	}
@@ -199,7 +210,7 @@ func paramExistsFold(cfg *firebase.RemoteConfig, requested string) bool {
 func resolveSource(cfg *firebase.RemoteConfig, requested string) (shared.ParamTarget, bool, error) {
 	var matches []shared.ParamTarget
 	for _, target := range shared.CollectParamTargets(cfg) {
-		if strings.EqualFold(target.Key, requested) {
+		if target.Key == requested {
 			matches = append(matches, target)
 		}
 	}
@@ -207,7 +218,11 @@ func resolveSource(cfg *firebase.RemoteConfig, requested string) (shared.ParamTa
 		return shared.ParamTarget{}, false, nil
 	}
 	if len(matches) > 1 {
-		return shared.ParamTarget{}, false, fmt.Errorf("source parameter %q is ambiguous across groups", requested)
+		candidates := make([]shared.SelectionCandidate, 0, len(matches))
+		for _, match := range matches {
+			candidates = append(candidates, shared.SelectionCandidate{Name: shared.FormatParameterHeader(match.Key, match.Group), ID: match.Key})
+		}
+		return shared.ParamTarget{}, false, &shared.SelectionError{Resource: "parameter", Kind: "ambiguous", Query: requested, Candidates: candidates, Err: fmt.Errorf("source parameter %q is ambiguous across groups", requested)}
 	}
 	return matches[0], true, nil
 }

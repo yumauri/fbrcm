@@ -42,7 +42,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "auth", "cache", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "hooks", "personalizations", "profile", "project", "projects", "rollouts", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "personalizations", "profile", "project", "projects", "rollouts", "schema", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -66,7 +66,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{20, 20, 20}) {
+	if !reflect.DeepEqual(counts, []int{24, 24, 24}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }
@@ -83,6 +83,27 @@ func TestRootCommandDefinesProfileOverride(t *testing.T) {
 	localFlag := cmd.PersistentFlags().Lookup("no-local-config")
 	if localFlag == nil || !strings.Contains(localFlag.Usage, "FBRCM_NO_LOCAL_CONFIG") {
 		t.Fatalf("no-local-config flag = %#v", localFlag)
+	}
+}
+
+func TestRootCommandRejectsWhitespaceOnlyInvocationValues(t *testing.T) {
+	tests := [][]string{
+		{"--profile", "   ", "cache", "path"},
+		{"config", "set", "powerline_glyphs", "   "},
+		{"delete", "   "},
+	}
+	for _, args := range tests {
+		t.Run(strings.Join(args, "_"), func(t *testing.T) {
+			cmd := NewRootForContract("test")
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			cmd.SetArgs(args)
+			_, err := cmd.ExecuteC()
+			var argument *shared.ArgumentError
+			if !errors.As(err, &argument) {
+				t.Fatalf("ExecuteC(%q) error = %T %v, want typed argument error", args, err, err)
+			}
+		})
 	}
 }
 
@@ -108,7 +129,11 @@ func TestRootCommandSkipsConnectivityProbeForHelpAndVersion(t *testing.T) {
 	for _, args := range [][]string{{"--help"}, {"help"}, {"--version"}} {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
 			calls := 0
-			cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+			cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(_ context.Context, probe bool) {
+				if probe {
+					calls++
+				}
+			})
 			cmd.SetOut(&bytes.Buffer{})
 			cmd.SetErr(&bytes.Buffer{})
 			cmd.SetArgs(args)
@@ -129,7 +154,11 @@ func TestRootCommandTreatsConfigAsLocalRecoverySurface(t *testing.T) {
 	t.Setenv(env.Profile, "../invalid")
 
 	calls := 0
-	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(_ context.Context, probe bool) {
+		if probe {
+			calls++
+		}
+	})
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{"config", "show", "powerline_glyphs"})
@@ -148,7 +177,11 @@ func TestRootCommandTreatsHooksAsLocalRecoverySurface(t *testing.T) {
 	t.Setenv(env.Profile, "../invalid")
 
 	calls := 0
-	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(_ context.Context, probe bool) {
+		if probe {
+			calls++
+		}
+	})
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{"hooks", "status", "--json"})
@@ -167,7 +200,11 @@ func TestRootCommandTreatsProjectAliasesAsLocalRecoverySurface(t *testing.T) {
 	t.Setenv(env.Profile, "../invalid")
 
 	calls := 0
-	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(_ context.Context, probe bool) {
+		if probe {
+			calls++
+		}
+	})
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{"projects", "aliases", "list", "--json"})
@@ -179,7 +216,7 @@ func TestRootCommandTreatsProjectAliasesAsLocalRecoverySurface(t *testing.T) {
 	}
 }
 
-func TestRootCommandProbesBeforeExecution(t *testing.T) {
+func TestRootCommandSkipsProbeForLocalProfileCommand(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
@@ -190,32 +227,29 @@ func TestRootCommandProbesBeforeExecution(t *testing.T) {
 	t.Cleanup(func() { _ = config.SetProfileOverride("") })
 
 	calls := 0
-	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() { calls++ })
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(_ context.Context, probe bool) {
+		if probe {
+			calls++
+		}
+	})
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{"profile"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute profile: %v", err)
 	}
-	if calls != 1 {
-		t.Fatalf("connectivity probe calls = %d, want 1", calls)
+	if calls != 0 {
+		t.Fatalf("connectivity probe calls = %d, want 0", calls)
 	}
 }
 
 func TestCommandExitCodeHonorsDiffContract(t *testing.T) {
 	cmd := &cobra.Command{Use: "diff"}
-	shared.AddDiffExitCodeFlag(cmd)
-	original := fmt.Errorf("failed")
-	if got := commandExitCode(cmd, original); got != 1 {
-		t.Fatalf("default error exit code = %d, want 1", got)
+	original := &shared.ExpressionError{Expression: "group ==", Context: "parameter", Err: fmt.Errorf("failed")}
+	if got := commandExitCode(cmd, original); got != 8 {
+		t.Fatalf("default error exit code = %d, want 8", got)
 	}
-	if err := cmd.Flags().Set("exit-code", "true"); err != nil {
-		t.Fatal(err)
-	}
-	if got := commandExitCode(cmd, original); got != 2 {
-		t.Fatalf("diff operational error exit code = %d, want 2", got)
-	}
-	explicit := shared.WithExitCode(nil, 1)
+	explicit := shared.DiffFoundError(cmd)
 	if got := commandExitCode(cmd, explicit); got != 1 {
 		t.Fatalf("diff found exit code = %d, want 1", got)
 	}
@@ -228,11 +262,10 @@ func TestCommandExitCodeHonorsDiffContract(t *testing.T) {
 func TestCommandExitCodeCoversPreRunDiffErrors(t *testing.T) {
 	root := &cobra.Command{Use: "fbrcm"}
 	diff := &cobra.Command{Use: "diff <left> <right>", Args: cobra.ExactArgs(2), RunE: func(*cobra.Command, []string) error { return nil }}
-	shared.AddDiffExitCodeFlag(diff)
 	root.AddCommand(diff)
 	root.SetOut(&bytes.Buffer{})
 	root.SetErr(&bytes.Buffer{})
-	root.SetArgs([]string{"diff", "--exit-code"})
+	root.SetArgs([]string{"diff"})
 	executed, err := root.ExecuteC()
 	if err == nil {
 		t.Fatal("argument error is nil")
@@ -242,10 +275,9 @@ func TestCommandExitCodeCoversPreRunDiffErrors(t *testing.T) {
 	}
 }
 
-func TestCommandExitCodeFindsExitFlagAfterUnknownFlag(t *testing.T) {
+func TestCommandExitCodeClassifiesUnknownFlagAsArgumentFailure(t *testing.T) {
 	cmd := &cobra.Command{Use: "diff"}
-	shared.AddDiffExitCodeFlag(cmd)
-	if got := commandExitCode(cmd, fmt.Errorf("unknown flag"), "diff", "--bad-flag", "--exit-code"); got != 2 {
+	if got := commandExitCode(cmd, fmt.Errorf("unknown flag")); got != 2 {
 		t.Fatalf("unknown flag exit code = %d, want 2", got)
 	}
 }
@@ -265,7 +297,7 @@ func TestRootProfileFlagSelectsWithoutSwitching(t *testing.T) {
 		}
 	}
 
-	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func() {})
+	cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(context.Context, bool) {})
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetErr(&out)
@@ -302,7 +334,7 @@ func TestRootCommandShowsAuthSetupGuidanceBeforeUsage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := newRootCommandWithOfflineInit(svc, "1.2.3", "abc123", "2026-06-14", func() {})
+	cmd := newRootCommandWithOfflineInit(svc, "1.2.3", "abc123", "2026-06-14", func(context.Context, bool) {})
 	var output bytes.Buffer
 	cmd.SetOut(&output)
 	cmd.SetErr(&output)
@@ -336,6 +368,36 @@ func TestIsProfileCommand(t *testing.T) {
 	}
 	if isProfileCommand(projects) {
 		t.Fatalf("projects command recognized as profile")
+	}
+}
+
+func TestCompletedCommandErrorHonorsExpiredDeadline(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := completedCommandError(ctx, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("completedCommandError = %v, want context cancellation", err)
+	}
+	commandErr := errors.New("command failed")
+	if err := completedCommandError(ctx, commandErr); !errors.Is(err, commandErr) {
+		t.Fatalf("completedCommandError = %v, want original command error", err)
+	}
+}
+
+func TestExpiredContextStopsCommandBeforeRun(t *testing.T) {
+	root := NewRootForContract("test")
+	var output bytes.Buffer
+	root.SetOut(&output)
+	root.SilenceUsage = true
+	root.SetArgs([]string{"capabilities", "--json"})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	root.SetContext(shared.WithMachineState(ctx))
+	_, err := root.ExecuteC()
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("ExecuteC error = %v, want context cancellation", err)
+	}
+	if output.Len() != 0 {
+		t.Fatalf("command ran after cancellation: %s", output.String())
 	}
 }
 

@@ -268,7 +268,7 @@ func ParametersStatusLabel(source string, cachedAt time.Time, hasTree bool, err 
 		return "fetch"
 	case "cache", "cache-verified", "cache-stale":
 		if time.Since(cachedAt) > 10*time.Minute {
-			return "staled"
+			return "stale"
 		}
 		if time.Since(cachedAt) < time.Minute {
 			return "fetch"

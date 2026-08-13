@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "physical_project_selector": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_selector"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "$ref": "#/$defs/physical_project_selector"
+        },
+        "rollout_id": {
+          "anyOf": [
+            {
+              "pattern": "^[^/]+$"
+            },
+            {
+              "pattern": "^projects/[^/]+/namespaces/firebase/rollouts/[^/]+$"
+            }
+          ],
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-validation": [
+            {
+              "accepted_forms": [
+                "bare_id",
+                "resolved_project_resource_name"
+              ],
+              "collection": "rollouts",
+              "operator": "managed_feature_id",
+              "project_argument": "project"
+            }
+          ]
+        }
+      },
+      "required": [
+        "project",
+        "rollout_id"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "yes": {
+          "description": "Delete without confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object"
+}

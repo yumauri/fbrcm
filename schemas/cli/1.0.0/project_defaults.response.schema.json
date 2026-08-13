@@ -1,0 +1,345 @@
+{
+  "$defs": {
+    "success_data": {
+      "$defs": {
+        "artifact_json_content": {
+          "$anchor": "artifact_json_content"
+        }
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "base64_content": {
+              "type": "null"
+            },
+            "destination": {
+              "type": "null"
+            },
+            "encoding": {
+              "const": "json"
+            },
+            "json_content": {
+              "$ref": "#artifact_json_content"
+            },
+            "overwritten": {
+              "const": false
+            },
+            "text_content": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "base64_content": {
+              "type": "null"
+            },
+            "destination": {
+              "type": "null"
+            },
+            "encoding": {
+              "const": "utf-8"
+            },
+            "json_content": {
+              "type": "null"
+            },
+            "overwritten": {
+              "const": false
+            },
+            "text_content": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "properties": {
+            "base64_content": {
+              "contentEncoding": "base64",
+              "type": "string"
+            },
+            "destination": {
+              "type": "null"
+            },
+            "encoding": {
+              "const": "base64"
+            },
+            "json_content": {
+              "type": "null"
+            },
+            "overwritten": {
+              "const": false
+            },
+            "text_content": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "base64_content": {
+              "type": "null"
+            },
+            "destination": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "encoding": {
+              "const": "none"
+            },
+            "json_content": {
+              "type": "null"
+            },
+            "text_content": {
+              "type": "null"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "base64_content": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "destination": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "encoding": {
+          "enum": [
+            "json",
+            "utf-8",
+            "base64",
+            "none"
+          ],
+          "type": "string"
+        },
+        "json_content": {
+          "anyOf": [
+            {
+              "$ref": "#artifact_json_content"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "media_type": {
+          "enum": [
+            "application/json",
+            "application/xml",
+            "application/x-plist"
+          ],
+          "type": "string"
+        },
+        "overwritten": {
+          "type": "boolean"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "target": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "text_content": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "target",
+        "media_type",
+        "encoding",
+        "json_content",
+        "text_content",
+        "base64_content",
+        "destination",
+        "size_bytes",
+        "sha256",
+        "overwritten"
+      ],
+      "type": "object",
+      "x-fbrcm-invariants": [
+        {
+          "left": {
+            "field": "size_bytes"
+          },
+          "op": "eq",
+          "right": {
+            "op": "byte_length",
+            "value": {
+              "symbol": "canonical_artifact_bytes"
+            }
+          }
+        },
+        {
+          "left": {
+            "field": "sha256"
+          },
+          "op": "eq",
+          "right": {
+            "op": "lowercase_hex",
+            "value": {
+              "op": "sha256",
+              "value": {
+                "symbol": "canonical_artifact_bytes"
+              }
+            }
+          }
+        },
+        {
+          "left": {
+            "field": "overwritten"
+          },
+          "op": "iff",
+          "right": {
+            "op": "and",
+            "values": [
+              {
+                "left": {
+                  "field": "encoding"
+                },
+                "op": "eq",
+                "right": {
+                  "const": "none"
+                }
+              },
+              {
+                "symbol": "existing_destination_replaced"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "project.defaults"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

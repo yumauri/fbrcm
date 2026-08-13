@@ -1,36 +1,51 @@
 package shared
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
-func TestResolveParameterArgFilters(t *testing.T) {
-	got, err := ResolveParameterArgFilters([]string{"flag"}, nil)
-	if err != nil {
-		t.Fatalf("ResolveParameterArgFilters returned error: %v", err)
+func TestWriteJSONNormalizesNilTopLevelSlice(t *testing.T) {
+	cmd := &cobra.Command{Use: "test"}
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	var values []string
+	if err := WriteJSON(cmd, values); err != nil {
+		t.Fatal(err)
 	}
-	if len(got) != 1 || got[0] != "=flag" {
-		t.Fatalf("filters = %#v, want =flag", got)
+	if got := output.String(); got != "[]\n" {
+		t.Fatalf("output = %q, want an empty JSON array", got)
 	}
 }
 
-func TestResolveParameterArgFiltersRejectsExistingFilter(t *testing.T) {
-	_, err := ResolveParameterArgFilters([]string{"flag"}, []string{"foo"})
+func TestResolveParameterArgument(t *testing.T) {
+	got, err := ResolveParameterArgument([]string{"Flag"}, nil)
+	if err != nil {
+		t.Fatalf("ResolveParameterArgument returned error: %v", err)
+	}
+	if got == nil || *got != "Flag" {
+		t.Fatalf("argument = %#v, want literal Flag", got)
+	}
+}
+
+func TestResolveParameterArgumentRejectsExistingFilter(t *testing.T) {
+	_, err := ResolveParameterArgument([]string{"flag"}, []string{"foo"})
 	if err == nil {
-		t.Fatalf("ResolveParameterArgFilters accepted parameter arg with existing filter")
+		t.Fatalf("ResolveParameterArgument accepted parameter arg with existing filter")
 	}
 }
 
-func TestResolveParameterArgFiltersKeepsFiltersWithoutArg(t *testing.T) {
-	in := []string{"foo"}
-	got, err := ResolveParameterArgFilters(nil, in)
+func TestResolveParameterArgumentReturnsNilWithoutArg(t *testing.T) {
+	got, err := ResolveParameterArgument(nil, []string{"foo"})
 	if err != nil {
-		t.Fatalf("ResolveParameterArgFilters returned error: %v", err)
+		t.Fatalf("ResolveParameterArgument returned error: %v", err)
 	}
-	if len(got) != 1 || got[0] != "foo" {
-		t.Fatalf("filters = %#v, want original filters", got)
+	if got != nil {
+		t.Fatalf("argument = %#v, want nil", got)
 	}
 }
 

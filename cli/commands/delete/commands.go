@@ -3,9 +3,11 @@ package deletecmd
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -36,6 +38,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 
 	addDeleteFlags(cmd)
+	contract.RegisterResponse(cmd, []rc.RemoteMutationJSONResult{}, contract.ArtifactData{})
 	return cmd
 }
 
@@ -56,19 +59,19 @@ func runDeleteCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	if shared.StdinAvailable(cmd.InOrStdin()) {
-		if opts.Draft {
-			return fmt.Errorf("--draft is unavailable in stdin mode")
-		}
-		if opts.ChangeNote != nil {
-			return fmt.Errorf("--change-note is unavailable in stdin mode")
+		if err := shared.RejectChangedFlags(cmd, "stdin mode", "project", "dry-run", "draft", "change-note"); err != nil {
+			return err
 		}
 		corelog.For("delete").Info("stdin mode enabled; using remote config from stdin")
-		return runDeleteStdin(cmd, opts.ParamFilters, opts.ParamExpr, opts.Search)
+		return runDeleteStdin(cmd, opts.ParamFilters, opts.ParamArgument, opts.ParamExpr, opts.Search)
 	}
 	return runDeleteRemote(cmd, svc, opts)
 }
 
 func readDeleteOptions(cmd *cobra.Command, args []string) (deleteOptions, error) {
+	if len(args) > 0 && strings.TrimSpace(args[0]) == "" {
+		return deleteOptions{}, shared.InvalidArgument(fmt.Errorf("parameter argument cannot be empty"))
+	}
 	opts, err := shared.ReadParameterMutationOpts(cmd, args)
 	if err != nil {
 		return deleteOptions{}, err
@@ -91,7 +94,7 @@ func runDeleteRemote(cmd *cobra.Command, svc *core.Core, opts deleteOptions) err
 	return err
 }
 
-func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr string, search shared.ParameterSearch) error {
+func runDeleteStdin(cmd *cobra.Command, paramFilters []string, paramArgument *string, projectExpr string, search shared.ParameterSearch) error {
 	cfg, remoteConfigRaw, err := rc.ReadRemoteConfigInput(cmd.InOrStdin())
 	if err != nil {
 		return err
@@ -102,7 +105,7 @@ func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr strin
 	}
 
 	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
-	matched, err := shared.CollectMatchingParamTargets(project, cfg, paramFilters, search, compiledExpr, shared.DefaultRootGroupLabel)
+	matched, err := shared.CollectMatchingParamTargetsWithArgument(project, cfg, paramFilters, paramArgument, search, compiledExpr, shared.DefaultRootGroupLabel)
 	if err != nil {
 		return err
 	}
@@ -110,7 +113,16 @@ func runDeleteStdin(cmd *cobra.Command, paramFilters []string, projectExpr strin
 	if err != nil {
 		return err
 	}
-	if err := rc.WriteOrderPreservingRemoteConfigStdout(cmd, finalCfg, remoteConfigRaw); err != nil {
+	out, err := rc.MarshalOrderPreservingRemoteConfig(finalCfg, remoteConfigRaw, nil)
+	if err != nil {
+		return err
+	}
+	if contract.Enabled(cmd) {
+		target := "<stdin>"
+		if err := shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", out, nil, false)); err != nil {
+			return err
+		}
+	} else if err := rc.WriteOrderPreservingRemoteConfigStdout(cmd, finalCfg, remoteConfigRaw); err != nil {
 		return err
 	}
 

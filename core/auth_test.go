@@ -150,6 +150,10 @@ func TestDeleteAuthMissing(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), `auth "missing" is not configured`) {
 		t.Fatalf("DeleteAuth = %v, want not configured error", err)
 	}
+	var authErr *AuthError
+	if !errors.As(err, &authErr) || authErr.Kind != "setup_required" {
+		t.Fatalf("DeleteAuth error type = %#v", err)
+	}
 }
 
 func TestDeleteAuthMissingWithoutAuthFile(t *testing.T) {

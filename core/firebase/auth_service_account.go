@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	corelog "github.com/yumauri/fbrcm/core/log"
@@ -24,9 +25,10 @@ func serviceAccountHTTPClient(ctx context.Context, keyPath string) (*http.Client
 	cfg, err := google.JWTConfigFromJSON(keyData, cloudPlatformScope)
 	if err != nil {
 		logger.Error("parse service account key failed", "path", keyPath, "err", err)
-		return nil, fmt.Errorf("parsing service account key: %w", err)
+		return nil, credentialAuthenticationError("service-account", "load_credentials", fmt.Errorf("parsing service account key: %w", err))
 	}
 
 	logger.Debug("service account http client ready")
-	return wrapAuthHTTPClient(cfg.Client(ctx)), nil
+	tokenSource := authenticationTokenSource{base: cfg.TokenSource(ctx), authType: "service-account", operation: "token_exchange"}
+	return wrapAuthHTTPClient(oauth2.NewClient(ctx, tokenSource)), nil
 }

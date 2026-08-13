@@ -1,0 +1,334 @@
+{
+  "$defs": {
+    "credentials": {
+      "additionalProperties": true,
+      "oneOf": [
+        {
+          "properties": {
+            "installed": {
+              "additionalProperties": true,
+              "properties": {
+                "auth_uri": {
+                  "type": "string",
+                  "x-fbrcm-validation": [
+                    {
+                      "normalization": "trim_unicode_whitespace",
+                      "operator": "parse_uri",
+                      "parser": "net/url.ParseRequestURI",
+                      "require_absolute": true
+                    }
+                  ]
+                },
+                "client_id": {
+                  "pattern": ".*\\S.*",
+                  "type": "string"
+                },
+                "client_secret": {
+                  "pattern": ".*\\S.*",
+                  "type": "string"
+                },
+                "redirect_uris": {
+                  "items": {
+                    "type": "string",
+                    "x-fbrcm-validation": [
+                      {
+                        "normalization": "trim_unicode_whitespace",
+                        "operator": "parse_uri",
+                        "parser": "net/url.ParseRequestURI",
+                        "require_absolute": true
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "token_uri": {
+                  "type": "string",
+                  "x-fbrcm-validation": [
+                    {
+                      "normalization": "trim_unicode_whitespace",
+                      "operator": "parse_uri",
+                      "parser": "net/url.ParseRequestURI",
+                      "require_absolute": true
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "client_id",
+                "client_secret",
+                "auth_uri",
+                "token_uri",
+                "redirect_uris"
+              ],
+              "type": "object"
+            },
+            "web": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "installed"
+          ]
+        },
+        {
+          "properties": {
+            "installed": {
+              "type": "null"
+            },
+            "web": {
+              "additionalProperties": true,
+              "properties": {
+                "auth_uri": {
+                  "type": "string",
+                  "x-fbrcm-validation": [
+                    {
+                      "normalization": "trim_unicode_whitespace",
+                      "operator": "parse_uri",
+                      "parser": "net/url.ParseRequestURI",
+                      "require_absolute": true
+                    }
+                  ]
+                },
+                "client_id": {
+                  "pattern": ".*\\S.*",
+                  "type": "string"
+                },
+                "client_secret": {
+                  "pattern": ".*\\S.*",
+                  "type": "string"
+                },
+                "redirect_uris": {
+                  "items": {
+                    "type": "string",
+                    "x-fbrcm-validation": [
+                      {
+                        "normalization": "trim_unicode_whitespace",
+                        "operator": "parse_uri",
+                        "parser": "net/url.ParseRequestURI",
+                        "require_absolute": true
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "token_uri": {
+                  "type": "string",
+                  "x-fbrcm-validation": [
+                    {
+                      "normalization": "trim_unicode_whitespace",
+                      "operator": "parse_uri",
+                      "parser": "net/url.ParseRequestURI",
+                      "require_absolute": true
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "client_id",
+                "client_secret",
+                "auth_uri",
+                "token_uri",
+                "redirect_uris"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "web"
+          ]
+        },
+        {
+          "properties": {
+            "installed": {
+              "additionalProperties": true,
+              "properties": {
+                "auth_uri": {
+                  "type": "string",
+                  "x-fbrcm-validation": [
+                    {
+                      "normalization": "trim_unicode_whitespace",
+                      "operator": "parse_uri",
+                      "parser": "net/url.ParseRequestURI",
+                      "require_absolute": true
+                    }
+                  ]
+                },
+                "client_id": {
+                  "pattern": ".*\\S.*",
+                  "type": "string"
+                },
+                "client_secret": {
+                  "pattern": ".*\\S.*",
+                  "type": "string"
+                },
+                "redirect_uris": {
+                  "items": {
+                    "type": "string",
+                    "x-fbrcm-validation": [
+                      {
+                        "normalization": "trim_unicode_whitespace",
+                        "operator": "parse_uri",
+                        "parser": "net/url.ParseRequestURI",
+                        "require_absolute": true
+                      }
+                    ]
+                  },
+                  "type": "array"
+                },
+                "token_uri": {
+                  "type": "string",
+                  "x-fbrcm-validation": [
+                    {
+                      "normalization": "trim_unicode_whitespace",
+                      "operator": "parse_uri",
+                      "parser": "net/url.ParseRequestURI",
+                      "require_absolute": true
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "client_id",
+                "client_secret",
+                "auth_uri",
+                "token_uri"
+              ],
+              "type": "object"
+            },
+            "web": {
+              "additionalProperties": true,
+              "properties": {
+                "redirect_uris": {
+                  "items": {
+                    "type": "string",
+                    "x-fbrcm-validation": [
+                      {
+                        "normalization": "trim_unicode_whitespace",
+                        "operator": "parse_uri",
+                        "parser": "net/url.ParseRequestURI",
+                        "require_absolute": true
+                      }
+                    ]
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "redirect_uris"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "installed",
+            "web"
+          ]
+        }
+      ],
+      "type": "object"
+    },
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "auth_id": {
+          "$ref": "#/$defs/path_segment"
+        }
+      },
+      "required": [
+        "auth_id"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "description": "Import OAuth client secret from file path; if omitted, read stdin or open file picker",
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
+        "label": {
+          "description": "Auth identity label",
+          "pattern": "^(?:$|.*\\S.*)$",
+          "type": "string"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/credentials"
+        }
+      ]
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-input-selection": [
+    {
+      "later_sources": "ignored_without_consumption",
+      "on_missing": "interaction.required",
+      "operator": "first_available",
+      "sources": [
+        "options.from",
+        "stdin.document"
+      ]
+    }
+  ]
+}

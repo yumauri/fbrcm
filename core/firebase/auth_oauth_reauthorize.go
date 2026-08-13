@@ -140,7 +140,10 @@ func recoverRejectedOAuthToken(
 
 	token, refreshErr := forceRefreshOAuthToken(ctx, oauthCfg, cached)
 	if refreshErr != nil {
-		logger.Warn("forced oauth token refresh failed; reauthorizing", "err", refreshErr)
+		if !oauthRefreshRequiresAuthorization(refreshErr, cached != nil && cached.RefreshToken != "") {
+			return nil, nil, authenticationRequestError("oauth", "refresh_token", refreshErr)
+		}
+		logger.Warn("forced oauth token refresh requires reauthorization", "err", refreshErr)
 		if IsOffline() {
 			return nil, nil, ErrOffline
 		}
@@ -176,5 +179,9 @@ func forceRefreshOAuthToken(ctx context.Context, oauthCfg *oauth2.Config, cached
 	expired := *cached
 	expired.AccessToken = ""
 	expired.Expiry = time.Unix(0, 0)
-	return oauthCfg.TokenSource(ctx, &expired).Token()
+	token, err := oauthCfg.TokenSource(ctx, &expired).Token()
+	if err != nil {
+		return nil, authenticationRequestError("oauth", "refresh_token", err)
+	}
+	return token, nil
 }

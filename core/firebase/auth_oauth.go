@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -21,6 +22,11 @@ import (
 
 type oauthTerminalOutputKey struct{}
 type oauthAuthorizationObserverKey struct{}
+type oauthInteractionAllowedKey struct{}
+
+// ErrOAuthInteractionRequired reports that usable OAuth credentials are not
+// available without starting the desktop authorization flow.
+var ErrOAuthInteractionRequired = errors.New("OAuth browser authorization is required")
 
 // OAuthAuthorizationEvent reports the interactive portion of a desktop OAuth
 // flow. A start event contains URL; a completion event has Done set.
@@ -60,6 +66,23 @@ func WithOAuthTerminalOutput(ctx context.Context, enabled bool) context.Context 
 	return context.WithValue(ctx, oauthTerminalOutputKey{}, enabled)
 }
 
+// WithOAuthInteractionAllowed controls whether a command may start the desktop
+// browser authorization flow. It defaults to true for human CLI and TUI use.
+func WithOAuthInteractionAllowed(ctx context.Context, allowed bool) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, oauthInteractionAllowedKey{}, allowed)
+}
+
+func oauthInteractionAllowed(ctx context.Context) bool {
+	if ctx == nil {
+		return true
+	}
+	allowed, configured := ctx.Value(oauthInteractionAllowedKey{}).(bool)
+	return !configured || allowed
+}
+
 func oauthTerminalOutputEnabled(ctx context.Context) bool {
 	if ctx == nil {
 		return true
@@ -83,7 +106,7 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 	oauthCfg, err := google.ConfigFromJSON(clientSecretData, cloudPlatformScope)
 	if err != nil {
 		logger.Error("parse oauth client secret failed", "path", clientSecretPath, "err", err)
-		return nil, fmt.Errorf("parsing OAuth client secret: %w", err)
+		return nil, credentialAuthenticationError("oauth", "load_credentials", fmt.Errorf("parsing OAuth client secret: %w", err))
 	}
 
 	tok, err := readCachedToken(tokenPath)
@@ -125,7 +148,10 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 
 	hadRefreshToken, err := refreshOAuthToken(tokenSource, tok)
 	if err != nil {
-		logger.Warn("oauth token refresh failed; reauthorizing", "has_refresh_token", hadRefreshToken)
+		if !oauthRefreshRequiresAuthorization(err, hadRefreshToken) {
+			return nil, authenticationRequestError("oauth", "refresh_token", err)
+		}
+		logger.Warn("oauth token refresh requires reauthorization", "has_refresh_token", hadRefreshToken)
 		tok, err = authorizeDesktopClient(ctx, oauthCfg, true, autoOpen)
 		if err != nil {
 			return nil, err
@@ -179,6 +205,10 @@ func refreshOAuthToken(source oauth2.TokenSource, cached *oauth2.Token) (bool, e
 func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceConsent bool, autoOpen bool) (token *oauth2.Token, returnErr error) {
 	logger := corelog.For("firebase")
 	logger.Info("start oauth desktop authorization", "force_consent", forceConsent, "auto_open", autoOpen)
+	if !oauthInteractionAllowed(ctx) {
+		logger.Info("oauth desktop authorization blocked by non-interactive context")
+		return nil, ErrOAuthInteractionRequired
+	}
 	oauthCfgCopy := *oauthCfg
 	oauthCfg = &oauthCfgCopy
 	authorizationCtx, cancelAuthorization := context.WithCancel(ctx)

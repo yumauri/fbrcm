@@ -2,10 +2,15 @@ package shared
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
+	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 const (
@@ -13,7 +18,7 @@ const (
 	targetFilterFlagHelp    = "Filter template targets by optional client@ or server@ project query; may be repeated"
 	parameterFilterFlagHelp = "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated"
 	parameterSearchFlagHelp = "Search parameters by name, description, values, and conditions"
-	dryRunFlagHelp          = "Preview changes without writing local or Firebase state"
+	dryRunFlagHelp          = "Preview the requested mutation without applying it"
 )
 
 func AddProjectFilterFlag(cmd *cobra.Command) {
@@ -65,4 +70,123 @@ func WithChangeNote(ctx context.Context, changeNote *string) (context.Context, e
 
 func AddYesFlag(cmd *cobra.Command, help string) {
 	cmd.Flags().BoolP("yes", "y", false, help)
+}
+
+// ValidateNonBlankInputs rejects explicitly supplied whitespace-only argv
+// values before command-specific parsing can reinterpret them as an omitted
+// selector, default, or collection resource. A small set of content flags
+// intentionally accepts the exact empty string, but even those reject a value
+// containing only whitespace.
+func ValidateNonBlankInputs(cmd *cobra.Command, args []string) error {
+	for index, value := range args {
+		if strings.TrimSpace(value) == "" {
+			return InvalidArgument(fmt.Errorf("argument %d requires a non-empty value", index+1))
+		}
+	}
+
+	allowExactEmpty := map[string]bool{
+		"change-note": true,
+		"description": true,
+		"group":       true,
+		"label":       true,
+		"value":       true,
+	}
+	var validationErr error
+	cmd.Flags().Visit(func(flag *pflag.Flag) {
+		if validationErr != nil {
+			return
+		}
+		values, ok, err := stringFlagValues(cmd, flag)
+		if err != nil {
+			validationErr = InvalidArgument(err)
+			return
+		}
+		if !ok {
+			return
+		}
+		for _, value := range values {
+			if strings.TrimSpace(value) != "" {
+				continue
+			}
+			if value == "" && allowExactEmpty[flag.Name] && flag.Value.Type() == "string" {
+				continue
+			}
+			validationErr = InvalidArgument(fmt.Errorf("--%s requires a non-empty value", flag.Name))
+			return
+		}
+	})
+	return validationErr
+}
+
+func stringFlagValues(cmd *cobra.Command, flag *pflag.Flag) ([]string, bool, error) {
+	switch flag.Value.Type() {
+	case "string":
+		value, err := cmd.Flags().GetString(flag.Name)
+		return []string{value}, true, err
+	case "stringArray":
+		values, err := cmd.Flags().GetStringArray(flag.Name)
+		return values, true, err
+	case "stringSlice":
+		values, err := cmd.Flags().GetStringSlice(flag.Name)
+		return values, true, err
+	default:
+		return nil, false, nil
+	}
+}
+
+// ValidateQueryFlags rejects explicitly supplied empty filter queries. Empty
+// mode-prefixed queries would otherwise be dropped and could broaden a
+// mutation to every item.
+func ValidateQueryFlags(cmd *cobra.Command) error {
+	for _, name := range []string{"filter", "project"} {
+		flag := cmd.Flags().Lookup(name)
+		if flag == nil || !cmd.Flags().Changed(name) {
+			continue
+		}
+		values, err := cmd.Flags().GetStringArray(name)
+		if err != nil {
+			return InvalidArgument(err)
+		}
+		for _, raw := range values {
+			querySource := raw
+			if name == "project" {
+				target, _, err := rctarget.ParseSelector(raw)
+				if err != nil {
+					return InvalidArgument(fmt.Errorf("--project: %w", err))
+				}
+				querySource = target.ProjectID
+			}
+			_, query := filter.ParseModePrefixedQuery(querySource)
+			if strings.TrimSpace(query) == "" {
+				return InvalidArgument(fmt.Errorf("--%s requires a non-empty query", name))
+			}
+		}
+	}
+	return nil
+}
+
+// RejectTemplateProjectFilters enforces project-scoped commands that do not
+// accept client@ or server@ template selectors.
+func RejectTemplateProjectFilters(values []string) error {
+	for _, raw := range values {
+		_, explicit, err := rctarget.ParseSelector(raw)
+		if err != nil {
+			return InvalidArgument(fmt.Errorf("--project: %w", err))
+		}
+		if explicit {
+			return InvalidArgument(fmt.Errorf("--project %q uses template syntax, but this command is project-scoped", raw))
+		}
+	}
+	return nil
+}
+
+// RejectChangedFlags rejects flags that are unavailable in a particular
+// invocation mode, including explicitly supplied false or empty values.
+func RejectChangedFlags(cmd *cobra.Command, mode string, names ...string) error {
+	for _, name := range names {
+		if cmd.Flags().Changed(name) {
+			return InvalidArgument(fmt.Errorf("--%s is unavailable in %s", name, mode))
+		}
+	}
+	return nil
 }

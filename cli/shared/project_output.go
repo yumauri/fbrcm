@@ -21,7 +21,7 @@ type ProjectJSON struct {
 	PrimaryTemplate rctarget.Kind   `json:"primary_template"`
 	UpdatedAt       string          `json:"updated_at,omitempty"`
 	SyncedAt        string          `json:"synced_at,omitempty"`
-	URL             string          `json:"url,omitempty"`
+	URL             string          `json:"url,omitempty" contract:"format=uri"`
 }
 
 // NewProjectJSON copies a project into its CLI JSON representation.

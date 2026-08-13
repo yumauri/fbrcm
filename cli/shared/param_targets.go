@@ -52,12 +52,19 @@ func CollectParamTargets(cfg *firebase.RemoteConfig) []ParamTarget {
 
 // CollectMatchingParamTargets filters parameters by name filters, search, and expression.
 func CollectMatchingParamTargets(project core.Project, cfg *firebase.RemoteConfig, rawFilters []string, search ParameterSearch, compiledExpr *filter.Expression, defaultGroupLabel string) ([]ParamTarget, error) {
+	return CollectMatchingParamTargetsWithArgument(project, cfg, rawFilters, nil, search, compiledExpr, defaultGroupLabel)
+}
+
+// CollectMatchingParamTargetsWithArgument applies either a literal positional
+// parameter name or explicit query filters, followed by search and expression
+// selection.
+func CollectMatchingParamTargetsWithArgument(project core.Project, cfg *firebase.RemoteConfig, rawFilters []string, parameterArgument *string, search ParameterSearch, compiledExpr *filter.Expression, defaultGroupLabel string) ([]ParamTarget, error) {
 	all := CollectParamTargets(cfg)
 	filters := ParseFilters(rawFilters)
 
 	filtered := make([]ParamTarget, 0, len(all))
 	for _, target := range all {
-		if !MatchAnyFilter(target.Key, filters) {
+		if (parameterArgument != nil && target.Key != *parameterArgument) || (parameterArgument == nil && !MatchAnyFilter(target.Key, filters)) {
 			continue
 		}
 		if !MatchParameterSearch(target.Key, target.Param, cfg, search) {

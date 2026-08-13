@@ -54,7 +54,10 @@ delegating methods in root `core` files are intentional.
 ## `cli/`
 
 `cli/app` builds the Cobra root, selects the process profile, initializes
-offline mode, and maps command errors to exit codes.
+offline mode, and maps command errors to exit codes. `cli/contract` owns the
+versioned JSON envelope, typed problem classification, artifact wrapping, and
+capability discovery. `schemas` embeds the generated per-command Draft 2020-12
+schemas; `cmd/schemagen` regenerates those schemas and the capability golden.
 
 `cli/commands` contains one package per top-level feature:
 
@@ -72,7 +75,9 @@ Notable nested packages:
 
 `cli/shared` contains behavior used across command packages: target resolution,
 flags, text and expression filtering, confirmation, terminal sizing, JSON
-output, parameter search, prompt input, and batch-result helpers.
+output, parameter search, prompt input, and batch-result helpers. Its machine
+mode prevents confirmations and selection prompts from running under the
+global JSON contract.
 
 ### Remote Config CLI pipeline
 

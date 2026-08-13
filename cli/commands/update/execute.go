@@ -2,6 +2,7 @@ package updatecmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
@@ -24,7 +25,7 @@ func runUpdateRemote(cmd *cobra.Command, svc *core.Core, opts updateOptions) err
 	return err
 }
 
-func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramExpr string, search shared.ParameterSearch, spec updateSpec) error {
+func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramArgument *string, paramExpr string, search shared.ParameterSearch, spec updateSpec) error {
 	cfg, raw, err := rc.ReadRemoteConfigInput(cmd.InOrStdin())
 	if err != nil {
 		return err
@@ -34,7 +35,7 @@ func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramExpr string,
 		return err
 	}
 	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
-	matched, err := shared.CollectMatchingParamTargets(project, cfg, paramFilters, search, compiledExpr, shared.DefaultRootGroupLabel)
+	matched, err := shared.CollectMatchingParamTargetsWithArgument(project, cfg, paramFilters, paramArgument, search, compiledExpr, shared.DefaultRootGroupLabel)
 	if err != nil {
 		return err
 	}
@@ -42,7 +43,16 @@ func runUpdateStdin(cmd *cobra.Command, paramFilters []string, paramExpr string,
 	if err != nil {
 		return err
 	}
-	if err := rc.WriteOrderPreservingRemoteConfigStdout(cmd, finalCfg, raw); err != nil {
+	out, err := rc.MarshalOrderPreservingRemoteConfig(finalCfg, raw, nil)
+	if err != nil {
+		return err
+	}
+	if contract.Enabled(cmd) {
+		target := "<stdin>"
+		if err := shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", out, nil, false)); err != nil {
+			return err
+		}
+	} else if err := rc.WriteOrderPreservingRemoteConfigStdout(cmd, finalCfg, raw); err != nil {
 		return err
 	}
 	totals := updateTotals{updatedParams: len(updated)}

@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
@@ -87,7 +88,7 @@ func validateAppConfig(path string, exists bool, cfg *coreconfig.AppConfig) conf
 	}
 	if profile := strings.TrimSpace(cfg.Profile); profile != "" {
 		if err := coreconfig.ValidateProfileName(cfg.Profile); err != nil {
-			report.Errors = append(report.Errors, configDiagnostic{Severity: "error", Code: "invalid_profile", Key: "profile", Message: err.Error()})
+			report.Errors = append(report.Errors, configDiagnostic{Severity: "error", Code: "invalid_profile", Key: "profile", Message: shared.SafeErrorText(err)})
 		} else if !coreconfig.ProfileExists(profile) {
 			report.Errors = append(report.Errors, configDiagnostic{Severity: "error", Code: "missing_profile", Key: "profile", Message: fmt.Sprintf("profile %q does not exist", profile)})
 		}
@@ -115,7 +116,7 @@ func decodeConfigForValidation(path string) (configState, error) {
 	}
 	cfg, err := coreconfig.DecodeAppConfig(raw, true)
 	if err != nil {
-		diagnostic := configDiagnostic{Severity: "error", Code: "toml_decode", Key: "", Message: err.Error()}
+		diagnostic := configDiagnostic{Severity: "error", Code: "toml_decode", Key: "", Message: shared.SafeErrorText(err)}
 		return configState{Path: path, Exists: true, Report: configValidationResult{
 			Path: path, Exists: true, Valid: false, Errors: []configDiagnostic{diagnostic}, Warnings: []configDiagnostic{},
 		}}, nil
@@ -150,6 +151,9 @@ func configValue(state configState, key string) (any, string, error) {
 	case key == "projects.aliases":
 		return coreconfig.CloneProjectAliases(state.Effective), projectAliasSource(state, ""), nil
 	case len(parts) == 3 && parts[0] == "projects" && parts[1] == "aliases":
+		if err := coreconfig.ValidateProjectAliasName(parts[2]); err != nil {
+			return nil, "", shared.InvalidArgument(err)
+		}
 		value, ok := coreconfig.CloneProjectAliases(state.Effective)[parts[2]]
 		if !ok {
 			return nil, "default", nil
@@ -167,23 +171,23 @@ func configValue(state configState, key string) (any, string, error) {
 		case "post_publish":
 			return append([]string(nil), state.Effective.Hooks.PostPublish...), hookSource(state, parts[1]), nil
 		default:
-			return nil, "", fmt.Errorf("unknown hook key %q", parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown hook key %q", parts[1]))
 		}
 	case len(parts) == 2 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {
-			return nil, "", fmt.Errorf("unknown keybinding block %q", parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown keybinding block %q", parts[1]))
 		}
 		return state.Effective.Keys[parts[1]], keySource(state, parts), nil
 	case len(parts) == 3 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {
-			return nil, "", fmt.Errorf("unknown keybinding block %q", parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown keybinding block %q", parts[1]))
 		}
 		if !tuiconfig.KnownAction(parts[1], parts[2]) {
-			return nil, "", fmt.Errorf("unknown action %q in block %q", parts[2], parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown action %q in block %q", parts[2], parts[1]))
 		}
 		return append([]string(nil), state.Effective.Keys[parts[1]][parts[2]]...), keySource(state, parts), nil
 	default:
-		return nil, "", fmt.Errorf("unknown config key %q", key)
+		return nil, "", shared.InvalidArgument(fmt.Errorf("unknown config key %q", key))
 	}
 }
 

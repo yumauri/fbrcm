@@ -3,6 +3,7 @@ package firebase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -53,6 +54,11 @@ func TestChangeNoteContextNormalizesAndPreservesExplicitEmpty(t *testing.T) {
 	}
 	if _, err := WithChangeNote(context.Background(), "line one\nline two"); err == nil {
 		t.Fatal("multiline change note returned nil error")
+	} else {
+		var invalid *InvalidChangeNoteError
+		if !errors.As(err, &invalid) {
+			t.Fatalf("multiline change note error = %T, want InvalidChangeNoteError", err)
+		}
 	}
 }
 
@@ -77,6 +83,27 @@ func TestMarshalRemoteConfigForUpdateRejectsUnsupportedConditionColor(t *testing
 	_, err := MarshalRemoteConfigForUpdate(&RemoteConfig{Conditions: []RemoteConfigCondition{{Name: "staff", Expression: "true", TagColor: "RED"}}})
 	if err == nil || !strings.Contains(err.Error(), `condition "staff"`) || !strings.Contains(err.Error(), `unsupported condition color "RED"`) {
 		t.Fatalf("MarshalRemoteConfigForUpdate error = %v", err)
+	}
+}
+
+func TestMarshalRemoteConfigForUpdateRejectsInvalidTemplateSemantics(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  *RemoteConfig
+		want string
+	}{
+		{"empty condition", &RemoteConfig{Conditions: []RemoteConfigCondition{{}}}, "empty name"},
+		{"duplicate condition", &RemoteConfig{Conditions: []RemoteConfigCondition{{Name: "beta", Expression: "true"}, {Name: "beta", Expression: "false"}}}, "duplicated"},
+		{"unsupported value type", &RemoteConfig{Parameters: map[string]RemoteConfigParam{"flag": {ValueType: "FLOAT"}}}, "unsupported valueType"},
+		{"duplicate parameter", &RemoteConfig{Parameters: map[string]RemoteConfigParam{"flag": {}}, ParameterGroups: map[string]RemoteConfigGroup{"group": {Parameters: map[string]RemoteConfigParam{"flag": {}}}}}, "appears more than once"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := MarshalRemoteConfigForUpdate(test.cfg)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("MarshalRemoteConfigForUpdate error = %v, want %q", err, test.want)
+			}
+		})
 	}
 }
 

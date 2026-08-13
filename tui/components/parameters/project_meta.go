@@ -46,7 +46,7 @@ func (m Model) projectMetaSegments(project *projectState, selected bool) (badge 
 	if project.hasDraft {
 		label := "draft"
 		if project.staleDraft {
-			label = "staled draft"
+			label = "stale draft"
 			if project.draftVersion != "" {
 				label += " v" + project.draftVersion
 			}

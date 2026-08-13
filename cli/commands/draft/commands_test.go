@@ -13,6 +13,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	cmdtest "github.com/yumauri/fbrcm/cli/commands/testutil"
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -33,7 +34,7 @@ func TestNewCommandStructure(t *testing.T) {
 	for _, flag := range []string{"raw", "to"} {
 		cmdtest.AssertFlag(t, cmd, "show", flag)
 	}
-	for _, flag := range []string{"against", "cached", "filter", "search", "group", "expr", "parameters", "conditions", "json", "exit-code"} {
+	for _, flag := range []string{"against", "cached", "filter", "search", "group", "expr", "parameters", "conditions", "json"} {
 		cmdtest.AssertFlag(t, cmd, "diff", flag)
 	}
 	for _, subcommand := range []string{"publish", "discard"} {
@@ -70,7 +71,42 @@ func TestBatchJSONOutputsAreArrays(t *testing.T) {
 	}
 }
 
-func TestDiffExitCodeAndCorruptDraftRecovery(t *testing.T) {
+func TestSuccessfulPublishStatusDistinguishesNoOpDryRuns(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		dryRun      bool
+		changed     bool
+		wantStatus  string
+		wantDeleted bool
+	}{
+		{name: "dry run unchanged", dryRun: true, wantStatus: "unchanged"},
+		{name: "live unchanged", wantStatus: "already-applied", wantDeleted: true},
+		{name: "dry run changed", dryRun: true, changed: true, wantStatus: "would-publish"},
+		{name: "live changed", changed: true, wantStatus: "published", wantDeleted: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			status, deleted := successfulPublishStatus(test.dryRun, test.changed)
+			if status != test.wantStatus || deleted != test.wantDeleted {
+				t.Fatalf("successfulPublishStatus(%t, %t) = %q, %t; want %q, %t", test.dryRun, test.changed, status, deleted, test.wantStatus, test.wantDeleted)
+			}
+		})
+	}
+}
+
+func TestPostPublicationFailureUsesFirebaseValidationProvenance(t *testing.T) {
+	result := publishResult{ValidationSource: core.ValidationSourceLocal}
+
+	markDraftFirebaseValidated(&result)
+
+	if !result.Validated {
+		t.Fatal("post-publication result is not marked as validated")
+	}
+	if result.ValidationSource != core.ValidationSourceFirebase {
+		t.Fatalf("validation source = %q, want %q", result.ValidationSource, core.ValidationSourceFirebase)
+	}
+}
+
+func TestDiffReturnsStatusOneInHumanAndJSONModes(t *testing.T) {
 	setupCommandTest(t)
 	base := commandRemoteConfig("1", "old")
 	draftRaw := commandRemoteConfig("1", "new")
@@ -78,14 +114,29 @@ func TestDiffExitCodeAndCorruptDraftRecovery(t *testing.T) {
 	if err := config.SaveDraft(&config.Draft{FormatVersion: config.DraftFormatVersion, ProjectID: "demo", BaseVersion: "1", BaseETag: "etag-1", CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: base, RemoteConfig: draftRaw}); err != nil {
 		t.Fatal(err)
 	}
-	cmd := New(nil)
-	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs([]string{"diff", "demo", "--exit-code"})
-	err := cmd.Execute()
-	var exitErr *shared.ExitError
-	if !errors.As(err, &exitErr) || exitErr.Code != 1 {
-		t.Fatalf("diff exit error = %#v", err)
+	for _, args := range [][]string{{"diff", "demo"}, {"diff", "demo", "--json"}} {
+		cmd := New(nil)
+		cmd.SetOut(&bytes.Buffer{})
+		var stderr bytes.Buffer
+		cmd.SetErr(&stderr)
+		cmd.SetArgs(args)
+		err := cmd.Execute()
+		var exitErr *shared.ExitError
+		if !errors.As(err, &exitErr) || exitErr.Code != 1 {
+			t.Fatalf("%v diff exit error = %#v", args, err)
+		}
+		if stderr.Len() != 0 {
+			t.Fatalf("%v semantic diff result wrote Cobra diagnostics: %q", args, stderr.String())
+		}
+	}
+}
+
+func TestCorruptDraftRecovery(t *testing.T) {
+	setupCommandTest(t)
+	raw := commandRemoteConfig("1", "new")
+	now := time.Now().UTC()
+	if err := config.SaveDraft(&config.Draft{FormatVersion: config.DraftFormatVersion, ProjectID: "demo", BaseVersion: "1", BaseETag: "etag-1", CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: raw, RemoteConfig: raw}); err != nil {
+		t.Fatal(err)
 	}
 
 	if err := os.WriteFile(config.GetDraftPath("demo"), []byte(`{"version":{"versionNumber":"1"}}`), 0o600); err != nil {
@@ -126,7 +177,17 @@ func TestListShowDiffAndDiscardLocalDraft(t *testing.T) {
 	if !strings.Contains(showOut, `"value":"new"`) || strings.Contains(showOut, "base_remote_config") {
 		t.Fatalf("draft show output = %s", showOut)
 	}
-	diffOut := executeCommand(t, "diff", "demo")
+	cmd := New(nil)
+	var diffBuffer bytes.Buffer
+	cmd.SetOut(&diffBuffer)
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"diff", "demo"})
+	err = cmd.Execute()
+	var exitErr *shared.ExitError
+	if !errors.As(err, &exitErr) || exitErr.Code != 1 {
+		t.Fatalf("draft diff exit error = %#v", err)
+	}
+	diffOut := diffBuffer.String()
 	if !strings.Contains(diffOut, "old") || !strings.Contains(diffOut, "new") {
 		t.Fatalf("draft diff output = %s", diffOut)
 	}
@@ -136,6 +197,66 @@ func TestListShowDiffAndDiscardLocalDraft(t *testing.T) {
 	}
 	if _, err := config.LoadDraft("demo"); err == nil {
 		t.Fatal("draft still exists after discard")
+	}
+}
+
+func TestDraftShowDoesNotOverwriteExistingDestinationInMachineMode(t *testing.T) {
+	setupCommandTest(t)
+	now := time.Now().UTC()
+	raw := commandRemoteConfig("1", "new")
+	if err := config.SaveDraft(&config.Draft{
+		FormatVersion: config.DraftFormatVersion, ProjectID: "demo", BaseVersion: "1", BaseETag: "etag-1",
+		CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: raw, RemoteConfig: raw,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	destination := filepath.Join(t.TempDir(), "draft.json")
+	if err := os.WriteFile(destination, []byte("original"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := New(&core.Core{})
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"show", "demo", "--to", destination})
+	shared.SetMachineMode(true)
+	t.Cleanup(func() { shared.SetMachineMode(false) })
+	err := cmd.Execute()
+	var interaction *shared.InteractionError
+	if !errors.As(err, &interaction) || interaction.RequiredOption != "" || !interaction.Destructive {
+		t.Fatalf("draft show overwrite error = %#v", err)
+	}
+	got, readErr := os.ReadFile(destination)
+	if readErr != nil || string(got) != "original" {
+		t.Fatalf("destination = %q, %v", got, readErr)
+	}
+}
+
+func TestDraftShowReportsNewDestinationAsNotOverwritten(t *testing.T) {
+	setupCommandTest(t)
+	now := time.Now().UTC()
+	raw := commandRemoteConfig("1", "new")
+	if err := config.SaveDraft(&config.Draft{
+		FormatVersion: config.DraftFormatVersion, ProjectID: "demo", BaseVersion: "1", BaseETag: "etag-1",
+		CreatedAt: now, UpdatedAt: now, BaseRemoteConfig: raw, RemoteConfig: raw,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	destination := filepath.Join(t.TempDir(), "draft.json")
+	cmd := New(&core.Core{})
+	cmd.PersistentFlags().Bool("json", false, "")
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"show", "demo", "--to", destination, "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	var artifact contract.ArtifactData
+	if err := json.Unmarshal(out.Bytes(), &artifact); err != nil {
+		t.Fatal(err)
+	}
+	if artifact.Overwritten || artifact.Destination == nil || *artifact.Destination != destination {
+		t.Fatalf("artifact = %#v", artifact)
 	}
 }
 
@@ -162,6 +283,11 @@ prod = "acme-production-42"
 		got, _, err := resolveDraft(query)
 		if err != nil || got != want {
 			t.Fatalf("resolveDraft(%q) = %q, %v; want %q", query, got, err, want)
+		}
+	}
+	for _, query := range []string{"PROD", "production", " prod"} {
+		if _, _, err := resolveDraft(query); err == nil {
+			t.Fatalf("case-mismatched or padded draft selector %q unexpectedly resolved", query)
 		}
 	}
 

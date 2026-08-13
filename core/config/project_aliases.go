@@ -174,13 +174,11 @@ func LoadProjectAliases() (map[string]string, error) {
 	return maps.Clone(registry.Aliases), nil
 }
 
-// ResolveProjectAlias resolves an exact case-insensitive alias.
+// ResolveProjectAlias resolves an exact case-sensitive alias.
 func ResolveProjectAlias(aliases map[string]string, query string) (string, string, bool) {
-	query = strings.TrimSpace(query)
-	for alias, projectID := range aliases {
-		if strings.EqualFold(alias, query) {
-			return alias, projectID, true
-		}
+	projectID, ok := aliases[query]
+	if ok {
+		return query, projectID, true
 	}
 	return "", "", false
 }

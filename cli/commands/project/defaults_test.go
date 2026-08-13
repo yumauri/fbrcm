@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
@@ -23,7 +24,7 @@ func TestDefaultsCommandWritesSelectedFormatToStdout(t *testing.T) {
 	})
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"demo", "--format", "xml"})
+	cmd.SetArgs([]string{"demo-project", "--format", "xml"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
@@ -48,7 +49,7 @@ func TestDefaultsCommandCreatesPrivateFileAndOverwritesWithYes(t *testing.T) {
 	cmd := newDefaultsCommandWithDownloader(svc, download)
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"demo", "--to", destination})
+	cmd.SetArgs([]string{"demo-project", "--to", destination})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func TestDefaultsCommandCreatesPrivateFileAndOverwritesWithYes(t *testing.T) {
 
 	cmd = newDefaultsCommandWithDownloader(svc, download)
 	cmd.SetOut(&bytes.Buffer{})
-	cmd.SetArgs([]string{"demo", "--to", destination, "--yes"})
+	cmd.SetArgs([]string{"demo-project", "--to", destination, "--yes"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -83,9 +84,10 @@ func TestDefaultsCommandRejectsFormatBeforeDownload(t *testing.T) {
 	cmd := newDefaultsCommandWithDownloader(svc, func(context.Context, string, firebase.DefaultsFormat) ([]byte, error) {
 		return nil, errors.New("unexpected download")
 	})
-	cmd.SetArgs([]string{"demo", "--format", "yaml"})
+	cmd.SetArgs([]string{"demo-project", "--format", "yaml"})
 	err := cmd.Execute()
-	if err == nil || !strings.Contains(err.Error(), "allowed: json, xml, plist") {
+	var argumentErr *shared.ArgumentError
+	if err == nil || !errors.As(err, &argumentErr) || !strings.Contains(err.Error(), "allowed: json, xml, plist") {
 		t.Fatalf("format error = %v", err)
 	}
 }

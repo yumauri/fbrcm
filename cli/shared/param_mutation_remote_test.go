@@ -32,8 +32,8 @@ func TestReadParameterMutationOpts(t *testing.T) {
 	if len(opts.ProjectFilters) != 1 || opts.ProjectFilters[0] != "demo" {
 		t.Fatalf("ProjectFilters = %v", opts.ProjectFilters)
 	}
-	if len(opts.ParamFilters) != 1 || opts.ParamFilters[0] != "=flag" {
-		t.Fatalf("ParamFilters = %v", opts.ParamFilters)
+	if len(opts.ParamFilters) != 0 || opts.ParamArgument == nil || *opts.ParamArgument != "flag" {
+		t.Fatalf("parameter selection = filters %v, argument %#v", opts.ParamFilters, opts.ParamArgument)
 	}
 	if opts.Search.Raw != "login" || !opts.Yes {
 		t.Fatalf("opts = %+v", opts)

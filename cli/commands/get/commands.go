@@ -1,16 +1,17 @@
 package get
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/commands/get/table"
+	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
@@ -18,6 +19,7 @@ type getOptions struct {
 	projectFilters []string
 	projectExpr    string
 	paramFilters   []string
+	paramArgument  *string
 	search         shared.ParameterSearch
 	jsonOut        bool
 	update         bool
@@ -35,6 +37,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 
 	addGetFlags(getCmd)
+	contract.RegisterResponse(getCmd, []parameterRowJSON{})
 	return getCmd
 }
 
@@ -87,16 +90,15 @@ func readGetOptions(cmd *cobra.Command, args []string) (getOptions, error) {
 	if err != nil {
 		return getOptions{}, err
 	}
-	if len(args) > 0 {
-		paramFilters, err = shared.ResolveParameterArgFilters(args, paramFilters)
-		if err != nil {
-			return getOptions{}, err
-		}
+	paramArgument, err := shared.ResolveParameterArgument(args, paramFilters)
+	if err != nil {
+		return getOptions{}, err
 	}
 	return getOptions{
 		projectFilters: projectFilters,
 		projectExpr:    projectExpr,
 		paramFilters:   paramFilters,
+		paramArgument:  paramArgument,
 		search:         shared.NewParameterSearch(searchValue),
 		jsonOut:        jsonOut,
 		update:         update,
@@ -109,7 +111,7 @@ func runGetStdin(cmd *cobra.Command, opts getOptions) error {
 		if err != nil {
 			return err
 		}
-		return printGetRows(cmd, "table-stdin-dir", rows, opts.paramFilters, opts.jsonOut, false, true)
+		return printGetRows(cmd, "table-stdin-dir", rows, opts.paramFilters, opts.paramArgument, opts.jsonOut, false, true)
 	}
 	corelog.For("get").Info("stdin mode enabled; using remote config from stdin")
 	compiledExpr, err := shared.CompileExpr(opts.projectExpr, "<stdin>")
@@ -121,12 +123,12 @@ func runGetStdin(cmd *cobra.Command, opts getOptions) error {
 		return err
 	}
 	rows = filterParameterRowsByProject(rows, opts.projectFilters)
-	return printGetRows(cmd, "table-stdin", rows, opts.paramFilters, opts.jsonOut, false, false)
+	return printGetRows(cmd, "table-stdin", rows, opts.paramFilters, opts.paramArgument, opts.jsonOut, false, false)
 }
 
 func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	progress.Start("Loading projects…")
-	projects, _, err := svc.ListProjects(context.Background())
+	projects, _, err := svc.ListProjects(shared.CommandContext(cmd))
 	if err != nil {
 		return err
 	}
@@ -145,13 +147,19 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	if err != nil {
 		return err
 	}
-	loaded, err := loadProjectsParameters(context.Background(), svc, projects, opts.update)
+	loaded, err := loadProjectsParameters(shared.CommandContext(cmd), svc, projects, opts.update)
 	if err != nil {
 		return err
 	}
 
 	rows := make([]parameterRow, 0)
 	for _, item := range loaded {
+		if item.status == "stale" {
+			selector, _ := rctarget.ExactFilter(item.project.ProjectID)
+			shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "cache.stale", Message: "The command used a stale local Remote Config cache after refresh failed.", Target: item.project.ProjectID, Details: struct {
+				Source string `json:"source"`
+			}{Source: item.source}, Remediation: []shared.Remediation{{Description: "refresh the stale target", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", selector}}}})
+		}
 		if item.cfg == nil || item.cache == nil {
 			continue
 		}
@@ -162,7 +170,7 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 		rows = append(rows, projectRows...)
 	}
 
-	rows = filterParameterRows(rows, opts.paramFilters)
+	rows = filterParameterRows(rows, opts.paramFilters, opts.paramArgument)
 	sortParameterRows(rows)
 	if opts.jsonOut {
 		if err := writeRowsJSON(cmd, rows); err != nil {
@@ -173,7 +181,7 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	}
 
 	projectExact := singleExactProjectFilter(opts.projectFilters) && len(loaded) == 1
-	paramExact := singleExactParameterFilter(opts.paramFilters)
+	paramExact := opts.paramArgument != nil || singleExactParameterFilter(opts.paramFilters)
 	tableRows := rows
 	if opts.all {
 		tableRows = buildTableRows(loaded, rows)
@@ -183,8 +191,8 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	return nil
 }
 
-func printGetRows(cmd *cobra.Command, source string, rows []parameterRow, paramFilters []string, jsonOut bool, allowHideKey, includeProject bool) error {
-	rows = filterParameterRows(rows, paramFilters)
+func printGetRows(cmd *cobra.Command, source string, rows []parameterRow, paramFilters []string, paramArgument *string, jsonOut bool, allowHideKey, includeProject bool) error {
+	rows = filterParameterRows(rows, paramFilters, paramArgument)
 	sortParameterRows(rows)
 	if jsonOut {
 		return writeRowsJSON(cmd, rows)

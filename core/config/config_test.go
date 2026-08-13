@@ -188,6 +188,11 @@ func TestValidateProfileNameAndAuthID(t *testing.T) {
 	for _, id := range []string{"", " ", "..", "a/b", `a\b`} {
 		if err := ValidateProfileName(id); err == nil {
 			t.Fatalf("ValidateProfileName(%q) = nil, want error", id)
+		} else {
+			var profileErr *ProfileError
+			if !errors.As(err, &profileErr) || profileErr.Kind != ProfileErrorInvalidArgument || profileErr.Profile != id {
+				t.Fatalf("ValidateProfileName(%q) error = %#v", id, err)
+			}
 		}
 		if err := ValidateAuthID(id); err == nil {
 			t.Fatalf("ValidateAuthID(%q) = nil, want error", id)
@@ -262,7 +267,8 @@ func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 
 	writeFile(t, GetProjectsFilePath(), "{", PrivateFileMode)
 	_, err = LoadProjects()
-	if err == nil || !strings.Contains(err.Error(), "decode projects config") {
+	var invalidConfig *InvalidConfigurationError
+	if err == nil || !strings.Contains(err.Error(), "decode projects config") || !errors.As(err, &invalidConfig) || invalidConfig.Stage != "decoding" || invalidConfig.Path != GetProjectsFilePath() {
 		t.Fatalf("LoadProjects corrupt = %v, want decode error", err)
 	}
 
@@ -714,6 +720,41 @@ func TestRenameProfileRejectsExistingTarget(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "already exists") {
 		t.Fatalf("RenameProfile = %v, want already exists error", err)
 	}
+	var profileErr *ProfileError
+	if !errors.As(err, &profileErr) || profileErr.Kind != ProfileErrorConflict || profileErr.Profile != "two" {
+		t.Fatalf("RenameProfile typed error = %#v", err)
+	}
+}
+
+func TestRenameProfileSameNameRequiresExistingProfile(t *testing.T) {
+	setupTestDirs(t)
+	if err := RenameProfile("missing", "missing"); err == nil || !strings.Contains(err.Error(), "does not exist") {
+		t.Fatalf("RenameProfile missing same-name error = %v", err)
+	} else {
+		var profileErr *ProfileError
+		if !errors.As(err, &profileErr) || profileErr.Kind != ProfileErrorNotFound || profileErr.Profile != "missing" {
+			t.Fatalf("RenameProfile missing typed error = %#v", err)
+		}
+	}
+	if err := SwitchProfile("existing"); err != nil {
+		t.Fatal(err)
+	}
+	if err := RenameProfile("existing", "existing"); err != nil {
+		t.Fatalf("RenameProfile existing same-name = %v", err)
+	}
+}
+
+func TestExistingProfileSelectorsRequireExactCase(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile("Canonical"); err != nil {
+		t.Fatal(err)
+	}
+	if ProfileExists("canonical") {
+		t.Fatal("case-mismatched profile name unexpectedly exists")
+	}
+	if err := RenameProfile("canonical", "renamed"); err == nil {
+		t.Fatal("RenameProfile accepted a case-mismatched existing profile name")
+	}
 }
 
 func TestDeleteProfileRejectsActiveProfile(t *testing.T) {
@@ -725,6 +766,10 @@ func TestDeleteProfileRejectsActiveProfile(t *testing.T) {
 	err := DeleteProfile("keep")
 	if err == nil || !strings.Contains(err.Error(), "cannot delete active profile") {
 		t.Fatalf("DeleteProfile active = %v, want rejection", err)
+	}
+	var profileErr *ProfileError
+	if !errors.As(err, &profileErr) || profileErr.Kind != ProfileErrorConflict || profileErr.Profile != "keep" {
+		t.Fatalf("DeleteProfile typed error = %#v", err)
 	}
 }
 

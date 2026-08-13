@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -13,7 +14,7 @@ import (
 )
 
 type configShowResult struct {
-	Scope        string                `json:"scope"`
+	Scope        string                `json:"scope" contract:"enum=effective|global|local"`
 	Path         string                `json:"path"`
 	Exists       bool                  `json:"exists"`
 	GlobalPath   string                `json:"global_path,omitempty"`
@@ -24,9 +25,9 @@ type configShowResult struct {
 }
 
 type configValueResult struct {
-	Key    string `json:"key"`
-	Value  any    `json:"value"`
-	Source string `json:"source"`
+	Key    string          `json:"key"`
+	Value  json.RawMessage `json:"value"`
+	Source string          `json:"source" contract:"enum=absent|default|global|local|mixed|migrated"`
 }
 
 func newShowCommand() *cobra.Command {
@@ -54,7 +55,11 @@ func newShowCommand() *cobra.Command {
 					return err
 				}
 				if jsonOut {
-					return shared.WriteJSON(cmd, configValueResult{Key: args[0], Value: value, Source: source})
+					result, err := newConfigValueResult(args[0], value, source)
+					if err != nil {
+						return err
+					}
+					return shared.WriteJSON(cmd, result)
 				}
 				return writeConfigValue(cmd, args[0], value)
 			}
@@ -72,6 +77,14 @@ func newShowCommand() *cobra.Command {
 	cmd.Flags().Bool("json", false, "Print configuration as JSON")
 	addScopeFlag(cmd, scopeEffective)
 	return cmd
+}
+
+func newConfigValueResult(key string, value any, source string) (configValueResult, error) {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return configValueResult{}, fmt.Errorf("encode config value %s: %w", key, err)
+	}
+	return configValueResult{Key: key, Value: raw, Source: source}, nil
 }
 
 func scopedConfig(state configState, scope string) (*coreconfig.AppConfig, string, bool) {
@@ -122,6 +135,9 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 		}
 		return aliases, source, nil
 	case len(parts) == 3 && parts[0] == "projects" && parts[1] == "aliases":
+		if err := coreconfig.ValidateProjectAliasName(parts[2]); err != nil {
+			return nil, "", shared.InvalidArgument(err)
+		}
 		value, ok := coreconfig.CloneProjectAliases(cfg)[parts[2]]
 		if !ok {
 			return nil, "absent", nil
@@ -148,16 +164,16 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 			}
 			return append([]string(nil), cfg.Hooks.PostPublish...), source, nil
 		default:
-			return nil, "", fmt.Errorf("unknown hook key %q", parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown hook key %q", parts[1]))
 		}
 	case len(parts) == 2 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {
-			return nil, "", fmt.Errorf("unknown keybinding block %q", parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown keybinding block %q", parts[1]))
 		}
 		return cfg.Keys[parts[1]], source, nil
 	case len(parts) == 3 && parts[0] == "keys":
 		if !tuiconfig.KnownAction(parts[1], parts[2]) {
-			return nil, "", fmt.Errorf("unknown action %q in block %q", parts[2], parts[1])
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown action %q in block %q", parts[2], parts[1]))
 		}
 		value, ok := cfg.Keys[parts[1]][parts[2]]
 		if !ok {
@@ -165,7 +181,7 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 		}
 		return append([]string(nil), value...), source, nil
 	default:
-		return nil, "", fmt.Errorf("unknown config key %q", key)
+		return nil, "", shared.InvalidArgument(fmt.Errorf("unknown config key %q", key))
 	}
 }
 

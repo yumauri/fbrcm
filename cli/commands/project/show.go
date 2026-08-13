@@ -1,7 +1,6 @@
 package project
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -19,7 +18,7 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 		Short: "Show project details and auth access",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := shared.CommandContext(cmd)
 			update, err := cmd.Flags().GetBool("update")
 			if err != nil {
 				return err

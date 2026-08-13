@@ -25,15 +25,25 @@ var offlineEnabled atomic.Bool
 
 // InitOfflineMode initializes offline mode from env or a connectivity probe.
 func InitOfflineMode() {
-	raw, envSet := os.LookupEnv(env.Offline)
-	initOfflineMode(raw, envSet, defaultConnectivityProbe)
+	InitOfflineModeContext(context.Background(), true)
 }
 
-func initOfflineMode(raw string, envSet bool, probe func() error) {
+// InitOfflineModeContext initializes offline state from the environment and,
+// when requested, a connectivity probe governed by the command context.
+func InitOfflineModeContext(ctx context.Context, probe bool) {
+	raw, envSet := os.LookupEnv(env.Offline)
+	initOfflineMode(raw, envSet, probe, func() error { return defaultConnectivityProbe(ctx) })
+}
+
+func initOfflineMode(raw string, envSet, shouldProbe bool, probe func() error) {
 	logger := corelog.For("firebase.offline")
 	if envSet {
 		offlineEnabled.Store(true)
 		logger.Warn("offline mode enabled by environment", "env", env.Offline, "value", raw)
+		return
+	}
+	if !shouldProbe {
+		offlineEnabled.Store(false)
 		return
 	}
 
@@ -46,8 +56,11 @@ func initOfflineMode(raw string, envSet bool, probe func() error) {
 	logger.Debug("connectivity check passed", "url", offlineProbeURL)
 }
 
-func defaultConnectivityProbe() error {
-	ctx, cancel := context.WithTimeout(context.Background(), offlineProbeTimeout)
+func defaultConnectivityProbe(parent context.Context) error {
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, offlineProbeTimeout)
 	defer cancel()
 
 	client := &http.Client{Transport: http.DefaultTransport}

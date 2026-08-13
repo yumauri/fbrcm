@@ -35,9 +35,17 @@ func TestValidateConfiguredKeysDetectsEffectiveDefaultConflict(t *testing.T) {
 }
 
 func TestValidateConfiguredKeysAcceptsSupportedTerminalKeys(t *testing.T) {
-	for _, key := range []string{"x", "?", "space", "enter", "ctrl+r", "shift+tab", "alt+left", "f12", "meta+enter", "super+kp1"} {
+	for _, key := range []string{"x", "?", "space", "enter", "ctrl+r", "shift+tab", "alt+left", "f1", "f12", "f63", "meta+enter", "super+kp1"} {
 		if !validKeyName(key) {
 			t.Errorf("validKeyName(%q) = false", key)
+		}
+	}
+}
+
+func TestValidateConfiguredKeysRejectsNoncanonicalFunctionKeys(t *testing.T) {
+	for _, key := range []string{"f01", "f001", "f+1", "f64", "ctrl+f01"} {
+		if validKeyName(key) {
+			t.Errorf("validKeyName(%q) = true", key)
 		}
 	}
 }

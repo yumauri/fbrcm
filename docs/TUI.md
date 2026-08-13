@@ -9,6 +9,16 @@ fbrcm
 The minimum supported terminal size is 80 columns by 20 rows. A wider terminal
 is recommended when comparing values or promoting changes.
 
+## Startup and offline mode
+
+When `FBRCM_OFFLINE` is unset, TUI startup performs a short, proxy-aware HTTPS
+connectivity probe. If the probe fails, the TUI enables offline mode and uses
+available cached data. Defining `FBRCM_OFFLINE`, including with an empty value
+or `0`, skips the probe and enables offline mode immediately.
+
+The startup probe and standard HTTP requests honor `HTTPS_PROXY`, `HTTP_PROXY`,
+and `NO_PROXY`, including their lowercase forms.
+
 ## Mental model
 
 The workspace has four main areas:

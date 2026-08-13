@@ -143,6 +143,74 @@ func TestGetRemoteConfigVersionPairSharesFirebaseHistoryRequest(t *testing.T) {
 	}
 }
 
+func TestGetRemoteConfigVersionPairClassifiesMissingRelativeVersion(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "listVersions") {
+			return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"10"}]}`, ""), nil
+		}
+		return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	_, _, err := svc.GetRemoteConfigVersionPair(context.Background(), "demo", "current~2", "previous", false)
+	var lookup *RemoteConfigVersionLookupError
+	if !errors.As(err, &lookup) || lookup.Kind != "not_found" || lookup.ProjectID != "demo" || lookup.Selector != "current~2" {
+		t.Fatalf("error = %#v, lookup = %#v", err, lookup)
+	}
+}
+
+func TestListRemoteConfigVersionsDoesNotMarkFilteredFirstVersionCurrent(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	seedAuthAndProject(t, svc, "main", "demo")
+	if err := config.SaveParametersCache("demo", &config.ParametersCache{
+		ETag: "etag-10", CachedAt: time.Now().UTC(), RemoteConfig: []byte(`{"version":{"versionNumber":"10"}}`),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method != http.MethodGet || !strings.Contains(req.URL.Path, "listVersions") {
+			return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+		}
+		return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"9"},{"versionNumber":"8"}]}`, ""), nil
+	})})
+	injectFirebaseService(t, svc, "main", client)
+
+	result, err := svc.ListRemoteConfigVersions(context.Background(), "demo", VersionListOptions{Limit: 20, Before: "9"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Versions) != 2 {
+		t.Fatalf("versions = %#v", result.Versions)
+	}
+	for _, version := range result.Versions {
+		if version.Current {
+			t.Fatalf("filtered version %s incorrectly marked current", version.VersionNumber)
+		}
+	}
+}
+
+func TestRemoteConfigVersionLookupErrorsAreTyped(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	for _, test := range []struct {
+		selector string
+		kind     string
+	}{
+		{selector: "not-a-version", kind: "invalid_argument"},
+		{selector: "7", kind: "not_found"},
+		{selector: "previous", kind: "not_found"},
+		{selector: " current", kind: "invalid_argument"},
+		{selector: "CURRENT", kind: "invalid_argument"},
+	} {
+		_, err := svc.GetRemoteConfigVersion(context.Background(), "demo", test.selector, true)
+		var lookup *RemoteConfigVersionLookupError
+		if !errors.As(err, &lookup) || lookup.Kind != test.kind || lookup.ProjectID != "demo" || lookup.Selector != test.selector {
+			t.Errorf("selector %q error = %#v, want typed %s lookup error", test.selector, err, test.kind)
+		}
+	}
+}
+
 func TestParseRelativeVersionSelectorRejectsInvalidDistance(t *testing.T) {
 	for _, selector := range []string{"current~0", "latest~-1", "current~x", "current~300", "42~1"} {
 		if _, _, _, err := parseRelativeVersionSelector(selector); err == nil {

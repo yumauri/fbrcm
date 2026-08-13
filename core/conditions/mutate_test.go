@@ -177,13 +177,16 @@ func TestConditionDefinitionValidation(t *testing.T) {
 	}
 }
 
-func TestResolveNameUsesExactThenCaseInsensitiveMatching(t *testing.T) {
+func TestResolveNameExactRequiresExactCaseSensitiveName(t *testing.T) {
 	cfg := &firebase.RemoteConfig{Conditions: []firebase.RemoteConfigCondition{{Name: "Beta Users"}}}
-	if got, ok := ResolveName(cfg, "Beta Users"); !ok || got != "Beta Users" {
-		t.Fatalf("exact ResolveName = %q, %v", got, ok)
+	if got, ok := ResolveNameExact(cfg, "Beta Users"); !ok || got != "Beta Users" {
+		t.Fatalf("exact ResolveNameExact = %q, %v", got, ok)
+	}
+	if got, ok := ResolveNameExact(cfg, "beta users"); ok || got != "" {
+		t.Fatalf("case-mismatched ResolveNameExact = %q, %v; want not found", got, ok)
 	}
 	if got, ok := ResolveName(cfg, "beta users"); !ok || got != "Beta Users" {
-		t.Fatalf("case-insensitive ResolveName = %q, %v", got, ok)
+		t.Fatalf("non-positional ResolveName = %q, %v; want canonical name", got, ok)
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/mail"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -35,6 +37,38 @@ func ValidateOAuthClientSecret(data []byte) error {
 	if _, err := google.ConfigFromJSON(data, cloudPlatformScope); err != nil {
 		return fmt.Errorf("parse OAuth client secret: %w", err)
 	}
+	type clientCredentials struct {
+		ClientID     string   `json:"client_id"`
+		ClientSecret string   `json:"client_secret"`
+		AuthURI      string   `json:"auth_uri"`
+		TokenURI     string   `json:"token_uri"`
+		RedirectURIs []string `json:"redirect_uris"`
+	}
+	var document struct {
+		Installed *clientCredentials `json:"installed"`
+		Web       *clientCredentials `json:"web"`
+	}
+	if err := json.Unmarshal(data, &document); err != nil {
+		return fmt.Errorf("parse OAuth client secret: %w", err)
+	}
+	credentials := document.Installed
+	if credentials == nil {
+		credentials = document.Web
+	}
+	if credentials == nil || strings.TrimSpace(credentials.ClientID) == "" || strings.TrimSpace(credentials.ClientSecret) == "" {
+		return fmt.Errorf("parse OAuth client secret: client_id and client_secret are required")
+	}
+	if err := validateCredentialURI("auth_uri", credentials.AuthURI); err != nil {
+		return err
+	}
+	if err := validateCredentialURI("token_uri", credentials.TokenURI); err != nil {
+		return err
+	}
+	for _, redirectURI := range credentials.RedirectURIs {
+		if err := validateCredentialURI("redirect_uris", redirectURI); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -43,6 +77,33 @@ func ValidateOAuthClientSecret(data []byte) error {
 func ValidateServiceAccountKey(data []byte) error {
 	if _, err := google.JWTConfigFromJSON(data, cloudPlatformScope); err != nil {
 		return fmt.Errorf("parse service account key: %w", err)
+	}
+	var key struct {
+		ProjectID   string `json:"project_id"`
+		PrivateKey  string `json:"private_key"`
+		ClientEmail string `json:"client_email"`
+		TokenURI    string `json:"token_uri"`
+	}
+	if err := json.Unmarshal(data, &key); err != nil {
+		return fmt.Errorf("parse service account key: %w", err)
+	}
+	if strings.TrimSpace(key.ProjectID) == "" || strings.TrimSpace(key.PrivateKey) == "" {
+		return fmt.Errorf("parse service account key: project_id and private_key are required")
+	}
+	address, err := mail.ParseAddress(key.ClientEmail)
+	if err != nil || address.Address != key.ClientEmail {
+		return fmt.Errorf("parse service account key: client_email must be a valid email address")
+	}
+	if err := validateCredentialURI("token_uri", key.TokenURI); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateCredentialURI(field, value string) error {
+	parsed, err := url.ParseRequestURI(strings.TrimSpace(value))
+	if err != nil || parsed.Scheme == "" {
+		return fmt.Errorf("parse credentials: %s must be a valid absolute URI", field)
 	}
 	return nil
 }
@@ -149,7 +210,7 @@ func (s *Service) TestProjectPermissions(ctx context.Context, projectID string, 
 		return nil, fmt.Errorf("read permission response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("permission API returned %s: %s", resp.Status, strings.TrimSpace(string(responseBody)))
+		return nil, newAPIError("cloud_resource_manager", "test_permissions", resp, responseBody)
 	}
 	var payload struct {
 		Permissions []string `json:"permissions"`

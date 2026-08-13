@@ -15,13 +15,24 @@ import (
 
 const managedFeatureNamespace = "firebase"
 
+// ManagedFeatureResourceError identifies an invalid experiment or rollout ID
+// before any Firebase request is created.
+type ManagedFeatureResourceError struct {
+	Collection string
+	ItemID     string
+	Err        error
+}
+
+func (e *ManagedFeatureResourceError) Error() string { return e.Err.Error() }
+func (e *ManagedFeatureResourceError) Unwrap() error { return e.Err }
+
 type Experiment struct {
 	Name           string               `json:"name"`
 	Definition     ExperimentDefinition `json:"definition"`
 	State          string               `json:"state,omitempty"`
-	StartTime      string               `json:"startTime,omitempty"`
-	EndTime        string               `json:"endTime,omitempty"`
-	LastUpdateTime string               `json:"lastUpdateTime,omitempty"`
+	StartTime      string               `json:"startTime,omitempty" contract:"format=date-time"`
+	EndTime        string               `json:"endTime,omitempty" contract:"format=date-time"`
+	LastUpdateTime string               `json:"lastUpdateTime,omitempty" contract:"format=date-time"`
 	ETag           string               `json:"etag,omitempty"`
 	raw            json.RawMessage
 }
@@ -73,10 +84,10 @@ type Rollout struct {
 	Name           string            `json:"name"`
 	Definition     RolloutDefinition `json:"definition"`
 	State          string            `json:"state,omitempty"`
-	CreateTime     string            `json:"createTime,omitempty"`
-	StartTime      string            `json:"startTime,omitempty"`
-	EndTime        string            `json:"endTime,omitempty"`
-	LastUpdateTime string            `json:"lastUpdateTime,omitempty"`
+	CreateTime     string            `json:"createTime,omitempty" contract:"format=date-time"`
+	StartTime      string            `json:"startTime,omitempty" contract:"format=date-time"`
+	EndTime        string            `json:"endTime,omitempty" contract:"format=date-time"`
+	LastUpdateTime string            `json:"lastUpdateTime,omitempty" contract:"format=date-time"`
 	ETag           string            `json:"etag,omitempty"`
 	raw            json.RawMessage
 }
@@ -213,7 +224,7 @@ func (s *Service) getManagedFeatureJSON(ctx context.Context, projectIdentifier, 
 		return fmt.Errorf("read Remote Config %s response: %w", collection, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("remote config %s API returned %s: %s", collection, resp.Status, strings.TrimSpace(string(body)))
+		return newAPIError("firebase_remote_config", "get_"+collection, resp, body)
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(destination); err != nil {
 		return fmt.Errorf("decode Remote Config %s response: %w", collection, err)
@@ -245,7 +256,7 @@ func (s *Service) deleteManagedFeature(ctx context.Context, projectIdentifier, q
 		return fmt.Errorf("read Remote Config %s delete response: %w", collection, err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("remote config %s delete API returned %s: %s", collection, resp.Status, strings.TrimSpace(string(body)))
+		return newAPIError("firebase_remote_config", "delete_"+collection, resp, body)
 	}
 	return nil
 }
@@ -259,14 +270,17 @@ func managedFeatureResource(projectIdentifier, collection, itemID string) (strin
 		return "", fmt.Errorf("unsupported Remote Config managed feature %q", collection)
 	}
 	parent := "projects/" + url.PathEscape(projectIdentifier) + "/namespaces/" + managedFeatureNamespace + "/" + collection
-	itemID = strings.TrimSpace(itemID)
 	if itemID == "" {
 		return parent, nil
 	}
 	if strings.Contains(itemID, "/") {
 		prefix := parent + "/"
 		if !strings.HasPrefix(itemID, prefix) || strings.TrimPrefix(itemID, prefix) == "" || strings.Contains(strings.TrimPrefix(itemID, prefix), "/") {
-			return "", fmt.Errorf("invalid %s resource name %q", collection, itemID)
+			return "", &ManagedFeatureResourceError{
+				Collection: collection,
+				ItemID:     itemID,
+				Err:        fmt.Errorf("invalid %s resource name %q", collection, itemID),
+			}
 		}
 		return itemID, nil
 	}

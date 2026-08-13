@@ -48,7 +48,7 @@ func TestConfigShowMissingUsesDefaultsWithoutCreatingFile(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result.Value != true || result.Source != "default" {
+	if string(result.Value) != "true" || result.Source != "default" {
 		t.Fatalf("result = %+v", result)
 	}
 	if _, err := os.Stat(coreconfig.GetGlobalConfigFilePath()); !errors.Is(err, os.ErrNotExist) {
@@ -321,7 +321,7 @@ func TestConfigShowMergesNearestLocalConfigAndReportsSource(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result.Value != false || result.Source != "local" {
+	if string(result.Value) != "false" || result.Source != "local" {
 		t.Fatalf("result = %+v", result)
 	}
 
@@ -418,7 +418,7 @@ func TestConfigProjectAliasKeysAreRepositoryScoped(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result.Value != "acme-production-42" || result.Source != "local" {
+	if string(result.Value) != `"acme-production-42"` || result.Source != "local" {
 		t.Fatalf("alias result = %+v", result)
 	}
 
