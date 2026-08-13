@@ -115,9 +115,7 @@ func TestSubmitGroupRenameWithDraftReturnsDraftCommand(t *testing.T) {
 func TestSubmitDuplicateRenameWithDraftSelectsDuplicate(t *testing.T) {
 	m := newRenameTestModel(t, true)
 	m.parameters.FocusParameter("demo", "__default__", "flag")
-	if cmd := m.openDuplicateInput(); cmd != nil {
-		_ = cmd()
-	}
+	m.openDuplicateInput()
 	setRenameInputValue(t, &m, "flag_copy")
 
 	msg := runRenameCmd(t, m.submitRenameInput())
@@ -136,9 +134,7 @@ func TestSubmitDuplicateRenameWithDraftSelectsDuplicate(t *testing.T) {
 func TestCancelDuplicateRenameClearsTransientDuplicate(t *testing.T) {
 	m := newRenameTestModel(t, false)
 	m.parameters.FocusParameter("demo", "__default__", "flag")
-	if cmd := m.openDuplicateInput(); cmd != nil {
-		_ = cmd()
-	}
+	m.openDuplicateInput()
 	if _, _, _, _, ok := m.parameters.CurrentTransientDuplicate(); !ok {
 		t.Fatalf("transient duplicate missing before cancel")
 	}
@@ -212,10 +208,7 @@ func saveRenameParametersCache(t *testing.T, projectID string, raw json.RawMessa
 func openRenameForParameter(t *testing.T, m *Model) {
 	t.Helper()
 	m.parameters.FocusParameter("demo", "__default__", "flag")
-	cmd := m.openRenameInput()
-	if cmd != nil {
-		_ = cmd()
-	}
+	m.openRenameInput()
 	if !m.renameInput.IsOpen() {
 		t.Fatalf("rename input did not open")
 	}
@@ -234,10 +227,7 @@ func openRenameForGroup(t *testing.T, m *Model, groupKey string) {
 	if _, currentGroupKey, _, ok := m.parameters.CurrentGroupRef(); !ok || currentGroupKey != groupKey {
 		t.Fatalf("current group = %q, ok = %v; want %q, true", currentGroupKey, ok, groupKey)
 	}
-	cmd = m.openRenameInput()
-	if cmd != nil {
-		_ = cmd()
-	}
+	m.openRenameInput()
 	if !m.renameInput.IsOpen() {
 		t.Fatalf("rename input did not open")
 	}
@@ -247,11 +237,8 @@ func setRenameInputValue(t *testing.T, m *Model, value string) {
 	t.Helper()
 	x, y := m.renameInput.Position()
 	m.renameInput = m.renameInput.Close()
-	next, cmd := m.renameInput.Open(x, y, 1, 80, value)
+	next, _ := m.renameInput.Open(x, y, 1, 80, value)
 	m.renameInput = next
-	if cmd != nil {
-		_ = cmd()
-	}
 }
 
 func runRenameCmd(t *testing.T, cmd tea.Cmd) messages.ParametersLoadedMsg {

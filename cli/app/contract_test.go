@@ -10,6 +10,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	jsonschema "github.com/santhosh-tekuri/jsonschema/v6"
@@ -1979,7 +1980,7 @@ func TestArtifactSchemaRejectsContradictoryRepresentations(t *testing.T) {
 
 	document = structToContractValue(t, envelope).(map[string]any)
 	data = document["data"].(map[string]any)
-	data["json_content"] = map[string]any{"unrelated": true}
+	data["text_content"] = "contradictory inline representation"
 	validateContractValue(t, id, document, false)
 }
 
@@ -2525,61 +2526,71 @@ func marshalEnvelope(t *testing.T, envelope contract.Envelope) []byte {
 	return output.Bytes()
 }
 
-func validateContractValue(t *testing.T, schemaID string, value any, valid bool) {
-	t.Helper()
-	raw, err := schemas.ReadByID(schemaID)
+type contractSchemaRegistry struct {
+	mu       sync.Mutex
+	compiler *jsonschema.Compiler
+	compiled map[string]*jsonschema.Schema
+}
+
+var (
+	contractSchemasOnce sync.Once
+	contractSchemas     *contractSchemaRegistry
+	contractSchemasErr  error
+)
+
+func loadContractSchemaRegistry() {
+	ids, err := schemas.List()
 	if err != nil {
-		t.Fatal(err)
-	}
-	var document any
-	if err := json.Unmarshal(raw, &document); err != nil {
-		t.Fatal(err)
+		contractSchemasErr = err
+		return
 	}
 	compiler := jsonschema.NewCompiler()
 	compiler.AssertFormat()
-	semanticRaw, err := schemas.ReadByID(contract.SemanticSchemaID())
+	for _, id := range ids {
+		raw, readErr := schemas.ReadByID(id)
+		if readErr != nil {
+			contractSchemasErr = readErr
+			return
+		}
+		var document any
+		if unmarshalErr := json.Unmarshal(raw, &document); unmarshalErr != nil {
+			contractSchemasErr = fmt.Errorf("decode schema %s: %w", id, unmarshalErr)
+			return
+		}
+		if addErr := compiler.AddResource(id, document); addErr != nil {
+			contractSchemasErr = fmt.Errorf("register schema %s: %w", id, addErr)
+			return
+		}
+	}
+	contractSchemas = &contractSchemaRegistry{
+		compiler: compiler,
+		compiled: make(map[string]*jsonschema.Schema),
+	}
+}
+
+func compiledContractSchema(id string) (*jsonschema.Schema, error) {
+	contractSchemasOnce.Do(loadContractSchemaRegistry)
+	if contractSchemasErr != nil {
+		return nil, contractSchemasErr
+	}
+	contractSchemas.mu.Lock()
+	defer contractSchemas.mu.Unlock()
+	if compiled, ok := contractSchemas.compiled[id]; ok {
+		return compiled, nil
+	}
+	compiled, err := contractSchemas.compiler.Compile(id)
+	if err != nil {
+		return nil, fmt.Errorf("compile %s: %w", id, err)
+	}
+	contractSchemas.compiled[id] = compiled
+	return compiled, nil
+}
+
+func validateContractValue(t *testing.T, schemaID string, value any, valid bool) {
+	t.Helper()
+	compiled, err := compiledContractSchema(schemaID)
 	if err != nil {
 		t.Fatal(err)
-	}
-	var semanticDocument any
-	if err := json.Unmarshal(semanticRaw, &semanticDocument); err != nil {
-		t.Fatal(err)
-	}
-	if err := compiler.AddResource(contract.SemanticSchemaID(), semanticDocument); err != nil {
-		t.Fatal(err)
-	}
-	if schemaID != contract.CapabilitySchemaID() {
-		capabilityRaw, readErr := schemas.ReadByID(contract.CapabilitySchemaID())
-		if readErr != nil {
-			t.Fatal(readErr)
-		}
-		var capabilityDocument any
-		if err := json.Unmarshal(capabilityRaw, &capabilityDocument); err != nil {
-			t.Fatal(err)
-		}
-		if err := compiler.AddResource(contract.CapabilitySchemaID(), capabilityDocument); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if schemaID != contract.EnvelopeSchemaID() {
-		envelopeRaw, readErr := schemas.ReadByID(contract.EnvelopeSchemaID())
-		if readErr != nil {
-			t.Fatal(readErr)
-		}
-		var envelopeDocument any
-		if err := json.Unmarshal(envelopeRaw, &envelopeDocument); err != nil {
-			t.Fatal(err)
-		}
-		if err := compiler.AddResource(contract.EnvelopeSchemaID(), envelopeDocument); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := compiler.AddResource(schemaID, document); err != nil {
-		t.Fatal(err)
-	}
-	compiled, err := compiler.Compile(schemaID)
-	if err != nil {
-		t.Fatalf("compile %s: %v", schemaID, err)
 	}
 	err = compiled.Validate(value)
 	if valid && err != nil {

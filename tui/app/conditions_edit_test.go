@@ -28,9 +28,7 @@ func TestNewConditionUsesNameThenRawExpressionAndStagesIntoDraft(t *testing.T) {
 	m.conditions, _ = m.conditions.Update(messages.ConditionsLoadedMsg{Project: project, Tree: &core.ConditionsTree{}, Source: "draft"})
 	m.setActive(panels.Conditions)
 
-	if cmd := m.openNewConditionInput(); cmd != nil {
-		_ = cmd()
-	}
+	m.openNewConditionInput()
 	setRenameInputValue(t, &m, "beta_users")
 	var handled bool
 	m, _, handled = m.updateOpenModal(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
