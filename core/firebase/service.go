@@ -9,10 +9,14 @@ import (
 )
 
 type Service struct {
-	httpClient *http.Client
-	// quotaProjectID stores optional quota project for client-based Google APIs.
-	quotaProjectID        string
-	useTargetProjectQuota bool
+	httpClient         *http.Client
+	quotaProjectPolicy quotaProjectPolicy
+}
+
+type authHTTPClientResult struct {
+	client                   *http.Client
+	credentialQuotaProjectID string
+	useTargetProjectQuota    bool
 }
 
 // NewServiceForAuth constructs service for auth entry with options.
@@ -20,47 +24,58 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 	logger := corelog.For("firebase")
 	logger.Debug("create firebase service", "auth_id", auth.ID, "auth_type", auth.Type)
 
-	client, quotaProjectID, useTargetProjectQuota, err := authHTTPClient(ctx, auth, autoOpen)
+	environmentQuotaProjectID, err := environmentQuotaProjectID()
+	if err != nil {
+		return nil, err
+	}
+	result, err := authHTTPClient(ctx, auth, autoOpen)
 	if err != nil {
 		logger.Error("create firebase http client failed", "err", err)
 		return nil, err
 	}
 
 	logger.Debug("firebase service ready")
-	return &Service{
-		httpClient:            client,
-		quotaProjectID:        quotaProjectID,
-		useTargetProjectQuota: useTargetProjectQuota,
-	}, nil
+	return serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID), nil
 }
 
 // NewDiagnosticServiceForAuth constructs a service without starting an
 // interactive OAuth authorization flow or persisting refreshed credentials.
 func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*Service, error) {
-	client, quotaProjectID, useTargetProjectQuota, err := diagnosticAuthHTTPClient(ctx, auth)
+	environmentQuotaProjectID, err := environmentQuotaProjectID()
 	if err != nil {
 		return nil, err
 	}
-	return &Service{
-		httpClient:            client,
-		quotaProjectID:        quotaProjectID,
-		useTargetProjectQuota: useTargetProjectQuota,
-	}, nil
+	result, err := diagnosticAuthHTTPClient(ctx, auth)
+	if err != nil {
+		return nil, err
+	}
+	return serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID), nil
 }
 
-func diagnosticAuthHTTPClient(ctx context.Context, auth config.AuthEntry) (*http.Client, string, bool, error) {
+func serviceFromAuthHTTPClientResult(result authHTTPClientResult, environmentQuotaProjectID string) *Service {
+	return &Service{
+		httpClient: result.client,
+		quotaProjectPolicy: quotaProjectPolicy{
+			environmentQuotaProjectID: environmentQuotaProjectID,
+			credentialQuotaProjectID:  result.credentialQuotaProjectID,
+			useTargetProjectQuota:     result.useTargetProjectQuota,
+		},
+	}
+}
+
+func diagnosticAuthHTTPClient(ctx context.Context, auth config.AuthEntry) (authHTTPClientResult, error) {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		client, err := diagnosticOAuthHTTPClient(ctx, config.OAuthClientSecretPath(auth), config.OAuthTokenPath(auth))
-		return client, "", false, err
+		return authHTTPClientResult{client: client}, err
 	case config.AuthTypeServiceAccount:
 		client, err := serviceAccountHTTPClient(ctx, config.ServiceAccountKeyPath(auth))
-		return client, "", false, err
+		return authHTTPClientResult{client: client}, err
 	case config.AuthTypeGCloud:
 		client, quotaProjectID, err := gcloudHTTPClient(ctx)
-		return client, quotaProjectID, true, err
+		return authHTTPClientResult{client: client, credentialQuotaProjectID: quotaProjectID, useTargetProjectQuota: true}, err
 	default:
-		return nil, "", false, errAuthRequired()
+		return authHTTPClientResult{}, errAuthRequired()
 	}
 }
 
@@ -73,19 +88,19 @@ func NewServiceWithHTTPClient(client *http.Client) *Service {
 	return &Service{httpClient: client}
 }
 
-func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool) (*http.Client, string, bool, error) {
+func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool) (authHTTPClientResult, error) {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		client, err := oauthHTTPClient(ctx, config.OAuthClientSecretPath(auth), config.OAuthTokenPath(auth), autoOpen)
-		return client, "", false, err
+		return authHTTPClientResult{client: client}, err
 	case config.AuthTypeServiceAccount:
 		client, err := serviceAccountHTTPClient(ctx, config.ServiceAccountKeyPath(auth))
-		return client, "", false, err
+		return authHTTPClientResult{client: client}, err
 	case config.AuthTypeGCloud:
 		client, quotaProjectID, err := gcloudHTTPClient(ctx)
-		return client, quotaProjectID, true, err
+		return authHTTPClientResult{client: client, credentialQuotaProjectID: quotaProjectID, useTargetProjectQuota: true}, err
 	default:
-		return nil, "", false, errAuthRequired()
+		return authHTTPClientResult{}, errAuthRequired()
 	}
 }
 
@@ -93,10 +108,7 @@ func (s *Service) setQuotaProject(req *http.Request, targetProjectID string) {
 	if req == nil {
 		return
 	}
-	quotaProjectID := s.quotaProjectID
-	if quotaProjectID == "" && s.useTargetProjectQuota {
-		quotaProjectID = targetProjectID
-	}
+	quotaProjectID := s.quotaProjectPolicy.projectID(targetProjectID)
 	if quotaProjectID == "" {
 		return
 	}

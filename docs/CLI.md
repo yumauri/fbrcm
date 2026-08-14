@@ -453,6 +453,7 @@ FBRCM_PROFILE
 | `NO_COLOR` | Disable CLI, prompt, log, and TUI colors when set to a non-empty value. |
 | `COLUMNS` | Supply a positive terminal width for human-readable CLI output. Invalid values are ignored. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Select an Application Default Credentials JSON file for gcloud identities and diagnostics. |
+| `GOOGLE_CLOUD_QUOTA_PROJECT` | Set the Google Cloud quota and billing project for Firebase and Cloud Resource Manager requests made with gcloud, OAuth, or service-account identities, including diagnostics. |
 | `XDG_CONFIG_HOME` | Supply the Unix config home when `FBRCM_CONFIG_DIR` is unset; fbrcm appends `fbrcm`. |
 | `XDG_CACHE_HOME` | Supply the Unix user-cache home where supported when `FBRCM_CACHE_DIR` is unset; fbrcm appends `fbrcm`. |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Configure Go's HTTP transport. Lowercase forms are also honored. |
@@ -465,6 +466,18 @@ faint, italic, underline, or reverse video.
 `config edit` also consults `VISUAL`, `EDITOR`, and on Unix-like systems
 `SHELL`. Directory discovery follows the operating system and may use `HOME`,
 `USERPROFILE`, `LOCALAPPDATA`, or `APPDATA`.
+
+`GOOGLE_CLOUD_QUOTA_PROJECT` is the standard Google Cloud environment override.
+A nonempty trimmed value applies to every configured auth type and takes
+precedence over `quota_project_id` in Application Default Credentials and over
+fbrcm's gcloud target-project fallback. The ADC quota project remains available
+only to gcloud identities. When neither override is available, gcloud identities
+use the request's target project where one exists; project listing has no target
+and therefore no such fallback. OAuth and service-account identities do not gain
+an implicit target fallback. The authenticated principal must have
+`serviceusage.services.use` on the selected quota project. Invalid nonempty
+values fail as typed authentication configuration or credential errors before
+fbrcm starts OAuth interaction or sends an API request.
 
 ### Filter Queries
 
@@ -2319,7 +2332,8 @@ Flags:
 
 Adds or replaces a [Google Cloud CLI](https://cloud.google.com/cli) ADC
 identity. Run `gcloud auth application-default login` first so ADC discovery
-can find credentials.
+can find credentials. If the selected ADC JSON contains `quota_project_id`,
+fbrcm uses it unless `GOOGLE_CLOUD_QUOTA_PROJECT` overrides it for the process.
 
 Flags:
 

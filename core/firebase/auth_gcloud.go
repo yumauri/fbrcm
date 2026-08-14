@@ -2,13 +2,11 @@ package firebase
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -28,27 +26,13 @@ func gcloudHTTPClient(ctx context.Context) (*http.Client, string, error) {
 	tokenSource := authenticationTokenSource{base: credentials.TokenSource, authType: "gcloud", operation: "token_exchange"}
 	client := oauth2.NewClient(ctx, tokenSource)
 
-	quotaProjectID := adcQuotaProjectID()
+	quotaProjectID, err := credentialQuotaProjectID(credentials.JSON)
+	if err != nil {
+		logger.Error("load gcloud ADC quota project failed", "err", err)
+		return nil, "", err
+	}
 	logger.Debug("gcloud application default credentials http client ready", "quota_project_id", quotaProjectID != "")
 	return wrapAuthHTTPClient(client), quotaProjectID, nil
-}
-
-func adcQuotaProjectID() string {
-	path := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	if strings.TrimSpace(path) == "" {
-		path = wellKnownADCFile()
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	var payload struct {
-		QuotaProjectID string `json:"quota_project_id"`
-	}
-	if err := json.Unmarshal(data, &payload); err != nil {
-		return ""
-	}
-	return strings.TrimSpace(payload.QuotaProjectID)
 }
 
 func wellKnownADCFile() string {

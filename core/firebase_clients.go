@@ -76,6 +76,19 @@ func withAuthFailureID(authID string, err error) error {
 	if errors.As(err, &authentication) {
 		return &AuthError{Kind: authentication.Kind, AuthID: authID, Err: err}
 	}
+	var quotaProject *firebase.QuotaProjectError
+	if errors.As(err, &quotaProject) {
+		if quotaProject.Source == firebase.QuotaProjectSourceCredentials {
+			authentication := &firebase.AuthenticationError{
+				Kind:      firebase.AuthenticationCredentialsInvalid,
+				AuthType:  "gcloud",
+				Operation: "load_credentials",
+				Err:       err,
+			}
+			return &AuthError{Kind: authentication.Kind, AuthID: authID, Err: authentication}
+		}
+		return &AuthError{Kind: "configuration", AuthID: authID, Err: err}
+	}
 	return err
 }
 

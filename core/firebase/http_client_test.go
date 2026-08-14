@@ -240,3 +240,18 @@ func TestResilientTransportDryRunSkipsNetwork(t *testing.T) {
 		t.Fatalf("status = %d", resp.StatusCode)
 	}
 }
+
+func TestCloneRequestPreservesQuotaProjectHeader(t *testing.T) {
+	req, err := http.NewRequest(http.MethodGet, "https://example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("X-Goog-User-Project", "billing-project")
+	cloned, err := cloneRequest(req, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cloned.Header.Get("X-Goog-User-Project"); got != "billing-project" {
+		t.Fatalf("cloned quota project header = %q", got)
+	}
+}

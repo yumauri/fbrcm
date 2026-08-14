@@ -139,6 +139,17 @@ were rolled back after a later failure.
 | `FBRCM_NO_LOCAL_CONFIG` | ignore repository `.fbrcm.toml` discovery when set to a nonempty value |
 | `FBRCM_LOG_LEVEL` | override the `silent` JSON-mode default if you want logs on stderr |
 | `FBRCM_HOOK_TRUST` | pin the exact `fbrcm hooks fingerprint` value in CI to trust repo hooks non-interactively |
+| `GOOGLE_CLOUD_QUOTA_PROJECT` | set one Google Cloud quota/billing project for Firebase and Cloud Resource Manager requests across gcloud, OAuth, and service-account identities |
+
+`GOOGLE_CLOUD_QUOTA_PROJECT` overrides an ADC `quota_project_id` and any
+gcloud target-project fallback. The caller needs `serviceusage.services.use`
+on that project. Malformed values produce a typed `auth.configuration_invalid`
+problem; malformed ADC quota metadata produces `auth.credentials_invalid`.
+Use the standard Google variable name, not an fbrcm-specific alias:
+
+```text
+GOOGLE_CLOUD_QUOTA_PROJECT=automation-quota fbrcm projects update --json
+```
 
 ## Minimal end-to-end example
 

@@ -43,7 +43,7 @@ func (s *Service) DownloadRemoteConfigDefaults(ctx context.Context, projectID st
 	}
 	logger.Info("download remote config defaults", "project_id", projectID, "format", parsedFormat)
 
-	resource, quotaProjectID, err := remoteConfigResource(projectID)
+	resource, targetProjectID, err := remoteConfigResource(projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (s *Service) DownloadRemoteConfigDefaults(ctx context.Context, projectID st
 	if err != nil {
 		return nil, fmt.Errorf("create remote config defaults request: %w", err)
 	}
-	s.setQuotaProject(req, quotaProjectID)
+	s.setQuotaProject(req, targetProjectID)
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)

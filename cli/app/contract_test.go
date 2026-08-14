@@ -19,6 +19,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/schemas"
 )
@@ -1148,6 +1149,24 @@ func TestBuildEnvelopeConvertsMismatchedRegisteredPayloadToContractViolation(t *
 		t.Fatalf("envelope = %#v", envelope)
 	}
 	validateContractValue(t, envelope.Schema, structToContractValue(t, envelope), true)
+}
+
+func TestQuotaProjectConfigurationFailureEnvelopeConforms(t *testing.T) {
+	root := NewRootForContract("test")
+	cmd, _, err := root.Find([]string{"projects", "list"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cause := &firebase.QuotaProjectError{
+		Source:   firebase.QuotaProjectSourceEnvironment,
+		Variable: "GOOGLE_CLOUD_QUOTA_PROJECT",
+		Err:      errors.New("invalid GOOGLE_CLOUD_QUOTA_PROJECT"),
+	}
+	envelope := contract.BuildEnvelope(cmd, "test", nil, &core.AuthError{Kind: "configuration", AuthID: "personal", Err: cause})
+	if envelope.Outcome != "failure" || envelope.ExitCode != 4 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "auth.configuration_invalid" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	validateContractDocument(t, envelope.Schema, marshalEnvelope(t, envelope))
 }
 
 func TestDiffResponseSchemasCorrelateChangedAndExitCode(t *testing.T) {

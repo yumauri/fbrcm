@@ -147,47 +147,47 @@ func (r Rollout) MarshalJSON() ([]byte, error) {
 	return json.Marshal(rolloutWire(r))
 }
 
-func (s *Service) ListExperiments(ctx context.Context, projectIdentifier, quotaProjectID string, opts ListManagedFeaturesOptions) (ExperimentsPage, error) {
+func (s *Service) ListExperiments(ctx context.Context, projectIdentifier, targetProjectID string, opts ListManagedFeaturesOptions) (ExperimentsPage, error) {
 	var page ExperimentsPage
-	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, quotaProjectID, "experiments", "", opts, &page); err != nil {
+	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, targetProjectID, "experiments", "", opts, &page); err != nil {
 		return ExperimentsPage{}, err
 	}
 	return page, nil
 }
 
-func (s *Service) GetExperiment(ctx context.Context, projectIdentifier, quotaProjectID, experimentID string) (Experiment, error) {
+func (s *Service) GetExperiment(ctx context.Context, projectIdentifier, targetProjectID, experimentID string) (Experiment, error) {
 	var experiment Experiment
-	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, quotaProjectID, "experiments", experimentID, ListManagedFeaturesOptions{}, &experiment); err != nil {
+	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, targetProjectID, "experiments", experimentID, ListManagedFeaturesOptions{}, &experiment); err != nil {
 		return Experiment{}, err
 	}
 	return experiment, nil
 }
 
-func (s *Service) DeleteExperiment(ctx context.Context, projectIdentifier, quotaProjectID, experimentID string) error {
-	return s.deleteManagedFeature(ctx, projectIdentifier, quotaProjectID, "experiments", experimentID)
+func (s *Service) DeleteExperiment(ctx context.Context, projectIdentifier, targetProjectID, experimentID string) error {
+	return s.deleteManagedFeature(ctx, projectIdentifier, targetProjectID, "experiments", experimentID)
 }
 
-func (s *Service) ListRollouts(ctx context.Context, projectIdentifier, quotaProjectID string, opts ListManagedFeaturesOptions) (RolloutsPage, error) {
+func (s *Service) ListRollouts(ctx context.Context, projectIdentifier, targetProjectID string, opts ListManagedFeaturesOptions) (RolloutsPage, error) {
 	var page RolloutsPage
-	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, quotaProjectID, "rollouts", "", opts, &page); err != nil {
+	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, targetProjectID, "rollouts", "", opts, &page); err != nil {
 		return RolloutsPage{}, err
 	}
 	return page, nil
 }
 
-func (s *Service) GetRollout(ctx context.Context, projectIdentifier, quotaProjectID, rolloutID string) (Rollout, error) {
+func (s *Service) GetRollout(ctx context.Context, projectIdentifier, targetProjectID, rolloutID string) (Rollout, error) {
 	var rollout Rollout
-	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, quotaProjectID, "rollouts", rolloutID, ListManagedFeaturesOptions{}, &rollout); err != nil {
+	if err := s.getManagedFeatureJSON(ctx, projectIdentifier, targetProjectID, "rollouts", rolloutID, ListManagedFeaturesOptions{}, &rollout); err != nil {
 		return Rollout{}, err
 	}
 	return rollout, nil
 }
 
-func (s *Service) DeleteRollout(ctx context.Context, projectIdentifier, quotaProjectID, rolloutID string) error {
-	return s.deleteManagedFeature(ctx, projectIdentifier, quotaProjectID, "rollouts", rolloutID)
+func (s *Service) DeleteRollout(ctx context.Context, projectIdentifier, targetProjectID, rolloutID string) error {
+	return s.deleteManagedFeature(ctx, projectIdentifier, targetProjectID, "rollouts", rolloutID)
 }
 
-func (s *Service) getManagedFeatureJSON(ctx context.Context, projectIdentifier, quotaProjectID, collection, itemID string, opts ListManagedFeaturesOptions, destination any) error {
+func (s *Service) getManagedFeatureJSON(ctx context.Context, projectIdentifier, targetProjectID, collection, itemID string, opts ListManagedFeaturesOptions, destination any) error {
 	logger := corelog.For("firebase")
 	resource, err := managedFeatureResource(projectIdentifier, collection, itemID)
 	if err != nil {
@@ -211,13 +211,13 @@ func (s *Service) getManagedFeatureJSON(ctx context.Context, projectIdentifier, 
 	if err != nil {
 		return fmt.Errorf("create Remote Config %s request: %w", collection, err)
 	}
-	s.setQuotaProject(req, quotaProjectID)
-	logHTTPRequest(logger.With("project_id", quotaProjectID, "resource", resource), req)
+	s.setQuotaProject(req, targetProjectID)
+	logHTTPRequest(logger.With("project_id", targetProjectID, "resource", resource), req)
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("get Remote Config %s: %w", collection, err)
 	}
-	logHTTPResponse(logger.With("project_id", quotaProjectID, "resource", resource), req, resp)
+	logHTTPResponse(logger.With("project_id", targetProjectID, "resource", resource), req, resp)
 	body, err := io.ReadAll(resp.Body)
 	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
@@ -232,7 +232,7 @@ func (s *Service) getManagedFeatureJSON(ctx context.Context, projectIdentifier, 
 	return nil
 }
 
-func (s *Service) deleteManagedFeature(ctx context.Context, projectIdentifier, quotaProjectID, collection, itemID string) error {
+func (s *Service) deleteManagedFeature(ctx context.Context, projectIdentifier, targetProjectID, collection, itemID string) error {
 	logger := corelog.For("firebase")
 	resource, err := managedFeatureResource(projectIdentifier, collection, itemID)
 	if err != nil {
@@ -243,13 +243,13 @@ func (s *Service) deleteManagedFeature(ctx context.Context, projectIdentifier, q
 	if err != nil {
 		return fmt.Errorf("create Remote Config %s delete request: %w", collection, err)
 	}
-	s.setQuotaProject(req, quotaProjectID)
-	logHTTPRequest(logger.With("project_id", quotaProjectID, "resource", resource), req)
+	s.setQuotaProject(req, targetProjectID)
+	logHTTPRequest(logger.With("project_id", targetProjectID, "resource", resource), req)
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("delete Remote Config %s: %w", collection, err)
 	}
-	logHTTPResponse(logger.With("project_id", quotaProjectID, "resource", resource), req, resp)
+	logHTTPResponse(logger.With("project_id", targetProjectID, "resource", resource), req, resp)
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

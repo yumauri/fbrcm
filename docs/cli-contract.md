@@ -666,6 +666,14 @@ unknown first component renders root help. The root schema includes the
 executable `--version` option. Schema lookup publishes exact case-sensitive
 embedded-ID matching and a typed `schema.not_found` result.
 
+`GOOGLE_CLOUD_QUOTA_PROJECT` is inherited process context rather than a command
+argument, so it is not represented in invocation schemas or capability flags.
+An invalid nonempty environment value fails before auth interaction or network
+access as `auth.configuration_invalid`; invalid `quota_project_id` metadata in
+the ADC selected for a gcloud identity fails as `auth.credentials_invalid`.
+Both are non-retryable auth-category failures with semantic exit status 4 and
+retain the selected auth identity as their problem target.
+
 Direct mutation result DTOs expose selection and no-op provenance:
 
 ```json

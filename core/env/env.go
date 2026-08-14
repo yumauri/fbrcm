@@ -6,15 +6,16 @@ import (
 )
 
 const (
-	LogLevel      = "FBRCM_LOG_LEVEL"
-	Offline       = "FBRCM_OFFLINE"
-	Profile       = "FBRCM_PROFILE"
-	NoColor       = "NO_COLOR"
-	ConfigDir     = "FBRCM_CONFIG_DIR"
-	CacheDir      = "FBRCM_CACHE_DIR"
-	Editor        = "FBRCM_EDITOR"
-	NoLocalConfig = "FBRCM_NO_LOCAL_CONFIG"
-	XDGConfigHome = "XDG_CONFIG_HOME"
+	LogLevel                = "FBRCM_LOG_LEVEL"
+	Offline                 = "FBRCM_OFFLINE"
+	Profile                 = "FBRCM_PROFILE"
+	NoColor                 = "NO_COLOR"
+	ConfigDir               = "FBRCM_CONFIG_DIR"
+	CacheDir                = "FBRCM_CACHE_DIR"
+	Editor                  = "FBRCM_EDITOR"
+	NoLocalConfig           = "FBRCM_NO_LOCAL_CONFIG"
+	GoogleCloudQuotaProject = "GOOGLE_CLOUD_QUOTA_PROJECT"
+	XDGConfigHome           = "XDG_CONFIG_HOME"
 )
 
 func LookupTrimmed(name string) (string, bool) {

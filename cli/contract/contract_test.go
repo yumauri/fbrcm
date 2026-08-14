@@ -249,6 +249,41 @@ func TestAuthenticationFailuresRemainTypedAndTargeted(t *testing.T) {
 	}
 }
 
+func TestQuotaProjectFailuresUseExistingTypedAuthProblems(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		source   firebase.QuotaProjectSource
+		authKind string
+		wantCode string
+	}{
+		{
+			name:     "environment configuration",
+			source:   firebase.QuotaProjectSourceEnvironment,
+			authKind: "configuration",
+			wantCode: "auth.configuration_invalid",
+		},
+		{
+			name:     "ADC credential configuration",
+			source:   firebase.QuotaProjectSourceCredentials,
+			authKind: firebase.AuthenticationCredentialsInvalid,
+			wantCode: "auth.credentials_invalid",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cause := &firebase.QuotaProjectError{Source: test.source, Err: errors.New("invalid quota project")}
+			var inner error = cause
+			if test.source == firebase.QuotaProjectSourceCredentials {
+				inner = &firebase.AuthenticationError{Kind: test.authKind, AuthType: "gcloud", Operation: "load_credentials", Err: cause}
+			}
+			err := &core.AuthError{Kind: test.authKind, AuthID: "personal", Err: inner}
+			problem := Classify(err)
+			if problem.Code != test.wantCode || problem.Category != "auth" || problem.Retryable || problem.Target == nil || *problem.Target != "personal" || ExitCode(nil, err) != 4 {
+				t.Fatalf("problem = %#v exit=%d", problem, ExitCode(nil, err))
+			}
+		})
+	}
+}
+
 func TestInteractionProblemSuggestsNonInteractiveConfirmation(t *testing.T) {
 	problem := Classify(shared.InteractionRequired("confirmation is required", true, "--yes"))
 	if problem.Category != "interaction" || problem.Retryable || len(problem.Remediation) != 1 || problem.Remediation[0].Strategy != shared.RemediationRetryWithArguments || len(problem.Remediation[0].Argv) != 1 || problem.Remediation[0].Argv[0] != "--yes" {
