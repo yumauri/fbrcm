@@ -1,0 +1,17 @@
+{
+  "name": "experiments_show_json",
+  "command_id": "experiments.show",
+  "args": ["experiments", "show", "${PROJECT_ID}", "onboarding-copy", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/namespaces/firebase/experiments/onboarding-copy",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "json_output": true,
+  "fixture": "managed_features"
+}

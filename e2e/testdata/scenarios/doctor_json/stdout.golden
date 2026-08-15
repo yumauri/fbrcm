@@ -1,0 +1,135 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:response",
+  "contract_version": "1.0.0",
+  "command": "doctor",
+  "requested_command": "doctor",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 11,
+    "items": [
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "profile",
+        "status": "pass",
+        "check": "Profile",
+        "detail": "default"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "config-directory",
+        "status": "pass",
+        "check": "Profile config directory",
+        "detail": "<E2E_RUN_ROOT>/environment/config/default"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "cache-writable",
+        "status": "pass",
+        "check": "Profile cache writable",
+        "detail": "<E2E_RUN_ROOT>/environment/cache/default"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "auth-config",
+        "status": "pass",
+        "check": "Auth config",
+        "detail": "1 identities; default e2e"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "credentials:e2e",
+        "status": "pass",
+        "check": "Credentials (e2e)",
+        "detail": "oauth: <E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "token:e2e",
+        "status": "pass",
+        "check": "OAuth token (e2e)",
+        "detail": "valid until 2099-01-01 00:00:00 UTC"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "projects-config",
+        "status": "pass",
+        "check": "Projects config",
+        "detail": "1 projects"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "network",
+        "status": "pass",
+        "check": "Network",
+        "detail": "online"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "api:cloud-resource-manager:e2e",
+        "status": "pass",
+        "check": "Cloud Resource Manager API (e2e)",
+        "detail": "project listing allowed"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "api:remote-config:northstar-wallet",
+        "status": "pass",
+        "check": "Firebase Remote Config API (northstar-wallet)",
+        "detail": "read allowed"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "offline": false,
+        "id": "permissions:northstar-wallet",
+        "status": "pass",
+        "check": "Firebase permissions (northstar-wallet)",
+        "detail": "cloudconfig.configs.get, cloudconfig.configs.update"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

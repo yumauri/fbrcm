@@ -1,0 +1,10 @@
+{
+  "name": "projects_aliases_list_narrow",
+  "command_id": "projects.aliases.list",
+  "args": ["projects", "aliases", "list"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "fixture": "read_state",
+  "local_config": true,
+  "terminal_width": 48
+}

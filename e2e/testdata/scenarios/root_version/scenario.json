@@ -1,0 +1,7 @@
+{
+  "name": "root_version",
+  "command_id": "root",
+  "args": ["--version"],
+  "expected_exit_code": 0,
+  "expected_http": []
+}

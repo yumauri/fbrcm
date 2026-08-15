@@ -1,0 +1,33 @@
+{
+  "name": "conditions_list_filtered_json",
+  "command_id": "conditions.list",
+  "args": [
+    "conditions",
+    "list",
+    "${PROJECT_ID}",
+    "--update",
+    "--filter",
+    "=kyc_pending",
+    "--search",
+    "android",
+    "--expr",
+    "priority == 2",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

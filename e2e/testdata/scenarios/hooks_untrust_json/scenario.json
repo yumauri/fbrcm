@@ -1,0 +1,12 @@
+{
+  "name": "hooks_untrust_json",
+  "command_id": "hooks.untrust",
+  "args": ["hooks", "untrust", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{"root": "config", "path": "hook-trust.json"}],
+  "json_output": true,
+  "fixture": "hooks_untrust",
+  "local_config": true,
+  "offline": true
+}

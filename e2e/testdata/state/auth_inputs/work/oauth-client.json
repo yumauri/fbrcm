@@ -1,0 +1,9 @@
+{
+  "installed": {
+    "client_id": "synthetic-secondary.apps.googleusercontent.com",
+    "client_secret": "not-a-real-secret",
+    "auth_uri": "https://accounts.example.test/o/oauth2/auth",
+    "token_uri": "https://oauth.example.test/token",
+    "redirect_uris": ["http://localhost"]
+  }
+}

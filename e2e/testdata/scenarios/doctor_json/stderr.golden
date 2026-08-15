@@ -1,0 +1,48 @@
+[1mDEBU[m logger initialized [2mmode[m[2m=[mcli [2mlog_level[m[2m=[mDEBUG
+[1mDEBU[m core service initialized [2mcomponent[m[2m=[mcore
+[1mDEBU[m application start [2mcomponent[m[2m=[mmain [2mmode[m[2m=[mcli [2marg_count[m[2m=[m4
+[1mDEBU[m start cli [2mcomponent[m[2m=[mcli
+[1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default
+[1mDEBU[m resolved cache dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CACHE_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m ensure private file [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml [2mmode[m[2m=[m0600
+[1mDEBU[m private file ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml
+[1mINFO[m current profile [2mcomponent[m[2m=[mconfig [2mprofile[m[2m=[mdefault
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m resolved cache dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CACHE_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m loaded effective config [2mcomponent[m[2m=[mconfig [2mglobal_path[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml [2mlocal_path[m[2m=[m"" [2mlocal_exists[m[2m=[mfalse [2mprofile[m[2m=[mdefault
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
+[1mDEBU[m resolved application paths [2mcomponent[m[2m=[mconfig [2mconfig_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mcache_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache [2mprofile[m[2m=[mdefault [2mconfig_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config/default [2mcache_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default [2mprojects_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mauth_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/auth-config.json
+[1mDEBU[m read cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json
+[1mINFO[m loaded cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json [2mhas_refresh_token[m[2m=[mfalse
+[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json
+[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
+[1mDEBU[m read cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json
+[1mINFO[m loaded cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json [2mhas_refresh_token[m[2m=[mfalse
+[1mINFO[m firebase list projects start [2mcomponent[m[2m=[mfirebase
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000"[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000"[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000"[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json"
+[1mINFO[m projects page loaded [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2maccepted[m[2m=[m1 [2mnext_page[m[2m=[mfalse
+[1mINFO[m get project details [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://cloudresourcemanager.googleapis.com/v3/projects/northstar-wallet[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://cloudresourcemanager.googleapis.com/v3/projects/northstar-wallet[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://cloudresourcemanager.googleapis.com/v3/projects/northstar-wallet[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json"
+[1mINFO[m firebase list projects complete [2mcomponent[m[2m=[mfirebase [2mcount[m[2m=[m1 [2mpages[m[2m=[m1
+[1mINFO[m get remote config [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mversion[m[2m=[m""
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json Etag=synthetic-doctor-etag"
+[1mINFO[m remote config loaded [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2metag[m[2m=[msynthetic-doctor-etag [2mbytes[m[2m=[m86

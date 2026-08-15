@@ -1,0 +1,8 @@
+{
+  "name": "profile_path_json",
+  "command_id": "profile.path",
+  "args": ["profile", "path", "default", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:response",
+  "contract_version": "1.0.0",
+  "command": "versions.show",
+  "requested_command": "versions.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "version": {
+      "versionNumber": "12",
+      "updateTime": "2026-08-01T13:16:40.437597Z",
+      "updateUser": {
+        "email": "yumaa.verdin@gmail.com"
+      },
+      "change_note": null,
+      "updateOrigin": "CONSOLE",
+      "updateType": "INCREMENTAL_UPDATE",
+      "current": false,
+      "cached": false
+    },
+    "cached": false
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,16 @@
+{
+  "name": "versions_show_json",
+  "command_id": "versions.show",
+  "args": ["versions", "show", "${PROJECT_ID}", "12", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=12",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

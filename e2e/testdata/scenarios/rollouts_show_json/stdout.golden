@@ -1,0 +1,66 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:response",
+  "contract_version": "1.0.0",
+  "command": "rollouts.show",
+  "requested_command": "rollouts.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "template": {
+      "version": "42",
+      "source": "cache"
+    },
+    "rollout": {
+      "createTime": "2026-07-20T08:00:00Z",
+      "definition": {
+        "displayName": "Instant transfer",
+        "description": "Gradually enable instant transfers",
+        "controlVariant": {
+          "name": "disabled",
+          "weight": 85
+        },
+        "enabledVariant": {
+          "name": "enabled",
+          "weight": 15
+        }
+      },
+      "etag": "synthetic-rollout-etag",
+      "lastUpdateTime": "2026-08-12T14:15:00Z",
+      "name": "projects/northstar-wallet/namespaces/firebase/rollouts/instant-transfer",
+      "references": [
+        {
+          "group": "growth",
+          "parameter": "instant_transfer_enabled",
+          "condition": "android_beta",
+          "value_type": "BOOLEAN",
+          "value": "true",
+          "percentage": 15
+        }
+      ],
+      "startTime": "2026-08-05T09:00:00Z",
+      "state": "RUNNING"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

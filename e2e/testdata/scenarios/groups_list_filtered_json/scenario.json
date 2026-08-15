@@ -1,0 +1,32 @@
+{
+  "name": "groups_list_filtered_json",
+  "command_id": "groups.list",
+  "args": [
+    "groups",
+    "list",
+    "--project",
+    "=${PROJECT_ID}",
+    "--update",
+    "--filter",
+    "=support",
+    "--search",
+    "maintenance",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

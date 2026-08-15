@@ -96,11 +96,11 @@ func TestFilterHelpers(t *testing.T) {
 	}
 
 	projectRows := []parameterRow{
-		{Project: "Setplex", ProjectID: "setplex-686c9", Key: "alpha"},
-		{Project: "Adyl Tv", ProjectID: "adyl-tv", Key: "alpha"},
+		{Project: "Example One", ProjectID: "example-one-a1b2", Key: "alpha"},
+		{Project: "Example Two", ProjectID: "example-two-c3d4", Key: "alpha"},
 	}
-	filteredProjects := filterParameterRowsByProject(projectRows, []string{"setplex"})
-	if got, want := rowProjectIDs(filteredProjects), []string{"setplex-686c9"}; !reflect.DeepEqual(got, want) {
+	filteredProjects := filterParameterRowsByProject(projectRows, []string{"example-one"})
+	if got, want := rowProjectIDs(filteredProjects), []string{"example-one-a1b2"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("project filtered rows = %#v, want %#v", got, want)
 	}
 	if got := filterParameterRowsByProject(projectRows, nil); len(got) != len(projectRows) {

@@ -1,0 +1,20 @@
+{
+  "name": "projects_forget_json",
+  "command_id": "projects.forget",
+  "args": ["projects", "forget", "--filter", "=Northstar Wallet", "--expr", "project_id == \"northstar-wallet\"", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "config",
+    "path": "default/projects-config.json",
+    "json_replacements": {"/synced_at": "<E2E_SYNCED_AT>"}
+  }],
+  "expected_absent_state_paths": [
+    {"root": "cache", "path": "default/remote-config/northstar-wallet.12.json"},
+    {"root": "cache", "path": "default/remote-config/server@northstar-wallet.3.json"},
+    {"root": "cache", "path": "default/drafts/northstar-wallet.json"}
+  ],
+  "json_output": true,
+  "fixture": "read_state",
+  "offline": true
+}

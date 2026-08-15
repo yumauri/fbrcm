@@ -143,7 +143,7 @@ func TestHistoryLoadMarksNAVersionUnavailableWithoutRequest(t *testing.T) {
 }
 
 func TestHistoryProjectStatusIsRightAligned(t *testing.T) {
-	project := core.Project{ProjectID: "mercato-mobile-9eac5", Name: "Mercato Mobile"}
+	project := core.Project{ProjectID: "example-mobile-a1b2", Name: "Example Mobile"}
 	tree := &core.ParametersTree{Version: "NA"}
 	tests := []struct {
 		name  string

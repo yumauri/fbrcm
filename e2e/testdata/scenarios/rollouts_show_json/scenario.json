@@ -1,0 +1,17 @@
+{
+  "name": "rollouts_show_json",
+  "command_id": "rollouts.show",
+  "args": ["rollouts", "show", "${PROJECT_ID}", "instant-transfer", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/namespaces/firebase/rollouts/instant-transfer",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "json_output": true,
+  "fixture": "managed_features"
+}

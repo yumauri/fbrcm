@@ -21,10 +21,10 @@ import (
 
 func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 	projects := []core.Project{
-		{Name: "Production", ProjectID: "setplex-production-a1b2"},
-		{Name: "setplex-production-a1b2", ProjectID: "name-collision"},
-		{Name: "Production EU", ProjectID: "setplex-production-eu-c3d4"},
-		{Name: "Staging", ProjectID: "setplex-staging-e5f6"},
+		{Name: "Production", ProjectID: "example-production-a1b2"},
+		{Name: "example-production-a1b2", ProjectID: "name-collision"},
+		{Name: "Production EU", ProjectID: "example-production-eu-c3d4"},
+		{Name: "Staging", ProjectID: "example-staging-e5f6"},
 	}
 
 	tests := []struct {
@@ -32,9 +32,9 @@ func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 		query string
 		want  []string
 	}{
-		{name: "exact id wins over name", query: "setplex-production-a1b2", want: []string{"setplex-production-a1b2"}},
-		{name: "case-mismatched id does not match", query: "SETplex-production-A1B2", want: nil},
-		{name: "exact name", query: "Production", want: []string{"setplex-production-a1b2"}},
+		{name: "exact id wins over name", query: "example-production-a1b2", want: []string{"example-production-a1b2"}},
+		{name: "case-mismatched id does not match", query: "EXAMPLE-production-A1B2", want: nil},
+		{name: "exact name", query: "Production", want: []string{"example-production-a1b2"}},
 		{name: "case-mismatched name does not match", query: "production", want: nil},
 		{name: "substring does not match", query: "stag", want: nil},
 		{name: "missing", query: "unrelated", want: nil},

@@ -23,19 +23,15 @@ type loadedGroups struct {
 	Groups   []core.ParametersGroup
 }
 
-type groupListEntry struct {
+type groupListJSON struct {
+	Project        string `json:"project"`
+	ProjectID      string `json:"project_id"`
+	Version        string `json:"version"`
+	Source         string `json:"source" contract:"enum=cache|cache-verified|firebase|draft"`
+	HasDraft       bool   `json:"has_draft"`
 	Name           string `json:"name"`
 	Description    string `json:"description,omitempty"`
 	ParameterCount int    `json:"parameter_count"`
-}
-
-type groupListJSON struct {
-	Project   string `json:"project"`
-	ProjectID string `json:"project_id"`
-	Version   string `json:"version"`
-	Source    string `json:"source" contract:"enum=cache|cache-verified|firebase|draft"`
-	HasDraft  bool   `json:"has_draft"`
-	groupListEntry
 }
 
 type projectGroup struct {
@@ -187,7 +183,7 @@ func groupsJSON(groups []projectGroup) []groupListJSON {
 	for i, item := range groups {
 		out[i] = groupListJSON{
 			Project: item.Project.Name, ProjectID: item.Project.ProjectID, Version: item.Version, Source: item.Source, HasDraft: item.HasDraft,
-			groupListEntry: groupListEntry{Name: item.Group.Key, Description: item.Group.Description, ParameterCount: len(item.Group.Parameters)},
+			Name: item.Group.Key, Description: item.Group.Description, ParameterCount: len(item.Group.Parameters),
 		}
 	}
 	return out

@@ -1,0 +1,7 @@
+{
+  "project_id": "northstar-wallet",
+  "project_name": "Northstar Wallet",
+  "quota_project_id": "northstar-wallet",
+  "default_terminal_width": 200,
+  "default_log_level": "debug"
+}

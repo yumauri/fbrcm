@@ -1,0 +1,14 @@
+{
+  "name": "auth_add_oauth_json",
+  "command_id": "auth.add.oauth",
+  "args": ["auth", "add", "oauth", "oauth-secondary", "--from", "oauth-client.json", "--label", "Synthetic OAuth identity", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {"root": "config", "path": "default/auth-config.json"},
+    {"root": "config", "path": "default/auth/oauth-secondary/client-secret.json"}
+  ],
+  "json_output": true,
+  "fixture": "auth_inputs",
+  "offline": true
+}

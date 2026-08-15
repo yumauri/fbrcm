@@ -1,0 +1,26 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:response",
+  "contract_version": "1.0.0",
+  "command": "config.reset",
+  "requested_command": "config.reset",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "scope": "global",
+    "key": "powerline_glyphs",
+    "status": "reset",
+    "changed": true
+  },
+  "errors": [],
+  "warnings": []
+}

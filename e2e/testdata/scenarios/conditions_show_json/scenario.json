@@ -1,0 +1,28 @@
+{
+  "name": "conditions_show_json",
+  "command_id": "conditions.show",
+  "args": [
+    "conditions",
+    "show",
+    "${PROJECT_ID}",
+    "high_risk_session",
+    "--update",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

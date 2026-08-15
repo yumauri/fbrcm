@@ -1,0 +1,21 @@
+{
+  "name": "get_filtered_json",
+  "command_id": "get",
+  "args": [
+    "get",
+    "--project",
+    "=${PROJECT_ID}",
+    "--filter",
+    "=support_chat_enabled",
+    "--search",
+    "support",
+    "--expr",
+    "group == \"support\"",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "read_state",
+  "offline": true
+}

@@ -1,0 +1,18 @@
+{
+  "name": "profile_rename_json",
+  "command_id": "profile.rename",
+  "args": ["profile", "rename", "old-profile", "renamed-profile", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {"root": "config", "path": "renamed-profile/profile-marker.txt"},
+    {"root": "cache", "path": "renamed-profile/cache-marker.txt"}
+  ],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "old-profile"},
+    {"root": "cache", "path": "old-profile"}
+  ],
+  "json_output": true,
+  "fixture": "profile_lifecycle",
+  "offline": true
+}

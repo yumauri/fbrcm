@@ -1,0 +1,6 @@
+profile = 'default'
+
+[projects]
+[projects.aliases]
+preview = 'aurora-preview-lab'
+sandbox = 'northstar-wallet'

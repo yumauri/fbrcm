@@ -1,0 +1,23 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:response",
+  "contract_version": "1.0.0",
+  "command": "hooks.fingerprint",
+  "requested_command": "hooks.fingerprint",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "fingerprint": "<E2E_HOOK_FINGERPRINT>"
+  },
+  "errors": [],
+  "warnings": []
+}

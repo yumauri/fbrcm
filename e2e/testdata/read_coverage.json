@@ -1,0 +1,16 @@
+{
+  "additional_read_commands": [
+    "project.defaults",
+    "project.export",
+    "versions.export"
+  ],
+  "excluded": {
+    "auth.login": "May refresh credentials or require browser authorization.",
+    "completion.bash": "Omitted because Cobra generates completion scripts directly from the already-covered command tree.",
+    "completion.fish": "Omitted because Cobra generates completion scripts directly from the already-covered command tree.",
+    "completion.powershell": "Omitted because Cobra generates completion scripts directly from the already-covered command tree.",
+    "completion.zsh": "Omitted because Cobra generates completion scripts directly from the already-covered command tree.",
+    "config.edit": "Interactive editor workflow is outside the read-only command scope.",
+    "profile": "The executable profile chooser is interactive; profile list is covered separately."
+  }
+}

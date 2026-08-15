@@ -48,11 +48,11 @@ func TestListAndGetExperimentsUseNumericFirebaseProjectResource(t *testing.T) {
 func TestListAndGetRolloutsDecodeDefinition(t *testing.T) {
 	svc := NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		switch req.URL.Path {
-		case "/v1/projects/949596266151/namespaces/firebase/rollouts":
-			return jsonHTTPResponse(http.StatusOK, `{"rollouts":[{"name":"projects/949596266151/namespaces/firebase/rollouts/rollout_1"}]}`, ""), nil
-		case "/v1/projects/949596266151/namespaces/firebase/rollouts/rollout_1":
+		case "/v1/projects/123456789012/namespaces/firebase/rollouts":
+			return jsonHTTPResponse(http.StatusOK, `{"rollouts":[{"name":"projects/123456789012/namespaces/firebase/rollouts/rollout_1"}]}`, ""), nil
+		case "/v1/projects/123456789012/namespaces/firebase/rollouts/rollout_1":
 			return jsonHTTPResponse(http.StatusOK, `{
-				"name":"projects/949596266151/namespaces/firebase/rollouts/rollout_1",
+				"name":"projects/123456789012/namespaces/firebase/rollouts/rollout_1",
 				"definition":{
 					"displayName":"Funding",
 					"controlVariant":{"name":"Control","futureNestedField":"kept"},
@@ -67,11 +67,11 @@ func TestListAndGetRolloutsDecodeDefinition(t *testing.T) {
 		}
 	})})
 
-	page, err := svc.ListRollouts(context.Background(), "949596266151", "northstar-wallet", ListManagedFeaturesOptions{})
+	page, err := svc.ListRollouts(context.Background(), "123456789012", "northstar-wallet", ListManagedFeaturesOptions{})
 	if err != nil || len(page.Rollouts) != 1 {
 		t.Fatalf("ListRollouts = %+v, %v", page, err)
 	}
-	rollout, err := svc.GetRollout(context.Background(), "949596266151", "northstar-wallet", "rollout_1")
+	rollout, err := svc.GetRollout(context.Background(), "123456789012", "northstar-wallet", "rollout_1")
 	if err != nil || rollout.Definition.EnabledVariant.Name != "Enabled" || rollout.CreateTime != "2026-07-01T09:10:11Z" {
 		t.Fatalf("GetRollout = %+v, %v", rollout, err)
 	}

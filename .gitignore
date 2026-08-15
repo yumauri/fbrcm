@@ -32,4 +32,5 @@ client_secret.json
 projects-config.json
 token.json
 .fbrcm.toml
+!e2e/testdata/state/**/.fbrcm.toml
 .firebaserc

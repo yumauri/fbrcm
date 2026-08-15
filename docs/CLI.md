@@ -447,6 +447,7 @@ FBRCM_PROFILE
 | `FBRCM_CACHE_DIR` | Override the fbrcm cache root. Takes precedence over the operating system's user-cache directory. |
 | `FBRCM_OFFLINE` | Enable CLI offline mode whenever the variable is defined, including as an empty string or `0`. If it is unset, CLI commands perform only their declared network operations. |
 | `FBRCM_LOG_LEVEL` | Set logging to `debug`, `info`, `warn`, `error`, `fatal`, or `silent`, case-insensitively. The default is `info` for human CLI/TUI use and `silent` with `--json`; an explicit value overrides either default. |
+| `FBRCM_LOG_NO_TIMESTAMP` | Omit timestamps from log lines when set to a non-empty value. Useful for deterministic CI and snapshot output. |
 | `FBRCM_EDITOR` | Select the command used by `config edit`, after `--editor` and before `VISUAL` or `EDITOR`. Arguments are supported. |
 | `FBRCM_NO_LOCAL_CONFIG` | Ignore repository `.fbrcm.toml` discovery when set to a non-empty value. The root `--no-local-config` flag provides the same behavior for one invocation. |
 | `FBRCM_HOOK_TRUST` | Trust local hooks for this invocation only when the value exactly matches `fbrcm hooks fingerprint`. Intended for CI. |
@@ -454,6 +455,7 @@ FBRCM_PROFILE
 | `COLUMNS` | Supply a positive terminal width for human-readable CLI output. Invalid values are ignored. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Select an Application Default Credentials JSON file for gcloud identities and diagnostics. |
 | `GOOGLE_CLOUD_QUOTA_PROJECT` | Set the Google Cloud quota and billing project for Firebase and Cloud Resource Manager requests made with gcloud, OAuth, or service-account identities, including diagnostics. |
+| `SSL_CERT_FILE` | Add PEM-encoded certificate authorities to the trust roots used by authenticated API clients. This is honored on every supported platform, including macOS. |
 | `XDG_CONFIG_HOME` | Supply the Unix config home when `FBRCM_CONFIG_DIR` is unset; fbrcm appends `fbrcm`. |
 | `XDG_CACHE_HOME` | Supply the Unix user-cache home where supported when `FBRCM_CACHE_DIR` is unset; fbrcm appends `fbrcm`. |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Configure Go's HTTP transport. Lowercase forms are also honored. |
@@ -1186,6 +1188,9 @@ Human output identifies the project and whether the validated source was `draft`
 ### `fbrcm groups list`
 
 `groups list` lists real Firebase parameter groups across the selected template targets, including intentionally empty and description-only groups. It uses an unpublished target-specific draft when present and otherwise follows the same fresh/stale cache behavior as condition reads. Human output is a naturally sized table with canonical target ID, project name, parameter count, and description; the project column is omitted for one exact `--project` target filter, matching `get`. On narrow terminals, the description is cropped with an ellipsis first, followed by target ID and group name only when necessary.
+
+JSON output returns one item per group with `project`, `project_id`, `version`,
+`source`, `has_draft`, `name`, optional `description`, and `parameter_count`.
 
 List flags:
 

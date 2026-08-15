@@ -1,0 +1,15 @@
+{
+  "name": "auth_bind_json",
+  "command_id": "auth.bind",
+  "args": ["auth", "bind", "--auth", "secondary", "--project", "=northstar-wallet", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "config",
+    "path": "default/projects-config.json",
+    "json_replacements": {"/synced_at": "<E2E_SYNCED_AT>"}
+  }],
+  "json_output": true,
+  "fixture": "auth_bind",
+  "offline": true
+}

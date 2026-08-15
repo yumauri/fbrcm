@@ -1,0 +1,400 @@
+{
+  "etag": "fixture-etag-version-12",
+  "cached_at": "2024-01-02T03:04:05Z",
+  "remote_config": {
+    "conditions": [
+      {
+        "name": "employees",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      },
+      {
+        "name": "kyc_pending",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      },
+      {
+        "name": "uk_open_banking",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      },
+      {
+        "name": "android_beta_10",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      },
+      {
+        "name": "high_risk_session",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      },
+      {
+        "name": "webapp",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      }
+    ],
+    "version": {
+      "versionNumber": "12",
+      "updateTime": "2024-01-02T03:04:05Z",
+      "description": "Sanitized personal-profile fixture",
+      "updateOrigin": "CONSOLE",
+      "updateType": "INCREMENTAL_UPDATE"
+    },
+    "parameterGroups": {
+      "support": {
+        "description": "Sanitized fixture group support",
+        "parameters": {
+          "document_upload_max_mb": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter document_upload_max_mb",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "incident_status_url": {
+            "defaultValue": {
+              "value": "fixture-default"
+            },
+            "description": "Sanitized fixture parameter incident_status_url",
+            "valueType": "STRING",
+            "conditionalValues": {}
+          },
+          "maintenance_banner": {
+            "defaultValue": {
+              "value": "[]"
+            },
+            "description": "Sanitized fixture parameter maintenance_banner",
+            "valueType": "JSON",
+            "conditionalValues": {}
+          },
+          "show_tax_center": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter show_tax_center",
+            "valueType": "BOOLEAN",
+            "conditionalValues": {}
+          },
+          "statement_months_available": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter statement_months_available",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "support_chat_enabled": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter support_chat_enabled",
+            "valueType": "BOOLEAN",
+            "conditionalValues": {}
+          },
+          "support_queue_copy": {
+            "defaultValue": {
+              "value": "fixture-default"
+            },
+            "description": "Sanitized fixture parameter support_queue_copy",
+            "valueType": "STRING",
+            "conditionalValues": {}
+          }
+        }
+      },
+      "banking": {
+        "description": "Sanitized fixture group banking",
+        "parameters": {
+          "account_nickname_max_length": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter account_nickname_max_length",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "ach_transfer_limit_daily": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter ach_transfer_limit_daily",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "card_freeze_enabled": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter card_freeze_enabled",
+            "valueType": "BOOLEAN",
+            "conditionalValues": {}
+          },
+          "instant_cashout_fee_bps": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter instant_cashout_fee_bps",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "open_banking_enabled": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "uk_open_banking": {
+                "value": "true"
+              }
+            },
+            "description": "Sanitized fixture parameter open_banking_enabled",
+            "valueType": "BOOLEAN"
+          },
+          "pending_transaction_days": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter pending_transaction_days",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "plaid_products": {
+            "defaultValue": {
+              "value": "[]"
+            },
+            "description": "Sanitized fixture parameter plaid_products",
+            "valueType": "JSON",
+            "conditionalValues": {}
+          }
+        }
+      },
+      "risk": {
+        "description": "Sanitized fixture group risk",
+        "parameters": {
+          "block_crypto_card_loads": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter block_crypto_card_loads",
+            "valueType": "BOOLEAN",
+            "conditionalValues": {}
+          },
+          "device_binding_grace_hours": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter device_binding_grace_hours",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "high_risk_transfer_limit": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "conditionalValues": {
+              "high_risk_session": {
+                "value": "2"
+              }
+            },
+            "description": "Sanitized fixture parameter high_risk_transfer_limit",
+            "valueType": "NUMBER"
+          },
+          "require_step_up_for_new_device": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter require_step_up_for_new_device",
+            "valueType": "BOOLEAN",
+            "conditionalValues": {}
+          },
+          "risk_banner_copy": {
+            "defaultValue": {
+              "value": "fixture-default"
+            },
+            "conditionalValues": {
+              "high_risk_session": {
+                "value": "fixture-high_risk_session"
+              }
+            },
+            "description": "Sanitized fixture parameter risk_banner_copy",
+            "valueType": "STRING"
+          },
+          "step_up_methods": {
+            "defaultValue": {
+              "value": "[]"
+            },
+            "conditionalValues": {
+              "employees": {
+                "value": "[\"fixture\"]"
+              }
+            },
+            "description": "Sanitized fixture parameter step_up_methods",
+            "valueType": "JSON"
+          },
+          "velocity_window_minutes": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter velocity_window_minutes",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          }
+        }
+      },
+      "insights": {
+        "description": "Sanitized fixture group insights",
+        "parameters": {
+          "cashflow_forecast_days": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter cashflow_forecast_days",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "enable_subscription_detection": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "true"
+              }
+            },
+            "description": "Sanitized fixture parameter enable_subscription_detection",
+            "valueType": "BOOLEAN"
+          },
+          "insight_min_transaction_count": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter insight_min_transaction_count",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "merchant_logo_cdn": {
+            "defaultValue": {
+              "value": "fixture-default"
+            },
+            "description": "Sanitized fixture parameter merchant_logo_cdn",
+            "valueType": "STRING",
+            "conditionalValues": {}
+          },
+          "monthly_budget_enabled": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter monthly_budget_enabled",
+            "valueType": "BOOLEAN",
+            "conditionalValues": {}
+          },
+          "savings_nudge_threshold": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "description": "Sanitized fixture parameter savings_nudge_threshold",
+            "valueType": "NUMBER",
+            "conditionalValues": {}
+          },
+          "spending_categories": {
+            "defaultValue": {
+              "value": "[]"
+            },
+            "description": "Sanitized fixture parameter spending_categories",
+            "valueType": "JSON",
+            "conditionalValues": {}
+          }
+        }
+      },
+      "onboarding": {
+        "description": "Sanitized fixture group onboarding",
+        "parameters": {
+          "enable_passkey_signup": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "true"
+              }
+            },
+            "description": "Sanitized fixture parameter enable_passkey_signup",
+            "valueType": "BOOLEAN"
+          },
+          "funding_minimum_amount": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "2"
+              }
+            },
+            "description": "Sanitized fixture parameter funding_minimum_amount",
+            "valueType": "NUMBER"
+          },
+          "kyc_provider": {
+            "defaultValue": {
+              "value": "fixture-default"
+            },
+            "conditionalValues": {
+              "employees": {
+                "value": "fixture-employees"
+              },
+              "android_beta_10": {
+                "value": "fixture-android_beta_10"
+              }
+            },
+            "description": "Sanitized fixture parameter kyc_provider",
+            "valueType": "STRING"
+          },
+          "kyc_retry_limit": {
+            "defaultValue": {
+              "value": "1"
+            },
+            "conditionalValues": {
+              "kyc_pending": {
+                "value": "2"
+              }
+            },
+            "description": "Sanitized fixture parameter kyc_retry_limit",
+            "valueType": "NUMBER"
+          },
+          "onboarding_steps": {
+            "defaultValue": {
+              "value": "[]"
+            },
+            "conditionalValues": {
+              "uk_open_banking": {
+                "value": "[\"fixture\"]"
+              }
+            },
+            "description": "Sanitized fixture parameter onboarding_steps",
+            "valueType": "JSON"
+          },
+          "show_income_question": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "webapp": {
+                "value": "true"
+              }
+            },
+            "description": "Sanitized fixture parameter show_income_question",
+            "valueType": "BOOLEAN"
+          },
+          "welcome_bonus_copy": {
+            "defaultValue": {
+              "value": "fixture-default"
+            },
+            "description": "Sanitized fixture parameter welcome_bonus_copy",
+            "valueType": "STRING",
+            "conditionalValues": {}
+          }
+        }
+      }
+    },
+    "parameters": {}
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "root_version_json",
+  "command_id": "root",
+  "args": ["--version", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

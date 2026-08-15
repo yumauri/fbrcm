@@ -1,0 +1,51 @@
+┌────────────┬────────────────────────────────┬─────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Group      │ Key                            │ Type    │ Values                                                                                                      │
+├────────────┼────────────────────────────────┼─────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ banking    │ account_nickname_max_length    │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 32                                                                                  │
+│ banking    │ ach_transfer_limit_daily       │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 3000                                                                                │
+│ banking    │ card_freeze_enabled            │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
+│ banking    │ instant_cashout_fee_bps        │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 85                                                                                  │
+│ banking    │ open_banking_enabled           │ BOOLEAN │ ╌┬╌ uk_open_banking ╌╌╌ true                                                                                │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                                                                               │
+│ banking    │ pending_transaction_days       │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 5                                                                                   │
+│ banking    │ plaid_products                 │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ ["auth","transactions","identity"]                                                  │
+│ insights   │ cashflow_forecast_days         │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 30                                                                                  │
+│ insights   │ enable_subscription_detection  │ BOOLEAN │ ╌┬╌ android_beta_10 ╌╌╌ false                                                                               │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ true                                                                                │
+│ insights   │ insight_min_transaction_count  │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 8                                                                                   │
+│ insights   │ merchant_logo_cdn              │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ https://assets.example.invalid/merchants                                            │
+│ insights   │ monthly_budget_enabled         │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
+│ insights   │ savings_nudge_threshold        │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 125                                                                                 │
+│ insights   │ spending_categories            │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ ["groceries","restaurants","transport","subscriptions","utilities"]                 │
+│ onboarding │ enable_passkey_signup          │ BOOLEAN │ ╌┬╌ android_beta_10 ╌╌╌ true                                                                                │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                                                                               │
+│ onboarding │ funding_minimum_amount         │ NUMBER  │ ╌┬╌ android_beta_10 ╌╌╌ ◐ 10% → 20 | (no change)                                                            │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 10                                                                                  │
+│ onboarding │ kyc_provider                   │ STRING  │ ╌┬╌ employees ╌╌╌╌╌╌╌╌╌ sandbox                                                                             │
+│            │                                │         │  ├╌ android_beta_10 ╌╌╌ ◈ (personalization)                                                                 │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ veriff                                                                              │
+│ onboarding │ kyc_retry_limit                │ NUMBER  │ ╌┬╌ kyc_pending ╌╌╌╌╌╌╌ 3                                                                                   │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 2                                                                                   │
+│ onboarding │ onboarding_steps               │ JSON    │ ╌┬╌ uk_open_banking ╌╌╌ ["email","phone","identity","open_banking","funding","card"]                        │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ ["email","phone","identity","funding","card"]                                       │
+│ onboarding │ show_income_question           │ BOOLEAN │ ╌┬╌ webapp ╌╌╌╌╌╌╌╌╌╌╌╌ ⚗ 15% : true | false | true                                                         │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ true                                                                                │
+│ onboarding │ welcome_bonus_copy             │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ Get started with no monthly fees                                                    │
+│ risk       │ block_crypto_card_loads        │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
+│ risk       │ device_binding_grace_hours     │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 24                                                                                  │
+│ risk       │ high_risk_transfer_limit       │ NUMBER  │ ╌┬╌ high_risk_session ╌ 50                                                                                  │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 200                                                                                 │
+│ risk       │ require_step_up_for_new_device │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
+│ risk       │ risk_banner_copy               │ STRING  │ ╌┬╌ high_risk_session ╌ Extra verification is required before continuing                                    │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ We need a quick security check                                                      │
+│ risk       │ step_up_methods                │ JSON    │ ╌┬╌ employees ╌╌╌╌╌╌╌╌╌ ["totp","sms_otp","email_otp"]                                                      │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ ["sms_otp","email_otp"]                                                             │
+│ risk       │ velocity_window_minutes        │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 15                                                                                  │
+│ support    │ document_upload_max_mb         │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 12                                                                                  │
+│ support    │ incident_status_url            │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ https://status.example.invalid/finance                                              │
+│ support    │ maintenance_banner             │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ {"enabled":false,"title":"Scheduled maintenance","startsAt":"2026-06-02T01:00:00Z"} │
+│ support    │ show_tax_center                │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
+│ support    │ statement_months_available     │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 24                                                                                  │
+│ support    │ support_chat_enabled           │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
+│ support    │ support_queue_copy             │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ A specialist will join shortly                                                      │
+└────────────┴────────────────────────────────┴─────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

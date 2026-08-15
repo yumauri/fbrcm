@@ -1,0 +1,8 @@
+{
+  "name": "config_show_json",
+  "command_id": "config.show",
+  "args": ["config", "show", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

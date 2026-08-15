@@ -1,0 +1,31 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:response",
+  "contract_version": "1.0.0",
+  "command": "profile.path",
+  "requested_command": "profile.path",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 2,
+    "items": [
+      {
+        "path": "<E2E_RUN_ROOT>/environment/config/default"
+      },
+      {
+        "path": "<E2E_RUN_ROOT>/environment/cache/default"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

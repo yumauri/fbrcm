@@ -1,0 +1,10 @@
+{
+  "name": "auth_add_gcloud_json",
+  "command_id": "auth.add.gcloud",
+  "args": ["auth", "add", "gcloud", "gcloud-secondary", "--label", "Synthetic ADC identity", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{"root": "config", "path": "default/auth-config.json"}],
+  "json_output": true,
+  "offline": true
+}

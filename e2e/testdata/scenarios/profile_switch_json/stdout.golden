@@ -1,0 +1,27 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:response",
+  "contract_version": "1.0.0",
+  "command": "profile.switch",
+  "requested_command": "profile.switch",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "sandbox",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "requested_profile": "sandbox",
+    "previous_profile": "default",
+    "effective_profile": "sandbox",
+    "changed": true,
+    "overridden": false
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,8 @@
+{
+  "name": "project_templates_show_json",
+  "command_id": "project.templates.show",
+  "args": ["project", "templates", "show", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

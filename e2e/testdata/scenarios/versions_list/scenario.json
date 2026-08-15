@@ -1,0 +1,20 @@
+{
+  "name": "versions_list",
+  "command_id": "versions.list",
+  "args": [
+    "versions",
+    "list",
+    "${PROJECT_ID}",
+    "--limit",
+    "3"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "status": 200
+    }
+  ]
+}

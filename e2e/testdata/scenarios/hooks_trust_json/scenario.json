@@ -1,0 +1,12 @@
+{
+  "name": "hooks_trust_json",
+  "command_id": "hooks.trust",
+  "args": ["hooks", "trust", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{"root": "config", "path": "hook-trust.json"}],
+  "json_output": true,
+  "fixture": "hooks_mutation",
+  "local_config": true,
+  "offline": true
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:response",
+  "contract_version": "1.0.0",
+  "command": "hooks.status",
+  "requested_command": "hooks.status",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "local_config": "<E2E_RUN_ROOT>/environment/work/.fbrcm.toml",
+    "local_hooks": true,
+    "trusted": false,
+    "fingerprint": "<E2E_HOOK_FINGERPRINT>",
+    "timeout": "15s",
+    "pre_publish": [
+      "./scripts/validate.sh"
+    ],
+    "post_publish": [
+      "./scripts/notify.sh"
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:response",
+  "contract_version": "1.0.0",
+  "command": "conditions.list",
+  "requested_command": "conditions.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "priority": 2,
+        "name": "kyc_pending",
+        "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 35",
+        "tag_color": "ORANGE",
+        "usages": [
+          {
+            "group_key": "onboarding",
+            "group": "onboarding",
+            "parameter": "kyc_retry_limit",
+            "value": "3",
+            "raw_value": "3",
+            "value_type": "NUMBER",
+            "plain": true
+          }
+        ]
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

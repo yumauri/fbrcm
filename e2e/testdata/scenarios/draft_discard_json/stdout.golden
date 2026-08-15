@@ -1,0 +1,30 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:response",
+  "contract_version": "1.0.0",
+  "command": "draft.discard",
+  "requested_command": "draft.discard",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project_id": "northstar-wallet",
+        "status": "discarded",
+        "base_version": "12"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

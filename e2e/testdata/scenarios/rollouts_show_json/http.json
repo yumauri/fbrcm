@@ -1,0 +1,23 @@
+{
+  "data": {
+    "globalActions": {"delays": [], "delaysLogNormal": []},
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/namespaces/firebase/rollouts/instant-transfer"}],
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"name\":\"projects/northstar-wallet/namespaces/firebase/rollouts/instant-transfer\",\"definition\":{\"displayName\":\"Instant transfer\",\"description\":\"Gradually enable instant transfers\",\"controlVariant\":{\"name\":\"disabled\",\"weight\":85},\"enabledVariant\":{\"name\":\"enabled\",\"weight\":15}},\"state\":\"RUNNING\",\"createTime\":\"2026-07-20T08:00:00Z\",\"startTime\":\"2026-08-05T09:00:00Z\",\"lastUpdateTime\":\"2026-08-12T14:15:00Z\",\"etag\":\"synthetic-rollout-etag\"}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {"hoverflyVersion": "v1.12.10", "schemaVersion": "v5.3", "timeExported": "2024-01-01T00:00:00Z"}
+}

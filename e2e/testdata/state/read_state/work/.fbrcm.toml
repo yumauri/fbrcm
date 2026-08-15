@@ -1,0 +1,8 @@
+[projects.aliases]
+development = "northstar-wallet"
+shared = "northstar-wallet"
+
+[hooks]
+timeout = "15s"
+pre_publish = ["./scripts/validate.sh"]
+post_publish = ["./scripts/notify.sh"]

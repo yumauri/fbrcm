@@ -1,0 +1,67 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:response",
+  "contract_version": "1.0.0",
+  "command": "versions.diff",
+  "requested_command": "versions.diff",
+  "outcome": "success",
+  "exit_code": 1,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "from_version": "10",
+    "to_version": "11",
+    "changed": true,
+    "diff": {
+      "conditions": null,
+      "parameters": [
+        {
+          "key": "pending_transaction_days",
+          "group": "banking",
+          "kind": "changed",
+          "current": {
+            "defaultValue": {
+              "value": "7"
+            },
+            "description": "Days to display pending transactions",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "5"
+            },
+            "description": "Days to display pending transactions",
+            "valueType": "NUMBER"
+          }
+        }
+      ],
+      "group_descriptions": [
+        {
+          "group": "banking",
+          "kind": "unchanged",
+          "current": "Account aggregation and payment rails",
+          "final": "Account aggregation and payment rails"
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

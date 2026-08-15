@@ -1,0 +1,62 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:response",
+  "contract_version": "1.0.0",
+  "command": "projects.diff",
+  "requested_command": "projects.diff",
+  "outcome": "success",
+  "exit_code": 1,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "source_project": "server@northstar-wallet",
+    "target_project": "northstar-wallet",
+    "changed": true,
+    "summary": {
+      "conditions": {
+        "added": 0,
+        "removed": 0,
+        "changed": 0,
+        "unchanged": 0
+      },
+      "parameters": {
+        "added": 1,
+        "removed": 0,
+        "changed": 0,
+        "unchanged": 0
+      },
+      "group_descriptions": {
+        "added": 0,
+        "removed": 0,
+        "changed": 0,
+        "unchanged": 0
+      }
+    },
+    "changes": {
+      "conditions": null,
+      "parameters": [
+        {
+          "key": "server_endpoint",
+          "kind": "added",
+          "final": {
+            "defaultValue": {
+              "value": "https://example.invalid/api"
+            },
+            "description": "Synthetic server fixture parameter",
+            "valueType": "STRING"
+          }
+        }
+      ],
+      "group_descriptions": null
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

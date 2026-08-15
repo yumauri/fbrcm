@@ -1,0 +1,9 @@
+{
+  "name": "cache_list_narrow",
+  "command_id": "cache.list",
+  "args": ["cache", "list"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "fixture": "read_state",
+  "terminal_width": 72
+}

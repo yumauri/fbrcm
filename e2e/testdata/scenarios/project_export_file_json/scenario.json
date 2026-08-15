@@ -1,0 +1,23 @@
+{
+  "name": "project_export_file_json",
+  "command_id": "project.export",
+  "args": [
+    "project",
+    "export",
+    "${PROJECT_ID}",
+    "--to",
+    "remote-config.json",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "status": 200
+    }
+  ],
+  "expected_files": ["remote-config.json"],
+  "json_output": true
+}

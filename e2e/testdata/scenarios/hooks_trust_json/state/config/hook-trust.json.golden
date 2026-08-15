@@ -1,0 +1,5 @@
+{
+  "trusted": {
+    "<E2E_RUN_ROOT>/environment/work/.fbrcm.toml": "<E2E_HOOK_FINGERPRINT>"
+  }
+}

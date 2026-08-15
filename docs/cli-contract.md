@@ -747,7 +747,10 @@ target selectors, literal physical project IDs, alias and path-segment names,
 version selectors, filter modes and queries, and expression contexts.
 Collection commands describe the normalized `{count, items}` data object and
 the complete item shape; mutation and lookup commands describe their named
-result DTOs. `null` is also accepted for failures without usable data. Only
+result DTOs. For example, `groups.list` publishes the group identity and count
+fields (`name`, optional `description`, and `parameter_count`) alongside its
+project, template version, source, and draft provenance. `null` is also
+accepted for failures without usable data. Only
 `schema show`, whose result is the requested schema document itself,
 intentionally permits an arbitrary JSON object.
 

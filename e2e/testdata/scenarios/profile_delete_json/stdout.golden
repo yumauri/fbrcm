@@ -1,0 +1,28 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:response",
+  "contract_version": "1.0.0",
+  "command": "profile.delete",
+  "requested_command": "profile.delete",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "profile": "disposable",
+    "status": "deleted",
+    "deleted_paths": [
+      "<E2E_RUN_ROOT>/environment/config/disposable",
+      "<E2E_RUN_ROOT>/environment/cache/disposable"
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

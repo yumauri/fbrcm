@@ -1,0 +1,60 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:get:response",
+  "contract_version": "1.0.0",
+  "command": "get",
+  "requested_command": "get",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project": "Northstar Wallet",
+        "project_id": "northstar-wallet",
+        "group": "support",
+        "key": "support_chat_enabled",
+        "description": "Sanitized fixture parameter support_chat_enabled",
+        "default_value": "false",
+        "conditional": false,
+        "conditions": [],
+        "type": "BOOLEAN",
+        "version": "12",
+        "cached_at": "2024-01-02T03:04:05Z",
+        "status": "stale"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    {
+      "code": "cache.stale",
+      "message": "The command used a stale local Remote Config cache after refresh failed.",
+      "target": "northstar-wallet",
+      "details": {
+        "source": "cache-stale"
+      },
+      "remediation": [
+        {
+          "description": "refresh the stale target",
+          "strategy": "run_command",
+          "argv": [
+            "get",
+            "--update",
+            "--project",
+            "=northstar-wallet"
+          ]
+        }
+      ]
+    }
+  ]
+}

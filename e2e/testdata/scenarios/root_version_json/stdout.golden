@@ -1,0 +1,23 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:root:response",
+  "contract_version": "1.0.0",
+  "command": "root",
+  "requested_command": "root",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "text": "fbrcm dev (commit none, built unknown)"
+  },
+  "errors": [],
+  "warnings": []
+}

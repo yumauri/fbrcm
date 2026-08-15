@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "trusted": {
+    "<E2E_CANONICAL_WORK_DIR>/.fbrcm.toml": "synthetic-stored-fingerprint"
+  }
+}

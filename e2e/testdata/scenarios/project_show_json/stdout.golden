@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:response",
+  "contract_version": "1.0.0",
+  "command": "project.show",
+  "requested_command": "project.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": "Northstar Wallet",
+    "project_id": "northstar-wallet",
+    "aliases": [],
+    "auth_id": "e2e",
+    "disabled": false,
+    "templates": [
+      "client"
+    ],
+    "primary_template": "client",
+    "synced_at": "2024-01-01T00:00:00Z",
+    "url": "https://console.firebase.google.com/project/northstar-wallet/config"
+  },
+  "errors": [],
+  "warnings": []
+}

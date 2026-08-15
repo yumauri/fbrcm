@@ -131,7 +131,7 @@ func (m *manager) init(mode Mode, defaults ...charmlog.Level) {
 	}
 	m.mode = mode
 	m.logger.SetFormatter(charmlog.TextFormatter)
-	m.logger.SetReportTimestamp(true)
+	m.logger.SetReportTimestamp(!env.LogTimestampDisabled())
 	m.logger.SetTimeFormat("15:04:05")
 	m.setLevelLocked(defaultLevel)
 	if env.NoColorEnabled() {

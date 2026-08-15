@@ -1,0 +1,27 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
+  "contract_version": "1.0.0",
+  "command": "config.validate",
+  "requested_command": "config.validate",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "path": "global and local configuration",
+    "exists": true,
+    "valid": true,
+    "errors": [],
+    "warnings": []
+  },
+  "errors": [],
+  "warnings": []
+}

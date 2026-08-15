@@ -1,0 +1,26 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:response",
+  "contract_version": "1.0.0",
+  "command": "projects.aliases.set",
+  "requested_command": "projects.aliases.set",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "alias": "staging",
+    "project_id": "northstar-wallet",
+    "changed": true,
+    "source": "fbrcm"
+  },
+  "errors": [],
+  "warnings": []
+}

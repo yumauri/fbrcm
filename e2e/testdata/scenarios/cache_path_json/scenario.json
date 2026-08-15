@@ -1,0 +1,8 @@
+{
+  "name": "cache_path_json",
+  "command_id": "cache.path",
+  "args": ["cache", "path", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

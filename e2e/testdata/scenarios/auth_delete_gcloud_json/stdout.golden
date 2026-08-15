@@ -1,0 +1,26 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:response",
+  "contract_version": "1.0.0",
+  "command": "auth.delete",
+  "requested_command": "auth.delete",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "auth_id": "gcloud-secondary",
+    "type": "gcloud",
+    "status": "deleted",
+    "deleted_paths": null
+  },
+  "errors": [],
+  "warnings": []
+}

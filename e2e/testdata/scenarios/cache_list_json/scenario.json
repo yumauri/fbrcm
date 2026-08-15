@@ -1,0 +1,9 @@
+{
+  "name": "cache_list_json",
+  "command_id": "cache.list",
+  "args": ["cache", "list", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "read_state"
+}
