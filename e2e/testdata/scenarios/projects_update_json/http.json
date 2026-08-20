@@ -1,0 +1,39 @@
+{
+  "data": {
+    "globalActions": {"delays": [], "delaysLogNormal": []},
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "cloudresourcemanager.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects"}],
+          "query": {"pageSize": [{"matcher": "exact", "value": "1000"}]},
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"projects\":[{\"projectId\":\"northstar-wallet\",\"projectNumber\":\"123456789012\",\"name\":\"Northstar Wallet\",\"lifecycleState\":\"ACTIVE\"}]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "cloudresourcemanager.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v3/projects/northstar-wallet"}],
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"projectId\":\"northstar-wallet\",\"displayName\":\"Northstar Wallet\",\"state\":\"ACTIVE\",\"etag\":\"synthetic-project-etag\",\"updateTime\":\"2026-08-01T08:00:00Z\"}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {"hoverflyVersion": "v1.12.10", "schemaVersion": "v5.3", "timeExported": "2024-01-01T00:00:00Z"}
+}

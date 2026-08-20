@@ -1,0 +1,23 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:response",
+  "contract_version": "1.0.0",
+  "command": "projects.path",
+  "requested_command": "projects.path",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "path": "<E2E_RUN_ROOT>/environment/config/default/projects-config.json"
+  },
+  "errors": [],
+  "warnings": []
+}

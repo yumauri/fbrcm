@@ -1,0 +1,39 @@
+{
+  "name": "versions_diff_filtered_json",
+  "command_id": "versions.diff",
+  "args": [
+    "versions",
+    "diff",
+    "${PROJECT_ID}",
+    "10",
+    "11",
+    "--filter",
+    "=pending_transaction_days",
+    "--group",
+    "banking",
+    "--search",
+    "pending",
+    "--expr",
+    "name == \"pending_transaction_days\"",
+    "--parameters",
+    "--json"
+  ],
+  "expected_exit_code": 1,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=10",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=11",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

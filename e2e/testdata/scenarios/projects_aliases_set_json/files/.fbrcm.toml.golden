@@ -1,0 +1,5 @@
+profile = 'default'
+
+[projects]
+[projects.aliases]
+staging = 'northstar-wallet'

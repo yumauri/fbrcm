@@ -23,6 +23,10 @@ type authHTTPClientResult struct {
 func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool) (*Service, error) {
 	logger := corelog.For("firebase")
 	logger.Debug("create firebase service", "auth_id", auth.ID, "auth_type", auth.Type)
+	ctx, err := withEnvironmentTLSRoots(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	environmentQuotaProjectID, err := environmentQuotaProjectID()
 	if err != nil {
@@ -41,6 +45,10 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 // NewDiagnosticServiceForAuth constructs a service without starting an
 // interactive OAuth authorization flow or persisting refreshed credentials.
 func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*Service, error) {
+	ctx, err := withEnvironmentTLSRoots(ctx)
+	if err != nil {
+		return nil, err
+	}
 	environmentQuotaProjectID, err := environmentQuotaProjectID()
 	if err != nil {
 		return nil, err

@@ -1,0 +1,878 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response",
+  "contract_version": "1.0.0",
+  "command": "config.show",
+  "requested_command": "config.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "scope": "effective",
+    "path": "effective",
+    "exists": false,
+    "global_path": "<E2E_RUN_ROOT>/environment/config/config.toml",
+    "config": {
+      "profile": "default",
+      "powerline_glyphs": true,
+      "keys": {
+        "accounts": {
+          "cancel": [
+            "esc"
+          ],
+          "delete": [
+            "x"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "auth_picker": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "next": [
+            "right",
+            "l",
+            "tab"
+          ],
+          "prev": [
+            "left",
+            "h",
+            "shift+tab"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "bool_input": {
+          "cancel": [
+            "esc"
+          ],
+          "copy_value": [
+            "ctrl+y"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "conditions": {
+          "color": [
+            "c"
+          ],
+          "copy_name": [
+            "y"
+          ],
+          "copy_path": [
+            "Y"
+          ],
+          "delete": [
+            "x"
+          ],
+          "discard": [
+            "d"
+          ],
+          "discard_all": [
+            "D"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "edit": [
+            "e"
+          ],
+          "first": [
+            "home"
+          ],
+          "last": [
+            "end"
+          ],
+          "move": [
+            "m"
+          ],
+          "new": [
+            "a"
+          ],
+          "open_details": [
+            "enter"
+          ],
+          "page_down": [
+            "pgdown",
+            "l"
+          ],
+          "page_up": [
+            "pgup",
+            "h"
+          ],
+          "publish": [
+            "p"
+          ],
+          "publish_all": [
+            "P"
+          ],
+          "rename": [
+            "r"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "details": {
+          "close": [
+            "esc"
+          ],
+          "color": [
+            "c"
+          ],
+          "copy_name": [
+            "y"
+          ],
+          "copy_path": [
+            "Y"
+          ],
+          "copy_value": [
+            "ctrl+y"
+          ],
+          "delete": [
+            "x"
+          ],
+          "edit_value": [
+            "right",
+            "e"
+          ],
+          "move": [
+            "m"
+          ],
+          "new": [
+            "a"
+          ],
+          "rename": [
+            "r"
+          ],
+          "submit": [
+            "ctrl+enter"
+          ],
+          "toggle_in_app_default": [
+            "d"
+          ]
+        },
+        "details_form": {
+          "close": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "page_down": [
+            "pgdown",
+            "l"
+          ],
+          "page_up": [
+            "pgup",
+            "h"
+          ],
+          "right": [
+            "right"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "dialog": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "next": [
+            "right",
+            "l",
+            "tab"
+          ],
+          "page_down": [
+            "pgdown"
+          ],
+          "page_up": [
+            "pgup"
+          ],
+          "prev": [
+            "left",
+            "h",
+            "shift+tab"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "diff_view": {
+          "close": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "left": [
+            "left",
+            "h"
+          ],
+          "page_down": [
+            "pgdown"
+          ],
+          "page_up": [
+            "pgup"
+          ],
+          "right": [
+            "right",
+            "l"
+          ],
+          "toggle": [
+            "space",
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "filter": {
+          "apply": [
+            "enter"
+          ],
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down"
+          ],
+          "exact": [
+            "="
+          ],
+          "expression": [
+            ":"
+          ],
+          "fuzzy": [
+            "~"
+          ],
+          "includes": [
+            "/"
+          ],
+          "starts_with": [
+            "^"
+          ],
+          "up": [
+            "up"
+          ]
+        },
+        "global": {
+          "accounts": [
+            "ctrl+a"
+          ],
+          "focus_ab_tests": [
+            "6"
+          ],
+          "focus_conditions": [
+            "3"
+          ],
+          "focus_details": [
+            "5"
+          ],
+          "focus_history": [
+            "4"
+          ],
+          "focus_logs": [
+            "0"
+          ],
+          "focus_next": [
+            "tab"
+          ],
+          "focus_parameters": [
+            "2"
+          ],
+          "focus_personalizations": [
+            "7"
+          ],
+          "focus_projects": [
+            "1"
+          ],
+          "focus_promote": [
+            "9"
+          ],
+          "focus_rollouts": [
+            "8"
+          ],
+          "force_quit": [
+            "ctrl+c"
+          ],
+          "help": [
+            "?"
+          ],
+          "profiles": [
+            "ctrl+p"
+          ],
+          "quit": [
+            "q"
+          ],
+          "workspace_menu": [
+            "\\"
+          ]
+        },
+        "help": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "ctrl+j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "page_down": [
+            "pgdown"
+          ],
+          "page_up": [
+            "pgup"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "ctrl+k"
+          ]
+        },
+        "history": {
+          "choose_versions": [
+            "v"
+          ],
+          "pair_newer": [
+            "."
+          ],
+          "pair_older": [
+            ","
+          ],
+          "submit": [
+            "enter"
+          ],
+          "toggle_changes": [
+            "c"
+          ]
+        },
+        "history_picker": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "left": [
+            "left"
+          ],
+          "page_down": [
+            "pgdown"
+          ],
+          "page_up": [
+            "pgup"
+          ],
+          "pair_newer": [
+            "."
+          ],
+          "pair_older": [
+            ","
+          ],
+          "reset": [
+            "r"
+          ],
+          "right": [
+            "right"
+          ],
+          "rollback": [
+            "R"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "toggle": [
+            "tab",
+            "shift+tab"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "json_input": {
+          "cancel": [
+            "esc"
+          ],
+          "copy_value": [
+            "ctrl+y"
+          ],
+          "format": [
+            "ctrl+f"
+          ],
+          "save": [
+            "ctrl+s",
+            "ctrl+enter"
+          ]
+        },
+        "logs": {
+          "blank_line": [
+            "enter"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "level_down": [
+            "["
+          ],
+          "level_up": [
+            "]"
+          ],
+          "page_down": [
+            "pgdown",
+            "l"
+          ],
+          "page_up": [
+            "pgup",
+            "h"
+          ],
+          "resize_grow": [
+            "=",
+            "+"
+          ],
+          "resize_shrink": [
+            "-",
+            "_"
+          ],
+          "toggle_mode": [
+            "c"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "managed_features": {
+          "down": [
+            "down",
+            "j"
+          ],
+          "first": [
+            "home"
+          ],
+          "last": [
+            "end"
+          ],
+          "open_details": [
+            "enter"
+          ],
+          "page_down": [
+            "pgdown",
+            "l"
+          ],
+          "page_up": [
+            "pgup",
+            "h"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "move_input": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "number_input": {
+          "cancel": [
+            "esc"
+          ],
+          "copy_value": [
+            "ctrl+y"
+          ],
+          "submit": [
+            "enter"
+          ]
+        },
+        "parameters": {
+          "collapse": [
+            "left",
+            "h"
+          ],
+          "collapse_all": [
+            "\u003c"
+          ],
+          "collapse_groups": [
+            "("
+          ],
+          "copy_name": [
+            "y"
+          ],
+          "copy_path": [
+            "Y"
+          ],
+          "delete": [
+            "x"
+          ],
+          "discard": [
+            "d"
+          ],
+          "discard_all": [
+            "D"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "duplicate": [
+            "c"
+          ],
+          "edit": [
+            "e"
+          ],
+          "expand": [
+            "right",
+            "l"
+          ],
+          "expand_all": [
+            "\u003e"
+          ],
+          "expand_groups": [
+            ")"
+          ],
+          "first": [
+            "home"
+          ],
+          "last": [
+            "end"
+          ],
+          "move": [
+            "m"
+          ],
+          "new": [
+            "a"
+          ],
+          "new_group": [
+            "A"
+          ],
+          "next_group": [
+            "pgdown"
+          ],
+          "open_details": [
+            "enter"
+          ],
+          "prev_group": [
+            "pgup"
+          ],
+          "publish": [
+            "p"
+          ],
+          "publish_all": [
+            "P"
+          ],
+          "reload": [
+            "u"
+          ],
+          "reload_all": [
+            "U"
+          ],
+          "rename": [
+            "r"
+          ],
+          "toggle": [
+            " ",
+            "space"
+          ],
+          "toggle_maximize": [
+            "z"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "profiles": {
+          "cancel": [
+            "esc"
+          ],
+          "delete": [
+            "x"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "rename": [
+            "r"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "projects": {
+          "bind_auth": [
+            "b"
+          ],
+          "defaults": [
+            "d"
+          ],
+          "delete": [
+            "x"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "export": [
+            "e"
+          ],
+          "home": [
+            "home"
+          ],
+          "import": [
+            "i"
+          ],
+          "make_primary": [
+            "p"
+          ],
+          "mark": [
+            "space"
+          ],
+          "open": [
+            "o"
+          ],
+          "page_down": [
+            "pgdown",
+            "l"
+          ],
+          "page_up": [
+            "pgup",
+            "h"
+          ],
+          "promote": [
+            "v"
+          ],
+          "refresh": [
+            "u"
+          ],
+          "select": [
+            "enter"
+          ],
+          "toggle_mode": [
+            "c"
+          ],
+          "toggle_templates": [
+            "t"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "promote": {
+          "close": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "page_down": [
+            "pgdown"
+          ],
+          "page_up": [
+            "pgup"
+          ],
+          "prune": [
+            "x"
+          ],
+          "publish": [
+            "p"
+          ],
+          "save_draft": [
+            "d"
+          ],
+          "select_all": [
+            "a"
+          ],
+          "select_none": [
+            "n"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "swap": [
+            "s"
+          ],
+          "toggle": [
+            "space"
+          ],
+          "toggle_source": [
+            "u"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
+        "rename_input": {
+          "cancel": [
+            "esc"
+          ],
+          "submit": [
+            "enter"
+          ]
+        },
+        "string_input": {
+          "cancel": [
+            "esc"
+          ],
+          "copy_value": [
+            "ctrl+y"
+          ],
+          "save": [
+            "ctrl+s",
+            "ctrl+enter"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "toggle_expanded": [
+            "ctrl+e"
+          ]
+        },
+        "workspace_menu": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        }
+      }
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

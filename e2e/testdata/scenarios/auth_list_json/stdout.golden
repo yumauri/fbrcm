@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response",
+  "contract_version": "1.0.0",
+  "command": "auth.list",
+  "requested_command": "auth.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "id": "e2e",
+        "type": "oauth",
+        "label": "E2E fixture",
+        "client_secret_path": "auth/e2e/client-secret.json",
+        "token_path": "auth/e2e/token.json",
+        "default": true
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

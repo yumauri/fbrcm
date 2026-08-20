@@ -1,0 +1,58 @@
+{
+  "format_version": 1,
+  "project_id": "northstar-wallet",
+  "base_version": "12",
+  "base_etag": "fixture-etag-version-12",
+  "created_at": "2024-01-03T10:00:00Z",
+  "updated_at": "<E2E_UPDATED_AT>",
+  "change_note": "Review synthetic rollout before publication",
+  "base_remote_config": {
+    "parameterGroups": {
+      "banking": {
+        "description": "Sanitized fixture group banking",
+        "parameters": {
+          "card_freeze_enabled": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter card_freeze_enabled",
+            "valueType": "BOOLEAN"
+          }
+        }
+      }
+    },
+    "version": {
+      "versionNumber": "12",
+      "updateTime": "2024-01-02T03:04:05Z",
+      "description": "Sanitized personal-profile fixture"
+    }
+  },
+  "remote_config": {
+    "parameterGroups": {
+      "banking": {
+        "description": "Sanitized fixture group banking",
+        "parameters": {
+          "card_freeze_enabled": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Sanitized fixture parameter card_freeze_enabled",
+            "valueType": "BOOLEAN"
+          },
+          "fixture_rollout_enabled": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Synthetic parameter added by the E2E draft",
+            "valueType": "BOOLEAN"
+          }
+        }
+      }
+    },
+    "version": {
+      "versionNumber": "12",
+      "updateTime": "2024-01-02T03:04:05Z",
+      "description": "Sanitized personal-profile fixture"
+    }
+  }
+}

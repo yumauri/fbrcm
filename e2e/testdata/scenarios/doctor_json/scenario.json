@@ -1,0 +1,35 @@
+{
+  "name": "doctor_json",
+  "command_id": "doctor",
+  "args": ["doctor", "--timeout", "30s", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v1/projects",
+      "query": "pageSize=1000",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v3/projects/${PROJECT_ID}",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}:testIamPermissions",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "json_output": true
+}

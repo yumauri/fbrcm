@@ -1,0 +1,12 @@
+{
+  "name": "projects_aliases_set_json",
+  "command_id": "projects.aliases.set",
+  "args": ["projects", "aliases", "set", "staging", "northstar-wallet", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_files": [".fbrcm.toml"],
+  "json_output": true,
+  "fixture": "aliases_set",
+  "local_config": true,
+  "offline": true
+}

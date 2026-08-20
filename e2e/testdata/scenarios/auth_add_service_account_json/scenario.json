@@ -1,0 +1,14 @@
+{
+  "name": "auth_add_service_account_json",
+  "command_id": "auth.add.service-account",
+  "args": ["auth", "add", "service-account", "service-secondary", "--from", "service-account.json", "--label", "Synthetic service identity", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {"root": "config", "path": "default/auth-config.json"},
+    {"root": "config", "path": "default/auth/service-secondary/service-account.json"}
+  ],
+  "json_output": true,
+  "fixture": "auth_inputs",
+  "offline": true
+}

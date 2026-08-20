@@ -1,0 +1,24 @@
+{
+  "name": "projects_diff_client_server_json",
+  "command_id": "projects.diff",
+  "args": [
+    "projects",
+    "diff",
+    "server@${PROJECT_ID}",
+    "client@${PROJECT_ID}",
+    "--cached",
+    "--filter",
+    "=server_endpoint",
+    "--search",
+    "endpoint",
+    "--expr",
+    "name == \"server_endpoint\"",
+    "--parameters",
+    "--json"
+  ],
+  "expected_exit_code": 1,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "read_state",
+  "offline": true
+}

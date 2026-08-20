@@ -1,0 +1,25 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:response",
+  "contract_version": "1.0.0",
+  "command": "project.open",
+  "requested_command": "project.open",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project_id": "northstar-wallet",
+    "url": "https://console.firebase.google.com/project/northstar-wallet/config",
+    "opened": false
+  },
+  "errors": [],
+  "warnings": []
+}

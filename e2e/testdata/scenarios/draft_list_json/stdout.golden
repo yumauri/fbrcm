@@ -1,0 +1,43 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:response",
+  "contract_version": "1.0.0",
+  "command": "draft.list",
+  "requested_command": "draft.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project_id": "northstar-wallet",
+        "project": "Northstar Wallet",
+        "base_version": "12",
+        "created_at": "2024-01-03T10:00:00Z",
+        "updated_at": "2024-01-04T11:30:00Z",
+        "size": 1645,
+        "status": "ready",
+        "valid": true,
+        "base_available": true,
+        "path": "<E2E_RUN_ROOT>/environment/cache/default/drafts/northstar-wallet.json",
+        "changes": {
+          "conditions": 0,
+          "group_descriptions": 0,
+          "parameters": 2
+        },
+        "change_note": "Enable the fixture rollout after validation"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

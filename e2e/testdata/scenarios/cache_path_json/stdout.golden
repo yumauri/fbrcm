@@ -1,0 +1,23 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:response",
+  "contract_version": "1.0.0",
+  "command": "cache.path",
+  "requested_command": "cache.path",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "path": "<E2E_RUN_ROOT>/environment/cache/default/remote-config"
+  },
+  "errors": [],
+  "warnings": []
+}

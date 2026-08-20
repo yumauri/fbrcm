@@ -1,0 +1,28 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:response",
+  "contract_version": "1.0.0",
+  "command": "auth.path",
+  "requested_command": "auth.path",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "id": "e2e",
+    "type": "oauth",
+    "auth_config_path": "<E2E_RUN_ROOT>/environment/config/default/auth-config.json",
+    "profile_config_path": "<E2E_RUN_ROOT>/environment/config/default",
+    "client_secret_path": "<E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json",
+    "token_path": "<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json"
+  },
+  "errors": [],
+  "warnings": []
+}

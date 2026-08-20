@@ -1,0 +1,20 @@
+Compare Remote Config between two projects
+
+Usage:
+  fbrcm projects diff <source-project> <target-project> [flags]
+
+Flags:
+      --cached               Use cached Remote Config instead of live Firebase fetch
+      --conditions           Include only condition changes
+      --expr string          Filter parameter changes by expr-lang expression
+  -f, --filter stringArray   Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated
+      --group stringArray    Select parameters in group; may be repeated
+  -h, --help                 help for diff
+      --json                 Print diff as JSON
+      --parameters           Include only parameter and group description changes
+      --search string        Search parameters by name, description, values, and conditions
+
+Global Flags:
+      --no-local-config    Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)
+      --profile string     Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)
+      --timeout duration   Maximum duration for the complete command

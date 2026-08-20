@@ -1,0 +1,13 @@
+{
+  "name": "schema_show_json",
+  "command_id": "schema.show",
+  "args": [
+    "schema",
+    "show",
+    "urn:fbrcm:schema:cli:1.0.0:command:get:response",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

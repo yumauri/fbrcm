@@ -1,0 +1,24 @@
+{
+  "data": {
+    "globalActions": {"delays": [], "delaysLogNormal": []},
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/namespaces/firebase/experiments"}],
+          "query": {"pageSize": [{"matcher": "exact", "value": "100"}]},
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"experiments\":[{\"name\":\"projects/northstar-wallet/namespaces/firebase/experiments/onboarding-copy\",\"definition\":{\"displayName\":\"Onboarding copy\",\"description\":\"Compare concise onboarding guidance\",\"service\":\"firebase_remote_config\",\"objectives\":{\"activationEvent\":{\"event\":\"onboarding_started\"},\"eventObjectives\":[{\"isPrimary\":true,\"customObjectiveDetails\":{\"event\":\"onboarding_completed\",\"countType\":\"UNIQUE_USERS\"}}]},\"variants\":[{\"name\":\"control\",\"weight\":1},{\"name\":\"short-copy\",\"weight\":1}]},\"state\":\"RUNNING\",\"startTime\":\"2026-08-01T10:00:00Z\",\"lastUpdateTime\":\"2026-08-10T12:30:00Z\",\"etag\":\"synthetic-experiment-etag\"}]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {"hoverflyVersion": "v1.12.10", "schemaVersion": "v5.3", "timeExported": "2024-01-01T00:00:00Z"}
+}

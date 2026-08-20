@@ -1,0 +1,97 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig:downloadDefaults"
+            }
+          ],
+          "query": {
+            "format": [
+              {
+                "matcher": "exact",
+                "value": "PLIST"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/5VWXYsbNxR9bn6Fquddj+1tS1gch202LYElXYhDaZciZM21R7VGUqQre6cl/z1XM15wRg5swA8jS+d+nnukxevH1rA9hKidfcVnkylnYJWrtd2+4h9Xv12+5K+XLxY/3v7xZvXX/VvmjY7I7j/+evfuDeOXVXXjvYGqul3dsvu7dx9WjGxU1dv3nPEG0V9X1eFwmMh8aqJcmw/G6j44DwG7OzJ2SYBJjTUnN4P1r8Khf2utcPnih8UOumXtVGrBokjeOFmLVj6Kdr2o8h4diRgo8uVsvqiOn0ectkrXGRdRYooiBTMG5XAjxTucmMCjbHPQ2u6l0XW10VZaBWPDrdQWod8Sa2kthLHd/zltrw3U/HojTYQLjhoN8Gv+QTVQJ9phJ1b4BacIAsYbpCPz6fyXyyn95qvp7Ho6pd/f/PM4iNi4g0AqhaIUywgwpCLunCX0lWydxSYKuZfa5DjH6PlPBTZ57wIK1UgUx+Se5fOI+5QggVDOd2PUDYselJY9Dw7aGPav05ZRfgFNN7YnlXKJMrBa7axsoWeDAbvFZmz4qmCEVI3AIG3cQBBGtxpFTRUoQrqaTqdjrJKhFpsA8B98T/7aUtUpXiUpoYRiA8QZH8fQlz+PgTQtNrNrR/99y2HPrTGQcHmUh0SlQhoryrIrXBYevZG6Fj64Oiksjj9wmbAhpp7YjbTsR0xjx/8Z21sbp3ZChc6jE3358vgWhs9VrYa9zsOlh1S2QdKK6hcKdMnURm8bEXTcjVpdIMseB/iUdAASDPCkNmLjgrBwEEM4zwm89ztowlmy/wnMAg2/ZORJ7VgElQJVj5EsqF05sEMcLWDjyso98NhG4dBTG4DkxPTfRR/2QI0gH+JA5STRaLVNCIW1WUGIzNmNIQTVAWiBZ3l0VZRxYKuIaR1V0H5gICD0nHnm0FATMUf6FY370S9Gp5BnCKRSNHPGbYl4deHySfVljICl6j/hY2E4q6bpxDrVW/g+FZR7WkVhM1JgE4DUwBTQ2bzoQXwaZ0XavXVBl4174NvgFOQtIgKZRplCjv9pWLMA5yvmpB95L6E2GjOqoMyxg54qREtB3bDJP0t9NmkIl1qn29QK2Z7r2azgzK5TWXr2JCfFXUaPA73ZnEMEwNB9Y7wLQbVrRyKUg8tzdaaM/QxRYXzjLJxK2wU/pkVfWcjKgvW3MT04HN1IdNXF5zL9AKbHrJ2lF8o5xfgdkPWPA1KNg8aGWceORGR0mZyQdFENr6ZF1b+pll8A9g2g+OkJAAA=",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/x-plist"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 07:36:07 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

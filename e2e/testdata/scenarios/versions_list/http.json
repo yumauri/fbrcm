@@ -1,0 +1,97 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "3"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/+VTXU/CMBR951c0e5bRdsBgTy4wA1GBbOVDjSFlq2PCPrJ2KBL+u90AMZjgC2+8NGnPuefce0+6KQGgrFjKgzjiigFe5B2ATXEekV4WzlgqYQVh5eYAZolHBSNByHIEQ1wvw0YZIoI0A9WNKlSrml5r6s+nJUNeiB1c5HtEdyJPWUgpGLHUC6KfKomzkAbLnLDOCeqqINz6+avqxuFvahBSnw3Tgj0XIuFGpbKca6ofx/6SZdLajSPBIpEXVmjFbPmN2O2SFl70P8ZZ5ow1Pnpv37mdabXxNfMWOg156redTkjf7j0xx3Z7MsFdZW+5PRmunwa+bF66t/o9p/9g/VnYOilm7fZatvVo9Yj5MB0O2iaxdpJ7wTMZoPMZ6GUNEowMBA2IVFSvwVrtWjLwGHfTIBFyYbm5zbzMZSBhkezVByKlEadujgKPrvnpUo7Z2ZZDpuage/nw4H/h4QaB8vdgA2pqE+oQ1q8lvEt9IHm+5jVKxD7FQE5D4gUrFJtKaVv6BiRHRdn0BAAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 07:36:15 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

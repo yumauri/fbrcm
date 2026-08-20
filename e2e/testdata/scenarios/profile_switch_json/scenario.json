@@ -1,0 +1,10 @@
+{
+  "name": "profile_switch_json",
+  "command_id": "profile.switch",
+  "args": ["profile", "switch", "sandbox", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{"root": "config", "path": "config.toml"}],
+  "json_output": true,
+  "offline": true
+}

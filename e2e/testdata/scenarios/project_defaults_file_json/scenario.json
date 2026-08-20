@@ -1,0 +1,26 @@
+{
+  "name": "project_defaults_file_json",
+  "command_id": "project.defaults",
+  "args": [
+    "project",
+    "defaults",
+    "${PROJECT_ID}",
+    "--format",
+    "json",
+    "--to",
+    "defaults.json",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:downloadDefaults",
+      "query": "format=JSON",
+      "status": 200
+    }
+  ],
+  "expected_files": ["defaults.json"],
+  "json_output": true
+}

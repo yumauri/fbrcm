@@ -1,0 +1,45 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:update:response",
+  "contract_version": "1.0.0",
+  "command": "update",
+  "requested_command": "update",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": true,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "target": "northstar-wallet",
+        "status": "would-publish",
+        "changed_item_count": 1,
+        "previous_version": "12",
+        "published_version": null,
+        "draft": false,
+        "dry_run": true,
+        "validated": true,
+        "validation_source": "firebase",
+        "error": null,
+        "retry_selector": null,
+        "change_note": null,
+        "selection": {
+          "default_scope": false,
+          "resolved_target_count": 1,
+          "matched_item_count": 1
+        },
+        "no_op_reason": null
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

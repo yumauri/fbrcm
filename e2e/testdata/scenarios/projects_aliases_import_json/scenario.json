@@ -1,0 +1,12 @@
+{
+  "name": "projects_aliases_import_json",
+  "command_id": "projects.aliases.import",
+  "args": ["projects", "aliases", "import", "--from", "firebase-import.json", "--conflict", "overwrite", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_files": [".fbrcm.toml"],
+  "json_output": true,
+  "fixture": "aliases_import",
+  "local_config": true,
+  "offline": true
+}

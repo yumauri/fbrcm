@@ -1,0 +1,32 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:response",
+  "contract_version": "1.0.0",
+  "command": "versions.export",
+  "requested_command": "versions.export",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "target": "northstar-wallet",
+    "media_type": "application/json",
+    "encoding": "none",
+    "json_content": null,
+    "text_content": null,
+    "base64_content": null,
+    "destination": "version-11.json",
+    "size_bytes": 10783,
+    "sha256": "6081757f9722b3ed0289e9a41e2cc68b312f81b55ccc7aabe3b5cfe52cd86419",
+    "overwritten": false
+  },
+  "errors": [],
+  "warnings": []
+}

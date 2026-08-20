@@ -11,8 +11,18 @@
           "items": {
             "additionalProperties": false,
             "properties": {
+              "description": {
+                "type": "string"
+              },
               "has_draft": {
                 "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "parameter_count": {
+                "minimum": 0,
+                "type": "integer"
               },
               "project": {
                 "type": "string"
@@ -35,6 +45,8 @@
             },
             "required": [
               "has_draft",
+              "name",
+              "parameter_count",
               "project",
               "project_id",
               "source",

@@ -11,8 +11,8 @@ import (
 )
 
 func TestProjectLineUsesNameAndParenthesizedID(t *testing.T) {
-	project := core.Project{Name: "Mercato Mobile", ProjectID: "mercato-mobile-9eac5"}
-	if got, want := ansi.Strip(ProjectLine(project)), "Project: Mercato Mobile (mercato-mobile-9eac5)"; got != want {
+	project := core.Project{Name: "Example Mobile", ProjectID: "example-mobile-a1b2"}
+	if got, want := ansi.Strip(ProjectLine(project)), "Project: Example Mobile (example-mobile-a1b2)"; got != want {
 		t.Fatalf("ProjectLine = %q, want %q", got, want)
 	}
 	if got := ProjectLine(project); !strings.Contains(got, styles.TreeProjectName.Render(project.Name)) {

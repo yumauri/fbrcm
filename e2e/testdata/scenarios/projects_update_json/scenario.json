@@ -1,0 +1,40 @@
+{
+  "name": "projects_update_json",
+  "command_id": "projects.update",
+  "args": [
+    "projects", "update",
+    "--auth", "e2e",
+    "--filter", "=Northstar Wallet",
+    "--expr", "project_id == \"northstar-wallet\"",
+    "--url",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v1/projects",
+      "query": "pageSize=1000",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v3/projects/${PROJECT_ID}",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "expected_state_files": [
+    {
+      "root": "config",
+      "path": "default/projects-config.json",
+      "json_replacements": {
+        "/synced_at": "<E2E_SYNCED_AT>"
+      }
+    }
+  ],
+  "json_output": true,
+  "fixture": "projects_update"
+}

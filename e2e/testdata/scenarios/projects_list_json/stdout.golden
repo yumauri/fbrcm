@@ -1,0 +1,37 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
+  "contract_version": "1.0.0",
+  "command": "projects.list",
+  "requested_command": "projects.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project": "Northstar Wallet",
+        "project_id": "northstar-wallet",
+        "aliases": [],
+        "auth_id": "e2e",
+        "disabled": false,
+        "templates": [
+          "client"
+        ],
+        "primary_template": "client",
+        "synced_at": "2024-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

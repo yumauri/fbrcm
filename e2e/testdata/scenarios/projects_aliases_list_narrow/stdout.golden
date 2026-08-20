@@ -1,0 +1,7 @@
+┌───────┬───────────────────────────┬──────────┐
+│ Alias │ Project ID                │ Source   │
+├───────┼───────────────────────────┼──────────┤
+│ deve… │ northstar-wallet          │ fbrcm    │
+│ prod… │ firebase-production-proj… │ firebase │
+│ shar… │ northstar-wallet          │ both     │
+└───────┴───────────────────────────┴──────────┘

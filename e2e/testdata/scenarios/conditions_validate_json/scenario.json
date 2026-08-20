@@ -1,0 +1,30 @@
+{
+  "name": "conditions_validate_json",
+  "command_id": "conditions.validate",
+  "args": ["conditions", "validate", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "query": "pageSize=1",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=12",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "validateOnly=true",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

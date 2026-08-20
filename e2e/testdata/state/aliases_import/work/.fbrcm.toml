@@ -1,0 +1,4 @@
+profile = "default"
+
+[projects.aliases]
+preview = "old-preview-lab"

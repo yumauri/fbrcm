@@ -1,0 +1,40 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:response",
+  "contract_version": "1.0.0",
+  "command": "projects.aliases.import",
+  "requested_command": "projects.aliases.import",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "from": "<E2E_RUN_ROOT>/environment/work/firebase-import.json",
+    "destination": "<E2E_RUN_ROOT>/environment/work/.fbrcm.toml",
+    "conflict_policy": "overwrite",
+    "dry_run": false,
+    "changed": true,
+    "items": [
+      {
+        "alias": "preview",
+        "previous_project_id": "old-preview-lab",
+        "project_id": "aurora-preview-lab",
+        "action": "overwrite"
+      },
+      {
+        "alias": "sandbox",
+        "project_id": "northstar-wallet",
+        "action": "add"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -17,11 +17,11 @@ func TestExpandedTemplatePairRendersAsConnectedProject(t *testing.T) {
 	m := templatePairViewModel(rctarget.Client)
 
 	got := normalizedProjectContent(m)
-	want := `╭PulseForge Fitness
-│ pulseforge-fitness-f60f7
+	want := `╭Example Fitness App
+│ example-fitness-app-a1b2
 │
-╰PulseForge Fitness
-  server@pulseforge-fitness-f60f7
+╰Example Fitness App
+  server@example-fitness-app-a1b2
 
  Other Project
   other`
@@ -35,11 +35,11 @@ func TestExpandedTemplatePairConnectorFollowsPrimaryOrder(t *testing.T) {
 	m := templatePairViewModel(rctarget.Server)
 
 	got := normalizedProjectContent(m)
-	want := `╭PulseForge Fitness
-│ server@pulseforge-fitness-f60f7
+	want := `╭Example Fitness App
+│ server@example-fitness-app-a1b2
 │
-╰PulseForge Fitness
-  pulseforge-fitness-f60f7
+╰Example Fitness App
+  example-fitness-app-a1b2
 
  Other Project
   other`
@@ -55,8 +55,8 @@ func TestFilteredTemplateDoesNotRenderPartialConnector(t *testing.T) {
 	m, _ = m.Update(tea.PasteMsg{Content: "server@"})
 
 	got := normalizedProjectContent(m)
-	want := ` PulseForge Fitness
-  server@pulseforge-fitness-f60f7`
+	want := ` Example Fitness App
+  server@example-fitness-app-a1b2`
 	if got != want {
 		t.Fatalf("content mismatch\n--- got ---\n%s\n--- want ---\n%s", got, want)
 	}
@@ -65,12 +65,12 @@ func TestFilteredTemplateDoesNotRenderPartialConnector(t *testing.T) {
 func TestProjectAliasesRenderAndFilter(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	m := templatePairViewModel(rctarget.Client)
-	m.aliasesByID = map[string][]string{"pulseforge-fitness-f60f7": {"prod", "production"}}
+	m.aliasesByID = map[string][]string{"example-fitness-app-a1b2": {"prod", "production"}}
 	m.applyFilter()
 	m.syncViewport()
 
 	got := normalizedProjectContent(m)
-	if !strings.Contains(got, "PulseForge Fitness [prod, production]") {
+	if !strings.Contains(got, "Example Fitness App [prod, production]") {
 		t.Fatalf("alias content = %q", got)
 	}
 	wantMeta := "[prod, production]"
@@ -79,7 +79,7 @@ func TestProjectAliasesRenderAndFilter(t *testing.T) {
 	}
 	m, _ = m.Update(keyText("="))
 	m, _ = m.Update(tea.PasteMsg{Content: "prod"})
-	if len(m.projects) != 2 || m.projects[0].ProjectID != "pulseforge-fitness-f60f7" || m.projects[1].ProjectID != "server@pulseforge-fitness-f60f7" {
+	if len(m.projects) != 2 || m.projects[0].ProjectID != "example-fitness-app-a1b2" || m.projects[1].ProjectID != "server@example-fitness-app-a1b2" {
 		t.Fatalf("alias-filtered projects = %#v", m.projects)
 	}
 	m.contentLines()
@@ -93,8 +93,8 @@ func templatePairViewModel(primary rctarget.Kind) Model {
 	m, _ = m.Update(messages.ProjectsLoadedMsg{
 		Projects: []core.Project{
 			{
-				Name:            "PulseForge Fitness",
-				ProjectID:       "pulseforge-fitness-f60f7",
+				Name:            "Example Fitness App",
+				ProjectID:       "example-fitness-app-a1b2",
 				Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
 				PrimaryTemplate: primary,
 			},

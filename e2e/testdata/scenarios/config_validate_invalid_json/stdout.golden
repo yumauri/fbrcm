@@ -1,0 +1,45 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
+  "contract_version": "1.0.0",
+  "command": "config.validate",
+  "requested_command": "config.validate",
+  "outcome": "failure",
+  "exit_code": 1,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "path": "<E2E_RUN_ROOT>/environment/work/.fbrcm.toml",
+    "exists": true,
+    "valid": false,
+    "errors": [
+      {
+        "severity": "error",
+        "code": "toml_decode",
+        "key": "",
+        "message": "toml: array is incomplete"
+      }
+    ],
+    "warnings": []
+  },
+  "errors": [
+    {
+      "code": "validation.failed",
+      "category": "validation",
+      "message": "configuration validation failed",
+      "retryable": false,
+      "target": null,
+      "stage": null,
+      "details": null,
+      "remediation": []
+    }
+  ],
+  "warnings": []
+}

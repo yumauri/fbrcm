@@ -85,19 +85,19 @@ func TestTargetPickerExcludesSourceAndSelectsTarget(t *testing.T) {
 }
 
 func TestTargetPickerFiltersAsUserTypes(t *testing.T) {
-	source := core.Project{Name: "SignalOps Console", ProjectID: "signalops-console"}
+	source := core.Project{Name: "ExampleOps Console", ProjectID: "exampleops-console"}
 	projects := []core.Project{
 		source,
-		{Name: "Mercato Mobile", ProjectID: "mercato-mobile-9eac5"},
+		{Name: "Example Mobile", ProjectID: "example-mobile-a1b2"},
 		{Name: "Northstar Wallet", ProjectID: "northstar-wallet"},
-		{Name: "PulseForge Fitness", ProjectID: "pulseforge-fitness-f60f7"},
+		{Name: "Example Fitness App", ProjectID: "example-fitness-app-a1b2"},
 	}
 	m := New(nil).Open(source, projects).SetBounds(24, 0, 76, 20).SetTargetRow(10)
 	for _, r := range "WALLET" {
 		m, _ = m.Update(keyRune(r))
 	}
 	view := testutil.NormalizeViewSnapshot(m.TargetView())
-	if !strings.Contains(view, "Northstar Wallet (northstar-wallet)") || strings.Contains(view, "Mercato Mobile") || strings.Contains(view, "PulseForge Fitness") {
+	if !strings.Contains(view, "Northstar Wallet (northstar-wallet)") || strings.Contains(view, "Example Mobile") || strings.Contains(view, "Example Fitness App") {
 		t.Fatalf("filtered target picker:\n%s", view)
 	}
 }
@@ -637,25 +637,25 @@ func TestPromoteUsesPromotionActionWording(t *testing.T) {
 
 func TestPromoteHeaderShowsNamedProjectsAndAlignedSnapshotStates(t *testing.T) {
 	plan := dependencyPlan(t)
-	plan.Source.Project = core.Project{Name: "SignalOps Console", ProjectID: "signalops-console"}
+	plan.Source.Project = core.Project{Name: "ExampleOps Console", ProjectID: "exampleops-console"}
 	plan.Source.Source = "cache-verified"
 	plan.Source.Version = "2"
-	plan.Target.Project = core.Project{Name: "Mercato Mobile", ProjectID: "mercato-mobile-9eac5"}
+	plan.Target.Project = core.Project{Name: "Example Mobile", ProjectID: "example-mobile-a1b2"}
 	plan.Target.Source = "cache-verified"
 	plan.Target.Version = "1"
 	m := promoteTestModel(t, plan)
 	raw := m.ViewWithBorder(true, true)
-	if !strings.Contains(raw, styles.PanelText.Render("SignalOps Console")) ||
-		!strings.Contains(raw, styles.PanelMuted.Render(" (signalops-console)")) ||
-		!strings.Contains(raw, styles.PanelText.Render("Mercato Mobile")) ||
-		!strings.Contains(raw, styles.PanelMuted.Render(" (mercato-mobile-9eac5)")) {
+	if !strings.Contains(raw, styles.PanelText.Render("ExampleOps Console")) ||
+		!strings.Contains(raw, styles.PanelMuted.Render(" (exampleops-console)")) ||
+		!strings.Contains(raw, styles.PanelText.Render("Example Mobile")) ||
+		!strings.Contains(raw, styles.PanelMuted.Render(" (example-mobile-a1b2)")) {
 		t.Fatalf("project names and IDs do not use Projects-panel styles:\n%s", testutil.NormalizeViewSnapshot(raw))
 	}
 
 	lines := strings.Split(testutil.NormalizeViewSnapshot(raw), "\n")
 	if len(lines) < 5 ||
-		!strings.Contains(lines[1], "SignalOps Console (signalops-console)") ||
-		!strings.Contains(lines[1], "🬭🬿 Mercato Mobile (mercato-mobile-9eac5)") ||
+		!strings.Contains(lines[1], "ExampleOps Console (exampleops-console)") ||
+		!strings.Contains(lines[1], "🬭🬿 Example Mobile (example-mobile-a1b2)") ||
 		!strings.Contains(lines[2], "cache-verified v2") ||
 		!strings.Contains(lines[2], "🬂🭚 cache-verified v1") {
 		t.Fatalf("promotion header layout is missing:\n%s", strings.Join(lines, "\n"))
@@ -683,21 +683,21 @@ func TestPromoteHeaderShowsNamedProjectsAndAlignedSnapshotStates(t *testing.T) {
 		t.Fatalf("narrow header arrow does not have exactly one surrounding space: %q", narrowLines[1])
 	}
 
-	plan.Source.Project = core.Project{Name: "PulseForge Fitness", ProjectID: "pulseforge-fitness-f60f7"}
-	pulseForgeHeader := strings.Split(testutil.NormalizeViewSnapshot(promoteTestModel(t, plan).ViewWithBorder(true, true)), "\n")[1]
-	if !strings.Contains(pulseForgeHeader, "PulseForge Fitness (pulseforge-fitness-f60f7) 🬭🬿") {
-		t.Fatalf("source ID was cropped even though the complete header fits: %q", pulseForgeHeader)
+	plan.Source.Project = core.Project{Name: "Example Fitness App", ProjectID: "example-fitness-app-a1b2"}
+	fitnessHeader := strings.Split(testutil.NormalizeViewSnapshot(promoteTestModel(t, plan).ViewWithBorder(true, true)), "\n")[1]
+	if !strings.Contains(fitnessHeader, "Example Fitness App (example-fitness-app-a1b2) 🬭🬿") {
+		t.Fatalf("source ID was cropped even though the complete header fits: %q", fitnessHeader)
 	}
 }
 
 func TestPromoteLoadingHeaderPersistsIntoReview(t *testing.T) {
-	source := core.Project{Name: "SignalOps Console", ProjectID: "signalops-console"}
-	target := core.Project{Name: "Mercato Mobile", ProjectID: "mercato-mobile-9eac5"}
+	source := core.Project{Name: "ExampleOps Console", ProjectID: "exampleops-console"}
+	target := core.Project{Name: "Example Mobile", ProjectID: "example-mobile-a1b2"}
 	m := New(nil).SetBounds(0, 0, 100, 24).SetLoading(source, target, core.ProjectPromotionEffective)
 	loadingView := m.ViewWithBorder(true, true)
 	loadingLines := strings.Split(testutil.NormalizeViewSnapshot(loadingView), "\n")
 	if len(loadingLines) < 5 ||
-		!strings.Contains(loadingLines[1], "SignalOps Console (signalops-console) 🬭🬿 Mercato Mobile (mercato-mobile-9eac5)") ||
+		!strings.Contains(loadingLines[1], "ExampleOps Console (exampleops-console) 🬭🬿 Example Mobile (example-mobile-a1b2)") ||
 		!strings.Contains(loadingLines[2], "🬂🭚") || strings.Count(loadingLines[2], "…") != 2 ||
 		!strings.Contains(loadingLines[3], "Loading Remote Config snapshots…") {
 		t.Fatalf("loading header is incomplete:\n%s", strings.Join(loadingLines, "\n"))
@@ -725,10 +725,10 @@ func TestPromoteLoadingHeaderPersistsIntoReview(t *testing.T) {
 
 func TestPromoteHeaderBlockExpandsForLongerSnapshotStatus(t *testing.T) {
 	plan := dependencyPlan(t)
-	plan.Source.Project = core.Project{Name: "Adyl TV", ProjectID: "adyl-tv"}
+	plan.Source.Project = core.Project{Name: "Demo A", ProjectID: "demo-a"}
 	plan.Source.Source = "cache-verified"
 	plan.Source.Version = "12345"
-	plan.Target.Project = core.Project{Name: "BlueTV", ProjectID: "blue-4bdb4"}
+	plan.Target.Project = core.Project{Name: "Demo B", ProjectID: "demo-b"}
 	plan.Target.Source = "cache-verified"
 	plan.Target.Version = "81"
 

@@ -1,0 +1,968 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:response",
+  "contract_version": "1.0.0",
+  "command": "versions.diff",
+  "requested_command": "versions.diff",
+  "outcome": "success",
+  "exit_code": 1,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "from_version": "11",
+    "to_version": "12",
+    "changed": true,
+    "diff": {
+      "conditions": [
+        {
+          "name": "android_beta_10",
+          "kind": "unchanged",
+          "previous_position": 4,
+          "final_position": 4,
+          "current": {
+            "name": "android_beta_10",
+            "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 10",
+            "tagColor": "PURPLE"
+          },
+          "final": {
+            "name": "android_beta_10",
+            "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 10",
+            "tagColor": "PURPLE"
+          }
+        },
+        {
+          "name": "employees",
+          "kind": "unchanged",
+          "previous_position": 1,
+          "final_position": 1,
+          "current": {
+            "name": "employees",
+            "expression": "percent \u003c= 5",
+            "tagColor": "BLUE"
+          },
+          "final": {
+            "name": "employees",
+            "expression": "percent \u003c= 5",
+            "tagColor": "BLUE"
+          }
+        },
+        {
+          "name": "high_risk_session",
+          "kind": "unchanged",
+          "previous_position": 5,
+          "final_position": 5,
+          "current": {
+            "name": "high_risk_session",
+            "expression": "device.country in ['us', 'gb', 'de'] \u0026\u0026 percent \u003c= 15",
+            "tagColor": "DEEP_ORANGE"
+          },
+          "final": {
+            "name": "high_risk_session",
+            "expression": "device.country in ['us', 'gb', 'de'] \u0026\u0026 percent \u003c= 15",
+            "tagColor": "DEEP_ORANGE"
+          }
+        },
+        {
+          "name": "kyc_pending",
+          "kind": "unchanged",
+          "previous_position": 2,
+          "final_position": 2,
+          "current": {
+            "name": "kyc_pending",
+            "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 35",
+            "tagColor": "ORANGE"
+          },
+          "final": {
+            "name": "kyc_pending",
+            "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 35",
+            "tagColor": "ORANGE"
+          }
+        },
+        {
+          "name": "uk_open_banking",
+          "kind": "unchanged",
+          "previous_position": 3,
+          "final_position": 3,
+          "current": {
+            "name": "uk_open_banking",
+            "expression": "device.country in ['gb']",
+            "tagColor": "GREEN"
+          },
+          "final": {
+            "name": "uk_open_banking",
+            "expression": "device.country in ['gb']",
+            "tagColor": "GREEN"
+          }
+        },
+        {
+          "name": "webapp",
+          "kind": "added",
+          "final_position": 6,
+          "final": {
+            "name": "webapp",
+            "expression": "app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'",
+            "tagColor": "LIME"
+          }
+        }
+      ],
+      "parameters": [
+        {
+          "key": "account_nickname_max_length",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "32"
+            },
+            "description": "Maximum account nickname length",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "32"
+            },
+            "description": "Maximum account nickname length",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "ach_transfer_limit_daily",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "3000"
+            },
+            "description": "Daily ACH transfer limit",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "3000"
+            },
+            "description": "Daily ACH transfer limit",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "card_freeze_enabled",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Allow card freeze from app",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Allow card freeze from app",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "instant_cashout_fee_bps",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "85"
+            },
+            "description": "Instant cashout fee in basis points",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "85"
+            },
+            "description": "Instant cashout fee in basis points",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "open_banking_enabled",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "uk_open_banking": {
+                "value": "true"
+              }
+            },
+            "description": "Enable open banking connection",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "uk_open_banking": {
+                "value": "true"
+              }
+            },
+            "description": "Enable open banking connection",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "pending_transaction_days",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "5"
+            },
+            "description": "Days to display pending transactions",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "5"
+            },
+            "description": "Days to display pending transactions",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "plaid_products",
+          "group": "banking",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "[\"auth\",\"transactions\",\"identity\"]"
+            },
+            "description": "Plaid products requested",
+            "valueType": "JSON"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "[\"auth\",\"transactions\",\"identity\"]"
+            },
+            "description": "Plaid products requested",
+            "valueType": "JSON"
+          }
+        },
+        {
+          "key": "cashflow_forecast_days",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "30"
+            },
+            "description": "Cashflow forecast horizon",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "30"
+            },
+            "description": "Cashflow forecast horizon",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "enable_subscription_detection",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "false"
+              }
+            },
+            "description": "Detect recurring subscriptions",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "false"
+              }
+            },
+            "description": "Detect recurring subscriptions",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "insight_min_transaction_count",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "8"
+            },
+            "description": "Minimum transactions before showing insights",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "8"
+            },
+            "description": "Minimum transactions before showing insights",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "merchant_logo_cdn",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "https://assets.example.invalid/merchants"
+            },
+            "description": "Merchant logo CDN base URL",
+            "valueType": "STRING"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "https://assets.example.invalid/merchants"
+            },
+            "description": "Merchant logo CDN base URL",
+            "valueType": "STRING"
+          }
+        },
+        {
+          "key": "monthly_budget_enabled",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Enable monthly budget module",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Enable monthly budget module",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "savings_nudge_threshold",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "125"
+            },
+            "description": "Balance delta threshold for savings nudge",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "125"
+            },
+            "description": "Balance delta threshold for savings nudge",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "spending_categories",
+          "group": "insights",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "[\"groceries\",\"restaurants\",\"transport\",\"subscriptions\",\"utilities\"]"
+            },
+            "description": "Default spend categories",
+            "valueType": "JSON"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "[\"groceries\",\"restaurants\",\"transport\",\"subscriptions\",\"utilities\"]"
+            },
+            "description": "Default spend categories",
+            "valueType": "JSON"
+          }
+        },
+        {
+          "key": "enable_passkey_signup",
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "true"
+              }
+            },
+            "description": "Offer passkey setup during signup",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "value": "true"
+              }
+            },
+            "description": "Offer passkey setup during signup",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "funding_minimum_amount",
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "10"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "rolloutValue": {
+                  "rolloutId": "rollout_1",
+                  "value": "20",
+                  "percent": 10
+                }
+              }
+            },
+            "description": "Minimum first funding amount",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "10"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "rolloutValue": {
+                  "rolloutId": "rollout_1",
+                  "value": "20",
+                  "percent": 10
+                }
+              }
+            },
+            "description": "Minimum first funding amount",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "kyc_provider",
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "veriff"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "personalizationValue": {
+                  "personalizationId": "07fb3c47-e4b2-4446-b137-595e0722778d"
+                }
+              },
+              "employees": {
+                "value": "sandbox"
+              }
+            },
+            "description": "Identity verification provider",
+            "valueType": "STRING"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "veriff"
+            },
+            "conditionalValues": {
+              "android_beta_10": {
+                "personalizationValue": {
+                  "personalizationId": "07fb3c47-e4b2-4446-b137-595e0722778d"
+                }
+              },
+              "employees": {
+                "value": "sandbox"
+              }
+            },
+            "description": "Identity verification provider",
+            "valueType": "STRING"
+          }
+        },
+        {
+          "key": "kyc_retry_limit",
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "2"
+            },
+            "conditionalValues": {
+              "kyc_pending": {
+                "value": "3"
+              }
+            },
+            "description": "Maximum KYC retry attempts",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "2"
+            },
+            "conditionalValues": {
+              "kyc_pending": {
+                "value": "3"
+              }
+            },
+            "description": "Maximum KYC retry attempts",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "onboarding_steps",
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "[\"email\",\"phone\",\"identity\",\"funding\",\"card\"]"
+            },
+            "conditionalValues": {
+              "uk_open_banking": {
+                "value": "[\"email\",\"phone\",\"identity\",\"open_banking\",\"funding\",\"card\"]"
+              }
+            },
+            "description": "Ordered onboarding steps",
+            "valueType": "JSON"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "[\"email\",\"phone\",\"identity\",\"funding\",\"card\"]"
+            },
+            "conditionalValues": {
+              "uk_open_banking": {
+                "value": "[\"email\",\"phone\",\"identity\",\"open_banking\",\"funding\",\"card\"]"
+              }
+            },
+            "description": "Ordered onboarding steps",
+            "valueType": "JSON"
+          }
+        },
+        {
+          "key": "show_income_question",
+          "group": "onboarding",
+          "kind": "changed",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Ask user for income range during onboarding",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "conditionalValues": {
+              "webapp": {
+                "experimentValue": {
+                  "experimentId": "abt_4",
+                  "variantValue": [
+                    {
+                      "variantId": "0",
+                      "value": "true"
+                    },
+                    {
+                      "variantId": "1",
+                      "value": "false"
+                    },
+                    {
+                      "variantId": "2",
+                      "value": "true"
+                    }
+                  ],
+                  "exposurePercent": 15
+                }
+              }
+            },
+            "description": "Ask user for income range during onboarding",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "welcome_bonus_copy",
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "Get started with no monthly fees"
+            },
+            "description": "Welcome bonus banner copy",
+            "valueType": "STRING"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "Get started with no monthly fees"
+            },
+            "description": "Welcome bonus banner copy",
+            "valueType": "STRING"
+          }
+        },
+        {
+          "key": "block_crypto_card_loads",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Block card loads from crypto merchant category",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Block card loads from crypto merchant category",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "device_binding_grace_hours",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "24"
+            },
+            "description": "Grace period for device binding",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "24"
+            },
+            "description": "Grace period for device binding",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "high_risk_transfer_limit",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "200"
+            },
+            "conditionalValues": {
+              "high_risk_session": {
+                "value": "50"
+              }
+            },
+            "description": "Transfer limit for high risk sessions",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "200"
+            },
+            "conditionalValues": {
+              "high_risk_session": {
+                "value": "50"
+              }
+            },
+            "description": "Transfer limit for high risk sessions",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "require_step_up_for_new_device",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Require extra auth on new device",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Require extra auth on new device",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "risk_banner_copy",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "We need a quick security check"
+            },
+            "conditionalValues": {
+              "high_risk_session": {
+                "value": "Extra verification is required before continuing"
+              }
+            },
+            "description": "Copy shown during step-up",
+            "valueType": "STRING"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "We need a quick security check"
+            },
+            "conditionalValues": {
+              "high_risk_session": {
+                "value": "Extra verification is required before continuing"
+              }
+            },
+            "description": "Copy shown during step-up",
+            "valueType": "STRING"
+          }
+        },
+        {
+          "key": "step_up_methods",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "[\"sms_otp\",\"email_otp\"]"
+            },
+            "conditionalValues": {
+              "employees": {
+                "value": "[\"totp\",\"sms_otp\",\"email_otp\"]"
+              }
+            },
+            "description": "Allowed step-up methods",
+            "valueType": "JSON"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "[\"sms_otp\",\"email_otp\"]"
+            },
+            "conditionalValues": {
+              "employees": {
+                "value": "[\"totp\",\"sms_otp\",\"email_otp\"]"
+              }
+            },
+            "description": "Allowed step-up methods",
+            "valueType": "JSON"
+          }
+        },
+        {
+          "key": "velocity_window_minutes",
+          "group": "risk",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "15"
+            },
+            "description": "Velocity evaluation window",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "15"
+            },
+            "description": "Velocity evaluation window",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "document_upload_max_mb",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "12"
+            },
+            "description": "Max document upload size",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "12"
+            },
+            "description": "Max document upload size",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "incident_status_url",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "https://status.example.invalid/finance"
+            },
+            "description": "Status page URL",
+            "valueType": "STRING"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "https://status.example.invalid/finance"
+            },
+            "description": "Status page URL",
+            "valueType": "STRING"
+          }
+        },
+        {
+          "key": "maintenance_banner",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "{\"enabled\":false,\"title\":\"Scheduled maintenance\",\"startsAt\":\"2026-06-02T01:00:00Z\"}"
+            },
+            "description": "Maintenance banner payload",
+            "valueType": "JSON"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "{\"enabled\":false,\"title\":\"Scheduled maintenance\",\"startsAt\":\"2026-06-02T01:00:00Z\"}"
+            },
+            "description": "Maintenance banner payload",
+            "valueType": "JSON"
+          }
+        },
+        {
+          "key": "show_tax_center",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Show tax documents center",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Show tax documents center",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "statement_months_available",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "24"
+            },
+            "description": "Statement history retention",
+            "valueType": "NUMBER"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "24"
+            },
+            "description": "Statement history retention",
+            "valueType": "NUMBER"
+          }
+        },
+        {
+          "key": "support_chat_enabled",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Enable in-app support chat",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Enable in-app support chat",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "support_queue_copy",
+          "group": "support",
+          "kind": "unchanged",
+          "current": {
+            "defaultValue": {
+              "value": "A specialist will join shortly"
+            },
+            "description": "Support queue message",
+            "valueType": "STRING"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "A specialist will join shortly"
+            },
+            "description": "Support queue message",
+            "valueType": "STRING"
+          }
+        }
+      ],
+      "group_descriptions": [
+        {
+          "group": "banking",
+          "kind": "unchanged",
+          "current": "Account aggregation and payment rails",
+          "final": "Account aggregation and payment rails"
+        },
+        {
+          "group": "insights",
+          "kind": "unchanged",
+          "current": "Budgeting and analytics features",
+          "final": "Budgeting and analytics features"
+        },
+        {
+          "group": "onboarding",
+          "kind": "unchanged",
+          "current": "Signup and verification flows",
+          "final": "Signup and verification flows"
+        },
+        {
+          "group": "risk",
+          "kind": "unchanged",
+          "current": "Fraud, velocity and risk controls",
+          "final": "Fraud, velocity and risk controls"
+        },
+        {
+          "group": "support",
+          "kind": "unchanged",
+          "current": "Customer support and maintenance messaging",
+          "final": "Customer support and maintenance messaging"
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

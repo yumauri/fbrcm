@@ -1,0 +1,80 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:response",
+  "contract_version": "1.0.0",
+  "command": "draft.diff",
+  "requested_command": "draft.diff",
+  "outcome": "success",
+  "exit_code": 1,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "against": "base",
+    "base_version": "12",
+    "current_version": "",
+    "changed": true,
+    "diff": {
+      "conditions": [],
+      "parameters": [
+        {
+          "key": "card_freeze_enabled",
+          "group": "banking",
+          "kind": "changed",
+          "current": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Sanitized fixture parameter card_freeze_enabled",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Sanitized fixture parameter card_freeze_enabled",
+            "valueType": "BOOLEAN"
+          }
+        },
+        {
+          "key": "fixture_rollout_enabled",
+          "group": "banking",
+          "kind": "added",
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Synthetic parameter added by the E2E draft",
+            "valueType": "BOOLEAN"
+          }
+        }
+      ],
+      "group_descriptions": [
+        {
+          "group": "banking",
+          "kind": "unchanged",
+          "current": "Sanitized fixture group banking",
+          "final": "Sanitized fixture group banking"
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

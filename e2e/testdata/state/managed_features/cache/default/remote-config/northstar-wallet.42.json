@@ -1,0 +1,72 @@
+{
+  "etag": "fixture-etag-version-42",
+  "cached_at": "2099-01-01T00:00:00Z",
+  "remote_config": {
+    "conditions": [
+      {
+        "name": "android_beta",
+        "expression": "device.os == 'android'",
+        "tagColor": "BLUE"
+      }
+    ],
+    "version": {
+      "versionNumber": "42",
+      "updateTime": "2026-08-15T10:00:00Z",
+      "description": "Synthetic managed-feature fixture",
+      "updateOrigin": "CONSOLE",
+      "updateType": "INCREMENTAL_UPDATE"
+    },
+    "parameterGroups": {
+      "growth": {
+        "description": "Synthetic managed-feature bindings",
+        "parameters": {
+          "onboarding_message": {
+            "defaultValue": {
+              "experimentValue": {
+                "experimentId": "onboarding-copy",
+                "variantValue": [
+                  {
+                    "variantId": "control",
+                    "value": "Welcome"
+                  },
+                  {
+                    "variantId": "short-copy",
+                    "value": "Start here"
+                  }
+                ],
+                "exposurePercent": 25
+              }
+            },
+            "description": "Synthetic onboarding experiment",
+            "valueType": "STRING"
+          },
+          "guided_offer": {
+            "defaultValue": {
+              "personalizationValue": {
+                "personalizationId": "guided-offer"
+              }
+            },
+            "description": "Synthetic personalization",
+            "valueType": "STRING"
+          },
+          "instant_transfer_enabled": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "conditionalValues": {
+              "android_beta": {
+                "rolloutValue": {
+                  "rolloutId": "instant-transfer",
+                  "value": "true",
+                  "percent": 15
+                }
+              }
+            },
+            "description": "Synthetic gradual rollout",
+            "valueType": "BOOLEAN"
+          }
+        }
+      }
+    }
+  }
+}

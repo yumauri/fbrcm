@@ -1,0 +1,9 @@
+{
+  "name": "draft_diff_json",
+  "command_id": "draft.diff",
+  "args": ["draft", "diff", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 1,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "read_state"
+}

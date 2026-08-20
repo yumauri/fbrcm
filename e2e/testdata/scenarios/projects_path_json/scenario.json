@@ -1,0 +1,8 @@
+{
+  "name": "projects_path_json",
+  "command_id": "projects.path",
+  "args": ["projects", "path", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:response",
+  "contract_version": "1.0.0",
+  "command": "cache.clear",
+  "requested_command": "cache.clear",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "path": "<E2E_RUN_ROOT>/environment/cache/default/remote-config",
+    "status": "cleared",
+    "snapshots_deleted": 2,
+    "targets_affected": 2,
+    "bytes_deleted": 13105
+  },
+  "errors": [],
+  "warnings": []
+}

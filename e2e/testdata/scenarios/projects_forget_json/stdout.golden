@@ -1,0 +1,30 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:response",
+  "contract_version": "1.0.0",
+  "command": "projects.forget",
+  "requested_command": "projects.forget",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project": "Northstar Wallet",
+        "project_id": "northstar-wallet",
+        "status": "forgotten"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

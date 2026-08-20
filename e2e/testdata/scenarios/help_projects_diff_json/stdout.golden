@@ -1,0 +1,23 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:help:response",
+  "contract_version": "1.0.0",
+  "command": "help",
+  "requested_command": "help",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "text": "Compare Remote Config between two projects\n\nUsage:\n  fbrcm projects diff \u003csource-project\u003e \u003ctarget-project\u003e [flags]\n\nFlags:\n      --cached               Use cached Remote Config instead of live Firebase fetch\n      --conditions           Include only condition changes\n      --expr string          Filter parameter changes by expr-lang expression\n  -f, --filter stringArray   Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated\n      --group stringArray    Select parameters in group; may be repeated\n  -h, --help                 help for diff\n      --json                 Print diff as JSON\n      --parameters           Include only parameter and group description changes\n      --search string        Search parameters by name, description, values, and conditions\n\nGlobal Flags:\n      --no-local-config    Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)\n      --profile string     Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)\n      --timeout duration   Maximum duration for the complete command"
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>document_upload_max_mb</key>
+	<string>12</string>
+	<key>incident_status_url</key>
+	<string>https://status.example.invalid/finance</string>
+	<key>maintenance_banner</key>
+	<string>{"enabled":false,"title":"Scheduled maintenance","startsAt":"2026-06-02T01:00:00Z"}</string>
+	<key>show_tax_center</key>
+	<string>true</string>
+	<key>statement_months_available</key>
+	<string>24</string>
+	<key>support_chat_enabled</key>
+	<string>true</string>
+	<key>support_queue_copy</key>
+	<string>A specialist will join shortly</string>
+	<key>account_nickname_max_length</key>
+	<string>32</string>
+	<key>ach_transfer_limit_daily</key>
+	<string>3000</string>
+	<key>card_freeze_enabled</key>
+	<string>true</string>
+	<key>instant_cashout_fee_bps</key>
+	<string>85</string>
+	<key>open_banking_enabled</key>
+	<string>false</string>
+	<key>pending_transaction_days</key>
+	<string>5</string>
+	<key>plaid_products</key>
+	<string>["auth","transactions","identity"]</string>
+	<key>block_crypto_card_loads</key>
+	<string>true</string>
+	<key>device_binding_grace_hours</key>
+	<string>24</string>
+	<key>high_risk_transfer_limit</key>
+	<string>200</string>
+	<key>require_step_up_for_new_device</key>
+	<string>true</string>
+	<key>risk_banner_copy</key>
+	<string>We need a quick security check</string>
+	<key>step_up_methods</key>
+	<string>["sms_otp","email_otp"]</string>
+	<key>velocity_window_minutes</key>
+	<string>15</string>
+	<key>cashflow_forecast_days</key>
+	<string>30</string>
+	<key>enable_subscription_detection</key>
+	<string>true</string>
+	<key>insight_min_transaction_count</key>
+	<string>8</string>
+	<key>merchant_logo_cdn</key>
+	<string>https://assets.example.invalid/merchants</string>
+	<key>monthly_budget_enabled</key>
+	<string>true</string>
+	<key>savings_nudge_threshold</key>
+	<string>125</string>
+	<key>spending_categories</key>
+	<string>["groceries","restaurants","transport","subscriptions","utilities"]</string>
+	<key>enable_passkey_signup</key>
+	<string>false</string>
+	<key>funding_minimum_amount</key>
+	<string>10</string>
+	<key>kyc_provider</key>
+	<string>veriff</string>
+	<key>kyc_retry_limit</key>
+	<string>2</string>
+	<key>onboarding_steps</key>
+	<string>["email","phone","identity","funding","card"]</string>
+	<key>show_income_question</key>
+	<string>true</string>
+	<key>welcome_bonus_copy</key>
+	<string>Get started with no monthly fees</string>
+</dict>
+</plist>

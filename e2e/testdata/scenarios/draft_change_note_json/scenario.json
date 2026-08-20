@@ -1,0 +1,15 @@
+{
+  "name": "draft_change_note_json",
+  "command_id": "draft.change-note",
+  "args": ["draft", "change-note", "${PROJECT_ID}", "Review synthetic rollout before publication", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "cache",
+    "path": "default/drafts/northstar-wallet.json",
+    "json_replacements": {"/updated_at": "<E2E_UPDATED_AT>"}
+  }],
+  "json_output": true,
+  "fixture": "read_state",
+  "offline": true
+}

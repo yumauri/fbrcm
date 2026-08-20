@@ -1,0 +1,8 @@
+{
+  "name": "draft_path_json",
+  "command_id": "draft.path",
+  "args": ["draft", "path", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

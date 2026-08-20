@@ -1,0 +1,12 @@
+{
+  "name": "projects_aliases_remove_json",
+  "command_id": "projects.aliases.remove",
+  "args": ["projects", "aliases", "remove", "staging", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_files": [".fbrcm.toml"],
+  "json_output": true,
+  "fixture": "aliases_remove",
+  "local_config": true,
+  "offline": true
+}

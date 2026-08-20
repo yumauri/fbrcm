@@ -1,0 +1,14 @@
+{
+  "name": "project_templates_set_json",
+  "command_id": "project.templates.set",
+  "args": ["project", "templates", "set", "${PROJECT_ID}", "--templates", "client,server", "--primary", "server", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "config",
+    "path": "default/projects-config.json",
+    "json_replacements": {"/synced_at": "<E2E_SYNCED_AT>"}
+  }],
+  "json_output": true,
+  "offline": true
+}

@@ -1,0 +1,91 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:response",
+  "contract_version": "1.0.0",
+  "command": "experiments.show",
+  "requested_command": "experiments.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "template": {
+      "version": "42",
+      "source": "cache"
+    },
+    "experiment": {
+      "definition": {
+        "displayName": "Onboarding copy",
+        "description": "Compare concise onboarding guidance",
+        "service": "firebase_remote_config",
+        "objectives": {
+          "activationEvent": {
+            "event": "onboarding_started"
+          },
+          "eventObjectives": [
+            {
+              "isPrimary": true,
+              "customObjectiveDetails": {
+                "event": "onboarding_completed",
+                "countType": "UNIQUE_USERS"
+              }
+            }
+          ]
+        },
+        "variants": [
+          {
+            "name": "control",
+            "weight": 1
+          },
+          {
+            "name": "short-copy",
+            "weight": 1
+          }
+        ]
+      },
+      "etag": "synthetic-experiment-etag",
+      "lastUpdateTime": "2026-08-10T12:30:00Z",
+      "name": "projects/northstar-wallet/namespaces/firebase/experiments/onboarding-copy",
+      "references": [
+        {
+          "group": "growth",
+          "parameter": "onboarding_message",
+          "default": true,
+          "value_type": "STRING",
+          "percentage": 25,
+          "variants": [
+            {
+              "id": "control",
+              "value": "Welcome"
+            },
+            {
+              "id": "short-copy",
+              "value": "Start here"
+            }
+          ]
+        }
+      ],
+      "startTime": "2026-08-01T10:00:00Z",
+      "state": "RUNNING"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

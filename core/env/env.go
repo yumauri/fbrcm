@@ -7,6 +7,7 @@ import (
 
 const (
 	LogLevel                = "FBRCM_LOG_LEVEL"
+	LogNoTimestamp          = "FBRCM_LOG_NO_TIMESTAMP"
 	Offline                 = "FBRCM_OFFLINE"
 	Profile                 = "FBRCM_PROFILE"
 	NoColor                 = "NO_COLOR"
@@ -15,6 +16,7 @@ const (
 	Editor                  = "FBRCM_EDITOR"
 	NoLocalConfig           = "FBRCM_NO_LOCAL_CONFIG"
 	GoogleCloudQuotaProject = "GOOGLE_CLOUD_QUOTA_PROJECT"
+	TLSCertFile             = "SSL_CERT_FILE"
 	XDGConfigHome           = "XDG_CONFIG_HOME"
 )
 
@@ -34,5 +36,10 @@ func LookupTrimmed(name string) (string, bool) {
 
 func NoColorEnabled() bool {
 	value, ok := os.LookupEnv(NoColor)
+	return ok && value != ""
+}
+
+func LogTimestampDisabled() bool {
+	value, ok := os.LookupEnv(LogNoTimestamp)
 	return ok && value != ""
 }

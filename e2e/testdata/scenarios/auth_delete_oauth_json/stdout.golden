@@ -1,0 +1,29 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:response",
+  "contract_version": "1.0.0",
+  "command": "auth.delete",
+  "requested_command": "auth.delete",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "auth_id": "e2e",
+    "type": "oauth",
+    "status": "deleted",
+    "deleted_paths": [
+      "<E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json",
+      "<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json"
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

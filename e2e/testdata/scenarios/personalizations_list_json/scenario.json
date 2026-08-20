@@ -1,0 +1,10 @@
+{
+  "name": "personalizations_list_json",
+  "command_id": "personalizations.list",
+  "args": ["personalizations", "list", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "managed_features",
+  "offline": true
+}

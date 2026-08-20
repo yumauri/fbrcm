@@ -1,0 +1,8 @@
+{
+  "name": "auth_path_json",
+  "command_id": "auth.path",
+  "args": ["auth", "path", "e2e", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

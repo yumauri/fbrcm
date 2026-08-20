@@ -1,0 +1,25 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:response",
+  "contract_version": "1.0.0",
+  "command": "config.path",
+  "requested_command": "config.path",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "scope": "global",
+    "path": "<E2E_RUN_ROOT>/environment/config/config.toml",
+    "exists": false
+  },
+  "errors": [],
+  "warnings": []
+}

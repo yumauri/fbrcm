@@ -1,0 +1,97 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig:downloadDefaults"
+            }
+          ],
+          "query": {
+            "format": [
+              {
+                "matcher": "exact",
+                "value": "JSON"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/3VUTW/bMAy971cIPnetk67DkFtP+wEbMGBzISgybWuWJVWiknpF//soyW6TdANyiMyvR75HPn9grGqtjBMY5NFpK1o+iSc+7asdqzbb6ip5KCNVmzwCCoyBR6+TeUB0YXdzU75ew5OYnIZrZQ5Cq/amU0YYCSXFJJRByB/4XhgDPmV4bir6ttfQNtWuEzrAVVOhQg30bqpvcoA2kpWdhDcV+VBJj+Ees9u23n7+WNNv+73e7Oqafj+b6qUUDoM9cqSWJDVQqqKPC6qEHHLvkzU4BC4OQukEKPltPy1e0TnrkctBIF/wXuRZPB4jRODSujnZ71lwIBUNIyA7Kq3Zb6sMI0Qe9VwihZQ2Un2j5GjEBHn6GkyPQ0pxu13dBo5emNCB51pNCnlLSHOZ27qui5cUvuWdB/gD/8apDHVM1aQgEBF5B8SGC8npy11xsQ5MYmhUpj9NktkpLuTRJmsGJCQqawjNnNMsWZwWquXO2zZKzIZfTSUiDpm9k8CQP2R1KZyb6qHE77WVI5d+dmh5bitJM5x308JBJTmpAqf3gl7Ulw+n7A2qH7hXYbwYYPZZJ+fhMSoPJHBwtAe8s54bOPJS4rxszlU0/Er1D2AGSKeCUR45sgAyemqIkYLluIqt5J4AB9uuQwlT4BZdHgOQzHV5LXM4AA2C8vAjNUlCnpSJCDl2c7eSHoZOk40wAz3wlYvbpbnCIg9xH6RXrvAFCJmAdwKhcWGqc0ZvFmmWybLO4GkbSEna9kRQa07vgQgB8P09WGPCkiJtnJ75PrY9/G+vxIGYDdwkH46DB9KtbsttWvoPqxwl7XJvvYJ1tL23EtI7D5diUUSfALyJMG1tOSgnwyn2iEorzNEPZ3N01N8IM6dJmegudqOLBQwNUE1x4mJaJ7dZ2BhnmRbjQJrP1+hAELvuzeYB/Xwi0WUtzd7SGqTUSUdri1kxGa4brIGLZaLHgif/T3v02ky+i3TYLd0cOlvhvRaOoLN1bw3d/FXpXwFZvr6k9qPCgRnLFioZnZNQfXj5C80bkx9WBgAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 07:36:06 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

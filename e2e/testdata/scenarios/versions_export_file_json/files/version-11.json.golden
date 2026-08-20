@@ -1,0 +1,370 @@
+{
+  "conditions": [
+    {
+      "name": "employees",
+      "expression": "percent <= 5",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "kyc_pending",
+      "expression": "device.os == 'android' && percent <= 35",
+      "tagColor": "ORANGE"
+    },
+    {
+      "name": "uk_open_banking",
+      "expression": "device.country in ['gb']",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "android_beta_10",
+      "expression": "device.os == 'android' && percent <= 10",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "high_risk_session",
+      "expression": "device.country in ['us', 'gb', 'de'] && percent <= 15",
+      "tagColor": "DEEP_ORANGE"
+    }
+  ],
+  "version": {
+    "versionNumber": "11",
+    "updateTime": "2026-07-30T21:10:01.165055Z",
+    "updateUser": {
+      "email": "yumaa.verdin@gmail.com"
+    },
+    "description": "Reduce pending transaction days",
+    "updateOrigin": "REST_API",
+    "updateType": "INCREMENTAL_UPDATE"
+  },
+  "parameterGroups": {
+    "banking": {
+      "description": "Account aggregation and payment rails",
+      "parameters": {
+        "account_nickname_max_length": {
+          "defaultValue": {
+            "value": "32"
+          },
+          "description": "Maximum account nickname length",
+          "valueType": "NUMBER"
+        },
+        "ach_transfer_limit_daily": {
+          "defaultValue": {
+            "value": "3000"
+          },
+          "description": "Daily ACH transfer limit",
+          "valueType": "NUMBER"
+        },
+        "card_freeze_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Allow card freeze from app",
+          "valueType": "BOOLEAN"
+        },
+        "instant_cashout_fee_bps": {
+          "defaultValue": {
+            "value": "85"
+          },
+          "description": "Instant cashout fee in basis points",
+          "valueType": "NUMBER"
+        },
+        "open_banking_enabled": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "conditionalValues": {
+            "uk_open_banking": {
+              "value": "true"
+            }
+          },
+          "description": "Enable open banking connection",
+          "valueType": "BOOLEAN"
+        },
+        "pending_transaction_days": {
+          "defaultValue": {
+            "value": "5"
+          },
+          "description": "Days to display pending transactions",
+          "valueType": "NUMBER"
+        },
+        "plaid_products": {
+          "defaultValue": {
+            "value": "[\"auth\",\"transactions\",\"identity\"]"
+          },
+          "description": "Plaid products requested",
+          "valueType": "JSON"
+        }
+      }
+    },
+    "insights": {
+      "description": "Budgeting and analytics features",
+      "parameters": {
+        "cashflow_forecast_days": {
+          "defaultValue": {
+            "value": "30"
+          },
+          "description": "Cashflow forecast horizon",
+          "valueType": "NUMBER"
+        },
+        "enable_subscription_detection": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "conditionalValues": {
+            "android_beta_10": {
+              "value": "false"
+            }
+          },
+          "description": "Detect recurring subscriptions",
+          "valueType": "BOOLEAN"
+        },
+        "insight_min_transaction_count": {
+          "defaultValue": {
+            "value": "8"
+          },
+          "description": "Minimum transactions before showing insights",
+          "valueType": "NUMBER"
+        },
+        "merchant_logo_cdn": {
+          "defaultValue": {
+            "value": "https://assets.example.invalid/merchants"
+          },
+          "description": "Merchant logo CDN base URL",
+          "valueType": "STRING"
+        },
+        "monthly_budget_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable monthly budget module",
+          "valueType": "BOOLEAN"
+        },
+        "savings_nudge_threshold": {
+          "defaultValue": {
+            "value": "125"
+          },
+          "description": "Balance delta threshold for savings nudge",
+          "valueType": "NUMBER"
+        },
+        "spending_categories": {
+          "defaultValue": {
+            "value": "[\"groceries\",\"restaurants\",\"transport\",\"subscriptions\",\"utilities\"]"
+          },
+          "description": "Default spend categories",
+          "valueType": "JSON"
+        }
+      }
+    },
+    "onboarding": {
+      "description": "Signup and verification flows",
+      "parameters": {
+        "enable_passkey_signup": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "conditionalValues": {
+            "android_beta_10": {
+              "value": "true"
+            }
+          },
+          "description": "Offer passkey setup during signup",
+          "valueType": "BOOLEAN"
+        },
+        "funding_minimum_amount": {
+          "defaultValue": {
+            "value": "10"
+          },
+          "conditionalValues": {
+            "android_beta_10": {
+              "rolloutValue": {
+                "rolloutId": "rollout_1",
+                "value": "20",
+                "percent": 10
+              }
+            }
+          },
+          "description": "Minimum first funding amount",
+          "valueType": "NUMBER"
+        },
+        "kyc_provider": {
+          "defaultValue": {
+            "value": "veriff"
+          },
+          "conditionalValues": {
+            "employees": {
+              "value": "sandbox"
+            },
+            "android_beta_10": {
+              "personalizationValue": {
+                "personalizationId": "07fb3c47-e4b2-4446-b137-595e0722778d"
+              }
+            }
+          },
+          "description": "Identity verification provider",
+          "valueType": "STRING"
+        },
+        "kyc_retry_limit": {
+          "defaultValue": {
+            "value": "2"
+          },
+          "conditionalValues": {
+            "kyc_pending": {
+              "value": "3"
+            }
+          },
+          "description": "Maximum KYC retry attempts",
+          "valueType": "NUMBER"
+        },
+        "onboarding_steps": {
+          "defaultValue": {
+            "value": "[\"email\",\"phone\",\"identity\",\"funding\",\"card\"]"
+          },
+          "conditionalValues": {
+            "uk_open_banking": {
+              "value": "[\"email\",\"phone\",\"identity\",\"open_banking\",\"funding\",\"card\"]"
+            }
+          },
+          "description": "Ordered onboarding steps",
+          "valueType": "JSON"
+        },
+        "show_income_question": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Ask user for income range during onboarding",
+          "valueType": "BOOLEAN"
+        },
+        "welcome_bonus_copy": {
+          "defaultValue": {
+            "value": "Get started with no monthly fees"
+          },
+          "description": "Welcome bonus banner copy",
+          "valueType": "STRING"
+        }
+      }
+    },
+    "risk": {
+      "description": "Fraud, velocity and risk controls",
+      "parameters": {
+        "block_crypto_card_loads": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Block card loads from crypto merchant category",
+          "valueType": "BOOLEAN"
+        },
+        "device_binding_grace_hours": {
+          "defaultValue": {
+            "value": "24"
+          },
+          "description": "Grace period for device binding",
+          "valueType": "NUMBER"
+        },
+        "high_risk_transfer_limit": {
+          "defaultValue": {
+            "value": "200"
+          },
+          "conditionalValues": {
+            "high_risk_session": {
+              "value": "50"
+            }
+          },
+          "description": "Transfer limit for high risk sessions",
+          "valueType": "NUMBER"
+        },
+        "require_step_up_for_new_device": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Require extra auth on new device",
+          "valueType": "BOOLEAN"
+        },
+        "risk_banner_copy": {
+          "defaultValue": {
+            "value": "We need a quick security check"
+          },
+          "conditionalValues": {
+            "high_risk_session": {
+              "value": "Extra verification is required before continuing"
+            }
+          },
+          "description": "Copy shown during step-up",
+          "valueType": "STRING"
+        },
+        "step_up_methods": {
+          "defaultValue": {
+            "value": "[\"sms_otp\",\"email_otp\"]"
+          },
+          "conditionalValues": {
+            "employees": {
+              "value": "[\"totp\",\"sms_otp\",\"email_otp\"]"
+            }
+          },
+          "description": "Allowed step-up methods",
+          "valueType": "JSON"
+        },
+        "velocity_window_minutes": {
+          "defaultValue": {
+            "value": "15"
+          },
+          "description": "Velocity evaluation window",
+          "valueType": "NUMBER"
+        }
+      }
+    },
+    "support": {
+      "description": "Customer support and maintenance messaging",
+      "parameters": {
+        "document_upload_max_mb": {
+          "defaultValue": {
+            "value": "12"
+          },
+          "description": "Max document upload size",
+          "valueType": "NUMBER"
+        },
+        "incident_status_url": {
+          "defaultValue": {
+            "value": "https://status.example.invalid/finance"
+          },
+          "description": "Status page URL",
+          "valueType": "STRING"
+        },
+        "maintenance_banner": {
+          "defaultValue": {
+            "value": "{\"enabled\":false,\"title\":\"Scheduled maintenance\",\"startsAt\":\"2026-06-02T01:00:00Z\"}"
+          },
+          "description": "Maintenance banner payload",
+          "valueType": "JSON"
+        },
+        "show_tax_center": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Show tax documents center",
+          "valueType": "BOOLEAN"
+        },
+        "statement_months_available": {
+          "defaultValue": {
+            "value": "24"
+          },
+          "description": "Statement history retention",
+          "valueType": "NUMBER"
+        },
+        "support_chat_enabled": {
+          "defaultValue": {
+            "value": "true"
+          },
+          "description": "Enable in-app support chat",
+          "valueType": "BOOLEAN"
+        },
+        "support_queue_copy": {
+          "defaultValue": {
+            "value": "A specialist will join shortly"
+          },
+          "description": "Support queue message",
+          "valueType": "STRING"
+        }
+      }
+    }
+  }
+}

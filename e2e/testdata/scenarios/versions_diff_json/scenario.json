@@ -1,0 +1,23 @@
+{
+  "name": "versions_diff_json",
+  "command_id": "versions.diff",
+  "args": ["versions", "diff", "${PROJECT_ID}", "11", "12", "--json"],
+  "expected_exit_code": 1,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=11",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=12",
+      "status": 200
+    }
+  ],
+  "json_output": true
+}

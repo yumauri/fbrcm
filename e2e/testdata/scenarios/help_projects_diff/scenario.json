@@ -1,0 +1,7 @@
+{
+  "name": "help_projects_diff",
+  "command_id": "help",
+  "args": ["help", "projects", "diff"],
+  "expected_exit_code": 0,
+  "expected_http": []
+}

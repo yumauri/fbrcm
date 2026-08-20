@@ -1,0 +1,9 @@
+{
+  "name": "draft_list_narrow",
+  "command_id": "draft.list",
+  "args": ["draft", "list"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "fixture": "read_state",
+  "terminal_width": 88
+}

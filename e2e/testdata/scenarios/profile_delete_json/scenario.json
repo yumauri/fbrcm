@@ -1,0 +1,14 @@
+{
+  "name": "profile_delete_json",
+  "command_id": "profile.delete",
+  "args": ["profile", "delete", "disposable", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "disposable"},
+    {"root": "cache", "path": "disposable"}
+  ],
+  "json_output": true,
+  "fixture": "profile_lifecycle",
+  "offline": true
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:response",
+  "contract_version": "1.0.0",
+  "command": "auth.add.service-account",
+  "requested_command": "auth.add.service-account",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "auth_id": "service-secondary",
+    "type": "service-account",
+    "label": "Synthetic service identity",
+    "status": "added",
+    "paths": {
+      "id": "service-secondary",
+      "type": "service-account",
+      "auth_config_path": "<E2E_RUN_ROOT>/environment/config/default/auth-config.json",
+      "profile_config_path": "<E2E_RUN_ROOT>/environment/config/default",
+      "service_account_path": "<E2E_RUN_ROOT>/environment/config/default/auth/service-secondary/service-account.json"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

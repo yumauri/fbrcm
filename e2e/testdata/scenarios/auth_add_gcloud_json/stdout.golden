@@ -1,0 +1,32 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
+  "contract_version": "1.0.0",
+  "command": "auth.add.gcloud",
+  "requested_command": "auth.add.gcloud",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "auth_id": "gcloud-secondary",
+    "type": "gcloud",
+    "label": "Synthetic ADC identity",
+    "status": "added",
+    "paths": {
+      "id": "gcloud-secondary",
+      "type": "gcloud",
+      "auth_config_path": "",
+      "profile_config_path": ""
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

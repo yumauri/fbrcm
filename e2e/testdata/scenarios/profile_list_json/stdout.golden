@@ -1,0 +1,29 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:response",
+  "contract_version": "1.0.0",
+  "command": "profile.list",
+  "requested_command": "profile.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "profile": "default",
+        "active": true
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

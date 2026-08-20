@@ -1,0 +1,23 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:response",
+  "contract_version": "1.0.0",
+  "command": "draft.path",
+  "requested_command": "draft.path",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "path": "<E2E_RUN_ROOT>/environment/cache/default/drafts"
+  },
+  "errors": [],
+  "warnings": []
+}

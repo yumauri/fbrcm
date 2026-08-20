@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "default_auth_id": "e2e",
+  "auth": [
+    {
+      "id": "e2e",
+      "type": "oauth",
+      "label": "E2E fixture",
+      "client_secret_path": "auth/e2e/client-secret.json",
+      "token_path": "auth/e2e/token.json"
+    },
+    {
+      "id": "service-secondary",
+      "type": "service-account",
+      "label": "Synthetic service identity",
+      "service_account_path": "auth/service-secondary/service-account.json"
+    }
+  ]
+}

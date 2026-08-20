@@ -1,0 +1,26 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:response",
+  "contract_version": "1.0.0",
+  "command": "profile.rename",
+  "requested_command": "profile.rename",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "old_profile": "old-profile",
+    "new_profile": "renamed-profile",
+    "effective_profile": "default",
+    "changed": true
+  },
+  "errors": [],
+  "warnings": []
+}

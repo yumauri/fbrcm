@@ -1,0 +1,40 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:response",
+  "contract_version": "1.0.0",
+  "command": "projects.aliases.list",
+  "requested_command": "projects.aliases.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 3,
+    "items": [
+      {
+        "alias": "development",
+        "project_id": "northstar-wallet",
+        "source": "fbrcm"
+      },
+      {
+        "alias": "production",
+        "project_id": "firebase-production-project",
+        "source": "firebase"
+      },
+      {
+        "alias": "shared",
+        "project_id": "northstar-wallet",
+        "source": "both"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

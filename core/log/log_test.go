@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"io"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -43,6 +44,23 @@ func TestCLIOutputsKeepLogsAndTerminalGuidanceSeparate(t *testing.T) {
 	}
 	if !strings.Contains(terminal.String(), "still visible") {
 		t.Fatalf("terminal guidance was suppressed with silent logs: %q", terminal.String())
+	}
+}
+
+func TestLogTimestampCanBeDisabled(t *testing.T) {
+	t.Setenv(env.LogNoTimestamp, "1")
+	t.Setenv(env.NoColor, "1")
+	m := newManager()
+	m.init(ModeCLI)
+
+	var logs bytes.Buffer
+	m.configureCLIOutput(&logs, io.Discard)
+	m.defaultLogger().Info("deterministic log")
+	if regexp.MustCompile(`\d{2}:\d{2}:\d{2}`).MatchString(logs.String()) {
+		t.Fatalf("log contains timestamp: %q", logs.String())
+	}
+	if !strings.Contains(logs.String(), "deterministic log") {
+		t.Fatalf("log output = %q", logs.String())
 	}
 }
 

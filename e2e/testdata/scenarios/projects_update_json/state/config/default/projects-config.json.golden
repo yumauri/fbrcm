@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "projects": [
+    {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "project_number": "123456789012",
+      "state": "ACTIVE",
+      "etag": "synthetic-project-etag",
+      "updated_at": "2026-08-01T08:00:00Z",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client",
+      "discovered_by": [
+        "e2e"
+      ]
+    }
+  ],
+  "synced_at": "<E2E_SYNCED_AT>"
+}

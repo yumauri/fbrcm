@@ -1,0 +1,8 @@
+{
+  "name": "projects_list_json",
+  "command_id": "projects.list",
+  "args": ["projects", "list", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true
+}

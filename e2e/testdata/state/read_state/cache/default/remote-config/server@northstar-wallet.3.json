@@ -1,0 +1,20 @@
+{
+  "etag": "fixture-server-etag-version-3",
+  "cached_at": "2024-01-01T02:03:04Z",
+  "remote_config": {
+    "parameters": {
+      "server_endpoint": {
+        "defaultValue": {
+          "value": "https://example.invalid/api"
+        },
+        "description": "Synthetic server fixture parameter",
+        "valueType": "STRING"
+      }
+    },
+    "version": {
+      "versionNumber": "3",
+      "updateTime": "2024-01-01T02:03:04Z",
+      "description": "Synthetic server fixture"
+    }
+  }
+}

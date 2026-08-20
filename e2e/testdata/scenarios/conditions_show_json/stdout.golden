@@ -1,0 +1,61 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:response",
+  "contract_version": "1.0.0",
+  "command": "conditions.show",
+  "requested_command": "conditions.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "version": "12",
+    "source": "firebase",
+    "has_draft": false,
+    "condition": {
+      "priority": 5,
+      "name": "high_risk_session",
+      "expression": "device.country in ['us', 'gb', 'de'] \u0026\u0026 percent \u003c= 15",
+      "tag_color": "DEEP_ORANGE",
+      "usages": [
+        {
+          "group_key": "risk",
+          "group": "risk",
+          "parameter": "high_risk_transfer_limit",
+          "value": "50",
+          "raw_value": "50",
+          "value_type": "NUMBER",
+          "plain": true
+        },
+        {
+          "group_key": "risk",
+          "group": "risk",
+          "parameter": "risk_banner_copy",
+          "value": "Extra verification is required before continuing",
+          "raw_value": "Extra verification is required before continuing",
+          "value_type": "STRING",
+          "plain": true
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

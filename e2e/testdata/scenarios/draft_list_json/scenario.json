@@ -1,0 +1,9 @@
+{
+  "name": "draft_list_json",
+  "command_id": "draft.list",
+  "args": ["draft", "list", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "read_state"
+}
