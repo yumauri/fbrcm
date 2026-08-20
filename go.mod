@@ -4,7 +4,7 @@ go 1.26.6
 
 require (
 	charm.land/bubbles/v2 v2.1.1
-	charm.land/bubbletea/v2 v2.0.8
+	charm.land/bubbletea/v2 v2.0.9
 	charm.land/lipgloss/v2 v2.0.6
 	charm.land/log/v2 v2.0.0
 	github.com/atotto/clipboard v0.1.4
@@ -14,7 +14,7 @@ require (
 	github.com/erikgeiser/promptkit v0.12.0
 	github.com/expr-lang/expr v1.17.8
 	github.com/itchyny/gojq v0.12.19
-	github.com/mattn/go-runewidth v0.0.27
+	github.com/mattn/go-runewidth v0.0.28
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/uniseg v0.4.7
