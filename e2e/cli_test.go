@@ -36,6 +36,17 @@ func TestCLI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	runPattern := ""
+	if runFlag := flag.Lookup("test.run"); runFlag != nil {
+		runPattern = runFlag.Value.String()
+	}
+	if err := harness.ValidateRecordingRunFilter(suite, mode, runPattern); err != nil {
+		t.Fatal(err)
+	}
+	scenarios, err = harness.OrderScenariosForMode(scenarios, suite, mode)
+	if err != nil {
+		t.Fatal(err)
+	}
 	toolDirectory := t.TempDir()
 	setupContext, cancelSetup := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancelSetup()

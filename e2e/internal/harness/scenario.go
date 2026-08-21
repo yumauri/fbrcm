@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -30,11 +31,19 @@ var protectedScenarioEnvironment = map[string]bool{
 
 // Suite identifies the stable Firebase project represented by committed cassettes.
 type Suite struct {
-	ProjectID            string `json:"project_id"`
-	ProjectName          string `json:"project_name"`
-	QuotaProjectID       string `json:"quota_project_id,omitempty"`
-	DefaultTerminalWidth int    `json:"default_terminal_width,omitempty"`
-	DefaultLogLevel      string `json:"default_log_level,omitempty"`
+	ProjectID            string              `json:"project_id"`
+	ProjectName          string              `json:"project_name"`
+	QuotaProjectID       string              `json:"quota_project_id,omitempty"`
+	DefaultTerminalWidth int                 `json:"default_terminal_width,omitempty"`
+	DefaultLogLevel      string              `json:"default_log_level,omitempty"`
+	RecordingSequences   []RecordingSequence `json:"recording_sequences,omitempty"`
+}
+
+// RecordingSequence orders independent scenarios whose live Firebase effects
+// establish the preconditions for the next recording in the sequence.
+type RecordingSequence struct {
+	Name      string   `json:"name"`
+	Scenarios []string `json:"scenarios"`
 }
 
 // Scenario describes one black-box CLI execution and its expected traffic.
@@ -108,6 +117,33 @@ func LoadSuite(path string) (Suite, error) {
 	}
 	if !validLogLevel(suite.DefaultLogLevel) {
 		return Suite{}, fmt.Errorf("suite has unsupported default_log_level %q", suite.DefaultLogLevel)
+	}
+	seenSequenceNames := make(map[string]bool, len(suite.RecordingSequences))
+	for sequenceIndex := range suite.RecordingSequences {
+		sequence := &suite.RecordingSequences[sequenceIndex]
+		sequence.Name = strings.TrimSpace(sequence.Name)
+		if sequence.Name == "" {
+			return Suite{}, fmt.Errorf("suite recording_sequences entry %d requires a name", sequenceIndex+1)
+		}
+		if seenSequenceNames[sequence.Name] {
+			return Suite{}, fmt.Errorf("suite recording_sequences contains duplicate name %q", sequence.Name)
+		}
+		seenSequenceNames[sequence.Name] = true
+		if len(sequence.Scenarios) == 0 {
+			return Suite{}, fmt.Errorf("suite recording sequence %q has no scenarios", sequence.Name)
+		}
+		seenScenarios := make(map[string]bool, len(sequence.Scenarios))
+		for scenarioIndex := range sequence.Scenarios {
+			scenarioName := strings.TrimSpace(sequence.Scenarios[scenarioIndex])
+			if scenarioName == "" {
+				return Suite{}, fmt.Errorf("suite recording sequence %q has an empty scenario at position %d", sequence.Name, scenarioIndex+1)
+			}
+			if seenScenarios[scenarioName] {
+				return Suite{}, fmt.Errorf("suite recording sequence %q contains duplicate scenario %q", sequence.Name, scenarioName)
+			}
+			seenScenarios[scenarioName] = true
+			sequence.Scenarios[scenarioIndex] = scenarioName
+		}
 	}
 	return suite, nil
 }
@@ -246,7 +282,132 @@ func LoadScenarios(root string, suite Suite) ([]Scenario, error) {
 	if len(scenarios) == 0 {
 		return nil, fmt.Errorf("no scenarios found in %s", root)
 	}
+	knownScenarios := make(map[string]Scenario, len(scenarios))
+	for _, scenario := range scenarios {
+		knownScenarios[scenario.Name] = scenario
+	}
+	for _, sequence := range suite.RecordingSequences {
+		for _, scenarioName := range sequence.Scenarios {
+			if _, exists := knownScenarios[scenarioName]; !exists {
+				return nil, fmt.Errorf("suite recording sequence %q references unknown scenario %q", sequence.Name, scenarioName)
+			}
+		}
+	}
+	for _, sequence := range suite.RecordingSequences {
+		for _, scenarioName := range sequence.Scenarios {
+			scenario := knownScenarios[scenarioName]
+			if len(scenario.ExpectedHTTP) == 0 || scenario.HTTPReplayOnly {
+				return nil, fmt.Errorf("suite recording sequence %q scenario %q must declare live HTTP traffic", sequence.Name, scenarioName)
+			}
+		}
+	}
+	sequencedScenarios := make(map[string]bool)
+	for _, sequence := range suite.RecordingSequences {
+		for _, scenarioName := range sequence.Scenarios {
+			sequencedScenarios[scenarioName] = true
+		}
+	}
+	for _, scenario := range scenarios {
+		if requiresRecordingSequence(scenario) && !sequencedScenarios[scenario.Name] {
+			return nil, fmt.Errorf("scenario %q declares mutating live HTTP traffic but does not belong to a recording sequence", scenario.Name)
+		}
+	}
 	return scenarios, nil
+}
+
+// OrderScenariosForMode makes every declared recording sequence a mandatory,
+// contiguous block in HTTP capture modes. Replay and output-only modes retain
+// the normal independent alphabetical order.
+func OrderScenariosForMode(scenarios []Scenario, suite Suite, mode Mode) ([]Scenario, error) {
+	if mode == ModeReplay || mode == ModeUpdateOutput {
+		return scenarios, nil
+	}
+	byName := make(map[string]Scenario, len(scenarios))
+	for _, scenario := range scenarios {
+		byName[scenario.Name] = scenario
+	}
+	ordered := make([]Scenario, 0, len(scenarios))
+	sequenced := make(map[string]bool)
+	for _, sequence := range suite.RecordingSequences {
+		existingCassettes := 0
+		for _, scenarioName := range sequence.Scenarios {
+			scenario, exists := byName[scenarioName]
+			if !exists {
+				return nil, fmt.Errorf("recording sequence %q references unavailable scenario %q", sequence.Name, scenarioName)
+			}
+			if mode == ModeRecordMissing {
+				_, err := os.Stat(filepath.Join(scenario.Directory, "http.json"))
+				switch {
+				case err == nil:
+					existingCassettes++
+				case !os.IsNotExist(err):
+					return nil, fmt.Errorf("inspect recording sequence %q scenario %q cassette: %w", sequence.Name, scenarioName, err)
+				}
+			}
+			ordered = append(ordered, scenario)
+			sequenced[scenarioName] = true
+		}
+		if mode == ModeRecordMissing && existingCassettes != 0 && existingCassettes != len(sequence.Scenarios) {
+			return nil, fmt.Errorf("recording sequence %q has both existing and missing HTTP cassettes; use -mode=refresh-all to record the complete sequence", sequence.Name)
+		}
+	}
+	for _, scenario := range scenarios {
+		if !sequenced[scenario.Name] {
+			ordered = append(ordered, scenario)
+		}
+	}
+	return ordered, nil
+}
+
+// ValidateRecordingRunFilter prevents Go's subtest filter from selecting only
+// part of a mandatory recording sequence. Selecting every member or no member
+// of each sequence remains valid.
+func ValidateRecordingRunFilter(suite Suite, mode Mode, runPattern string) error {
+	if mode == ModeReplay || mode == ModeUpdateOutput || len(suite.RecordingSequences) == 0 {
+		return nil
+	}
+	parts := strings.Split(runPattern, "/")
+	if len(parts) < 2 {
+		return nil
+	}
+	childPattern, err := regexp.Compile(parts[1])
+	if err != nil {
+		return fmt.Errorf("parse scenario part of -run filter: %w", err)
+	}
+	for _, sequence := range suite.RecordingSequences {
+		matched := 0
+		for _, scenarioName := range sequence.Scenarios {
+			if childPattern.MatchString(scenarioName) {
+				matched++
+			}
+		}
+		if matched != 0 && matched != len(sequence.Scenarios) {
+			return fmt.Errorf("-run filter selects only part of recording sequence %q; select every member or none", sequence.Name)
+		}
+	}
+	return nil
+}
+
+func requiresRecordingSequence(scenario Scenario) bool {
+	if scenario.HTTPReplayOnly {
+		return false
+	}
+	for _, expectation := range scenario.ExpectedHTTP {
+		switch expectation.Method {
+		case "GET", "HEAD", "OPTIONS":
+			continue
+		case "PUT":
+			if expectation.Query == "validateOnly=true" {
+				continue
+			}
+		case "POST":
+			if strings.HasSuffix(expectation.Path, ":testIamPermissions") {
+				continue
+			}
+		}
+		return true
+	}
+	return false
 }
 
 func cleanRelativeSnapshotPath(path string) (string, bool) {
