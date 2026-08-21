@@ -10,6 +10,7 @@ const (
 	LogNoTimestamp          = "FBRCM_LOG_NO_TIMESTAMP"
 	Offline                 = "FBRCM_OFFLINE"
 	Profile                 = "FBRCM_PROFILE"
+	GoogleAccessToken       = "FBRCM_GOOGLE_ACCESS_TOKEN"
 	NoColor                 = "NO_COLOR"
 	ConfigDir               = "FBRCM_CONFIG_DIR"
 	CacheDir                = "FBRCM_CACHE_DIR"
@@ -19,6 +20,14 @@ const (
 	TLSCertFile             = "SSL_CERT_FILE"
 	XDGConfigHome           = "XDG_CONFIG_HOME"
 )
+
+// LookupNonEmpty returns an environment value without normalization. It is
+// suitable for opaque values such as credentials, where trimming would hide
+// invalid input or alter the value sent to another service.
+func LookupNonEmpty(name string) (string, bool) {
+	value, ok := os.LookupEnv(name)
+	return value, ok && value != ""
+}
 
 func LookupTrimmed(name string) (string, bool) {
 	value, ok := os.LookupEnv(name)

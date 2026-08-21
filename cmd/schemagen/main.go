@@ -859,7 +859,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			"network_access":   map[string]any{"enum": []string{"none", "conditional", "required"}}, "network_when": conditionClauses,
 			"destructive": map[string]any{"type": "boolean"}, "destructive_when": conditionClauses, "destructive_reasons": stringArray, "idempotency": map[string]any{"enum": []string{"yes", "conditional", "no"}},
 			"idempotency_when": map[string]any{"type": "array", "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"idempotency", "when"}, "properties": map[string]any{"idempotency": map[string]any{"enum": []string{"yes", "no"}}, "when": conditionClauses}}},
-			"supports":         map[string]any{"type": "object", "additionalProperties": false, "required": []string{"dry_run", "draft", "confirmation_bypass", "stdin"}, "properties": map[string]any{"dry_run": map[string]any{"type": "boolean"}, "draft": map[string]any{"type": "boolean"}, "confirmation_bypass": map[string]any{"type": "boolean"}, "stdin": map[string]any{"type": "boolean"}}},
+			"supports":         contract.CapabilitySupportSchema(),
 			"stdin_modes":      map[string]any{"type": "array", "uniqueItems": true, "items": map[string]any{"const": "json_document"}},
 			"interaction":      map[string]any{"type": "object", "additionalProperties": false, "required": []string{"mode", "json_behavior"}, "properties": map[string]any{"mode": map[string]any{"enum": []string{"none", "optional", "required"}}, "json_behavior": map[string]any{"enum": []string{"non_interactive", "confirmation_required_without_bypass", "destination_conflict_returns_interaction", "external_input_returns_interaction", "browser_launch_suppressed", "oauth_authorization_returns_interaction", "browser_launch_suppressed_and_oauth_authorization_returns_interaction", "declared_conditions_return_interaction", "missing_input_returns_interaction", "deletion_preview_requires_confirmation", "import_requires_explicit_strategy_and_confirmation", "promotion_requires_explicit_selection_and_confirmation"}}}},
 			"interaction_when": conditionClauses,
@@ -1166,6 +1166,9 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 			result["pattern"] = `.*\S.*`
 		}
 	}
+	if name == "stateless" && !contract.SupportsStatelessCommand(commandID) {
+		result["const"] = false
+	}
 	if flag.Effective {
 		applyFlagSemantics(result, commandID, name)
 	}
@@ -1387,6 +1390,12 @@ func modePrefixedMatching(fields []string, targetAware bool) map[string]any {
 		rule["explicit_target_selection"] = "single_named_template"
 		rule["client_target_canonicalization"] = "unqualified_project_id"
 	}
+	return rule
+}
+
+func statelessGetProjectMatching() map[string]any {
+	rule := modePrefixedMatching([]string{"project_id", "display_name"}, true)
+	rule["unqualified_target_selection"] = "client_template"
 	return rule
 }
 
@@ -1758,6 +1767,33 @@ func semanticDefinitions(commandID string) map[string]any {
 		"physical_project_id": map[string]any{
 			"$ref": contract.SemanticRef("physical_project_id"),
 		},
+		"stateless_target_selector": map[string]any{
+			"type":            "string",
+			"pattern":         `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\s][^@\s]*$`,
+			"x-fbrcm-grammar": "[client@|server@]literal physical project ID; an omitted template prefix selects client",
+			"x-fbrcm-matching": []any{map[string]any{
+				"operator": "literal_project_id", "comparison": "exact_case_sensitive", "default_template": "client", "lookup": false,
+			}},
+		},
+		"stateless_get_project_selector": map[string]any{
+			"oneOf": []any{
+				map[string]any{
+					"type":            "string",
+					"pattern":         `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?=[^=^/~@\s][^@\s]*$`,
+					"x-fbrcm-grammar": "[client@|server@]=literal physical project ID; exact mode bypasses project discovery",
+					"x-fbrcm-matching": []any{map[string]any{
+						"operator": "literal_project_id", "comparison": "exact_case_sensitive", "default_template": "client", "lookup": false,
+					}},
+				},
+				map[string]any{
+					"allOf": []any{
+						map[string]any{"$ref": "#/$defs/target_selector"},
+						map[string]any{"not": map[string]any{"pattern": `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?=`}},
+					},
+					"x-fbrcm-matching": []any{statelessGetProjectMatching()},
+				},
+			},
+		},
 		"project_alias": map[string]any{"$ref": contract.SemanticRef("project_alias")},
 		"path_segment":  map[string]any{"$ref": contract.SemanticRef("path_segment")},
 		"version_selector": map[string]any{"allOf": []any{map[string]any{
@@ -1930,6 +1966,7 @@ func extensionLanguageMetadata() map[string]any {
 			"semantics": "Apply the declared query preparation and matching algorithm when predicting local selection. Matching metadata does not mutate the normalized invocation value unless a separate normalization rule says so.",
 			"operators": map[string]any{
 				"auth_id_resolution":              operation(nil, "selection", "Compare the positional auth ID exactly and case-sensitively against configured canonical auth IDs. No match returns auth.not_found; IDs are unique."),
+				"literal_project_id":              operation([]string{"comparison", "default_template", "lookup"}, "selection", "Use the supplied physical Firebase project ID exactly without project-registry, display-name, or repository-alias lookup. An omitted template prefix selects the client template; client@ and server@ select one named template."),
 				"mode_prefixed_query":             operation([]string{"fields", "query_normalization", "default_mode", "mode_prefixes", "comparison", "target_prefixes?", "unqualified_target_selection?", "explicit_target_selection?", "client_target_canonicalization?"}, "boolean_or_target_selection", "Match the declared resource fields after optional target-prefix parsing, using the first query rune as a declared mode prefix or the default mode. Fuzzy matches query runes as an ordered subsequence; starts-with, includes, and exact have their literal meanings. Target-aware rules additionally declare unqualified expansion, explicit single-template selection, and client target canonicalization."),
 				"project_positional_resolution":   operation([]string{"fields", "query_normalization", "comparison", "precedence", "target_prefixes?", "unqualified_target_selection?", "explicit_target_selection?", "client_target_canonicalization?"}, "selection", "Resolve the untrimmed literal project selector exactly and case-sensitively in precedence order: project ID, repository alias, then display name. Substrings and mode prefixes have no search meaning. Target-aware rules additionally declare primary-template resolution, explicit single-template selection, and client target canonicalization."),
 				"draft_resolution":                operation([]string{"candidate_source", "fields", "query_normalization", "comparison", "precedence", "target_prefixes", "unqualified_target_selection", "explicit_target_selection", "client_target_canonicalization", "zero_result", "multiple_result"}, "selection", "Resolve only existing local draft target IDs. Parse an optional template target without trimming its project selector, then compare exactly and case-sensitively in precedence order: draft physical project ID, repository alias, then display name. Unqualified queries select the configured primary template. Substrings and mode prefixes have no search meaning. Zero and multiple matches return the declared typed draft problems."),
@@ -2018,6 +2055,130 @@ func expressionLanguageMetadata() map[string]any {
 
 func optionConstraints(commandID string, command *cobra.Command, publishedOptions map[string]any) []any {
 	constraints := make([]any, 0)
+	if contract.SupportsStatelessCommand(commandID) {
+		statelessProjectSchema := "stateless_target_selector"
+		if slices.Contains([]string{
+			"experiments.list", "experiments.show", "personalizations.list", "personalizations.show",
+			"project.open", "project.show", "rollouts.list", "rollouts.show",
+		}, commandID) {
+			statelessProjectSchema = "physical_project_id"
+		}
+		statelessOptions := map[string]any{
+			"not": map[string]any{"required": []string{"profile"}},
+		}
+		statelessOptionProperties := map[string]any{}
+		if slices.Contains([]string{"projects.diff", "versions.diff", "versions.export", "versions.list", "versions.show"}, commandID) {
+			statelessOptionProperties["cached"] = map[string]any{"const": false}
+		}
+		if slices.Contains([]string{
+			"conditions.list", "conditions.show", "experiments.list", "experiments.show", "groups.list",
+			"personalizations.list", "personalizations.show", "project.show", "rollouts.list", "rollouts.show",
+		}, commandID) {
+			statelessOptionProperties["update"] = map[string]any{"const": false}
+		}
+		if commandID == "get" {
+			statelessOptionProperties["update"] = map[string]any{"const": false}
+		}
+		if commandID == "projects.list" {
+			statelessOptionProperties["update"] = map[string]any{"const": false}
+		}
+		if len(statelessOptionProperties) > 0 {
+			statelessOptions["properties"] = statelessOptionProperties
+		}
+		statelessConstraint := map[string]any{
+			"if": map[string]any{
+				"properties": map[string]any{"stateless": map[string]any{"const": true}},
+				"required":   []string{"stateless"},
+			},
+			"then": statelessOptions,
+		}
+		if commandID == "projects.list" {
+			statelessConstraint["else"] = map[string]any{
+				"properties": map[string]any{
+					"profile": map[string]any{"allOf": []any{map[string]any{"$ref": "#/$defs/path_segment"}}},
+				},
+			}
+		}
+		constraints = append(constraints, optionsConstraint(statelessConstraint))
+		if commandID != "projects.list" && commandID != "get" && commandID != "groups.list" && commandID != "projects.diff" {
+			constraints = append(constraints, map[string]any{
+				"if": map[string]any{
+					"properties": map[string]any{
+						"options": map[string]any{
+							"properties": map[string]any{"stateless": map[string]any{"const": true}},
+							"required":   []string{"stateless"},
+						},
+					},
+					"required": []string{"options"},
+				},
+				"then": map[string]any{
+					"properties": map[string]any{
+						"arguments": map[string]any{
+							"properties": map[string]any{"project": map[string]any{"$ref": "#/$defs/" + statelessProjectSchema}},
+						},
+					},
+				},
+				"else": map[string]any{
+					"properties": map[string]any{
+						"options": map[string]any{
+							"properties": map[string]any{
+								"profile": map[string]any{"allOf": []any{map[string]any{"$ref": "#/$defs/path_segment"}}},
+							},
+						},
+					},
+				},
+			})
+		}
+		if commandID == "get" || commandID == "groups.list" {
+			constraints = append(constraints, map[string]any{
+				"if": map[string]any{
+					"properties": map[string]any{
+						"options": map[string]any{
+							"properties": map[string]any{"stateless": map[string]any{"const": true}},
+							"required":   []string{"stateless"},
+						},
+						"stdin": map[string]any{"type": "null"},
+					},
+					"required": []string{"options", "stdin"},
+				},
+				"then": map[string]any{
+					"properties": map[string]any{
+						"options": map[string]any{
+							"properties": map[string]any{
+								"project": map[string]any{
+									"type":  "array",
+									"items": map[string]any{"$ref": "#/$defs/stateless_get_project_selector"},
+								},
+							},
+						},
+					},
+				},
+			})
+		}
+		if commandID == "projects.diff" {
+			constraints = append(constraints, map[string]any{
+				"if": map[string]any{
+					"properties": map[string]any{
+						"options": map[string]any{
+							"properties": map[string]any{"stateless": map[string]any{"const": true}},
+							"required":   []string{"stateless"},
+						},
+					},
+					"required": []string{"options"},
+				},
+				"then": map[string]any{
+					"properties": map[string]any{
+						"arguments": map[string]any{
+							"properties": map[string]any{
+								"source_project": map[string]any{"$ref": "#/$defs/stateless_target_selector"},
+								"target_project": map[string]any{"$ref": "#/$defs/stateless_target_selector"},
+							},
+						},
+					},
+				},
+			})
+		}
+	}
 	for _, group := range annotationGroups(command.Flags(), "cobra_annotation_mutually_exclusive") {
 		if slices.Contains(group, "json") {
 			for _, name := range group {
@@ -2103,6 +2264,19 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		constraints = append(constraints, argumentOptionMutualExclusion("parameter", "filter"))
 	case "delete", "get":
 		constraints = append(constraints, argumentOptionMutualExclusion("parameter", "filter"))
+		if commandID == "get" {
+			constraints = append(constraints, map[string]any{
+				"if": map[string]any{
+					"properties": map[string]any{"stdin": map[string]any{"not": map[string]any{"type": "null"}}},
+					"required":   []string{"stdin"},
+				},
+				"then": map[string]any{
+					"properties": map[string]any{
+						"options": map[string]any{"properties": map[string]any{"update": map[string]any{"const": false}}},
+					},
+				},
+			})
+		}
 	case "duplicate":
 		constraints = append(constraints, map[string]any{"x-fbrcm-validation": []any{map[string]any{"operator": "fields_differ", "fields": []any{"arguments.source", "arguments.target"}, "comparison": "exact_codepoint"}}})
 	case "config.set":

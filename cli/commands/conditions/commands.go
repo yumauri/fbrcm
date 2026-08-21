@@ -121,16 +121,31 @@ func addReadFlags(cmd *cobra.Command) {
 }
 
 func load(cmd *cobra.Command, svc *core.Core, query string) (loadedConditions, error) {
-	project, err := shared.ResolveProjectTargetArg(shared.CommandContext(cmd), cmd, svc, query)
-	if err != nil {
-		return loadedConditions{}, err
-	}
+	ctx := shared.CommandContext(cmd)
 	update, _ := cmd.Flags().GetBool("update")
-	cache, source, err := loadCache(shared.CommandContext(cmd), svc, project.ProjectID, update)
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
+		return loadedConditions{}, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+	}
+	project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, query)
 	if err != nil {
 		return loadedConditions{}, err
 	}
-	tree, hasDraft, err := svc.BuildDraftAwareConditionsTree(project.ProjectID, cache)
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return loadedConditions{}, err
+	}
+	cmd.SetContext(ctx)
+	cache, source, err := loadCache(ctx, svc, project.ProjectID, update)
+	if err != nil {
+		return loadedConditions{}, err
+	}
+	var tree *core.ConditionsTree
+	var hasDraft bool
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		tree, hasDraft, err = svc.BuildDraftAwareConditionsTree(project.ProjectID, cache)
+	} else {
+		tree, err = svc.BuildConditionsTree(cache)
+	}
 	if err != nil {
 		return loadedConditions{}, err
 	}
@@ -151,6 +166,9 @@ func loadCache(ctx context.Context, svc *core.Core, projectID string, update boo
 	}
 	if err == nil {
 		return cache, source, nil
+	}
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return nil, "", err
 	}
 
 	stale, state, inspectErr := svc.InspectParametersCache(projectID)

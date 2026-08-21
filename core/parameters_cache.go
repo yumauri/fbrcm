@@ -59,7 +59,7 @@ func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) 
 	logger := corelog.For("core")
 	logger.Debug("get parameters requested", "project_id", projectID, "force", force)
 
-	if force {
+	if force || !ExecutionPolicyFromContext(ctx).ReadLocalState {
 		return s.fetchLatestParameters(ctx, projectID)
 	}
 
@@ -84,6 +84,10 @@ func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) 
 func (s *Core) RevalidateParameters(ctx context.Context, projectID string) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Debug("revalidate parameters requested", "project_id", projectID)
+
+	if !ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return s.fetchLatestParameters(ctx, projectID)
+	}
 
 	cache, state, err := s.InspectParametersCache(projectID)
 	if err != nil {
@@ -146,7 +150,7 @@ func (s *Core) fetchLatestParameters(ctx context.Context, projectID string) (*Pa
 		return nil, "", fmt.Errorf("firebase error: %w", err)
 	}
 
-	if latestVersion.VersionNumber != "" {
+	if ExecutionPolicyFromContext(ctx).ReadLocalState && latestVersion.VersionNumber != "" {
 		cache, err := config.LoadParametersCacheVersion(projectID, latestVersion.VersionNumber)
 		if err == nil {
 			return s.refreshVerifiedCache(ctx, projectID, cache, latestVersion.VersionNumber)
@@ -189,6 +193,10 @@ func (s *Core) fetchParametersVersion(ctx context.Context, projectID, version st
 	}
 	if firebase.IsDryRun(ctx) {
 		logger.Warn("dry run, skip parameters cache save after fetch", "project_id", projectID, "etag", etag)
+		return cache, "firebase", nil
+	}
+	if !ExecutionPolicyFromContext(ctx).WriteLocalState {
+		logger.Debug("execution policy skips parameters cache save after fetch", "project_id", projectID, "etag", etag)
 		return cache, "firebase", nil
 	}
 	if err := config.SaveParametersCache(projectID, cache); err != nil {
@@ -249,6 +257,10 @@ func (s *Core) refreshVerifiedCache(ctx context.Context, projectID string, cache
 	refreshed.CachedAt = time.Now().UTC()
 	if firebase.IsDryRun(ctx) {
 		logger.Warn("dry run, skip parameters cache timestamp refresh", "project_id", projectID, "version", version)
+		return &refreshed, "cache-verified", nil
+	}
+	if !ExecutionPolicyFromContext(ctx).WriteLocalState {
+		logger.Debug("execution policy skips parameters cache timestamp refresh", "project_id", projectID, "version", version)
 		return &refreshed, "cache-verified", nil
 	}
 	if err := config.SaveParametersCache(projectID, &refreshed); err != nil {

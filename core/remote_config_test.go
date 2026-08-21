@@ -41,6 +41,44 @@ func TestExportRemoteConfig(t *testing.T) {
 	assertRemoteConfigVersion(t, raw, "7")
 }
 
+func TestExportRemoteConfigWithDirectFirebaseService(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+
+	const body = `{"version":{"versionNumber":"8"},"parameters":{"flag":{"defaultValue":{"value":"direct"}}}}`
+	var requestPath string
+	requestCount := 0
+	client := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			requestCount++
+			requestPath = req.URL.EscapedPath()
+			return jsonResponse(http.StatusOK, body, `"etag-direct"`), nil
+		}),
+	})
+	ctx, err := WithDirectFirebaseService(context.Background(), "demo", client)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	raw, etag, err := svc.ExportRemoteConfig(ctx, "server@demo")
+	if err != nil {
+		t.Fatalf("ExportRemoteConfig = %v", err)
+	}
+	if etag != `"etag-direct"` {
+		t.Fatalf("etag = %q, want %q", etag, `"etag-direct"`)
+	}
+	if !strings.Contains(requestPath, "/projects/demo/") || !strings.Contains(requestPath, "/namespaces/firebase-server/remoteConfig") {
+		t.Fatalf("request path = %q, want server template for physical project demo", requestPath)
+	}
+	assertRemoteConfigVersion(t, raw, "8")
+
+	if _, _, err := svc.ExportRemoteConfig(context.Background(), "demo"); err == nil || !strings.Contains(err.Error(), "read projects config") {
+		t.Fatalf("ExportRemoteConfig without direct context = %v, want stored-project lookup error", err)
+	}
+	if requestCount != 1 {
+		t.Fatalf("direct firebase service handled %d requests after its context was discarded, want 1", requestCount)
+	}
+}
+
 func TestDownloadRemoteConfigDefaults(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	seedAuthAndProject(t, svc, "main", "demo")
@@ -183,6 +221,58 @@ func TestPublishRemoteConfigWithETagWritesVersionedCache(t *testing.T) {
 	}
 	if cache.ETag != `"etag-2"` {
 		t.Fatalf("etag = %q, want etag-2", cache.ETag)
+	}
+}
+
+func TestPublishRemoteConfigWithETagHonorsStatelessExecutionPolicy(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	saveDefaultParametersCache(t, map[string]string{"flag": "cached"})
+	cachePath := config.GetParametersCachePath("demo")
+	cacheBefore, err := os.ReadFile(cachePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	markerDir := t.TempDir()
+	preMarker := filepath.Join(markerDir, "pre")
+	postMarker := filepath.Join(markerDir, "post")
+	if err := config.SaveAppConfig(&config.AppConfig{Hooks: &config.HooksConfig{
+		PrePublish:  []string{"printf pre > " + shellQuote(preMarker)},
+		PostPublish: []string{"printf post > " + shellQuote(postMarker)},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	payload := remoteConfigRaw("2", map[string]string{"flag": "published"})
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodPut && !strings.Contains(req.URL.RawQuery, "validateOnly") {
+			return jsonResponse(http.StatusOK, string(payload), `"etag-2"`), nil
+		}
+		return nil, io.EOF
+	})})
+	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
+	ctx, err = WithDirectFirebaseService(ctx, "demo", client)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	raw, etag, err := svc.PublishRemoteConfigWithETag(ctx, "demo", payload, "etag-1")
+	if err != nil {
+		t.Fatalf("PublishRemoteConfigWithETag = %v", err)
+	}
+	if string(raw) != string(payload) || etag != `"etag-2"` {
+		t.Fatalf("published response = %s/%q, want payload/etag-2", raw, etag)
+	}
+	for _, marker := range []string{preMarker, postMarker} {
+		if _, err := os.Stat(marker); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("hook marker %s stat = %v, want not found", marker, err)
+		}
+	}
+	cacheAfter, err := os.ReadFile(cachePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(cacheAfter) != string(cacheBefore) {
+		t.Fatalf("cache file changed under stateless policy")
 	}
 }
 

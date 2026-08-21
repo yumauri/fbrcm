@@ -64,6 +64,9 @@ type ProjectImportResult struct {
 }
 
 func (s *Core) PrepareProjectImport(ctx context.Context, project Project, sourceRaw []byte, opts ProjectImportOptions) (*ProjectImportPlan, error) {
+	if err := requireLocalStateRead(ctx, "project import preparation"); err != nil {
+		return nil, err
+	}
 	source, err := importer.ParseSource(sourceRaw)
 	if err != nil {
 		return nil, err
@@ -134,6 +137,14 @@ func (s *Core) ExecuteProjectImport(ctx context.Context, plan *ProjectImportPlan
 	}
 	if !plan.HasChanges {
 		return nil, fmt.Errorf("import has no changes")
+	}
+	if !publish {
+		if err := requireLocalStateRead(ctx, "project import draft creation"); err != nil {
+			return nil, err
+		}
+		if err := requireLocalStateWrite(ctx, "project import draft creation"); err != nil {
+			return nil, err
+		}
 	}
 	var err error
 	ctx, err = firebase.WithChangeNote(ctx, plan.ChangeNote)

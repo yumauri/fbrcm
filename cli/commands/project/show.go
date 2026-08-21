@@ -23,29 +23,48 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			stateless := !core.ExecutionPolicyFromContext(ctx).ReadLocalState
+			if stateless && update {
+				return shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; project metadata is already live"))
+			}
 			if update {
 				if _, _, err := svc.SyncProjects(ctx); err != nil {
 					return err
 				}
 			}
 
-			project, err := shared.ResolveProjectArg(ctx, cmd, svc, args[0])
-			if err != nil {
-				return err
+			var project core.Project
+			if stateless {
+				project, err = shared.ResolvePhysicalProjectForExecution(ctx, cmd, svc, args[0])
+				if err == nil {
+					ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+				}
+				if err == nil {
+					project, err = svc.GetProjectDetails(ctx, project.ProjectID)
+				}
+				if err != nil {
+					return err
+				}
+				cmd.SetContext(ctx)
+			} else {
+				project, err = shared.ResolveProjectArg(ctx, cmd, svc, args[0])
+				if err != nil {
+					return err
+				}
 			}
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
 				return err
 			}
 			if jsonOut {
-				aliases, aliasErr := projectAliases(project.ProjectID)
+				aliases, aliasErr := projectAliasesForExecution(project.ProjectID, stateless)
 				if aliasErr != nil {
 					return aliasErr
 				}
 				return shared.WriteJSON(cmd, shared.NewProjectJSONWithAliases(project, aliases, true))
 			}
 
-			aliases, aliasErr := projectAliases(project.ProjectID)
+			aliases, aliasErr := projectAliasesForExecution(project.ProjectID, stateless)
 			if aliasErr != nil {
 				return aliasErr
 			}
@@ -56,6 +75,13 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("update", false, "Update projects from Firebase before printing")
 	cmd.Flags().Bool("json", false, "Print project details as JSON")
 	return cmd
+}
+
+func projectAliasesForExecution(projectID string, stateless bool) ([]string, error) {
+	if stateless {
+		return nil, nil
+	}
+	return projectAliases(projectID)
 }
 
 func renderProjectDetailsWithAliases(project core.Project, aliases []string) string {

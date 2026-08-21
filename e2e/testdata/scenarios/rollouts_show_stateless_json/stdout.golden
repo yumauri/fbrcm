@@ -1,0 +1,65 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:response",
+  "contract_version": "1.0.0",
+  "command": "rollouts.show",
+  "requested_command": "rollouts.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "project_number": "949596266151",
+      "state": "ACTIVE",
+      "etag": "W/\"1ea994f67032507a\"",
+      "updated_at": "2026-05-16T09:07:13.923358Z",
+      "auth_id": ""
+    },
+    "template": {
+      "version": "12",
+      "source": "firebase"
+    },
+    "rollout": {
+      "createTime": "2026-07-28T06:25:17.482838Z",
+      "definition": {
+        "displayName": "increase minimal funding",
+        "controlVariant": {
+          "name": "Control",
+          "weight": 1
+        },
+        "enabledVariant": {
+          "name": "Enabled",
+          "weight": 1
+        }
+      },
+      "endTime": "1970-01-01T00:00:00Z",
+      "etag": "e1",
+      "lastUpdateTime": "2026-07-28T06:25:17.482838Z",
+      "name": "projects/949596266151/namespaces/firebase/rollouts/rollout_1",
+      "references": [
+        {
+          "group": "onboarding",
+          "parameter": "funding_minimum_amount",
+          "condition": "android_beta_10",
+          "value_type": "NUMBER",
+          "value": "20",
+          "percentage": 10
+        }
+      ],
+      "startTime": "2026-07-28T06:25:17.482838Z",
+      "state": "RUNNING"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

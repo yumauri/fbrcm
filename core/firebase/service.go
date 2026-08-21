@@ -42,6 +42,25 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 	return serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID), nil
 }
 
+// NewServiceWithAccessToken constructs a service backed by one static Google
+// OAuth 2.0 access token. The token is used only in memory and is neither
+// refreshed nor persisted.
+func NewServiceWithAccessToken(ctx context.Context, accessToken string) (*Service, error) {
+	ctx, err := withEnvironmentTLSRoots(ctx)
+	if err != nil {
+		return nil, err
+	}
+	environmentQuotaProjectID, err := environmentQuotaProjectID()
+	if err != nil {
+		return nil, err
+	}
+	client, err := accessTokenHTTPClient(ctx, accessToken)
+	if err != nil {
+		return nil, err
+	}
+	return serviceFromAuthHTTPClientResult(authHTTPClientResult{client: client, useTargetProjectQuota: true}, environmentQuotaProjectID), nil
+}
+
 // NewDiagnosticServiceForAuth constructs a service without starting an
 // interactive OAuth authorization flow or persisting refreshed credentials.
 func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*Service, error) {

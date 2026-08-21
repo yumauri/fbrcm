@@ -164,9 +164,12 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 		return nil, "", fmt.Errorf("decode remote config: %w", err)
 	}
 
+	policy := ExecutionPolicyFromContext(ctx)
 	var currentRaw json.RawMessage
-	if current, loadErr := config.LoadParametersCache(projectID); loadErr == nil && current.ETag == etag {
-		currentRaw = current.RemoteConfig
+	if policy.ReadLocalState {
+		if current, loadErr := config.LoadParametersCache(projectID); loadErr == nil && current.ETag == etag {
+			currentRaw = current.RemoteConfig
+		}
 	}
 	hookSession, err := s.preparePublicationHooks(ctx, projectID, currentRaw, updateRaw)
 	if err != nil {
@@ -193,9 +196,13 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 		return updatedRaw, nextETag, nil
 	}
 	var cacheErr error
-	if err := config.SaveParametersCache(projectID, cache); err != nil {
-		logger.Error("save parameters cache after publish failed", "project_id", projectID, "etag", nextETag, "err", err)
-		cacheErr = err
+	if policy.WriteLocalState {
+		if err := config.SaveParametersCache(projectID, cache); err != nil {
+			logger.Error("save parameters cache after publish failed", "project_id", projectID, "etag", nextETag, "err", err)
+			cacheErr = err
+		}
+	} else {
+		logger.Debug("execution policy skips parameters cache update after publish", "project_id", projectID, "etag", nextETag)
 	}
 	if err := hookSession.Run(ctx, corehooks.PostPublish, updatedRaw); err != nil {
 		return updatedRaw, nextETag, &RemoteConfigPublishedHookError{ProjectID: projectID, RemoteConfig: updatedRaw, ETag: nextETag, HookErr: err, CacheErr: cacheErr}

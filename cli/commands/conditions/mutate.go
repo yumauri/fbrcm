@@ -178,9 +178,28 @@ func newValidateCommand(svc *core.Core) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := shared.CommandContext(cmd)
-			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
+			}
+			ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+			if err != nil {
+				return err
+			}
+			cmd.SetContext(ctx)
+			if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+				raw, etag, err := svc.ExportRemoteConfig(ctx, project.ProjectID)
+				if err != nil {
+					return err
+				}
+				if err := svc.ValidateRemoteConfigWithETag(ctx, project.ProjectID, raw, etag); err != nil {
+					return err
+				}
+				if shared.MachineMode(cmd) {
+					return shared.WriteJSON(cmd, conditionValidationResult{Project: project, Source: "firebase", Valid: true})
+				}
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Valid: %s (%s) · firebase\n", project.Name, project.ProjectID)
+				return nil
 			}
 			hasDraft, err := svc.HasDraft(project.ProjectID)
 			if err != nil {

@@ -74,6 +74,41 @@ func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
 	return nil, "", fmt.Errorf("read projects cache: %w", loadErr)
 }
 
+// ListProjectsForExecution preserves cache-first discovery when local state is
+// enabled and otherwise uses a directly bound, in-memory Firebase service.
+// The stateless path neither reads nor updates the projects registry.
+func (s *Core) ListProjectsForExecution(ctx context.Context) ([]Project, string, error) {
+	if ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return s.ListProjects(ctx)
+	}
+	fb, ok := directFirebaseDiscoveryServiceFromContext(ctx)
+	if !ok {
+		return nil, "", &ExecutionPolicyError{
+			Capability: "local-state reads",
+			Operation:  "configured Firebase project discovery",
+		}
+	}
+	projects, err := fb.ListProjects(ctx)
+	if err != nil {
+		return nil, "", fmt.Errorf("firebase error: %w", err)
+	}
+	return toConfigProjects(projects), "firebase", nil
+}
+
+// GetProjectDetails fetches current metadata for one physical Google Cloud
+// project through the Firebase service selected for this execution.
+func (s *Core) GetProjectDetails(ctx context.Context, projectID string) (Project, error) {
+	fb, err := s.firebaseServiceForProject(ctx, projectID)
+	if err != nil {
+		return Project{}, err
+	}
+	project, err := fb.GetProject(ctx, projectID)
+	if err != nil {
+		return Project{}, fmt.Errorf("firebase error: %w", err)
+	}
+	return toConfigProjects([]firebase.Project{project})[0], nil
+}
+
 // ProjectAuthBindingFailure describes a selected project that the requested
 // auth identity did not discover.
 type ProjectAuthBindingFailure struct {

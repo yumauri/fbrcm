@@ -1,0 +1,13 @@
+[1mDEBU[m logger initialized [2mmode[m[2m=[mcli [2mlog_level[m[2m=[mDEBUG
+[1mDEBU[m core service initialized [2mcomponent[m[2m=[mcore
+[1mDEBU[m application start [2mcomponent[m[2m=[mmain [2mmode[m[2m=[mcli [2marg_count[m[2m=[m5
+[1mDEBU[m start cli [2mcomponent[m[2m=[mcli
+[1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
+[1mINFO[m stateless mode enabled [2mcomponent[m[2m=[mcli.stateless [2mcommand[m[2m=[mproject.export
+[1mINFO[m export remote config requested [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
+[1mINFO[m get remote config [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mversion[m[2m=[m""
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig[m [2mstatus[m[2m=[m"401 Unauthorized"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig[m [2mstatus[m[2m=[m"401 Unauthorized" [2mheaders[m[2m=[m"Content-Type=application/json"
+[1mERRO[m remote config api returned non-200 [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mstatus[m[2m=[m"401 Unauthorized"
+[1mERRO[m firebase remote config export failed [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet [2merr[m[2m=[m"firebase_remote_config get returned 401 Unauthorized: Request had invalid authentication credentials."

@@ -8,6 +8,12 @@ import (
 )
 
 func (s *Core) PublishDraft(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, error) {
+	if err := requireLocalStateRead(ctx, "draft publication"); err != nil {
+		return nil, nil, err
+	}
+	if err := requireLocalStateWrite(ctx, "draft publication"); err != nil {
+		return nil, nil, err
+	}
 	cache, _, err := draft.PublishExistingDraft(ctx, s.draftDeps(), projectID)
 	if err != nil && cache == nil {
 		return nil, nil, err
@@ -20,6 +26,12 @@ func (s *Core) PublishDraft(ctx context.Context, projectID string) (*ParametersC
 }
 
 func (s *Core) DiscardDraft(ctx context.Context, projectID string) (*ParametersCache, *ParametersTree, error) {
+	if err := requireLocalStateRead(ctx, "draft discard"); err != nil {
+		return nil, nil, err
+	}
+	if err := requireLocalStateWrite(ctx, "draft discard"); err != nil {
+		return nil, nil, err
+	}
 	cache, _, err := s.GetParameters(ctx, projectID, false)
 	if err != nil {
 		return nil, nil, err
@@ -32,6 +44,12 @@ func (s *Core) DiscardDraft(ctx context.Context, projectID string) (*ParametersC
 }
 
 func (s *Core) RefreshDraftAwareParameters(ctx context.Context, projectID string, previousCache *ParametersCache) (*ParametersCache, *ParametersTree, string, bool, bool, error) {
+	if err := requireLocalStateRead(ctx, "draft-aware parameter refresh"); err != nil {
+		return nil, nil, "", false, false, err
+	}
+	if err := requireLocalStateWrite(ctx, "draft-aware parameter refresh"); err != nil {
+		return nil, nil, "", false, false, err
+	}
 	if previousCache == nil {
 		var err error
 		previousCache, _, err = s.InspectParametersCache(projectID)

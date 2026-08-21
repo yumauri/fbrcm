@@ -1,0 +1,23 @@
+{
+  "name": "project_export_stateless_incorrect_token_json",
+  "command_id": "project.export",
+  "args": ["--stateless", "project", "export", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 4,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "status": 401
+    }
+  ],
+  "http_replay_only": true,
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"}
+  ],
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "incorrect"
+  },
+  "json_output": true
+}

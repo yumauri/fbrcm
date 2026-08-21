@@ -1,0 +1,17 @@
+[1mDEBU[m logger initialized [2mmode[m[2m=[mcli [2mlog_level[m[2m=[mDEBUG
+[1mDEBU[m core service initialized [2mcomponent[m[2m=[mcore
+[1mDEBU[m application start [2mcomponent[m[2m=[mmain [2mmode[m[2m=[mcli [2marg_count[m[2m=[m7
+[1mDEBU[m start cli [2mcomponent[m[2m=[mcli
+[1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
+[1mINFO[m stateless mode enabled [2mcomponent[m[2m=[mcli.stateless [2mcommand[m[2m=[mprojects.list
+[1mINFO[m firebase list projects start [2mcomponent[m[2m=[mfirebase
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000"[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000"[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://cloudresourcemanager.googleapis.com/v1/projects?pageSize=1000"[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json"
+[1mINFO[m projects page loaded [2mcomponent[m[2m=[mfirebase [2mpage[m[2m=[m1 [2maccepted[m[2m=[m1 [2mnext_page[m[2m=[mfalse
+[1mINFO[m get project details [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://cloudresourcemanager.googleapis.com/v3/projects/northstar-wallet[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://cloudresourcemanager.googleapis.com/v3/projects/northstar-wallet[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://cloudresourcemanager.googleapis.com/v3/projects/northstar-wallet[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json"
+[1mINFO[m firebase list projects complete [2mcomponent[m[2m=[mfirebase [2mcount[m[2m=[m1 [2mpages[m[2m=[m1
+[1mINFO[m total [2mcomponent[m[2m=[mprojects [2mprojects[m[2m=[m1

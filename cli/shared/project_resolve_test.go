@@ -2,6 +2,7 @@ package shared
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -18,6 +19,58 @@ import (
 	"github.com/yumauri/fbrcm/core/env"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
+
+func TestResolveProjectTargetForExecutionRequiresLiteralTargetWithoutLocalReads(t *testing.T) {
+	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())
+	cmd := &cobra.Command{Use: "export"}
+
+	for query, want := range map[string]string{
+		"demo":        "demo",
+		"client@demo": "demo",
+		"SERVER@demo": "server@demo",
+	} {
+		project, err := ResolveProjectTargetForExecution(ctx, cmd, nil, query)
+		if err != nil || project.ProjectID != want || project.Name != "demo" {
+			t.Fatalf("ResolveProjectTargetForExecution(%q) = %#v, %v; want %q", query, project, err, want)
+		}
+	}
+	for _, query := range []string{"=demo", "server@=demo", "demo project", "server@"} {
+		if _, err := ResolveProjectTargetForExecution(ctx, cmd, nil, query); err == nil {
+			t.Errorf("ResolveProjectTargetForExecution(%q) accepted a non-literal target", query)
+		}
+	}
+}
+
+func TestResolvePhysicalProjectForExecutionRequiresLiteralIDWithoutLocalReads(t *testing.T) {
+	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())
+	cmd := &cobra.Command{Use: "open"}
+
+	project, err := ResolvePhysicalProjectForExecution(ctx, cmd, nil, "demo-project")
+	if err != nil || project.ProjectID != "demo-project" || project.Name != "demo-project" {
+		t.Fatalf("ResolvePhysicalProjectForExecution() = %#v, %v", project, err)
+	}
+	for _, query := range []string{"=demo", "client@demo", "server@demo", "demo project"} {
+		if _, err := ResolvePhysicalProjectForExecution(ctx, cmd, nil, query); err == nil {
+			t.Errorf("ResolvePhysicalProjectForExecution(%q) accepted a selector", query)
+		}
+	}
+}
+
+func TestFirebaseServiceContextForExecutionRequiresStatelessToken(t *testing.T) {
+	t.Setenv(env.GoogleAccessToken, "")
+	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())
+	_, err := FirebaseServiceContextForExecution(ctx, "demo")
+	var authErr *core.AuthError
+	if !errors.As(err, &authErr) || authErr.Kind != "configuration" || !strings.Contains(err.Error(), env.GoogleAccessToken) {
+		t.Fatalf("FirebaseServiceContextForExecution error = %v", err)
+	}
+
+	stateful := core.WithExecutionPolicy(context.Background(), core.StatefulExecutionPolicy())
+	got, err := FirebaseServiceContextForExecution(stateful, "demo")
+	if err != nil || got != stateful {
+		t.Fatalf("stateful context = %v, %v; want unchanged", got, err)
+	}
+}
 
 func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 	projects := []core.Project{

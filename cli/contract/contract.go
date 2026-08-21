@@ -18,6 +18,7 @@ import (
 	jsonschema "github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -197,10 +198,12 @@ func BuildEnvelope(cmd *cobra.Command, version string, captured []byte, err erro
 	if outcome == "failure" && len(bytes.TrimSpace(captured)) == 0 {
 		data = nil
 	}
-	profile := config.GetActiveProfileName()
 	var profilePtr *string
-	if strings.TrimSpace(profile) != "" {
-		profilePtr = &profile
+	if !machine.Profileless(shared.CommandContext(cmd)) {
+		profile := config.GetActiveProfileName()
+		if strings.TrimSpace(profile) != "" {
+			profilePtr = &profile
+		}
 	}
 	envelope := Envelope{
 		Schema:           SchemaID(command),

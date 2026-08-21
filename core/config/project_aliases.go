@@ -21,24 +21,44 @@ func ValidateProjectAliasName(alias string) error {
 // ValidateProjectAliasProjectID validates the literal physical project ID
 // stored as an alias target. Accessibility is intentionally not checked.
 func ValidateProjectAliasProjectID(projectID string) error {
+	return validatePhysicalProjectID(projectID, true)
+}
+
+// ValidatePhysicalProjectID validates one literal physical project ID without
+// checking whether it exists or is accessible.
+func ValidatePhysicalProjectID(projectID string) error {
+	return validatePhysicalProjectID(projectID, false)
+}
+
+func validatePhysicalProjectID(projectID string, aliasTarget bool) error {
+	label := "physical project ID"
+	if aliasTarget {
+		label = "project alias target"
+	}
 	if projectID == "" {
-		return fmt.Errorf("project alias target must not be empty")
+		return fmt.Errorf("%s must not be empty", label)
 	}
 	if projectID != strings.TrimSpace(projectID) {
-		return fmt.Errorf("project alias target %q must not have surrounding whitespace", projectID)
+		return fmt.Errorf("%s %q must not have surrounding whitespace", label, projectID)
 	}
 	if strings.ContainsAny(projectID, " \t\r\n") {
-		return fmt.Errorf("project alias target %q must not contain whitespace", projectID)
+		return fmt.Errorf("%s %q must not contain whitespace", label, projectID)
 	}
 	lower := strings.ToLower(projectID)
 	if strings.HasPrefix(lower, "client@") || strings.HasPrefix(lower, "server@") {
-		return fmt.Errorf("project alias target %q must reference a physical project ID without a template prefix", projectID)
+		if aliasTarget {
+			return fmt.Errorf("project alias target %q must reference a physical project ID without a template prefix", projectID)
+		}
+		return fmt.Errorf("%s %q must not include a template prefix", label, projectID)
 	}
 	if strings.Contains(projectID, "@") {
-		return fmt.Errorf("project alias target %q must reference a physical project ID", projectID)
+		if aliasTarget {
+			return fmt.Errorf("project alias target %q must reference a physical project ID", projectID)
+		}
+		return fmt.Errorf("%s %q must be a physical project ID", label, projectID)
 	}
 	if strings.ContainsAny(projectID[:1], "=^/~") {
-		return fmt.Errorf("project alias target %q must not use a filter prefix", projectID)
+		return fmt.Errorf("%s %q must not use a filter prefix", label, projectID)
 	}
 	return nil
 }

@@ -83,6 +83,10 @@ func TestEnvironmentQuotaProjectRejectsUnsafeValueBeforeAuthLoading(t *testing.T
 			_, err := NewDiagnosticServiceForAuth(context.Background(), config.AuthEntry{Type: "unsupported"})
 			return err
 		}},
+		{name: "access token", load: func() error {
+			_, err := NewServiceWithAccessToken(context.Background(), "access-token")
+			return err
+		}},
 	} {
 		t.Run(construct.name, func(t *testing.T) {
 			err := construct.load()

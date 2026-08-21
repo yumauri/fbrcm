@@ -1,0 +1,35 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:response",
+  "contract_version": "1.0.0",
+  "command": "groups.list",
+  "requested_command": "groups.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project": "northstar-wallet",
+        "project_id": "northstar-wallet",
+        "version": "12",
+        "source": "firebase",
+        "has_draft": false,
+        "name": "support",
+        "description": "Customer support and maintenance messaging",
+        "parameter_count": 7
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

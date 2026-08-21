@@ -838,7 +838,7 @@ func capabilityIndexSchema() map[string]any {
 	summary := map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []string{"id", "path", "summary", "invocation_schema", "response_schema", "side_effect_level", "destructive"},
+		"required":             []string{"id", "path", "summary", "invocation_schema", "response_schema", "side_effect_level", "destructive", "supports"},
 		"properties": map[string]any{
 			"id":                map[string]any{"type": "string", "minLength": 1},
 			"path":              map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
@@ -847,6 +847,7 @@ func capabilityIndexSchema() map[string]any {
 			"response_schema":   map[string]any{"type": "string", "pattern": `^urn:fbrcm:schema:cli:`},
 			"side_effect_level": map[string]any{"type": "integer", "minimum": 0, "maximum": 3},
 			"destructive":       map[string]any{"type": "boolean"},
+			"supports":          CapabilitySupportSchema(),
 		},
 	}
 	return map[string]any{
@@ -860,6 +861,23 @@ func capabilityIndexSchema() map[string]any {
 			"contract_version": map[string]any{"const": Version},
 			"count":            map[string]any{"type": "integer", "minimum": 0},
 			"commands":         map[string]any{"type": "array", "items": summary},
+		},
+	}
+}
+
+// CapabilitySupportSchema returns the shared schema for detailed and compact
+// capability support declarations.
+func CapabilitySupportSchema() map[string]any {
+	return map[string]any{
+		"type":                 "object",
+		"additionalProperties": false,
+		"required":             []string{"dry_run", "draft", "confirmation_bypass", "stdin", "stateless"},
+		"properties": map[string]any{
+			"dry_run":             map[string]any{"type": "boolean"},
+			"draft":               map[string]any{"type": "boolean"},
+			"confirmation_bypass": map[string]any{"type": "boolean"},
+			"stdin":               map[string]any{"type": "boolean"},
+			"stateless":           map[string]any{"type": "boolean"},
 		},
 	}
 }

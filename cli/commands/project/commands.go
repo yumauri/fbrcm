@@ -50,13 +50,17 @@ func newOpenCommand(svc *core.Core, openURL func(string) error) *cobra.Command {
 		Short: "Open project Remote Config in the Firebase console",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := shared.ResolveProjectArg(shared.CommandContext(cmd), cmd, svc, args[0])
+			project, err := shared.ResolvePhysicalProjectForExecution(shared.CommandContext(cmd), cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			url := firebase.RemoteConfigConsoleURL(project.ProjectID)
 			if contract.Enabled(cmd) {
 				return shared.WriteJSON(cmd, projectOpenResult{ProjectID: project.ProjectID, URL: url, Opened: false})
+			}
+			if firebase.IsOffline() {
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), url)
+				return err
 			}
 			if err := openURL(url); err != nil {
 				return err
@@ -72,7 +76,8 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 		Short: "Export project Remote Config JSON",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := shared.ResolveProjectTargetArg(shared.CommandContext(cmd), cmd, svc, args[0])
+			ctx := shared.CommandContext(cmd)
+			project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -93,8 +98,13 @@ func newExportCommand(svc *core.Core) *cobra.Command {
 					return err
 				}
 			}
+			ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+			if err != nil {
+				return err
+			}
+			cmd.SetContext(ctx)
 
-			raw, _, err := svc.ExportRemoteConfig(shared.CommandContext(cmd), project.ProjectID)
+			raw, _, err := svc.ExportRemoteConfig(ctx, project.ProjectID)
 			if err != nil {
 				return err
 			}

@@ -1,0 +1,40 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:response",
+  "contract_version": "1.0.0",
+  "command": "project.export",
+  "requested_command": "project.export",
+  "outcome": "failure",
+  "exit_code": 4,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": null,
+  "errors": [
+    {
+      "code": "auth.credentials_invalid",
+      "category": "auth",
+      "message": "firebase error: firebase_remote_config get returned 401 Unauthorized: Request had invalid authentication credentials.",
+      "retryable": false,
+      "target": null,
+      "stage": null,
+      "details": {
+        "kind": "remote_api",
+        "service": "firebase_remote_config",
+        "operation": "get",
+        "http_status": 401,
+        "remote_status": "UNAUTHENTICATED",
+        "remote_code": "401",
+        "retry_after_ms": 0
+      },
+      "remediation": []
+    }
+  ],
+  "warnings": []
+}

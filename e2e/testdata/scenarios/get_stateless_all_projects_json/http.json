@@ -1,0 +1,1305 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1000"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/82UXUvDMBSG7/crwq7NSNokbXonw8EuNoUNBcWLtDudlfSDJENk+N9NW938YDJ246AEmvOep4eHpNsBQsPG1M+QOTtM0IN/R2jbrfvKfFOmYHx5SINYMC4Y5ZQOL37Epqs2Yot1pXTdWJzVla017HO6yCF7zTQsnHLQhi/Hy+nt1T5RqbLbX3SQ68ai8S+ISkG3s35O6ffywkCqbNcKlUo1rHYNX8p+ItNlVoXtQx+Ztx09M+BHWxb9GAEJBCYcU7EkMvEPFaOIhfd930fXX7aokCIKmQzDQ7ac/2Cpiwpwo9XrSa52CHTzHfF/puIkYCMZB8ea4jQkISMhZ+zQuWo22kJemzXgvHAVWItzQfLoFGU3LWvSstCkZ52FtShhdBQLeqw1ySSXIhDCX8cD1qrauCfrlMEvSmtwp9iafzLQ3U/G/7kSCWejiBx9F+NIhJIFhIvokKsSTKZcjcs6LTRgCSrjp/ia9Rw06zhnYsv/uQKyO1l+fRy8Dd4BKXvzlP8FAAA=",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:33 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Server-Timing": [
+              "gfet4t7; dur=863"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/streamline-play"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/33PsQrCMBAG4L1PUTJbTZM0Nt1EHFxEsCiIS5qcUom1NHEQ8d1NmyJOjnf/d3fcK4pj1MgboCJGbXe/gnJ2lpKUCz6nTFCKJj0Zo7XunXUdyJupG0haI59BWCfdsGWxLNf7VWjq2vZiMx7YfQfj7XdQ+Z6Dsg6EYMITnCUpL7EocF4QNhU5OQb7aPU/y8h0TrM8FyMHJy89PMxOSAHnGWM6S1UFGOgJBWNkBcZ69fKVr891B5W0wwFoZGVAD/AnStS9G3L/XgA+f0fv6AOiaJCVTgEAAA==",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:34 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/northstar-wallet"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/3XPwY6CMBAG4DtPQXpetC20WG5mswcvnogmxssAwy6mC6TtZmOM726hmHjxOPN/M5O5RXFMevhFUsRkNMMFa2fXKlNCSS4lE4x8TGSJds3k+sG4H+vAJP+gNbpAfMPNa7af5e7wFZpNZ0cN1/1yYf+cjI8vk7VBP1p2wXDKZUJFwmRJVUFlIbJVTtNTsH9j897mBUtXiqep2CwcHXxP8Lg+E4agVNZKv4wLmsOZBKOhQm29uvnK121nsAI7H8AeKo3NDF+ipB7MnPv/AvD5PbpHD9t0z6lQAQAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/mercato-mobile-9eac5"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/33PPW/DIBAG4N2/wmIuyfkDHLxFVYcMyWQ1UpUF8LVyhGML6BBF+e/F4CFTx+N9Xk73yPKc3OSIpM3JbKcrau+2u4ZXoi6B8aYgbwtZo0O/uBGtln6i46QGg1Sg1Cwx56WPX+3fu8PnR3rsBzcbeT+tW46pnR9jOxFtMRS7IYkSSk6B0YJ3IFrgbcE3JRRfyf7O/X+2qjesgko0K0cvfxZ43l4IZ5phswNgyGol4EKSMVKhcUE9whTm78Giki4uwJtUBvsIXyKqJxvzcF0CIX9mz+wPrE5cDFIBAAA=",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/pulseforge-fitness-f60f7"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/3XPsW7DIBAG4N1PYTGXBAzYwVtVNVKWqoPVSlUWMEfkiNoWOEMV5d2LwUOXjsf/8Z/uXpQlGtU3oLZEs5+u0C9hLygjjBMmOKfoaSVbdDLJ3VwAO/kLYDssI4SAbU1sk2lY1JLqnl+608drfjRDmJ36eds2va8Nx7WhPOaGzHoP8XM3ZFWRqsZEYFp3RLakaTndHWr6le1tNv/bQ0vITopGSLFxWNRlhZ/7M9LAma16I5iWsiL8jLJxSoMLUd3jFGc7eNAqpAUwKu3AJPgnwv3kUx4vzCDmj+JR/AIn2ABRWgEAAA==",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/signalops-console"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/33PMa+CMBAH8J1PQTqLUmgruBnj4OIbJJq8uBxwGEyFhsPhxfjdLS2D00u6XP+/u8u9gjBkHTyQbUJmhv6O1UgrnmRKSCW45JwtJjJHh3py1N460L2hqOo76jV6QyOMbs52VxzOe/9Zt2Q0/B3nFSfX+mMo3H23VgPa3qL1KIkTFcUy4qqI8419XC3XIv319mnq/2wqllKuec5njiPcJnhZXVnWiAbLJhEizzLI0yvzRkOJmqx62crWTTtgCeQWYAelxtrBr8iePrjcHuiBzd/BO/gAl88QpVIBAAA=",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/pulseforge-fitness-f60f7/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/2VQW2+CMBR+91eQPk8wxYDhaQRYJNuQYL1sy2IqdJVBqYHW6Yz/fQXntriXk/R8t/P12NM0sCN1k/OqAY72ot6aduzmLxJJtia1gsEQ3Fwwuc2wIChnpAXgAFr9gd2HFoLQGVgOtPSRbULLer6WzJrO6xKi9hU+mzxJhrE2J3WWVz8qhROG87IlHFqCvusIt7Td6ilnf6k5w5TM6o69EWLbOIZRbkydck5LIlV0yitBKtEKDWy4Hh3xNEQeLCYfCymnC7OZv/t36Xg1HH2us8LGrKmpPx0z/HafiQ1M/OUShuA78nRVblLnVB2v0pNgilZuHP77scO2KxtGXhI8BhFyH1az2HdRcPY8qfnaakBF9iJWdRAvSGdpgt6p9wVXr4y3swEAAA==",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/streamline-play/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/2VQW0+DMBR+51eQPjtYymSEJwlgRlRGtu6ixiwd1IJQSqBM57L/bmFOzXw5Sc93O18PiqqCHambjJcNsNVn+VbVQz9/kbBlW1JLGIzA1RlrqwQLgjJGOgAOoTkYjgfQRBDaQ9M2rjXDskam8XQpWTS91zlE7kt8MnlsGcbqktRJVv6oJE4YzoqOsO8I2q4n3NBuq8Wc/aVmDFOyqHt2KkTV2LpepIZGOacFaWV0zEtBStEJdaw7LrV4HCAX5tP3VdvOV0azfPNu48lmZH1uk3yMWVNTbz5h+PUuESmcees1DMB35PGi3LTOqDxeps/8Odo4UfDvx/ZVXzYI3Zn/4IfIud8sIs9B/snzKOdLpwEl+RCRrIN4TnpLAyhH5Qtd12R8swEAAA==",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/mercato-mobile-9eac5/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/2VQXW+CMBR951eQPk9g1aHhaQRYJNvUSFG3ZSEVusKg1EDROeN/X8G5Le7lJr3n654eFFUFW1LVGS9rYKkv8q2qh27+IpOGrUklYXADrs5Ys0mwIChjpAWgAc2eMexBE0FoGaZ1PdRMw4Qj8/lSEtad1zlE7kt8MnlqGMbqglRJVv6oJE4YzoqWsG8J2rYj3NJ2q8Wc/aVmDFMSVh07FWJTW7pepH2Nck4L0sjomJeClKIV6li3HTrisY8cmE93y6YJlv168e7exeNoMPpcJ/kQs7qibjBm+O0+ESmcu6sV9MF35PGi3LTKqDxeps+9AEX2zP/3Y/tNV9afOHPv0Zsg+yEKZ66NvJPnUc7XVgNK8iFmsg7iOeksB0A5Kl/x/rqYswEAAA==",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/signalops-console/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/2VQXW+CMBR991eQPk8whaHjaQRYJNvUQFG3ZSEVusq01JSic8b/voJzW9zLTXrP1z09dDQNbImoCl5WwNFe1FvTDu38RUY1WxChYGCDqzNWb3IsCSoYaQDYg3a31+9CG0Ho9GzHhLpl3diW9XwpSarW6xyi9iU+mTzVDGNtSkRelD8qhROGi3VD2DcEfdsSbmmz1TPO/lILhilJRMteSrmpHMNYL02dck7XpFbRGS8lKWUjNLDhenTAsxB5cDXezeo6npnV9N2/y4apNfhc5Ks+ZpWgfjxk+O0+l0sY+fM5DMF35PGi3FgUVB2v0qMgRqk7Cf/92H7Tlg1HXhQ8BiPkPqTJxHdRcPI8qvnaaEBJPuRE1UF8RVrLa9A5dr4A2SPOxbMBAAA=",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:35 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/2VQW0/CMBR+51csfZZdkc09SbYZFnEjMC5qDClb7SZ0XboWRcJ/txuiBl9O0vPdztdDR1HADrG6oGUNXOVZvhXl0M5fJBJkjZiEgWGCqzMoqgxylBQENYipm/2u7nR1IzEs1+i7PV3tWfb1jf10KZnVrdk5Re5LeDJ5FARCZY5YVpQ/KokjAottQ9g3BHXXEm5xs1VTSv5SCwIxmrGWnXNe1a6mbXNLxZTiLRIyOqUlRyVvhBrUBh52aBomnrmJ3xdCTBdWPX/z79Lhqud8rrONDUnNsD8dEvh6n/HcnPjLpRmC78jjRbmYFVgeL9O9OJrGo+Dfh+2rtmsYeZPgIYiSwWg1G/uDJDhZHuV8aTSgRB98LNskdINaR8MAnWPnC3jxoPu0AQAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:36 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/streamline-play/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "4"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:36 GMT"
+            ],
+            "Etag": [
+              "etag-121696734933-4"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/pulseforge-fitness-f60f7/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "4"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:36 GMT"
+            ],
+            "Etag": [
+              "etag-513034035441-4"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/signalops-console/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "6"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:36 GMT"
+            ],
+            "Etag": [
+              "etag-128645641511-6"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/mercato-mobile-9eac5/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "5"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:36 GMT"
+            ],
+            "Etag": [
+              "etag-876394205671-5"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "12"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 14:35:36 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-12"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

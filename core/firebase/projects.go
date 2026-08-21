@@ -33,6 +33,7 @@ type listProjectsResponse struct {
 }
 
 type getProjectV3Response struct {
+	Name        string `json:"name"`
 	ProjectID   string `json:"projectId"`
 	DisplayName string `json:"displayName"`
 	State       string `json:"state"`
@@ -235,11 +236,12 @@ func (s *Service) GetProject(ctx context.Context, projectID string) (Project, er
 	}
 
 	return Project{
-		Name:       strings.TrimSpace(payload.DisplayName),
-		ProjectID:  strings.TrimSpace(payload.ProjectID),
-		State:      strings.TrimSpace(payload.State),
-		ETag:       strings.TrimSpace(payload.Etag),
-		UpdateTime: strings.TrimSpace(payload.UpdateTime),
+		Name:          strings.TrimSpace(payload.DisplayName),
+		ProjectID:     strings.TrimSpace(payload.ProjectID),
+		ProjectNumber: strings.TrimPrefix(strings.TrimSpace(payload.Name), "projects/"),
+		State:         strings.TrimSpace(payload.State),
+		ETag:          strings.TrimSpace(payload.Etag),
+		UpdateTime:    strings.TrimSpace(payload.UpdateTime),
 	}, nil
 }
 

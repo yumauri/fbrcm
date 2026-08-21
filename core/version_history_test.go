@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -101,6 +102,52 @@ func TestGetRemoteConfigRelativeFirebaseVersion(t *testing.T) {
 	}
 	if resolved.Version.VersionNumber != "5" {
 		t.Fatalf("relative Firebase version = %q, want 5", resolved.Version.VersionNumber)
+	}
+}
+
+func TestGetRemoteConfigVersionHonorsStatelessExecutionPolicy(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	local := &config.ParametersCache{ETag: "etag-local", CachedAt: time.Now().UTC(), RemoteConfig: []byte(`{"version":{"versionNumber":"9"},"parameters":{"flag":{"defaultValue":{"value":"local"}}}}`)}
+	if err := config.SaveParametersCacheSnapshot("demo", local); err != nil {
+		t.Fatal(err)
+	}
+	snapshotPath := config.GetParametersCacheVersionPath("demo", "9")
+	snapshotBefore, err := os.ReadFile(snapshotPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Method == http.MethodGet && strings.Contains(req.URL.Path, "/remoteConfig") {
+			return jsonResponse(http.StatusOK, `{"version":{"versionNumber":"9"},"parameters":{"flag":{"defaultValue":{"value":"remote"}}}}`, `"etag-remote"`), nil
+		}
+		return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+	})})
+	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
+	ctx, err = WithDirectFirebaseService(ctx, "demo", client)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, err := svc.GetRemoteConfigVersion(ctx, "demo", "9", false)
+	if err != nil {
+		t.Fatalf("GetRemoteConfigVersion = %v", err)
+	}
+	if resolved.Cached || resolved.Cache == nil || resolved.Cache.ETag != `"etag-remote"` {
+		t.Fatalf("resolved version = %#v, want uncached remote result", resolved)
+	}
+	snapshotAfter, err := os.ReadFile(snapshotPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(snapshotAfter) != string(snapshotBefore) {
+		t.Fatal("version snapshot changed under stateless policy")
+	}
+
+	_, err = svc.GetRemoteConfigVersion(ctx, "demo", "9", true)
+	var policyErr *ExecutionPolicyError
+	if !errors.As(err, &policyErr) || policyErr.Capability != "local-state reads" {
+		t.Fatalf("cached-only error = %v, want local-read ExecutionPolicyError", err)
 	}
 }
 

@@ -42,3 +42,15 @@ func TestNoColorEnabled(t *testing.T) {
 		})
 	}
 }
+
+func TestLookupNonEmptyPreservesOpaqueValue(t *testing.T) {
+	t.Setenv(GoogleAccessToken, "  opaque token  ")
+	value, ok := LookupNonEmpty(GoogleAccessToken)
+	if !ok || value != "  opaque token  " {
+		t.Fatalf("LookupNonEmpty = %q, %t", value, ok)
+	}
+	t.Setenv(GoogleAccessToken, "")
+	if _, ok := LookupNonEmpty(GoogleAccessToken); ok {
+		t.Fatal("LookupNonEmpty accepted an empty value")
+	}
+}

@@ -37,16 +37,16 @@ func printProjects(cmd *cobra.Command, svc *core.Core, projects []core.Project, 
 	if err != nil {
 		return err
 	}
-	aliases, err := config.LoadProjectAliases()
-	if err != nil {
-		return err
+	aliasesByID := map[string][]string{}
+	if core.ExecutionPolicyFromContext(shared.CommandContext(cmd)).ReadLocalState {
+		aliases, err := config.LoadProjectAliases()
+		if err != nil {
+			return err
+		}
+		aliasesByID = config.ProjectAliasesByID(aliases)
 	}
-	aliasesByID := config.ProjectAliasesByID(aliases)
 
-	projects, err = shared.FilterProjects(projects, filterValues)
-	if err != nil {
-		return err
-	}
+	projects = shared.FilterProjectsWithAliases(projects, filterValues, aliasesByID)
 	projects, err = shared.FilterProjectsByExpr(shared.CommandContext(cmd), svc, projects, projectExpr)
 	if err != nil {
 		return err

@@ -77,6 +77,9 @@ type ProjectPromotionResult struct {
 }
 
 func (s *Core) PrepareProjectPromotion(ctx context.Context, source, target Project, opts ProjectPromotionOptions) (*ProjectPromotionPlan, error) {
+	if err := requireLocalStateRead(ctx, "project promotion preparation"); err != nil {
+		return nil, err
+	}
 	if source.ProjectID == "" || target.ProjectID == "" {
 		return nil, fmt.Errorf("source and target projects are required")
 	}
@@ -293,6 +296,12 @@ func (s *Core) SaveProjectPromotionDraft(preview *ProjectPromotionPreview) (*Pro
 }
 
 func (s *Core) PublishProjectPromotion(ctx context.Context, preview *ProjectPromotionPreview) (*ProjectPromotionResult, error) {
+	if err := requireLocalStateRead(ctx, "project promotion publication"); err != nil {
+		return nil, err
+	}
+	if err := requireLocalStateWrite(ctx, "project promotion publication"); err != nil {
+		return nil, err
+	}
 	ctx = corehooks.WithOperation(ctx, "promotion")
 	if err := validatePromotionPreview(preview); err != nil {
 		return nil, err

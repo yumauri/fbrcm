@@ -95,7 +95,7 @@ func copyFixtureTree(source, destination string, replacements []SnapshotReplacem
 	return nil
 }
 
-func PrepareEnvironment(root, fixturesRoot string, suite Suite, proxyURL, certificatePath, accessToken string, terminalWidth int, logLevel string, localConfig bool) (Environment, error) {
+func PrepareEnvironment(root, fixturesRoot string, suite Suite, proxyURL, certificatePath, accessToken string, terminalWidth int, logLevel string, localConfig bool, scenarioEnvironment map[string]string) (Environment, error) {
 	configDir := filepath.Join(root, "config")
 	cacheDir := filepath.Join(root, "cache")
 	profileConfigDir := filepath.Join(configDir, "default")
@@ -139,13 +139,20 @@ func PrepareEnvironment(root, fixturesRoot string, suite Suite, proxyURL, certif
 	for _, key := range []string{
 		"ALL_PROXY", "all_proxy", "HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy",
 		"NO_PROXY", "no_proxy", "FBRCM_OFFLINE", "FBRCM_PROFILE", "FBRCM_EDITOR",
-		"FBRCM_HOOK_TRUST", "GOOGLE_CLOUD_QUOTA_PROJECT", "XDG_CONFIG_HOME",
+		"FBRCM_E2E_ACCESS_TOKEN", "FBRCM_GOOGLE_ACCESS_TOKEN", "FBRCM_HOOK_TRUST",
+		"GOOGLE_CLOUD_QUOTA_PROJECT", "XDG_CONFIG_HOME",
 	} {
 		delete(values, key)
 	}
 	values["HOME"] = homeDir
 	values["FBRCM_CONFIG_DIR"] = configDir
 	values["FBRCM_CACHE_DIR"] = cacheDir
+	for name, value := range scenarioEnvironment {
+		if value == e2eAccessTokenVariable {
+			value = accessToken
+		}
+		values[name] = value
+	}
 	if !localConfig {
 		values["FBRCM_NO_LOCAL_CONFIG"] = "1"
 	}

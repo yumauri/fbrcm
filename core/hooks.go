@@ -24,5 +24,8 @@ func (s *Core) hookOutputWriter() io.Writer {
 }
 
 func (s *Core) preparePublicationHooks(ctx context.Context, target string, current, candidate json.RawMessage) (*corehooks.Session, error) {
+	if !ExecutionPolicyFromContext(ctx).RunHooks {
+		return nil, nil
+	}
 	return corehooks.Prepare(corehooks.MetadataFromContext(ctx, target, current, candidate), s.hookOutputWriter())
 }

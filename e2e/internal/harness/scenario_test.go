@@ -64,6 +64,7 @@ func TestLoadScenariosAcceptsZeroHTTPAndExpandsProject(t *testing.T) {
   "expected_state_files":[{"root":"CONFIG","path":"default/projects.json","json_replacements":{"/synced_at":"<SYNCED_AT>"}}],
   "expected_absent_state_paths":[{"root":"cache","path":"default/remote-config"}],
   "json_output":true,
+  "envs":{"FBRCM_GOOGLE_ACCESS_TOKEN":"${FBRCM_E2E_ACCESS_TOKEN}"},
   "offline":true
 }`,
 		"remote": `{
@@ -87,7 +88,7 @@ func TestLoadScenariosAcceptsZeroHTTPAndExpandsProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(scenarios) != 2 || len(scenarios[0].ExpectedHTTP) != 0 || len(scenarios[0].ExpectedFiles) != 1 || scenarios[0].ExpectedFiles[0] != "export.json" || !scenarios[0].Offline {
+	if len(scenarios) != 2 || len(scenarios[0].ExpectedHTTP) != 0 || len(scenarios[0].ExpectedFiles) != 1 || scenarios[0].ExpectedFiles[0] != "export.json" || !scenarios[0].Offline || scenarios[0].Environment["FBRCM_GOOGLE_ACCESS_TOKEN"] != e2eAccessTokenVariable {
 		t.Fatalf("scenarios = %#v", scenarios)
 	}
 	stateFile := scenarios[0].ExpectedStateFiles[0]
@@ -123,6 +124,28 @@ func TestLoadScenariosRejectsReplayOnlyWithoutHTTP(t *testing.T) {
 	}
 	if _, err := LoadScenarios(root, Suite{ProjectID: "fixture-project"}); err == nil {
 		t.Fatal("LoadScenarios accepted http_replay_only without HTTP expectations")
+	}
+}
+
+func TestLoadScenariosRejectsHarnessOwnedEnvironmentOverride(t *testing.T) {
+	root := t.TempDir()
+	directory := filepath.Join(root, "invalid")
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	raw := `{
+  "name":"invalid",
+  "command_id":"project.export",
+  "args":["--stateless","project","export","fixture-project","--json"],
+  "expected_exit_code":0,
+  "expected_http":[],
+  "envs":{"HTTPS_PROXY":"https://uncontrolled.example"}
+}`
+	if err := os.WriteFile(filepath.Join(directory, "scenario.json"), []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadScenarios(root, Suite{ProjectID: "fixture-project"}); err == nil {
+		t.Fatal("LoadScenarios accepted a harness-owned environment override")
 	}
 }
 

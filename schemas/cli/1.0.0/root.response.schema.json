@@ -37,6 +37,34 @@
                   },
                   "summary": {
                     "type": "string"
+                  },
+                  "supports": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "confirmation_bypass": {
+                        "type": "boolean"
+                      },
+                      "draft": {
+                        "type": "boolean"
+                      },
+                      "dry_run": {
+                        "type": "boolean"
+                      },
+                      "stateless": {
+                        "type": "boolean"
+                      },
+                      "stdin": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "dry_run",
+                      "draft",
+                      "confirmation_bypass",
+                      "stdin",
+                      "stateless"
+                    ],
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -46,7 +74,8 @@
                   "invocation_schema",
                   "response_schema",
                   "side_effect_level",
-                  "destructive"
+                  "destructive",
+                  "supports"
                 ],
                 "type": "object"
               },

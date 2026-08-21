@@ -11,9 +11,22 @@ import (
 
 const (
 	projectVariable         = "${PROJECT_ID}"
+	e2eAccessTokenVariable  = "${FBRCM_E2E_ACCESS_TOKEN}"
 	defaultTerminalWidth    = 200
 	defaultScenarioLogLevel = "debug"
 )
+
+var protectedScenarioEnvironment = map[string]bool{
+	"ALL_PROXY":              true,
+	"FBRCM_CACHE_DIR":        true,
+	"FBRCM_CONFIG_DIR":       true,
+	"FBRCM_E2E_ACCESS_TOKEN": true,
+	"HOME":                   true,
+	"HTTPS_PROXY":            true,
+	"HTTP_PROXY":             true,
+	"NO_PROXY":               true,
+	"SSL_CERT_FILE":          true,
+}
 
 // Suite identifies the stable Firebase project represented by committed cassettes.
 type Suite struct {
@@ -31,11 +44,13 @@ type Scenario struct {
 	Args                     []string               `json:"args"`
 	ExpectedExitCode         int                    `json:"expected_exit_code"`
 	ExpectedHTTP             []HTTPExpectation      `json:"expected_http"`
+	HTTPUnordered            bool                   `json:"http_unordered,omitempty"`
 	HTTPReplayOnly           bool                   `json:"http_replay_only,omitempty"`
 	ExpectedFiles            []string               `json:"expected_files,omitempty"`
 	ExpectedStateFiles       []StateFileExpectation `json:"expected_state_files,omitempty"`
 	ExpectedAbsentStatePaths []StatePathExpectation `json:"expected_absent_state_paths,omitempty"`
 	JSONOutput               bool                   `json:"json_output,omitempty"`
+	Environment              map[string]string      `json:"envs,omitempty"`
 	Fixture                  string                 `json:"fixture,omitempty"`
 	LocalConfig              bool                   `json:"local_config,omitempty"`
 	Offline                  bool                   `json:"offline,omitempty"`
@@ -130,6 +145,17 @@ func LoadScenarios(root string, suite Suite) ([]Scenario, error) {
 		scenario.LogLevel = strings.ToLower(strings.TrimSpace(scenario.LogLevel))
 		if scenario.LogLevel != "" && !validLogLevel(scenario.LogLevel) {
 			return nil, fmt.Errorf("scenario %s has unsupported log_level %q", scenario.Name, scenario.LogLevel)
+		}
+		for name, value := range scenario.Environment {
+			if name == "" || strings.ContainsAny(name, "=\x00") {
+				return nil, fmt.Errorf("scenario %s envs contains invalid variable name %q", scenario.Name, name)
+			}
+			if strings.ContainsRune(value, '\x00') {
+				return nil, fmt.Errorf("scenario %s envs variable %q contains a null byte", scenario.Name, name)
+			}
+			if protectedScenarioEnvironment[strings.ToUpper(name)] {
+				return nil, fmt.Errorf("scenario %s envs cannot override harness-owned variable %s", scenario.Name, name)
+			}
 		}
 		for index := range scenario.Args {
 			scenario.Args[index] = strings.ReplaceAll(scenario.Args[index], projectVariable, suite.ProjectID)

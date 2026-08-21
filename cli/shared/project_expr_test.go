@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/yumauri/fbrcm/core"
@@ -36,6 +37,17 @@ func TestFilterProjects(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].ProjectID != "alpha" {
 		t.Fatalf("FilterProjects = %+v", got)
+	}
+}
+
+func TestFilterProjectsWithAliasesCanExcludeLocalAliases(t *testing.T) {
+	projects := []core.Project{{Name: "Production", ProjectID: "acme-production-42"}}
+	if got := FilterProjectsWithAliases(projects, []string{"=prod"}, nil); len(got) != 0 {
+		t.Fatalf("filter without aliases = %+v, want no match", got)
+	}
+	aliases := map[string][]string{"acme-production-42": {"prod"}}
+	if got := FilterProjectsWithAliases(projects, []string{"=prod"}, aliases); len(got) != 1 {
+		t.Fatalf("filter with aliases = %+v, want one match", got)
 	}
 }
 
@@ -98,6 +110,42 @@ func TestFilterProjectTargetsDefaultsToClient(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].ProjectID != "mobile-prod" {
 		t.Fatalf("targets = %#v", got)
+	}
+}
+
+func TestFilterProjectTargetsWithAliasesCanExcludeLocalAliases(t *testing.T) {
+	projects := []core.Project{{Name: "Production", ProjectID: "acme-production-42"}}
+	got, err := FilterProjectTargetsWithAliases(projects, []string{"=prod"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("filter without aliases = %+v, want no match", got)
+	}
+
+	got, err = FilterProjectTargetsWithAliases(projects, []string{"server@=prod"}, map[string][]string{"acme-production-42": {"prod"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ProjectID != "server@acme-production-42" {
+		t.Fatalf("filter with aliases = %+v, want server target", got)
+	}
+}
+
+func TestFilterProjectTargetsWithAliasesPreservesRemoteFilterModes(t *testing.T) {
+	projects := []core.Project{{Name: "My Test Application", ProjectID: "my-test-project"}}
+	for _, selector := range []string{"test", "^my-test", "/Test App", "~mtpr", "server@test"} {
+		got, err := FilterProjectTargetsWithAliases(projects, []string{selector}, nil)
+		if err != nil {
+			t.Fatalf("selector %q: %v", selector, err)
+		}
+		wantID := "my-test-project"
+		if strings.HasPrefix(selector, "server@") {
+			wantID = "server@my-test-project"
+		}
+		if len(got) != 1 || got[0].ProjectID != wantID {
+			t.Fatalf("selector %q = %+v, want %q", selector, got, wantID)
+		}
 	}
 }
 

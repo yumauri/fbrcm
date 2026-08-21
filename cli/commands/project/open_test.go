@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/spf13/cobra"
+
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
@@ -52,6 +55,70 @@ func TestOpenCommandResolvesProjectAndOpensRemoteConfigConsole(t *testing.T) {
 		if err := cmd.Execute(); err == nil {
 			t.Fatalf("non-exact project selector %q unexpectedly resolved", query)
 		}
+	}
+}
+
+func TestOpenCommandStatelessUsesLiteralProjectIDWithoutService(t *testing.T) {
+	var openedURL string
+	cmd := newOpenCommand(nil, func(url string) error {
+		openedURL = url
+		return nil
+	})
+	cmd.SetContext(core.WithExecutionPolicy(cmd.Context(), core.StatelessExecutionPolicy()))
+	cmd.SetArgs([]string{"demo-project"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute stateless open command: %v", err)
+	}
+	if want := firebase.RemoteConfigConsoleURL("demo-project"); openedURL != want {
+		t.Fatalf("opened URL = %q, want %q", openedURL, want)
+	}
+
+	for _, project := range []string{"=demo-project", "client@demo-project", "server@demo-project"} {
+		cmd := newOpenCommand(nil, func(string) error { return nil })
+		cmd.SetContext(core.WithExecutionPolicy(cmd.Context(), core.StatelessExecutionPolicy()))
+		cmd.SetArgs([]string{project})
+		if err := cmd.Execute(); err == nil {
+			t.Errorf("stateless project open accepted %q", project)
+		}
+	}
+}
+
+func TestOpenCommandOfflinePrintsURLWithoutOpeningBrowser(t *testing.T) {
+	firebase.SetOfflineMode(true)
+	t.Cleanup(func() { firebase.SetOfflineMode(false) })
+	statefulService := saveProjectsForTest(t, []config.Project{{Name: "Demo", ProjectID: "demo-project", AuthID: "main"}})
+
+	tests := []struct {
+		name      string
+		service   *core.Core
+		configure func(*cobra.Command)
+	}{
+		{name: "stateful", service: statefulService, configure: func(*cobra.Command) {}},
+		{name: "stateless", configure: func(cmd *cobra.Command) {
+			cmd.SetContext(core.WithExecutionPolicy(cmd.Context(), core.StatelessExecutionPolicy()))
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			opened := false
+			cmd := newOpenCommand(test.service, func(string) error {
+				opened = true
+				return nil
+			})
+			test.configure(cmd)
+			var output bytes.Buffer
+			cmd.SetOut(&output)
+			cmd.SetArgs([]string{"demo-project"})
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("execute offline project open: %v", err)
+			}
+			if opened {
+				t.Fatal("offline project open launched a browser")
+			}
+			if want := firebase.RemoteConfigConsoleURL("demo-project") + "\n"; output.String() != want {
+				t.Fatalf("offline output = %q, want %q", output.String(), want)
+			}
+		})
 	}
 }
 

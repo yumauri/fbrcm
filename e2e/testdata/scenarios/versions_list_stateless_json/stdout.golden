@@ -1,0 +1,51 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:response",
+  "contract_version": "1.0.0",
+  "command": "versions.list",
+  "requested_command": "versions.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 2,
+    "items": [
+      {
+        "versionNumber": "12",
+        "updateTime": "2026-08-01T10:16:40Z",
+        "updateUser": {
+          "name": "Yumaa Verdin",
+          "email": "yumaa.verdin@gmail.com"
+        },
+        "change_note": null,
+        "updateOrigin": "CONSOLE",
+        "updateType": "INCREMENTAL_UPDATE",
+        "current": false,
+        "cached": false
+      },
+      {
+        "versionNumber": "11",
+        "updateTime": "2026-07-30T18:10:01Z",
+        "updateUser": {
+          "name": "Yumaa Verdin",
+          "email": "yumaa.verdin@gmail.com"
+        },
+        "change_note": "Reduce pending transaction days",
+        "updateOrigin": "REST_API",
+        "updateType": "INCREMENTAL_UPDATE",
+        "current": false,
+        "cached": false
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -1,0 +1,185 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "11"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 15:46:37 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-11"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "12"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Thu, 20 Aug 2026 15:46:37 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-12"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

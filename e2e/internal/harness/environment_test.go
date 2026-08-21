@@ -10,6 +10,8 @@ import (
 
 func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 	t.Setenv("GOOGLE_CLOUD_QUOTA_PROJECT", "parent-quota-project")
+	t.Setenv("FBRCM_E2E_ACCESS_TOKEN", "parent-e2e-token")
+	t.Setenv("FBRCM_GOOGLE_ACCESS_TOKEN", "parent-stateless-token")
 	root := t.TempDir()
 	fixtures := filepath.Join(root, "fixtures")
 	if err := os.MkdirAll(fixtures, 0o700); err != nil {
@@ -31,6 +33,7 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 		240,
 		"warn",
 		false,
+		map[string]string{"FBRCM_GOOGLE_ACCESS_TOKEN": e2eAccessTokenVariable},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -44,6 +47,12 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 	}
 	if values["GOOGLE_CLOUD_QUOTA_PROJECT"] != "suite-quota-project" {
 		t.Fatalf("quota project = %q", values["GOOGLE_CLOUD_QUOTA_PROJECT"])
+	}
+	if values["FBRCM_GOOGLE_ACCESS_TOKEN"] != "fixture-token" {
+		t.Fatalf("stateless access token = %q", values["FBRCM_GOOGLE_ACCESS_TOKEN"])
+	}
+	if _, exists := values["FBRCM_E2E_ACCESS_TOKEN"]; exists {
+		t.Fatal("private E2E access token variable leaked into child environment")
 	}
 	if values["COLUMNS"] != "240" {
 		t.Fatalf("terminal width = %q", values["COLUMNS"])
@@ -74,10 +83,11 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 		Suite{ProjectID: "fixture-project", ProjectName: "Fixture Project"},
 		"http://127.0.0.1:1234",
 		filepath.Join(root, "cert.pem"),
-		"fixture-token",
+		"",
 		0,
 		"",
 		false,
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -85,11 +95,52 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 	if _, exists := environmentMap(withoutQuota.Variables)["GOOGLE_CLOUD_QUOTA_PROJECT"]; exists {
 		t.Fatal("parent GOOGLE_CLOUD_QUOTA_PROJECT leaked into isolated environment")
 	}
+	if _, exists := environmentMap(withoutQuota.Variables)["FBRCM_GOOGLE_ACCESS_TOKEN"]; exists {
+		t.Fatal("parent stateless access token leaked into ordinary scenario environment")
+	}
 	if got := environmentMap(withoutQuota.Variables)["COLUMNS"]; got != "200" {
 		t.Fatalf("default terminal width = %q", got)
 	}
 	if got := environmentMap(withoutQuota.Variables)["FBRCM_LOG_LEVEL"]; got != "debug" {
 		t.Fatalf("default log level = %q", got)
+	}
+
+	replayStateless, err := PrepareEnvironment(
+		filepath.Join(root, "run-replay-stateless"),
+		fixtures,
+		Suite{ProjectID: "fixture-project", ProjectName: "Fixture Project"},
+		"http://127.0.0.1:1234",
+		filepath.Join(root, "cert.pem"),
+		"",
+		0,
+		"",
+		false,
+		map[string]string{"FBRCM_GOOGLE_ACCESS_TOKEN": e2eAccessTokenVariable},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := environmentMap(replayStateless.Variables)["FBRCM_GOOGLE_ACCESS_TOKEN"]; got != replayToken {
+		t.Fatalf("replay stateless access token = %q, want replay token", got)
+	}
+
+	literalStateless, err := PrepareEnvironment(
+		filepath.Join(root, "run-literal-stateless"),
+		fixtures,
+		Suite{ProjectID: "fixture-project", ProjectName: "Fixture Project"},
+		"http://127.0.0.1:1234",
+		filepath.Join(root, "cert.pem"),
+		"fixture-token",
+		0,
+		"",
+		false,
+		map[string]string{"FBRCM_GOOGLE_ACCESS_TOKEN": "incorrect"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := environmentMap(literalStateless.Variables)["FBRCM_GOOGLE_ACCESS_TOKEN"]; got != "incorrect" {
+		t.Fatalf("literal stateless access token = %q, want incorrect", got)
 	}
 }
 
@@ -106,7 +157,7 @@ func TestPrepareEnvironmentCanEnableLocalConfig(t *testing.T) {
 	}
 	environment, err := PrepareEnvironment(
 		filepath.Join(root, "run"), fixtures, Suite{ProjectID: "fixture-project"},
-		"http://127.0.0.1:1234", filepath.Join(root, "cert.pem"), "token", 200, "debug", true,
+		"http://127.0.0.1:1234", filepath.Join(root, "cert.pem"), "token", 200, "debug", true, nil,
 	)
 	if err != nil {
 		t.Fatal(err)

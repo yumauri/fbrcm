@@ -7,7 +7,9 @@ The harness runs a real `fbrcm` process through an HTTPS Hoverfly proxy. Replay
 mode never contacts Firebase: unmatched requests fail at the proxy. The command's
 stdout, stderr, exit status, HTTP method, destination, request count, and replay
 mode are all checked. Each scenario declares the expected HTTP method, host,
-path, status, and order. Committed HTTP simulations preserve response bodies
+path, and status. Order is checked by default; `"http_unordered": true` compares
+the declared and observed requests as a multiset for intentionally concurrent
+commands. Committed HTTP simulations preserve response bodies
 exactly and are sanitized before they are written.
 
 ## Requirements
@@ -215,6 +217,15 @@ non-mutating methods such as Firebase validate-only requests without broadly
 allowing mutations. Captured fixtures are checked for supplied tokens and common
 credential fields before being saved.
 
+The harness writes the value supplied through `FBRCM_E2E_ACCESS_TOKEN` to the
+temporary OAuth profile used by stateful scenarios. Replay mode substitutes its
+fixed non-secret replay token when no live token was supplied. Scenario `envs`
+may map the exact value `${FBRCM_E2E_ACCESS_TOKEN}` to an application variable;
+the harness replaces it with that effective live-or-replay token. Unlisted
+variables are not inferred from argv, and inherited `FBRCM_GOOGLE_ACCESS_TOKEN`
+is removed. The private `FBRCM_E2E_ACCESS_TOKEN` variable itself is never
+forwarded to fbrcm.
+
 Use `"http_replay_only": true` for a scenario whose HTTP response is
 intentionally synthetic or whose live upstream operation observes account-wide
 resources. Its `http.json` must already exist and is never captured or replaced
@@ -272,6 +283,21 @@ cache and fallback coverage and still enforces a zero-request HTTP contract.
 Set `json_output` when stdout uses the versioned CLI JSON envelope. The harness
 then validates stdout against
 `schemas/cli/1.0.0/<command>.response.schema.json` before snapshot comparison.
+Use `envs` for explicit command environment setup. An exact
+`${FBRCM_E2E_ACCESS_TOKEN}` value selects the harness's effective live-or-replay
+token; any other value is passed literally. For example:
+
+```json
+{
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"
+  }
+}
+```
+
+Omit the entry to test a missing variable, or use a literal such as
+`"incorrect"` to test malformed credentials. The harness rejects overrides of
+its private token, isolated state roots, proxy configuration, and trusted CA.
 
 For a command that must not use the network, declare an empty contract:
 

@@ -222,6 +222,12 @@ func extensionSchemaDefinitions() map[string]any {
 		}},
 		"normalization_rules": map[string]any{"type": "array", "minItems": 1, "items": ref("normalization_rule")},
 		"matching_rule": map[string]any{"oneOf": []any{
+			object([]string{"operator", "comparison", "default_template", "lookup"}, map[string]any{
+				"operator":         map[string]any{"const": "literal_project_id"},
+				"comparison":       map[string]any{"const": "exact_case_sensitive"},
+				"default_template": map[string]any{"const": "client"},
+				"lookup":           map[string]any{"const": false},
+			}),
 			object([]string{"operator", "fields", "query_normalization", "default_mode", "mode_prefixes", "comparison"}, map[string]any{
 				"operator":            map[string]any{"const": "mode_prefixed_query"},
 				"fields":              map[string]any{"type": "array", "minItems": 1, "uniqueItems": true, "items": stringValue},
@@ -240,6 +246,7 @@ func extensionSchemaDefinitions() map[string]any {
 				},
 				"unqualified_target_selection": map[string]any{"enum": []string{
 					"all_configured_enabled_templates",
+					"client_template",
 					"existing_drafts_in_configured_enabled_templates_or_client_fallback",
 				}},
 				"explicit_target_selection":      map[string]any{"const": "single_named_template"},

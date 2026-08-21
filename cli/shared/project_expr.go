@@ -96,8 +96,20 @@ func FilterProjects(projects []core.Project, rawFilters []string) ([]core.Projec
 	if err != nil {
 		return nil, err
 	}
-	aliasesByID := config.ProjectAliasesByID(aliases)
+	return filterProjectsWithAliases(projects, filters, config.ProjectAliasesByID(aliases)), nil
+}
 
+// FilterProjectsWithAliases filters projects by remote names and IDs plus the
+// explicitly supplied aliases. Passing an empty alias map avoids local state.
+func FilterProjectsWithAliases(projects []core.Project, rawFilters []string, aliasesByID map[string][]string) []core.Project {
+	filters := ParseFilters(rawFilters)
+	if len(filters) == 0 {
+		return projects
+	}
+	return filterProjectsWithAliases(projects, filters, aliasesByID)
+}
+
+func filterProjectsWithAliases(projects []core.Project, filters []QueryFilter, aliasesByID map[string][]string) []core.Project {
 	filtered := make([]core.Project, 0, len(projects))
 	for _, project := range projects {
 		for _, item := range filters {
@@ -110,13 +122,24 @@ func FilterProjects(projects []core.Project, rawFilters []string) ([]core.Projec
 			}
 		}
 	}
-	return filtered, nil
+	return filtered
 }
 
 // FilterProjectTargets applies project filters after parsing an optional
 // client@ or server@ template prefix. Explicit prefixes select one template;
 // unqualified filters expand to each project's configured template views.
 func FilterProjectTargets(projects []core.Project, rawFilters []string) ([]core.Project, error) {
+	aliases, err := config.LoadProjectAliases()
+	if err != nil {
+		return nil, err
+	}
+	return FilterProjectTargetsWithAliases(projects, rawFilters, config.ProjectAliasesByID(aliases))
+}
+
+// FilterProjectTargetsWithAliases applies target-aware project filters using
+// only the explicitly supplied aliases. Passing an empty alias map avoids
+// reading or matching repository-local project aliases.
+func FilterProjectTargetsWithAliases(projects []core.Project, rawFilters []string, aliasesByID map[string][]string) ([]core.Project, error) {
 	type targetFilter struct {
 		target   rctarget.Target
 		explicit bool
@@ -141,12 +164,6 @@ func FilterProjectTargets(projects []core.Project, rawFilters []string) ([]core.
 			filter:   QueryFilter{Mode: mode, Query: query},
 		})
 	}
-	aliases, err := config.LoadProjectAliases()
-	if err != nil {
-		return nil, err
-	}
-	aliasesByID := config.ProjectAliasesByID(aliases)
-
 	filtered := make([]core.Project, 0, len(projects)*2)
 	seen := make(map[string]struct{})
 	for _, project := range projects {
@@ -391,7 +408,11 @@ func templateProjectID(value string) string {
 }
 
 func loadProjectExprConfig(ctx context.Context, svc *core.Core, project core.Project) (*firebase.RemoteConfig, error) {
-	cache, _, err := svc.GetParameters(ctx, project.ProjectID, false)
+	executionCtx, err := FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	cache, _, err := svc.GetParameters(executionCtx, project.ProjectID, false)
 	if err != nil {
 		return nil, err
 	}

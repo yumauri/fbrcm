@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response",
+  "contract_version": "1.0.0",
+  "command": "conditions.validate",
+  "requested_command": "conditions.validate",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "northstar-wallet",
+      "project_id": "northstar-wallet",
+      "auth_id": "",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "source": "firebase",
+    "valid": true
+  },
+  "errors": [],
+  "warnings": []
+}
