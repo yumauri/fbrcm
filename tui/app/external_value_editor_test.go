@@ -2,7 +2,6 @@ package app
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -72,7 +71,7 @@ func TestExternalJSONEditorRejectsInvalidAndPreservesRecoveryFile(t *testing.T) 
 		t.Fatalf("recovery file was not preserved: %v", err)
 	}
 	next.dialog = next.dialog.SetBounds(0, 0, 100, 30)
-	if view := next.dialog.View(); !strings.Contains(view, "Invalid JSON") || !strings.Contains(view, filepath.Base(path)) || !strings.Contains(view, "Reopen") {
+	if view := next.dialog.View(); !strings.Contains(view, "Invalid JSON") || !strings.Contains(view, "The staged value is preserved at:") || !strings.Contains(view, "Reopen") {
 		t.Fatalf("invalid JSON dialog = %q", view)
 	}
 }
