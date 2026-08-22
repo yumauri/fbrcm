@@ -42,6 +42,9 @@ func TestProjectAliasValidation(t *testing.T) {
 			t.Fatalf("ValidateProjectAliasProjectID(%q) succeeded", projectID)
 		}
 	}
+	if err := ValidatePhysicalProjectID("acme-production-42"); err != nil {
+		t.Fatalf("ValidatePhysicalProjectID valid = %v", err)
+	}
 	if err := ValidateProjectAliases(map[string]string{"prod-eu_2": "acme-production-42"}); err != nil {
 		t.Fatalf("valid aliases = %v", err)
 	}

@@ -16,7 +16,7 @@ func TestListProjectsAndGetProject(t *testing.T) {
 				body := `{"projects":[{"projectId":"demo","name":"Demo","lifecycleState":"ACTIVE"}]}`
 				return jsonHTTPResponse(http.StatusOK, body, ""), nil
 			case req.Method == http.MethodGet && strings.HasPrefix(req.URL.Path, "/v3/projects/"):
-				body := `{"projectId":"demo","displayName":"Demo Display","state":"ACTIVE","etag":"e1","updateTime":"2026-01-01T00:00:00Z"}`
+				body := `{"name":"projects/123456789","projectId":"demo","displayName":"Demo Display","state":"ACTIVE","etag":"e1","updateTime":"2026-01-01T00:00:00Z"}`
 				return jsonHTTPResponse(http.StatusOK, body, ""), nil
 			default:
 				return nil, io.EOF
@@ -36,7 +36,7 @@ func TestListProjectsAndGetProject(t *testing.T) {
 	}
 
 	project, err := svc.GetProject(context.Background(), "demo")
-	if err != nil || project.Name != "Demo Display" {
+	if err != nil || project.Name != "Demo Display" || project.ProjectNumber != "123456789" {
 		t.Fatalf("GetProject = %+v err=%v", project, err)
 	}
 }

@@ -31,6 +31,7 @@ import (
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
 	versionscmd "github.com/yumauri/fbrcm/cli/commands/versions"
 	"github.com/yumauri/fbrcm/cli/contract"
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
@@ -99,9 +100,45 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			if err := shared.CommandContext(cmd).Err(); err != nil {
 				return err
 			}
-			if contract.Enabled(cmd) {
-				cmd.SetContext(firebase.WithOAuthInteractionAllowed(shared.CommandContext(cmd), false))
+			ctx := shared.CommandContext(cmd)
+			stateless, err := cmd.Flags().GetBool("stateless")
+			if err != nil {
+				return shared.InvalidArgument(err)
 			}
+			if stateless {
+				ctx = core.WithExecutionPolicy(ctx, core.StatelessExecutionPolicy())
+				ctx = machine.WithProfileless(ctx)
+				cmd.SetContext(ctx)
+				commandID := contract.CommandID(cmd)
+				if !contract.SupportsStatelessCommand(commandID) {
+					return shared.InvalidArgument(fmt.Errorf("--stateless is not supported by %s", strings.TrimPrefix(cmd.CommandPath(), "fbrcm ")))
+				}
+				if cmd.Flags().Changed("profile") {
+					return shared.InvalidArgument(fmt.Errorf("--profile cannot be used with --stateless"))
+				}
+				requiresAccessToken := contract.StatelessCommandRequiresAccessToken(commandID)
+				if commandID == "get" && shared.StdinAvailable(cmd.InOrStdin()) {
+					requiresAccessToken = false
+				}
+				if requiresAccessToken {
+					if _, ok := env.LookupNonEmpty(env.GoogleAccessToken); !ok {
+						return &core.AuthError{
+							Kind: "configuration",
+							Err:  fmt.Errorf("%s is required with --stateless", env.GoogleAccessToken),
+						}
+					}
+				}
+				corelog.For("cli.stateless").Info(
+					"stateless mode enabled",
+					"command", commandID,
+				)
+			} else {
+				ctx = core.WithExecutionPolicy(ctx, core.StatefulExecutionPolicy())
+			}
+			if contract.Enabled(cmd) {
+				ctx = firebase.WithOAuthInteractionAllowed(ctx, false)
+			}
+			cmd.SetContext(ctx)
 			timeout, err := cmd.Flags().GetDuration("timeout")
 			if err != nil {
 				return shared.InvalidArgument(err)
@@ -116,12 +153,16 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			if err != nil {
 				return shared.InvalidArgument(err)
 			}
-			config.SetLocalConfigDisabled(noLocalConfig)
+			config.SetLocalConfigDisabled(noLocalConfig || stateless)
 			if cmd.Name() == "help" || contract.IsCommandGroup(cmd) || isConfigCommand(cmd) || isHooksCommand(cmd) || isProjectAliasesCommand(cmd) || isContractMetadataCommand(cmd) {
 				initOfflineMode(shared.CommandContext(cmd), false)
 				return nil
 			}
 			progress.Start(commandProgressMessage(cmd))
+			if machine.Profileless(shared.CommandContext(cmd)) {
+				initOfflineMode(shared.CommandContext(cmd), false)
+				return nil
+			}
 			profileName, err := cmd.Flags().GetString("profile")
 			if err != nil {
 				return shared.InvalidArgument(err)
@@ -151,6 +192,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.SetVersionTemplate(versionTemplate)
 	profileDefault, _ := env.LookupTrimmed(env.Profile)
 	rootCmd.PersistentFlags().String("profile", profileDefault, "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)")
+	rootCmd.PersistentFlags().Bool("stateless", false, "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)")
 	rootCmd.PersistentFlags().Bool("no-local-config", false, "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)")
 	rootCmd.PersistentFlags().Bool("json", false, "Emit one versioned machine-readable JSON envelope")
 	rootCmd.PersistentFlags().Duration("timeout", 0, "Maximum duration for the complete command")

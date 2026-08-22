@@ -1,6 +1,7 @@
 package managedfeatures
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -75,12 +76,12 @@ func newExperimentsListCommand(svc *core.Core) *cobra.Command {
 		Short: "List experiments and their parameter bindings",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveReadProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigExperiments(shared.CommandContext(cmd), project, update)
+			result, err := svc.ListRemoteConfigExperiments(ctx, project, update)
 			if err != nil {
 				return err
 			}
@@ -120,12 +121,12 @@ func newExperimentsShowCommand(svc *core.Core) *cobra.Command {
 		Short: "Show experiment details and parameter bindings",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveReadProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			experiment, template, err := svc.GetRemoteConfigExperiment(shared.CommandContext(cmd), project, args[1], update)
+			experiment, template, err := svc.GetRemoteConfigExperiment(ctx, project, args[1], update)
 			if err != nil {
 				return err
 			}
@@ -148,7 +149,7 @@ func newExperimentsDeleteCommand(svc *core.Core) *cobra.Command {
 		Short: "Delete an experiment",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, _, err := resolveProjectForExecution(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -193,12 +194,12 @@ func newRolloutsListCommand(svc *core.Core) *cobra.Command {
 		Short: "List rollouts and their parameter bindings",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveReadProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigRollouts(shared.CommandContext(cmd), project, update)
+			result, err := svc.ListRemoteConfigRollouts(ctx, project, update)
 			if err != nil {
 				return err
 			}
@@ -221,12 +222,12 @@ func newRolloutsShowCommand(svc *core.Core) *cobra.Command {
 		Short: "Show rollout details and parameter bindings",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveReadProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			rollout, template, err := svc.GetRemoteConfigRollout(shared.CommandContext(cmd), project, args[1], update)
+			rollout, template, err := svc.GetRemoteConfigRollout(ctx, project, args[1], update)
 			if err != nil {
 				return err
 			}
@@ -249,7 +250,7 @@ func newRolloutsDeleteCommand(svc *core.Core) *cobra.Command {
 		Short: "Delete a rollout",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, _, err := resolveProjectForExecution(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -294,12 +295,12 @@ func newPersonalizationsListCommand(svc *core.Core) *cobra.Command {
 		Short: "List personalizations and their parameter bindings",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveReadProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigPersonalizations(shared.CommandContext(cmd), project, update)
+			result, err := svc.ListRemoteConfigPersonalizations(ctx, project, update)
 			if err != nil {
 				return err
 			}
@@ -323,12 +324,12 @@ func newPersonalizationsShowCommand(svc *core.Core) *cobra.Command {
 		Short: "Show personalization parameter bindings",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveReadProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
 			update, _ := cmd.Flags().GetBool("update")
-			personalization, template, err := svc.GetRemoteConfigPersonalization(shared.CommandContext(cmd), project, args[1], update)
+			personalization, template, err := svc.GetRemoteConfigPersonalization(ctx, project, args[1], update)
 			if err != nil {
 				return err
 			}
@@ -346,22 +347,61 @@ func newPersonalizationsShowCommand(svc *core.Core) *cobra.Command {
 }
 
 func resolveProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	project, _, err := resolveProjectForExecution(cmd, svc, query)
+	return project, err
+}
+
+func resolveProjectForExecution(cmd *cobra.Command, svc *core.Core, query string) (core.Project, context.Context, error) {
 	target, explicit, err := rctarget.ParsePositionalSelector(query)
 	if err != nil {
-		return core.Project{}, shared.InvalidArgument(err)
+		return core.Project{}, nil, shared.InvalidArgument(err)
 	}
 	if explicit {
 		if target.Kind == rctarget.Server {
-			return core.Project{}, shared.InvalidArgument(fmt.Errorf(
+			return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf(
 				"managed features support only the client Remote Config namespace; omit the server@ prefix",
 			))
 		}
-		return core.Project{}, shared.InvalidArgument(fmt.Errorf(
+		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf(
 			"managed-feature commands are project-scoped; omit the client@ prefix",
 		))
 	}
 	ctx := shared.CommandContext(cmd)
-	return shared.ResolveProjectArg(ctx, cmd, svc, target.ProjectID)
+	project, err := shared.ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
+	if err != nil {
+		return core.Project{}, nil, err
+	}
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return core.Project{}, nil, err
+	}
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		project, err = svc.GetProjectDetails(ctx, project.ProjectID)
+		if err != nil {
+			return core.Project{}, nil, err
+		}
+	}
+	cmd.SetContext(ctx)
+	return project, ctx, nil
+}
+
+func resolveReadProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, context.Context, error) {
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
+	if err != nil {
+		return core.Project{}, nil, shared.InvalidArgument(err)
+	}
+	if explicit {
+		if target.Kind == rctarget.Server {
+			return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("managed features support only the client Remote Config namespace; omit the server@ prefix"))
+		}
+		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("managed-feature commands are project-scoped; omit the client@ prefix"))
+	}
+	ctx := shared.CommandContext(cmd)
+	update, _ := cmd.Flags().GetBool("update")
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
+		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+	}
+	return resolveProjectForExecution(cmd, svc, target.ProjectID)
 }
 
 func addTemplateReadFlags(cmd *cobra.Command, noun string) {

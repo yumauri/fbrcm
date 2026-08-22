@@ -96,6 +96,7 @@ func RunScenario(ctx context.Context, scenario Scenario, suite Suite, options Ru
 		terminalWidth,
 		logLevel,
 		scenario.LocalConfig,
+		scenario.Environment,
 	)
 	if err != nil {
 		return RunReport{}, err
@@ -115,7 +116,7 @@ func RunScenario(ctx context.Context, scenario Scenario, suite Suite, options Ru
 	if err != nil {
 		return RunReport{}, err
 	}
-	if err := validateJournal(journal, scenario.ExpectedHTTP, capture); err != nil {
+	if err := validateJournal(journal, scenario.ExpectedHTTP, capture, scenario.HTTPUnordered); err != nil {
 		return RunReport{Result: result}, fmt.Errorf(
 			"%w\nexit code: %d\nstdout:\n%s\nstderr:\n%s",
 			err,
@@ -291,13 +292,35 @@ func appendPathReplacements(replacements []SnapshotReplacement, path, placeholde
 	return replacements
 }
 
-func validateJournal(journal Journal, expected []HTTPExpectation, capture bool) error {
+func validateJournal(journal Journal, expected []HTTPExpectation, capture, unordered bool) error {
 	if journal.Total != len(expected) || len(journal.Entries) != len(expected) {
 		return fmt.Errorf("Hoverfly journal contains %d requests (total %d), want %d", len(journal.Entries), journal.Total, len(expected))
 	}
 	wantMode := "simulate"
 	if capture {
 		wantMode = "capture"
+	}
+	if unordered {
+		remaining := append([]HTTPExpectation(nil), expected...)
+		for index, entry := range journal.Entries {
+			matched := -1
+			matchedQuery := false
+			for candidateIndex, candidate := range remaining {
+				if !journalEntryMatches(entry, candidate, wantMode) {
+					continue
+				}
+				exactQuery := candidate.Query != ""
+				if matched == -1 || exactQuery && !matchedQuery {
+					matched = candidateIndex
+					matchedQuery = exactQuery
+				}
+			}
+			if matched == -1 {
+				return fmt.Errorf("request %d (%s %s%s, status %d, mode %s) has no matching unordered expectation", index+1, entry.Request.Method, entry.Request.Destination, entry.Request.Path, entry.Response.Status, entry.Mode)
+			}
+			remaining = append(remaining[:matched], remaining[matched+1:]...)
+		}
+		return nil
 	}
 	for index, entry := range journal.Entries {
 		want := expected[index]
@@ -321,6 +344,16 @@ func validateJournal(journal Journal, expected []HTTPExpectation, capture bool) 
 		}
 	}
 	return nil
+}
+
+func journalEntryMatches(entry JournalEntry, want HTTPExpectation, wantMode string) bool {
+	if entry.Mode != wantMode || entry.Request.Method != want.Method || entry.Request.Path != want.Path || entry.Response.Status != want.Status {
+		return false
+	}
+	if entry.Request.Destination != want.Host && entry.Request.Destination != want.Host+":443" {
+		return false
+	}
+	return want.Query == "" || entry.Request.Query == want.Query
 }
 
 func emptySimulation() []byte {

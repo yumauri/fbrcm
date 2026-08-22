@@ -128,18 +128,29 @@ func newListCommand(svc *core.Core) *cobra.Command {
 		Use:   "list",
 		Short: "List projects using cache-first loading",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := shared.CommandContext(cmd)
 			forceUpdate, err := cmd.Flags().GetBool("update")
 			if err != nil {
 				return err
+			}
+			if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+				if forceUpdate {
+					return shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; project discovery is already live"))
+				}
+				ctx, err = shared.FirebaseProjectDiscoveryContextForExecution(ctx)
+				if err != nil {
+					return err
+				}
+				cmd.SetContext(ctx)
 			}
 
 			var projects []core.Project
 			var source string
 			if forceUpdate {
 				progress.Start("Syncing projects…")
-				projects, source, err = svc.SyncProjects(shared.CommandContext(cmd))
+				projects, source, err = svc.SyncProjects(ctx)
 			} else {
-				projects, source, err = svc.ListProjects(shared.CommandContext(cmd))
+				projects, source, err = svc.ListProjectsForExecution(ctx)
 			}
 			if err != nil {
 				return err

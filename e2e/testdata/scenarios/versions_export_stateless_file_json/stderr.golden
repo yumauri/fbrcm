@@ -1,0 +1,13 @@
+[1mDEBU[m logger initialized [2mmode[m[2m=[mcli [2mlog_level[m[2m=[mDEBUG
+[1mDEBU[m core service initialized [2mcomponent[m[2m=[mcore
+[1mDEBU[m application start [2mcomponent[m[2m=[mmain [2mmode[m[2m=[mcli [2marg_count[m[2m=[m8
+[1mDEBU[m start cli [2mcomponent[m[2m=[mcli
+[1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
+[1mINFO[m stateless mode enabled [2mcomponent[m[2m=[mcli.stateless [2mcommand[m[2m=[mversions.export
+[1mINFO[m get remote config [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mversion[m[2m=[m11
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig?versionNumber=11"[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig?versionNumber=11"[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/remoteConfig?versionNumber=11"[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Alt-Svc=h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000 Content-Type=application/json; charset=UTF-8 Date=Sat, 22 Aug 2026 06:55:41 GMT Etag=etag-949596266151-11 Hoverfly=Was-Here Server=ESF Vary=Origin,X-Origin,Referer X-Content-Type-Options=nosniff X-Frame-Options=SAMEORIGIN X-Xss-Protection=0"
+[1mINFO[m remote config loaded [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2metag[m[2m=[metag-949596266151-11 [2mbytes[m[2m=[m10783
+[1mDEBU[m ensure private file [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[mversion-11.json [2mmode[m[2m=[m0600
+[1mDEBU[m private file ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[mversion-11.json

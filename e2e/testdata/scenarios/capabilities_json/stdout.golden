@@ -28,7 +28,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": true,
+          "stateless": true
+        }
       },
       {
         "id": "auth.add.gcloud",
@@ -41,7 +48,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "auth.add.oauth",
@@ -54,7 +68,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": true,
+          "stateless": false
+        }
       },
       {
         "id": "auth.add.service-account",
@@ -67,7 +88,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": true,
+          "stateless": false
+        }
       },
       {
         "id": "auth.bind",
@@ -79,7 +107,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "auth.delete",
@@ -91,7 +126,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "auth.list",
@@ -103,7 +145,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "auth.login",
@@ -115,7 +164,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "auth.path",
@@ -127,7 +183,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "cache.clear",
@@ -139,7 +202,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "cache.list",
@@ -151,7 +221,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "cache.path",
@@ -163,7 +240,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "capabilities",
@@ -174,7 +258,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "completion.bash",
@@ -186,7 +277,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "completion.fish",
@@ -198,7 +296,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "completion.powershell",
@@ -210,7 +315,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "completion.zsh",
@@ -222,7 +334,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "conditions.add",
@@ -234,7 +353,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.delete",
@@ -246,7 +372,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.edit",
@@ -258,7 +391,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.list",
@@ -270,7 +410,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.move",
@@ -282,7 +429,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.rename",
@@ -294,7 +448,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.show",
@@ -306,7 +467,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "conditions.validate",
@@ -318,7 +486,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "config.edit",
@@ -330,7 +505,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "config.path",
@@ -342,7 +524,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "config.reset",
@@ -354,7 +543,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "config.set",
@@ -366,7 +562,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "config.show",
@@ -378,7 +581,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "config.validate",
@@ -390,7 +600,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "delete",
@@ -401,7 +618,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": true,
+          "stateless": true
+        }
       },
       {
         "id": "doctor",
@@ -412,7 +636,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.change-note",
@@ -424,7 +655,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.diff",
@@ -436,7 +674,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.discard",
@@ -448,7 +693,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.list",
@@ -460,7 +712,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.path",
@@ -472,7 +731,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.publish",
@@ -484,7 +750,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "draft.show",
@@ -496,7 +769,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "duplicate",
@@ -507,7 +787,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "experiments.delete",
@@ -519,7 +806,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "experiments.list",
@@ -531,7 +825,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "experiments.show",
@@ -543,7 +844,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "get",
@@ -554,7 +862,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": true,
+          "stateless": true
+        }
       },
       {
         "id": "groups.add",
@@ -566,7 +881,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "groups.delete",
@@ -578,7 +900,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "groups.edit",
@@ -590,7 +919,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "groups.list",
@@ -602,7 +938,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "groups.rename",
@@ -614,7 +957,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:response",
         "side_effect_level": 3,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "help",
@@ -625,7 +975,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "hooks.fingerprint",
@@ -637,7 +994,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "hooks.status",
@@ -649,7 +1013,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "hooks.trust",
@@ -661,7 +1032,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "hooks.untrust",
@@ -673,7 +1051,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "personalizations.list",
@@ -685,7 +1070,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "personalizations.show",
@@ -697,7 +1089,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "profile",
@@ -708,7 +1107,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "profile.delete",
@@ -720,7 +1126,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "profile.list",
@@ -732,7 +1145,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "profile.path",
@@ -744,7 +1164,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "profile.rename",
@@ -756,7 +1183,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "profile.switch",
@@ -768,7 +1202,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "project.defaults",
@@ -780,7 +1221,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:response",
         "side_effect_level": 2,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "project.export",
@@ -792,7 +1240,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:response",
         "side_effect_level": 2,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "project.import",
@@ -804,7 +1259,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": true,
+          "stateless": true
+        }
       },
       {
         "id": "project.open",
@@ -816,7 +1278,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "project.show",
@@ -828,7 +1297,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "project.templates.set",
@@ -841,7 +1317,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "project.templates.show",
@@ -854,7 +1337,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.aliases.import",
@@ -867,7 +1357,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.aliases.list",
@@ -880,7 +1377,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.aliases.remove",
@@ -893,7 +1397,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.aliases.set",
@@ -906,7 +1417,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.diff",
@@ -918,7 +1436,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "projects.forget",
@@ -930,7 +1455,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.list",
@@ -942,7 +1474,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "projects.path",
@@ -954,7 +1493,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.promote",
@@ -966,7 +1512,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "projects.reset",
@@ -978,7 +1531,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:response",
         "side_effect_level": 1,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "projects.update",
@@ -990,7 +1550,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "rollouts.delete",
@@ -1002,7 +1569,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "rollouts.list",
@@ -1014,7 +1588,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "rollouts.show",
@@ -1026,7 +1607,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "root",
@@ -1035,7 +1623,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "schema.list",
@@ -1047,7 +1642,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "schema.show",
@@ -1059,7 +1661,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
         "side_effect_level": 1,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "update",
@@ -1070,7 +1679,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": true,
+          "confirmation_bypass": true,
+          "stdin": true,
+          "stateless": true
+        }
       },
       {
         "id": "versions.diff",
@@ -1082,7 +1698,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "versions.export",
@@ -1094,7 +1717,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:response",
         "side_effect_level": 2,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "versions.list",
@@ -1106,7 +1736,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "versions.restore",
@@ -1118,7 +1755,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
       },
       {
         "id": "versions.rollback",
@@ -1130,7 +1774,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:response",
         "side_effect_level": 3,
-        "destructive": true
+        "destructive": true,
+        "supports": {
+          "dry_run": true,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": true
+        }
       },
       {
         "id": "versions.show",
@@ -1142,7 +1793,14 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:response",
         "side_effect_level": 2,
-        "destructive": false
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": true
+        }
       }
     ]
   },

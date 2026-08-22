@@ -36,7 +36,7 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 				return shared.InvalidArgument(err)
 			}
 			ctx := shared.CommandContext(cmd)
-			project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, args[0])
+			project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -57,6 +57,11 @@ func newDefaultsCommandWithDownloader(svc *core.Core, download defaultsDownloade
 					return err
 				}
 			}
+			ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+			if err != nil {
+				return err
+			}
+			cmd.SetContext(ctx)
 
 			defaults, err := download(ctx, project.ProjectID, format)
 			if err != nil {

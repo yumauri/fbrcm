@@ -1,0 +1,42 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:response",
+  "contract_version": "1.0.0",
+  "command": "conditions.list",
+  "requested_command": "conditions.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "priority": 1,
+        "name": "android_users",
+        "expression": "device.os == 'android'",
+        "tag_color": "BLUE",
+        "usages": [
+          {
+            "group_key": "__default__",
+            "group": "(root)",
+            "parameter": "welcome_message",
+            "value": "Hello Android",
+            "raw_value": "Hello Android",
+            "value_type": "STRING",
+            "plain": true
+          }
+        ]
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

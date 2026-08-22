@@ -1,0 +1,12 @@
+{
+  "name": "project_export_stateless_missing_token_json",
+  "command_id": "project.export",
+  "args": ["--stateless", "project", "export", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 4,
+  "expected_http": [],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"}
+  ],
+  "json_output": true
+}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -102,6 +103,50 @@ func TestGetParametersForceFetchFromFirebase(t *testing.T) {
 	}
 	if _, err := config.LoadParametersCacheVersion("demo", "1"); err != nil {
 		t.Fatalf("old version not preserved: %v", err)
+	}
+}
+
+func TestGetParametersHonorsStatelessExecutionPolicy(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	saveDefaultParametersCache(t, map[string]string{"flag": "cached"})
+	cachePath := config.GetParametersCachePath("demo")
+	cacheBefore, err := os.ReadFile(cachePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const fetchedBody = `{"version":{"versionNumber":"99"},"parameters":{"flag":{"defaultValue":{"value":"remote"}}}}`
+	client := firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		switch {
+		case req.Method == http.MethodGet && strings.Contains(req.URL.Path, "listVersions"):
+			return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"99"}]}`, ""), nil
+		case req.Method == http.MethodGet && strings.Contains(req.URL.Path, "/remoteConfig"):
+			return jsonResponse(http.StatusOK, fetchedBody, `"etag-remote"`), nil
+		default:
+			return nil, errors.New("unexpected request: " + req.Method + " " + req.URL.String())
+		}
+	})})
+	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
+	ctx, err = WithDirectFirebaseService(ctx, "demo", client)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cache, source, err := svc.GetParameters(ctx, "demo", false)
+	if err != nil {
+		t.Fatalf("GetParameters = %v", err)
+	}
+	if source != "firebase" {
+		t.Fatalf("source = %q, want firebase", source)
+	}
+	assertRemoteConfigVersion(t, cache.RemoteConfig, "99")
+
+	cacheAfter, err := os.ReadFile(cachePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(cacheAfter) != string(cacheBefore) {
+		t.Fatalf("cache file changed under stateless policy")
 	}
 }
 

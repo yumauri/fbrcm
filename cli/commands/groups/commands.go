@@ -91,19 +91,22 @@ func loadProjects(cmd *cobra.Command, svc *core.Core) ([]loadedGroups, error) {
 	if err != nil {
 		return nil, err
 	}
-	projects, _, err := svc.ListProjects(ctx)
-	if err != nil {
-		return nil, err
+	update, _ := cmd.Flags().GetBool("update")
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
+		return nil, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
 	}
-	projects, err = shared.FilterProjectTargets(projects, projectFilters)
+	projects, ctx, err := shared.ResolveProjectTargetsForExecution(ctx, cmd, svc, projectFilters)
 	if err != nil {
 		return nil, err
 	}
 	strfold.SortProjects(projects, func(project core.Project) string { return project.Name }, func(project core.Project) string { return project.ProjectID })
-	update, _ := cmd.Flags().GetBool("update")
 	loaded := make([]loadedGroups, 0, len(projects))
 	for _, project := range projects {
-		item, err := loadProjectGroups(ctx, svc, project, update)
+		projectCtx, err := shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+		if err != nil {
+			return nil, err
+		}
+		item, err := loadProjectGroups(projectCtx, svc, project, update)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +120,13 @@ func loadProjectGroups(ctx context.Context, svc *core.Core, project core.Project
 	if err != nil {
 		return loadedGroups{}, err
 	}
-	tree, hasDraft, err := svc.BuildDraftAwareParametersTree(project.ProjectID, cache)
+	var tree *core.ParametersTree
+	var hasDraft bool
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		tree, hasDraft, err = svc.BuildDraftAwareParametersTree(project.ProjectID, cache)
+	} else {
+		tree, err = svc.BuildParametersTree(cache)
+	}
 	if err != nil {
 		return loadedGroups{}, err
 	}
@@ -154,6 +163,9 @@ func loadCache(ctx context.Context, svc *core.Core, projectID string, update boo
 	}
 	if err == nil {
 		return cache, source, nil
+	}
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return nil, "", err
 	}
 	stale, state, inspectErr := svc.InspectParametersCache(projectID)
 	if inspectErr == nil && state != core.ParametersCacheMissing && stale != nil {

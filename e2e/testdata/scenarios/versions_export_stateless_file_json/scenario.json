@@ -1,0 +1,33 @@
+{
+  "name": "versions_export_stateless_file_json",
+  "command_id": "versions.export",
+  "args": [
+    "--stateless",
+    "versions",
+    "export",
+    "${PROJECT_ID}",
+    "11",
+    "--to",
+    "version-11.json",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=11",
+      "status": 200
+    }
+  ],
+  "expected_files": ["version-11.json"],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"}
+  ],
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"
+  },
+  "json_output": true
+}

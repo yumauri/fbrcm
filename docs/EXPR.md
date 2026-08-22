@@ -215,6 +215,12 @@ fbrcm duplicate <source> <target> --expr '...'
 
 The expression is evaluated once per project. The command loads that project's Remote Config so project filters can inspect parameters too.
 
+With `projects list --stateless`, ordinary project filters run first, then the
+current client Remote Config template is fetched directly for each remaining
+project. The resulting `conditions`, `groups`, and `parameters` fields have the
+same expression semantics as stateful mode, but no local cache is read or
+written.
+
 `projects forget` is deliberately local: it evaluates against the cached client
 template and supplies an empty config context when no cache exists. Project-only
 expressions therefore still work without contacting Firebase.

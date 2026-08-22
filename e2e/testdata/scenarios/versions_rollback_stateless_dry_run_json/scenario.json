@@ -1,0 +1,26 @@
+{
+  "name": "versions_rollback_stateless_dry_run_json",
+  "command_id": "versions.rollback",
+  "args": [
+    "--stateless", "versions", "rollback", "${PROJECT_ID}", "11",
+    "--dry-run", "--yes", "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "versionNumber=11", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions", "query": "pageSize=1", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "versionNumber=11", "status": 200},
+    {"method": "PUT", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "validateOnly=true", "status": 200}
+  ],
+  "log_level": "warn",
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"},
+    {"root": "cache", "path": "default/versions"},
+    {"root": "cache", "path": "default/drafts"}
+  ],
+  "envs": {"FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"},
+  "json_output": true
+}

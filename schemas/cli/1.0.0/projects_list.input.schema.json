@@ -29,6 +29,47 @@
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:input",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "else": {
+            "properties": {
+              "profile": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/path_segment"
+                  }
+                ]
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            },
+            "properties": {
+              "update": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "arguments": {
       "additionalProperties": false,
@@ -41,7 +82,7 @@
       "properties": {
         "expr": {
           "$ref": "#/$defs/expression",
-          "description": "Filter projects by expr-lang expression",
+          "description": "Filter projects by expr-lang expression; with --stateless, evaluates against directly fetched client Remote Config after project filtering",
           "pattern": ".*\\S.*",
           "x-fbrcm-normalization": [
             {
@@ -87,13 +128,21 @@
           "type": "boolean"
         },
         "profile": {
-          "allOf": [
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
             {
-              "$ref": "#/$defs/path_segment"
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
             }
           ],
-          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
-          "type": "string",
           "x-fbrcm-normalization": [
             {
               "operator": "trim_unicode_whitespace",
@@ -101,6 +150,10 @@
               "target": "normalized_invocation"
             }
           ]
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
         },
         "timeout": {
           "description": "Maximum duration for the complete command",
@@ -119,8 +172,20 @@
           ]
         },
         "update": {
-          "description": "Update projects from Firebase before printing",
-          "type": "boolean"
+          "description": "Update projects from Firebase before printing; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
         },
         "url": {
           "description": "Include Firebase Console Remote Config URL",

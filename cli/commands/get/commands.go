@@ -1,7 +1,9 @@
 package get
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -55,7 +57,14 @@ func runGetCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if err != nil {
 		return err
 	}
-	if shared.StdinAvailable(cmd.InOrStdin()) {
+	stdinAvailable := shared.StdinAvailable(cmd.InOrStdin())
+	if opts.update && !core.ExecutionPolicyFromContext(shared.CommandContext(cmd)).ReadLocalState {
+		return shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+	}
+	if opts.update && stdinAvailable {
+		return shared.InvalidArgument(fmt.Errorf("--update cannot be used with stdin; stdin Remote Config is already the complete input"))
+	}
+	if stdinAvailable {
 		return runGetStdin(cmd, opts)
 	}
 	return runGetRemote(cmd, svc, opts)
@@ -127,15 +136,12 @@ func runGetStdin(cmd *cobra.Command, opts getOptions) error {
 }
 
 func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
-	progress.Start("Loading projects…")
-	projects, _, err := svc.ListProjects(shared.CommandContext(cmd))
+	ctx := shared.CommandContext(cmd)
+	projects, ctx, err := resolveGetProjectsForExecution(ctx, cmd, svc, opts.projectFilters)
 	if err != nil {
 		return err
 	}
-	projects, err = shared.FilterProjectTargets(projects, opts.projectFilters)
-	if err != nil {
-		return err
-	}
+	cmd.SetContext(ctx)
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
 	if opts.update {
@@ -147,7 +153,7 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	if err != nil {
 		return err
 	}
-	loaded, err := loadProjectsParameters(shared.CommandContext(cmd), svc, projects, opts.update)
+	loaded, err := loadProjectsParameters(ctx, svc, projects, opts.update)
 	if err != nil {
 		return err
 	}
@@ -163,7 +169,11 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 		if item.cfg == nil || item.cache == nil {
 			continue
 		}
-		projectRows, err := flattenParameters(item.project, item.cfg, item.cache.CachedAt, item.status, "", compiledExpr, opts.search)
+		cachedAt := item.cache.CachedAt
+		if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+			cachedAt = time.Time{}
+		}
+		projectRows, err := flattenParameters(item.project, item.cfg, cachedAt, item.status, "", compiledExpr, opts.search)
 		if err != nil {
 			return err
 		}
@@ -189,6 +199,10 @@ func runGetRemote(cmd *cobra.Command, svc *core.Core, opts getOptions) error {
 	_, _ = fmt.Fprintln(cmd.OutOrStdout(), table.Render(tableRows, shared.ParseFilters(opts.paramFilters), paramExact, !projectExact))
 	logGetTotals("table", tableRows)
 	return nil
+}
+
+func resolveGetProjectsForExecution(ctx context.Context, cmd *cobra.Command, svc *core.Core, projectFilters []string) ([]core.Project, context.Context, error) {
+	return shared.ResolveProjectTargetsForExecution(ctx, cmd, svc, projectFilters)
 }
 
 func printGetRows(cmd *cobra.Command, source string, rows []parameterRow, paramFilters []string, paramArgument *string, jsonOut bool, allowHideKey, includeProject bool) error {

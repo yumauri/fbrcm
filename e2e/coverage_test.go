@@ -17,6 +17,9 @@ type capabilityIndex struct {
 		ID              string `json:"id"`
 		SideEffectLevel int    `json:"side_effect_level"`
 		Destructive     bool   `json:"destructive"`
+		Supports        struct {
+			Stateless bool `json:"stateless"`
+		} `json:"supports"`
 	} `json:"commands"`
 }
 
@@ -147,6 +150,52 @@ func TestCoreParameterMutationDryRunCoverage(t *testing.T) {
 	sort.Strings(missing)
 	if len(missing) > 0 {
 		t.Fatalf("core parameter commands need safe dry-run E2E coverage: %v", missing)
+	}
+}
+
+func TestStatelessCommandCoverage(t *testing.T) {
+	e2eRoot, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	suite, err := harness.LoadSuite(filepath.Join(e2eRoot, "testdata", "suite.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenarios, err := harness.LoadScenarios(filepath.Join(e2eRoot, "testdata", "scenarios"), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var capabilities capabilityIndex
+	readJSONTest(t, filepath.Join(e2eRoot, "..", "cli", "app", "testdata", "contract_v1_capabilities.golden.json"), &capabilities)
+
+	supported := make(map[string]bool)
+	for _, capability := range capabilities.Commands {
+		if capability.Supports.Stateless {
+			supported[capability.ID] = true
+		}
+	}
+	covered := make(map[string]bool)
+	for _, scenario := range scenarios {
+		if !slices.Contains(scenario.Args, "--stateless") {
+			continue
+		}
+		if !supported[scenario.CommandID] {
+			t.Errorf("scenario %s uses --stateless for unsupported command %q", scenario.Name, scenario.CommandID)
+			continue
+		}
+		covered[scenario.CommandID] = true
+	}
+
+	var missing []string
+	for id := range supported {
+		if !covered[id] {
+			missing = append(missing, id)
+		}
+	}
+	sort.Strings(missing)
+	if len(missing) > 0 {
+		t.Fatalf("commands advertising supports.stateless need a stateless E2E scenario: %v", missing)
 	}
 }
 

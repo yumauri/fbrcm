@@ -47,6 +47,12 @@ func (s *Core) inspectParametersCacheOrError(projectID string) (*ParametersCache
 }
 
 func (s *Core) mutateDraft(ctx context.Context, projectID string, publish bool, spec draft.MutationSpec) (*ParametersCache, *ParametersTree, bool, error) {
+	if err := requireLocalStateRead(ctx, "draft mutation"); err != nil {
+		return nil, nil, false, err
+	}
+	if err := requireLocalStateWrite(ctx, "draft mutation"); err != nil {
+		return nil, nil, false, err
+	}
 	result, hasDraftBefore, err := draft.Mutate(ctx, s.draftDeps(), projectID, publish, spec)
 	if err != nil && result == nil {
 		return nil, nil, hasDraftBefore, err
@@ -116,10 +122,19 @@ func (s *Core) DeleteDraft(projectID string) error {
 }
 
 func (s *Core) PrepareDraftPublish(ctx context.Context, projectID string) (*DraftPublishPlan, error) {
+	if err := requireLocalStateRead(ctx, "draft publication preparation"); err != nil {
+		return nil, err
+	}
 	return draft.PreparePublish(ctx, s.draftDeps(), projectID)
 }
 
 func (s *Core) ExecuteDraftPublish(ctx context.Context, projectID string, plan *DraftPublishPlan) (*ParametersCache, *ParametersTree, error) {
+	if err := requireLocalStateRead(ctx, "draft publication"); err != nil {
+		return nil, nil, err
+	}
+	if err := requireLocalStateWrite(ctx, "draft publication"); err != nil {
+		return nil, nil, err
+	}
 	ctx = corehooks.WithOperation(ctx, "draft-publish")
 	cache, _, publishErr := draft.ExecutePublish(ctx, s.draftDeps(), projectID, plan)
 	if publishErr != nil && cache == nil {

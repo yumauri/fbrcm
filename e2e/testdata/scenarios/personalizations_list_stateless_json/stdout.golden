@@ -1,0 +1,36 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:response",
+  "contract_version": "1.0.0",
+  "command": "personalizations.list",
+  "requested_command": "personalizations.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "id": "07fb3c47-e4b2-4446-b137-595e0722778d",
+        "references": [
+          {
+            "group": "onboarding",
+            "parameter": "kyc_provider",
+            "condition": "android_beta_10",
+            "value_type": "STRING"
+          }
+        ]
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

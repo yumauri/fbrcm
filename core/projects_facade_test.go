@@ -273,6 +273,54 @@ func TestListProjectsUsesCacheWhenPresent(t *testing.T) {
 	}
 }
 
+func TestListProjectsForExecutionUsesDirectDiscoveryWithoutLocalState(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	if err := config.SaveProjects([]config.Project{{Name: "Cached", ProjectID: "cached", AuthID: "main"}}, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+
+	direct := firebase.NewServiceWithHTTPClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			switch {
+			case req.Method == http.MethodGet && req.URL.Host == "cloudresourcemanager.googleapis.com" && req.URL.Path == "/v1/projects":
+				return jsonResponse(http.StatusOK, `{"projects":[{"projectId":"remote","projectNumber":"123","name":"projects/123","lifecycleState":"ACTIVE"}]}`, ""), nil
+			case req.Method == http.MethodGet && req.URL.Path == "/v3/projects/remote":
+				return jsonResponse(http.StatusOK, `{"projectId":"remote","displayName":"Remote","state":"ACTIVE","etag":"etag-1","updateTime":"2026-08-20T10:00:00Z"}`, ""), nil
+			default:
+				return nil, errors.New("unexpected request: " + req.URL.String())
+			}
+		}),
+	})
+	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
+	ctx, err := WithDirectFirebaseDiscoveryService(ctx, direct)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, source, err := svc.ListProjectsForExecution(ctx)
+	if err != nil {
+		t.Fatalf("ListProjectsForExecution = %v", err)
+	}
+	if source != "firebase" || len(got) != 1 || got[0].ProjectID != "remote" || got[0].Name != "Remote" {
+		t.Fatalf("projects/source = %+v/%q, want direct remote project", got, source)
+	}
+	persisted, err := config.LoadProjects()
+	if err != nil || len(persisted) != 1 || persisted[0].ProjectID != "cached" {
+		t.Fatalf("persisted projects = %+v, %v; want untouched cache", persisted, err)
+	}
+}
+
+func TestListProjectsForExecutionRequiresDirectDiscoveryWithoutLocalState(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
+
+	_, _, err := svc.ListProjectsForExecution(ctx)
+	var policyErr *ExecutionPolicyError
+	if !errors.As(err, &policyErr) || policyErr.Operation != "configured Firebase project discovery" {
+		t.Fatalf("ListProjectsForExecution error = %#v, want discovery ExecutionPolicyError", err)
+	}
+}
+
 func TestResetProjectsDeletesRegistry(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	if err := config.SaveProjects([]config.Project{{ProjectID: "demo"}}, time.Now().UTC()); err != nil {

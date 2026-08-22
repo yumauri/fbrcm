@@ -22,8 +22,18 @@
         }
       ]
     },
-    "path_segment": {
-      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    "stateless_target_selector": {
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\\s][^@\\s]*$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@]literal physical project ID; an omitted template prefix selects client",
+      "x-fbrcm-matching": [
+        {
+          "comparison": "exact_case_sensitive",
+          "default_template": "client",
+          "lookup": false,
+          "operator": "literal_project_id"
+        }
+      ]
     },
     "target_positional_selector": {
       "allOf": [
@@ -43,6 +53,64 @@
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:input",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          }
+        },
+        "required": [
+          "options"
+        ]
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "properties": {
+              "source_project": {
+                "$ref": "#/$defs/stateless_target_selector"
+              },
+              "target_project": {
+                "$ref": "#/$defs/stateless_target_selector"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "arguments": {
       "additionalProperties": false,
@@ -170,13 +238,21 @@
           "type": "boolean"
         },
         "profile": {
-          "allOf": [
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
             {
-              "$ref": "#/$defs/path_segment"
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
             }
           ],
-          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
-          "type": "string",
           "x-fbrcm-normalization": [
             {
               "operator": "trim_unicode_whitespace",
@@ -212,6 +288,10 @@
               "raw_query": "collapse_unicode_whitespace"
             }
           ]
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
         },
         "timeout": {
           "description": "Maximum duration for the complete command",

@@ -1,0 +1,35 @@
+{
+  "name": "projects_list_stateless_json",
+  "command_id": "projects.list",
+  "args": [
+    "--stateless", "projects", "list",
+    "--filter", "=Northstar Wallet",
+    "--url",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v1/projects",
+      "query": "pageSize=1000",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "cloudresourcemanager.googleapis.com",
+      "path": "/v3/projects/${PROJECT_ID}",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"}
+  ],
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"
+  },
+  "json_output": true
+}

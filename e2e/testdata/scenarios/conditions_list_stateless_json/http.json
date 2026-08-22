@@ -1,0 +1,40 @@
+{
+  "data": {
+    "globalActions": {"delays": [], "delaysLogNormal": []},
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/remoteConfig:listVersions"}],
+          "query": {"pageSize": [{"matcher": "exact", "value": "1"}]},
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"versions\":[{\"versionNumber\":\"7\",\"updateTime\":\"2026-08-20T08:00:00Z\"}]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/remoteConfig"}],
+          "query": {"versionNumber": [{"matcher": "exact", "value": "7"}]},
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"conditions\":[{\"name\":\"android_users\",\"expression\":\"device.os == 'android'\",\"tagColor\":\"BLUE\"},{\"name\":\"internal_users\",\"expression\":\"user.email contains '@example.com'\",\"tagColor\":\"GREEN\"}],\"parameters\":{\"welcome_message\":{\"defaultValue\":{\"value\":\"Hello\"},\"conditionalValues\":{\"android_users\":{\"value\":\"Hello Android\"}}}},\"version\":{\"versionNumber\":\"7\"}}",
+          "headers": {"Content-Type": ["application/json"], "Etag": ["synthetic-etag-7"]},
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {"hoverflyVersion": "v1.12.10", "schemaVersion": "v5.3", "timeExported": "2024-01-01T00:00:00Z"}
+}

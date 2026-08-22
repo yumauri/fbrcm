@@ -1,0 +1,163 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/northstar-wallet"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/3XPwY6CMBAG4DtPQXpetC20WG5mswcvnogmxssAwy6mC6TtZmOM726hmHjxOPN/M5O5RXFMevhFUsRkNMMFa2fXKlNCSS4lE4x8TGSJds3k+sG4H+vAJP+gNbpAfMPNa7af5e7wFZpNZ0cN1/1yYf+cjI8vk7VBP1p2wXDKZUJFwmRJVUFlIbJVTtNTsH9j897mBUtXiqep2CwcHXxP8Lg+E4agVNZKv4wLmsOZBKOhQm29uvnK121nsAI7H8AeKo3NDF+ipB7MnPv/AvD5PbpHD9t0z6lQAQAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 19:19:49 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/949596266151/namespaces/firebase/experiments/abt_4"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/61S3U/CMBB/31/R9Bll42Mw3lCr2QOD4CBGY5YybloztqUtIBL+d9uxjWGMMdFkD8vd7+vuujcQwgldAR4gnPH0DUIpmk7H6Tp2y7atrtXUXZHREEQzYhwWVEAT3jPgbAWJAtOFDDq4oYWWELGESZYmSm6vKrrGRBbTnVd4JLBFJzaSIGTOzdki5Cwr6Fi3UJRyRNE5SaAoTrclSwDfsDDXJg8TMnVHxPODezKdu9ckmJLR2CfB9di7de9KSrrQY7INiCqmqlJdotqdbJSLbh0aZRN0aVznPRUtVCnkQCYmKiXlOwWRfA2NelPshIRVJXMDkrK4HqLAVQH1VByk8laxgjauwQ5nyuoIY7W5FfvIJ7hdJ2G5x9HwwR25j+RErlH3/xiv91/xir9noyaEN5Qzqo5fW/0pVvWEr9TrjFkC+GSPt8BeXvU9LeNLtm8E5kcbNPyzwtXPCkY5Yq6FhaQyp09nnud6x7eqq1z67CjcMlv2hdm/MC3fag8se9DuXXadTr/ffTyiIVmWWMvpmQqosaY5yL8CFFMhZ9lSuf1eV9IXDQQLGwfjE0V8btozBAAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 19:19:50 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:get:response",
+  "contract_version": "1.0.0",
+  "command": "get",
+  "requested_command": "get",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 1,
+    "items": [
+      {
+        "project": "northstar-wallet",
+        "project_id": "northstar-wallet",
+        "group": "support",
+        "key": "support_chat_enabled",
+        "description": "Enable in-app support chat",
+        "default_value": "true",
+        "conditional": false,
+        "conditions": [],
+        "type": "BOOLEAN",
+        "version": "12",
+        "cached_at": null,
+        "status": "fetch"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

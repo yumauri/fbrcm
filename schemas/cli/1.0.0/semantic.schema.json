@@ -628,6 +628,30 @@
         {
           "additionalProperties": false,
           "properties": {
+            "comparison": {
+              "const": "exact_case_sensitive"
+            },
+            "default_template": {
+              "const": "client"
+            },
+            "lookup": {
+              "const": false
+            },
+            "operator": {
+              "const": "literal_project_id"
+            }
+          },
+          "required": [
+            "operator",
+            "comparison",
+            "default_template",
+            "lookup"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "client_target_canonicalization": {
               "const": "unqualified_project_id"
             },
@@ -694,6 +718,7 @@
             "unqualified_target_selection": {
               "enum": [
                 "all_configured_enabled_templates",
+                "client_template",
                 "existing_drafts_in_configured_enabled_templates_or_client_fallback"
               ]
             }
@@ -2055,6 +2080,15 @@
           "operands": null,
           "result": "selection",
           "semantics": "Resolve the longest exact, case-sensitive existing command prefix, including navigational groups, and render its help. Ignore unmatched suffix components. With no existing first component or no components, render root help; this selector does not return not-found or ambiguity problems."
+        },
+        "literal_project_id": {
+          "operands": [
+            "comparison",
+            "default_template",
+            "lookup"
+          ],
+          "result": "selection",
+          "semantics": "Use the supplied physical Firebase project ID exactly without project-registry, display-name, or repository-alias lookup. An omitted template prefix selects the client template; client@ and server@ select one named template."
         },
         "mode_prefixed_query": {
           "operands": [

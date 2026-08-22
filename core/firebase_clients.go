@@ -16,6 +16,12 @@ func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) 
 	if err != nil {
 		return nil, err
 	}
+	if fb, direct, err := directFirebaseServiceFromContext(ctx, target.ProjectID); direct {
+		return fb, err
+	}
+	if err := requireLocalStateRead(ctx, "configured Firebase service resolution"); err != nil {
+		return nil, err
+	}
 	project, err := s.ProjectByID(target.ProjectID)
 	if err != nil {
 		return nil, err

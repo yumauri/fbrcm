@@ -1,0 +1,5 @@
+[1mDEBU[m logger initialized [2mmode[m[2m=[mcli [2mlog_level[m[2m=[mDEBUG
+[1mDEBU[m core service initialized [2mcomponent[m[2m=[mcore
+[1mDEBU[m application start [2mcomponent[m[2m=[mmain [2mmode[m[2m=[mcli [2marg_count[m[2m=[m5
+[1mDEBU[m start cli [2mcomponent[m[2m=[mcli
+[1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli

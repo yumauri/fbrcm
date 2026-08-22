@@ -20,9 +20,26 @@ type State struct {
 }
 
 type stateKey struct{}
+type profilelessKey struct{}
 
 func WithState(ctx context.Context) context.Context {
 	return context.WithValue(ctx, stateKey{}, &State{})
+}
+
+// WithProfileless marks one machine invocation as independent of persisted
+// profile state. The marker is inherited by contexts derived from the result.
+func WithProfileless(ctx context.Context) context.Context {
+	return context.WithValue(ctx, profilelessKey{}, struct{}{})
+}
+
+// Profileless reports whether an invocation explicitly opted out of profile
+// selection and profile information in its response envelope.
+func Profileless(ctx context.Context) bool {
+	if ctx == nil {
+		return false
+	}
+	_, ok := ctx.Value(profilelessKey{}).(struct{})
+	return ok
 }
 
 func FromContext(ctx context.Context) *State {

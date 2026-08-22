@@ -212,6 +212,11 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	if err != nil {
 		return err
 	}
+	ctx, err = shared.FirebaseServicesContextForExecution(ctx, []string{source.ProjectID, target.ProjectID})
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
 
 	plan := rcpromote.BuildPlan(sourceCfg, targetCfg, rcpromote.Options{Prune: opts.Prune})
 	plan.Diff, err = filterDiffResult(source, sourceCfg, target, targetCfg, plan.Diff, opts)
@@ -302,11 +307,14 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 }
 
 func loadCompareConfigs(ctx context.Context, cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, cached bool) (core.Project, core.Project, *firebase.RemoteConfig, *firebase.RemoteConfig, error) {
+	if cached && !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return core.Project{}, core.Project{}, nil, nil, shared.InvalidArgument(fmt.Errorf("--cached cannot be used with --stateless; Remote Config reads are already live"))
+	}
 	resolveProject := func(query string) (core.Project, error) {
 		if cached {
 			return shared.ResolveCachedProjectTargetArg(cmd, query)
 		}
-		return shared.ResolveProjectTargetArg(ctx, cmd, svc, query)
+		return shared.ResolveProjectTargetForExecution(ctx, cmd, svc, query)
 	}
 	source, err := resolveProject(sourceQuery)
 	if err != nil {
@@ -343,6 +351,10 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 		}
 		return firebase.ParseCloneRemoteConfig(cache.RemoteConfig)
 	}
+	ctx, err := shared.FirebaseServiceContextForExecution(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
 	raw, _, err := svc.ExportRemoteConfig(ctx, projectID)
 	if err != nil {
 		return nil, err
@@ -352,13 +364,15 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 
 func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, bool, string, error) {
 	progress.Start("Preparing promotion to " + target.ProjectID + "…")
-	if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
-		return false, false, core.ValidationSourceLocal, err
-	} else if hasDraft {
-		return false, false, core.ValidationSourceLocal, &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Remediation: []shared.Remediation{
-			{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", target.ProjectID}},
-			{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", target.ProjectID}},
-		}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)}
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		} else if hasDraft {
+			return false, false, core.ValidationSourceLocal, &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Remediation: []shared.Remediation{
+				{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", target.ProjectID}},
+				{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", target.ProjectID}},
+			}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)}
+		}
 	}
 	for {
 		raw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)

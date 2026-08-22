@@ -1,0 +1,38 @@
+{
+  "name": "conditions_list_stateless_json",
+  "command_id": "conditions.list",
+  "args": [
+    "--stateless", "conditions", "list", "${PROJECT_ID}",
+    "--filter", "=android_users",
+    "--search", "android",
+    "--expr", "priority == 1",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "query": "pageSize=1",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=7",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"},
+    {"root": "cache", "path": "default/drafts"}
+  ],
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"
+  },
+  "json_output": true
+}

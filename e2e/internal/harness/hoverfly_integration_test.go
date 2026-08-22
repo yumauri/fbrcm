@@ -131,7 +131,7 @@ func TestHoverflyCapturesGuardsAndReplaysOffline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := validateJournal(journal, []HTTPExpectation{{Method: http.MethodGet, Host: upstreamURL.Host, Path: "/fixture", Status: http.StatusOK}}, false); err != nil {
+	if err := validateJournal(journal, []HTTPExpectation{{Method: http.MethodGet, Host: upstreamURL.Host, Path: "/fixture", Status: http.StatusOK}}, false, false); err != nil {
 		t.Fatal(err)
 	}
 }

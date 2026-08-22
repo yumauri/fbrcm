@@ -75,18 +75,30 @@ func versionNotFound(projectID, selector string, err error) error {
 }
 
 func (s *Core) ListRemoteConfigVersions(ctx context.Context, projectID string, opts VersionListOptions) (RemoteConfigVersionList, error) {
-	snapshots, err := config.ListParametersCacheSnapshotsForProject(projectID)
-	if err != nil {
-		return RemoteConfigVersionList{}, err
+	policy := ExecutionPolicyFromContext(ctx)
+	if opts.CachedOnly {
+		if err := requireLocalStateRead(ctx, "cached Remote Config version listing"); err != nil {
+			return RemoteConfigVersionList{}, err
+		}
+	}
+	var snapshots []config.ParametersCacheSnapshot
+	var err error
+	if policy.ReadLocalState {
+		snapshots, err = config.ListParametersCacheSnapshotsForProject(projectID)
+		if err != nil {
+			return RemoteConfigVersionList{}, err
+		}
 	}
 	byVersion := make(map[string]config.ParametersCacheSnapshot, len(snapshots))
 	for _, snapshot := range snapshots {
 		byVersion[snapshot.Version] = snapshot
 	}
 	current := ""
-	if cache, err := config.LoadParametersCache(projectID); err == nil {
-		if cfg, parseErr := firebase.ParseRemoteConfig(cache.RemoteConfig); parseErr == nil {
-			current = cfg.Version.VersionNumber
+	if policy.ReadLocalState {
+		if cache, err := config.LoadParametersCache(projectID); err == nil {
+			if cfg, parseErr := firebase.ParseRemoteConfig(cache.RemoteConfig); parseErr == nil {
+				current = cfg.Version.VersionNumber
+			}
 		}
 	}
 	if opts.CachedOnly {
@@ -160,7 +172,9 @@ func (s *Core) GetRemoteConfigVersion(ctx context.Context, projectID, selector s
 // history response when both are relative to the current version. This keeps a
 // diff internally consistent and avoids listing version history twice.
 func (s *Core) GetRemoteConfigVersionPair(ctx context.Context, projectID, fromSelector, toSelector string, cachedOnly bool) (*ResolvedRemoteConfigVersion, *ResolvedRemoteConfigVersion, error) {
-	key := projectID + "\x00" + fromSelector + "\x00" + toSelector + "\x00" + strconv.FormatBool(cachedOnly)
+	policy := ExecutionPolicyFromContext(ctx)
+	key := projectID + "\x00" + fromSelector + "\x00" + toSelector + "\x00" + strconv.FormatBool(cachedOnly) +
+		"\x00" + strconv.FormatBool(policy.ReadLocalState) + "\x00" + strconv.FormatBool(policy.WriteLocalState)
 	value, err, _ := s.versionHistory.Do(key, func() (any, error) {
 		from, to, err := s.getRemoteConfigVersionPair(ctx, projectID, fromSelector, toSelector, cachedOnly)
 		if err != nil {
@@ -232,21 +246,29 @@ func (s *Core) getRemoteConfigVersionPair(ctx context.Context, projectID, fromSe
 }
 
 func (s *Core) getRemoteConfigVersionNumber(ctx context.Context, projectID, version string, cachedOnly bool) (*ResolvedRemoteConfigVersion, error) {
-	cache, err := config.LoadParametersCacheVersion(projectID, version)
-	if err == nil {
-		cfg, parseErr := firebase.ParseCloneRemoteConfig(cache.RemoteConfig)
-		if parseErr != nil {
-			return nil, fmt.Errorf("decode cached Remote Config version %s: %w", version, parseErr)
+	policy := ExecutionPolicyFromContext(ctx)
+	var cache *config.ParametersCache
+	if policy.ReadLocalState {
+		var err error
+		cache, err = config.LoadParametersCacheVersion(projectID, version)
+		if err == nil {
+			cfg, parseErr := firebase.ParseCloneRemoteConfig(cache.RemoteConfig)
+			if parseErr != nil {
+				return nil, fmt.Errorf("decode cached Remote Config version %s: %w", version, parseErr)
+			}
+			if cfg.Version.VersionNumber != version {
+				return nil, fmt.Errorf("cached Remote Config version mismatch: requested %s, got %s", version, cfg.Version.VersionNumber)
+			}
+			return &ResolvedRemoteConfigVersion{Version: cfg.Version, Cache: cache, Config: cfg, Cached: true}, nil
 		}
-		if cfg.Version.VersionNumber != version {
-			return nil, fmt.Errorf("cached Remote Config version mismatch: requested %s, got %s", version, cfg.Version.VersionNumber)
+		if !errors.Is(err, os.ErrNotExist) && !strings.Contains(err.Error(), "no such file") {
+			return nil, err
 		}
-		return &ResolvedRemoteConfigVersion{Version: cfg.Version, Cache: cache, Config: cfg, Cached: true}, nil
-	}
-	if !errors.Is(err, os.ErrNotExist) && !strings.Contains(err.Error(), "no such file") {
-		return nil, err
 	}
 	if cachedOnly {
+		if err := requireLocalStateRead(ctx, "cached Remote Config version lookup"); err != nil {
+			return nil, err
+		}
 		return nil, versionNotFound(projectID, version, fmt.Errorf("cached Remote Config version %s was not found for project %s", version, projectID))
 	}
 	fb, err := s.firebaseServiceForProject(ctx, projectID)
@@ -269,7 +291,7 @@ func (s *Core) getRemoteConfigVersionNumber(ctx context.Context, projectID, vers
 		return nil, fmt.Errorf("firebase returned version %s when version %s was requested", cfg.Version.VersionNumber, version)
 	}
 	cache = &config.ParametersCache{ETag: etag, CachedAt: time.Now().UTC(), RemoteConfig: raw}
-	if !firebase.IsDryRun(ctx) {
+	if !firebase.IsDryRun(ctx) && policy.WriteLocalState {
 		if err := config.SaveParametersCacheSnapshot(projectID, cache); err != nil {
 			return nil, fmt.Errorf("cache historical version: %w", err)
 		}
@@ -334,8 +356,10 @@ func (s *Core) RollbackRemoteConfig(ctx context.Context, projectID, sourceVersio
 	}
 	result := VersionPublishResult{PreviousVersion: current.Version.VersionNumber, SourceVersion: sourceVersion, PublishedVersion: published.Version.VersionNumber, RemoteConfig: raw, ETag: etag}
 	var cacheErr error
-	if err := config.SaveParametersCache(projectID, &config.ParametersCache{ETag: etag, CachedAt: time.Now().UTC(), RemoteConfig: raw}); err != nil {
-		cacheErr = err
+	if ExecutionPolicyFromContext(ctx).WriteLocalState {
+		if err := config.SaveParametersCache(projectID, &config.ParametersCache{ETag: etag, CachedAt: time.Now().UTC(), RemoteConfig: raw}); err != nil {
+			cacheErr = err
+		}
 	}
 	if err := hookSession.Run(ctx, corehooks.PostPublish, raw); err != nil {
 		return result, &RemoteConfigPublishedHookError{ProjectID: projectID, RemoteConfig: raw, ETag: etag, HookErr: err, CacheErr: cacheErr}
@@ -395,6 +419,9 @@ func (s *Core) resolveVersionSelector(ctx context.Context, projectID, selector s
 	}
 	if selector == "current" || selector == "latest" {
 		if cachedOnly {
+			if err := requireLocalStateRead(ctx, "cached current Remote Config version lookup"); err != nil {
+				return "", err
+			}
 			cache, err := config.LoadParametersCache(projectID)
 			if err != nil {
 				if errors.Is(err, os.ErrNotExist) {
@@ -451,6 +478,9 @@ func parseRelativeVersionSelector(selector string) (base string, distance int, o
 
 func (s *Core) resolveRelativeVersion(ctx context.Context, projectID, selector string, distance int, cachedOnly bool) (string, error) {
 	if cachedOnly {
+		if err := requireLocalStateRead(ctx, "cached relative Remote Config version lookup"); err != nil {
+			return "", err
+		}
 		return relativeCachedVersion(projectID, selector, distance)
 	}
 	fb, err := s.firebaseServiceForProject(ctx, projectID)

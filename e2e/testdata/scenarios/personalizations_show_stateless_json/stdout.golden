@@ -1,0 +1,46 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:response",
+  "contract_version": "1.0.0",
+  "command": "personalizations.show",
+  "requested_command": "personalizations.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "project_number": "949596266151",
+      "state": "ACTIVE",
+      "etag": "W/\"1ea994f67032507a\"",
+      "updated_at": "2026-05-16T09:07:13.923358Z",
+      "auth_id": ""
+    },
+    "template": {
+      "version": "12",
+      "source": "firebase"
+    },
+    "personalization": {
+      "id": "07fb3c47-e4b2-4446-b137-595e0722778d",
+      "references": [
+        {
+          "group": "onboarding",
+          "parameter": "kyc_provider",
+          "condition": "android_beta_10",
+          "value_type": "STRING"
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

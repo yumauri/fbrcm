@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "fbrcm_e2e_stateless_import": {
+      "description": "Temporary stateless import E2E parameter",
+      "defaultValue": {
+        "value": "temporary"
+      },
+      "valueType": "STRING"
+    }
+  }
+}

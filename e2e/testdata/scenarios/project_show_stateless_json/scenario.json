@@ -1,0 +1,16 @@
+{
+  "name": "project_show_stateless_json",
+  "command_id": "project.show",
+  "args": ["--stateless", "project", "show", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/${PROJECT_ID}", "status": 200}
+  ],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"},
+    {"root": "cache", "path": "default/drafts"}
+  ],
+  "envs": {"FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"},
+  "json_output": true
+}

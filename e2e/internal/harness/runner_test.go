@@ -22,11 +22,11 @@ func TestValidateJournalChecksExactHTTPContract(t *testing.T) {
 		Query:  "validateOnly=true",
 		Status: http.StatusInternalServerError,
 	}}
-	if err := validateJournal(journal, expected, false); err != nil {
+	if err := validateJournal(journal, expected, false, false); err != nil {
 		t.Fatal(err)
 	}
 	journal.Entries[0].Request.Path = "/v1/unexpected"
-	if err := validateJournal(journal, expected, false); err == nil {
+	if err := validateJournal(journal, expected, false, false); err == nil {
 		t.Fatal("validateJournal accepted an unexpected path")
 	}
 }
@@ -42,14 +42,36 @@ func TestValidateJournalChecksDeclaredQuery(t *testing.T) {
 		Method: http.MethodPut, Host: "firebase.example", Path: "/v1/fixture",
 		Query: "validateOnly=true", Status: http.StatusOK,
 	}}
-	if err := validateJournal(journal, expected, false); err == nil || !strings.Contains(err.Error(), "query") {
+	if err := validateJournal(journal, expected, false, false); err == nil || !strings.Contains(err.Error(), "query") {
 		t.Fatalf("validateJournal query error = %v", err)
 	}
 }
 
 func TestValidateJournalAcceptsNoRequests(t *testing.T) {
-	if err := validateJournal(Journal{}, nil, false); err != nil {
+	if err := validateJournal(Journal{}, nil, false, false); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestValidateJournalAcceptsUnorderedConcurrentRequests(t *testing.T) {
+	journal := Journal{Total: 2, Entries: []JournalEntry{{Mode: "simulate"}, {Mode: "simulate"}}}
+	journal.Entries[0].Request.Method = http.MethodGet
+	journal.Entries[0].Request.Destination = "firebase.example:443"
+	journal.Entries[0].Request.Path = "/v1/projects/two"
+	journal.Entries[0].Response.Status = http.StatusOK
+	journal.Entries[1].Request.Method = http.MethodGet
+	journal.Entries[1].Request.Destination = "firebase.example:443"
+	journal.Entries[1].Request.Path = "/v1/projects/one"
+	journal.Entries[1].Response.Status = http.StatusOK
+	expected := []HTTPExpectation{
+		{Method: http.MethodGet, Host: "firebase.example", Path: "/v1/projects/one", Status: http.StatusOK},
+		{Method: http.MethodGet, Host: "firebase.example", Path: "/v1/projects/two", Status: http.StatusOK},
+	}
+	if err := validateJournal(journal, expected, false, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := validateJournal(journal, expected, false, false); err == nil {
+		t.Fatal("ordered validation accepted reversed requests")
 	}
 }
 

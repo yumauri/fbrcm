@@ -1,0 +1,19 @@
+{
+  "name": "rollouts_show_stateless_json",
+  "command_id": "rollouts.show",
+  "args": ["--stateless", "rollouts", "show", "${PROJECT_ID}", "rollout_1", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/${PROJECT_ID}", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/949596266151/namespaces/firebase/rollouts/rollout_1", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions", "query": "pageSize=1", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "status": 200}
+  ],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"},
+    {"root": "cache", "path": "default/drafts"}
+  ],
+  "envs": {"FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"},
+  "json_output": true
+}

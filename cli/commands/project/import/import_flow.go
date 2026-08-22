@@ -64,6 +64,9 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	}
 	result := importResult{ProjectID: project.ProjectID, Draft: draftMode, DryRun: dryRun, ValidationSource: core.ValidationSourceLocal}
 	ctx := shared.CommandContext(cmd)
+	if err := shared.RejectStatelessDraft(ctx, draftMode); err != nil {
+		return err
+	}
 	if dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -76,7 +79,7 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 		return err
 	}
 	result.ChangeNote = changeNote
-	if !draftMode {
+	if !draftMode && core.ExecutionPolicyFromContext(ctx).ReadLocalState {
 		hasDraft, draftErr := svc.HasDraft(project.ProjectID)
 		if draftErr != nil {
 			return draftErr

@@ -7,7 +7,9 @@ The harness runs a real `fbrcm` process through an HTTPS Hoverfly proxy. Replay
 mode never contacts Firebase: unmatched requests fail at the proxy. The command's
 stdout, stderr, exit status, HTTP method, destination, request count, and replay
 mode are all checked. Each scenario declares the expected HTTP method, host,
-path, status, and order. Committed HTTP simulations preserve response bodies
+path, and status. Order is checked by default; `"http_unordered": true` compares
+the declared and observed requests as a multiset for intentionally concurrent
+commands. Committed HTTP simulations preserve response bodies
 exactly and are sanitized before they are written.
 
 ## Requirements
@@ -174,6 +176,57 @@ fixture in every mode; `refresh-all` still refreshes their stdout, stderr, and
 declared file snapshots by replaying that fixture. This prevents account-wide or
 purpose-built synthetic responses from being replaced with live account data.
 
+### Record a mutating lifecycle
+
+Keep each mutating command as an independent scenario with its own HTTP and
+output snapshots. Declare their live-recording order in `testdata/suite.json`:
+
+```json
+{
+  "project_id": "firebase-test-project",
+  "recording_sequences": [
+    {
+      "name": "parameter-lifecycle",
+      "scenarios": [
+        "parameter_add_live_json",
+        "parameter_update_live_json",
+        "parameter_delete_live_json"
+      ]
+    }
+  ]
+}
+```
+
+Then run HTTP recording as usual against the dedicated Firebase project:
+
+```sh
+FBRCM_E2E_ACCESS_TOKEN=... go test -v -count=1 . \
+  -run '^TestCLI$' \
+  -args -mode=refresh-all
+```
+
+In `record-missing`, `refresh-http`, and `refresh-all`, the harness automatically
+runs declared sequences first, in suite order. Every sequence is a contiguous
+block whose scenarios run in their listed order. Each scenario still gets
+isolated local config, cache, home, and work directories, while its live Firebase
+mutations establish the remote preconditions for the next scenario. If a member
+fails, Go continues with the remaining subtests, allowing a final delete scenario
+to clean up the dedicated resource.
+
+The order is mandatory rather than selected by a flag. A capture-mode `-run`
+filter may select every member of a recording sequence or none of them; selecting
+only part of a sequence fails before any CLI process runs. `record-missing` also
+fails when only some members already have HTTP cassettes, preventing replayed
+prerequisites from being mixed with live mutations. Use `refresh-all` to replace
+the complete sequence in that case.
+
+Replay and `update-output` retain normal alphabetical order, and every scenario
+and cassette remains independently runnable. A sequence cannot list the same
+scenario more than once; unknown or duplicate entries fail during suite loading.
+Any scenario declaring mutating live HTTP traffic must belong to a recording
+sequence; validate-only requests and IAM permission checks remain independent.
+Use a resource name reserved for E2E and place its delete scenario last.
+
 ## Choose the fbrcm executable
 
 By default, the harness builds the current checkout. It can instead execute an
@@ -206,14 +259,24 @@ to exist.
 | `update-output` | Replay existing | Create or replace |
 | `refresh-all` | Capture and replace | Create or replace |
 
-Live capture requires `FBRCM_E2E_ACCESS_TOKEN` and a dedicated read-only test
-project configured in `testdata/suite.json`. A middleware guard derives its
+Live capture requires `FBRCM_E2E_ACCESS_TOKEN` and a dedicated test project
+configured in `testdata/suite.json`. Grant the capture identity only the
+permissions required by the selected scenarios. A middleware guard derives its
 method, host, path, and optional exact-query allowlist from each scenario's
 `expected_http` entries; anything else is blocked before reaching an upstream
 service. This supports multi-host read flows and explicitly declared
-non-mutating methods such as Firebase validate-only requests without broadly
-allowing mutations. Captured fixtures are checked for supplied tokens and common
-credential fields before being saved.
+methods—including mutations in a recording sequence—without broadly allowing
+access to other endpoints. Captured fixtures are checked for supplied tokens and
+common credential fields before being saved.
+
+The harness writes the value supplied through `FBRCM_E2E_ACCESS_TOKEN` to the
+temporary OAuth profile used by stateful scenarios. Replay mode substitutes its
+fixed non-secret replay token when no live token was supplied. Scenario `envs`
+may map the exact value `${FBRCM_E2E_ACCESS_TOKEN}` to an application variable;
+the harness replaces it with that effective live-or-replay token. Unlisted
+variables are not inferred from argv, and inherited `FBRCM_GOOGLE_ACCESS_TOKEN`
+is removed. The private `FBRCM_E2E_ACCESS_TOKEN` variable itself is never
+forwarded to fbrcm.
 
 Use `"http_replay_only": true` for a scenario whose HTTP response is
 intentionally synthetic or whose live upstream operation observes account-wide
@@ -272,6 +335,21 @@ cache and fallback coverage and still enforces a zero-request HTTP contract.
 Set `json_output` when stdout uses the versioned CLI JSON envelope. The harness
 then validates stdout against
 `schemas/cli/1.0.0/<command>.response.schema.json` before snapshot comparison.
+Use `envs` for explicit command environment setup. An exact
+`${FBRCM_E2E_ACCESS_TOKEN}` value selects the harness's effective live-or-replay
+token; any other value is passed literally. For example:
+
+```json
+{
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"
+  }
+}
+```
+
+Omit the entry to test a missing variable, or use a literal such as
+`"incorrect"` to test malformed credentials. The harness rejects overrides of
+its private token, isolated state roots, proxy configuration, and trusted CA.
 
 For a command that must not use the network, declare an empty contract:
 

@@ -7,15 +7,18 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 
+	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/core/rc/importer"
@@ -323,6 +326,27 @@ func TestBuildEnvelopeFailureHasNullData(t *testing.T) {
 	envelope := BuildEnvelope(cmd, "test", nil, &shared.SelectionError{Resource: "resource", Kind: "not_found", Query: "missing"})
 	if envelope.Outcome != "failure" || envelope.Data != nil || envelope.ExitCode != 6 || len(envelope.Errors) != 1 {
 		t.Fatalf("envelope = %#v", envelope)
+	}
+}
+
+func TestBuildEnvelopePreservesProfilelessMachineContext(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.Profile, "")
+	if err := config.SetProfileOverride(""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = config.SetProfileOverride("") })
+
+	cmd := commandForTest("show")
+	cmd.SetContext(machine.WithProfileless(shared.WithMachineState(context.Background())))
+	envelope := BuildEnvelope(cmd, "test", nil, &shared.SelectionError{Resource: "resource", Kind: "not_found", Query: "missing"})
+	if envelope.Context.Profile != nil {
+		t.Fatalf("context profile = %q, want null", *envelope.Context.Profile)
+	}
+	if _, err := os.Stat(filepath.Join(root, "config")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("config root stat = %v, want envelope construction without profile filesystem access", err)
 	}
 }
 

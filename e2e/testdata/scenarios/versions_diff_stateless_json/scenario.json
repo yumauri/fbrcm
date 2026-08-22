@@ -1,0 +1,17 @@
+{
+  "name": "versions_diff_stateless_json",
+  "command_id": "versions.diff",
+  "args": ["--stateless", "versions", "diff", "${PROJECT_ID}", "11", "12", "--json"],
+  "expected_exit_code": 1,
+  "expected_http": [
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "versionNumber=11", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "versionNumber=12", "status": 200}
+  ],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"},
+    {"root": "cache", "path": "default/drafts"}
+  ],
+  "envs": {"FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"},
+  "json_output": true
+}

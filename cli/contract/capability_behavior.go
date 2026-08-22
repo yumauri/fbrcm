@@ -1,5 +1,7 @@
 package contract
 
+import "strings"
+
 type capabilityBehavior struct {
 	level              int
 	effects            []effectBehavior
@@ -86,10 +88,11 @@ func conditionalRemoteRead(when []BehaviorConditionClause, extra ...effectBehavi
 	return capabilityBehavior{level: 2, effects: effects, network: "conditional", networkWhen: cloneConditions(when), idempotency: "yes"}
 }
 
-func updatingRemoteRead(extra ...effectBehavior) capabilityBehavior {
+func statelessUpdatingRemoteRead(extra ...effectBehavior) capabilityBehavior {
 	return conditionalRemoteRead([]BehaviorConditionClause{
-		conditionClause(predicate("option", "update", "equals", true)),
-		conditionClause(predicate("runtime_state", "required_cache", "not_usable", nil)),
+		conditionClause(predicate("option", "stateless", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "update", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
 	}, extra...)
 }
 
@@ -159,10 +162,11 @@ func cachedRegistryRead() capabilityBehavior {
 	return conditionalReadOnly(conditionClause(predicate("runtime_state", "required_cache", "not_usable", nil)))
 }
 
-func updatingRegistryRead() capabilityBehavior {
+func projectsListRead() capabilityBehavior {
 	return conditionalReadOnly(
-		conditionClause(predicate("option", "update", "equals", true)),
-		conditionClause(predicate("runtime_state", "required_cache", "not_usable", nil)),
+		conditionClause(predicate("option", "stateless", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "update", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
 	)
 }
 
@@ -378,6 +382,60 @@ func withMachineAuthenticationEffects(id string, b capabilityBehavior) capabilit
 	return b
 }
 
+func withStatelessCommandEffects(b capabilityBehavior) capabilityBehavior {
+	effects := make([]effectBehavior, len(b.effects))
+	for index := range b.effects {
+		effects[index] = effectBehavior{name: b.effects[index].name, when: cloneConditions(b.effects[index].when)}
+	}
+	b.effects = effects
+	b.networkWhen = cloneConditions(b.networkWhen)
+	for effectIndex := range b.effects {
+		for clauseIndex := range b.effects[effectIndex].when {
+			clause := &b.effects[effectIndex].when[clauseIndex]
+			if statelessPolicyDisablesEffect(b.effects[effectIndex].name) || clauseHasStatefulCommandPredicate(*clause) {
+				clause.AllOf = append(clause.AllOf, predicate("option", "stateless", "equals", false))
+			}
+		}
+	}
+	for clauseIndex := range b.networkWhen {
+		clause := &b.networkWhen[clauseIndex]
+		if clauseHasStatefulCommandPredicate(*clause) {
+			clause.AllOf = append(clause.AllOf, predicate("option", "stateless", "equals", false))
+		}
+	}
+	return b
+}
+
+func statelessPolicyDisablesEffect(name string) bool {
+	return strings.HasPrefix(name, "local_cache_") || strings.HasPrefix(name, "local_draft_") ||
+		name == "local_state_write" || name == "trusted_hook_execution"
+}
+
+func withStatelessCommandInteractions(conditions []BehaviorConditionClause) []BehaviorConditionClause {
+	result := cloneConditions(conditions)
+	for index := range result {
+		if containsPredicate([]BehaviorConditionClause{result[index]}, "runtime_state", "authentication", "requires_human_authorization") {
+			result[index].AllOf = append(result[index].AllOf, predicate("option", "stateless", "equals", false))
+		}
+	}
+	return result
+}
+
+func clauseHasStatefulCommandPredicate(clause BehaviorConditionClause) bool {
+	for _, item := range clause.AllOf {
+		if item.Source != "runtime_state" {
+			continue
+		}
+		if item.Name == "project_registry" || item.Name == "profile_bootstrap" {
+			return true
+		}
+		if item.Name == "authentication" && (item.Operator == "requires_network" || item.Operator == "token_persisted") {
+			return true
+		}
+	}
+	return false
+}
+
 func managedFeatureDelete() capabilityBehavior {
 	b := behavior(3, "required",
 		effect("firebase_remote_read"),
@@ -495,8 +553,8 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		"optional", "oauth_authorization_returns_interaction",
 		conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))),
 
-	"conditions.list":     updatingRemoteRead(),
-	"conditions.show":     updatingRemoteRead(),
+	"conditions.list":     statelessUpdatingRemoteRead(),
+	"conditions.show":     statelessUpdatingRemoteRead(),
 	"conditions.validate": requiredCacheableRemoteRead(effect("firebase_remote_validation")),
 	"doctor": {
 		level: 2,
@@ -522,15 +580,16 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"experiments.list": managedFeatureRead(),
 	"experiments.show": managedFeatureRead(),
 	"get": withStdin(conditionalRemoteRead([]BehaviorConditionClause{
-		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "update", "equals", true)),
-		conditionClause(predicate("stdin", "document", "absent", nil), predicate("runtime_state", "required_cache", "not_usable", nil)),
+		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "stateless", "equals", true)),
+		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "stateless", "equals", false), predicate("option", "update", "equals", true)),
+		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "stateless", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
 	})),
-	"groups.list":           updatingRemoteRead(),
-	"personalizations.list": updatingRemoteRead(),
-	"personalizations.show": updatingRemoteRead(),
-	"project.show":          updatingRegistryRead(),
+	"groups.list":           statelessUpdatingRemoteRead(),
+	"personalizations.list": statelessUpdatingRemoteRead(),
+	"personalizations.show": statelessUpdatingRemoteRead(),
+	"project.show":          projectsListRead(),
 	"projects.diff":         conditionalReadOnly(conditionClause(predicate("option", "cached", "equals", false))),
-	"projects.list":         updatingRegistryRead(),
+	"projects.list":         projectsListRead(),
 	"rollouts.list":         managedFeatureRead(),
 	"rollouts.show":         managedFeatureRead(),
 	"versions.diff":         historicalVersionRead(),

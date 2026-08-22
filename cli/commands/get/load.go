@@ -4,7 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/yumauri/fbrcm/cli/shared/rc"
+	"github.com/yumauri/fbrcm/cli/shared"
+	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
@@ -88,9 +89,13 @@ func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core
 }
 
 func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedProjectParameters, error) {
-	cache, source, err := loadProjectParameters(ctx, svc, project.ProjectID, update)
+	executionCtx, err := shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return loadedProjectParameters{}, err
+	}
+	cache, source, err := loadProjectParameters(executionCtx, svc, project.ProjectID, update)
 	if err == nil {
-		cfg, parseErr := rc.ParseProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
+		cfg, parseErr := sharedrc.ParseProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
 		if parseErr != nil {
 			return loadedProjectParameters{}, parseErr
 		}
@@ -102,13 +107,16 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 			status:  core.ParametersStatusLabel(source, cache.CachedAt, true, nil),
 		}, nil
 	}
+	if !core.ExecutionPolicyFromContext(executionCtx).ReadLocalState {
+		return loadedProjectParameters{}, err
+	}
 
 	cache, state, inspectErr := svc.InspectParametersCache(project.ProjectID)
 	if inspectErr != nil {
 		return loadedProjectParameters{}, err
 	}
 	if state != core.ParametersCacheMissing && cache != nil {
-		cfg, parseErr := rc.ParseCachedProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
+		cfg, parseErr := sharedrc.ParseCachedProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
 		if parseErr != nil {
 			return loadedProjectParameters{}, parseErr
 		}

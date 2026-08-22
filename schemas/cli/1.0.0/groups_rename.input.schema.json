@@ -1,7 +1,58 @@
 {
   "$defs": {
-    "path_segment": {
-      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    "stateless_get_project_selector": {
+      "oneOf": [
+        {
+          "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?=[^=^/~@\\s][^@\\s]*$",
+          "type": "string",
+          "x-fbrcm-grammar": "[client@|server@]=literal physical project ID; exact mode bypasses project discovery",
+          "x-fbrcm-matching": [
+            {
+              "comparison": "exact_case_sensitive",
+              "default_template": "client",
+              "lookup": false,
+              "operator": "literal_project_id"
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/target_selector"
+            },
+            {
+              "not": {
+                "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?="
+              }
+            }
+          ],
+          "x-fbrcm-matching": [
+            {
+              "client_target_canonicalization": "unqualified_project_id",
+              "comparison": "unicode_case_insensitive",
+              "default_mode": "fuzzy",
+              "explicit_target_selection": "single_named_template",
+              "fields": [
+                "project_id",
+                "display_name"
+              ],
+              "mode_prefixes": {
+                "/": "includes",
+                "=": "exact",
+                "^": "starts-with",
+                "~": "fuzzy"
+              },
+              "operator": "mode_prefixed_query",
+              "query_normalization": "trim_unicode_whitespace",
+              "target_prefixes": [
+                "client",
+                "server"
+              ],
+              "unqualified_target_selection": "client_template"
+            }
+          ]
+        }
+      ]
     },
     "target_selector": {
       "allOf": [
@@ -21,6 +72,73 @@
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:input",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            },
+            "properties": {
+              "draft": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "stdin": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "options",
+          "stdin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "project": {
+                "items": {
+                  "$ref": "#/$defs/stateless_get_project_selector"
+                },
+                "type": "array"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "arguments": {
       "additionalProperties": false,
@@ -77,8 +195,20 @@
           ]
         },
         "draft": {
-          "description": "Save changes to a local draft instead of publishing",
-          "type": "boolean"
+          "description": "Save changes to a local draft instead of publishing; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
         },
         "dry-run": {
           "description": "Preview the requested mutation without applying it",
@@ -89,13 +219,21 @@
           "type": "boolean"
         },
         "profile": {
-          "allOf": [
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
             {
-              "$ref": "#/$defs/path_segment"
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
             }
           ],
-          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
-          "type": "string",
           "x-fbrcm-normalization": [
             {
               "operator": "trim_unicode_whitespace",
@@ -111,6 +249,10 @@
           },
           "minItems": 1,
           "type": "array"
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
         },
         "timeout": {
           "description": "Maximum duration for the complete command",

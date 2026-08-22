@@ -1,9 +1,14 @@
 package shared
 
 import (
+	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
+
+	"github.com/yumauri/fbrcm/core"
 )
 
 func TestReadParameterMutationOpts(t *testing.T) {
@@ -37,5 +42,15 @@ func TestReadParameterMutationOpts(t *testing.T) {
 	}
 	if opts.Search.Raw != "login" || !opts.Yes {
 		t.Fatalf("opts = %+v", opts)
+	}
+}
+
+func TestRunParameterMutationRemoteRejectsDraftInStatelessMode(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.SetContext(core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy()))
+	_, err := RunParameterMutationRemote(cmd, nil, ParameterMutationOpts{Draft: true}, "update", "", nil)
+	var argument *ArgumentError
+	if !errors.As(err, &argument) || !strings.Contains(err.Error(), "--draft cannot be used with --stateless") {
+		t.Fatalf("RunParameterMutationRemote error = %T %v, want typed stateless draft error", err, err)
 	}
 }

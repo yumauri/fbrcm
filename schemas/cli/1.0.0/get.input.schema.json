@@ -22,9 +22,6 @@
         }
       ]
     },
-    "path_segment": {
-      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
-    },
     "remote_config": {
       "anyOf": [
         {
@@ -1006,6 +1003,60 @@
       ],
       "description": "Firebase Remote Config template or fbrcm parameters-cache object accepted by the local stdin decoder"
     },
+    "stateless_get_project_selector": {
+      "oneOf": [
+        {
+          "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?=[^=^/~@\\s][^@\\s]*$",
+          "type": "string",
+          "x-fbrcm-grammar": "[client@|server@]=literal physical project ID; exact mode bypasses project discovery",
+          "x-fbrcm-matching": [
+            {
+              "comparison": "exact_case_sensitive",
+              "default_template": "client",
+              "lookup": false,
+              "operator": "literal_project_id"
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/target_selector"
+            },
+            {
+              "not": {
+                "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?="
+              }
+            }
+          ],
+          "x-fbrcm-matching": [
+            {
+              "client_target_canonicalization": "unqualified_project_id",
+              "comparison": "unicode_case_insensitive",
+              "default_mode": "fuzzy",
+              "explicit_target_selection": "single_named_template",
+              "fields": [
+                "project_id",
+                "display_name"
+              ],
+              "mode_prefixes": {
+                "/": "includes",
+                "=": "exact",
+                "^": "starts-with",
+                "~": "fuzzy"
+              },
+              "operator": "mode_prefixed_query",
+              "query_normalization": "trim_unicode_whitespace",
+              "target_prefixes": [
+                "client",
+                "server"
+              ],
+              "unqualified_target_selection": "client_template"
+            }
+          ]
+        }
+      ]
+    },
     "target_selector": {
       "allOf": [
         {
@@ -1026,6 +1077,71 @@
   "additionalProperties": false,
   "allOf": [
     {
+      "properties": {
+        "options": {
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            },
+            "properties": {
+              "update": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "stdin": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "options",
+          "stdin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "project": {
+                "items": {
+                  "$ref": "#/$defs/stateless_get_project_selector"
+                },
+                "type": "array"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "not": {
         "properties": {
           "arguments": {
@@ -1043,6 +1159,31 @@
           "arguments",
           "options"
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stdin": {
+            "not": {
+              "type": "null"
+            }
+          }
+        },
+        "required": [
+          "stdin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "update": {
+                "const": false
+              }
+            }
+          }
+        }
       }
     }
   ],
@@ -1117,13 +1258,21 @@
           "type": "boolean"
         },
         "profile": {
-          "allOf": [
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
             {
-              "$ref": "#/$defs/path_segment"
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
             }
           ],
-          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
-          "type": "string",
           "x-fbrcm-normalization": [
             {
               "operator": "trim_unicode_whitespace",
@@ -1133,7 +1282,7 @@
           ]
         },
         "project": {
-          "description": "Filter template targets by optional client@ or server@ project query; may be repeated",
+          "description": "Filter template targets by optional client@ or server@ project query; may be repeated; with remote --stateless execution, exact (=) targets bypass discovery and other selectors filter remote project IDs and display names",
           "items": {
             "$ref": "#/$defs/target_selector"
           },
@@ -1164,6 +1313,10 @@
             }
           ]
         },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
+        },
         "timeout": {
           "description": "Maximum duration for the complete command",
           "not": {
@@ -1181,8 +1334,26 @@
           ]
         },
         "update": {
-          "description": "Revalidate cached parameters before printing",
-          "type": "boolean"
+          "description": "Revalidate cached parameters before printing; cannot be combined with --stateless or stdin",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                },
+                {
+                  "source": "stdin",
+                  "name": "document",
+                  "operator": "absent",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],

@@ -1,0 +1,51 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:response",
+  "contract_version": "1.0.0",
+  "command": "rollouts.delete",
+  "requested_command": "rollouts.delete",
+  "outcome": "failure",
+  "exit_code": 10,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "kind": "rollout",
+    "id": "rollout_1",
+    "display_name": "increase minimal funding",
+    "project_id": "northstar-wallet",
+    "status": "would-delete"
+  },
+  "errors": [
+    {
+      "code": "interaction.required",
+      "category": "interaction",
+      "message": "confirmation is required before deleting the rollout",
+      "retryable": false,
+      "target": null,
+      "stage": null,
+      "details": {
+        "kind": "interaction",
+        "interaction_type": "confirmation",
+        "required_option": "--yes",
+        "destructive": true
+      },
+      "remediation": [
+        {
+          "description": "rerun with the complete non-interactive arguments",
+          "strategy": "retry_with_arguments",
+          "argv": [
+            "--yes"
+          ]
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

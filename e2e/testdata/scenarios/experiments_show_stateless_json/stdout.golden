@@ -1,0 +1,103 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:response",
+  "contract_version": "1.0.0",
+  "command": "experiments.show",
+  "requested_command": "experiments.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "project_number": "949596266151",
+      "state": "ACTIVE",
+      "etag": "W/\"1ea994f67032507a\"",
+      "updated_at": "2026-05-16T09:07:13.923358Z",
+      "auth_id": ""
+    },
+    "template": {
+      "version": "12",
+      "source": "firebase"
+    },
+    "experiment": {
+      "definition": {
+        "displayName": "new experiment test",
+        "description": "test for a new experiments flow",
+        "service": "EXPERIMENT_SERVICE_REMOTE_CONFIG",
+        "objectives": {
+          "activationEvent": {},
+          "eventObjectives": [
+            {
+              "isPrimary": true,
+              "systemObjectiveDetails": {
+                "objective": "retention_3"
+              },
+              "abtOptimizationFunction": "MAXIMIZE"
+            },
+            {
+              "systemObjectiveDetails": {
+                "objective": "retention_7"
+              },
+              "abtOptimizationFunction": "MAXIMIZE"
+            }
+          ]
+        },
+        "variants": [
+          {
+            "name": "Baseline",
+            "weight": 1
+          },
+          {
+            "name": "Variant A",
+            "weight": 1
+          },
+          {
+            "name": "Variant B",
+            "weight": 1
+          }
+        ]
+      },
+      "endTime": "1970-01-01T00:00:00Z",
+      "etag": "e1",
+      "lastUpdateTime": "2026-08-01T13:16:37.594885Z",
+      "name": "projects/949596266151/namespaces/firebase/experiments/abt_4",
+      "references": [
+        {
+          "group": "onboarding",
+          "parameter": "show_income_question",
+          "condition": "webapp",
+          "value_type": "BOOLEAN",
+          "percentage": 15,
+          "variants": [
+            {
+              "id": "0",
+              "value": "true"
+            },
+            {
+              "id": "1",
+              "value": "false"
+            },
+            {
+              "id": "2",
+              "value": "true"
+            }
+          ]
+        }
+      ],
+      "startTime": "2026-08-01T13:16:37.594885Z",
+      "state": "RUNNING"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

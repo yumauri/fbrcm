@@ -14,8 +14,195 @@ import (
 	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/env"
+	"github.com/yumauri/fbrcm/core/filter"
+	"github.com/yumauri/fbrcm/core/firebase"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
+
+// ResolveProjectTargetForExecution uses configured project resolution when
+// local reads are allowed and otherwise requires one literal physical project
+// target. Stateless targets default to the client template.
+func ResolveProjectTargetForExecution(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return ResolveProjectTargetArg(ctx, cmd, svc, query)
+	}
+	target, _, err := rctarget.ParsePositionalSelector(query)
+	if err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	if err := config.ValidatePhysicalProjectID(target.ProjectID); err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	return core.Project{
+		Name:            target.ProjectID,
+		ProjectID:       target.String(),
+		Templates:       []rctarget.Kind{target.Kind},
+		PrimaryTemplate: target.Kind,
+	}, nil
+}
+
+// ResolvePhysicalProjectForExecution uses configured project resolution when
+// local reads are allowed and otherwise requires one literal physical project
+// ID without client/server target syntax.
+func ResolvePhysicalProjectForExecution(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return ResolveProjectArg(ctx, cmd, svc, query)
+	}
+	if err := config.ValidatePhysicalProjectID(query); err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	return core.Project{Name: query, ProjectID: query}, nil
+}
+
+// FirebaseServiceContextForExecution binds an in-memory static-token Firebase
+// service when configured service resolution is disabled by the execution
+// policy. Stateful execution returns the original context unchanged.
+func FirebaseServiceContextForExecution(ctx context.Context, projectID string) (context.Context, error) {
+	return FirebaseServicesContextForExecution(ctx, []string{projectID})
+}
+
+// FirebaseServicesContextForExecution binds one in-memory static-token
+// Firebase service to every selected physical project when configured service
+// resolution is disabled by the execution policy. Stateful execution returns
+// the original context unchanged.
+func FirebaseServicesContextForExecution(ctx context.Context, projectIDs []string) (context.Context, error) {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return ctx, nil
+	}
+	service, err := staticAccessTokenFirebaseService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, projectID := range projectIDs {
+		ctx, err = core.WithDirectFirebaseService(ctx, projectID, service)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ctx, nil
+}
+
+// FirebaseProjectDiscoveryContextForExecution binds an in-memory static-token
+// service for stateless project discovery. Stateful execution returns the
+// original context unchanged.
+func FirebaseProjectDiscoveryContextForExecution(ctx context.Context) (context.Context, error) {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return ctx, nil
+	}
+	service, err := staticAccessTokenFirebaseService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return core.WithDirectFirebaseDiscoveryService(ctx, service)
+}
+
+// ResolveProjectTargetsForExecution applies normal profile-backed target
+// selection when local state is enabled. In stateless execution, exact
+// selectors are treated as literal project IDs while all other selectors are
+// matched against one live project-discovery result without repository aliases.
+func ResolveProjectTargetsForExecution(ctx context.Context, cmd *cobra.Command, svc *core.Core, rawFilters []string) ([]core.Project, context.Context, error) {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		progress.Start("Loading projects…")
+		projects, _, err := svc.ListProjects(ctx)
+		if err != nil {
+			return nil, ctx, err
+		}
+		projects, err = FilterProjectTargets(projects, rawFilters)
+		return projects, ctx, err
+	}
+
+	selected := make([]core.Project, 0, len(rawFilters))
+	seen := make(map[string]struct{})
+	appendUnique := func(projects ...core.Project) {
+		for _, project := range projects {
+			if _, ok := seen[project.ProjectID]; ok {
+				continue
+			}
+			seen[project.ProjectID] = struct{}{}
+			selected = append(selected, project)
+		}
+	}
+
+	discoveryFilters := make([]string, 0, len(rawFilters))
+	hasFilter := false
+	for _, raw := range rawFilters {
+		if strings.TrimSpace(raw) == "" {
+			continue
+		}
+		hasFilter = true
+		target, _, err := rctarget.ParseSelector(raw)
+		if err != nil {
+			return nil, ctx, InvalidArgument(err)
+		}
+		mode, query := filter.ParseModePrefixedQuery(target.ProjectID)
+		if mode != filter.ModeExact {
+			discoveryFilters = append(discoveryFilters, raw)
+			continue
+		}
+
+		target.ProjectID = query
+		project, err := ResolveProjectTargetForExecution(ctx, cmd, svc, target.String())
+		if err != nil {
+			return nil, ctx, err
+		}
+		appendUnique(project)
+	}
+
+	if !hasFilter || len(discoveryFilters) > 0 {
+		discoveryCtx, err := FirebaseProjectDiscoveryContextForExecution(ctx)
+		if err != nil {
+			return nil, ctx, err
+		}
+		progress.Start("Loading projects…")
+		projects, _, err := svc.ListProjectsForExecution(discoveryCtx)
+		if err != nil {
+			return nil, ctx, err
+		}
+		projects, err = FilterProjectTargetsWithAliases(projects, discoveryFilters, nil)
+		if err != nil {
+			return nil, ctx, err
+		}
+		appendUnique(projects...)
+		ctx = discoveryCtx
+	}
+
+	return selected, ctx, nil
+}
+
+// ResolveProjectMutationTargetsForExecution resolves target filters using the
+// active execution policy and binds direct Firebase services for every
+// stateless target. Stateful execution retains configured service resolution.
+func ResolveProjectMutationTargetsForExecution(ctx context.Context, cmd *cobra.Command, svc *core.Core, rawFilters []string) ([]core.Project, context.Context, error) {
+	projects, ctx, err := ResolveProjectTargetsForExecution(ctx, cmd, svc, rawFilters)
+	if err != nil {
+		return nil, ctx, err
+	}
+	projectIDs := make([]string, len(projects))
+	for i, project := range projects {
+		projectIDs[i] = project.ProjectID
+	}
+	ctx, err = FirebaseServicesContextForExecution(ctx, projectIDs)
+	if err != nil {
+		return nil, ctx, err
+	}
+	return projects, ctx, nil
+}
+
+func staticAccessTokenFirebaseService(ctx context.Context) (*firebase.Service, error) {
+	accessToken, ok := env.LookupNonEmpty(env.GoogleAccessToken)
+	if !ok {
+		return nil, &core.AuthError{
+			Kind: "configuration",
+			Err:  fmt.Errorf("%s is required with --stateless", env.GoogleAccessToken),
+		}
+	}
+	service, err := firebase.NewServiceWithAccessToken(ctx, accessToken)
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
+}
 
 func ResolveProjectArg(ctx context.Context, cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
 	progress.Start("Resolving project…")

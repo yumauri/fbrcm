@@ -21,6 +21,7 @@ type Support struct {
 	Draft              bool `json:"draft"`
 	ConfirmationBypass bool `json:"confirmation_bypass"`
 	Stdin              bool `json:"stdin"`
+	Stateless          bool `json:"stateless"`
 }
 
 type ArgumentCapability struct {
@@ -107,6 +108,7 @@ type CapabilitySummary struct {
 	ResponseSchema   string   `json:"response_schema"`
 	SideEffectLevel  int      `json:"side_effect_level"`
 	Destructive      bool     `json:"destructive"`
+	Supports         Support  `json:"supports"`
 }
 
 type CapabilityIndex struct {
@@ -132,6 +134,7 @@ func Capabilities(root *cobra.Command) CapabilityIndex {
 			ResponseSchema:   capability.ResponseSchema,
 			SideEffectLevel:  capability.SideEffectLevel,
 			Destructive:      capability.Destructive,
+			Supports:         capability.Supports,
 		})
 	}
 	return CapabilityIndex{ContractVersion: Version, Count: len(commands), Commands: commands}
@@ -320,6 +323,45 @@ func describe(cmd *cobra.Command) Capability {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "version", "equals", false))}
 				usage += "; accepted but not applied with --version"
 			}
+			if SupportsStatelessCommand(id) && flag.Name == "profile" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
+			if SupportsStatelessCommand(id) && flag.Name == "cached" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
+			if SupportsStatelessCommand(id) && flag.Name == "draft" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
+			if id == "projects.list" && flag.Name == "update" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
+			if id == "projects.list" && flag.Name == "expr" {
+				usage += "; with --stateless, evaluates against directly fetched client Remote Config after project filtering"
+			}
+			if slices.Contains([]string{
+				"conditions.list", "conditions.show", "experiments.list", "experiments.show", "groups.list",
+				"personalizations.list", "personalizations.show", "project.show", "rollouts.list", "rollouts.show",
+			}, id) && flag.Name == "update" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
+			if id == "get" && flag.Name == "update" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(
+					predicate("option", "stateless", "equals", false),
+					predicate("stdin", "document", "absent", nil),
+				)}
+				usage += "; cannot be combined with --stateless or stdin"
+			}
+			if id == "get" && flag.Name == "project" {
+				usage += "; with remote --stateless execution, exact (=) targets bypass discovery and other selectors filter remote project IDs and display names"
+			}
+			if flag.Name == "stateless" && !SupportsStatelessCommand(id) {
+				usage += "; true is currently rejected by this command"
+			}
 			flags = append(flags, FlagCapability{Name: "--" + flag.Name, Aliases: aliases, Type: flag.Value.Type(), Default: defaultValue, Required: flag.Annotations != nil && len(flag.Annotations[cobra.BashCompOneRequiredFlag]) > 0, Repeatable: strings.Contains(flag.Value.Type(), "Slice") || strings.Contains(flag.Value.Type(), "Array"), Effective: effective, EffectiveWhen: effectiveWhen, Usage: usage})
 		})
 	}
@@ -337,7 +379,7 @@ func describe(cmd *cobra.Command) Capability {
 	}
 	behavior = withMachineAuthenticationEffects(id, behavior)
 	behavior = withJSONEnvelopeProfileBootstrap(behavior)
-	support := Support{DryRun: hasFlag(cmd, "dry-run"), Draft: hasFlag(cmd, "draft"), ConfirmationBypass: hasFlag(cmd, "yes"), Stdin: behavior.stdin}
+	support := Support{DryRun: hasFlag(cmd, "dry-run"), Draft: hasFlag(cmd, "draft"), ConfirmationBypass: hasFlag(cmd, "yes"), Stdin: behavior.stdin, Stateless: SupportsStatelessCommand(id)}
 	interaction := InteractionCapability{Mode: "none", JSONBehavior: "non_interactive"}
 	interactionWhen := cloneConditions(behavior.interactionWhen)
 	if support.ConfirmationBypass {
@@ -367,6 +409,10 @@ func describe(cmd *cobra.Command) Capability {
 		if behavior.idempotency == "conditional" && !containsPredicateInIdempotency(behavior.idempotencyWhen, "runtime_state", "authentication", "requires_human_authorization") {
 			behavior.idempotencyWhen = append([]IdempotencyCondition{{Idempotency: "yes", When: []BehaviorConditionClause{authWhen}}}, behavior.idempotencyWhen...)
 		}
+	}
+	if SupportsStatelessCommand(id) {
+		behavior = withStatelessCommandEffects(behavior)
+		interactionWhen = withStatelessCommandInteractions(interactionWhen)
 	}
 	var stdinSchema *string
 	if support.Stdin {

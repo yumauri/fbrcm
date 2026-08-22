@@ -32,10 +32,17 @@ func New(svc *core.Core) *cobra.Command {
 }
 
 func resolveVersionProject(cmd *cobra.Command, svc *core.Core, query string, cachedOnly bool) (core.Project, error) {
+	ctx := shared.CommandContext(cmd)
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if cachedOnly {
+			return core.Project{}, shared.InvalidArgument(fmt.Errorf("--cached cannot be used with --stateless"))
+		}
+		return shared.ResolveProjectTargetForExecution(ctx, cmd, svc, query)
+	}
 	if cachedOnly {
 		return shared.ResolveCachedProjectTargetArg(cmd, query)
 	}
-	return shared.ResolveProjectTargetArg(shared.CommandContext(cmd), cmd, svc, query)
+	return shared.ResolveProjectTargetArg(ctx, cmd, svc, query)
 }
 
 func newVersionsListCommand(svc *core.Core) *cobra.Command {
@@ -64,7 +71,12 @@ func newVersionsListCommand(svc *core.Core) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		result, err := svc.ListRemoteConfigVersions(shared.CommandContext(cmd), project.ProjectID, core.VersionListOptions{Limit: limit, All: all, Before: before, Since: since, Until: until, CachedOnly: cached})
+		ctx, err := shared.FirebaseServiceContextForExecution(shared.CommandContext(cmd), project.ProjectID)
+		if err != nil {
+			return err
+		}
+		cmd.SetContext(ctx)
+		result, err := svc.ListRemoteConfigVersions(ctx, project.ProjectID, core.VersionListOptions{Limit: limit, All: all, Before: before, Since: since, Until: until, CachedOnly: cached})
 		if err != nil {
 			return err
 		}
@@ -158,7 +170,12 @@ func newVersionsShowCommand(svc *core.Core) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		resolved, err := svc.GetRemoteConfigVersion(shared.CommandContext(cmd), project.ProjectID, args[1], cached)
+		ctx, err := shared.FirebaseServiceContextForExecution(shared.CommandContext(cmd), project.ProjectID)
+		if err != nil {
+			return err
+		}
+		cmd.SetContext(ctx)
+		resolved, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, args[1], cached)
 		if err != nil {
 			return err
 		}
@@ -208,11 +225,16 @@ func runVersionsDiff(cmd *cobra.Command, svc *core.Core, args []string) error {
 	if err != nil {
 		return err
 	}
+	ctx, err := shared.FirebaseServiceContextForExecution(shared.CommandContext(cmd), project.ProjectID)
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
 	to := "current"
 	if len(args) == 3 {
 		to = args[2]
 	}
-	fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(shared.CommandContext(cmd), project.ProjectID, args[1], to, opts.cached)
+	fromCfg, toCfg, err := svc.GetRemoteConfigVersionPair(ctx, project.ProjectID, args[1], to, opts.cached)
 	if err != nil {
 		return err
 	}
@@ -353,7 +375,12 @@ func newVersionsExportCommand(svc *core.Core) *cobra.Command {
 				return err
 			}
 		}
-		resolved, err := svc.GetRemoteConfigVersion(shared.CommandContext(cmd), project.ProjectID, args[1], cached)
+		ctx, err := shared.FirebaseServiceContextForExecution(shared.CommandContext(cmd), project.ProjectID)
+		if err != nil {
+			return err
+		}
+		cmd.SetContext(ctx)
+		resolved, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, args[1], cached)
 		if err != nil {
 			return err
 		}
@@ -426,13 +453,20 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	if err != nil {
 		return err
 	}
-	if hasDraft, draftErr := svc.HasDraft(project.ProjectID); draftErr != nil {
-		return draftErr
-	} else if hasDraft {
-		return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []shared.Remediation{
-			{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
-			{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
-		}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)}
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, draftErr := svc.HasDraft(project.ProjectID); draftErr != nil {
+			return draftErr
+		} else if hasDraft {
+			return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []shared.Remediation{
+				{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
+				{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
+			}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)}
+		}
 	}
 	target, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, selector, restore)
 	if err != nil {

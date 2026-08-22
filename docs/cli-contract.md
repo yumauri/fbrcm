@@ -260,6 +260,8 @@ editor, file picker, or browser authorization flow.
   no local ADC source is available.
 - `project open --json` returns the URL with `opened: false` and does not start
   a browser.
+- In human mode, `FBRCM_OFFLINE` makes `project open` print that URL to stdout
+  instead of launching a browser, in both stateful and stateless execution.
 - A command that would overwrite an existing file requires explicit
   confirmation. Commands with `--yes` use it as the machine bypass. `draft
   show --to`, which intentionally has no bypass option, returns
@@ -336,7 +338,9 @@ fbrcm schema show urn:fbrcm:schema:cli:1.0.0:command:project.import:input --json
 
 The no-argument JSON form returns a compact index containing each command's
 stable ID, argv path, summary, schema URNs, side-effect level, and destructive
-marker. `capabilities <command...> --json` performs an exact argv-path lookup
+marker. It also includes the same `supports` object as the detailed record;
+`supports.stateless` is the authoritative discovery signal for stateless-mode
+availability. `capabilities <command...> --json` performs an exact argv-path lookup
 and returns the detailed record below. Unknown paths are `not_found` failures;
 non-executable command groups are argument failures. No prefix fallback is
 performed.
@@ -352,7 +356,7 @@ Every executable command's detailed capability record contains:
 - destructive markers, typed destructive conditions, and human-readable
   destructive reasons;
 - idempotency classification and typed `idempotency_when` conditions;
-- dry-run, draft, confirmation-bypass, and stdin support;
+- dry-run, draft, confirmation-bypass, stdin, and stateless support;
 - interaction requirements, typed `interaction_when` conditions, and
   JSON-mode behavior.
 
@@ -426,11 +430,14 @@ must contact an identity provider or metadata service and `local_file_write`
 when a non-dry OAuth flow persists a new or refreshed token. Doctor declares
 the remote authentication access but not token persistence because its
 diagnostic client refreshes only in memory.
-Every machine invocation declares `local_state_write` coverage for envelope
-profile bootstrap. Commands without an unconditional local-state write use the
-condition `runtime_state.profile_bootstrap required`: final envelope construction resolves
-`context.profile` and, when no explicit or persisted effective profile exists,
-creates the default profile directories and global configuration. Commands that
+Every machine invocation declares `local_state_write` coverage for possible
+envelope profile bootstrap. Commands without an unconditional local-state write
+use the condition `runtime_state.profile_bootstrap required`: by default, final
+envelope construction resolves `context.profile` and, when no explicit or
+persisted effective profile exists, creates the default profile directories and
+global configuration. An execution path explicitly marked profileless skips
+profile selection and envelope bootstrap and reports `context.profile` as
+`null`; no CLI argument or environment variable selects that path yet. Commands that
 resolve projects through the live registry also declare a local-state write for
 `runtime_state.project_registry sync_write_succeeded`, covering persistence of a
 successful Firebase registry sync after a missing or empty registry. On commands
@@ -673,6 +680,180 @@ access as `auth.configuration_invalid`; invalid `quota_project_id` metadata in
 the ADC selected for a gcloud identity fails as `auth.credentials_invalid`.
 Both are non-retryable auth-category failures with semantic exit status 4 and
 retain the selected auth identity as their problem target.
+
+`FBRCM_GOOGLE_ACCESS_TOKEN` is inherited process context. The explicit root
+`--stateless` option selects profileless static-token authentication for the
+supported commands published by `capabilities`: parameter reads and mutations;
+condition reads, validation, and mutations; group reads and mutations;
+experiment and rollout reads and deletion; personalization reads; project
+defaults, export, import, open, and show; project discovery, diff, and
+promotion; and version list, show, export, diff, and rollback. It works in both
+human and JSON output modes and requires a nonempty token, except that `project
+open` and stateless `get` with a stdin document are local-only and do not
+require the token. The token itself is never
+included in an invocation schema, response, log, or remediation. Except for
+the project-filter behavior documented below for `get`, parameter mutations,
+`groups list`, and `projects list`,
+each remote target is interpreted as a literal physical Firebase project ID
+with an optional `client@` or `server@` template prefix. Profile, alias, and
+configured-primary resolution are skipped, `context.profile` is `null`, and the access token is neither refreshed
+nor persisted. Repository configuration is disabled, `FBRCM_PROFILE` is
+ignored, and an explicit `--profile` conflicts with `--stateless`. Version
+commands also reject `--cached` because stateless execution cannot read local
+snapshots. Commands with `--update` reject it because stateless reads are
+already live. Setting the token without `--stateless` does
+not alter normal profile, project-resolution, or configured-auth behavior. The
+quota-project precedence is `GOOGLE_CLOUD_QUOTA_PROJECT`, then the requested
+physical Firebase project ID; static-token mode has no credential file from
+which to read an ADC `quota_project_id`.
+
+Stateless `projects list` performs live paginated Cloud Resource Manager
+discovery and per-project metadata enrichment. It has no requested target for
+quota fallback, so only `GOOGLE_CLOUD_QUOTA_PROJECT` supplies a quota project
+for the initial list request. The command skips repository aliases and all
+profile-managed state. Its `filter` option matches only remote display names
+and project IDs; `url` remains effective. Invocation schemas reject `update`
+when true because discovery is already live. `expr` remains available and is
+evaluated after `filter`; the command directly fetches the current client
+Remote Config template for each remaining project and builds the standard
+project expression context without reading or writing a cache.
+
+Stateless `versions list` reads Firebase version history without consulting
+the current cache pointer or immutable snapshots. Its items therefore report
+`cached: false` and `current: false`; `cached` is rejected while the normal
+live pagination, time, and version-number filters remain available. Stateless
+`conditions list` fetches the latest Remote Config without cache or draft
+overlay, then applies its name, search, and expression filters locally.
+`update` is rejected for conditions because stateless reads are already live.
+
+Condition show uses the same direct template path, and condition validate sends
+the downloaded template and ETag to Firebase's validate-only endpoint without
+draft inspection. Group list reuses the stateless `get` target-selection rules
+and applies group filters locally. Version diff fetches both selected versions
+without snapshot reads, and projects diff fetches both literal template targets
+without project-registry resolution; both reject `cached`.
+
+Managed-feature list/show commands accept one literal physical project ID and
+reject client/server prefixes. They fetch current project metadata to obtain
+the numeric project identifier, then read the published client template
+without caching. Experiment and rollout commands also contact their live
+metadata endpoints; personalization commands derive their records from the
+template. Project show performs one live metadata request and leaves all
+profile-derived fields empty.
+
+Stateless experiment and rollout deletion use the same literal physical project
+and metadata resolution, fetch the named resource before confirmation, and
+then send its Firebase DELETE request directly. They do not fetch or rewrite
+the Remote Config template. JSON mode without `yes: true` returns the normal
+`would-delete` data plus `interaction.required`, and no DELETE request is sent.
+
+Stateless group add/edit/rename/delete reuse the same target-selection rules as
+stateless group list. Each selected template is fetched directly, transformed
+in memory, submitted to Firebase validation, and published with the fetched
+ETag. The execution policy suppresses project-registry and cache writes,
+immutable version snapshots, draft inspection, and pre/post-publish hooks.
+`draft: true` is rejected by both runtime validation and invocation schemas;
+dry-run, change notes, confirmation, and structured per-target outcomes remain
+available. Multi-target publications remain independent and non-atomic.
+
+Stateless condition add/edit/move/rename/delete accept exactly one literal
+client or server template target. They use the same direct fetch, in-memory
+transformation, Firebase validation, ETag publication, and persistence-policy
+suppression as stateless group mutations. Condition ordering and parameter
+references are transformed by the existing condition domain operations.
+`draft: true` is rejected; dry-run, change notes, confirmation bypass, and
+structured mutation outcomes remain available.
+
+Stateless parameter add/duplicate/update/delete use the same project-selection
+contract as stateless remote `get`: exact `=project-id` selectors bypass
+discovery, non-exact selectors filter one live discovery result, and an omitted
+selector selects all accessible projects. Optional client/server prefixes are
+preserved, repeated selectors are ORed and deduplicated, and repository aliases
+never participate. Each selected target is fetched, transformed, validated,
+and published independently. Parameter matching for update and delete and
+project-context expressions for add and duplicate are evaluated against the
+directly fetched template. The persistence policy suppresses project registry,
+cache, snapshot, draft, and hook access; `draft: true` is rejected while
+dry-run, change notes, confirmation bypass, and structured partial outcomes
+remain available.
+
+Stateless `project import` accepts a literal client or server target and keeps
+the normal explicit file-before-stdin input selection. It fetches the current
+template directly, applies import selection and merge logic in memory,
+validates against Firebase, and publishes with the fetched ETag. Explicit input
+file access is caller-directed rather than application-managed state and
+remains available. Draft reads and writes, cache and snapshot persistence, and
+hooks are suppressed; `draft: true` is rejected by runtime and schema.
+
+Stateless `projects promote` accepts two literal client or server targets. It
+reads both templates directly, applies the existing local selection plan,
+reloads and revalidates the target, and publishes with the latest ETag. A typed
+ETag conflict reloads the target, reapplies the selected plan, and retries.
+Profile aliases, drafts, caches, snapshots, and hooks do not participate;
+dry-run reaches Firebase validation but omits publication.
+
+Stateless `versions rollback` accepts one literal client or server target. It
+loads source and current history directly, performs the normal pre-publication
+current-version recheck, validates the candidate, and uses Firebase's native
+force-publication rollback endpoint. No snapshot, cache, draft, or hook state
+is accessed or updated. Dry-run performs the reads and validate-only request
+without sending the rollback POST. The documented native rollback race window
+after the final recheck is unchanged.
+
+Stateless remote `get` discovers all token-accessible projects when `project`
+is omitted. A non-exact selector uses the normal fuzzy, starts-with (`^`),
+contains (`/`), or fuzzy (`~`) modes against remote project IDs and display
+names only. An exact `=project-id` selector instead treats its query as a
+literal physical ID and bypasses discovery. Optional `client@` and `server@`
+prefixes select the requested template kind; unqualified discovered projects
+default to client. Repeated selectors are ORed, mixed direct and discovered
+targets are unioned and deduplicated, and discovery runs at most once. No
+repository aliases or configured template preferences participate. The
+command fetches every selected latest template without stale-cache fallback
+and applies parameter, search, and expression filters in memory. It reports
+`cached_at: null` and status `fetch`; `update` is rejected because the read is
+already live. Discovery has no requested target for the initial quota fallback,
+so it may require `GOOGLE_CLOUD_QUOTA_PROJECT`; exact-only selection retains
+the target-project fallback. Existing stdin document mode is also
+stateless-capable and tokenless, while `update` is rejected for every stdin
+invocation because stdin is already the complete input.
+
+`project open <project>` also supports `--stateless`, but performs no Firebase
+API request and therefore requires no access token or quota project. Its
+project argument is a literal physical project ID without `client@` or
+`server@` syntax. Human mode opens the constructed Firebase Console URL; JSON
+mode returns the URL without launching a browser. Human offline mode also
+prints the URL without launching a browser.
+
+After a supported stateless invocation passes setup validation, fbrcm emits an
+info-level `stateless mode enabled` log record with component `cli.stateless`
+and the stable command ID; credential values are never logged. JSON mode's
+default silent log level suppresses this record unless logging is explicitly
+enabled.
+
+Every command execution carries an explicit persistence policy. Normal mode
+enables application-managed local reads, local writes, and configured hooks.
+Stateless mode disables all three controls; service resolution, parameter and
+version caches, draft entry points, publication cache updates, and hook
+preparation consult that policy instead of a command-specific stateless
+marker. The permissive policy is also the default for internal callers that do
+not attach one, preserving existing stateful behavior. Explicit caller-chosen
+artifact output such as `project export --to`, `project defaults --to`, or
+`versions export --to` is not application-managed local state and remains
+permitted.
+
+`--to` and `--yes` retain the normal artifact destination and overwrite
+contracts. Every supported stateless invocation schema rejects `profile` and
+rejects state-dependent options where they exist. Project-target schemas
+conditionally narrow positional arguments to literal physical IDs with
+optional template prefixes where supported. Project-scoped metadata and
+managed-feature commands require a physical ID without a prefix; template-aware
+commands publish client as the default when `options.stateless` is true.
+Capability side-effect and
+interaction conditions mark profile bootstrap, project-registry persistence,
+configured-auth token persistence, identity-provider access, and OAuth
+authorization as stateful-only; an explicitly requested `--to` write remains
+available in either mode.
 
 Direct mutation result DTOs expose selection and no-op provenance:
 
