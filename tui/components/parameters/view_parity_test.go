@@ -92,7 +92,7 @@ func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
 
 	got := parityTestModel().renderParameterValue(core.ParametersValue{
 		Value: label, ValueType: "BOOLEAN", UseInAppDefault: true,
-	}, false)
+	}, false, 40)
 	want := corestyles.EmptyValueStyle().Render(label)
 	if got != want {
 		t.Fatalf("renderParameterValue = %q, want shared empty-value style %q", got, want)

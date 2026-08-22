@@ -134,7 +134,8 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	left := prefixStyle.Render("  ") + m.renderHighlightedParameterKey(param.Key, style, selected) + prefixStyle.Render(namePad)
 	left += prefixStyle.Render(strings.Repeat(" ", 2)) + iconLineStyle.Render(icon)
 	left += prefixStyle.Render(" ")
-	line := left + m.renderCollapsedParameterValues(param.Values, separatorLineStyle, selected)
+	valueWidth := max(width-lipgloss.Width(left), 0)
+	line := left + m.renderCollapsedParameterValues(param.Values, separatorLineStyle, selected, valueWidth)
 	if selected {
 		return styles.FillSelectedLine(line, width, parameterSelectionStyle())
 	}
@@ -271,11 +272,7 @@ func (m Model) renderHistoryTypedValue(value *core.ParametersValue, kind rcdiff.
 	if value == nil || width <= 0 {
 		return ""
 	}
-	clipped := *value
-	if clipped.Display.Kind == rcdisplay.ValueSummaryPlain {
-		clipped.Value = ansi.Truncate(clipped.Value, width, "")
-	}
-	rendered := m.renderParameterValueWithBase(clipped, selected)
+	rendered := m.renderParameterValueWithBase(*value, selected, width)
 	rendered = ansi.Truncate(rendered, width, "")
 	if !selected {
 		if background := historyChangeBackground(kind); background != nil {
@@ -326,8 +323,9 @@ func (m Model) renderValueNode(node visibleNode, selected bool) string {
 		fillerWidth = max(leafValueStart-labelStart-lipgloss.Width(label)-3, 1)
 	}
 	filler := strings.Repeat("╌", fillerWidth)
-	valueRendered := m.renderParameterValue(value, selected)
-	line := tree + " " + labelStyle.Render(label) + leafLineStyle.Render(" "+filler+" ") + valueRendered
+	prefix := tree + " " + labelStyle.Render(label) + leafLineStyle.Render(" "+filler+" ")
+	valueRendered := m.renderParameterValue(value, selected, max(width-lipgloss.Width(prefix), 0))
+	line := prefix + valueRendered
 	return viewutil.PadRight(line, width)
 }
 
@@ -374,22 +372,40 @@ func (m Model) renderHistoryValueNode(node visibleNode, selected bool) string {
 	return viewutil.PadRight(line, width)
 }
 
-func (m Model) renderCollapsedParameterValues(values []core.ParametersValue, separatorStyle lipgloss.Style, selected bool) string {
+func (m Model) renderCollapsedParameterValues(values []core.ParametersValue, separatorStyle lipgloss.Style, selected bool, width int) string {
 	parts := make([]string, 0, max(0, len(values)*2-1))
 	for i, value := range values {
 		if i > 0 {
-			parts = append(parts, separatorStyle.Render(" / "))
+			if width <= 3 {
+				break
+			}
+			separator := separatorStyle.Render(" / ")
+			parts = append(parts, separator)
+			width -= lipgloss.Width(separator)
 		}
-		parts = append(parts, m.renderParameterValueWithBase(value, selected))
+		rendered := m.renderParameterValueWithBase(value, selected, width)
+		parts = append(parts, rendered)
+		width -= lipgloss.Width(rendered)
+		if width <= 0 {
+			break
+		}
 	}
 	return strings.Join(parts, "")
 }
 
-func (m Model) renderParameterValue(value core.ParametersValue, selected bool) string {
-	return m.renderParameterValueWithBase(value, selected)
+func (m Model) renderParameterValue(value core.ParametersValue, selected bool, width int) string {
+	return m.renderParameterValueWithBase(value, selected, width)
 }
 
-func (m Model) renderParameterValueWithBase(value core.ParametersValue, selected bool) string {
+func (m Model) renderParameterValueWithBase(value core.ParametersValue, selected bool, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	fragment, cropped := cropParameterValuePreview(value.Value, width)
+	preview := fragment
+	if cropped {
+		preview += "…"
+	}
 	if value.Empty || value.UseInAppDefault {
 		style := corestyles.EmptyValueStyle()
 		if selected {
@@ -399,18 +415,37 @@ func (m Model) renderParameterValueWithBase(value core.ParametersValue, selected
 				style = style.Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
 			}
 		}
-		return style.Render(value.Value)
+		return style.Render(preview)
 	}
 	if selected {
-		return valueSelectionStyle().Render(value.Value)
+		return valueSelectionStyle().Render(preview)
 	}
 	if rendered, ok := viewutil.RenderManagedValueSummary(value.Display, value.ValueType); ok {
-		return rendered
+		return ansi.Truncate(rendered, width, "…")
 	}
 	if strings.EqualFold(strings.TrimSpace(value.ValueType), "json") {
-		return jsoninput.HighlightJSONVisible(value.Value)
+		rendered := jsoninput.HighlightJSONVisible(fragment)
+		if cropped {
+			rendered += parameterValueStyle.Render("…")
+		}
+		return rendered
 	}
-	return corestyles.ValueTextStyle(value.Value, value.ValueType).Render(value.Value)
+	return corestyles.ValueTextStyle(value.Value, value.ValueType).Render(preview)
+}
+
+func cropParameterValuePreview(value string, width int) (string, bool) {
+	if width <= 0 {
+		return "", value != ""
+	}
+	fragment, cropped := viewutil.CropTextBeforeRender(value, width, width, 1)
+	if !cropped {
+		return fragment, false
+	}
+	if width == 1 {
+		return "", true
+	}
+	fragment, _ = viewutil.CropTextBeforeRender(fragment, width-1, width-1, 1)
+	return fragment, true
 }
 
 func (m Model) renderHighlightedParameterKey(text string, baseStyle lipgloss.Style, selected bool) string {

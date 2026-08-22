@@ -7,7 +7,6 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/rivo/uniseg"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -938,55 +937,11 @@ func renderParameterValue(value, valueType string, firstWidth, continuationWidth
 	if strings.TrimSpace(value) == "" {
 		return styles.DetailsEmptyValue.Render("—"), false
 	}
-	fragment, cropped := cropValueBeforeRender(value, firstWidth, continuationWidth, lineBudget)
+	fragment, cropped := viewutil.CropTextBeforeRender(value, firstWidth, continuationWidth, lineBudget)
 	if strings.EqualFold(strings.TrimSpace(valueType), "json") {
 		return jsoninput.HighlightJSONVisible(fragment), cropped
 	}
 	return corestyles.ValueTextStyle(value, valueType).Render(fragment), cropped
-}
-
-func cropValueBeforeRender(value string, firstWidth, continuationWidth, lineBudget int) (string, bool) {
-	if lineBudget <= 0 {
-		return value, false
-	}
-	firstWidth = max(firstWidth, 1)
-	continuationWidth = max(continuationWidth, 1)
-
-	var out strings.Builder
-	graphemes := uniseg.NewGraphemes(value)
-	line := 0
-	lineWidth := 0
-	lineLimit := firstWidth
-	for graphemes.Next() {
-		cluster := graphemes.Str()
-		if cluster == "\r" {
-			continue
-		}
-		if cluster == "\n" {
-			_, end := graphemes.Positions()
-			if line+1 >= lineBudget {
-				return out.String(), end < len(value)
-			}
-			out.WriteByte('\n')
-			line++
-			lineWidth = 0
-			lineLimit = continuationWidth
-			continue
-		}
-
-		clusterWidth := graphemes.Width()
-		if lineWidth > 0 && lineWidth+clusterWidth > lineLimit {
-			if line+1 >= lineBudget {
-				return out.String(), true
-			}
-			line++
-			lineWidth = 0
-			lineLimit = continuationWidth
-		}
-		out.WriteString(cluster)
-		lineWidth += clusterWidth
-	}
-	return out.String(), false
 }
 
 func conditionColor(conditions []firebase.RemoteConfigCondition, name string) string {

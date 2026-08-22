@@ -17,6 +17,7 @@ import (
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
 	"github.com/yumauri/fbrcm/tui/components/jsoninput"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
@@ -423,7 +424,7 @@ func TestPromoteParameterValueWrapsWithHangingIndentAndLineBudget(t *testing.T) 
 
 func TestPromoteCropsHugeJSONBeforeSyntaxHighlighting(t *testing.T) {
 	huge := `{"payload":"` + strings.Repeat("abcdefghij", 100_000) + `","tail":"must not be scanned"}`
-	fragment, cropped := cropValueBeforeRender(huge, 12, 16, detailValueMaxLineBudget)
+	fragment, cropped := viewutil.CropTextBeforeRender(huge, 12, 16, detailValueMaxLineBudget)
 	if !cropped {
 		t.Fatal("huge JSON fragment was not cropped")
 	}
@@ -446,7 +447,7 @@ func TestPromoteCropsHugeJSONBeforeSyntaxHighlighting(t *testing.T) {
 
 func TestPromoteCropsHugeStringBeforeStylingAndWrapping(t *testing.T) {
 	huge := strings.Repeat("abcdefghij", 100_000) + "tail must not be rendered"
-	fragment, cropped := cropValueBeforeRender(huge, 12, 16, detailValueMaxLineBudget)
+	fragment, cropped := viewutil.CropTextBeforeRender(huge, 12, 16, detailValueMaxLineBudget)
 	if !cropped {
 		t.Fatal("huge string fragment was not cropped")
 	}

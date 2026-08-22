@@ -18,6 +18,8 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
+const valuePreviewLineBudget = 8
+
 func newTextInput() textinput.Model {
 	return inputstyles.NewTextInput()
 }
@@ -54,16 +56,15 @@ func (m Model) renderValueLines(value core.ParametersValue, width int) []string 
 	case "json":
 		return renderJSONValueLines(value.RawValue, width)
 	case "string", "":
-		if strings.Contains(value.RawValue, "\n") {
-			return renderPlainValueLines(value.RawValue, width, corestyles.ValueTextStyle(value.RawValue, value.ValueType))
-		}
+		return renderPlainValueLines(value.RawValue, width, corestyles.ValueTextStyle(value.RawValue, value.ValueType))
 	}
 	return renderPlainValueLines(value.Value, width, m.valueTextStyle(value))
 }
 
 func renderPlainValueLines(value string, width int, style lipgloss.Style) []string {
+	fragment, cropped := viewutil.CropTextBeforeRender(value, width, width, valuePreviewLineBudget)
 	lines := make([]string, 0)
-	for part := range strings.SplitSeq(value, "\n") {
+	for part := range strings.SplitSeq(fragment, "\n") {
 		for _, line := range wrapLine(part, width) {
 			lines = append(lines, style.Render(line))
 		}
@@ -71,15 +72,19 @@ func renderPlainValueLines(value string, width int, style lipgloss.Style) []stri
 	if len(lines) == 0 {
 		return []string{style.Render("")}
 	}
-	return lines
+	return finishValuePreview(lines, width, cropped)
 }
 
 func renderJSONValueLines(value string, width int) []string {
+	fragment, cropped := viewutil.CropTextBeforeRender(value, width, width, valuePreviewLineBudget)
 	var out bytes.Buffer
-	if err := json.Indent(&out, []byte(value), "", "  "); err != nil {
-		return renderPlainValueLines(value, width, corestyles.ValueTextStyle(value, "json"))
+	if cropped {
+		out.WriteString(fragment)
+	} else if err := json.Indent(&out, []byte(fragment), "", "  "); err != nil {
+		return renderPlainValueLines(fragment, width, corestyles.ValueTextStyle(fragment, "json"))
 	}
-	formatted := out.String()
+	formatted, formattedCropped := viewutil.CropTextBeforeRender(out.String(), width, width, valuePreviewLineBudget)
+	cropped = cropped || formattedCropped
 	lines := strings.Split(formatted, "\n")
 	ranges := make([]jsoninput.JSONRange, 0, len(lines))
 	offset := 0
@@ -95,5 +100,18 @@ func renderJSONValueLines(value string, width int) []string {
 		indent := min(leadingSpaceWidth(ansi.Strip(highlighted))+2, max(width-1, 0))
 		rendered = append(rendered, viewutil.WrapRenderedLine(highlighted, width, indent)...)
 	}
-	return rendered
+	return finishValuePreview(rendered, width, cropped)
+}
+
+func finishValuePreview(lines []string, width int, cropped bool) []string {
+	if len(lines) > valuePreviewLineBudget {
+		lines = append([]string(nil), lines[:valuePreviewLineBudget]...)
+		cropped = true
+	}
+	if !cropped || len(lines) == 0 {
+		return lines
+	}
+	ellipsis := styles.PanelMuted.Render("…")
+	lines[len(lines)-1] = ansi.Truncate(lines[len(lines)-1], max(width-lipgloss.Width(ellipsis), 0), "") + ellipsis
+	return lines
 }
