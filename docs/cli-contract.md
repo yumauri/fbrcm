@@ -683,15 +683,17 @@ retain the selected auth identity as their problem target.
 
 `FBRCM_GOOGLE_ACCESS_TOKEN` is inherited process context. The explicit root
 `--stateless` option selects profileless static-token authentication for the
-supported read commands published by `capabilities`: condition list/show/validate,
-remote `get`, group list, experiment/rollout/personalization list and show,
-project defaults/export/open/show, project list and diff, and version
-list/show/export/diff. It works in both human
-and JSON output modes and requires a nonempty token, except that `project open`
-and stateless `get` with a stdin document are local-only and do not require the
-token. The token itself is never
+supported commands published by `capabilities`: parameter reads and mutations;
+condition reads, validation, and mutations; group reads and mutations;
+experiment and rollout reads and deletion; personalization reads; project
+defaults, export, import, open, and show; project discovery, diff, and
+promotion; and version list, show, export, diff, and rollback. It works in both
+human and JSON output modes and requires a nonempty token, except that `project
+open` and stateless `get` with a stdin document are local-only and do not
+require the token. The token itself is never
 included in an invocation schema, response, log, or remediation. Except for
-the project-filter behavior documented below for `get`, `groups list`, and `projects list`,
+the project-filter behavior documented below for `get`, parameter mutations,
+`groups list`, and `projects list`,
 each remote target is interpreted as a literal physical Firebase project ID
 with an optional `client@` or `server@` template prefix. Profile, alias, and
 configured-primary resolution are skipped, `context.profile` is `null`, and the access token is neither refreshed
@@ -738,6 +740,65 @@ without caching. Experiment and rollout commands also contact their live
 metadata endpoints; personalization commands derive their records from the
 template. Project show performs one live metadata request and leaves all
 profile-derived fields empty.
+
+Stateless experiment and rollout deletion use the same literal physical project
+and metadata resolution, fetch the named resource before confirmation, and
+then send its Firebase DELETE request directly. They do not fetch or rewrite
+the Remote Config template. JSON mode without `yes: true` returns the normal
+`would-delete` data plus `interaction.required`, and no DELETE request is sent.
+
+Stateless group add/edit/rename/delete reuse the same target-selection rules as
+stateless group list. Each selected template is fetched directly, transformed
+in memory, submitted to Firebase validation, and published with the fetched
+ETag. The execution policy suppresses project-registry and cache writes,
+immutable version snapshots, draft inspection, and pre/post-publish hooks.
+`draft: true` is rejected by both runtime validation and invocation schemas;
+dry-run, change notes, confirmation, and structured per-target outcomes remain
+available. Multi-target publications remain independent and non-atomic.
+
+Stateless condition add/edit/move/rename/delete accept exactly one literal
+client or server template target. They use the same direct fetch, in-memory
+transformation, Firebase validation, ETag publication, and persistence-policy
+suppression as stateless group mutations. Condition ordering and parameter
+references are transformed by the existing condition domain operations.
+`draft: true` is rejected; dry-run, change notes, confirmation bypass, and
+structured mutation outcomes remain available.
+
+Stateless parameter add/duplicate/update/delete use the same project-selection
+contract as stateless remote `get`: exact `=project-id` selectors bypass
+discovery, non-exact selectors filter one live discovery result, and an omitted
+selector selects all accessible projects. Optional client/server prefixes are
+preserved, repeated selectors are ORed and deduplicated, and repository aliases
+never participate. Each selected target is fetched, transformed, validated,
+and published independently. Parameter matching for update and delete and
+project-context expressions for add and duplicate are evaluated against the
+directly fetched template. The persistence policy suppresses project registry,
+cache, snapshot, draft, and hook access; `draft: true` is rejected while
+dry-run, change notes, confirmation bypass, and structured partial outcomes
+remain available.
+
+Stateless `project import` accepts a literal client or server target and keeps
+the normal explicit file-before-stdin input selection. It fetches the current
+template directly, applies import selection and merge logic in memory,
+validates against Firebase, and publishes with the fetched ETag. Explicit input
+file access is caller-directed rather than application-managed state and
+remains available. Draft reads and writes, cache and snapshot persistence, and
+hooks are suppressed; `draft: true` is rejected by runtime and schema.
+
+Stateless `projects promote` accepts two literal client or server targets. It
+reads both templates directly, applies the existing local selection plan,
+reloads and revalidates the target, and publishes with the latest ETag. A typed
+ETag conflict reloads the target, reapplies the selected plan, and retries.
+Profile aliases, drafts, caches, snapshots, and hooks do not participate;
+dry-run reaches Firebase validation but omits publication.
+
+Stateless `versions rollback` accepts one literal client or server target. It
+loads source and current history directly, performs the normal pre-publication
+current-version recheck, validates the candidate, and uses Firebase's native
+force-publication rollback endpoint. No snapshot, cache, draft, or hook state
+is accessed or updated. Dry-run performs the reads and validate-only request
+without sending the rollback POST. The documented native rollback race window
+after the final recheck is unchanged.
 
 Stateless remote `get` discovers all token-accessible projects when `project`
 is omitted. A non-exact selector uses the normal fuzzy, starts-with (`^`),

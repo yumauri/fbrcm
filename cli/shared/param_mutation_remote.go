@@ -86,6 +86,9 @@ type ParameterMutationApplyFn func(cmd *cobra.Command, project core.Project, cur
 // RunParameterMutationRemote lists, filters, and publishes parameter mutations across projects.
 func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts ParameterMutationOpts, operation, emoji string, apply ParameterMutationApplyFn) (rc.RemoteMutationTotals, error) {
 	ctx := CommandContext(cmd)
+	if err := RejectStatelessDraft(ctx, opts.Draft); err != nil {
+		return rc.RemoteMutationTotals{}, err
+	}
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -94,12 +97,7 @@ func RunParameterMutationRemote(cmd *cobra.Command, svc *core.Core, opts Paramet
 		return rc.RemoteMutationTotals{}, err
 	}
 
-	progress.Start("Loading projects…")
-	projects, _, err := svc.ListProjects(ctx)
-	if err != nil {
-		return rc.RemoteMutationTotals{}, err
-	}
-	projects, err = FilterProjectTargets(projects, opts.ProjectFilters)
+	projects, ctx, err := ResolveProjectMutationTargetsForExecution(ctx, cmd, svc, opts.ProjectFilters)
 	if err != nil {
 		return rc.RemoteMutationTotals{}, err
 	}

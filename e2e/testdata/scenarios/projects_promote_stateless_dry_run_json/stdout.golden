@@ -1,0 +1,53 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:response",
+  "contract_version": "1.0.0",
+  "command": "projects.promote",
+  "requested_command": "projects.promote",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": true,
+    "draft": false
+  },
+  "data": {
+    "source_project": "northstar-wallet",
+    "target_project": "northstar-wallet",
+    "status": "unchanged",
+    "changed": false,
+    "dry_run": true,
+    "published": false,
+    "validated": true,
+    "validation_source": "local",
+    "selected": 0,
+    "change_note": null,
+    "summary": {
+      "conditions": {
+        "added": 0,
+        "removed": 0,
+        "changed": 0,
+        "unchanged": 0
+      },
+      "parameters": {
+        "added": 0,
+        "removed": 0,
+        "changed": 0,
+        "unchanged": 0
+      },
+      "group_descriptions": {
+        "added": 0,
+        "removed": 0,
+        "changed": 0,
+        "unchanged": 0
+      }
+    },
+    "error": null
+  },
+  "errors": [],
+  "warnings": []
+}

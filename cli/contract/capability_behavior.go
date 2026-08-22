@@ -1,5 +1,7 @@
 package contract
 
+import "strings"
+
 type capabilityBehavior struct {
 	level              int
 	effects            []effectBehavior
@@ -390,7 +392,7 @@ func withStatelessCommandEffects(b capabilityBehavior) capabilityBehavior {
 	for effectIndex := range b.effects {
 		for clauseIndex := range b.effects[effectIndex].when {
 			clause := &b.effects[effectIndex].when[clauseIndex]
-			if b.effects[effectIndex].name == "local_cache_write" || clauseHasStatefulCommandPredicate(*clause) {
+			if statelessPolicyDisablesEffect(b.effects[effectIndex].name) || clauseHasStatefulCommandPredicate(*clause) {
 				clause.AllOf = append(clause.AllOf, predicate("option", "stateless", "equals", false))
 			}
 		}
@@ -402,6 +404,11 @@ func withStatelessCommandEffects(b capabilityBehavior) capabilityBehavior {
 		}
 	}
 	return b
+}
+
+func statelessPolicyDisablesEffect(name string) bool {
+	return strings.HasPrefix(name, "local_cache_") || strings.HasPrefix(name, "local_draft_") ||
+		name == "local_state_write" || name == "trusted_hook_execution"
 }
 
 func withStatelessCommandInteractions(conditions []BehaviorConditionClause) []BehaviorConditionClause {

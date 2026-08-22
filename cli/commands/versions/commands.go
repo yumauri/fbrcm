@@ -453,13 +453,20 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	if err != nil {
 		return err
 	}
-	if hasDraft, draftErr := svc.HasDraft(project.ProjectID); draftErr != nil {
-		return draftErr
-	} else if hasDraft {
-		return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []shared.Remediation{
-			{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
-			{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
-		}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)}
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, draftErr := svc.HasDraft(project.ProjectID); draftErr != nil {
+			return draftErr
+		} else if hasDraft {
+			return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []shared.Remediation{
+				{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
+				{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
+			}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before changing versions", project.ProjectID)}
+		}
 	}
 	target, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, selector, restore)
 	if err != nil {

@@ -154,6 +154,9 @@ func readAddValueSpec(cmd *cobra.Command) (addValueSpec, error) {
 
 func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 	ctx := shared.CommandContext(cmd)
+	if err := shared.RejectStatelessDraft(ctx, opts.draft); err != nil {
+		return err
+	}
 	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -162,11 +165,7 @@ func runAddRemote(cmd *cobra.Command, svc *core.Core, opts addOptions) error {
 		return err
 	}
 
-	projects, _, err := svc.ListProjects(ctx)
-	if err != nil {
-		return err
-	}
-	projects, err = shared.FilterProjectTargets(projects, opts.projectFilters)
+	projects, ctx, err := shared.ResolveProjectMutationTargetsForExecution(ctx, cmd, svc, opts.projectFilters)
 	if err != nil {
 		return err
 	}

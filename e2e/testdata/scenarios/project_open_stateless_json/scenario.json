@@ -1,0 +1,12 @@
+{
+  "name": "project_open_stateless_json",
+  "command_id": "project.open",
+  "args": ["--stateless", "project", "open", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "default/remote-config"}
+  ],
+  "json_output": true
+}

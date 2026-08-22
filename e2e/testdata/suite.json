@@ -3,5 +3,70 @@
   "project_name": "Northstar Wallet",
   "quota_project_id": "northstar-wallet",
   "default_terminal_width": 200,
-  "default_log_level": "debug"
+  "default_log_level": "debug",
+  "recording_sequences": [
+    {
+      "name": "groups-stateful-lifecycle",
+      "scenarios": [
+        "groups_add_json",
+        "groups_edit_json",
+        "groups_rename_json",
+        "groups_delete_json"
+      ]
+    },
+    {
+      "name": "groups-stateless-lifecycle",
+      "scenarios": [
+        "groups_add_stateless_json",
+        "groups_edit_stateless_json",
+        "groups_rename_stateless_json",
+        "groups_delete_stateless_json"
+      ]
+    },
+    {
+      "name": "conditions-stateful-lifecycle",
+      "scenarios": [
+        "conditions_add_json",
+        "conditions_edit_json",
+        "conditions_move_json",
+        "conditions_rename_json",
+        "conditions_delete_json"
+      ]
+    },
+    {
+      "name": "conditions-stateless-lifecycle",
+      "scenarios": [
+        "conditions_add_stateless_json",
+        "conditions_edit_stateless_json",
+        "conditions_move_stateless_json",
+        "conditions_rename_stateless_json",
+        "conditions_delete_stateless_json"
+      ]
+    },
+    {
+      "name": "parameters-stateful-lifecycle",
+      "scenarios": [
+        "parameter_add_json",
+        "parameter_duplicate_json",
+        "parameter_update_json",
+        "parameter_delete_json"
+      ]
+    },
+    {
+      "name": "parameters-stateless-lifecycle",
+      "scenarios": [
+        "parameter_add_stateless_json",
+        "parameter_duplicate_stateless_json",
+        "parameter_update_stateless_json",
+        "parameter_delete_stateless_json"
+      ]
+    },
+    {
+      "name": "project-import-stateless-lifecycle",
+      "scenarios": [
+        "project_import_stateless_json",
+        "project_import_stateless_cleanup_json"
+      ]
+    }
+  ]
 }

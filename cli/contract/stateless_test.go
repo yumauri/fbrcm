@@ -11,7 +11,7 @@ func TestSupportsStatelessCommand(t *testing.T) {
 			t.Errorf("SupportsStatelessCommand(%q) = false", commandID)
 		}
 	}
-	for _, commandID := range []string{"", "conditions.add", "versions.rollback"} {
+	for _, commandID := range []string{"", "versions.restore"} {
 		if SupportsStatelessCommand(commandID) {
 			t.Errorf("SupportsStatelessCommand(%q) = true", commandID)
 		}

@@ -1,0 +1,32 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:response",
+  "contract_version": "1.0.0",
+  "command": "project.import",
+  "requested_command": "project.import",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project_id": "northstar-wallet",
+    "status": "imported",
+    "changed": true,
+    "draft": false,
+    "dry_run": false,
+    "validated": true,
+    "validation_source": "firebase",
+    "change_note": null,
+    "published": true,
+    "error": null
+  },
+  "errors": [],
+  "warnings": []
+}

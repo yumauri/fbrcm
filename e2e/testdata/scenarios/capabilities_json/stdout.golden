@@ -34,7 +34,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -359,7 +359,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -378,7 +378,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -397,7 +397,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -435,7 +435,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -454,7 +454,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -624,7 +624,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -793,7 +793,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -812,7 +812,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -887,7 +887,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -906,7 +906,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -925,7 +925,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -963,7 +963,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -1265,7 +1265,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -1518,7 +1518,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -1575,7 +1575,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -1685,7 +1685,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         }
       },
       {
@@ -1780,7 +1780,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         }
       },
       {

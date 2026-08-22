@@ -23,6 +23,31 @@ func TestWithDirectFirebaseService(t *testing.T) {
 	}
 }
 
+func TestWithDirectFirebaseServiceAccumulatesProjectBindings(t *testing.T) {
+	first := firebase.NewServiceWithHTTPClient(nil)
+	second := firebase.NewServiceWithHTTPClient(nil)
+	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
+	var err error
+	ctx, err = WithDirectFirebaseService(ctx, "first-project", first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, err = WithDirectFirebaseService(ctx, "server@second-project", second)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for projectID, want := range map[string]*firebase.Service{"first-project": first, "second-project": second} {
+		got, direct, resolveErr := directFirebaseServiceFromContext(ctx, projectID)
+		if resolveErr != nil || !direct || got != want {
+			t.Fatalf("directFirebaseServiceFromContext(%q) = %p, %t, %v; want %p, true, nil", projectID, got, direct, resolveErr, want)
+		}
+	}
+	if _, direct, resolveErr := directFirebaseServiceFromContext(ctx, "unbound-project"); !direct || resolveErr == nil || !strings.Contains(resolveErr.Error(), `not bound to project "unbound-project"`) {
+		t.Fatalf("unbound direct service = direct %t, error %v", direct, resolveErr)
+	}
+}
+
 func TestWithDirectFirebaseDiscoveryService(t *testing.T) {
 	service := firebase.NewServiceWithHTTPClient(nil)
 	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())

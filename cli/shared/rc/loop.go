@@ -184,25 +184,35 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 	totals := RemoteMutationTotals{DefaultScope: defaultScope, ResolvedTargets: len(projects)}
 	if len(projects) > 1 && !firebase.IsDryRun(ctx) {
 		jsonOut, _ := cmd.Flags().GetBool("json")
+		message := "Warning: Remote Config is published independently for each project. Some projects may succeed while others fail."
+		var remediation []machine.Remediation
+		if core.ExecutionPolicyFromContext(ctx).WriteLocalState {
+			message += " For coordinated changes, consider staging with --draft first."
+			remediation = []machine.Remediation{{Description: "stage the changes as drafts before publishing", Strategy: machine.RemediationRetryWithArguments, Argv: []string{"--draft"}}}
+		}
 		if !jsonOut {
-			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: Remote Config is published independently for each project. Some projects may succeed while others fail. For coordinated changes, consider staging with --draft first.")
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), message)
 		}
 		machine.FromContext(cmd.Context()).AddWarning(machine.Warning{Code: "publication.non_atomic", Message: "Remote Config is published independently for each target; successful publications are not rolled back when another target fails.", Details: struct {
 			TargetCount int `json:"target_count"`
-		}{TargetCount: len(projects)}, Remediation: []machine.Remediation{{Description: "stage the changes as drafts before publishing", Strategy: machine.RemediationRetryWithArguments, Argv: []string{"--draft"}}}})
+		}{TargetCount: len(projects)}, Remediation: remediation})
 	}
 
 	for _, project := range projects {
 		progress.Start("Preparing Remote Config for " + project.ProjectID + "…")
 		result := RemoteMutationResult{Project: project, ChangeNote: remoteMutationChangeNote(ctx), ValidationSource: core.ValidationSourceLocal}
 		preparationFailed := false
-		hasDraft, err := svc.HasDraft(project.ProjectID)
-		if err == nil && hasDraft {
-			err = &machine.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []machine.Remediation{
-				{Description: "apply the mutation to the existing draft", Strategy: machine.RemediationRetryWithArguments, Argv: []string{"--draft"}},
-				{Description: "publish the existing draft", Strategy: machine.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
-				{Description: "discard the existing draft", Strategy: machine.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
-			}, Err: fmt.Errorf("project has an unpublished draft; use --draft, publish it, or discard it first")}
+		var err error
+		if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+			hasDraft, draftErr := svc.HasDraft(project.ProjectID)
+			err = draftErr
+			if err == nil && hasDraft {
+				err = &machine.ConflictError{Code: "draft.exists", Resource: "draft", Target: project.ProjectID, Remediation: []machine.Remediation{
+					{Description: "apply the mutation to the existing draft", Strategy: machine.RemediationRetryWithArguments, Argv: []string{"--draft"}},
+					{Description: "publish the existing draft", Strategy: machine.RemediationRunCommand, Argv: []string{"draft", "publish", project.ProjectID}},
+					{Description: "discard the existing draft", Strategy: machine.RemediationRunCommand, Argv: []string{"draft", "discard", project.ProjectID}},
+				}, Err: fmt.Errorf("project has an unpublished draft; use --draft, publish it, or discard it first")}
+			}
 		}
 		var cfg *ProjectConfig
 		if err == nil {

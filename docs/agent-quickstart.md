@@ -160,11 +160,20 @@ Use the standard Google variable name, not an fbrcm-specific alias:
 GOOGLE_CLOUD_QUOTA_PROJECT=automation-quota fbrcm projects update --json
 ```
 
-For a one-shot read without profile files, supply a short-lived access token
-and, for project-target commands, the literal Firebase project ID. Stateless
-Firebase API commands are `conditions list`, `get`, `project defaults`, `project
-export`, `projects list`, `versions list`, `versions show`, and `versions
-export`:
+For a one-shot operation without profile files, supply a short-lived access
+token. Do not hard-code a stateless command list in automation: use
+`supports.stateless` from `fbrcm capabilities --json`, as shown above. Current
+coverage includes parameter reads and mutations; condition and group reads,
+validation, and mutations; experiment, rollout, and personalization reads;
+experiment and rollout deletion; project defaults, export, import, open, and
+show; project discovery, diff, and promotion; and version list, show, export,
+diff, and rollback.
+
+Commands that take one direct target require a literal Firebase project ID,
+optionally qualified with `client@` or `server@` when that command supports
+template selection. Parameter mutations, `get`, and `groups list` additionally
+support live project discovery and filtering; managed-feature commands require
+an unqualified physical project ID:
 
 ```text
 FBRCM_GOOGLE_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)" \
@@ -175,16 +184,20 @@ FBRCM_GOOGLE_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)
 ```
 
 Stateless execution disables application-managed local reads, local writes,
-and configured hooks. The explicit `--to` artifact remains allowed. Version
-commands reject `--cached`; omitting `--stateless` retains normal cache, draft,
-profile, and hook behavior.
+and configured hooks. Explicit caller-selected input and output files remain
+allowed. Where present, `--update` and `--cached` are rejected because stateless
+reads are already live and cannot use snapshots; mutations that offer `--draft`
+also reject it. Omitting `--stateless` retains normal cache, draft, profile, and
+hook behavior.
 
 `fbrcm --stateless projects list --json` discovers projects live without the
 profile project registry. Filters match remote project names and IDs only;
-`--update` and `--expr` are unavailable. Stateless project expressions are
-deferred until they are integrated with the uncached Remote Config read path
-now available to stateless `get`. Set `GOOGLE_CLOUD_QUOTA_PROJECT` when the access-token
-identity requires a quota project for account-wide listing.
+`--update` is rejected because discovery is already live. `--expr` remains
+available: after ordinary project filtering, fbrcm directly fetches the current
+client Remote Config template for each remaining project and evaluates the
+expression without reading or writing a cache. Set `GOOGLE_CLOUD_QUOTA_PROJECT`
+when the access-token identity requires a quota project for account-wide
+listing.
 
 `versions list` reads live history and rejects `--cached`. `conditions list`
 fetches the latest template without applying local drafts or caches; its

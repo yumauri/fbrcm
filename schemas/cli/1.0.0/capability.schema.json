@@ -205,7 +205,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -255,7 +267,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -277,7 +301,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -386,6 +410,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -497,6 +527,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -536,6 +572,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -582,6 +624,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -597,6 +645,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -607,6 +661,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -622,6 +682,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -637,6 +703,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -829,7 +901,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [
           "json_document"
@@ -862,6 +934,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -3097,7 +3175,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -3147,7 +3237,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -3157,7 +3259,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -3219,6 +3321,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3312,6 +3420,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3345,6 +3459,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -3385,6 +3505,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3400,6 +3526,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -3410,6 +3542,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3425,6 +3563,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3440,6 +3584,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3600,7 +3750,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -3631,6 +3781,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -3678,7 +3834,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -3708,7 +3876,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -3718,7 +3898,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -3780,6 +3960,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3873,6 +4059,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3906,6 +4098,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -3946,6 +4144,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3961,6 +4165,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -3971,6 +4181,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -3986,6 +4202,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4001,6 +4223,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4174,7 +4402,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -4205,6 +4433,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -4262,7 +4496,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -4312,7 +4558,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -4322,7 +4580,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -4384,6 +4642,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4477,6 +4741,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4510,6 +4780,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -4550,6 +4826,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4565,6 +4847,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -4575,6 +4863,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4590,6 +4884,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4605,6 +4905,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -4765,7 +5071,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -4796,6 +5102,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -5278,7 +5590,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -5308,7 +5632,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -5318,7 +5654,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -5380,6 +5716,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -5473,6 +5815,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -5506,6 +5854,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -5546,6 +5900,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -5561,6 +5921,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -5571,6 +5937,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -5586,6 +5958,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -5601,6 +5979,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -5761,7 +6145,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -5792,6 +6176,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -5845,7 +6235,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -5875,7 +6277,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -5885,7 +6299,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -5947,6 +6361,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -6040,6 +6460,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -6073,6 +6499,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -6113,6 +6545,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -6128,6 +6566,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -6138,6 +6582,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -6153,6 +6603,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -6168,6 +6624,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -6328,7 +6790,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -6359,6 +6821,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -7814,7 +8282,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -7866,7 +8346,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -7898,7 +8390,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -7977,6 +8469,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -8088,6 +8586,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -8127,6 +8631,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -8173,6 +8683,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -8188,6 +8704,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -8198,6 +8720,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -8213,6 +8741,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -8228,6 +8762,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -8433,7 +8973,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [
           "json_document"
@@ -8466,6 +9006,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -10276,7 +10822,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -10316,7 +10874,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -10338,7 +10908,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -10400,6 +10970,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10493,6 +11069,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10526,6 +11108,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -10566,6 +11154,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10581,6 +11175,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -10591,6 +11191,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10606,6 +11212,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10621,6 +11233,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10781,7 +11399,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -10812,6 +11430,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -10859,7 +11483,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -10869,7 +11505,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -10936,6 +11572,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -10946,6 +11588,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10961,6 +11609,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -10976,6 +11630,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -11053,7 +11713,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -11078,6 +11738,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -12213,7 +12879,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -12243,7 +12921,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -12265,7 +12955,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -12327,6 +13017,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12420,6 +13116,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12453,6 +13155,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -12493,6 +13201,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12508,6 +13222,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -12518,6 +13238,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12533,6 +13259,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12548,6 +13280,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12708,7 +13446,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -12739,6 +13477,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -12780,7 +13524,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -12810,7 +13566,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -12832,7 +13600,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -12894,6 +13662,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -12987,6 +13761,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13020,6 +13800,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -13060,6 +13846,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13075,6 +13867,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -13085,6 +13883,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13100,6 +13904,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13115,6 +13925,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13288,7 +14104,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -13319,6 +14135,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -13370,7 +14192,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -13410,7 +14244,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -13432,7 +14278,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -13494,6 +14340,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13587,6 +14439,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13620,6 +14478,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -13660,6 +14524,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13675,6 +14545,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -13685,6 +14561,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13700,6 +14582,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13715,6 +14603,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -13875,7 +14769,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -13906,6 +14800,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -14377,7 +15277,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -14407,7 +15319,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -14429,7 +15353,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -14491,6 +15415,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -14584,6 +15514,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -14617,6 +15553,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -14657,6 +15599,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -14672,6 +15620,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -14682,6 +15636,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -14697,6 +15657,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -14712,6 +15678,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -14872,7 +15844,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -14903,6 +15875,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -17612,7 +18590,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -17724,7 +18714,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--remove-all-conditions",
@@ -17754,7 +18756,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -17816,6 +18818,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -17903,6 +18911,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -17936,6 +18950,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -17976,6 +18996,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -17991,6 +19017,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -18001,6 +19033,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -18016,6 +19054,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -18031,6 +19075,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -18204,7 +19254,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [
           "json_document"
@@ -18285,6 +19335,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -20813,7 +21869,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--prune",
@@ -20843,7 +21911,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -20904,6 +21972,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -20979,6 +22053,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -21013,6 +22093,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21028,6 +22114,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -21038,6 +22130,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21053,6 +22151,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21068,6 +22172,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21214,7 +22324,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -21255,6 +22365,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -21678,7 +22794,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -21688,7 +22816,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -21755,6 +22883,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -21765,6 +22899,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21780,6 +22920,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21795,6 +22941,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -21872,7 +23024,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -21897,6 +23049,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -22851,7 +24009,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Save changes to a local draft instead of publishing"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Save changes to a local draft instead of publishing; cannot be combined with --stateless"
           },
           {
             "name": "--dry-run",
@@ -22933,7 +24103,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--project",
@@ -22985,7 +24167,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -23094,6 +24276,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -23205,6 +24393,12 @@
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -23244,6 +24438,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -23290,6 +24490,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -23305,6 +24511,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -23315,6 +24527,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -23330,6 +24548,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -23345,6 +24569,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -23550,7 +24780,7 @@
           "draft": true,
           "confirmation_bypass": true,
           "stdin": true,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [
           "json_document"
@@ -23583,6 +24813,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -25247,7 +26483,19 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
           },
           {
             "name": "--stateless",
@@ -25257,7 +26505,7 @@
             "required": false,
             "repeatable": false,
             "effective": true,
-            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
           },
           {
             "name": "--timeout",
@@ -25318,6 +26566,12 @@
                     "name": "remote_read",
                     "operator": "cache_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -25393,6 +26647,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -25427,6 +26687,12 @@
                     "name": "trusted_hook",
                     "operator": "configured_for_event",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -25442,6 +26708,12 @@
                     "name": "project_registry",
                     "operator": "sync_write_succeeded",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               },
@@ -25452,6 +26724,12 @@
                     "name": "profile_bootstrap",
                     "operator": "required",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -25467,6 +26745,12 @@
                     "name": "authentication",
                     "operator": "requires_network",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -25482,6 +26766,12 @@
                     "name": "authentication",
                     "operator": "token_persisted",
                     "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
                   }
                 ]
               }
@@ -25628,7 +26918,7 @@
           "draft": false,
           "confirmation_bypass": true,
           "stdin": false,
-          "stateless": false
+          "stateless": true
         },
         "stdin_modes": [],
         "interaction": {
@@ -25659,6 +26949,12 @@
                 "name": "authentication",
                 "operator": "requires_human_authorization",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }

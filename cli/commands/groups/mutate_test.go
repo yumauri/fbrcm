@@ -1,12 +1,15 @@
 package groups
 
 import (
+	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/cli/shared"
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -84,5 +87,17 @@ func TestNamedGroupMutationRequiresExactCaseSensitiveName(t *testing.T) {
 	result, err := mutation(&firebase.RemoteConfig{ParameterGroups: map[string]firebase.RemoteConfigGroup{"Shared": {}}})
 	if err != nil || result.matched || result.applicable || resolved != "" {
 		t.Fatalf("mutation = result %+v, resolved %q, err %v; want skipped", result, resolved, err)
+	}
+}
+
+func TestGroupMutationRejectsDraftInStatelessMode(t *testing.T) {
+	cmd := newAddCommand(nil)
+	cmd.SetContext(core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy()))
+	cmd.SetArgs([]string{"example", "--project", "=demo", "--draft", "--yes"})
+
+	err := cmd.Execute()
+	var argument *shared.ArgumentError
+	if !errors.As(err, &argument) || !strings.Contains(err.Error(), "--draft cannot be used with --stateless") {
+		t.Fatalf("Execute error = %T %v, want typed stateless draft error", err, err)
 	}
 }

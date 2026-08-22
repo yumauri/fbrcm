@@ -1,0 +1,92 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 19:20:53 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-40"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

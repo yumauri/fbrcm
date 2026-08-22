@@ -1,0 +1,5 @@
+[1mWARN[m parameters cache miss [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.json
+[1mWARN[m parameters cache miss [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.json
+[1mWARN[m parameters cache miss [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
+[1mWARN[m fetching parameters from firebase due to cache miss during revalidation [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
+[1mWARN[m parameters cache miss [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.15.json

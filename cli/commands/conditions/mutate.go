@@ -276,6 +276,9 @@ func runNamedConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery,
 
 func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery string, opts mutationOptions, operation, emoji string, destructive bool, mutate conditionMutation) error {
 	ctx := shared.CommandContext(cmd)
+	if err := shared.RejectStatelessDraft(ctx, opts.Draft); err != nil {
+		return err
+	}
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -284,7 +287,11 @@ func runConditionMutation(cmd *cobra.Command, svc *core.Core, projectQuery strin
 	if err != nil {
 		return err
 	}
-	project, err := shared.ResolveProjectTargetArg(ctx, cmd, svc, projectQuery)
+	project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, projectQuery)
+	if err != nil {
+		return err
+	}
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
 	if err != nil {
 		return err
 	}

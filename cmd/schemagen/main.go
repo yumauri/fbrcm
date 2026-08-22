@@ -2058,8 +2058,8 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 	if contract.SupportsStatelessCommand(commandID) {
 		statelessProjectSchema := "stateless_target_selector"
 		if slices.Contains([]string{
-			"experiments.list", "experiments.show", "personalizations.list", "personalizations.show",
-			"project.open", "project.show", "rollouts.list", "rollouts.show",
+			"experiments.delete", "experiments.list", "experiments.show", "personalizations.list", "personalizations.show",
+			"project.open", "project.show", "rollouts.delete", "rollouts.list", "rollouts.show",
 		}, commandID) {
 			statelessProjectSchema = "physical_project_id"
 		}
@@ -2067,6 +2067,9 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 			"not": map[string]any{"required": []string{"profile"}},
 		}
 		statelessOptionProperties := map[string]any{}
+		if statelessMutationRejectsDraft(commandID) {
+			statelessOptionProperties["draft"] = map[string]any{"const": false}
+		}
 		if slices.Contains([]string{"projects.diff", "versions.diff", "versions.export", "versions.list", "versions.show"}, commandID) {
 			statelessOptionProperties["cached"] = map[string]any{"const": false}
 		}
@@ -2100,7 +2103,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 			}
 		}
 		constraints = append(constraints, optionsConstraint(statelessConstraint))
-		if commandID != "projects.list" && commandID != "get" && commandID != "groups.list" && commandID != "projects.diff" {
+		if commandID != "projects.list" && !usesStatelessProjectOption(commandID) && !usesStatelessDualTargetArguments(commandID) {
 			constraints = append(constraints, map[string]any{
 				"if": map[string]any{
 					"properties": map[string]any{
@@ -2129,7 +2132,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 			})
 		}
-		if commandID == "get" || commandID == "groups.list" {
+		if usesStatelessProjectOption(commandID) {
 			constraints = append(constraints, map[string]any{
 				"if": map[string]any{
 					"properties": map[string]any{
@@ -2155,7 +2158,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 			})
 		}
-		if commandID == "projects.diff" {
+		if usesStatelessDualTargetArguments(commandID) {
 			constraints = append(constraints, map[string]any{
 				"if": map[string]any{
 					"properties": map[string]any{
@@ -2343,6 +2346,26 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		}}})
 	}
 	return constraints
+}
+
+func statelessMutationRejectsDraft(commandID string) bool {
+	return slices.Contains([]string{
+		"add", "delete", "duplicate", "update",
+		"conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename",
+		"groups.add", "groups.delete", "groups.edit", "groups.rename",
+		"project.import",
+	}, commandID)
+}
+
+func usesStatelessProjectOption(commandID string) bool {
+	return slices.Contains([]string{
+		"add", "delete", "duplicate", "get", "update",
+		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
+	}, commandID)
+}
+
+func usesStatelessDualTargetArguments(commandID string) bool {
+	return slices.Contains([]string{"projects.diff", "projects.promote"}, commandID)
 }
 
 func typedValueConstraint(typeNames []string, valueSchema map[string]any) map[string]any {

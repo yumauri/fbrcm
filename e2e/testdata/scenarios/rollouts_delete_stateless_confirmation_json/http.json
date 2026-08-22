@@ -1,0 +1,163 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "cloudresourcemanager.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v3/projects/northstar-wallet"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/3XPwY6CMBAG4DtPQXpetC20WG5mswcvnogmxssAwy6mC6TtZmOM726hmHjxOPN/M5O5RXFMevhFUsRkNMMFa2fXKlNCSS4lE4x8TGSJds3k+sG4H+vAJP+gNbpAfMPNa7af5e7wFZpNZ0cN1/1yYf+cjI8vk7VBP1p2wXDKZUJFwmRJVUFlIbJVTtNTsH9j897mBUtXiqep2CwcHXxP8Lg+E4agVNZKv4wLmsOZBKOhQm29uvnK121nsAI7H8AeKo3NDF+ipB7MnPv/AvD5PbpHD9t0z6lQAQAA",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 19:19:53 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/949596266151/namespaces/firebase/rollouts/rollout_1"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/5WPTUvEMBCG7/0VJWdrk7j9vIqIlx6k68GLzLbTGknTkmQRWfa/m7RZ8aIozCG888yTmVMUx0TBhKSOyaLnN+ysSatdlVU5z3OWsdR3zQIdmnQQGg9gMNWzlPPRkeHxwsiVN/U4CCWsmJXznVziM2EWCR9N+ESoTqNzxJMjJ5DxcFS9UOMqcHg3K+usT6AFKPul+bbm7UaEAdd4RzG+epStyTmYUMFBYv+L6W4jfjZFwUaMBbuOPO6b5qG53871l1hsxWbjlOcJLRJetjSveVaz4npX8vKmfCYXibZ/plH1F5ZVBU0oc9VSWq8VIAnG7pf+P1ughdGDyEh0jj4BHkO2JwECAAA=",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 19:19:54 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

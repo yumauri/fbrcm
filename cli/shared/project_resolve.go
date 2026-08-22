@@ -59,6 +59,14 @@ func ResolvePhysicalProjectForExecution(ctx context.Context, cmd *cobra.Command,
 // service when configured service resolution is disabled by the execution
 // policy. Stateful execution returns the original context unchanged.
 func FirebaseServiceContextForExecution(ctx context.Context, projectID string) (context.Context, error) {
+	return FirebaseServicesContextForExecution(ctx, []string{projectID})
+}
+
+// FirebaseServicesContextForExecution binds one in-memory static-token
+// Firebase service to every selected physical project when configured service
+// resolution is disabled by the execution policy. Stateful execution returns
+// the original context unchanged.
+func FirebaseServicesContextForExecution(ctx context.Context, projectIDs []string) (context.Context, error) {
 	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
 		return ctx, nil
 	}
@@ -66,7 +74,13 @@ func FirebaseServiceContextForExecution(ctx context.Context, projectID string) (
 	if err != nil {
 		return nil, err
 	}
-	return core.WithDirectFirebaseService(ctx, projectID, service)
+	for _, projectID := range projectIDs {
+		ctx, err = core.WithDirectFirebaseService(ctx, projectID, service)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ctx, nil
 }
 
 // FirebaseProjectDiscoveryContextForExecution binds an in-memory static-token
@@ -154,6 +168,25 @@ func ResolveProjectTargetsForExecution(ctx context.Context, cmd *cobra.Command, 
 	}
 
 	return selected, ctx, nil
+}
+
+// ResolveProjectMutationTargetsForExecution resolves target filters using the
+// active execution policy and binds direct Firebase services for every
+// stateless target. Stateful execution retains configured service resolution.
+func ResolveProjectMutationTargetsForExecution(ctx context.Context, cmd *cobra.Command, svc *core.Core, rawFilters []string) ([]core.Project, context.Context, error) {
+	projects, ctx, err := ResolveProjectTargetsForExecution(ctx, cmd, svc, rawFilters)
+	if err != nil {
+		return nil, ctx, err
+	}
+	projectIDs := make([]string, len(projects))
+	for i, project := range projects {
+		projectIDs[i] = project.ProjectID
+	}
+	ctx, err = FirebaseServicesContextForExecution(ctx, projectIDs)
+	if err != nil {
+		return nil, ctx, err
+	}
+	return projects, ctx, nil
 }
 
 func staticAccessTokenFirebaseService(ctx context.Context) (*firebase.Service, error) {

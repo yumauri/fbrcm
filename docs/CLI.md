@@ -377,7 +377,7 @@ trimmed, so surrounding whitespace is significant and normally produces no
 match. Fuzzy, prefix, substring, and case-insensitive selection belongs only to
 explicit query options such as `--filter`, `--search`, and `--project`.
 
-Most commands require a selected profile before command execution. `profile`, `config`, `hooks`, `projects aliases`, `doctor`, `help`, `capabilities`, and `schema` do not. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. The supported stateless paths (`conditions list`, `get`, `project defaults`, `project export`, `project open`, `projects list`, `versions list`, `versions show`, and `versions export`) skip profile selection and envelope bootstrap and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
+Most commands require a selected profile before command execution. `profile`, `config`, `hooks`, `projects aliases`, `doctor`, `help`, `capabilities`, and `schema` do not. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
 
 Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable only when the command applies that option. An effective argv profile is trimmed, then must be one nonempty filesystem-safe path segment: `.`, `..`, path separators, and leading or trailing whitespace after normalization are invalid. Detailed capability flags expose `effective`; `false` means argv accepts the flag but the command does not apply it. Conditional applicability is published as `effective_when` and repeated in input schemas as `x-fbrcm-effective-when`. The input schema marks unconditional ineffectiveness as `x-fbrcm-effective: false`. `help`, `capabilities`, `schema`, `config`, `hooks`, and `projects aliases` commands currently ignore the argv `--profile` value; root version output accepts but ignores both `--profile` and `--no-local-config`. Machine-mode `auth login` ignores `--noopen`, and machine-mode `config edit` ignores `--editor`, `--full`, and `--scope` because both commands stop before reaching the corresponding human interaction. `FBRCM_PROFILE` may still supply the envelope profile because it is external process context.
 
@@ -799,7 +799,7 @@ Flags:
     --timeout <duration>    limit the complete command
 ```
 
-`--profile` defaults from `FBRCM_PROFILE`. It applies to CLI commands that use profile state. Help, contract metadata, configuration, hooks, and project-alias commands accept but ignore it; root `--version` also ignores both `--profile` and `--no-local-config`. `--stateless` is currently available for `conditions list`, `get`, `project defaults`, `project export`, `project open`, `projects list`, `versions list`, `versions show`, and `versions export`; every other command rejects it. Successful stateless setup emits an info-level `stateless mode enabled` log record with component `cli.stateless` and the stable command ID. Credential values are never logged. `FBRCM_PROFILE` selects and pins the profile when starting the TUI with no arguments; restart without it to create or switch profiles interactively.
+`--profile` defaults from `FBRCM_PROFILE`. It applies to CLI commands that use profile state. Help, contract metadata, configuration, hooks, and project-alias commands accept but ignore it; root `--version` also ignores both `--profile` and `--no-local-config`. Commands advertising `supports.stateless: true` in `fbrcm capabilities --json` accept `--stateless`; other commands reject it. Successful stateless setup emits an info-level `stateless mode enabled` log record with component `cli.stateless` and the stable command ID. Credential values are never logged. `FBRCM_PROFILE` selects and pins the profile when starting the TUI with no arguments; restart without it to create or switch profiles interactively.
 
 `--json` and `--timeout` also apply to every CLI subcommand. Use `fbrcm capabilities --json` for machine-readable command discovery and `fbrcm schema list --json` to enumerate the embedded JSON Schemas.
 Every JSON envelope includes both `command`, identifying the published response
@@ -968,6 +968,16 @@ Remote mode loads projects, filters them, and adds the parameter where it does n
 
 With `--draft`, each confirmed mutation is stored locally on top of any existing draft. Without `--draft`, the command refuses projects that already have unpublished drafts.
 
+With root `--stateless`, project selection matches stateless `get`: no
+`--project` discovers every accessible project, exact `=project-id` selectors
+bypass discovery, and fuzzy, starts-with, and contains selectors filter one
+live discovery result without repository aliases. Each selected template is
+fetched, transformed, validated, and published independently without reading or
+writing profiles, project registries, caches, snapshots, drafts, or hooks.
+`--expr` remains a project-context filter evaluated against directly fetched
+templates. `--draft` is rejected; dry-run, change notes, confirmation, and JSON
+results remain available.
+
 Stdin mode reads Remote Config JSON from stdin and adds the parameter to that
 JSON. Human mode prints the final JSON; JSON mode returns it as an artifact DTO.
 It also accepts an fbrcm parameters cache JSON file and reads its internal
@@ -993,6 +1003,11 @@ Flags:
 Remote mode prints the complete Remote Config diff and prompts before each duplicate unless `--yes` is set. It validates and publishes each project independently. A conflict fails that project without suppressing later projects, and the final command status is nonzero when any project fails. Project filters are applied before the project-context expression, matching `add` behavior.
 
 With `--draft`, duplication composes onto each existing draft and remains local. Without `--draft`, a project with an unpublished draft fails independently while other selected projects continue. The command does not use stdin transformation mode.
+
+With root `--stateless`, project selectors and project-context `--expr` use the
+same direct/discovered behavior as stateless `add` and `get`. Every selected
+template is fetched and published independently without local state or hooks.
+`--draft` is rejected; the other mutation controls retain their normal behavior.
 
 ### `fbrcm get [parameter]`
 
@@ -1060,6 +1075,13 @@ Remote mode prints diffs and prompts unless `--yes` is set. It validates and pub
 
 With `--draft`, mutations compose onto each existing draft and remain local. Without `--draft`, publication is best-effort and non-atomic; failures do not roll back earlier projects or prevent later independent projects from being attempted.
 
+With root `--stateless`, project selection matches stateless `get`, including
+all-accessible discovery when `--project` is omitted and discovery bypass for
+exact `=project-id` selectors. Parameter argument, filter, search, and
+parameter-context expression matching are applied to each directly fetched
+template before independent validation and publication. No profile-managed
+state or hooks are used, and `--draft` is rejected.
+
 Stdin mode reads Remote Config JSON from stdin and updates matching parameters.
 Human mode prints the final JSON; JSON mode returns it as an artifact DTO. It
 also accepts an fbrcm parameters cache JSON file and reads its internal
@@ -1087,6 +1109,11 @@ Flags:
 Remote mode prints diffs and prompts unless `--yes` is set. It validates and publishes each project independently, reports every outcome, continues after project-scoped failures, and returns nonzero if any project failed.
 
 With `--draft`, deletions are saved locally on top of any existing draft. Without `--draft`, a project with an unpublished draft fails independently while other selected projects continue.
+
+With root `--stateless`, project selection and parameter matching are identical
+to stateless `update`. Each selected target is fetched and published
+independently, application-managed local state and hooks remain disabled, and
+`--draft` is rejected.
 
 Stdin mode reads Remote Config JSON from stdin and deletes matching parameters.
 Human mode prints the final JSON; JSON mode returns it as an artifact DTO. It
@@ -1159,6 +1186,8 @@ All five commands support:
 ```
 
 Without `--draft`, mutations print the complete Remote Config diff, ask for confirmation unless `--yes` is set, validate with Firebase, and publish with ETag protection. They refuse immediate publication while the project has an unpublished draft. With `--draft`, mutations compose onto the existing draft or create one and remain local.
+
+With root `--stateless`, `<project>` must be one literal client or server target. The command fetches that template directly with `FBRCM_GOOGLE_ACCESS_TOKEN`, transforms it in memory, validates it with Firebase, and publishes it with the fetched ETag. It does not resolve a profile or read or write the project registry, cache, version snapshots, drafts, or hooks. `--dry-run`, `--change-note`, confirmation, `--yes`, and JSON results retain their normal behavior. `--draft` is rejected because stateless execution cannot persist a local draft.
 
 `add` appends the condition by default. Its additional flags are:
 
@@ -1237,6 +1266,16 @@ fbrcm groups delete <group> [--project|-p <query>]
 All group commands support repeatable `--project|-p` target filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured enabled template in stable project-name/target-ID order. The positional `<group>` used by `edit`, `rename`, and `delete` is untrimmed and must match the canonical group key exactly and case-sensitively; targets without that exact key are skipped. `add` and the rename destination create names rather than select existing groups, so those new names are trimmed and validated separately. Differently cased group keys remain distinct.
 
 All group mutations also support `--dry-run`, `--draft`, `--change-note`, `--yes|-y`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, and structured-result behavior as condition mutations. A truthy `--no-description` and `--description` are mutually exclusive. Explicit `--no-description=false` is treated as absent, so it does not clear a description or satisfy `edit`'s required edit selection.
+
+With root `--stateless`, project selection matches stateless `groups list` and
+`get`: exact `=project-id` selectors bypass discovery, while fuzzy,
+starts-with, and contains selectors use live project discovery without aliases.
+Each selected client or server template is fetched directly, mutated in memory,
+validated by Firebase, and published with its ETag. No project registry, cache,
+version snapshot, draft, or hook is read or written. `--dry-run`,
+`--change-note`, confirmation, `--yes`, and JSON results retain their normal
+behavior; `--draft` is rejected because stateless execution cannot persist a
+local draft.
 
 ### `fbrcm draft list`
 
@@ -1526,6 +1565,14 @@ After import transform, the CLI reports how many source conditions are kept and 
 
 The JSON envelope's `data` is one object containing `project_id`, `status`, `changed`, `draft`, `dry_run`, `validated`, `validation_source`, and `change_note`. Status is `imported`, `would-import`, `drafted`, `would-draft`, `unchanged`, or `validation-failed`. JSON mode suppresses human condition summaries and diffs, requires `--yes` when confirmation is needed, and requires an explicit import and merge-conflict strategy.
 
+With root `--stateless`, `<project>` is a literal client or server target. The
+input file or stdin document remains explicitly available, while profile,
+repository, cache, snapshot, draft, and hook state is neither read nor written.
+The current template is fetched directly, the transformed candidate is
+validated and published with its ETag, and dry-run still performs Firebase
+validation. `--draft` is rejected because stateless execution cannot persist a
+draft.
+
 ### Remote Config managed features
 
 Experiments and rollouts provide read-only `list` and `show` commands plus an explicit destructive `delete` command. Personalizations remain read-only. The CLI cannot create, start, stop, or edit managed features, and none of these commands publish Remote Config. All three command groups use ordinary positional project resolution and the client Remote Config namespace.
@@ -1597,6 +1644,12 @@ Flags:
 
 Without `--yes`, the destructive confirmation selects Yes by default. Selecting No cancels successfully without deleting anything. In JSON mode, omitting `--yes` returns the resolved experiment with status `would-delete` plus an `interaction.required` problem; no DELETE request is sent. Successful output names the deleted experiment and project.
 
+With root `--stateless`, `<project>` is a literal physical project ID without a
+template prefix. fbrcm fetches live project metadata to obtain the numeric
+project identifier, loads the experiment for confirmation, and sends the
+DELETE request using the one-shot token. It does not consult profiles or local
+state.
+
 ### `fbrcm rollouts list <project>`
 
 Lists Firebase rollouts and correlates each rollout ID with its published-template parameter bindings. Human output includes ID, display name, parameter, condition, percentage, relative last-update time, and state, in that order. Parameter names use the same blue styling as `get`, and condition names use their configured Remote Config tag colors. Descriptions and enabled values are omitted from the human list but remain available through JSON and `rollouts show`. A rollout with no binding in the current template remains visible with empty binding columns.
@@ -1640,6 +1693,10 @@ Flags:
 ```
 
 Without `--yes`, the destructive confirmation selects Yes by default. Selecting No cancels successfully without deleting anything. In JSON mode, omitting `--yes` returns the resolved rollout with status `would-delete` plus an `interaction.required` problem; no DELETE request is sent. Successful output names the deleted rollout and project.
+
+Stateless rollout deletion has the same direct project-metadata, confirmation,
+and DELETE flow as stateless experiment deletion. The project argument must be
+a literal physical ID, and no profile-managed state is accessed.
 
 ### `fbrcm personalizations list <project>`
 
@@ -1836,6 +1893,14 @@ after that check.
 
 If Firebase no longer retains a locally cached source version, rollback reports the failure and suggests the corresponding `restore` command.
 
+With root `--stateless`, `<project>` is a literal client or server target. The
+source and current templates are read directly from Firebase, local draft and
+snapshot checks are skipped, and validation plus the native rollback request
+use the one-shot token. Stateless execution still rechecks the current version
+immediately before publication, does not write the resulting template or
+version snapshot locally, and runs no hooks. `--dry-run` performs all reads and
+Firebase validation but does not send the native rollback POST.
+
 ### `fbrcm versions restore <project> <version>`
 
 Republishes an exact locally cached immutable snapshot. Restore exists for recovery when Firebase no longer retains the historical version.
@@ -1970,6 +2035,14 @@ Flags:
 Promotion JSON includes `change_note`, `changed`, `validated`, and `validation_source`; `changed` reports whether the selected result contains changes independently of whether it was a dry run or was published.
 
 Non-interactive promote requires explicit selection intent: `--all`, `--filter`, `--group`, `--expr`, or `--search`. Command reloads the target before publishing, validates with Firebase, publishes using the latest target ETag, and retries if the target changes during promotion.
+
+With root `--stateless`, both positional arguments are literal client or server
+targets. Source and target templates are fetched directly, selection and
+transformation remain local, and publication revalidates the target and uses
+its latest ETag. An ETag conflict repeats the target read, rebuilds the selected
+promotion, and retries. Profiles, aliases, caches, drafts, snapshots, and hooks
+are not consulted or updated; dry-run retains Firebase validation without the
+final publication.
 
 ### `fbrcm projects aliases list`
 

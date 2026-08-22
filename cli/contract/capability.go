@@ -331,6 +331,10 @@ func describe(cmd *cobra.Command) Capability {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
+			if SupportsStatelessCommand(id) && flag.Name == "draft" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
 			if id == "projects.list" && flag.Name == "update" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"

@@ -212,6 +212,11 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	if err != nil {
 		return err
 	}
+	ctx, err = shared.FirebaseServicesContextForExecution(ctx, []string{source.ProjectID, target.ProjectID})
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
 
 	plan := rcpromote.BuildPlan(sourceCfg, targetCfg, rcpromote.Options{Prune: opts.Prune})
 	plan.Diff, err = filterDiffResult(source, sourceCfg, target, targetCfg, plan.Diff, opts)
@@ -359,13 +364,15 @@ func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, ca
 
 func publishPromotePlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, bool, string, error) {
 	progress.Start("Preparing promotion to " + target.ProjectID + "…")
-	if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
-		return false, false, core.ValidationSourceLocal, err
-	} else if hasDraft {
-		return false, false, core.ValidationSourceLocal, &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Remediation: []shared.Remediation{
-			{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", target.ProjectID}},
-			{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", target.ProjectID}},
-		}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)}
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		} else if hasDraft {
+			return false, false, core.ValidationSourceLocal, &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Remediation: []shared.Remediation{
+				{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", target.ProjectID}},
+				{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", target.ProjectID}},
+			}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)}
+		}
 	}
 	for {
 		raw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)

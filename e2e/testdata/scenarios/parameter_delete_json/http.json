@@ -1,0 +1,344 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig:listVersions"
+            }
+          ],
+          "query": {
+            "pageSize": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "H4sIAAAAAAAC/2VQW2+CMBR+51eQPk/QosJ4GgEWyTYlUi/bspgKXWVSaqC4OcN/X8G5Le7lJD3f7Xw9KqoK9qQoU56XwFaf5VtVj+38RcYVW5NCwsAwwNUZrHYJFgSljDQI7MJhp2t1YA/1LLs/sAfXGjTNYR8+XUpmZWt2TpH7HJ9MHiuGsTonRZLmPyqJE4bTrCEcGoK2bwk3tNlqMWd/qSnDlMyKlr0RYlfaup5tDI1yTjNSyeiY54LkohHqWHdcavE4QC7cTt4XVRUtjHL+5t3Go1Xf+lwnWxOzsqBeNGL49S4RGzj1lksYgO/I+qLcpEipPF6mT/0IrZww+Pdjh11bNhi7U//BHyPnfjULPQf5J89azpdGA3LyIUJZB/EtaS0NCJRa+QJt7DNItQEAAA==",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 18:46:00 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "query": {
+            "versionNumber": [
+              {
+                "matcher": "exact",
+                "value": "33"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 18:46:01 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-33"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": "{\"conditions\":[{\"name\":\"employees\",\"expression\":\"percent \\u003c= 5\",\"tagColor\":\"BLUE\"},{\"name\":\"kyc_pending\",\"expression\":\"device.os == 'android' \\u0026\\u0026 percent \\u003c= 35\",\"tagColor\":\"ORANGE\"},{\"name\":\"uk_open_banking\",\"expression\":\"device.country in ['gb']\",\"tagColor\":\"GREEN\"},{\"name\":\"android_beta_10\",\"expression\":\"device.os == 'android' \\u0026\\u0026 percent \\u003c= 10\",\"tagColor\":\"PURPLE\"},{\"name\":\"high_risk_session\",\"expression\":\"device.country in ['us', 'gb', 'de'] \\u0026\\u0026 percent \\u003c= 15\",\"tagColor\":\"DEEP_ORANGE\"},{\"name\":\"webapp\",\"expression\":\"app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'\",\"tagColor\":\"LIME\"}],\"parameterGroups\":{\"banking\":{\"description\":\"Account aggregation and payment rails\",\"parameters\":{\"account_nickname_max_length\":{\"defaultValue\":{\"value\":\"32\"},\"description\":\"Maximum account nickname length\",\"valueType\":\"NUMBER\"},\"ach_transfer_limit_daily\":{\"defaultValue\":{\"value\":\"3000\"},\"description\":\"Daily ACH transfer limit\",\"valueType\":\"NUMBER\"},\"card_freeze_enabled\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Allow card freeze from app\",\"valueType\":\"BOOLEAN\"},\"instant_cashout_fee_bps\":{\"defaultValue\":{\"value\":\"85\"},\"description\":\"Instant cashout fee in basis points\",\"valueType\":\"NUMBER\"},\"open_banking_enabled\":{\"defaultValue\":{\"value\":\"false\"},\"conditionalValues\":{\"uk_open_banking\":{\"value\":\"true\"}},\"description\":\"Enable open banking connection\",\"valueType\":\"BOOLEAN\"},\"pending_transaction_days\":{\"defaultValue\":{\"value\":\"5\"},\"description\":\"Days to display pending transactions\",\"valueType\":\"NUMBER\"},\"plaid_products\":{\"defaultValue\":{\"value\":\"[\\\"auth\\\",\\\"transactions\\\",\\\"identity\\\"]\"},\"description\":\"Plaid products requested\",\"valueType\":\"JSON\"}}},\"insights\":{\"description\":\"Budgeting and analytics features\",\"parameters\":{\"cashflow_forecast_days\":{\"defaultValue\":{\"value\":\"30\"},\"description\":\"Cashflow forecast horizon\",\"valueType\":\"NUMBER\"},\"enable_subscription_detection\":{\"defaultValue\":{\"value\":\"true\"},\"conditionalValues\":{\"android_beta_10\":{\"value\":\"false\"}},\"description\":\"Detect recurring subscriptions\",\"valueType\":\"BOOLEAN\"},\"insight_min_transaction_count\":{\"defaultValue\":{\"value\":\"8\"},\"description\":\"Minimum transactions before showing insights\",\"valueType\":\"NUMBER\"},\"merchant_logo_cdn\":{\"defaultValue\":{\"value\":\"https://assets.example.invalid/merchants\"},\"description\":\"Merchant logo CDN base URL\",\"valueType\":\"STRING\"},\"monthly_budget_enabled\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Enable monthly budget module\",\"valueType\":\"BOOLEAN\"},\"savings_nudge_threshold\":{\"defaultValue\":{\"value\":\"125\"},\"description\":\"Balance delta threshold for savings nudge\",\"valueType\":\"NUMBER\"},\"spending_categories\":{\"defaultValue\":{\"value\":\"[\\\"groceries\\\",\\\"restaurants\\\",\\\"transport\\\",\\\"subscriptions\\\",\\\"utilities\\\"]\"},\"description\":\"Default spend categories\",\"valueType\":\"JSON\"}}},\"onboarding\":{\"description\":\"Signup and verification flows\",\"parameters\":{\"enable_passkey_signup\":{\"defaultValue\":{\"value\":\"false\"},\"conditionalValues\":{\"android_beta_10\":{\"value\":\"true\"}},\"description\":\"Offer passkey setup during signup\",\"valueType\":\"BOOLEAN\"},\"funding_minimum_amount\":{\"defaultValue\":{\"value\":\"10\"},\"conditionalValues\":{\"android_beta_10\":{\"rolloutValue\":{\"rolloutId\":\"rollout_1\",\"value\":\"20\",\"percent\":10}}},\"description\":\"Minimum first funding amount\",\"valueType\":\"NUMBER\"},\"kyc_provider\":{\"defaultValue\":{\"value\":\"veriff\"},\"conditionalValues\":{\"android_beta_10\":{\"personalizationValue\":{\"personalizationId\":\"07fb3c47-e4b2-4446-b137-595e0722778d\"}},\"employees\":{\"value\":\"sandbox\"}},\"description\":\"Identity verification provider\",\"valueType\":\"STRING\"},\"kyc_retry_limit\":{\"defaultValue\":{\"value\":\"2\"},\"conditionalValues\":{\"kyc_pending\":{\"value\":\"3\"}},\"description\":\"Maximum KYC retry attempts\",\"valueType\":\"NUMBER\"},\"onboarding_steps\":{\"defaultValue\":{\"value\":\"[\\\"email\\\",\\\"phone\\\",\\\"identity\\\",\\\"funding\\\",\\\"card\\\"]\"},\"conditionalValues\":{\"uk_open_banking\":{\"value\":\"[\\\"email\\\",\\\"phone\\\",\\\"identity\\\",\\\"open_banking\\\",\\\"funding\\\",\\\"card\\\"]\"}},\"description\":\"Ordered onboarding steps\",\"valueType\":\"JSON\"},\"show_income_question\":{\"defaultValue\":{\"value\":\"true\"},\"conditionalValues\":{\"webapp\":{\"experimentValue\":{\"experimentId\":\"abt_4\",\"variantValue\":[{\"variantId\":\"0\",\"value\":\"true\"},{\"variantId\":\"1\",\"value\":\"false\"},{\"variantId\":\"2\",\"value\":\"true\"}],\"exposurePercent\":15}}},\"description\":\"Ask user for income range during onboarding\",\"valueType\":\"BOOLEAN\"},\"welcome_bonus_copy\":{\"defaultValue\":{\"value\":\"Get started with no monthly fees\"},\"description\":\"Welcome bonus banner copy\",\"valueType\":\"STRING\"}}},\"risk\":{\"description\":\"Fraud, velocity and risk controls\",\"parameters\":{\"block_crypto_card_loads\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Block card loads from crypto merchant category\",\"valueType\":\"BOOLEAN\"},\"device_binding_grace_hours\":{\"defaultValue\":{\"value\":\"24\"},\"description\":\"Grace period for device binding\",\"valueType\":\"NUMBER\"},\"high_risk_transfer_limit\":{\"defaultValue\":{\"value\":\"200\"},\"conditionalValues\":{\"high_risk_session\":{\"value\":\"50\"}},\"description\":\"Transfer limit for high risk sessions\",\"valueType\":\"NUMBER\"},\"require_step_up_for_new_device\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Require extra auth on new device\",\"valueType\":\"BOOLEAN\"},\"risk_banner_copy\":{\"defaultValue\":{\"value\":\"We need a quick security check\"},\"conditionalValues\":{\"high_risk_session\":{\"value\":\"Extra verification is required before continuing\"}},\"description\":\"Copy shown during step-up\",\"valueType\":\"STRING\"},\"step_up_methods\":{\"defaultValue\":{\"value\":\"[\\\"sms_otp\\\",\\\"email_otp\\\"]\"},\"conditionalValues\":{\"employees\":{\"value\":\"[\\\"totp\\\",\\\"sms_otp\\\",\\\"email_otp\\\"]\"}},\"description\":\"Allowed step-up methods\",\"valueType\":\"JSON\"},\"velocity_window_minutes\":{\"defaultValue\":{\"value\":\"15\"},\"description\":\"Velocity evaluation window\",\"valueType\":\"NUMBER\"}}},\"support\":{\"description\":\"Customer support and maintenance messaging\",\"parameters\":{\"document_upload_max_mb\":{\"defaultValue\":{\"value\":\"12\"},\"description\":\"Max document upload size\",\"valueType\":\"NUMBER\"},\"incident_status_url\":{\"defaultValue\":{\"value\":\"https://status.example.invalid/finance\"},\"description\":\"Status page URL\",\"valueType\":\"STRING\"},\"maintenance_banner\":{\"defaultValue\":{\"value\":\"{\\\"enabled\\\":false,\\\"title\\\":\\\"Scheduled maintenance\\\",\\\"startsAt\\\":\\\"2026-06-02T01:00:00Z\\\"}\"},\"description\":\"Maintenance banner payload\",\"valueType\":\"JSON\"},\"show_tax_center\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Show tax documents center\",\"valueType\":\"BOOLEAN\"},\"statement_months_available\":{\"defaultValue\":{\"value\":\"24\"},\"description\":\"Statement history retention\",\"valueType\":\"NUMBER\"},\"support_chat_enabled\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Enable in-app support chat\",\"valueType\":\"BOOLEAN\"},\"support_queue_copy\":{\"defaultValue\":{\"value\":\"A specialist will join shortly\"},\"description\":\"Support queue message\",\"valueType\":\"STRING\"}}}}}"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "PUT"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "query": {
+            "validateOnly": [
+              {
+                "matcher": "exact",
+                "value": "true"
+              }
+            ]
+          },
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 18:46:01 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-0"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": "{\"conditions\":[{\"name\":\"employees\",\"expression\":\"percent \\u003c= 5\",\"tagColor\":\"BLUE\"},{\"name\":\"kyc_pending\",\"expression\":\"device.os == 'android' \\u0026\\u0026 percent \\u003c= 35\",\"tagColor\":\"ORANGE\"},{\"name\":\"uk_open_banking\",\"expression\":\"device.country in ['gb']\",\"tagColor\":\"GREEN\"},{\"name\":\"android_beta_10\",\"expression\":\"device.os == 'android' \\u0026\\u0026 percent \\u003c= 10\",\"tagColor\":\"PURPLE\"},{\"name\":\"high_risk_session\",\"expression\":\"device.country in ['us', 'gb', 'de'] \\u0026\\u0026 percent \\u003c= 15\",\"tagColor\":\"DEEP_ORANGE\"},{\"name\":\"webapp\",\"expression\":\"app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'\",\"tagColor\":\"LIME\"}],\"parameterGroups\":{\"banking\":{\"description\":\"Account aggregation and payment rails\",\"parameters\":{\"account_nickname_max_length\":{\"defaultValue\":{\"value\":\"32\"},\"description\":\"Maximum account nickname length\",\"valueType\":\"NUMBER\"},\"ach_transfer_limit_daily\":{\"defaultValue\":{\"value\":\"3000\"},\"description\":\"Daily ACH transfer limit\",\"valueType\":\"NUMBER\"},\"card_freeze_enabled\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Allow card freeze from app\",\"valueType\":\"BOOLEAN\"},\"instant_cashout_fee_bps\":{\"defaultValue\":{\"value\":\"85\"},\"description\":\"Instant cashout fee in basis points\",\"valueType\":\"NUMBER\"},\"open_banking_enabled\":{\"defaultValue\":{\"value\":\"false\"},\"conditionalValues\":{\"uk_open_banking\":{\"value\":\"true\"}},\"description\":\"Enable open banking connection\",\"valueType\":\"BOOLEAN\"},\"pending_transaction_days\":{\"defaultValue\":{\"value\":\"5\"},\"description\":\"Days to display pending transactions\",\"valueType\":\"NUMBER\"},\"plaid_products\":{\"defaultValue\":{\"value\":\"[\\\"auth\\\",\\\"transactions\\\",\\\"identity\\\"]\"},\"description\":\"Plaid products requested\",\"valueType\":\"JSON\"}}},\"insights\":{\"description\":\"Budgeting and analytics features\",\"parameters\":{\"cashflow_forecast_days\":{\"defaultValue\":{\"value\":\"30\"},\"description\":\"Cashflow forecast horizon\",\"valueType\":\"NUMBER\"},\"enable_subscription_detection\":{\"defaultValue\":{\"value\":\"true\"},\"conditionalValues\":{\"android_beta_10\":{\"value\":\"false\"}},\"description\":\"Detect recurring subscriptions\",\"valueType\":\"BOOLEAN\"},\"insight_min_transaction_count\":{\"defaultValue\":{\"value\":\"8\"},\"description\":\"Minimum transactions before showing insights\",\"valueType\":\"NUMBER\"},\"merchant_logo_cdn\":{\"defaultValue\":{\"value\":\"https://assets.example.invalid/merchants\"},\"description\":\"Merchant logo CDN base URL\",\"valueType\":\"STRING\"},\"monthly_budget_enabled\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Enable monthly budget module\",\"valueType\":\"BOOLEAN\"},\"savings_nudge_threshold\":{\"defaultValue\":{\"value\":\"125\"},\"description\":\"Balance delta threshold for savings nudge\",\"valueType\":\"NUMBER\"},\"spending_categories\":{\"defaultValue\":{\"value\":\"[\\\"groceries\\\",\\\"restaurants\\\",\\\"transport\\\",\\\"subscriptions\\\",\\\"utilities\\\"]\"},\"description\":\"Default spend categories\",\"valueType\":\"JSON\"}}},\"onboarding\":{\"description\":\"Signup and verification flows\",\"parameters\":{\"enable_passkey_signup\":{\"defaultValue\":{\"value\":\"false\"},\"conditionalValues\":{\"android_beta_10\":{\"value\":\"true\"}},\"description\":\"Offer passkey setup during signup\",\"valueType\":\"BOOLEAN\"},\"funding_minimum_amount\":{\"defaultValue\":{\"value\":\"10\"},\"conditionalValues\":{\"android_beta_10\":{\"rolloutValue\":{\"rolloutId\":\"rollout_1\",\"value\":\"20\",\"percent\":10}}},\"description\":\"Minimum first funding amount\",\"valueType\":\"NUMBER\"},\"kyc_provider\":{\"defaultValue\":{\"value\":\"veriff\"},\"conditionalValues\":{\"android_beta_10\":{\"personalizationValue\":{\"personalizationId\":\"07fb3c47-e4b2-4446-b137-595e0722778d\"}},\"employees\":{\"value\":\"sandbox\"}},\"description\":\"Identity verification provider\",\"valueType\":\"STRING\"},\"kyc_retry_limit\":{\"defaultValue\":{\"value\":\"2\"},\"conditionalValues\":{\"kyc_pending\":{\"value\":\"3\"}},\"description\":\"Maximum KYC retry attempts\",\"valueType\":\"NUMBER\"},\"onboarding_steps\":{\"defaultValue\":{\"value\":\"[\\\"email\\\",\\\"phone\\\",\\\"identity\\\",\\\"funding\\\",\\\"card\\\"]\"},\"conditionalValues\":{\"uk_open_banking\":{\"value\":\"[\\\"email\\\",\\\"phone\\\",\\\"identity\\\",\\\"open_banking\\\",\\\"funding\\\",\\\"card\\\"]\"}},\"description\":\"Ordered onboarding steps\",\"valueType\":\"JSON\"},\"show_income_question\":{\"defaultValue\":{\"value\":\"true\"},\"conditionalValues\":{\"webapp\":{\"experimentValue\":{\"experimentId\":\"abt_4\",\"variantValue\":[{\"variantId\":\"0\",\"value\":\"true\"},{\"variantId\":\"1\",\"value\":\"false\"},{\"variantId\":\"2\",\"value\":\"true\"}],\"exposurePercent\":15}}},\"description\":\"Ask user for income range during onboarding\",\"valueType\":\"BOOLEAN\"},\"welcome_bonus_copy\":{\"defaultValue\":{\"value\":\"Get started with no monthly fees\"},\"description\":\"Welcome bonus banner copy\",\"valueType\":\"STRING\"}}},\"risk\":{\"description\":\"Fraud, velocity and risk controls\",\"parameters\":{\"block_crypto_card_loads\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Block card loads from crypto merchant category\",\"valueType\":\"BOOLEAN\"},\"device_binding_grace_hours\":{\"defaultValue\":{\"value\":\"24\"},\"description\":\"Grace period for device binding\",\"valueType\":\"NUMBER\"},\"high_risk_transfer_limit\":{\"defaultValue\":{\"value\":\"200\"},\"conditionalValues\":{\"high_risk_session\":{\"value\":\"50\"}},\"description\":\"Transfer limit for high risk sessions\",\"valueType\":\"NUMBER\"},\"require_step_up_for_new_device\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Require extra auth on new device\",\"valueType\":\"BOOLEAN\"},\"risk_banner_copy\":{\"defaultValue\":{\"value\":\"We need a quick security check\"},\"conditionalValues\":{\"high_risk_session\":{\"value\":\"Extra verification is required before continuing\"}},\"description\":\"Copy shown during step-up\",\"valueType\":\"STRING\"},\"step_up_methods\":{\"defaultValue\":{\"value\":\"[\\\"sms_otp\\\",\\\"email_otp\\\"]\"},\"conditionalValues\":{\"employees\":{\"value\":\"[\\\"totp\\\",\\\"sms_otp\\\",\\\"email_otp\\\"]\"}},\"description\":\"Allowed step-up methods\",\"valueType\":\"JSON\"},\"velocity_window_minutes\":{\"defaultValue\":{\"value\":\"15\"},\"description\":\"Velocity evaluation window\",\"valueType\":\"NUMBER\"}}},\"support\":{\"description\":\"Customer support and maintenance messaging\",\"parameters\":{\"document_upload_max_mb\":{\"defaultValue\":{\"value\":\"12\"},\"description\":\"Max document upload size\",\"valueType\":\"NUMBER\"},\"incident_status_url\":{\"defaultValue\":{\"value\":\"https://status.example.invalid/finance\"},\"description\":\"Status page URL\",\"valueType\":\"STRING\"},\"maintenance_banner\":{\"defaultValue\":{\"value\":\"{\\\"enabled\\\":false,\\\"title\\\":\\\"Scheduled maintenance\\\",\\\"startsAt\\\":\\\"2026-06-02T01:00:00Z\\\"}\"},\"description\":\"Maintenance banner payload\",\"valueType\":\"JSON\"},\"show_tax_center\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Show tax documents center\",\"valueType\":\"BOOLEAN\"},\"statement_months_available\":{\"defaultValue\":{\"value\":\"24\"},\"description\":\"Statement history retention\",\"valueType\":\"NUMBER\"},\"support_chat_enabled\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Enable in-app support chat\",\"valueType\":\"BOOLEAN\"},\"support_queue_copy\":{\"defaultValue\":{\"value\":\"A specialist will join shortly\"},\"description\":\"Support queue message\",\"valueType\":\"STRING\"}}}}}"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "firebaseremoteconfig.googleapis.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "PUT"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/v1/projects/northstar-wallet/remoteConfig"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "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",
+          "encodedBody": true,
+          "headers": {
+            "Alt-Svc": [
+              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=UTF-8"
+            ],
+            "Date": [
+              "Fri, 21 Aug 2026 18:46:03 GMT"
+            ],
+            "Etag": [
+              "etag-949596266151-34"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Server": [
+              "ESF"
+            ],
+            "Vary": [
+              "Origin",
+              "X-Origin",
+              "Referer"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "SAMEORIGIN"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

@@ -156,6 +156,9 @@ func namedGroupMutation(requested string, mutate func(*firebase.RemoteConfig, st
 
 func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, operation, emoji string, destructive bool, mutate groupMutation) error {
 	ctx := shared.CommandContext(cmd)
+	if err := shared.RejectStatelessDraft(ctx, opts.Draft); err != nil {
+		return err
+	}
 	if opts.DryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -164,11 +167,7 @@ func runGroupMutation(cmd *cobra.Command, svc *core.Core, opts mutationOptions, 
 	if err != nil {
 		return err
 	}
-	projects, _, err := svc.ListProjects(ctx)
-	if err != nil {
-		return err
-	}
-	projects, err = shared.FilterProjectTargets(projects, opts.ProjectFilters)
+	projects, ctx, err := shared.ResolveProjectMutationTargetsForExecution(ctx, cmd, svc, opts.ProjectFilters)
 	if err != nil {
 		return err
 	}

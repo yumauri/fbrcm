@@ -938,6 +938,320 @@ func newStatelessHTTPTestCommand(t *testing.T, roundTrip appRoundTripFunc) (*cob
 	return cmd, captured, configRoot, cacheRoot
 }
 
+func statelessHTTPResponse(req *http.Request, status int, body, etag string) *http.Response {
+	header := make(http.Header)
+	header.Set("Content-Type", "application/json")
+	if etag != "" {
+		header.Set("ETag", etag)
+	}
+	return &http.Response{
+		StatusCode: status,
+		Status:     fmt.Sprintf("%d %s", status, http.StatusText(status)),
+		Header:     header,
+		Body:       io.NopCloser(strings.NewReader(body)),
+		Request:    req,
+	}
+}
+
+func TestStatelessProjectImportPublishesWithoutProfileState(t *testing.T) {
+	input := filepath.Join(t.TempDir(), "import.json")
+	if err := os.WriteFile(input, []byte(`{"parameters":{"imported_flag":{"defaultValue":{"value":"on"},"valueType":"STRING"}}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	requests := make(map[string]int)
+	cmd, captured, configRoot, cacheRoot := newStatelessHTTPTestCommand(t, func(req *http.Request) (*http.Response, error) {
+		key := req.Method + " " + req.URL.EscapedPath()
+		if req.URL.RawQuery != "" {
+			key += "?" + req.URL.RawQuery
+		}
+		requests[key]++
+		switch {
+		case req.Method == http.MethodGet:
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{},"version":{"versionNumber":"12"}}`, `"etag-12"`), nil
+		case req.Method == http.MethodPut && req.URL.Query().Get("validateOnly") == "true":
+			candidate, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(candidate), `"imported_flag"`) {
+				t.Fatalf("validation candidate = %s", candidate)
+			}
+			return statelessHTTPResponse(req, http.StatusOK, string(candidate), `"etag-12"`), nil
+		case req.Method == http.MethodPut:
+			if got := req.Header.Get("If-Match"); got != `"etag-12"` {
+				t.Fatalf("If-Match = %q", got)
+			}
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"imported_flag":{"defaultValue":{"value":"on"},"valueType":"STRING"}},"version":{"versionNumber":"13"}}`, `"etag-13"`), nil
+		default:
+			t.Fatalf("unexpected request %s %s", req.Method, req.URL.String())
+			return nil, nil
+		}
+	})
+	cmd.SetArgs([]string{"--stateless", "project", "import", "demo", "--from", input, "--override", "--yes", "--json"})
+	executed, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("stateless project import = %v", err)
+	}
+	compact := compactJSON(t, captured.Bytes())
+	for _, marker := range []string{`"project_id":"demo"`, `"status":"imported"`, `"published":true`, `"validated":true`} {
+		if !strings.Contains(compact, marker) {
+			t.Fatalf("project import output %s omits %s", captured.String(), marker)
+		}
+	}
+	if envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil); envelope.Context.Profile != nil || envelope.Outcome != "success" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	for key, want := range map[string]int{
+		"GET /v1/projects/demo/remoteConfig":                   1,
+		"PUT /v1/projects/demo/remoteConfig?validateOnly=true": 1,
+		"PUT /v1/projects/demo/remoteConfig":                   1,
+	} {
+		if requests[key] != want {
+			t.Fatalf("requests[%q] = %d, want %d; all requests: %#v", key, requests[key], want, requests)
+		}
+	}
+	assertProfilePathsAbsent(t, configRoot, cacheRoot)
+}
+
+func TestStatelessProjectsPromoteRetriesTargetConflictWithoutProfileState(t *testing.T) {
+	requests := make(map[string]int)
+	targetGets, targetPublishes := 0, 0
+	cmd, captured, configRoot, cacheRoot := newStatelessHTTPTestCommand(t, func(req *http.Request) (*http.Response, error) {
+		key := req.Method + " " + req.URL.EscapedPath()
+		if req.URL.RawQuery != "" {
+			key += "?" + req.URL.RawQuery
+		}
+		requests[key]++
+		switch {
+		case req.Method == http.MethodGet && strings.Contains(req.URL.EscapedPath(), "/projects/source/"):
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"promoted"},"valueType":"STRING"}},"version":{"versionNumber":"7"}}`, `"etag-source"`), nil
+		case req.Method == http.MethodGet && strings.Contains(req.URL.EscapedPath(), "/projects/target/"):
+			targetGets++
+			version, value, etag := "1", "current", `"etag-1"`
+			if targetGets >= 3 {
+				version, value, etag = "2", "concurrent", `"etag-2"`
+			}
+			body := fmt.Sprintf(`{"parameters":{"flag":{"defaultValue":{"value":%q},"valueType":"STRING"}},"version":{"versionNumber":%q}}`, value, version)
+			return statelessHTTPResponse(req, http.StatusOK, body, etag), nil
+		case req.Method == http.MethodPut && req.URL.Query().Get("validateOnly") == "true":
+			candidate, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(candidate), `"promoted"`) {
+				t.Fatalf("validation candidate = %s", candidate)
+			}
+			return statelessHTTPResponse(req, http.StatusOK, string(candidate), req.Header.Get("If-Match")), nil
+		case req.Method == http.MethodPut:
+			targetPublishes++
+			if targetPublishes == 1 {
+				return statelessHTTPResponse(req, http.StatusPreconditionFailed, `{"error":{"message":"etag mismatch"}}`, ""), nil
+			}
+			if got := req.Header.Get("If-Match"); got != `"etag-2"` {
+				t.Fatalf("retry If-Match = %q", got)
+			}
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"promoted"},"valueType":"STRING"}},"version":{"versionNumber":"3"}}`, `"etag-3"`), nil
+		default:
+			t.Fatalf("unexpected request %s %s", req.Method, req.URL.String())
+			return nil, nil
+		}
+	})
+	cmd.SetArgs([]string{"--stateless", "projects", "promote", "source", "target", "--all", "--yes", "--json"})
+	executed, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("stateless projects promote = %v; output: %s", err, captured.String())
+	}
+	compact := compactJSON(t, captured.Bytes())
+	for _, marker := range []string{`"source_project":"source"`, `"target_project":"target"`, `"status":"published"`, `"validated":true`} {
+		if !strings.Contains(compact, marker) {
+			t.Fatalf("projects promote output %s omits %s", captured.String(), marker)
+		}
+	}
+	if targetGets != 3 || targetPublishes != 2 {
+		t.Fatalf("target gets/publishes = %d/%d, want 3/2; requests: %#v", targetGets, targetPublishes, requests)
+	}
+	if envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil); envelope.Context.Profile != nil || envelope.Outcome != "success" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	assertProfilePathsAbsent(t, configRoot, cacheRoot)
+}
+
+func TestStatelessVersionsRollbackUsesNativePostWithoutProfileState(t *testing.T) {
+	requests := make(map[string]int)
+	cmd, captured, configRoot, cacheRoot := newStatelessHTTPTestCommand(t, func(req *http.Request) (*http.Response, error) {
+		key := req.Method + " " + req.URL.EscapedPath()
+		if req.URL.RawQuery != "" {
+			key += "?" + req.URL.RawQuery
+		}
+		requests[key]++
+		path := req.URL.EscapedPath()
+		switch {
+		case req.Method == http.MethodGet && strings.HasSuffix(path, ":listVersions"):
+			return statelessHTTPResponse(req, http.StatusOK, `{"versions":[{"versionNumber":"10","updateTime":"2026-08-21T00:00:00Z"}]}`, ""), nil
+		case req.Method == http.MethodGet && req.URL.Query().Get("versionNumber") == "7":
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"old"},"valueType":"STRING"}},"version":{"versionNumber":"7"}}`, `"etag-7"`), nil
+		case req.Method == http.MethodGet && req.URL.Query().Get("versionNumber") == "10":
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"current"},"valueType":"STRING"}},"version":{"versionNumber":"10"}}`, `"etag-10"`), nil
+		case req.Method == http.MethodGet:
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"current"},"valueType":"STRING"}},"version":{"versionNumber":"10"}}`, `"etag-10"`), nil
+		case req.Method == http.MethodPut && req.URL.Query().Get("validateOnly") == "true":
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"old"},"valueType":"STRING"}}}`, `"etag-10"`), nil
+		case req.Method == http.MethodPost && strings.HasSuffix(path, ":rollback"):
+			body, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(body), `"versionNumber":"7"`) {
+				t.Fatalf("rollback body = %s", body)
+			}
+			return statelessHTTPResponse(req, http.StatusOK, `{"parameters":{"flag":{"defaultValue":{"value":"old"},"valueType":"STRING"}},"version":{"versionNumber":"11"}}`, `"etag-11"`), nil
+		default:
+			t.Fatalf("unexpected request %s %s", req.Method, req.URL.String())
+			return nil, nil
+		}
+	})
+	cmd.SetArgs([]string{"--stateless", "versions", "rollback", "demo", "7", "--yes", "--json"})
+	executed, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("stateless versions rollback = %v; output: %s", err, captured.String())
+	}
+	compact := compactJSON(t, captured.Bytes())
+	for _, marker := range []string{`"project_id":"demo"`, `"operation":"rollback"`, `"previous_version":"10"`, `"source_version":"7"`, `"published_version":"11"`, `"status":"published"`} {
+		if !strings.Contains(compact, marker) {
+			t.Fatalf("versions rollback output %s omits %s", captured.String(), marker)
+		}
+	}
+	if requests["POST /v1/projects/demo/remoteConfig:rollback"] != 1 {
+		t.Fatalf("rollback requests = %#v", requests)
+	}
+	if envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil); envelope.Context.Profile != nil || envelope.Outcome != "success" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	assertProfilePathsAbsent(t, configRoot, cacheRoot)
+}
+
+func TestStatelessManagedFeatureDeletesUseDirectService(t *testing.T) {
+	tests := []struct {
+		name, command, collection, id, display string
+	}{
+		{name: "experiment", command: "experiments", collection: "experiments", id: "exp_1", display: "Stateless experiment"},
+		{name: "rollout", command: "rollouts", collection: "rollouts", id: "rollout_1", display: "Stateless rollout"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			requests := make(map[string]int)
+			cmd, captured, configRoot, cacheRoot := newStatelessHTTPTestCommand(t, func(req *http.Request) (*http.Response, error) {
+				key := req.Method + " " + req.URL.EscapedPath()
+				requests[key]++
+				switch {
+				case req.Method == http.MethodGet && req.URL.EscapedPath() == "/v3/projects/demo":
+					return statelessHTTPResponse(req, http.StatusOK, `{"name":"projects/123","projectId":"demo","displayName":"Demo","state":"ACTIVE"}`, ""), nil
+				case req.Method == http.MethodGet && strings.Contains(req.URL.EscapedPath(), "/"+tt.collection+"/"):
+					body := fmt.Sprintf(`{"name":"projects/123/namespaces/firebase/%s/%s","definition":{"displayName":%q}}`, tt.collection, tt.id, tt.display)
+					return statelessHTTPResponse(req, http.StatusOK, body, ""), nil
+				case req.Method == http.MethodDelete && strings.Contains(req.URL.EscapedPath(), "/"+tt.collection+"/"):
+					return statelessHTTPResponse(req, http.StatusNoContent, "", ""), nil
+				default:
+					t.Fatalf("unexpected request %s %s", req.Method, req.URL.String())
+					return nil, nil
+				}
+			})
+			cmd.SetArgs([]string{"--stateless", tt.command, "delete", "demo", tt.id, "--yes", "--json"})
+			executed, err := cmd.ExecuteC()
+			if err != nil {
+				t.Fatalf("stateless %s delete = %v; output: %s", tt.name, err, captured.String())
+			}
+			compact := compactJSON(t, captured.Bytes())
+			for _, marker := range []string{`"kind":"` + tt.name + `"`, `"id":"` + tt.id + `"`, `"project_id":"demo"`, `"status":"deleted"`} {
+				if !strings.Contains(compact, marker) {
+					t.Fatalf("%s delete output %s omits %s", tt.name, captured.String(), marker)
+				}
+			}
+			featurePath := "/v1/projects/123/namespaces/firebase/" + tt.collection + "/" + tt.id
+			for key, want := range map[string]int{
+				"GET /v3/projects/demo": 1,
+				"GET " + featurePath:    1,
+				"DELETE " + featurePath: 1,
+			} {
+				if requests[key] != want {
+					t.Fatalf("requests[%q] = %d, want %d; all requests: %#v", key, requests[key], want, requests)
+				}
+			}
+			if envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil); envelope.Context.Profile != nil || envelope.Outcome != "success" {
+				t.Fatalf("envelope = %#v", envelope)
+			}
+			assertProfilePathsAbsent(t, configRoot, cacheRoot)
+		})
+	}
+}
+
+func TestStatelessGroupsAddPublishesWithoutProfileState(t *testing.T) {
+	requests := make(map[string]int)
+	current := `{"parameterGroups":{},"version":{"versionNumber":"12"}}`
+	published := `{"parameterGroups":{"stateless_group":{"description":"Stateless group"}},"version":{"versionNumber":"13"}}`
+	cmd, captured, configRoot, cacheRoot := newStatelessHTTPTestCommand(t, func(req *http.Request) (*http.Response, error) {
+		key := req.Method + " " + req.URL.EscapedPath()
+		if req.URL.RawQuery != "" {
+			key += "?" + req.URL.RawQuery
+		}
+		requests[key]++
+
+		body := ""
+		etag := ""
+		switch {
+		case req.Method == http.MethodGet && strings.HasSuffix(req.URL.EscapedPath(), ":listVersions"):
+			body = `{"versions":[{"versionNumber":"12","updateTime":"2026-08-21T00:00:00Z"}]}`
+		case req.Method == http.MethodGet:
+			body, etag = current, `"etag-12"`
+		case req.Method == http.MethodPut && req.URL.Query().Get("validateOnly") == "true":
+			candidate, err := io.ReadAll(req.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(candidate), `"stateless_group"`) || !strings.Contains(string(candidate), `"Stateless group"`) {
+				t.Fatalf("validation candidate = %s", candidate)
+			}
+			body = string(candidate)
+		case req.Method == http.MethodPut:
+			body, etag = published, `"etag-13"`
+		default:
+			t.Fatalf("unexpected request %s %s", req.Method, req.URL.String())
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Header:     http.Header{"Content-Type": []string{"application/json"}, "ETag": []string{etag}},
+			Body:       io.NopCloser(strings.NewReader(body)),
+			Request:    req,
+		}, nil
+	})
+	cmd.SetArgs([]string{"--stateless", "groups", "add", "stateless_group", "--project", "=demo", "--description", "Stateless group", "--yes", "--json"})
+	executed, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("stateless groups add = %v", err)
+	}
+	compact := compactJSON(t, captured.Bytes())
+	for _, marker := range []string{`"target":"demo"`, `"status":"published"`, `"previous_version":"12"`, `"published_version":"13"`, `"draft":false`} {
+		if !strings.Contains(compact, marker) {
+			t.Fatalf("groups add output %s omits %s", captured.String(), marker)
+		}
+	}
+	if envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil); envelope.Context.Profile != nil || envelope.Outcome != "success" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	for key, want := range map[string]int{
+		"GET /v1/projects/demo/remoteConfig:listVersions?pageSize=1": 1,
+		"GET /v1/projects/demo/remoteConfig?versionNumber=12":        1,
+		"PUT /v1/projects/demo/remoteConfig?validateOnly=true":       1,
+		"PUT /v1/projects/demo/remoteConfig":                         1,
+	} {
+		if requests[key] != want {
+			t.Fatalf("requests[%q] = %d, want %d; all requests: %#v", key, requests[key], want, requests)
+		}
+	}
+	assertProfilePathsAbsent(t, configRoot, cacheRoot)
+}
+
 func assertProfilePathsAbsent(t *testing.T, paths ...string) {
 	t.Helper()
 	for _, path := range paths {
@@ -1185,7 +1499,7 @@ func TestStatelessModeRejectsUnsupportedCommandAndExplicitProfile(t *testing.T) 
 		args []string
 		want string
 	}{
-		{name: "unsupported command", args: []string{"--stateless", "conditions", "add", "my-project", "example", "--expression", "true", "--json"}, want: "not supported by conditions add"},
+		{name: "unsupported command", args: []string{"--stateless", "versions", "restore", "my-project", "7", "--json"}, want: "not supported by versions restore"},
 		{name: "explicit profile", args: []string{"--stateless", "--profile", "personal", "project", "export", "my-project", "--json"}, want: "--profile cannot be used"},
 		{name: "cached version", args: []string{"--stateless", "versions", "show", "my-project", "7", "--cached", "--json"}, want: "--cached cannot be used"},
 		{name: "conditions update", args: []string{"--stateless", "conditions", "list", "my-project", "--update", "--json"}, want: "--update cannot be used"},

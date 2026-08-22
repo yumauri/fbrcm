@@ -102,6 +102,9 @@ func readDuplicateOptions(cmd *cobra.Command, args []string) (duplicateOptions, 
 
 func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOptions) error {
 	ctx := shared.CommandContext(cmd)
+	if err := shared.RejectStatelessDraft(ctx, opts.draft); err != nil {
+		return err
+	}
 	if opts.dryRun {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -109,11 +112,7 @@ func runDuplicateRemote(cmd *cobra.Command, svc *core.Core, opts duplicateOption
 	if err != nil {
 		return err
 	}
-	projects, _, err := svc.ListProjects(ctx)
-	if err != nil {
-		return err
-	}
-	projects, err = shared.FilterProjectTargets(projects, opts.projectFilters)
+	projects, ctx, err := shared.ResolveProjectMutationTargetsForExecution(ctx, cmd, svc, opts.projectFilters)
 	if err != nil {
 		return err
 	}

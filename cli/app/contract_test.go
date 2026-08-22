@@ -245,31 +245,36 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 	if flag := slices.IndexFunc(rootCapability.Flags, func(flag contract.FlagCapability) bool { return flag.Name == "--version" }); flag < 0 || !slices.Contains(rootCapability.Flags[flag].Aliases, "-v") {
 		t.Fatalf("root version flag should publish -v: %#v", rootCapability.Flags)
 	}
-	statelessCommands := []struct {
+	statelessCacheWriters := map[string]bool{
+		"add": true, "delete": true, "duplicate": true, "get": true, "update": true,
+		"conditions.add": true, "conditions.delete": true, "conditions.edit": true, "conditions.list": true,
+		"conditions.move": true, "conditions.rename": true, "conditions.show": true, "conditions.validate": true,
+		"experiments.list": true, "experiments.show": true,
+		"groups.add": true, "groups.delete": true, "groups.edit": true, "groups.list": true, "groups.rename": true,
+		"personalizations.list": true, "personalizations.show": true,
+		"project.import": true, "projects.promote": true,
+		"rollouts.list": true, "rollouts.show": true,
+		"versions.diff": true, "versions.export": true, "versions.rollback": true, "versions.show": true,
+	}
+	statelessCommands := make([]struct {
 		path       []string
 		cacheWrite bool
-	}{
-		{path: []string{"conditions", "list"}, cacheWrite: true},
-		{path: []string{"conditions", "show"}, cacheWrite: true},
-		{path: []string{"conditions", "validate"}, cacheWrite: true},
-		{path: []string{"experiments", "list"}, cacheWrite: true},
-		{path: []string{"experiments", "show"}, cacheWrite: true},
-		{path: []string{"get"}, cacheWrite: true},
-		{path: []string{"groups", "list"}, cacheWrite: true},
-		{path: []string{"personalizations", "list"}, cacheWrite: true},
-		{path: []string{"personalizations", "show"}, cacheWrite: true},
-		{path: []string{"project", "defaults"}},
-		{path: []string{"project", "export"}},
-		{path: []string{"project", "open"}},
-		{path: []string{"project", "show"}},
-		{path: []string{"projects", "diff"}},
-		{path: []string{"projects", "list"}},
-		{path: []string{"rollouts", "list"}, cacheWrite: true},
-		{path: []string{"rollouts", "show"}, cacheWrite: true},
-		{path: []string{"versions", "diff"}, cacheWrite: true},
-		{path: []string{"versions", "show"}, cacheWrite: true},
-		{path: []string{"versions", "export"}, cacheWrite: true},
-		{path: []string{"versions", "list"}},
+	}, 0)
+	for _, capability := range contract.DetailedCapabilities(root) {
+		if !contract.SupportsStatelessCommand(capability.ID) {
+			continue
+		}
+		cacheWrite := statelessCacheWriters[capability.ID]
+		if slices.Contains(capability.SideEffects, "local_cache_write") != cacheWrite {
+			t.Fatalf("%s local cache side effect presence does not match its stateful path: %#v", capability.ID, capability.SideEffects)
+		}
+		statelessCommands = append(statelessCommands, struct {
+			path       []string
+			cacheWrite bool
+		}{
+			path:       capability.Path,
+			cacheWrite: cacheWrite,
+		})
 	}
 	for _, command := range statelessCommands {
 		capability, findErr := contract.FindCapability(root, command.path)
@@ -306,6 +311,18 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 			exprFlag := slices.IndexFunc(capability.Flags, func(flag contract.FlagCapability) bool { return flag.Name == "--expr" })
 			if exprFlag < 0 || len(capability.Flags[exprFlag].EffectiveWhen) != 0 || !strings.Contains(capability.Flags[exprFlag].Usage, "directly fetched client Remote Config") {
 				t.Fatalf("projects.list --expr applicability = %#v", capability.Flags)
+			}
+		}
+		if slices.Contains([]string{"add", "delete", "duplicate", "project.import", "update"}, capability.ID) ||
+			(strings.HasPrefix(capability.ID, "groups.") && capability.ID != "groups.list") ||
+			slices.Contains([]string{"conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename"}, capability.ID) {
+			draftFlag := slices.IndexFunc(capability.Flags, func(flag contract.FlagCapability) bool { return flag.Name == "--draft" })
+			if draftFlag < 0 || !capabilityConditionsHavePredicate(capability.Flags[draftFlag].EffectiveWhen, "option", "stateless", "equals") {
+				t.Fatalf("%s --draft applicability = %#v", capability.ID, capability.Flags)
+			}
+			if !capabilityEffectHasPredicate(capability, "local_draft_write", "option", "stateless", "equals") ||
+				!capabilityEffectHasPredicate(capability, "trusted_hook_execution", "option", "stateless", "equals") {
+				t.Fatalf("%s stateless persistence effects = %#v", capability.ID, capability.SideEffectWhen)
 			}
 		}
 		if slices.Contains([]string{
@@ -707,9 +724,13 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		}
 	}
 	if want := []string{
-		"conditions.list", "conditions.show", "conditions.validate", "experiments.list", "experiments.show", "get", "groups.list",
-		"personalizations.list", "personalizations.show", "project.defaults", "project.export", "project.open", "project.show",
-		"projects.diff", "projects.list", "rollouts.list", "rollouts.show", "versions.diff", "versions.export", "versions.list", "versions.show",
+		"add",
+		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
+		"delete", "duplicate", "experiments.delete", "experiments.list", "experiments.show", "get",
+		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
+		"personalizations.list", "personalizations.show", "project.defaults", "project.export", "project.import", "project.open", "project.show",
+		"projects.diff", "projects.list", "projects.promote", "rollouts.delete", "rollouts.list", "rollouts.show", "update",
+		"versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
 	}; !slices.Equal(stateless, want) {
 		t.Fatalf("stateless capability index = %v, want %v", stateless, want)
 	}
@@ -1175,6 +1196,87 @@ func TestStatelessInvocationSchemasPublishSupportedCommands(t *testing.T) {
 	validateContractValue(t, projectsListID, projectsListInput(map[string]any{"stateless": true, "update": false}), true)
 	validateContractValue(t, projectsListID, projectsListInput(map[string]any{"stateless": true, "expr": "project_id == 'demo'"}), true)
 	validateContractValue(t, projectsListID, projectsListInput(map[string]any{"stateless": true, "expr": ""}), false)
+
+	groupMutations := []struct {
+		id        string
+		arguments map[string]any
+		options   map[string]any
+	}{
+		{id: "groups.add", arguments: map[string]any{"name": "example"}, options: map[string]any{}},
+		{id: "groups.edit", arguments: map[string]any{"group": "example"}, options: map[string]any{"description": "Updated"}},
+		{id: "groups.rename", arguments: map[string]any{"group": "example", "new_name": "renamed"}, options: map[string]any{}},
+		{id: "groups.delete", arguments: map[string]any{"group": "renamed"}, options: map[string]any{}},
+	}
+	for _, mutation := range groupMutations {
+		id := "urn:fbrcm:schema:cli:" + contract.Version + ":command:" + mutation.id + ":input"
+		input := func(extra map[string]any) map[string]any {
+			options := map[string]any{"stateless": true, "project": []any{"=my-project"}, "draft": false, "yes": true}
+			maps.Copy(options, mutation.options)
+			maps.Copy(options, extra)
+			return map[string]any{"arguments": mutation.arguments, "options": options, "stdin": nil}
+		}
+		validateContractValue(t, id, input(nil), true)
+		validateContractValue(t, id, input(map[string]any{"draft": true}), false)
+		validateContractValue(t, id, input(map[string]any{"profile": "personal"}), false)
+		validateContractValue(t, id, input(map[string]any{"project": []any{"^my", "server@/project"}}), true)
+		validateContractValue(t, id, input(map[string]any{"project": []any{"server@="}}), false)
+	}
+
+	conditionMutations := []struct {
+		id        string
+		arguments map[string]any
+		options   map[string]any
+	}{
+		{id: "conditions.add", arguments: map[string]any{"project": "my-project", "name": "example"}, options: map[string]any{"expression": "percent <= 1"}},
+		{id: "conditions.edit", arguments: map[string]any{"project": "my-project", "condition": "example"}, options: map[string]any{"color": "GREEN"}},
+		{id: "conditions.move", arguments: map[string]any{"project": "my-project", "condition": "example", "priority": "1"}, options: map[string]any{}},
+		{id: "conditions.rename", arguments: map[string]any{"project": "my-project", "condition": "example", "new_name": "renamed"}, options: map[string]any{}},
+		{id: "conditions.delete", arguments: map[string]any{"project": "my-project", "condition": "renamed"}, options: map[string]any{}},
+	}
+	for _, mutation := range conditionMutations {
+		id := "urn:fbrcm:schema:cli:" + contract.Version + ":command:" + mutation.id + ":input"
+		input := func(extra map[string]any) map[string]any {
+			options := map[string]any{"stateless": true, "draft": false, "yes": true}
+			maps.Copy(options, mutation.options)
+			maps.Copy(options, extra)
+			return map[string]any{"arguments": mutation.arguments, "options": options, "stdin": nil}
+		}
+		validateContractValue(t, id, input(nil), true)
+		validateContractValue(t, id, input(map[string]any{"draft": true}), false)
+		validateContractValue(t, id, input(map[string]any{"profile": "personal"}), false)
+		withInvalidProject := maps.Clone(mutation.arguments)
+		withInvalidProject["project"] = "=my-project"
+		validateContractValue(t, id, map[string]any{"arguments": withInvalidProject, "options": input(nil)["options"], "stdin": nil}, false)
+	}
+
+	parameterMutations := []struct {
+		id        string
+		arguments map[string]any
+		options   map[string]any
+	}{
+		{id: "add", arguments: map[string]any{"parameter": "example"}, options: map[string]any{"type": "string", "value": "initial"}},
+		{id: "duplicate", arguments: map[string]any{"source": "example", "target": "example_copy"}, options: map[string]any{}},
+		{id: "update", arguments: map[string]any{}, options: map[string]any{"filter": []any{"=example"}, "description": "Updated"}},
+		{id: "delete", arguments: map[string]any{}, options: map[string]any{"filter": []any{"=example", "=example_copy"}}},
+	}
+	for _, mutation := range parameterMutations {
+		id := "urn:fbrcm:schema:cli:" + contract.Version + ":command:" + mutation.id + ":input"
+		input := func(projects []any, extra map[string]any) map[string]any {
+			options := map[string]any{"stateless": true, "draft": false, "yes": true}
+			if projects != nil {
+				options["project"] = projects
+			}
+			maps.Copy(options, mutation.options)
+			maps.Copy(options, extra)
+			return map[string]any{"arguments": mutation.arguments, "options": options, "stdin": nil}
+		}
+		validateContractValue(t, id, input([]any{"=my-project"}, nil), true)
+		validateContractValue(t, id, input([]any{"^my", "server@/project"}, nil), true)
+		validateContractValue(t, id, input(nil, nil), true)
+		validateContractValue(t, id, input([]any{"=my-project"}, map[string]any{"draft": true}), false)
+		validateContractValue(t, id, input([]any{"=my-project"}, map[string]any{"profile": "personal"}), false)
+		validateContractValue(t, id, input([]any{"server@="}, nil), false)
+	}
 }
 
 func TestExpandedStatelessInvocationSchemas(t *testing.T) {
@@ -1189,16 +1291,21 @@ func TestExpandedStatelessInvocationSchemas(t *testing.T) {
 	}{
 		{id: "conditions.show", arguments: map[string]any{"project": "demo", "condition": "employees"}, projectFields: []string{"project"}, rejectUpdate: true},
 		{id: "conditions.validate", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}},
+		{id: "experiments.delete", arguments: map[string]any{"project": "demo", "experiment_id": "exp"}, projectFields: []string{"project"}, physical: true},
 		{id: "experiments.list", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "experiments.show", arguments: map[string]any{"project": "demo", "experiment_id": "abt_4"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "groups.list", arguments: map[string]any{}, rejectUpdate: true, projectOptions: true},
 		{id: "personalizations.list", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "personalizations.show", arguments: map[string]any{"project": "demo", "personalization_id": "offer"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "project.show", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
+		{id: "project.import", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}},
 		{id: "projects.diff", arguments: map[string]any{"source_project": "demo", "target_project": "other"}, projectFields: []string{"source_project", "target_project"}, rejectCached: true},
+		{id: "projects.promote", arguments: map[string]any{"source_project": "demo", "target_project": "other"}, projectFields: []string{"source_project", "target_project"}},
+		{id: "rollouts.delete", arguments: map[string]any{"project": "demo", "rollout_id": "rollout_1"}, projectFields: []string{"project"}, physical: true},
 		{id: "rollouts.list", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "rollouts.show", arguments: map[string]any{"project": "demo", "rollout_id": "rollout_1"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "versions.diff", arguments: map[string]any{"project": "demo", "from": "11", "to": "12"}, projectFields: []string{"project"}, rejectCached: true},
+		{id: "versions.rollback", arguments: map[string]any{"project": "demo", "version": "11"}, projectFields: []string{"project"}},
 	}
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -1235,6 +1342,17 @@ func TestExpandedStatelessInvocationSchemas(t *testing.T) {
 			}
 		})
 	}
+
+	projectImportID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:project.import:input"
+	projectImport := func(options map[string]any) map[string]any {
+		return map[string]any{
+			"arguments": map[string]any{"project": "demo"},
+			"options":   options,
+			"stdin":     map[string]any{"parameters": map[string]any{}},
+		}
+	}
+	validateContractValue(t, projectImportID, projectImport(map[string]any{"stateless": true, "draft": false, "yes": true}), true)
+	validateContractValue(t, projectImportID, projectImport(map[string]any{"stateless": true, "draft": true, "yes": true}), false)
 }
 
 func TestPhysicalProjectSchemasRejectTemplatePrefixes(t *testing.T) {

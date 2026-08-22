@@ -1,0 +1,51 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:response",
+  "contract_version": "1.0.0",
+  "command": "experiments.delete",
+  "requested_command": "experiments.delete",
+  "outcome": "failure",
+  "exit_code": 10,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "kind": "experiment",
+    "id": "abt_4",
+    "display_name": "new experiment test",
+    "project_id": "northstar-wallet",
+    "status": "would-delete"
+  },
+  "errors": [
+    {
+      "code": "interaction.required",
+      "category": "interaction",
+      "message": "confirmation is required before deleting the experiment",
+      "retryable": false,
+      "target": null,
+      "stage": null,
+      "details": {
+        "kind": "interaction",
+        "interaction_type": "confirmation",
+        "required_option": "--yes",
+        "destructive": true
+      },
+      "remediation": [
+        {
+          "description": "rerun with the complete non-interactive arguments",
+          "strategy": "retry_with_arguments",
+          "argv": [
+            "--yes"
+          ]
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

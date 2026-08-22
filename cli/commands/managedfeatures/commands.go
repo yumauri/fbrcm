@@ -149,7 +149,7 @@ func newExperimentsDeleteCommand(svc *core.Core) *cobra.Command {
 		Short: "Delete an experiment",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, _, err := resolveProjectForExecution(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -250,7 +250,7 @@ func newRolloutsDeleteCommand(svc *core.Core) *cobra.Command {
 		Short: "Delete a rollout",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			project, err := resolveProject(cmd, svc, args[0])
+			project, _, err := resolveProjectForExecution(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -347,22 +347,42 @@ func newPersonalizationsShowCommand(svc *core.Core) *cobra.Command {
 }
 
 func resolveProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, error) {
+	project, _, err := resolveProjectForExecution(cmd, svc, query)
+	return project, err
+}
+
+func resolveProjectForExecution(cmd *cobra.Command, svc *core.Core, query string) (core.Project, context.Context, error) {
 	target, explicit, err := rctarget.ParsePositionalSelector(query)
 	if err != nil {
-		return core.Project{}, shared.InvalidArgument(err)
+		return core.Project{}, nil, shared.InvalidArgument(err)
 	}
 	if explicit {
 		if target.Kind == rctarget.Server {
-			return core.Project{}, shared.InvalidArgument(fmt.Errorf(
+			return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf(
 				"managed features support only the client Remote Config namespace; omit the server@ prefix",
 			))
 		}
-		return core.Project{}, shared.InvalidArgument(fmt.Errorf(
+		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf(
 			"managed-feature commands are project-scoped; omit the client@ prefix",
 		))
 	}
 	ctx := shared.CommandContext(cmd)
-	return shared.ResolveProjectArg(ctx, cmd, svc, target.ProjectID)
+	project, err := shared.ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
+	if err != nil {
+		return core.Project{}, nil, err
+	}
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return core.Project{}, nil, err
+	}
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		project, err = svc.GetProjectDetails(ctx, project.ProjectID)
+		if err != nil {
+			return core.Project{}, nil, err
+		}
+	}
+	cmd.SetContext(ctx)
+	return project, ctx, nil
 }
 
 func resolveReadProject(cmd *cobra.Command, svc *core.Core, query string) (core.Project, context.Context, error) {
@@ -381,22 +401,7 @@ func resolveReadProject(cmd *cobra.Command, svc *core.Core, query string) (core.
 	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
 		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
 	}
-	project, err := shared.ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
-	if err != nil {
-		return core.Project{}, nil, err
-	}
-	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
-	if err != nil {
-		return core.Project{}, nil, err
-	}
-	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
-		project, err = svc.GetProjectDetails(ctx, project.ProjectID)
-		if err != nil {
-			return core.Project{}, nil, err
-		}
-	}
-	cmd.SetContext(ctx)
-	return project, ctx, nil
+	return resolveProjectForExecution(cmd, svc, target.ProjectID)
 }
 
 func addTemplateReadFlags(cmd *cobra.Command, noun string) {
