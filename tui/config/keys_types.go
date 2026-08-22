@@ -86,6 +86,7 @@ const (
 	ActionToggleMaximize   Action = "toggle_maximize"
 	ActionRename           Action = "rename"
 	ActionEdit             Action = "edit"
+	ActionExternalEdit     Action = "external_edit"
 	ActionColor            Action = "color"
 	ActionNew              Action = "new"
 	ActionNewGroup         Action = "new_group"

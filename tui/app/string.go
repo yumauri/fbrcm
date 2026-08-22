@@ -16,6 +16,9 @@ func (m *Model) openStringInput() tea.Cmd {
 	if !ok {
 		return nil
 	}
+	if shouldUseExternalValueEditor(anchor.CurrentValue) {
+		return m.openExternalStringValueEditor()
+	}
 	m.closeOverlays()
 	m.valueEditSource = source
 	var cmd tea.Cmd

@@ -51,3 +51,14 @@ func (m *Model) openDetailsValueEditor() tea.Cmd {
 	}
 	return nil
 }
+
+func (m *Model) openDetailsExternalValueEditor() tea.Cmd {
+	m.valueEditSource = panels.Details
+	if _, ok := m.details.CurrentJSONValueAnchor(); ok {
+		return m.openExternalJSONValueEditor()
+	}
+	if _, ok := m.details.CurrentStringValueAnchor(m.width); ok {
+		return m.openExternalStringValueEditor()
+	}
+	return nil
+}

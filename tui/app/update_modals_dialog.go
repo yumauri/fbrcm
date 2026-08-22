@@ -21,6 +21,7 @@ func (m Model) updateDialog(msg tea.Msg) (Model, tea.Cmd, bool) {
 				return m, nil, true
 			}
 			m.closeDialog()
+			m.externalEdit = nil
 			return m, nil, true
 		}
 		var cmd tea.Cmd

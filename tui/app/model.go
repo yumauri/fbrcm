@@ -78,6 +78,7 @@ type Model struct {
 	projectImport    *core.ProjectImportPlan
 	projectExport    *projectExportSession
 	projectDefaults  *projectDefaultsSession
+	externalEdit     *externalValueEditSession
 	draftPublish     *draftPublishBatch
 	promoteReturn    *promoteReturnState
 	promotionPreview *core.ProjectPromotionPreview

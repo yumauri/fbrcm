@@ -6,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -15,7 +13,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
-	"github.com/yumauri/fbrcm/core/env"
+	coreeditor "github.com/yumauri/fbrcm/core/editor"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -186,28 +184,11 @@ func loadConfigStateForEdit(state configState, scope string, full bool) ([]byte,
 }
 
 func resolveEditor(explicit string) string {
-	for _, value := range []string{explicit, os.Getenv(env.Editor), os.Getenv("VISUAL"), os.Getenv("EDITOR")} {
-		if value = strings.TrimSpace(value); value != "" {
-			return value
-		}
-	}
-	if runtime.GOOS == "windows" {
-		return "notepad.exe"
-	}
-	return "vi"
+	return coreeditor.Resolve(explicit)
 }
 
 func runEditor(_ *cobra.Command, editor, path string) error {
-	var process *exec.Cmd
-	if runtime.GOOS == "windows" {
-		process = exec.Command("cmd", "/S", "/C", editor+" "+strconv.Quote(path))
-	} else {
-		shell := strings.TrimSpace(os.Getenv("SHELL"))
-		if shell == "" {
-			shell = "/bin/sh"
-		}
-		process = exec.Command(shell, "-c", `exec `+editor+` "$1"`, "fbrcm-editor", path)
-	}
+	process := coreeditor.Command(editor, path)
 	// Interactive editors must inherit the real process streams. Cobra's
 	// coordinated writers expose an Fd for in-process prompts, but os/exec sees
 	// them as generic writers and inserts a pipe, which makes Vim report that

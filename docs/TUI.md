@@ -241,6 +241,7 @@ surrounding chrome.
 | `A` | Add an empty parameter group |
 | `c` | Duplicate a parameter |
 | `e` | Edit the selected value |
+| `E` | Edit the selected text or JSON value in an external editor |
 | `r` | Rename the selected parameter or group |
 | `m` | Move the selected parameter or group |
 | `x` | Delete the selected item |
@@ -323,6 +324,7 @@ close.
 | --- | --- |
 | `Esc` | Close Details or cancel the current editor |
 | `Right` / `e` | Edit the selected value or condition expression |
+| `E` | Edit the selected text or JSON value in an external editor |
 | `a` | Add a conditional value |
 | `r` | Rename the selected entity |
 | `m` | Move the selected entity or condition priority |
@@ -343,6 +345,21 @@ value. Press `d` again to return it to a neutral remote value for its type:
 The JSON editor supports `Ctrl+F` to format and `Ctrl+S` or `Ctrl+Enter` to save.
 The expanded string editor uses `Ctrl+E` to switch size and `Ctrl+S` or
 `Ctrl+Enter` to save.
+
+Pressing `E` pauses the TUI, opens a private staged `.json` or `.txt` file in
+an external editor, and resumes the same TUI session when the editor exits.
+The editor is resolved from `FBRCM_EDITOR`, `VISUAL`, then `EDITOR`, with `vi`
+on Unix-like systems or `notepad.exe` on Windows as the fallback. Editor
+commands may include arguments; GUI editors must wait for the file to close,
+for example `FBRCM_EDITOR="code --wait" fbrcm`.
+
+Large text and formatted JSON values automatically use this external path when
+`e` is pressed. The built-in editor is limited to values no larger than 128 KiB
+and 1,000 logical lines; a separate 10,000-line safety guard ensures the
+underlying textarea's hard cap is never crossed by an existing value. JSON is
+validated and compacted after the editor exits. Invalid content is not applied:
+the recovery file is preserved and the error dialog can reopen it. Successful
+edits rejoin the normal Details, draft, or publish workflow.
 
 ## Draft workflow
 

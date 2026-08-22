@@ -172,6 +172,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Add new parameter group"
 		case tuiconfig.ActionEdit:
 			return "Edit selected value"
+		case tuiconfig.ActionExternalEdit:
+			return "Edit selected value externally"
 		case tuiconfig.ActionMove:
 			return "Move selected item"
 		case tuiconfig.ActionToggle:
@@ -263,6 +265,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Save details"
 		case tuiconfig.ActionEditValue:
 			return "Edit selected value or expression"
+		case tuiconfig.ActionExternalEdit:
+			return "Edit selected value externally"
 		case tuiconfig.ActionToggleInAppDefault:
 			return "Toggle selected value's in-app default"
 		case tuiconfig.ActionMove:
@@ -498,6 +502,8 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 		return "Open or close this searchable Actions window."
 	case tuiconfig.ActionOpenDetails:
 		return "Open Details for the selected item."
+	case tuiconfig.ActionExternalEdit:
+		return "Pause fbrcm and edit the selected text or JSON value with FBRCM_EDITOR, VISUAL, or EDITOR."
 	case tuiconfig.ActionMove:
 		return "Move the selected item; for conditions this changes priority."
 	case tuiconfig.ActionCopyValue:

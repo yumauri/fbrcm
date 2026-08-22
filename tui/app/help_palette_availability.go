@@ -383,6 +383,7 @@ func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, 
 	_, renameOK := m.parameters.CurrentRenameAnchor()
 	_, moveOK := m.parameters.CurrentMoveAnchor()
 	valueOK := m.currentParameterValueSelected()
+	externalValueOK := m.currentParameterExternalValueAvailable()
 
 	switch action {
 	case tuiconfig.ActionToggleMaximize:
@@ -409,6 +410,10 @@ func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, 
 	case tuiconfig.ActionEdit:
 		if !valueOK && !paramOK {
 			return false, "select a parameter value"
+		}
+	case tuiconfig.ActionExternalEdit:
+		if !externalValueOK {
+			return false, "select a text or JSON parameter value"
 		}
 	case tuiconfig.ActionDuplicate:
 		if !mutableParamOK {
@@ -452,6 +457,24 @@ func (m Model) currentParameterValueSelected() bool {
 		return true
 	}
 	_, ok := m.parameters.CurrentJSONValueAnchor()
+	return ok
+}
+
+func (m Model) currentParameterExternalValueAvailable() bool {
+	if _, ok := m.parameters.CurrentStringValueAnchor(); ok {
+		return true
+	}
+	if _, ok := m.parameters.CurrentJSONValueAnchor(); ok {
+		return true
+	}
+	parameters := m.parameters
+	if !parameters.FocusCurrentParameterDefaultValue() {
+		return false
+	}
+	if _, ok := parameters.CurrentStringValueAnchor(); ok {
+		return true
+	}
+	_, ok := parameters.CurrentJSONValueAnchor()
 	return ok
 }
 
@@ -527,6 +550,14 @@ func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, str
 			(action == tuiconfig.ActionRename || action == tuiconfig.ActionDelete) {
 			return false, "the condition has Firebase-managed values"
 		}
+		if action == tuiconfig.ActionExternalEdit {
+			if _, ok := m.details.CurrentStringValueAnchor(m.width); ok {
+				return true, ""
+			}
+			if _, ok := m.details.CurrentJSONValueAnchor(); !ok {
+				return false, "select a text or JSON parameter value"
+			}
+		}
 		return true, ""
 	}
 	readOnlyParameter := m.details.Data().Parameter.HasReadOnlyValues()
@@ -537,7 +568,7 @@ func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, str
 	if action == tuiconfig.ActionColor {
 		return false, "colors can only be edited for conditions"
 	}
-	if action == tuiconfig.ActionEditValue {
+	if action == tuiconfig.ActionEditValue || action == tuiconfig.ActionExternalEdit {
 		value, ok := m.details.SelectedParameterValue()
 		if !ok {
 			return false, "no parameter value is selected"
@@ -547,6 +578,14 @@ func (m Model) detailsHelpActionAvailability(action tuiconfig.Action) (bool, str
 		}
 		if !value.Plain {
 			return false, "the selected value does not use a remote value"
+		}
+		if action == tuiconfig.ActionExternalEdit {
+			if _, ok := m.details.CurrentStringValueAnchor(m.width); ok {
+				return true, ""
+			}
+			if _, ok := m.details.CurrentJSONValueAnchor(); !ok {
+				return false, "select a text or JSON parameter value"
+			}
 		}
 	}
 	if action == tuiconfig.ActionToggleInAppDefault {

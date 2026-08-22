@@ -7,6 +7,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	jsoninput "github.com/yumauri/fbrcm/tui/components/jsoninput"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
 
@@ -15,6 +16,9 @@ func (m *Model) openJSONInput() tea.Cmd {
 	anchor, ok := m.currentJSONValueAnchor()
 	if !ok {
 		return nil
+	}
+	if shouldUseExternalValueEditor(jsoninput.PrettyJSON(anchor.CurrentValue)) {
+		return m.openExternalJSONValueEditor()
 	}
 	m.closeOverlays()
 	m.valueEditSource = source

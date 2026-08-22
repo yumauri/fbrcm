@@ -62,6 +62,11 @@ func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd
 			}
 			return m, nil, true
 		}
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionExternalEdit, k):
+		if m.details.ValueSelected() {
+			return m, m.openDetailsExternalValueEditor(), true
+		}
+		return m, nil, true
 	}
 	if !m.details.TextInputActive() {
 		if next, cmd, ok := m.updateInactiveDetailsInputKey(k); ok {
@@ -118,6 +123,11 @@ func (m Model) updateConditionDetailsKeyMessage(msg tea.KeyMsg, k string) (Model
 			return m, m.openDetailsValueEditor(), true
 		}
 		return m, m.openConditionExpressionInput(), true
+	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionExternalEdit, k):
+		if m.details.UsageSelected() {
+			return m, m.openDetailsExternalValueEditor(), true
+		}
+		return m, nil, true
 	case tuiconfig.Matches(tuiconfig.BlockDetails, tuiconfig.ActionColor, k):
 		m.details = m.details.ActivateConditionColor()
 		return m, nil, true
@@ -394,6 +404,8 @@ func (m Model) updateGlobalPanelActionKey(k string) (Model, tea.Cmd, bool) {
 		return m, m.openNewGroupDetails(), true
 	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionEdit, k):
 		return m.updateParameterEditKey()
+	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionExternalEdit, k):
+		return m.updateParameterExternalEditKey()
 	case m.active == panels.Parameters && tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionMove, k):
 		m.openMoveParam()
 		return m, nil, true
@@ -507,6 +519,28 @@ func (m Model) openCurrentParameterValueEditor() (Model, tea.Cmd, bool) {
 	}
 	if _, ok := m.parameters.CurrentStringValueAnchor(); ok {
 		return m, m.openStringInput(), true
+	}
+	return m, nil, false
+}
+
+func (m Model) updateParameterExternalEditKey() (Model, tea.Cmd, bool) {
+	if next, cmd, ok := m.openCurrentParameterExternalEditor(); ok {
+		return next, cmd, true
+	}
+	if m.parameters.FocusCurrentParameterDefaultValue() {
+		if next, cmd, ok := m.openCurrentParameterExternalEditor(); ok {
+			return next, cmd, true
+		}
+	}
+	return m, nil, true
+}
+
+func (m Model) openCurrentParameterExternalEditor() (Model, tea.Cmd, bool) {
+	if _, ok := m.parameters.CurrentJSONValueAnchor(); ok {
+		return m, m.openExternalJSONValueEditor(), true
+	}
+	if _, ok := m.parameters.CurrentStringValueAnchor(); ok {
+		return m, m.openExternalStringValueEditor(), true
 	}
 	return m, nil, false
 }

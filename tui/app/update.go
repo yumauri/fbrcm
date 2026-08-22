@@ -25,6 +25,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateOAuthLinkAction(msg)
 	case oauthAuthorizationCanceledMsg:
 		return m.cancelOAuthAuthorization(msg)
+	case externalValueEditorFinishedMsg:
+		next, cmd, _ := m.updateExternalValueEditorFinished(msg)
+		return next, cmd
+	case externalValueEditorReopenMsg:
+		next, cmd, _ := m.updateExternalValueEditorReopen()
+		return next, cmd
+	case externalValueEditorDismissedMsg:
+		next, cmd, _ := m.updateExternalValueEditorDismissed()
+		return next, cmd
 	}
 	if logscmp.IsBackgroundMessage(msg) {
 		var cmd tea.Cmd
