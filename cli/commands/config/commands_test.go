@@ -24,6 +24,8 @@ func setupConfigCommandTest(t *testing.T) string {
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
 	t.Setenv(env.Profile, "")
+	coreconfig.SetLocalConfigDisabled(false)
+	t.Cleanup(func() { coreconfig.SetLocalConfigDisabled(false) })
 	return root
 }
 
@@ -108,15 +110,73 @@ func TestConfigSetTypedValuesAndRejectsConflict(t *testing.T) {
 	}
 }
 
+func TestConfigSetShowAndResetNetworkPolicy(t *testing.T) {
+	setupConfigCommandTest(t)
+	for key, value := range map[string]string{
+		"network.max_concurrent_requests": "3",
+		"network.retry.max_attempts":      "4",
+		"network.retry.base_delay":        "250ms",
+		"network.retry.max_delay":         "4s",
+		"network.retry.jitter_percent":    "25",
+	} {
+		if _, _, err := executeConfigCommand(t, New(), "set", key, value); err != nil {
+			t.Fatalf("set %s: %v", key, err)
+		}
+	}
+	if _, _, err := executeConfigCommand(t, New(), "set", "network.requests_per_minute", "30"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := executeConfigCommand(t, New(), "set", "network.rate_limit_cooldown", "75s"); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := coreconfig.LoadAppConfigStrict()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Network == nil || cfg.Network.EffectiveMaxConcurrentRequests() != 3 || cfg.Network.EffectiveRequestsPerMinute() != 30 ||
+		cfg.Network.RateLimitCooldown != "75s" || cfg.Network.Retry.EffectiveMaxAttempts() != 4 ||
+		cfg.Network.Retry.EffectiveJitterPercent() != 25 {
+		t.Fatalf("network config = %+v", cfg.Network)
+	}
+
+	stdout, _, err := executeConfigCommand(t, New(), "show", "network.requests_per_minute", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var result configValueResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Value) != "30" || result.Source != "global" {
+		t.Fatalf("network result = %+v", result)
+	}
+
+	if _, _, err := executeConfigCommand(t, New(), "reset", "network.rate_limit_cooldown", "--yes"); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _, err = executeConfigCommand(t, New(), "show", "network.rate_limit_cooldown", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Value) != `"30s"` || result.Source != "default" {
+		t.Fatalf("reset cooldown result = %+v", result)
+	}
+}
+
 func TestConfigResetPreservesProfile(t *testing.T) {
 	setupConfigCommandTest(t)
 	if err := coreconfig.SwitchProfile("work"); err != nil {
 		t.Fatal(err)
 	}
 	disabled := false
+	requestsPerMinute := 30
 	if err := coreconfig.SaveAppConfig(&coreconfig.AppConfig{
 		Profile: "work", PowerlineGlyphs: &disabled,
-		Keys: map[string]map[string][]string{"projects": {"refresh": {"ctrl+r"}}},
+		Keys:    map[string]map[string][]string{"projects": {"refresh": {"ctrl+r"}}},
+		Network: &coreconfig.NetworkConfig{RequestsPerMinute: &requestsPerMinute},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +195,7 @@ func TestConfigResetPreservesProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Profile != "work" || cfg.PowerlineGlyphs != nil {
+	if cfg.Profile != "work" || cfg.PowerlineGlyphs != nil || cfg.Network != nil {
 		t.Fatalf("config after reset = %+v", cfg)
 	}
 	if len(cfg.Keys) != 0 {
@@ -450,7 +510,9 @@ func TestConfigEditFullProvidesGeneratedKeyReference(t *testing.T) {
 	if _, _, err := executeConfigCommand(t, command, "edit", "--full"); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(staged, "Complete generated template") || !strings.Contains(staged, "[keys.projects]") || !strings.Contains(staged, "refresh") {
+	if !strings.Contains(staged, "Complete generated template") || !strings.Contains(staged, "[keys.projects]") || !strings.Contains(staged, "refresh") ||
+		!strings.Contains(staged, "[network]") || !strings.Contains(staged, "rate_limit_cooldown = \"30s\"") ||
+		!strings.Contains(staged, "[network.retry]") || !strings.Contains(staged, "base_delay = \"1s\"") {
 		t.Fatalf("full staged config lacks generated key reference:\n%s", staged)
 	}
 }

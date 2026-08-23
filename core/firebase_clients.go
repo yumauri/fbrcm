@@ -45,6 +45,7 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 	if ctx != nil {
 		serviceCtx = ctx
 	}
+	serviceCtx = s.WithFirebaseRequestController(serviceCtx)
 
 	result, err, _ := s.firebaseInit.Do(clientKey, func() (any, error) {
 		s.firebaseMu.Lock()

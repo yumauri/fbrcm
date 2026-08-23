@@ -11,6 +11,7 @@ import (
 type Service struct {
 	httpClient         *http.Client
 	quotaProjectPolicy quotaProjectPolicy
+	requestController  *RequestController
 }
 
 type authHTTPClientResult struct {
@@ -39,7 +40,9 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 	}
 
 	logger.Debug("firebase service ready")
-	return serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID), nil
+	service := serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID)
+	service.requestController = requestControllerFromContext(ctx)
+	return service, nil
 }
 
 // NewServiceWithAccessToken constructs a service backed by one static Google
@@ -58,7 +61,9 @@ func NewServiceWithAccessToken(ctx context.Context, accessToken string) (*Servic
 	if err != nil {
 		return nil, err
 	}
-	return serviceFromAuthHTTPClientResult(authHTTPClientResult{client: client, useTargetProjectQuota: true}, environmentQuotaProjectID), nil
+	service := serviceFromAuthHTTPClientResult(authHTTPClientResult{client: client, useTargetProjectQuota: true}, environmentQuotaProjectID)
+	service.requestController = requestControllerFromContext(ctx)
+	return service, nil
 }
 
 // NewDiagnosticServiceForAuth constructs a service without starting an
@@ -76,12 +81,15 @@ func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*S
 	if err != nil {
 		return nil, err
 	}
-	return serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID), nil
+	service := serviceFromAuthHTTPClientResult(result, environmentQuotaProjectID)
+	service.requestController = requestControllerFromContext(ctx)
+	return service, nil
 }
 
 func serviceFromAuthHTTPClientResult(result authHTTPClientResult, environmentQuotaProjectID string) *Service {
 	return &Service{
-		httpClient: result.client,
+		httpClient:        result.client,
+		requestController: defaultRequestController,
 		quotaProjectPolicy: quotaProjectPolicy{
 			environmentQuotaProjectID: environmentQuotaProjectID,
 			credentialQuotaProjectID:  result.credentialQuotaProjectID,
@@ -112,7 +120,7 @@ func NewServiceWithHTTPClient(client *http.Client) *Service {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &Service{httpClient: client}
+	return &Service{httpClient: client, requestController: defaultRequestController}
 }
 
 func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool) (authHTTPClientResult, error) {

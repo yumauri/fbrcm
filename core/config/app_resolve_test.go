@@ -80,6 +80,46 @@ delete = ["D"]
 	}
 }
 
+func TestSessionAppConfigResolutionReusedAndInvalidatedByWrite(t *testing.T) {
+	setupTestDirs(t)
+	if err := SaveAppConfig(&AppConfig{Profile: "first"}); err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	SetSessionAppConfigResolution(resolved)
+
+	writeFile(t, GetGlobalConfigFilePath(), "profile = \"external\"\n", PrivateFileMode)
+	cached, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cached.Effective.Profile != "first" {
+		t.Fatalf("cached profile = %q, want first", cached.Effective.Profile)
+	}
+	cached.Effective.Profile = "mutated-clone"
+	again, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.Effective.Profile != "first" {
+		t.Fatalf("session resolution was mutated through returned clone: %q", again.Effective.Profile)
+	}
+
+	if err := SaveAppConfig(&AppConfig{Profile: "saved"}); err != nil {
+		t.Fatal(err)
+	}
+	reloaded, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Effective.Profile != "saved" {
+		t.Fatalf("profile after invalidating write = %q, want saved", reloaded.Effective.Profile)
+	}
+}
+
 func TestResolveAppConfigHooksUseDeepMergeAndArrayReplacement(t *testing.T) {
 	setupTestDirs(t)
 	root := t.TempDir()
@@ -101,6 +141,55 @@ pre_publish = ["local-pre"]
 		!reflect.DeepEqual(resolved.Effective.Hooks.PrePublish, []string{"local-pre"}) ||
 		!reflect.DeepEqual(resolved.Effective.Hooks.PostPublish, []string{"global-post"}) {
 		t.Fatalf("effective hooks = %+v", resolved.Effective.Hooks)
+	}
+}
+
+func TestResolveAppConfigNetworkZeroDisablesGlobalPacing(t *testing.T) {
+	setupTestDirs(t)
+	root := t.TempDir()
+	withWorkingDirectory(t, root)
+	requestsPerMinute := 30
+	if err := SaveAppConfig(&AppConfig{Network: &NetworkConfig{
+		RequestsPerMinute: &requestsPerMinute,
+		RateLimitCooldown: "2m",
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(root, LocalConfigFileName), "[network]\nrequests_per_minute = 0\n", 0o644)
+
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved.Effective.Network == nil || resolved.Effective.Network.EffectiveRequestsPerMinute() != 0 || resolved.Effective.Network.RateLimitCooldown != "2m" {
+		t.Fatalf("effective network = %+v", resolved.Effective.Network)
+	}
+	if resolved.Local.Config.Network == nil || resolved.Local.Config.Network.RequestsPerMinute == nil || *resolved.Local.Config.Network.RequestsPerMinute != 0 {
+		t.Fatalf("stored local network = %+v", resolved.Local.Config.Network)
+	}
+}
+
+func TestResolveAppConfigDeeplyOverlaysRetryPolicy(t *testing.T) {
+	setupTestDirs(t)
+	root := t.TempDir()
+	withWorkingDirectory(t, root)
+	maxAttempts := 4
+	jitterPercent := 25
+	if err := SaveAppConfig(&AppConfig{Network: &NetworkConfig{Retry: &RetryConfig{
+		MaxAttempts: &maxAttempts, BaseDelay: "250ms", MaxDelay: "4s", JitterPercent: &jitterPercent,
+	}}}); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(root, LocalConfigFileName), "[network.retry]\njitter_percent = 0\n", 0o644)
+
+	resolved, err := ResolveAppConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	retry := resolved.Effective.Network.Retry
+	if retry == nil || retry.EffectiveMaxAttempts() != 4 || retry.BaseDelay != "250ms" ||
+		retry.MaxDelay != "4s" || retry.EffectiveJitterPercent() != 0 {
+		t.Fatalf("effective retry = %+v", retry)
 	}
 }
 

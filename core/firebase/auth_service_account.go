@@ -30,5 +30,5 @@ func serviceAccountHTTPClient(ctx context.Context, keyPath string) (*http.Client
 
 	logger.Debug("service account http client ready")
 	tokenSource := authenticationTokenSource{base: cfg.TokenSource(ctx), authType: "service-account", operation: "token_exchange"}
-	return wrapAuthHTTPClient(oauth2.NewClient(ctx, tokenSource)), nil
+	return wrapAuthHTTPClient(ctx, oauth2.NewClient(ctx, tokenSource)), nil
 }

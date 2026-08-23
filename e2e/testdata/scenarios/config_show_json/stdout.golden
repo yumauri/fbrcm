@@ -876,6 +876,17 @@
             "k"
           ]
         }
+      },
+      "network": {
+        "max_concurrent_requests": 5,
+        "requests_per_minute": 0,
+        "rate_limit_cooldown": "30s",
+        "retry": {
+          "max_attempts": 5,
+          "base_delay": "1s",
+          "max_delay": "10s",
+          "jitter_percent": 50
+        }
       }
     }
   },

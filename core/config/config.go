@@ -15,8 +15,150 @@ type AppConfig struct {
 	Profile         string                         `toml:"profile,omitempty" json:"profile"`
 	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty" json:"powerline_glyphs"`
 	Keys            map[string]map[string][]string `toml:"keys,omitempty" json:"keys"`
+	Network         *NetworkConfig                 `toml:"network,omitempty" json:"network,omitempty"`
 	Hooks           *HooksConfig                   `toml:"hooks,omitempty" json:"hooks,omitempty"`
 	Projects        *ProjectsConfig                `toml:"projects,omitempty" json:"projects,omitempty"`
+}
+
+const (
+	DefaultMaxConcurrentRequests = 5
+	MaxConcurrentRequests        = 64
+	DefaultRequestsPerMinute     = 0
+	MaxRequestsPerMinute         = 60_000
+	DefaultRateLimitCooldown     = 30 * time.Second
+	DefaultRetryMaxAttempts      = 5
+	MaxRetryAttempts             = 10
+	DefaultRetryBaseDelay        = time.Second
+	DefaultRetryMaxDelay         = 10 * time.Second
+	DefaultRetryJitterPercent    = 50
+)
+
+// NetworkConfig controls pacing and recovery for outbound API requests.
+// RequestsPerMinute is a pointer so a local zero can explicitly disable a
+// nonzero global limit in the deeply overlaid repository configuration.
+type NetworkConfig struct {
+	MaxConcurrentRequests *int         `toml:"max_concurrent_requests,omitempty" json:"max_concurrent_requests,omitempty"`
+	RequestsPerMinute     *int         `toml:"requests_per_minute,omitempty" json:"requests_per_minute,omitempty"`
+	RateLimitCooldown     string       `toml:"rate_limit_cooldown,omitempty" json:"rate_limit_cooldown,omitempty"`
+	Retry                 *RetryConfig `toml:"retry,omitempty" json:"retry,omitempty"`
+}
+
+// RetryConfig controls retries for replayable requests after transient
+// failures. MaxAttempts includes the initial request.
+type RetryConfig struct {
+	MaxAttempts   *int   `toml:"max_attempts,omitempty" json:"max_attempts,omitempty"`
+	BaseDelay     string `toml:"base_delay,omitempty" json:"base_delay,omitempty"`
+	MaxDelay      string `toml:"max_delay,omitempty" json:"max_delay,omitempty"`
+	JitterPercent *int   `toml:"jitter_percent,omitempty" json:"jitter_percent,omitempty"`
+}
+
+func (c *NetworkConfig) EffectiveMaxConcurrentRequests() int {
+	if c == nil || c.MaxConcurrentRequests == nil {
+		return DefaultMaxConcurrentRequests
+	}
+	return *c.MaxConcurrentRequests
+}
+
+// EffectiveRequestsPerMinute returns the configured request rate. Zero leaves
+// proactive pacing disabled while 429 cooldown coordination remains active.
+func (c *NetworkConfig) EffectiveRequestsPerMinute() int {
+	if c == nil || c.RequestsPerMinute == nil {
+		return DefaultRequestsPerMinute
+	}
+	return *c.RequestsPerMinute
+}
+
+// EffectiveRateLimitCooldown returns the fallback cooldown used when a 429
+// response does not include Retry-After.
+func (c *NetworkConfig) EffectiveRateLimitCooldown() (time.Duration, error) {
+	if c == nil || strings.TrimSpace(c.RateLimitCooldown) == "" {
+		return DefaultRateLimitCooldown, nil
+	}
+	delay, err := time.ParseDuration(strings.TrimSpace(c.RateLimitCooldown))
+	if err != nil {
+		return 0, fmt.Errorf("network.rate_limit_cooldown must be a duration such as 30s or 1m: %w", err)
+	}
+	if delay <= 0 {
+		return 0, fmt.Errorf("network.rate_limit_cooldown must be positive")
+	}
+	return delay, nil
+}
+
+func (c *RetryConfig) EffectiveMaxAttempts() int {
+	if c == nil || c.MaxAttempts == nil {
+		return DefaultRetryMaxAttempts
+	}
+	return *c.MaxAttempts
+}
+
+func (c *RetryConfig) EffectiveBaseDelay() (time.Duration, error) {
+	if c == nil || strings.TrimSpace(c.BaseDelay) == "" {
+		return DefaultRetryBaseDelay, nil
+	}
+	return parsePositiveNetworkDuration("network.retry.base_delay", c.BaseDelay)
+}
+
+func (c *RetryConfig) EffectiveMaxDelay() (time.Duration, error) {
+	if c == nil || strings.TrimSpace(c.MaxDelay) == "" {
+		return DefaultRetryMaxDelay, nil
+	}
+	return parsePositiveNetworkDuration("network.retry.max_delay", c.MaxDelay)
+}
+
+func (c *RetryConfig) EffectiveJitterPercent() int {
+	if c == nil || c.JitterPercent == nil {
+		return DefaultRetryJitterPercent
+	}
+	return *c.JitterPercent
+}
+
+func parsePositiveNetworkDuration(key, raw string) (time.Duration, error) {
+	delay, err := time.ParseDuration(strings.TrimSpace(raw))
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a duration such as 500ms or 10s: %w", key, err)
+	}
+	if delay <= 0 {
+		return 0, fmt.Errorf("%s must be positive", key)
+	}
+	return delay, nil
+}
+
+func validateNetworkConfig(network *NetworkConfig) error {
+	if network == nil {
+		return nil
+	}
+	maxConcurrentRequests := network.EffectiveMaxConcurrentRequests()
+	if maxConcurrentRequests < 1 || maxConcurrentRequests > MaxConcurrentRequests {
+		return fmt.Errorf("network.max_concurrent_requests must be between 1 and %d", MaxConcurrentRequests)
+	}
+	requestsPerMinute := network.EffectiveRequestsPerMinute()
+	if requestsPerMinute < 0 || requestsPerMinute > MaxRequestsPerMinute {
+		return fmt.Errorf("network.requests_per_minute must be between 0 and %d", MaxRequestsPerMinute)
+	}
+	if _, err := network.EffectiveRateLimitCooldown(); err != nil {
+		return err
+	}
+	retry := network.Retry
+	maxAttempts := retry.EffectiveMaxAttempts()
+	if maxAttempts < 1 || maxAttempts > MaxRetryAttempts {
+		return fmt.Errorf("network.retry.max_attempts must be between 1 and %d", MaxRetryAttempts)
+	}
+	baseDelay, err := retry.EffectiveBaseDelay()
+	if err != nil {
+		return err
+	}
+	maxDelay, err := retry.EffectiveMaxDelay()
+	if err != nil {
+		return err
+	}
+	if maxDelay < baseDelay {
+		return fmt.Errorf("network.retry.max_delay must be greater than or equal to network.retry.base_delay")
+	}
+	jitterPercent := retry.EffectiveJitterPercent()
+	if jitterPercent < 0 || jitterPercent > 100 {
+		return fmt.Errorf("network.retry.jitter_percent must be between 0 and 100")
+	}
+	return nil
 }
 
 // ProjectsConfig contains repository-scoped project selection metadata.
@@ -115,6 +257,9 @@ func DecodeAppConfig(raw []byte, strict bool) (*AppConfig, error) {
 	if err := validateHooksConfig(cfg.Hooks); err != nil {
 		return nil, err
 	}
+	if err := validateNetworkConfig(cfg.Network); err != nil {
+		return nil, err
+	}
 	if err := ValidateProjectAliases(projectAliases(cfg)); err != nil {
 		return nil, err
 	}
@@ -153,6 +298,7 @@ func SaveAppConfig(cfg *AppConfig) error {
 	if err := WritePrivateFileAtomic(path, data); err != nil {
 		return fmt.Errorf("write global config: %w", err)
 	}
+	clearSessionAppConfigResolution()
 	return nil
 }
 
@@ -164,6 +310,7 @@ func SaveAppConfigRaw(raw []byte) error {
 	if err := WritePrivateFileAtomic(GetGlobalConfigFilePath(), raw); err != nil {
 		return fmt.Errorf("write global config: %w", err)
 	}
+	clearSessionAppConfigResolution()
 	return nil
 }
 
@@ -180,5 +327,6 @@ func SaveLocalAppConfigRaw(path string, raw []byte) error {
 	if err := writeFileAtomicMode(path, raw, mode); err != nil {
 		return fmt.Errorf("write local config %s: %w", path, err)
 	}
+	clearSessionAppConfigResolution()
 	return nil
 }

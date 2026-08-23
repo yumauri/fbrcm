@@ -17,6 +17,11 @@ import (
 
 func Init(s *core.Core, version, commit, date string) {
 	corelog.For("tui").Debug("start tui")
+	if err := s.ConfigureFirebaseRequests(); err != nil {
+		corelog.For("tui").Error("network config load failed", "err", err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
 	if _, err := tuiconfig.Load(); err != nil {
 		corelog.For("tui").Error("tui config load failed", "err", err)
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)

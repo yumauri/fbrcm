@@ -32,7 +32,7 @@ func gcloudHTTPClient(ctx context.Context) (*http.Client, string, error) {
 		return nil, "", err
 	}
 	logger.Debug("gcloud application default credentials http client ready", "quota_project_id", quotaProjectID != "")
-	return wrapAuthHTTPClient(client), quotaProjectID, nil
+	return wrapAuthHTTPClient(ctx, client), quotaProjectID, nil
 }
 
 func wellKnownADCFile() string {

@@ -71,6 +71,37 @@ func stateFromConfig(path string, exists bool, stored *coreconfig.AppConfig) con
 		enabled := true
 		effective.PowerlineGlyphs = &enabled
 	}
+	if effective.Network == nil {
+		effective.Network = &coreconfig.NetworkConfig{}
+	}
+	if effective.Network.MaxConcurrentRequests == nil {
+		value := coreconfig.DefaultMaxConcurrentRequests
+		effective.Network.MaxConcurrentRequests = &value
+	}
+	if effective.Network.RequestsPerMinute == nil {
+		value := coreconfig.DefaultRequestsPerMinute
+		effective.Network.RequestsPerMinute = &value
+	}
+	if strings.TrimSpace(effective.Network.RateLimitCooldown) == "" {
+		effective.Network.RateLimitCooldown = coreconfig.DefaultRateLimitCooldown.String()
+	}
+	if effective.Network.Retry == nil {
+		effective.Network.Retry = &coreconfig.RetryConfig{}
+	}
+	if effective.Network.Retry.MaxAttempts == nil {
+		value := coreconfig.DefaultRetryMaxAttempts
+		effective.Network.Retry.MaxAttempts = &value
+	}
+	if strings.TrimSpace(effective.Network.Retry.BaseDelay) == "" {
+		effective.Network.Retry.BaseDelay = coreconfig.DefaultRetryBaseDelay.String()
+	}
+	if strings.TrimSpace(effective.Network.Retry.MaxDelay) == "" {
+		effective.Network.Retry.MaxDelay = coreconfig.DefaultRetryMaxDelay.String()
+	}
+	if effective.Network.Retry.JitterPercent == nil {
+		value := coreconfig.DefaultRetryJitterPercent
+		effective.Network.Retry.JitterPercent = &value
+	}
 	effective.Keys = tuiconfig.ToConfigMap(tuiconfig.Merge(tuiconfig.DefaultKeyMap(), effective.Keys))
 	report := validateAppConfig(path, exists, stored)
 	return configState{Path: path, Exists: exists, Stored: stored, GlobalPath: path, GlobalExists: exists, Global: stored, Local: &coreconfig.AppConfig{Keys: map[string]map[string][]string{}}, Merged: stored, Migrated: migrated, Effective: effective, Report: report}
@@ -144,6 +175,8 @@ func configValue(state configState, key string) (any, string, error) {
 		return *state.Effective.PowerlineGlyphs, source, nil
 	case key == "keys":
 		return state.Effective.Keys, keySource(state, parts), nil
+	case key == "network":
+		return state.Effective.Network, networkSource(state, ""), nil
 	case key == "hooks":
 		return state.Effective.Hooks, hookSource(state, ""), nil
 	case key == "projects":
@@ -173,6 +206,33 @@ func configValue(state configState, key string) (any, string, error) {
 		default:
 			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown hook key %q", parts[1]))
 		}
+	case len(parts) == 2 && parts[0] == "network":
+		switch parts[1] {
+		case "max_concurrent_requests":
+			return *state.Effective.Network.MaxConcurrentRequests, networkSource(state, parts[1]), nil
+		case "requests_per_minute":
+			return *state.Effective.Network.RequestsPerMinute, networkSource(state, parts[1]), nil
+		case "rate_limit_cooldown":
+			return state.Effective.Network.RateLimitCooldown, networkSource(state, parts[1]), nil
+		case "retry":
+			return state.Effective.Network.Retry, networkSource(state, parts[1]), nil
+		default:
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown network key %q", parts[1]))
+		}
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry":
+		retry := state.Effective.Network.Retry
+		switch parts[2] {
+		case "max_attempts":
+			return *retry.MaxAttempts, networkSource(state, "retry."+parts[2]), nil
+		case "base_delay":
+			return retry.BaseDelay, networkSource(state, "retry."+parts[2]), nil
+		case "max_delay":
+			return retry.MaxDelay, networkSource(state, "retry."+parts[2]), nil
+		case "jitter_percent":
+			return *retry.JitterPercent, networkSource(state, "retry."+parts[2]), nil
+		default:
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown network retry key %q", parts[2]))
+		}
 	case len(parts) == 2 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {
 			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown keybinding block %q", parts[1]))
@@ -189,6 +249,45 @@ func configValue(state configState, key string) (any, string, error) {
 	default:
 		return nil, "", shared.InvalidArgument(fmt.Errorf("unknown config key %q", key))
 	}
+}
+
+func networkSource(state configState, key string) string {
+	has := func(cfg *coreconfig.AppConfig) bool {
+		if cfg == nil || cfg.Network == nil {
+			return false
+		}
+		switch key {
+		case "max_concurrent_requests":
+			return cfg.Network.MaxConcurrentRequests != nil
+		case "requests_per_minute":
+			return cfg.Network.RequestsPerMinute != nil
+		case "rate_limit_cooldown":
+			return strings.TrimSpace(cfg.Network.RateLimitCooldown) != ""
+		case "retry":
+			return retryConfigPresent(cfg.Network.Retry)
+		case "retry.max_attempts":
+			return cfg.Network.Retry != nil && cfg.Network.Retry.MaxAttempts != nil
+		case "retry.base_delay":
+			return cfg.Network.Retry != nil && strings.TrimSpace(cfg.Network.Retry.BaseDelay) != ""
+		case "retry.max_delay":
+			return cfg.Network.Retry != nil && strings.TrimSpace(cfg.Network.Retry.MaxDelay) != ""
+		case "retry.jitter_percent":
+			return cfg.Network.Retry != nil && cfg.Network.Retry.JitterPercent != nil
+		default:
+			return cfg.Network.MaxConcurrentRequests != nil || cfg.Network.RequestsPerMinute != nil ||
+				strings.TrimSpace(cfg.Network.RateLimitCooldown) != "" || retryConfigPresent(cfg.Network.Retry)
+		}
+	}
+	local, global := has(state.Local), has(state.Global)
+	if (key == "" || key == "retry") && local && global {
+		return "mixed"
+	}
+	return scalarSource(local, global)
+}
+
+func retryConfigPresent(retry *coreconfig.RetryConfig) bool {
+	return retry != nil && (retry.MaxAttempts != nil || strings.TrimSpace(retry.BaseDelay) != "" ||
+		strings.TrimSpace(retry.MaxDelay) != "" || retry.JitterPercent != nil)
 }
 
 func projectAliasSource(state configState, alias string) string {

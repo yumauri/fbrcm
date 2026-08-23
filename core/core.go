@@ -26,6 +26,9 @@ type Core struct {
 	firebase map[string]*firebase.Service
 	// firebaseMu protects firebase clients.
 	firebaseMu sync.Mutex
+	// firebaseRequests coordinates API pacing and rate-limit cooldowns across clients.
+	firebaseRequestsMu sync.RWMutex
+	firebaseRequests   *firebase.RequestController
 	// firebaseInit deduplicates concurrent client creation per auth id.
 	firebaseInit singleflight.Group
 	// oauth coordinates interactive authorization with a host UI.
@@ -48,7 +51,12 @@ func NewService(ctx context.Context) (*Core, error) {
 
 	corelog.For("core").Debug("core service initialized")
 
-	return &Core{ctx: ctx, firebase: make(map[string]*firebase.Service), oauthAutoOpen: true}, nil
+	return &Core{
+		ctx:              ctx,
+		firebase:         make(map[string]*firebase.Service),
+		firebaseRequests: firebase.NewRequestController(firebase.DefaultRequestPolicy()),
+		oauthAutoOpen:    true,
+	}, nil
 }
 
 func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
@@ -284,6 +292,7 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	if ctx != nil {
 		serviceCtx = ctx
 	}
+	serviceCtx = s.WithFirebaseRequestController(serviceCtx)
 	serviceCtx, autoOpen := s.oauthAuthorizationContext(serviceCtx, authID, !noOpen)
 	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, autoOpen)
 	if err != nil {

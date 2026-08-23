@@ -1,13 +1,16 @@
 package firebase
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+)
 
 const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
 
-func wrapAuthHTTPClient(client *http.Client) *http.Client {
+func wrapAuthHTTPClient(ctx context.Context, client *http.Client) *http.Client {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	client.Transport = newResilientTransport(client.Transport)
+	client.Transport = newResilientTransportWithController(client.Transport, requestControllerFromContext(ctx))
 	return client
 }

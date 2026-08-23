@@ -23,5 +23,5 @@ func accessTokenHTTPClient(ctx context.Context, accessToken string) (*http.Clien
 	}
 
 	token := &oauth2.Token{AccessToken: accessToken, TokenType: "Bearer"}
-	return wrapAuthHTTPClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))), nil
+	return wrapAuthHTTPClient(ctx, oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))), nil
 }

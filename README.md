@@ -218,6 +218,10 @@ For example:
 ```sh
 fbrcm config set powerline_glyphs false
 fbrcm config set keys.projects.refresh u ctrl+r
+fbrcm config set network.max_concurrent_requests 3
+fbrcm config set network.requests_per_minute 30
+fbrcm config set network.rate_limit_cooldown 30s
+fbrcm config set network.retry.max_attempts 5
 fbrcm config validate
 fbrcm config edit --scope local
 ```
@@ -235,8 +239,14 @@ Firebase CLI aliases under the top-level `.firebaserc` `projects` object are
 also resolved automatically. Use `fbrcm projects aliases import --from
 .firebaserc` to copy them into the native table.
 
-Configuration files stay sparse: built-in keybindings are applied in memory
-and are not written during startup. Use `fbrcm config show keys` as the
+Network requests share a configurable concurrency limit and Firebase 429
+cooldowns across workers. A positive
+`network.requests_per_minute` additionally paces requests by API and quota
+consumer; its default zero leaves proactive pacing disabled. Retry attempts,
+exponential delays, and jitter are configurable under `network.retry`.
+Configuration
+files stay sparse: built-in values are applied in memory and are not written
+during startup. Use `fbrcm config show keys` as the
 authoritative key-name reference, or `fbrcm config edit --full` to stage a
 complete generated template.
 

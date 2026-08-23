@@ -51,6 +51,7 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	ctx = s.WithFirebaseRequestController(ctx)
 	report := DoctorReport{Offline: firebase.IsOffline()}
 
 	if err := config.EnsureActiveProfile(); err != nil {

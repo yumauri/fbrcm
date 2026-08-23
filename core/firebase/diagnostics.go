@@ -177,13 +177,13 @@ func diagnosticOAuthHTTPClient(ctx context.Context, clientSecretPath, tokenPath 
 		return nil, fmt.Errorf("OAuth token is missing; run `fbrcm auth login`")
 	}
 	if IsOffline() {
-		return wrapAuthHTTPClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))), nil
+		return wrapAuthHTTPClient(ctx, oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))), nil
 	}
 	refreshed, err := oauthCfg.TokenSource(ctx, token).Token()
 	if err != nil {
 		return nil, fmt.Errorf("refresh OAuth token: %w", err)
 	}
-	return wrapAuthHTTPClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(refreshed))), nil
+	return wrapAuthHTTPClient(ctx, oauth2.NewClient(ctx, oauth2.StaticTokenSource(refreshed))), nil
 }
 
 // TestProjectPermissions returns the requested IAM permissions granted on a

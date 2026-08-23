@@ -164,13 +164,14 @@ func SwitchProfile(name string) error {
 	if err := ValidateProfileName(name); err != nil {
 		return err
 	}
+	refreshRootPathsIfEnvironmentChanged()
 	if err := ensureProfileDirs(name, true); err != nil {
 		return err
 	}
 	if err := saveActiveProfile(name); err != nil {
 		return err
 	}
-	resetPaths()
+	clearSessionProfile()
 	corelog.For("config").Info("current profile", "profile", name)
 	return nil
 }

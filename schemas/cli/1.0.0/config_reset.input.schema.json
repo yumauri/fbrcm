@@ -282,6 +282,15 @@
                 "keys.workspace_menu.home",
                 "keys.workspace_menu.submit",
                 "keys.workspace_menu.up",
+                "network",
+                "network.max_concurrent_requests",
+                "network.rate_limit_cooldown",
+                "network.requests_per_minute",
+                "network.retry",
+                "network.retry.base_delay",
+                "network.retry.jitter_percent",
+                "network.retry.max_attempts",
+                "network.retry.max_delay",
                 "powerline_glyphs",
                 "projects.aliases"
               ]
@@ -296,6 +305,7 @@
               "operator": "trim_unicode_whitespace_if_prefix",
               "prefixes": [
                 "keys.",
+                "network.",
                 "projects.aliases."
               ],
               "source": "argv",

@@ -366,6 +366,41 @@ enables CLI offline mode and suppresses network requests. Standard HTTP
 requests honor `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`, including their
 lowercase forms.
 
+Authenticated API clients use one shared concurrency limit, configured by
+`network.max_concurrent_requests` from 1 through 64 and defaulting to five
+requests in flight. They also use
+one shared request controller across auth identities and stateless target
+bindings. The controller isolates schedules by API host and effective
+`X-Goog-User-Project` quota consumer. Every network attempt, including a retry,
+counts toward an optional proactive rate. When `network.requests_per_minute` is
+greater than zero, the first request may start immediately and later requests
+for the same schedule are evenly paced across one minute; zero, the default,
+disables proactive pacing.
+
+A `429 Too Many Requests` response establishes a shared cooldown for the same
+schedule, so queued workers and other clients do not continue independently.
+`Retry-After` controls the cooldown when Firebase supplies valid delta-seconds
+or an HTTP date. Without it, `network.rate_limit_cooldown` is the base delay and
+defaults to `30s`. Consecutive 429 responses for the same schedule add that
+base each time: 30 seconds, 1 minute, 1 minute 30 seconds, 2 minutes, and so on.
+A non-429 response resets the sequence. The escalation is specific to 429 responses;
+other transient failures use the generic retry policy.
+
+Replayable requests default to five total attempts. `network.retry.max_attempts`
+accepts 1 through 10 and includes the initial attempt. Non-429 network errors,
+HTTP 408, and HTTP 5xx responses use exponential delays beginning at
+`network.retry.base_delay` (default `1s`), capped before jitter by
+`network.retry.max_delay` (default `10s`), with zero through
+`network.retry.jitter_percent` additional random delay (default 50 percent).
+Valid `Retry-After` headers override that calculated delay. Non-replayable
+request bodies are attempted once. `network.retry.max_delay` does not cap 429
+cooldowns; those use the separate rate-limit policy described above.
+
+`Ctrl+C` and the root `--timeout` cancel concurrency, pacing, retry, and cooldown
+waits. Root `--stateless` does not read application configuration and therefore
+uses all built-in network defaults. `--no-local-config`
+ignores repository network overrides while retaining global ones.
+
 Every explicitly supplied positional argument must contain a non-whitespace
 value. Supplied string flags and every item in a repeated string flag likewise
 reject empty and whitespace-only values. Exact empty strings remain supported
@@ -2223,10 +2258,14 @@ complete effective key map. `--scope global` or `--scope local` instead shows
 only values physically stored in that layer. Supported keys are `profile`,
 `powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
 `hooks.timeout`, `hooks.pre_publish`, `hooks.post_publish`, `projects`,
-`projects.aliases`, and `projects.aliases.<alias>`. A selected scalar prints as plain text; a selected
+`projects.aliases`, `projects.aliases.<alias>`, `network`,
+`network.max_concurrent_requests`, `network.requests_per_minute`,
+`network.rate_limit_cooldown`, `network.retry`, `network.retry.max_attempts`,
+`network.retry.base_delay`, `network.retry.max_delay`, and
+`network.retry.jitter_percent`. A selected scalar prints as plain text; a selected
 keybinding list or map prints scoped TOML. JSON is emitted only with `--json`.
-Outer Unicode whitespace is removed for nested `keys.*`, `hooks.*`, and
-`projects.aliases.<alias>` lookups. Top-level keys are compared exactly and
+Outer Unicode whitespace is removed for nested `keys.*`, `network.*`,
+`hooks.*`, and `projects.aliases.<alias>` lookups. Top-level keys are compared exactly and
 should be emitted in canonical form without surrounding whitespace.
 
 The `projects.aliases` config keys describe native `.fbrcm.toml` state only.
@@ -2257,9 +2296,19 @@ is found. Supported forms are:
 
 ```text
 powerline_glyphs true|false
+network.max_concurrent_requests 1..64
+network.requests_per_minute 0..60000
+network.rate_limit_cooldown <positive-duration>
+network.retry.max_attempts 1..10
+network.retry.base_delay <positive-duration>
+network.retry.max_delay <positive-duration>
+network.retry.jitter_percent 0..100
 keys.<block>.<action> <key>...
 projects.aliases.<alias> <project-id>   requires --scope local
 ```
+
+`network.retry.max_delay` must be greater than or equal to
+`network.retry.base_delay` in the effective layered configuration.
 
 The active `profile` is read-only here; use `fbrcm profile switch <name>` or edit
 the local TOML. Only explicit overrides are stored: inherited values and
@@ -2270,7 +2319,7 @@ conflicts with configured or default actions. Failed validation leaves the file
 unchanged.
 
 Leading and trailing Unicode whitespace around nested
-`keys.<block>.<action>` and `projects.aliases.<alias>` keys is removed before
+`keys.<block>.<action>`, `network.*`, and `projects.aliases.<alias>` keys is removed before
 lookup. The top-level `powerline_glyphs` key is compared exactly. The normalized
 machine invocation schema publishes this conditional trimming.
 Keybinding values accept a printable single character, `f1` through `f63`, the
@@ -2290,13 +2339,15 @@ Flags:
 
 Removes a stored override from the selected layer. Removing a local override
 reveals the global value; removing a global override reveals the built-in
-default. The optional key may be `powerline_glyphs`, `keys`, `keys.<block>`, or
-`keys.<block>.<action>`. With no key, it removes all stored preferences while
+default. The optional key may be `powerline_glyphs`, `network`,
+`network.max_concurrent_requests`, `network.requests_per_minute`,
+`network.rate_limit_cooldown`, `network.retry`, any `network.retry.*` scalar, `keys`,
+`keys.<block>`, or `keys.<block>.<action>`. With no key, it removes all stored preferences while
 preserving that layer's `profile`. The optional key also accepts
 `projects.aliases` or `projects.aliases.<alias>` in local scope. Reset can repair an invalid key map by
 discarding the requested obsolete subtree. A changed reset asks for
 confirmation; Yes is selected by default. Writes are validated and atomic.
-Outer Unicode whitespace is removed for nested `keys.*` and
+Outer Unicode whitespace is removed for nested `keys.*`, `network.*`, and
 `projects.aliases.<alias>` keys; top-level reset keys are compared exactly.
 
 Flags:
@@ -2310,7 +2361,7 @@ Flags:
 ### `fbrcm config validate`
 
 Strictly validates TOML structure, profile references, project aliases,
-keybindings, hook commands, and hook timeout syntax. Project aliases are
+keybindings, network request rate and cooldown, hook commands, and hook timeout syntax. Project aliases are
 rejected in global scope. Effective and all-scope validation also checks the
 discovered `.firebaserc` and cross-source alias conflicts. By
 default, it validates both stored layers and their effective merged result.
@@ -2339,7 +2390,7 @@ the staged path is preserved for recovery.
 
 When the target does not exist, the editor starts with a sparse commented file.
 `--full` instead stages a complete generated keybinding template and commented
-hook examples. Saving that
+network and hook examples. Saving that
 template makes every retained entry an explicit override, so remove entries
 that should continue following future built-in defaults. Normal startup never
 materializes defaults into either config file.

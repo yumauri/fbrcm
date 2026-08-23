@@ -134,6 +134,31 @@ func CloneAppConfig(cfg *AppConfig) *AppConfig {
 			PostPublish: append([]string(nil), cfg.Hooks.PostPublish...),
 		}
 	}
+	if cfg.Network != nil {
+		out.Network = &NetworkConfig{RateLimitCooldown: cfg.Network.RateLimitCooldown}
+		if cfg.Network.MaxConcurrentRequests != nil {
+			value := *cfg.Network.MaxConcurrentRequests
+			out.Network.MaxConcurrentRequests = &value
+		}
+		if cfg.Network.RequestsPerMinute != nil {
+			value := *cfg.Network.RequestsPerMinute
+			out.Network.RequestsPerMinute = &value
+		}
+		if cfg.Network.Retry != nil {
+			out.Network.Retry = &RetryConfig{
+				BaseDelay: cfg.Network.Retry.BaseDelay,
+				MaxDelay:  cfg.Network.Retry.MaxDelay,
+			}
+			if cfg.Network.Retry.MaxAttempts != nil {
+				value := *cfg.Network.Retry.MaxAttempts
+				out.Network.Retry.MaxAttempts = &value
+			}
+			if cfg.Network.Retry.JitterPercent != nil {
+				value := *cfg.Network.Retry.JitterPercent
+				out.Network.Retry.JitterPercent = &value
+			}
+		}
+	}
 	if cfg.Projects != nil {
 		out.Projects = &ProjectsConfig{Aliases: CloneProjectAliases(cfg)}
 	}

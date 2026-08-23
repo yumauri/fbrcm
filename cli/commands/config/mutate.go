@@ -112,6 +112,73 @@ func setConfigValue(cfg *coreconfig.AppConfig, key string, values []string) (any
 		}
 		cfg.PowerlineGlyphs = &value
 		return value, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "max_concurrent_requests":
+		value, err := parseBoundedNetworkInteger(values, key, 1, coreconfig.MaxConcurrentRequests)
+		if err != nil {
+			return nil, err
+		}
+		ensureNetworkConfig(cfg).MaxConcurrentRequests = &value
+		return value, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "requests_per_minute":
+		if len(values) != 1 {
+			return nil, fmt.Errorf("network.requests_per_minute requires exactly one integer value")
+		}
+		value, err := strconv.Atoi(values[0])
+		if err != nil || value < 0 || value > coreconfig.MaxRequestsPerMinute {
+			return nil, fmt.Errorf("network.requests_per_minute must be between 0 and %d", coreconfig.MaxRequestsPerMinute)
+		}
+		if cfg.Network == nil {
+			cfg.Network = &coreconfig.NetworkConfig{}
+		}
+		cfg.Network.RequestsPerMinute = &value
+		return value, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "rate_limit_cooldown":
+		if len(values) != 1 {
+			return nil, fmt.Errorf("network.rate_limit_cooldown requires exactly one duration value")
+		}
+		candidate := &coreconfig.NetworkConfig{RateLimitCooldown: values[0]}
+		if _, err := candidate.EffectiveRateLimitCooldown(); err != nil {
+			return nil, err
+		}
+		if cfg.Network == nil {
+			cfg.Network = &coreconfig.NetworkConfig{}
+		}
+		cfg.Network.RateLimitCooldown = values[0]
+		return values[0], nil
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry" && parts[2] == "max_attempts":
+		value, err := parseBoundedNetworkInteger(values, key, 1, coreconfig.MaxRetryAttempts)
+		if err != nil {
+			return nil, err
+		}
+		ensureRetryConfig(cfg).MaxAttempts = &value
+		return value, nil
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry" && parts[2] == "base_delay":
+		if len(values) != 1 {
+			return nil, fmt.Errorf("%s requires exactly one duration value", key)
+		}
+		candidate := &coreconfig.RetryConfig{BaseDelay: values[0]}
+		if _, err := candidate.EffectiveBaseDelay(); err != nil {
+			return nil, err
+		}
+		ensureRetryConfig(cfg).BaseDelay = values[0]
+		return values[0], nil
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry" && parts[2] == "max_delay":
+		if len(values) != 1 {
+			return nil, fmt.Errorf("%s requires exactly one duration value", key)
+		}
+		candidate := &coreconfig.RetryConfig{MaxDelay: values[0]}
+		if _, err := candidate.EffectiveMaxDelay(); err != nil {
+			return nil, err
+		}
+		ensureRetryConfig(cfg).MaxDelay = values[0]
+		return values[0], nil
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry" && parts[2] == "jitter_percent":
+		value, err := parseBoundedNetworkInteger(values, key, 0, 100)
+		if err != nil {
+			return nil, err
+		}
+		ensureRetryConfig(cfg).JitterPercent = &value
+		return value, nil
 	case len(parts) == 3 && parts[0] == "keys":
 		block, action := parts[1], parts[2]
 		if !tuiconfig.KnownBlock(block) {
@@ -146,6 +213,32 @@ func setConfigValue(cfg *coreconfig.AppConfig, key string, values []string) (any
 	default:
 		return nil, fmt.Errorf("unknown or non-settable config key %q", key)
 	}
+}
+
+func parseBoundedNetworkInteger(values []string, key string, minimum, maximum int) (int, error) {
+	if len(values) != 1 {
+		return 0, fmt.Errorf("%s requires exactly one integer value", key)
+	}
+	value, err := strconv.Atoi(values[0])
+	if err != nil || value < minimum || value > maximum {
+		return 0, fmt.Errorf("%s must be between %d and %d", key, minimum, maximum)
+	}
+	return value, nil
+}
+
+func ensureNetworkConfig(cfg *coreconfig.AppConfig) *coreconfig.NetworkConfig {
+	if cfg.Network == nil {
+		cfg.Network = &coreconfig.NetworkConfig{}
+	}
+	return cfg.Network
+}
+
+func ensureRetryConfig(cfg *coreconfig.AppConfig) *coreconfig.RetryConfig {
+	network := ensureNetworkConfig(cfg)
+	if network.Retry == nil {
+		network.Retry = &coreconfig.RetryConfig{}
+	}
+	return network.Retry
 }
 
 func newResetCommand() *cobra.Command {
@@ -229,9 +322,10 @@ func requireLocalProjectAliasScope(key, scope string) error {
 
 func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreferences bool) (bool, error) {
 	if allPreferences {
-		changed := candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0
+		changed := candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0 || candidate.Network != nil
 		candidate.PowerlineGlyphs = nil
 		candidate.Keys = map[string]map[string][]string{}
+		candidate.Network = nil
 		return changed, nil
 	}
 	parts := strings.Split(strings.TrimSpace(key), ".")
@@ -245,6 +339,62 @@ func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreference
 	case key == "keys":
 		changed := len(candidate.Keys) > 0
 		candidate.Keys = map[string]map[string][]string{}
+		return changed, nil
+	case key == "network":
+		changed := candidate.Network != nil
+		candidate.Network = nil
+		return changed, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "max_concurrent_requests":
+		if candidate.Network == nil || candidate.Network.MaxConcurrentRequests == nil {
+			return false, nil
+		}
+		candidate.Network.MaxConcurrentRequests = nil
+		pruneNetworkConfig(candidate)
+		return true, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "requests_per_minute":
+		if candidate.Network == nil || candidate.Network.RequestsPerMinute == nil {
+			return false, nil
+		}
+		candidate.Network.RequestsPerMinute = nil
+		pruneNetworkConfig(candidate)
+		return true, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "rate_limit_cooldown":
+		if candidate.Network == nil || strings.TrimSpace(candidate.Network.RateLimitCooldown) == "" {
+			return false, nil
+		}
+		candidate.Network.RateLimitCooldown = ""
+		pruneNetworkConfig(candidate)
+		return true, nil
+	case len(parts) == 2 && parts[0] == "network" && parts[1] == "retry":
+		if candidate.Network == nil || !retryConfigPresent(candidate.Network.Retry) {
+			return false, nil
+		}
+		candidate.Network.Retry = nil
+		pruneNetworkConfig(candidate)
+		return true, nil
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry":
+		if candidate.Network == nil || candidate.Network.Retry == nil {
+			return false, nil
+		}
+		retry := candidate.Network.Retry
+		changed := false
+		switch parts[2] {
+		case "max_attempts":
+			changed = retry.MaxAttempts != nil
+			retry.MaxAttempts = nil
+		case "base_delay":
+			changed = strings.TrimSpace(retry.BaseDelay) != ""
+			retry.BaseDelay = ""
+		case "max_delay":
+			changed = strings.TrimSpace(retry.MaxDelay) != ""
+			retry.MaxDelay = ""
+		case "jitter_percent":
+			changed = retry.JitterPercent != nil
+			retry.JitterPercent = nil
+		default:
+			return false, fmt.Errorf("unknown network retry key %q", parts[2])
+		}
+		pruneNetworkConfig(candidate)
 		return changed, nil
 	case len(parts) == 2 && parts[0] == "keys":
 		block := parts[1]
@@ -291,6 +441,19 @@ func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreference
 		return changed, nil
 	default:
 		return false, fmt.Errorf("unknown or non-resettable config key %q", key)
+	}
+}
+
+func pruneNetworkConfig(cfg *coreconfig.AppConfig) {
+	if cfg.Network == nil {
+		return
+	}
+	if !retryConfigPresent(cfg.Network.Retry) {
+		cfg.Network.Retry = nil
+	}
+	if cfg.Network.MaxConcurrentRequests == nil && cfg.Network.RequestsPerMinute == nil &&
+		strings.TrimSpace(cfg.Network.RateLimitCooldown) == "" && cfg.Network.Retry == nil {
+		cfg.Network = nil
 	}
 }
 

@@ -14,28 +14,27 @@ import (
 	charmlog "charm.land/log/v2"
 )
 
-const (
-	maxConcurrentRequests = 5
-	maxRequestAttempts    = 5
-	baseRetryDelay        = 500 * time.Millisecond
-	maxRetryDelay         = 10 * time.Second
-)
-
-func MaxConcurrentRequests() int {
-	return maxConcurrentRequests
+func MaxConcurrentRequests(ctx context.Context) int {
+	return requestControllerFromContext(ctx).Policy().MaxConcurrentRequests
 }
 
-var requestLimiter = make(chan struct{}, maxConcurrentRequests)
-
 type resilientTransport struct {
-	base http.RoundTripper
+	base       http.RoundTripper
+	controller *RequestController
 }
 
 func newResilientTransport(base http.RoundTripper) http.RoundTripper {
+	return newResilientTransportWithController(base, defaultRequestController)
+}
+
+func newResilientTransportWithController(base http.RoundTripper, controller *RequestController) http.RoundTripper {
 	if base == nil {
 		base = http.DefaultTransport
 	}
-	return &resilientTransport{base: base}
+	if controller == nil {
+		controller = defaultRequestController
+	}
+	return &resilientTransport{base: base, controller: controller}
 }
 
 func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -49,34 +48,52 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		return dryRunResponse(req)
 	}
 
-	attempts := maxRequestAttempts
+	policy := t.controller.Policy()
+	attempts := policy.Retry.MaxAttempts
 	if !requestCanRetry(req) {
 		attempts = 1
 	}
+	scheduleKey := requestScheduleKey(req)
 
 	for attempt := 1; attempt <= attempts; attempt++ {
+		if err := t.controller.wait(req.Context(), scheduleKey); err != nil {
+			return nil, err
+		}
 		attemptReq, err := cloneRequest(req, attempt)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := acquireRequestSlot(req.Context()); err != nil {
+		if err := t.controller.acquire(req.Context()); err != nil {
 			return nil, err
 		}
 		resp, err := t.base.RoundTrip(attemptReq)
-		releaseRequestSlot()
+		t.controller.release()
 		if contextErr := req.Context().Err(); contextErr != nil {
 			closeRetryResponse(resp)
 			return nil, contextErr
 		}
 
-		if !shouldRetry(resp, err) || attempt == attempts {
+		retryable := shouldRetry(resp, err)
+		rateLimited := resp != nil && resp.StatusCode == http.StatusTooManyRequests
+		delay := time.Duration(0)
+		if rateLimited {
+			delay = t.controller.recordRateLimit(scheduleKey, resp)
+		} else {
+			t.controller.recordNonRateLimit(scheduleKey)
+		}
+		if !retryable || attempt == attempts {
 			return resp, err
 		}
 
-		delay := retryDelay(resp, attempt)
+		if !rateLimited {
+			delay = retryDelay(resp, attempt, policy.Retry)
+		}
 		logRetry(logger, req, resp, err, attempt, delay)
 		closeRetryResponse(resp)
+		if rateLimited {
+			continue
+		}
 		if err := sleepContext(req.Context(), delay); err != nil {
 			return nil, err
 		}
@@ -149,22 +166,6 @@ func dryRunResponse(req *http.Request) (*http.Response, error) {
 		ContentLength: int64(len(body)),
 		Request:       req,
 	}, nil
-}
-
-func acquireRequestSlot(ctx context.Context) error {
-	select {
-	case requestLimiter <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-func releaseRequestSlot() {
-	select {
-	case <-requestLimiter:
-	default:
-	}
 }
 
 func requestCanRetry(req *http.Request) bool {

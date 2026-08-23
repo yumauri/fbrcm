@@ -43,7 +43,7 @@ func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core
 	jobs := make(chan job)
 	results := make(chan result, len(projects))
 
-	workerCount := min(firebase.MaxConcurrentRequests(), len(projects))
+	workerCount := min(firebase.MaxConcurrentRequests(ctx), len(projects))
 
 	var workers sync.WaitGroup
 	workers.Add(workerCount)

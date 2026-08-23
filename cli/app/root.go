@@ -157,6 +157,18 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 				initOfflineMode(shared.CommandContext(cmd), false)
 				return nil
 			}
+			if s != nil {
+				if stateless {
+					s.ResetFirebaseRequestPolicy()
+				} else if err := s.ConfigureFirebaseRequests(); err != nil {
+					if cmd.Name() != "doctor" {
+						return err
+					}
+					s.ResetFirebaseRequestPolicy()
+				}
+				ctx = s.WithFirebaseRequestController(shared.CommandContext(cmd))
+				cmd.SetContext(ctx)
+			}
 			progress.Start(commandProgressMessage(cmd))
 			if machine.Profileless(shared.CommandContext(cmd)) {
 				initOfflineMode(shared.CommandContext(cmd), false)

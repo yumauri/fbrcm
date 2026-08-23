@@ -136,7 +136,7 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 	if IsOffline() {
 		logger.Warn("offline mode, using cached oauth token without refresh", "has_refresh_token", tok.RefreshToken != "")
 		client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(tok))
-		return wrapAuthHTTPClient(client), nil
+		return wrapAuthHTTPClient(ctx, client), nil
 	}
 
 	baseTokenSource := oauthCfg.TokenSource(ctx, tok)
@@ -190,7 +190,7 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 	if err != nil {
 		return nil, err
 	}
-	return wrapAuthHTTPClient(client), nil
+	return wrapAuthHTTPClient(ctx, client), nil
 }
 
 func refreshOAuthToken(source oauth2.TokenSource, cached *oauth2.Token) (bool, error) {

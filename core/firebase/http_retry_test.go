@@ -35,9 +35,22 @@ func TestRetryDelayUsesRetryAfter(t *testing.T) {
 	resp := &http.Response{
 		Header: http.Header{"Retry-After": []string{"2"}},
 	}
-	delay := retryDelay(resp, 1)
+	delay := retryDelay(resp, 1, DefaultRequestPolicy().Retry)
 	if delay != 2*time.Second {
 		t.Fatalf("delay = %v, want 2s", delay)
+	}
+}
+
+func TestRetryDelayUsesConfiguredExponentialBackoffWithoutJitter(t *testing.T) {
+	policy := RetryPolicy{BaseDelay: 10 * time.Millisecond, MaxDelay: 25 * time.Millisecond}
+	if got := retryDelay(nil, 1, policy); got != 10*time.Millisecond {
+		t.Fatalf("first delay = %v", got)
+	}
+	if got := retryDelay(nil, 2, policy); got != 20*time.Millisecond {
+		t.Fatalf("second delay = %v", got)
+	}
+	if got := retryDelay(nil, 3, policy); got != 25*time.Millisecond {
+		t.Fatalf("capped delay = %v", got)
 	}
 }
 
@@ -69,6 +82,31 @@ func TestResilientTransportDoesNotRetryCanceledRequest(t *testing.T) {
 	}
 	if attempts != 1 {
 		t.Fatalf("attempts = %d, want 1", attempts)
+	}
+}
+
+func TestResilientTransportUsesConfiguredAttemptLimit(t *testing.T) {
+	attempts := 0
+	controller := NewRequestController(RequestPolicy{Retry: RetryPolicy{
+		MaxAttempts: 3, BaseDelay: time.Millisecond, MaxDelay: time.Millisecond,
+	}})
+	transport := newResilientTransportWithController(roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		attempts++
+		resp := requestControllerResponse(req, http.StatusServiceUnavailable)
+		resp.Header.Set("Retry-After", "0")
+		return resp, nil
+	}), controller)
+	req, err := http.NewRequest(http.MethodGet, "https://example.test", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := transport.RoundTrip(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if attempts != 3 {
+		t.Fatalf("attempts = %d, want 3", attempts)
 	}
 }
 

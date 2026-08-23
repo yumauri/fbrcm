@@ -20,18 +20,53 @@ type paths struct {
 	authFile      string
 }
 
+type rootPaths struct {
+	configRootDir          string
+	cacheRootDir           string
+	environmentFingerprint string
+}
+
 var (
-	pathsInstance   *paths
-	pathsOnce       sync.Once
-	profileOverride string
-	sessionProfile  string
+	rootPathsInstance *rootPaths
+	rootPathsOnce     sync.Once
+	pathsInstance     *paths
+	pathsOnce         sync.Once
+	profileOverride   string
+	sessionProfile    string
 )
+
+// getRootPaths resolves process-wide roots once. Profile selection may reset
+// the derived paths without repeating environment and home-directory lookup.
+func getRootPaths() *rootPaths {
+	rootPathsOnce.Do(func() {
+		rootPathsInstance = &rootPaths{
+			configRootDir:          resolveConfigDir(),
+			cacheRootDir:           resolveCacheDir(),
+			environmentFingerprint: rootPathEnvironmentFingerprint(),
+		}
+	})
+	return rootPathsInstance
+}
+
+func rootPathEnvironmentFingerprint() string {
+	configDir, _ := env.LookupTrimmed(env.ConfigDir)
+	xdgConfigHome, _ := env.LookupTrimmed(env.XDGConfigHome)
+	cacheDir, _ := env.LookupTrimmed(env.CacheDir)
+	return configDir + "\x00" + xdgConfigHome + "\x00" + cacheDir
+}
+
+func refreshRootPathsIfEnvironmentChanged() {
+	if rootPathsInstance != nil && rootPathsInstance.environmentFingerprint != rootPathEnvironmentFingerprint() {
+		resetPaths()
+	}
+}
 
 // Get application used paths, resolving them once per process
 func getPaths() *paths {
 	pathsOnce.Do(func() {
-		configRootDir := resolveConfigDir()
-		cacheRootDir := resolveCacheDir()
+		roots := getRootPaths()
+		configRootDir := roots.configRootDir
+		cacheRootDir := roots.cacheRootDir
 		profile := activeProfileOrDefault()
 		configDir := filepath.Join(configRootDir, profile)
 		cacheDir := filepath.Join(cacheRootDir, profile)
@@ -57,6 +92,12 @@ func getPaths() *paths {
 
 // Reset cached path resolution after profile changes.
 func resetPaths() {
+	rootPathsInstance = nil
+	rootPathsOnce = sync.Once{}
+	resetProfilePaths()
+}
+
+func resetProfilePaths() {
 	pathsInstance = nil
 	pathsOnce = sync.Once{}
 }
@@ -71,7 +112,7 @@ func SetProfileOverride(name string) error {
 		}
 	}
 	profileOverride = name
-	resetPaths()
+	resetProfilePaths()
 	return nil
 }
 
@@ -90,7 +131,12 @@ func selectedProfileOverride() (string, bool) {
 
 func setSessionProfile(name string) {
 	sessionProfile = name
-	resetPaths()
+	resetProfilePaths()
+}
+
+func clearSessionProfile() {
+	sessionProfile = ""
+	resetProfilePaths()
 }
 
 // GetProfileOverride reports the profile pinned for this process by an
@@ -102,12 +148,12 @@ func GetProfileOverride() (string, bool) {
 
 // Get the path to the config root directory
 func GetConfigRootDirPath() string {
-	return resolveConfigDir()
+	return getRootPaths().configRootDir
 }
 
 // Get the path to the cache root directory
 func GetCacheRootDirPath() string {
-	return resolveCacheDir()
+	return getRootPaths().cacheRootDir
 }
 
 // Get the path to the config directory

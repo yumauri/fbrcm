@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"os"
@@ -10,7 +11,10 @@ import (
 	"testing"
 	"time"
 
+	charmlog "charm.land/log/v2"
+
 	"github.com/yumauri/fbrcm/core/env"
+	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
 func setupTestDirs(t *testing.T) {
@@ -77,6 +81,35 @@ func TestEnsurePrivateDirAndFile(t *testing.T) {
 	assertFileMode(t, path, PrivateFileMode)
 }
 
+func TestRootPathResolutionLogsOnce(t *testing.T) {
+	setupTestDirs(t)
+	t.Setenv(env.LogNoTimestamp, "1")
+	t.Setenv(env.NoColor, "1")
+	var logs bytes.Buffer
+	previousLevel := corelog.CurrentLevel()
+	corelog.ConfigureCLIOutput(&logs, &logs)
+	corelog.InitWithDefault(corelog.ModeCLI, charmlog.DebugLevel)
+	t.Cleanup(func() {
+		corelog.ConfigureCLIOutput(os.Stderr, os.Stderr)
+		corelog.SetLevel(previousLevel)
+	})
+	resetPaths()
+
+	for range 3 {
+		_ = GetConfigRootDirPath()
+	}
+	for range 2 {
+		_ = GetCacheRootDirPath()
+	}
+
+	if got := strings.Count(logs.String(), "resolved config dir from env override"); got != 1 {
+		t.Fatalf("config root resolution log count = %d, want 1\n%s", got, logs.String())
+	}
+	if got := strings.Count(logs.String(), "resolved cache dir from env override"); got != 1 {
+		t.Fatalf("cache root resolution log count = %d, want 1\n%s", got, logs.String())
+	}
+}
+
 func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
 	setupTestDirs(t)
 
@@ -138,6 +171,66 @@ func TestDecodeAppConfigValidatesHooks(t *testing.T) {
 	cfg, err := DecodeAppConfig([]byte("[hooks]\ntimeout = \"2m\"\npre_publish = [\"./check\"]\n"), true)
 	if err != nil || cfg.Hooks == nil || cfg.Hooks.PrePublish[0] != "./check" {
 		t.Fatalf("DecodeAppConfig valid = %+v, %v", cfg, err)
+	}
+}
+
+func TestDecodeAppConfigValidatesNetworkPolicy(t *testing.T) {
+	for _, raw := range []string{
+		"[network]\nmax_concurrent_requests = 0\n",
+		"[network]\nmax_concurrent_requests = 65\n",
+		"[network]\nrequests_per_minute = -1\n",
+		"[network]\nrequests_per_minute = 60001\n",
+		"[network]\nrate_limit_cooldown = \"later\"\n",
+		"[network]\nrate_limit_cooldown = \"0s\"\n",
+		"[network.retry]\nmax_attempts = 0\n",
+		"[network.retry]\nmax_attempts = 11\n",
+		"[network.retry]\nbase_delay = \"0s\"\n",
+		"[network.retry]\nmax_delay = \"later\"\n",
+		"[network.retry]\nbase_delay = \"2s\"\nmax_delay = \"1s\"\n",
+		"[network.retry]\njitter_percent = 101\n",
+	} {
+		if _, err := DecodeAppConfig([]byte(raw), true); err == nil {
+			t.Fatalf("DecodeAppConfig(%q) succeeded", raw)
+		}
+	}
+	cfg, err := DecodeAppConfig([]byte("[network]\nmax_concurrent_requests = 3\nrequests_per_minute = 30\nrate_limit_cooldown = \"90s\"\n[network.retry]\nmax_attempts = 4\nbase_delay = \"250ms\"\nmax_delay = \"4s\"\njitter_percent = 25\n"), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Network == nil || cfg.Network.EffectiveMaxConcurrentRequests() != 3 || cfg.Network.EffectiveRequestsPerMinute() != 30 {
+		t.Fatalf("network config = %+v", cfg.Network)
+	}
+	if delay, err := cfg.Network.EffectiveRateLimitCooldown(); err != nil || delay != 90*time.Second {
+		t.Fatalf("network cooldown = %v, %v", delay, err)
+	}
+	if cfg.Network.Retry.EffectiveMaxAttempts() != 4 || cfg.Network.Retry.EffectiveJitterPercent() != 25 {
+		t.Fatalf("retry config = %+v", cfg.Network.Retry)
+	}
+	if delay, err := cfg.Network.Retry.EffectiveBaseDelay(); err != nil || delay != 250*time.Millisecond {
+		t.Fatalf("retry base delay = %v, %v", delay, err)
+	}
+	if delay, err := cfg.Network.Retry.EffectiveMaxDelay(); err != nil || delay != 4*time.Second {
+		t.Fatalf("retry max delay = %v, %v", delay, err)
+	}
+}
+
+func TestNetworkConfigDefaults(t *testing.T) {
+	var network *NetworkConfig
+	if got := network.EffectiveMaxConcurrentRequests(); got != 5 {
+		t.Fatalf("default max concurrent requests = %d", got)
+	}
+	if got := network.EffectiveRequestsPerMinute(); got != 0 {
+		t.Fatalf("default requests per minute = %d", got)
+	}
+	if got, err := network.EffectiveRateLimitCooldown(); err != nil || got != 30*time.Second {
+		t.Fatalf("default cooldown = %v, %v", got, err)
+	}
+	var retry *RetryConfig
+	if retry.EffectiveMaxAttempts() != 5 || retry.EffectiveJitterPercent() != 50 {
+		t.Fatalf("default retry = attempts %d, jitter %d", retry.EffectiveMaxAttempts(), retry.EffectiveJitterPercent())
+	}
+	if got, err := retry.EffectiveBaseDelay(); err != nil || got != time.Second {
+		t.Fatalf("default retry base delay = %v, %v", got, err)
 	}
 }
 

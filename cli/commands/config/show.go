@@ -118,6 +118,11 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 		return *cfg.PowerlineGlyphs, source, nil
 	case key == "keys":
 		return cfg.Keys, source, nil
+	case key == "network":
+		if cfg.Network == nil {
+			return nil, "absent", nil
+		}
+		return cfg.Network, source, nil
 	case key == "hooks":
 		if cfg.Hooks == nil {
 			return nil, "absent", nil
@@ -165,6 +170,63 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 			return append([]string(nil), cfg.Hooks.PostPublish...), source, nil
 		default:
 			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown hook key %q", parts[1]))
+		}
+	case len(parts) == 2 && parts[0] == "network":
+		if cfg.Network == nil {
+			return nil, "absent", nil
+		}
+		switch parts[1] {
+		case "max_concurrent_requests":
+			if cfg.Network.MaxConcurrentRequests == nil {
+				return nil, "absent", nil
+			}
+			return *cfg.Network.MaxConcurrentRequests, source, nil
+		case "requests_per_minute":
+			if cfg.Network.RequestsPerMinute == nil {
+				return nil, "absent", nil
+			}
+			return *cfg.Network.RequestsPerMinute, source, nil
+		case "rate_limit_cooldown":
+			if strings.TrimSpace(cfg.Network.RateLimitCooldown) == "" {
+				return nil, "absent", nil
+			}
+			return cfg.Network.RateLimitCooldown, source, nil
+		case "retry":
+			if !retryConfigPresent(cfg.Network.Retry) {
+				return nil, "absent", nil
+			}
+			return cfg.Network.Retry, source, nil
+		default:
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown network key %q", parts[1]))
+		}
+	case len(parts) == 3 && parts[0] == "network" && parts[1] == "retry":
+		if cfg.Network == nil || cfg.Network.Retry == nil {
+			return nil, "absent", nil
+		}
+		retry := cfg.Network.Retry
+		switch parts[2] {
+		case "max_attempts":
+			if retry.MaxAttempts == nil {
+				return nil, "absent", nil
+			}
+			return *retry.MaxAttempts, source, nil
+		case "base_delay":
+			if strings.TrimSpace(retry.BaseDelay) == "" {
+				return nil, "absent", nil
+			}
+			return retry.BaseDelay, source, nil
+		case "max_delay":
+			if strings.TrimSpace(retry.MaxDelay) == "" {
+				return nil, "absent", nil
+			}
+			return retry.MaxDelay, source, nil
+		case "jitter_percent":
+			if retry.JitterPercent == nil {
+				return nil, "absent", nil
+			}
+			return *retry.JitterPercent, source, nil
+		default:
+			return nil, "", shared.InvalidArgument(fmt.Errorf("unknown network retry key %q", parts[2]))
 		}
 	case len(parts) == 2 && parts[0] == "keys":
 		if !tuiconfig.KnownBlock(parts[1]) {

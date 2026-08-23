@@ -60,6 +60,59 @@
                     "null"
                   ]
                 },
+                "network": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "max_concurrent_requests": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "rate_limit_cooldown": {
+                      "type": "string"
+                    },
+                    "requests_per_minute": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "retry": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "base_delay": {
+                          "type": "string"
+                        },
+                        "jitter_percent": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "max_attempts": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "max_delay": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [],
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
                 "powerline_glyphs": {
                   "type": [
                     "boolean",

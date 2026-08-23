@@ -10,12 +10,36 @@ import (
 	"time"
 )
 
-func retryDelay(resp *http.Response, attempt int) time.Duration {
+func retryDelay(resp *http.Response, attempt int, policy RetryPolicy) time.Duration {
 	if delay, ok := retryAfterDelay(resp); ok {
 		return delay
 	}
-	backoff := min(baseRetryDelay*time.Duration(1<<(attempt-1)), maxRetryDelay)
-	return backoff + time.Duration(rand.Int63n(int64(backoff/2)))
+	backoff := exponentialDelay(policy.BaseDelay, policy.MaxDelay, attempt)
+	jitterWindow := time.Duration(float64(backoff) * float64(policy.JitterPercent) / 100)
+	if jitterWindow <= 0 {
+		return backoff
+	}
+	return backoff + time.Duration(rand.Int63n(int64(jitterWindow)))
+}
+
+func exponentialDelay(base, maximum time.Duration, attempt int) time.Duration {
+	if attempt <= 1 {
+		return base
+	}
+	delay := base
+	for range attempt - 1 {
+		if maximum > 0 && delay >= maximum {
+			return maximum
+		}
+		if delay > time.Duration(1<<63-1)/2 {
+			return time.Duration(1<<63 - 1)
+		}
+		delay *= 2
+	}
+	if maximum > 0 {
+		return min(delay, maximum)
+	}
+	return delay
 }
 
 func retryAfterDelay(resp *http.Response) (time.Duration, bool) {

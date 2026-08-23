@@ -1620,8 +1620,12 @@ func TestInvocationSchemasEncodeRuntimeSemanticRequirements(t *testing.T) {
 		{"project.import", map[string]any{"project": "demo"}, map[string]any{"from": "config.json", "group": []any{"   "}, "override": true, "yes": true}, false},
 		{"versions.list", map[string]any{"project": "demo"}, map[string]any{"before": ""}, false},
 		{"config.show", map[string]any{"key": "hooks.post_publish"}, map[string]any{}, true},
+		{"config.show", map[string]any{"key": "network.rate_limit_cooldown"}, map[string]any{}, true},
+		{"config.show", map[string]any{"key": "network.retry.max_attempts"}, map[string]any{}, true},
 		{"config.show", map[string]any{"key": "hooks.unknown"}, map[string]any{}, false},
 		{"config.reset", map[string]any{"key": "keys.global.quit"}, map[string]any{}, true},
+		{"config.reset", map[string]any{"key": "network.requests_per_minute"}, map[string]any{}, true},
+		{"config.reset", map[string]any{"key": "network.retry"}, map[string]any{}, true},
 		{"config.reset", map[string]any{"key": "hooks"}, map[string]any{}, false},
 		{"config.edit", map[string]any{}, map[string]any{"editor": "ignored", "full": true, "scope": "invalid"}, true},
 		{"config.edit", map[string]any{}, map[string]any{"editor": "   "}, false},
@@ -1714,6 +1718,18 @@ func TestConfigSetInvocationSchemaPublishesClosedKeyGrammar(t *testing.T) {
 	}
 	validateContractValue(t, id, input("powerline_glyphs", []any{"true"}, map[string]any{}), true)
 	validateContractValue(t, id, input("powerline_glyphs", []any{"yes"}, map[string]any{}), false)
+	validateContractValue(t, id, input("network.requests_per_minute", []any{"0"}, map[string]any{}), true)
+	validateContractValue(t, id, input("network.requests_per_minute", []any{"60001"}, map[string]any{}), false)
+	validateContractValue(t, id, input("network.rate_limit_cooldown", []any{"90s"}, map[string]any{}), true)
+	validateContractValue(t, id, input("network.rate_limit_cooldown", []any{"0s"}, map[string]any{}), false)
+	validateContractValue(t, id, input("network.max_concurrent_requests", []any{"64"}, map[string]any{}), true)
+	validateContractValue(t, id, input("network.max_concurrent_requests", []any{"65"}, map[string]any{}), false)
+	validateContractValue(t, id, input("network.retry.max_attempts", []any{"10"}, map[string]any{}), true)
+	validateContractValue(t, id, input("network.retry.max_attempts", []any{"11"}, map[string]any{}), false)
+	validateContractValue(t, id, input("network.retry.base_delay", []any{"500ms"}, map[string]any{}), true)
+	validateContractValue(t, id, input("network.retry.max_delay", []any{"0s"}, map[string]any{}), false)
+	validateContractValue(t, id, input("network.retry.jitter_percent", []any{"0"}, map[string]any{}), true)
+	validateContractValue(t, id, input("network.retry.jitter_percent", []any{"101"}, map[string]any{}), false)
 	validateContractValue(t, id, input("unknown", []any{"value"}, map[string]any{}), false)
 	validateContractValue(t, id, input("keys.global.quit", []any{"q"}, map[string]any{}), true)
 	validateContractValue(t, id, input("keys.global.quit", []any{" "}, map[string]any{}), false)
@@ -1727,8 +1743,8 @@ func TestConfigSetInvocationSchemaPublishesClosedKeyGrammar(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := bytes.Count(raw, []byte(`"operator": "trim_unicode_whitespace"`)); got != 3 {
-		t.Fatalf("config.set normalization rule count = %d, want nested key, alias, and case-insensitive scope normalization", got)
+	if got := bytes.Count(raw, []byte(`"operator": "trim_unicode_whitespace"`)); got != 10 {
+		t.Fatalf("config.set normalization rule count = %d, want all nested keys, alias, and case-insensitive scope normalization", got)
 	}
 }
 
@@ -1779,8 +1795,8 @@ func TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas(t *testing.T
 
 func TestConfigKeySchemasPublishConditionalNestedKeyNormalization(t *testing.T) {
 	for id, prefixes := range map[string][]string{
-		"config.show":  {"keys.", "projects.aliases.", "hooks."},
-		"config.reset": {"keys.", "projects.aliases."},
+		"config.show":  {"keys.", "network.", "projects.aliases.", "hooks."},
+		"config.reset": {"keys.", "network.", "projects.aliases."},
 	} {
 		raw, err := schemas.ReadByID("urn:fbrcm:schema:cli:" + contract.Version + ":command:" + id + ":input")
 		if err != nil {

@@ -31,6 +31,8 @@ type AppConfigResolution struct {
 var (
 	localConfigMu       sync.RWMutex
 	localConfigDisabled bool
+	sessionConfigMu     sync.RWMutex
+	sessionConfig       *AppConfigResolution
 )
 
 // SetLocalConfigDisabled controls local config discovery for the current
@@ -39,6 +41,7 @@ func SetLocalConfigDisabled(disabled bool) {
 	localConfigMu.Lock()
 	localConfigDisabled = disabled
 	localConfigMu.Unlock()
+	clearSessionAppConfigResolution()
 	resetPaths()
 }
 
@@ -106,6 +109,13 @@ func GetLocalConfigFilePath() (string, bool, error) {
 }
 
 func ResolveAppConfig() (AppConfigResolution, error) {
+	if resolved, ok := sessionAppConfigResolution(); ok {
+		return resolved, nil
+	}
+	return resolveAppConfig()
+}
+
+func resolveAppConfig() (AppConfigResolution, error) {
 	globalPath := GetGlobalConfigFilePath()
 	global, err := loadAppConfigLayer(globalPath, "global")
 	if err != nil {
@@ -141,6 +151,47 @@ func ResolveAppConfig() (AppConfigResolution, error) {
 		return AppConfigResolution{}, invalidConfiguration("effective", "validation", fmt.Errorf("decode merged config: %w", err))
 	}
 	return AppConfigResolution{Global: global, Local: local, Effective: effective}, nil
+}
+
+// SetSessionAppConfigResolution makes one already validated resolution
+// available to later startup and command consumers. Configuration writes and
+// local-config mode changes invalidate it.
+func SetSessionAppConfigResolution(resolved AppConfigResolution) {
+	cloned := cloneAppConfigResolution(resolved)
+	sessionConfigMu.Lock()
+	sessionConfig = &cloned
+	sessionConfigMu.Unlock()
+}
+
+func sessionAppConfigResolution() (AppConfigResolution, bool) {
+	sessionConfigMu.RLock()
+	defer sessionConfigMu.RUnlock()
+	if sessionConfig == nil {
+		return AppConfigResolution{}, false
+	}
+	return cloneAppConfigResolution(*sessionConfig), true
+}
+
+func clearSessionAppConfigResolution() {
+	sessionConfigMu.Lock()
+	sessionConfig = nil
+	sessionConfigMu.Unlock()
+}
+
+func cloneAppConfigResolution(resolved AppConfigResolution) AppConfigResolution {
+	cloneLayer := func(layer AppConfigLayer) AppConfigLayer {
+		return AppConfigLayer{
+			Path:   layer.Path,
+			Exists: layer.Exists,
+			Config: CloneAppConfig(layer.Config),
+			values: cloneTOMLMap(layer.values),
+		}
+	}
+	return AppConfigResolution{
+		Global:    cloneLayer(resolved.Global),
+		Local:     cloneLayer(resolved.Local),
+		Effective: CloneAppConfig(resolved.Effective),
+	}
 }
 
 // MergeAppConfigs deeply overlays local on global while preserving absent

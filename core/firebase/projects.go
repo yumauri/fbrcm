@@ -148,7 +148,11 @@ func (s *Service) enrichProjects(ctx context.Context, projects []Project) ([]Pro
 	results := make(chan result, len(projects))
 	errCh := make(chan error, 1)
 
-	workerCount := min(maxConcurrentRequests, len(projects))
+	controller := s.requestController
+	if controller == nil {
+		controller = defaultRequestController
+	}
+	workerCount := min(controller.Policy().MaxConcurrentRequests, len(projects))
 
 	for range workerCount {
 		go func() {

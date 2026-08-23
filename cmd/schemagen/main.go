@@ -1698,7 +1698,12 @@ func parameterOrGroupName(commandID, name string) bool {
 }
 
 func configKeySchema(show bool) map[string]any {
-	values := []string{"powerline_glyphs", "keys"}
+	values := []string{
+		"powerline_glyphs", "keys", "network", "network.max_concurrent_requests",
+		"network.requests_per_minute", "network.rate_limit_cooldown", "network.retry",
+		"network.retry.max_attempts", "network.retry.base_delay", "network.retry.max_delay",
+		"network.retry.jitter_percent",
+	}
 	if show {
 		values = append(values, "profile", "hooks", "hooks.timeout", "hooks.pre_publish", "hooks.post_publish", "projects")
 	}
@@ -1712,7 +1717,7 @@ func configKeySchema(show bool) map[string]any {
 			map[string]any{"pattern": `^projects\.aliases\.[a-z][a-z0-9_-]{0,62}$`},
 		},
 	}
-	prefixes := []any{"keys.", "projects.aliases."}
+	prefixes := []any{"keys.", "network.", "projects.aliases."}
 	if show {
 		prefixes = append(prefixes, "hooks.")
 	}
@@ -2398,6 +2403,52 @@ func configSetConstraint() map[string]any {
 	}
 	oneBoolean := map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{"enum": []string{"true", "false"}}}
 	variants := []any{argumentVariant(map[string]any{"const": "powerline_glyphs"}, oneBoolean, false)}
+	variants = append(variants, argumentVariant(
+		map[string]any{"const": "network.max_concurrent_requests"},
+		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{
+			"type": "string", "pattern": `^(?:[1-9]|[1-5][0-9]|6[0-4])$`,
+		}},
+		true,
+	))
+	variants = append(variants, argumentVariant(
+		map[string]any{"const": "network.requests_per_minute"},
+		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{
+			"type": "string", "pattern": `^(?:0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|60000)$`,
+		}},
+		true,
+	))
+	positiveDuration := map[string]any{
+		"type":    "string",
+		"pattern": `^\+?(?:(?:0+(?:\.0*)?|\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\d*[1-9]\d*(?:\.\d*)?|0*\.\d*[1-9]\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))*$`,
+		"not":     map[string]any{"pattern": `^\+?(?:0*\.)\d+ns$`},
+	}
+	addValidationRule(positiveDuration, map[string]any{"operator": "parse_duration", "parser": "time.ParseDuration", "require_positive": true})
+	variants = append(variants, argumentVariant(
+		map[string]any{"const": "network.rate_limit_cooldown"},
+		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": positiveDuration},
+		true,
+	))
+	variants = append(variants, argumentVariant(
+		map[string]any{"const": "network.retry.max_attempts"},
+		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{
+			"type": "string", "pattern": `^(?:[1-9]|10)$`,
+		}},
+		true,
+	))
+	for _, key := range []string{"network.retry.base_delay", "network.retry.max_delay"} {
+		variants = append(variants, argumentVariant(
+			map[string]any{"const": key},
+			map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": positiveDuration},
+			true,
+		))
+	}
+	variants = append(variants, argumentVariant(
+		map[string]any{"const": "network.retry.jitter_percent"},
+		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{
+			"type": "string", "pattern": `^(?:0|[1-9]|[1-9][0-9]|100)$`,
+		}},
+		true,
+	))
 
 	keyNames := keyBindingConfigNames(false)
 	for index := range keyNames {

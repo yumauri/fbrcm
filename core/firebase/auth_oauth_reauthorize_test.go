@@ -164,7 +164,7 @@ func TestOAuthUnauthorizedTransportRecoversAndRetriesOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client = wrapAuthHTTPClient(client)
+	client = wrapAuthHTTPClient(context.Background(), client)
 
 	response, err := client.Get("https://example.test/config")
 	if err != nil {

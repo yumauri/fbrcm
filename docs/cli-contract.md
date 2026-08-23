@@ -43,7 +43,8 @@ the non-atomic batch warning as human stderr text.
 
 `--timeout` must be a strictly positive Go duration and limits the complete
 command, including project resolution, authentication, Firebase calls,
-retries, validation, hooks, and local persistence. CLI execution has no startup
+rate pacing, shared 429 cooldowns, retries, validation, hooks, and local
+persistence. CLI execution has no startup
 connectivity probe: every possible CLI network operation is represented by the
 command's capability predicates.
 An interrupt uses exit status `130`; an expired deadline uses exit status `9`.
@@ -179,6 +180,20 @@ retryability. Message wording is never used for classification. Error messages a
 captured hook output redact common credential forms and are bounded to 4,096
 characters plus a truncation marker. This boundary also applies to messages in
 command result DTOs, including target-level mutation errors.
+
+Before a final rate-limit problem is emitted, authenticated API transports
+coordinate concurrency, pacing, and retries through one controller keyed by
+API host and quota consumer. `network.max_concurrent_requests` bounds requests
+in flight across clients. A valid `Retry-After` response header sets the shared
+429 cooldown; otherwise each consecutive 429 adds the effective
+`network.rate_limit_cooldown` base until a non-429 response resets the sequence.
+A positive
+`network.requests_per_minute` evenly paces all attempts for that key, while zero
+disables proactive pacing. Replayable transient failures use the bounded
+attempt count, exponential base and maximum delays, and jitter percentage under
+`network.retry`; a valid `Retry-After` overrides the calculated delay. These
+waits remain part of the same invocation and are canceled by its context. JSON
+mode does not change this behavior.
 
 The published error schema defines every current `details.kind` object and an
 enum of all codes emitted by this contract version. Known codes constrain their
@@ -537,7 +552,7 @@ content options whose empty value has meaning: `--value`, `--description`,
 content that is subsequently trimmed. `config set`, `config show`, and
 `config reset` trim nested
 `keys.<block>.<action>` and
-`projects.aliases.<alias>` keys before their closed grammar is evaluated;
+`network.*` and `projects.aliases.<alias>` keys before their closed grammar is evaluated;
 `config show` also trims nested `hooks.*` keys. Top-level configuration keys
 are compared without trimming. The optional `get [parameter]`,
 `update [parameter]`, and `delete [parameter]` arguments likewise have no argv
