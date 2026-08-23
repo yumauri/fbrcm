@@ -4,7 +4,7 @@
   "args": ["projects", "reset", "--yes", "--json"],
   "expected_exit_code": 0,
   "expected_http": [],
-  "expected_absent_state_paths": [{"root": "config", "path": "default/projects-config.json"}],
+  "expected_absent_state_paths": [{"root": "config", "path": "profiles/default/projects-config.json"}],
   "json_output": true,
   "offline": true
 }

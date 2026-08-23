@@ -28,7 +28,7 @@
         "status": "ready",
         "valid": true,
         "base_available": true,
-        "path": "<E2E_RUN_ROOT>/environment/cache/default/drafts/northstar-wallet.json",
+        "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts/northstar-wallet.json",
         "changes": {
           "conditions": 0,
           "group_descriptions": 0,

@@ -316,7 +316,7 @@ func TestRootProfileFlagSelectsWithoutSwitching(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute with profile = %v", err)
 	}
-	if want := filepath.Join(root, "cache", "automation", "remote-config"); !strings.Contains(out.String(), want) {
+	if want := filepath.Join(root, "cache", "profiles", "automation", "remote-config"); !strings.Contains(out.String(), want) {
 		t.Fatalf("cache path = %q, want %q", out.String(), want)
 	}
 	appConfig, err := config.LoadAppConfig()

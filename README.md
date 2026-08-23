@@ -207,6 +207,9 @@ directory to the filesystem root, then deeply overlays the nearest local file
 on the global configuration. Inspect the effective configuration and its
 sources with:
 
+Profile-specific configuration and cache state is stored under
+`profiles/<name>` within the corresponding application root.
+
 ```sh
 fbrcm config show
 fbrcm config path

@@ -20,8 +20,8 @@
     "type": "oauth",
     "status": "deleted",
     "deleted_paths": [
-      "<E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json",
-      "<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json"
+      "<E2E_RUN_ROOT>/environment/config/profiles/default/auth/e2e/client-secret.json",
+      "<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json"
     ]
   },
   "errors": [],

@@ -5,10 +5,10 @@
 [1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
 [1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
 [1mDEBU[m resolved cache dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CACHE_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache
-[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default [2mmode[m[2m=[m0700
-[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default
-[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default [2mmode[m[2m=[m0700
-[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default
 [1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mmode[m[2m=[m0700
 [1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
 [1mDEBU[m ensure private file [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml [2mmode[m[2m=[m0600
@@ -16,30 +16,30 @@
 [1mINFO[m current profile [2mcomponent[m[2m=[mconfig [2mprofile[m[2m=[mdefault
 [1mDEBU[m list projects requested [2mcomponent[m[2m=[mcore
 [1mDEBU[m loaded effective config [2mcomponent[m[2m=[mconfig [2mglobal_path[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml [2mlocal_path[m[2m=[m"" [2mlocal_exists[m[2m=[mfalse [2mprofile[m[2m=[mdefault
-[1mDEBU[m resolved application paths [2mcomponent[m[2m=[mconfig [2mconfig_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mcache_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache [2mprofile[m[2m=[mdefault [2mconfig_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config/default [2mcache_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default [2mprojects_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mauth_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/auth-config.json
-[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json
-[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
+[1mDEBU[m resolved application paths [2mcomponent[m[2m=[mconfig [2mconfig_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mcache_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache [2mprofile[m[2m=[mdefault [2mconfig_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default [2mcache_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default [2mprojects_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mauth_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/auth-config.json
+[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
+[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
 [1mINFO[m loaded projects from cache [2mcomponent[m[2m=[mcore [2mcount[m[2m=[m1
-[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json
-[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
+[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
+[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
 [1mDEBU[m create firebase service [2mcomponent[m[2m=[mfirebase [2mauth_id[m[2m=[me2e [2mauth_type[m[2m=[moauth
-[1mINFO[m load oauth client secret [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json
-[1mDEBU[m read cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json
-[1mINFO[m loaded cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json [2mhas_refresh_token[m[2m=[mfalse
+[1mINFO[m load oauth client secret [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/auth/e2e/client-secret.json
+[1mDEBU[m read cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json
+[1mINFO[m loaded cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json [2mhas_refresh_token[m[2m=[mfalse
 [1mINFO[m oauth token changed; persist cache [2mcomponent[m[2m=[mfirebase
-[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e [2mmode[m[2m=[m0700
-[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e
-[1mDEBU[m write cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json
-[1mDEBU[m ensure private file [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json [2mmode[m[2m=[m0600
-[1mDEBU[m private file ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json
-[1mDEBU[m saved cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e
+[1mDEBU[m write cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json
+[1mDEBU[m ensure private file [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json [2mmode[m[2m=[m0600
+[1mDEBU[m private file ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json
+[1mDEBU[m saved cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json
 [1mDEBU[m oauth http client ready [2mcomponent[m[2m=[mfirebase
 [1mDEBU[m firebase service ready [2mcomponent[m[2m=[mfirebase
 [1mDEBU[m get parameters requested [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet [2mforce[m[2m=[mfalse
 [1mDEBU[m inspect parameters cache [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
-[1mDEBU[m read current parameters cache [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.json
-[1mWARN[m parameters cache miss [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.json
-[1mINFO[m loaded latest versioned parameters cache [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.42.json [2metag[m[2m=[mfixture-etag-version-42 [2mversion[m[2m=[m42
+[1mDEBU[m read current parameters cache [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/northstar-wallet.json
+[1mWARN[m parameters cache miss [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/northstar-wallet.json
+[1mINFO[m loaded latest versioned parameters cache [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/northstar-wallet.42.json [2metag[m[2m=[mfixture-etag-version-42 [2mversion[m[2m=[m42
 [1mINFO[m parameters cache fresh [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet [2metag[m[2m=[mfixture-etag-version-42
 [1mINFO[m serving parameters from fresh cache [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
 [1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[mnorthstar-wallet [2mresource[m[2m=[mprojects/northstar-wallet/namespaces/firebase/rollouts [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/namespaces/firebase/rollouts?pageSize=100"[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"

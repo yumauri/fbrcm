@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "path": "<E2E_RUN_ROOT>/environment/config/default/projects-config.json",
+    "path": "<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json",
     "status": "reset",
     "changed": true
   },

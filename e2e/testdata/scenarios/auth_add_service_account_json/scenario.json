@@ -5,8 +5,8 @@
   "expected_exit_code": 0,
   "expected_http": [],
   "expected_state_files": [
-    {"root": "config", "path": "default/auth-config.json"},
-    {"root": "config", "path": "default/auth/service-secondary/service-account.json"}
+    {"root": "config", "path": "profiles/default/auth-config.json"},
+    {"root": "config", "path": "profiles/default/auth/service-secondary/service-account.json"}
   ],
   "json_output": true,
   "fixture": "auth_inputs",

@@ -68,8 +68,8 @@ func getPaths() *paths {
 		configRootDir := roots.configRootDir
 		cacheRootDir := roots.cacheRootDir
 		profile := activeProfileOrDefault()
-		configDir := filepath.Join(configRootDir, profile)
-		cacheDir := filepath.Join(cacheRootDir, profile)
+		configDir := filepath.Join(configRootDir, profilesDirName, profile)
+		cacheDir := filepath.Join(cacheRootDir, profilesDirName, profile)
 
 		projectsFile := filepath.Join(configDir, "projects-config.json")
 		authFile := filepath.Join(configDir, "auth-config.json")

@@ -5,8 +5,8 @@
   "expected_exit_code": 0,
   "expected_http": [],
   "expected_state_files": [
-    {"root": "config", "path": "renamed-profile/profile-marker.txt"},
-    {"root": "cache", "path": "renamed-profile/cache-marker.txt"}
+    {"root": "config", "path": "profiles/renamed-profile/profile-marker.txt"},
+    {"root": "cache", "path": "profiles/renamed-profile/cache-marker.txt"}
   ],
   "expected_absent_state_paths": [
     {"root": "config", "path": "old-profile"},

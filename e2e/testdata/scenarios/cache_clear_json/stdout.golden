@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "path": "<E2E_RUN_ROOT>/environment/cache/default/remote-config",
+    "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config",
     "status": "cleared",
     "snapshots_deleted": 2,
     "targets_affected": 2,

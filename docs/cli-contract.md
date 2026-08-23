@@ -451,7 +451,8 @@ envelope profile bootstrap. Commands without an unconditional local-state write
 use the condition `runtime_state.profile_bootstrap required`: by default, final
 envelope construction resolves `context.profile` and, when no explicit or
 persisted effective profile exists, creates the default profile directories and
-global configuration. An execution path explicitly marked profileless skips
+global configuration. Profile-managed configuration and cache state live below
+`profiles/<name>` in their respective application roots. An execution path explicitly marked profileless skips
 profile selection and envelope bootstrap and reports `context.profile` as
 `null`; no CLI argument or environment variable selects that path yet. Commands that
 resolve projects through the live registry also declare a local-state write for

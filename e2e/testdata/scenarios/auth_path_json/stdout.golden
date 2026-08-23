@@ -18,10 +18,10 @@
   "data": {
     "id": "e2e",
     "type": "oauth",
-    "auth_config_path": "<E2E_RUN_ROOT>/environment/config/default/auth-config.json",
-    "profile_config_path": "<E2E_RUN_ROOT>/environment/config/default",
-    "client_secret_path": "<E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json",
-    "token_path": "<E2E_RUN_ROOT>/environment/cache/default/auth/e2e/token.json"
+    "auth_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth-config.json",
+    "profile_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+    "client_secret_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth/e2e/client-secret.json",
+    "token_path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json"
   },
   "errors": [],
   "warnings": []

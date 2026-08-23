@@ -407,7 +407,7 @@ relative:
   "expected_state_files": [
     {
       "root": "config",
-      "path": "default/projects-config.json",
+      "path": "profiles/default/projects-config.json",
       "json_replacements": {
         "/synced_at": "<E2E_SYNCED_AT>"
       }
@@ -430,8 +430,8 @@ directory:
 ```json
 {
   "expected_absent_state_paths": [
-    {"root": "cache", "path": "default/remote-config"},
-    {"root": "config", "path": "default/auth/old/client-secret.json"}
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "config", "path": "profiles/default/auth/old/client-secret.json"}
   ]
 }
 ```

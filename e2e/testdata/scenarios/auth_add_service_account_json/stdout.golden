@@ -23,9 +23,9 @@
     "paths": {
       "id": "service-secondary",
       "type": "service-account",
-      "auth_config_path": "<E2E_RUN_ROOT>/environment/config/default/auth-config.json",
-      "profile_config_path": "<E2E_RUN_ROOT>/environment/config/default",
-      "service_account_path": "<E2E_RUN_ROOT>/environment/config/default/auth/service-secondary/service-account.json"
+      "auth_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth-config.json",
+      "profile_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+      "service_account_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth/service-secondary/service-account.json"
     }
   },
   "errors": [],

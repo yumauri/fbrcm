@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "path": "<E2E_RUN_ROOT>/environment/cache/default/drafts"
+    "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts"
   },
   "errors": [],
   "warnings": []

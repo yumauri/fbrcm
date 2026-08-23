@@ -82,7 +82,7 @@ func TestProfilePathCommand(t *testing.T) {
 		t.Fatalf("profile path = %v", err)
 	}
 	text := out.String()
-	if !strings.Contains(text, filepath.Join("config", "paths")) {
+	if !strings.Contains(text, filepath.Join("config", "profiles", "paths")) {
 		t.Fatalf("output = %q, want config path", text)
 	}
 }

@@ -11,7 +11,7 @@ func TestCheckExpectedStateFileSnapshots(t *testing.T) {
 	root := t.TempDir()
 	configDir := filepath.Join(root, "config")
 	scenarioDir := filepath.Join(root, "scenario")
-	statePath := filepath.Join(configDir, "default", "projects.json")
+	statePath := filepath.Join(configDir, "profiles", "default", "projects.json")
 	if err := os.MkdirAll(filepath.Dir(statePath), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func TestCheckExpectedStateFileSnapshots(t *testing.T) {
 	scenario := Scenario{
 		Directory: scenarioDir,
 		ExpectedStateFiles: []StateFileExpectation{{
-			Root: "config", Path: filepath.Join("default", "projects.json"),
+			Root: "config", Path: filepath.Join("profiles", "default", "projects.json"),
 			JSONReplacements: map[string]string{"/synced_at": "<E2E_SYNCED_AT>"},
 		}},
 	}
@@ -34,7 +34,7 @@ func TestCheckExpectedStateFileSnapshots(t *testing.T) {
 	if len(changes) != 1 || !changes[0].Created {
 		t.Fatalf("create changes = %#v", changes)
 	}
-	snapshotPath := filepath.Join(scenarioDir, "state", "config", "default", "projects.json.golden")
+	snapshotPath := filepath.Join(scenarioDir, "state", "config", "profiles", "default", "projects.json.golden")
 	raw, err := os.ReadFile(snapshotPath)
 	if err != nil {
 		t.Fatal(err)

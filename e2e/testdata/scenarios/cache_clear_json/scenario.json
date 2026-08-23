@@ -4,7 +4,7 @@
   "args": ["cache", "clear", "--yes", "--json"],
   "expected_exit_code": 0,
   "expected_http": [],
-  "expected_absent_state_paths": [{"root": "cache", "path": "default/remote-config"}],
+  "expected_absent_state_paths": [{"root": "cache", "path": "profiles/default/remote-config"}],
   "json_output": true,
   "fixture": "read_state",
   "offline": true

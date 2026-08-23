@@ -23,10 +23,10 @@
     "paths": {
       "id": "oauth-secondary",
       "type": "oauth",
-      "auth_config_path": "<E2E_RUN_ROOT>/environment/config/default/auth-config.json",
-      "profile_config_path": "<E2E_RUN_ROOT>/environment/config/default",
-      "client_secret_path": "<E2E_RUN_ROOT>/environment/config/default/auth/oauth-secondary/client-secret.json",
-      "token_path": "<E2E_RUN_ROOT>/environment/cache/default/auth/oauth-secondary/token.json"
+      "auth_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth-config.json",
+      "profile_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+      "client_secret_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth/oauth-secondary/client-secret.json",
+      "token_path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/oauth-secondary/token.json"
     }
   },
   "errors": [],

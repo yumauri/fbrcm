@@ -98,8 +98,8 @@ func copyFixtureTree(source, destination string, replacements []SnapshotReplacem
 func PrepareEnvironment(root, fixturesRoot string, suite Suite, proxyURL, certificatePath, accessToken string, terminalWidth int, logLevel string, localConfig bool, scenarioEnvironment map[string]string) (Environment, error) {
 	configDir := filepath.Join(root, "config")
 	cacheDir := filepath.Join(root, "cache")
-	profileConfigDir := filepath.Join(configDir, "default")
-	profileCacheDir := filepath.Join(cacheDir, "default")
+	profileConfigDir := filepath.Join(configDir, "profiles", "default")
+	profileCacheDir := filepath.Join(cacheDir, "profiles", "default")
 	workDir := filepath.Join(root, "work")
 	homeDir := filepath.Join(root, "home")
 	for _, directory := range []string{configDir, cacheDir, profileConfigDir, profileCacheDir, workDir, homeDir} {

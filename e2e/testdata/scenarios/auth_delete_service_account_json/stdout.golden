@@ -20,7 +20,7 @@
     "type": "service-account",
     "status": "deleted",
     "deleted_paths": [
-      "<E2E_RUN_ROOT>/environment/config/default/auth/service-secondary/service-account.json"
+      "<E2E_RUN_ROOT>/environment/config/profiles/default/auth/service-secondary/service-account.json"
     ]
   },
   "errors": [],

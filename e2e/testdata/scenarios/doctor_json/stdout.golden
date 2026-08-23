@@ -20,8 +20,8 @@
     "items": [
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "profile",
         "status": "pass",
@@ -30,28 +30,28 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "config-directory",
         "status": "pass",
         "check": "Profile config directory",
-        "detail": "<E2E_RUN_ROOT>/environment/config/default"
+        "detail": "<E2E_RUN_ROOT>/environment/config/profiles/default"
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "cache-writable",
         "status": "pass",
         "check": "Profile cache writable",
-        "detail": "<E2E_RUN_ROOT>/environment/cache/default"
+        "detail": "<E2E_RUN_ROOT>/environment/cache/profiles/default"
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "auth-config",
         "status": "pass",
@@ -60,18 +60,18 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "credentials:e2e",
         "status": "pass",
         "check": "Credentials (e2e)",
-        "detail": "oauth: <E2E_RUN_ROOT>/environment/config/default/auth/e2e/client-secret.json"
+        "detail": "oauth: <E2E_RUN_ROOT>/environment/config/profiles/default/auth/e2e/client-secret.json"
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "token:e2e",
         "status": "pass",
@@ -80,8 +80,8 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "projects-config",
         "status": "pass",
@@ -90,8 +90,8 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "network",
         "status": "pass",
@@ -100,8 +100,8 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "api:cloud-resource-manager:e2e",
         "status": "pass",
@@ -110,8 +110,8 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "api:remote-config:northstar-wallet",
         "status": "pass",
@@ -120,8 +120,8 @@
       },
       {
         "profile": "default",
-        "config_dir": "<E2E_RUN_ROOT>/environment/config/default",
-        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
         "offline": false,
         "id": "permissions:northstar-wallet",
         "status": "pass",

@@ -19,6 +19,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/schemas"
@@ -793,7 +794,8 @@ func TestJSONHelpAndVersionUseConformingResponseSchemas(t *testing.T) {
 }
 
 func TestInvalidChangeNoteIsTypedArgumentFailure(t *testing.T) {
-	envelope, raw := executeJSONContract(t, "add", "flag", "--type", "string", "--value", "on", "--change-note", "line one\nline two", "--yes", "--json")
+	t.Setenv(env.GoogleAccessToken, "test-token")
+	envelope, raw := executeJSONContract(t, "add", "flag", "--type", "string", "--value", "on", "--change-note", "line one\nline two", "--yes", "--stateless", "--json")
 	if envelope.Outcome != "failure" || envelope.ExitCode != 2 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "argument.invalid" || envelope.Errors[0].Category != "argument" {
 		t.Fatalf("invalid change-note envelope = %#v", envelope)
 	}

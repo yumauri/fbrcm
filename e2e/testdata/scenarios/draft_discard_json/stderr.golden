@@ -5,10 +5,10 @@
 [1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
 [1mDEBU[m resolved config dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CONFIG_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
 [1mDEBU[m resolved cache dir from env override [2mcomponent[m[2m=[mconfig [2menv[m[2m=[mFBRCM_CACHE_DIR [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache
-[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default [2mmode[m[2m=[m0700
-[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default
-[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default [2mmode[m[2m=[m0700
-[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default
+[1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default [2mmode[m[2m=[m0700
+[1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default
 [1mDEBU[m ensure private dir [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mmode[m[2m=[m0700
 [1mDEBU[m private dir ready [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config
 [1mDEBU[m ensure private file [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml [2mmode[m[2m=[m0600
@@ -16,13 +16,13 @@
 [1mINFO[m current profile [2mcomponent[m[2m=[mconfig [2mprofile[m[2m=[mdefault
 [1mWARN[m offline mode enabled by environment [2mcomponent[m[2m=[mfirebase.offline [2menv[m[2m=[mFBRCM_OFFLINE [2mvalue[m[2m=[m1
 [1mDEBU[m loaded effective config [2mcomponent[m[2m=[mconfig [2mglobal_path[m[2m=[m<E2E_RUN_ROOT>/environment/config/config.toml [2mlocal_path[m[2m=[m"" [2mlocal_exists[m[2m=[mfalse [2mprofile[m[2m=[mdefault
-[1mDEBU[m resolved application paths [2mcomponent[m[2m=[mconfig [2mconfig_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mcache_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache [2mprofile[m[2m=[mdefault [2mconfig_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config/default [2mcache_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default [2mprojects_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mauth_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/auth-config.json
-[1mDEBU[m list drafts [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/drafts
-[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json
-[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
-[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json
-[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
-[1mDEBU[m read draft [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/drafts/northstar-wallet.json
-[1mINFO[m loaded draft [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/drafts/northstar-wallet.json [2mbytes[m[2m=[m780
-[1mDEBU[m remove draft [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/drafts/northstar-wallet.json
-[1mINFO[m draft removed [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/default/drafts/northstar-wallet.json
+[1mDEBU[m resolved application paths [2mcomponent[m[2m=[mconfig [2mconfig_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config [2mcache_root_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache [2mprofile[m[2m=[mdefault [2mconfig_dir[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default [2mcache_dir[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default [2mprojects_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mauth_file[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/auth-config.json
+[1mDEBU[m list drafts [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts
+[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
+[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
+[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
+[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
+[1mDEBU[m read draft [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts/northstar-wallet.json
+[1mINFO[m loaded draft [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts/northstar-wallet.json [2mbytes[m[2m=[m780
+[1mDEBU[m remove draft [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts/northstar-wallet.json
+[1mINFO[m draft removed [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/drafts/northstar-wallet.json

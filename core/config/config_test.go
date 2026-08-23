@@ -685,6 +685,9 @@ func TestLoadDraftRejectsPlainRemoteConfigFormat(t *testing.T) {
 
 func TestListProfilesAndEnsureActiveProfile(t *testing.T) {
 	setupTestDirs(t)
+	if err := os.MkdirAll(filepath.Join(GetConfigRootDirPath(), "themes"), PrivateDirMode); err != nil {
+		t.Fatal(err)
+	}
 
 	profiles, err := ListProfiles()
 	if err != nil {
@@ -694,6 +697,9 @@ func TestListProfilesAndEnsureActiveProfile(t *testing.T) {
 		t.Fatalf("ListProfiles = %v, want empty", profiles)
 	}
 
+	if err := SwitchProfile("themes"); err != nil {
+		t.Fatalf("SwitchProfile themes = %v", err)
+	}
 	if err := SwitchProfile("work"); err != nil {
 		t.Fatalf("SwitchProfile work = %v", err)
 	}
@@ -705,11 +711,11 @@ func TestListProfilesAndEnsureActiveProfile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListProfiles = %v", err)
 	}
-	if len(profiles) != 2 {
-		t.Fatalf("ListProfiles = %v, want [staging work]", profiles)
+	if len(profiles) != 3 {
+		t.Fatalf("ListProfiles = %v, want [staging themes work]", profiles)
 	}
-	if profiles[0] != "staging" || profiles[1] != "work" {
-		t.Fatalf("ListProfiles = %v, want sorted [staging work]", profiles)
+	if profiles[0] != "staging" || profiles[1] != "themes" || profiles[2] != "work" {
+		t.Fatalf("ListProfiles = %v, want sorted [staging themes work]", profiles)
 	}
 
 	if err := EnsureActiveProfile(); err != nil {
@@ -893,11 +899,19 @@ func TestDeleteProfileRemovesInactiveProfile(t *testing.T) {
 func TestGetProfileDirPathsValidateName(t *testing.T) {
 	setupTestDirs(t)
 
-	if _, err := GetProfileConfigDirPath("valid"); err != nil {
+	configPath, err := GetProfileConfigDirPath("valid")
+	if err != nil {
 		t.Fatalf("GetProfileConfigDirPath valid = %v", err)
 	}
-	if _, err := GetProfileCacheDirPath("valid"); err != nil {
+	if want := filepath.Join(GetConfigRootDirPath(), profilesDirName, "valid"); configPath != want {
+		t.Fatalf("GetProfileConfigDirPath valid = %q, want %q", configPath, want)
+	}
+	cachePath, err := GetProfileCacheDirPath("valid")
+	if err != nil {
 		t.Fatalf("GetProfileCacheDirPath valid = %v", err)
+	}
+	if want := filepath.Join(GetCacheRootDirPath(), profilesDirName, "valid"); cachePath != want {
+		t.Fatalf("GetProfileCacheDirPath valid = %q, want %q", cachePath, want)
 	}
 	if _, err := GetProfileConfigDirPath("../bad"); err == nil {
 		t.Fatal("GetProfileConfigDirPath invalid = nil, want error")

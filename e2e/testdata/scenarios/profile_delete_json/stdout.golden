@@ -19,8 +19,8 @@
     "profile": "disposable",
     "status": "deleted",
     "deleted_paths": [
-      "<E2E_RUN_ROOT>/environment/config/disposable",
-      "<E2E_RUN_ROOT>/environment/cache/disposable"
+      "<E2E_RUN_ROOT>/environment/config/profiles/disposable",
+      "<E2E_RUN_ROOT>/environment/cache/profiles/disposable"
     ]
   },
   "errors": [],

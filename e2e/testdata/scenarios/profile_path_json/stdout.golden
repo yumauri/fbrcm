@@ -19,10 +19,10 @@
     "count": 2,
     "items": [
       {
-        "path": "<E2E_RUN_ROOT>/environment/config/default"
+        "path": "<E2E_RUN_ROOT>/environment/config/profiles/default"
       },
       {
-        "path": "<E2E_RUN_ROOT>/environment/cache/default"
+        "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default"
       }
     ]
   },

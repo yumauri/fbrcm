@@ -11,7 +11,10 @@ import (
 	"github.com/yumauri/fbrcm/core/strfold"
 )
 
-const DefaultProfileName = "default"
+const (
+	DefaultProfileName = "default"
+	profilesDirName    = "profiles"
+)
 
 const (
 	ProfileErrorInvalidArgument = "invalid_argument"
@@ -84,7 +87,7 @@ func EnsureActiveProfile() error {
 
 func ListProfiles() ([]string, error) {
 	seen := map[string]struct{}{}
-	root := GetConfigRootDirPath()
+	root := filepath.Join(GetConfigRootDirPath(), profilesDirName)
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -214,10 +217,10 @@ func RenameProfile(oldName, newName string) error {
 		return profileError(ProfileErrorConflict, oldName, fmt.Errorf("profile %q is selected by local config %s; update that file before renaming the profile", oldName, resolved.Local.Path))
 	}
 
-	oldConfigDir := filepath.Join(GetConfigRootDirPath(), oldName)
-	oldCacheDir := filepath.Join(GetCacheRootDirPath(), oldName)
-	newConfigDir := filepath.Join(GetConfigRootDirPath(), newName)
-	newCacheDir := filepath.Join(GetCacheRootDirPath(), newName)
+	oldConfigDir := profileConfigDir(oldName)
+	oldCacheDir := profileCacheDir(oldName)
+	newConfigDir := profileConfigDir(newName)
+	newCacheDir := profileCacheDir(newName)
 
 	if !profileConfigDirExists(oldName) {
 		return profileError(ProfileErrorNotFound, oldName, fmt.Errorf("profile %q does not exist", oldName))
@@ -325,15 +328,15 @@ func saveActiveProfile(name string) error {
 }
 
 func profileConfigDir(name string) string {
-	return filepath.Join(GetConfigRootDirPath(), name)
+	return filepath.Join(GetConfigRootDirPath(), profilesDirName, name)
 }
 
 func profileCacheDir(name string) string {
-	return filepath.Join(GetCacheRootDirPath(), name)
+	return filepath.Join(GetCacheRootDirPath(), profilesDirName, name)
 }
 
 func profileConfigDirExists(name string) bool {
-	entries, err := os.ReadDir(GetConfigRootDirPath())
+	entries, err := os.ReadDir(filepath.Join(GetConfigRootDirPath(), profilesDirName))
 	if err != nil {
 		return false
 	}

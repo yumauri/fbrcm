@@ -4,7 +4,7 @@
   "args": ["auth", "delete", "gcloud-secondary", "--yes", "--json"],
   "expected_exit_code": 0,
   "expected_http": [],
-  "expected_state_files": [{"root": "config", "path": "default/auth-config.json"}],
+  "expected_state_files": [{"root": "config", "path": "profiles/default/auth-config.json"}],
   "json_output": true,
   "fixture": "auth_delete_variants",
   "offline": true

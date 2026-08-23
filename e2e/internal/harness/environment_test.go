@@ -60,7 +60,7 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 	if values["FBRCM_LOG_LEVEL"] != "warn" || values["FBRCM_LOG_NO_TIMESTAMP"] != "1" {
 		t.Fatalf("deterministic logging environment = %#v", values)
 	}
-	tokenPath := filepath.Join(values["FBRCM_CACHE_DIR"], "default", "auth", authID, "token.json")
+	tokenPath := filepath.Join(values["FBRCM_CACHE_DIR"], "profiles", "default", "auth", authID, "token.json")
 	raw, err := os.ReadFile(tokenPath)
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +72,7 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 	if token["access_token"] != "fixture-token" {
 		t.Fatalf("access token = %v", token["access_token"])
 	}
-	projectsPath := filepath.Join(values["FBRCM_CONFIG_DIR"], "default", "projects-config.json")
+	projectsPath := filepath.Join(values["FBRCM_CONFIG_DIR"], "profiles", "default", "projects-config.json")
 	if _, err := os.Stat(projectsPath); err != nil {
 		t.Fatal(err)
 	}
@@ -171,10 +171,10 @@ func TestApplyStateFixtureOverlaysEnvironmentRoots(t *testing.T) {
 	root := t.TempDir()
 	fixture := filepath.Join(root, "fixture")
 	for directory, filename := range map[string]string{
-		"config/default": "config.txt",
-		"cache/default":  "cache.txt",
-		"home":           "home.txt",
-		"work":           "work.txt",
+		"config/profiles/default": "config.txt",
+		"cache/profiles/default":  "cache.txt",
+		"home":                    "home.txt",
+		"work":                    "work.txt",
 	} {
 		path := filepath.Join(fixture, directory)
 		if err := os.MkdirAll(path, 0o700); err != nil {
@@ -196,8 +196,8 @@ func TestApplyStateFixtureOverlaysEnvironmentRoots(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, path := range []string{
-		filepath.Join(root, "config", "default", "config.txt"),
-		filepath.Join(root, "cache", "default", "cache.txt"),
+		filepath.Join(root, "config", "profiles", "default", "config.txt"),
+		filepath.Join(root, "cache", "profiles", "default", "cache.txt"),
 		filepath.Join(root, "home", "home.txt"),
 		filepath.Join(root, "work", "work.txt"),
 	} {

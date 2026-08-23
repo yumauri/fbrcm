@@ -16,8 +16,8 @@
   "fixture": "stateless_import",
   "expected_absent_state_paths": [
     {"root": "config", "path": "config.toml"},
-    {"root": "cache", "path": "default/remote-config"},
-    {"root": "cache", "path": "default/drafts"}
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "cache", "path": "profiles/default/drafts"}
   ],
   "envs": {"FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"},
   "json_output": true

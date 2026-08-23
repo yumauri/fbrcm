@@ -24,7 +24,7 @@
         "version": "12",
         "size": 12612,
         "cached_at": "2024-01-02T03:04:05Z",
-        "path": "<E2E_RUN_ROOT>/environment/cache/default/remote-config/northstar-wallet.12.json"
+        "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/northstar-wallet.12.json"
       },
       {
         "project_id": "server@northstar-wallet",
@@ -32,7 +32,7 @@
         "version": "3",
         "size": 493,
         "cached_at": "2024-01-01T02:03:04Z",
-        "path": "<E2E_RUN_ROOT>/environment/cache/default/remote-config/server@northstar-wallet.3.json"
+        "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/server@northstar-wallet.3.json"
       }
     ]
   },

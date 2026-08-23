@@ -6,7 +6,7 @@
   "expected_http": [],
   "expected_state_files": [{
     "root": "cache",
-    "path": "default/drafts/northstar-wallet.json",
+    "path": "profiles/default/drafts/northstar-wallet.json",
     "json_replacements": {"/updated_at": "<E2E_UPDATED_AT>"}
   }],
   "json_output": true,
