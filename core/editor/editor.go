@@ -11,6 +11,8 @@ import (
 	"github.com/yumauri/fbrcm/core/env"
 )
 
+const editorFileEnv = "FBRCM_EDITOR_FILE"
+
 // Resolve returns the first configured editor command. Explicit takes
 // precedence over the environment and may be empty.
 func Resolve(explicit string) string {
@@ -35,5 +37,10 @@ func Command(editorCommand, path string) *exec.Cmd {
 	if shell == "" {
 		shell = "/bin/sh"
 	}
-	return exec.Command(shell, "-c", `exec `+editorCommand+` "$1"`, "fbrcm-editor", path)
+	process := exec.Command(shell, "-c", `exec `+editorCommand+` "$`+editorFileEnv+`"`)
+	// POSIX shells expose arguments following -c as $0/$1, while fish exposes
+	// them through $argv. An environment variable gives both shell families the
+	// same safely quoted path expression.
+	process.Env = append(os.Environ(), editorFileEnv+"="+path)
+	return process
 }
