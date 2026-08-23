@@ -15,9 +15,6 @@ import (
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
-		return m, tea.Quit
-	}
 	switch msg := msg.(type) {
 	case core.OAuthAuthorizationEvent:
 		return m.updateOAuthAuthorizationEvent(msg)
@@ -39,6 +36,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.logs, cmd = m.logs.Update(msg)
 		return m, cmd
+	}
+	if m.aboutOpen {
+		next, cmd, handled := m.updateAbout(msg)
+		m = next
+		if handled {
+			return next, cmd
+		}
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionForceQuit, keyMsg.String()) {
+		return m, tea.Quit
 	}
 	if ready, ok := msg.(setup.WorkspaceReadyMsg); ok {
 		var cmds []tea.Cmd

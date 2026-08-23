@@ -55,7 +55,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		tui.Init(svc)
+		tui.Init(svc, version, commit, date)
 	} else {
 		cli.Init(svc, version, commit, date)
 	}

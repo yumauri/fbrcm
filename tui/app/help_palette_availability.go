@@ -18,7 +18,7 @@ func (m Model) helpPaletteActions() []helpPaletteAction {
 			actions[i].group = helpPaletteBlockTitle(active)
 		}
 		actions[i].enabled, actions[i].reason = m.helpPaletteActionAvailability(actions[i])
-		if len(actions[i].keys) == 0 {
+		if len(actions[i].keys) == 0 && !actions[i].paletteOnly {
 			actions[i].enabled = false
 			actions[i].reason = "shortcut is unbound or has a key conflict"
 		}
@@ -135,6 +135,8 @@ func (m Model) sharedHelpActionAvailability(active tuiconfig.Block, action tuico
 
 func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	switch action {
+	case tuiconfig.ActionAbout:
+		return true, ""
 	case tuiconfig.ActionAccounts, tuiconfig.ActionProfiles:
 		if m.setup.IsOpen() {
 			if active, ok := m.setup.HelpBlock(); ok {

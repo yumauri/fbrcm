@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	helpPaletteBorderStyle   = lipgloss.NewStyle().Foreground(styles.PaletteBlueBright)
 	helpPaletteGroupStyle    = styles.FilterText.Bold(true)
 	helpPaletteDisabledStyle = styles.PanelMuted.Italic(true)
 )
@@ -36,11 +35,11 @@ func (m Model) helpPaletteView() string {
 
 	lines := []string{helpPaletteTopBorder(contentWidth)}
 	for range viewutil.PopupPaddingTop {
-		lines = append(lines, helpPaletteLine("", contentWidth))
+		lines = append(lines, popupLine("", contentWidth))
 	}
-	lines = append(lines, helpPaletteLine(search, contentWidth), helpPaletteSeparator(contentWidth))
+	lines = append(lines, popupLine(search, contentWidth), popupSeparator(contentWidth))
 	lines = append(lines, m.helpPaletteActionLines(actions, listHeight, contentWidth)...)
-	lines = append(lines, helpPaletteSeparator(contentWidth))
+	lines = append(lines, popupSeparator(contentWidth))
 	status := "Select an action to see what it does"
 	if len(actions) > 0 && m.helpPalette.cursor >= 0 && m.helpPalette.cursor < len(actions) {
 		selected := actions[m.helpPalette.cursor]
@@ -49,9 +48,9 @@ func (m Model) helpPaletteView() string {
 			status += " Unavailable: " + selected.reason
 		}
 	}
-	lines = append(lines, helpPaletteLine(styles.PanelMuted.Render(status), contentWidth))
+	lines = append(lines, popupLine(styles.PanelMuted.Render(status), contentWidth))
 	footer := m.helpPaletteFooter(contentWidth)
-	lines = append(lines, helpPaletteLine(footer, contentWidth), helpPaletteBottomBorder(contentWidth))
+	lines = append(lines, popupLine(footer, contentWidth), popupBottomBorder(contentWidth))
 	return strings.Join(lines, "\n")
 }
 
@@ -73,9 +72,9 @@ func (m Model) helpPaletteFooter(width int) string {
 
 func (m Model) helpPaletteActionLines(actions []helpPaletteAction, height, width int) []string {
 	if len(actions) == 0 {
-		lines := []string{helpPaletteLine(styles.PanelMuted.Italic(true).Render("No matching actions"), width)}
+		lines := []string{popupLine(styles.PanelMuted.Italic(true).Render("No matching actions"), width)}
 		for len(lines) < height {
-			lines = append(lines, helpPaletteLine("", width))
+			lines = append(lines, popupLine("", width))
 		}
 		return lines
 	}
@@ -93,10 +92,10 @@ func (m Model) helpPaletteActionLines(actions []helpPaletteAction, height, width
 			group = item.group
 		}
 		previousGroup = item.group
-		lines = append(lines, helpPaletteLine(renderHelpPaletteAction(item, group, index == m.helpPalette.cursor, width), width))
+		lines = append(lines, popupLine(renderHelpPaletteAction(item, group, index == m.helpPalette.cursor, width), width))
 	}
 	for len(lines) < height {
-		lines = append(lines, helpPaletteLine("", width))
+		lines = append(lines, popupLine("", width))
 	}
 	return lines
 }
@@ -130,24 +129,9 @@ func renderHelpPaletteAction(item helpPaletteAction, group string, selected bool
 }
 
 func helpPaletteTopBorder(width int) string {
-	frameInner := viewutil.PopupInnerWidth(width)
 	hint := tuiconfig.ActionKeyHint(tuiconfig.BlockGlobal, tuiconfig.ActionHelp)
 	if len([]rune(hint)) > 1 {
 		hint += " "
 	}
-	title, titleWidth := styles.PanelHeaderTab(hint, "Actions", true, true, max(frameInner-1, 0))
-	fill := max(frameInner-titleWidth-1, 0)
-	return helpPaletteBorderStyle.Render("╭─") + title + helpPaletteBorderStyle.Render(strings.Repeat("─", fill)+"╮")
-}
-
-func helpPaletteSeparator(width int) string {
-	return helpPaletteBorderStyle.Render("├" + strings.Repeat("─", viewutil.PopupInnerWidth(width)) + "┤")
-}
-
-func helpPaletteBottomBorder(width int) string {
-	return helpPaletteBorderStyle.Render("╰" + strings.Repeat("─", viewutil.PopupInnerWidth(width)) + "╯")
-}
-
-func helpPaletteLine(content string, width int) string {
-	return helpPaletteBorderStyle.Render("│") + viewutil.PopupContentLine(content, width) + helpPaletteBorderStyle.Render("│")
+	return popupTopBorder(hint, "Actions", width)
 }

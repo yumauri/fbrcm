@@ -35,13 +35,12 @@ import (
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/about"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
-
-const versionTemplate = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`
 
 func isProfileCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "profile" || strings.HasPrefix(cmd.CommandPath(), "fbrcm profile")
@@ -188,8 +187,8 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return shared.InvalidArgument(err) })
 	rootCmd.SetOut(progress.StopWriter(os.Stdout))
 	rootCmd.SetErr(progress.StopWriter(os.Stderr))
-	rootCmd.Version = fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
-	rootCmd.SetVersionTemplate(versionTemplate)
+	rootCmd.Version = (about.BuildInfo{Version: version, Commit: commit, Date: date}).Metadata()
+	rootCmd.SetVersionTemplate(buildVersionTemplate())
 	profileDefault, _ := env.LookupTrimmed(env.Profile)
 	rootCmd.PersistentFlags().String("profile", profileDefault, "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)")
 	rootCmd.PersistentFlags().Bool("stateless", false, "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)")

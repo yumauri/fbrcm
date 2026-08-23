@@ -42,8 +42,8 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if first.Version != "1.2.3 (commit abc123, built 2026-06-14)" {
 		t.Fatalf("version = %q, want formatted version", first.Version)
 	}
-	if first.VersionTemplate() != versionTemplate {
-		t.Fatalf("version template = %q, want package template", first.VersionTemplate())
+	if first.VersionTemplate() != buildVersionTemplate() {
+		t.Fatalf("version template = %q, want branded version template", first.VersionTemplate())
 	}
 	if len(first.Commands()) != len(second.Commands()) {
 		t.Fatalf("command counts differ: %d vs %d", len(first.Commands()), len(second.Commands()))

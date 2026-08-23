@@ -160,6 +160,15 @@ func TestDefaultKeyMapIncludesHelpPaletteBindings(t *testing.T) {
 	}
 }
 
+func TestAboutHasNoDirectKeyBinding(t *testing.T) {
+	if _, ok := DefaultKeyMap()[BlockGlobal][ActionAbout]; ok {
+		t.Fatal("About has a direct global key binding")
+	}
+	if keys := Keys(BlockGlobal, ActionAbout); len(keys) != 0 {
+		t.Fatalf("About keys = %v, want none", keys)
+	}
+}
+
 func TestDefaultKeyMapIncludesWorkspaceMenuBindings(t *testing.T) {
 	if got := DefaultKeyMap()[BlockGlobal][ActionWorkspaceMenu]; len(got) != 1 || got[0] != "\\" {
 		t.Fatalf("workspace menu action = %v, want [\\\\]", got)

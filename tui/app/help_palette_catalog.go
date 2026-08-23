@@ -16,6 +16,7 @@ type helpPaletteAction struct {
 	keys        []string
 	enabled     bool
 	reason      string
+	paletteOnly bool
 }
 
 var helpPaletteBlockOrder = []tuiconfig.Block{
@@ -54,6 +55,9 @@ func helpPaletteCatalog() []helpPaletteAction {
 		for action := range defaults[block] {
 			actions = append(actions, action)
 		}
+		if block == tuiconfig.BlockGlobal {
+			actions = append(actions, tuiconfig.ActionAbout)
+		}
 		slices.SortFunc(actions, func(left, right tuiconfig.Action) int {
 			if byTitle := strings.Compare(helpPaletteActionTitle(block, left), helpPaletteActionTitle(block, right)); byTitle != 0 {
 				return byTitle
@@ -68,6 +72,7 @@ func helpPaletteCatalog() []helpPaletteAction {
 				group:       helpPaletteBlockTitle(block),
 				title:       title,
 				description: helpPaletteActionDescription(block, action, title),
+				paletteOnly: action == tuiconfig.ActionAbout,
 			})
 		}
 	}
@@ -335,6 +340,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 	}
 	if block == tuiconfig.BlockGlobal {
 		switch action {
+		case tuiconfig.ActionAbout:
+			return "About fbrcm"
 		case tuiconfig.ActionAccounts:
 			return "Open accounts"
 		case tuiconfig.ActionProfiles:
@@ -464,6 +471,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 
 func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action, title string) string {
 	switch action {
+	case tuiconfig.ActionAbout:
+		return "Show fbrcm version, build, and author information."
 	case tuiconfig.ActionQuit:
 		return "Quit fbrcm, prompting before discarding unsaved Details changes."
 	case tuiconfig.ActionForceQuit:

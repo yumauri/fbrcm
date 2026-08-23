@@ -65,6 +65,9 @@ func (m Model) mouseMode() tea.MouseMode {
 	if m.helpPalette.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
+	if m.aboutOpen {
+		return tea.MouseModeAllMotion
+	}
 	if m.setup.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
@@ -137,7 +140,7 @@ func (m Model) workspacePanelView(popupOpen bool) string {
 }
 
 func (m Model) popupWindowOpen() bool {
-	return m.helpPalette.IsOpen() || m.contextOverlayOpen()
+	return m.helpPalette.IsOpen() || m.aboutOpen || m.contextOverlayOpen()
 }
 
 func (m Model) contextOverlayOpen() bool {
@@ -171,6 +174,7 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendOAuthDialogLayer(layers)
 	layers = m.appendOfflineLayer(layers)
 	layers = m.appendHelpPaletteLayer(layers)
+	layers = m.appendAboutLayer(layers)
 	layers = m.appendProfileLayer(layers)
 	return layers
 }
@@ -240,7 +244,7 @@ func (m Model) appendSetupLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	if !m.setup.IsOpen() || !m.setup.IsPopup() {
 		return layers
 	}
-	focused := !m.helpPalette.IsOpen() && !m.dialog.IsOpen() && !m.oauthDialog.IsOpen() && !m.renameInput.IsOpen()
+	focused := !m.helpPalette.IsOpen() && !m.aboutOpen && !m.dialog.IsOpen() && !m.oauthDialog.IsOpen() && !m.renameInput.IsOpen()
 	view := m.setup.PopupViewWithFocus(m.width, m.height, focused)
 	return append(layers, lipgloss.NewLayer(view).
 		ID("accounts-profiles").
@@ -258,6 +262,19 @@ func (m Model) appendHelpPaletteLayer(layers []*lipgloss.Layer) []*lipgloss.Laye
 		ID("help-palette").
 		X(max((m.width-lipgloss.Width(view))/2, 0)).
 		Y(max((m.height-lipgloss.Height(view))/2, 0)).
+		Z(100))
+}
+
+func (m Model) appendAboutLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.aboutOpen {
+		return layers
+	}
+	view := m.aboutView()
+	x, y := m.aboutPosition()
+	return append(layers, lipgloss.NewLayer(view).
+		ID("about").
+		X(x).
+		Y(y).
 		Z(100))
 }
 

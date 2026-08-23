@@ -5,6 +5,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/about"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/authpicker"
 	boolpicker "github.com/yumauri/fbrcm/tui/components/boolpicker"
@@ -47,6 +48,8 @@ type Model struct {
 	logsSaved        int
 	help             help.Model
 	helpPalette      helpPaletteModel
+	aboutOpen        bool
+	buildInfo        about.BuildInfo
 	setup            setup.Model
 	active           panels.ID
 	parametersTab    panels.ID
@@ -145,7 +148,14 @@ type profileRenameSession struct {
 }
 
 func New(svc *core.Core) Model {
-	return newModel(svc, nil)
+	return NewWithBuildInfo(svc, about.BuildInfo{Version: "dev", Commit: "none", Date: "unknown"})
+}
+
+// NewWithBuildInfo creates the TUI model with release metadata for About.
+func NewWithBuildInfo(svc *core.Core, buildInfo about.BuildInfo) Model {
+	m := newModel(svc, nil)
+	m.buildInfo = buildInfo
+	return m
 }
 
 func newModel(svc *core.Core, oauthEvents chan core.OAuthAuthorizationEvent) Model {

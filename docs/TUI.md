@@ -37,6 +37,14 @@ The active profile appears in the upper-right corner. Press `?` anywhere to open
 the searchable action palette. It uses the effective key configuration, hides
 irrelevant actions, and explains why an action is unavailable.
 
+Search for **About fbrcm** in the Actions palette and press `Enter` (or
+double-click it) to open the centered About popup. About has no direct keyboard
+shortcut. It shows the same logo, release version, commit, build date, and
+author information as `fbrcm -v`. Its dimensions remain fixed while terminal
+resizes recenter it. Any non-quit key press is consumed while closing the
+popup; `q` and `Ctrl+C` retain their normal application quit behavior. A mouse
+click inside or outside the popup also closes it.
+
 ## Setup and authentication
 
 When the active profile has neither authentication nor cached projects, the TUI

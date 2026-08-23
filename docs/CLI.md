@@ -353,7 +353,10 @@ All commands support `--help`. Root also supports `--version`. With `--json`,
 implicit `--help`/`-h` is represented by the separate `help` operation and its
 invocation and response schemas, rather than being repeated in every command's
 option schema. Version text uses the root response schema, and the root
-capability publishes both `--version` and its `-v` alias.
+capability publishes both `--version` and its `-v` alias. Human version output
+starts with a Firebase-colored `fbrcm` text logo and ends with the author's
+contact information. `NO_COLOR` removes the logo styling; JSON version text is
+always unstyled.
 
 CLI invocations do not perform a startup connectivity probe. When
 `FBRCM_OFFLINE` is unset, CLI commands make only the network requests declared
@@ -791,7 +794,7 @@ Flags:
 
 ```text
 -h, --help                  show root help
--v, --version               print version, commit, and build date
+-v, --version               print logo, version, commit, build date, and author
     --profile <name>        use an existing profile for this invocation without changing the active profile
     --stateless             use profileless authentication for a supported command
     --no-local-config       ignore repository configuration

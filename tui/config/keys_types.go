@@ -38,6 +38,7 @@ const (
 	ActionQuit      Action = "quit"
 	ActionForceQuit Action = "force_quit"
 	ActionHelp      Action = "help"
+	ActionAbout     Action = "about"
 	ActionAccounts  Action = "accounts"
 	ActionProfiles  Action = "profiles"
 

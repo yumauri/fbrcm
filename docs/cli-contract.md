@@ -27,8 +27,9 @@ JSON mode writes exactly one JSON document followed by one newline to stdout,
 including for Cobra parsing failures and startup failures. It never writes a
 table, unwrapped usage text, progress UI, a prompt, or a second JSON document
 to stdout. Explicit or implicit help places generated help text in `data.text`
-under the `help` response schema. Root `--version` places its generated text in
-`data.text` under the root response schema.
+under the `help` response schema. Root `--version` places its generated logo,
+build metadata, and author contact text in `data.text` under the root response
+schema without terminal styling.
 Invoking a non-executable command group without a subcommand is also help and
 uses the `help` response schema. An invalid subcommand below a group is an
 argument failure under the published root response schema; it never advertises
