@@ -81,7 +81,7 @@ scoop install fbrcm
 
 Download an archive from
 [GitHub Releases](https://github.com/yumauri/fbrcm/releases), or install from
-source with Go 1.26.6 or newer:
+source with Go 1.27.0 or newer:
 
 ```sh
 go install github.com/yumauri/fbrcm@latest
@@ -263,7 +263,7 @@ fbrcm projects promote --help
 
 ## Build from source
 
-The module currently requires Go 1.26.6 or newer:
+The module currently requires Go 1.27.0 or newer:
 
 ```sh
 git clone https://github.com/yumauri/fbrcm.git

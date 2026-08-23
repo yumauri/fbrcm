@@ -78,12 +78,10 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 }
 
 func withAuthFailureID(authID string, err error) error {
-	var authentication *firebase.AuthenticationError
-	if errors.As(err, &authentication) {
+	if authentication, ok := errors.AsType[*firebase.AuthenticationError](err); ok {
 		return &AuthError{Kind: authentication.Kind, AuthID: authID, Err: err}
 	}
-	var quotaProject *firebase.QuotaProjectError
-	if errors.As(err, &quotaProject) {
+	if quotaProject, ok := errors.AsType[*firebase.QuotaProjectError](err); ok {
 		if quotaProject.Source == firebase.QuotaProjectSourceCredentials {
 			authentication := &firebase.AuthenticationError{
 				Kind:      firebase.AuthenticationCredentialsInvalid,

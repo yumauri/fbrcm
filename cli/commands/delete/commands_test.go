@@ -19,8 +19,7 @@ func TestReadDeleteOptionsRejectsBlankPositionalParameterOnlyWhenSupplied(t *tes
 	if _, err := readDeleteOptions(cmd, []string{" \t "}); err == nil {
 		t.Fatal("readDeleteOptions accepted a whitespace-only positional parameter")
 	} else {
-		var argument *shared.ArgumentError
-		if !errors.As(err, &argument) {
+		if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
 			t.Fatalf("blank positional error = %T, want ArgumentError", err)
 		}
 	}

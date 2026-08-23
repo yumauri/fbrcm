@@ -37,7 +37,7 @@ func main() {
 	}
 	defer func() { _ = os.RemoveAll(stageRoot) }()
 	goldenDir := filepath.Join(stageRoot, "cli", "app", "testdata")
-	major := strings.SplitN(contract.Version, ".", 2)[0]
+	major, _, _ := strings.Cut(contract.Version, ".")
 	goldenName := "contract_v" + major + "_capabilities.golden.json"
 	detailedGoldenName := "contract_v" + major + "_capabilities_detailed.golden.json"
 	write(goldenDir, goldenName, index)
@@ -178,7 +178,7 @@ type publishItem struct {
 }
 
 func publishGeneratedContract(stageRoot string) error {
-	major := strings.SplitN(contract.Version, ".", 2)[0]
+	major, _, _ := strings.Cut(contract.Version, ".")
 	items := []publishItem{
 		{staged: filepath.Join(stageRoot, "schemas", "cli", contract.Version), target: filepath.Join("schemas", "cli", contract.Version)},
 		{staged: filepath.Join(stageRoot, "cli", "app", "testdata", "contract_v"+major+"_capabilities.golden.json"), target: filepath.Join("cli", "app", "testdata", "contract_v"+major+"_capabilities.golden.json")},

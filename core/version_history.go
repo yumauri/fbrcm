@@ -113,7 +113,7 @@ func (s *Core) ListRemoteConfigVersions(ctx context.Context, projectID string, o
 			if !opts.Until.IsZero() && !snapshot.Cache.CachedAt.Before(opts.Until) {
 				continue
 			}
-			entry := RemoteConfigVersionEntry{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: snapshot.Version}, Current: snapshot.Version == current, Cached: true, CachedAt: snapshot.Cache.CachedAt, Size: snapshot.Size, Path: snapshot.Path}
+			entry := RemoteConfigVersionEntry{VersionNumber: snapshot.Version, Current: snapshot.Version == current, Cached: true, CachedAt: snapshot.Cache.CachedAt, Size: snapshot.Size, Path: snapshot.Path}
 			if cfg, parseErr := firebase.ParseRemoteConfig(snapshot.Cache.RemoteConfig); parseErr == nil {
 				entry.RemoteConfigVersion = cfg.Version
 			}

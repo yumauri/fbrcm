@@ -249,16 +249,14 @@ func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Cor
 			result.Status = RemoteMutationConflict
 			result.Err = &machine.ConflictError{Code: "remote_config.conflict", Resource: "remote_config", Target: project.ProjectID, Retryable: true, Err: fmt.Errorf("remote config changed during %s; rerun the command to review a fresh candidate", operation)}
 		case err != nil:
-			var hookPublishErr *core.RemoteConfigPublishedHookError
-			var cacheErr *core.RemoteConfigPublishedCacheError
-			if errors.As(err, &hookPublishErr) {
+			if _, ok := errors.AsType[*core.RemoteConfigPublishedHookError](err); ok {
 				result.Status, result.Published, result.Err = RemoteMutationPublishedHookFailed, true, err
 				machine.FromContext(cmd.Context()).AddWarning(machine.Warning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the publication, but a post_publish hook failed.", Target: project.ProjectID, Details: struct {
 					Stage string `json:"stage"`
 				}{Stage: "post_publish_hook"}, Remediation: []machine.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: machine.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
 				totals.ModifiedProjects++
 				totals.ChangedParams += result.ChangedCount
-			} else if errors.As(err, &cacheErr) {
+			} else if _, ok := errors.AsType[*core.RemoteConfigPublishedCacheError](err); ok {
 				result.Status, result.Published, result.Err = RemoteMutationPublishedCacheFailed, true, err
 				selector, _ := rctarget.ExactFilter(project.ProjectID)
 				machine.FromContext(cmd.Context()).AddWarning(machine.Warning{Code: "publication.cache_stale", Message: "Firebase accepted the publication, but the local cache update failed.", Target: project.ProjectID, Details: struct {

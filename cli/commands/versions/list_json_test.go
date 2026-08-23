@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	"github.com/yumauri/fbrcm/core"
-	"github.com/yumauri/fbrcm/core/firebase"
 )
 
 func TestVersionListJSONIsPlainArray(t *testing.T) {
 	result := core.RemoteConfigVersionList{
 		Versions: []core.RemoteConfigVersionEntry{{
-			RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "42"},
-			Current:             true,
+			VersionNumber: "42",
+			Current:       true,
 		}},
 		NextPageToken: "next-page",
 	}

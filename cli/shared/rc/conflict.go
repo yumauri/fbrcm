@@ -13,8 +13,7 @@ func IsRemoteConfigConflict(err error) bool {
 		return false
 	}
 
-	var conflict *machine.ConflictError
-	if errors.As(err, &conflict) {
+	if _, ok := errors.AsType[*machine.ConflictError](err); ok {
 		return true
 	}
 	var apiErr *firebase.APIError

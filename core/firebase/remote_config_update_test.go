@@ -55,8 +55,7 @@ func TestChangeNoteContextNormalizesAndPreservesExplicitEmpty(t *testing.T) {
 	if _, err := WithChangeNote(context.Background(), "line one\nline two"); err == nil {
 		t.Fatal("multiline change note returned nil error")
 	} else {
-		var invalid *InvalidChangeNoteError
-		if !errors.As(err, &invalid) {
+		if _, ok := errors.AsType[*InvalidChangeNoteError](err); !ok {
 			t.Fatalf("multiline change note error = %T, want InvalidChangeNoteError", err)
 		}
 	}

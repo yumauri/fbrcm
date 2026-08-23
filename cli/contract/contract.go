@@ -504,13 +504,11 @@ func classifyCommandError(cmd *cobra.Command, command string, err error) (Proble
 
 func Classify(err error) Problem {
 	problem := Problem{Code: "internal.unclassified", Category: "internal", Message: shared.SafeErrorText(err), Retryable: false, Details: nil, Remediation: []Remediation{}}
-	var invalidChangeNote *firebase.InvalidChangeNoteError
-	if errors.As(err, &invalidChangeNote) {
+	if _, ok := errors.AsType[*firebase.InvalidChangeNoteError](err); ok {
 		problem.Code, problem.Category = "argument.invalid", "argument"
 		return problem
 	}
-	var invalidConfig *config.InvalidConfigurationError
-	if errors.As(err, &invalidConfig) {
+	if invalidConfig, ok := errors.AsType[*config.InvalidConfigurationError](err); ok {
 		problem.Code, problem.Category = "configuration.invalid", "configuration"
 		problem.Target = optionalString(invalidConfig.Path)
 		problem.Stage = optionalString(invalidConfig.Stage)
@@ -520,13 +518,11 @@ func Classify(err error) Problem {
 		}{Kind: "validation", Source: "configuration"}
 		return problem
 	}
-	var argument *shared.ArgumentError
-	if errors.As(err, &argument) {
+	if argument, ok := errors.AsType[*shared.ArgumentError](err); ok {
 		problem.Code, problem.Category = defaultString(argument.Code, "argument.invalid"), "argument"
 		return problem
 	}
-	var profile *config.ProfileError
-	if errors.As(err, &profile) {
+	if profile, ok := errors.AsType[*config.ProfileError](err); ok {
 		problem.Target = optionalString(profile.Profile)
 		switch profile.Kind {
 		case config.ProfileErrorInvalidArgument:
@@ -547,8 +543,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var versionLookup *core.RemoteConfigVersionLookupError
-	if errors.As(err, &versionLookup) {
+	if versionLookup, ok := errors.AsType[*core.RemoteConfigVersionLookupError](err); ok {
 		problem.Target = optionalString(versionLookup.ProjectID)
 		if versionLookup.Kind == "invalid_argument" {
 			problem.Code, problem.Category = "argument.invalid", "argument"
@@ -558,14 +553,12 @@ func Classify(err error) Problem {
 		problem.Details = SelectionDetails{Kind: "selection", Resource: "version", Query: versionLookup.Selector, Candidates: []SelectionCandidate{}}
 		return problem
 	}
-	var managedResource *firebase.ManagedFeatureResourceError
-	if errors.As(err, &managedResource) {
+	if managedResource, ok := errors.AsType[*firebase.ManagedFeatureResourceError](err); ok {
 		problem.Code, problem.Category = "argument.invalid", "argument"
 		problem.Target = optionalString(managedResource.ItemID)
 		return problem
 	}
-	var managedLookup *core.ManagedFeatureLookupError
-	if errors.As(err, &managedLookup) {
+	if managedLookup, ok := errors.AsType[*core.ManagedFeatureLookupError](err); ok {
 		if managedLookup.Feature == "personalization" {
 			problem.Code, problem.Category = "personalization.not_found", "not_found"
 			problem.Target = optionalString(managedLookup.ProjectID)
@@ -573,14 +566,12 @@ func Classify(err error) Problem {
 			return problem
 		}
 	}
-	var projectLookup *core.ProjectLookupError
-	if errors.As(err, &projectLookup) {
+	if projectLookup, ok := errors.AsType[*core.ProjectLookupError](err); ok {
 		problem.Code, problem.Category = "project.not_found", "not_found"
 		problem.Details = SelectionDetails{Kind: "selection", Resource: "project", Query: projectLookup.Query, Candidates: []SelectionCandidate{}}
 		return problem
 	}
-	var interaction *shared.InteractionError
-	if errors.As(err, &interaction) {
+	if interaction, ok := errors.AsType[*shared.InteractionError](err); ok {
 		problem.Code, problem.Category = "interaction.required", "interaction"
 		problem.Retryable = false
 		problem.Details = struct {
@@ -594,8 +585,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var expression *shared.ExpressionError
-	if errors.As(err, &expression) {
+	if expression, ok := errors.AsType[*shared.ExpressionError](err); ok {
 		problem.Code, problem.Category = "expression.invalid", "validation"
 		problem.Target = optionalString(expression.Target)
 		problem.Details = struct {
@@ -605,8 +595,7 @@ func Classify(err error) Problem {
 		}{Kind: "expression", Expression: expression.Expression, Context: expression.Context}
 		return problem
 	}
-	var validation *shared.ValidationError
-	if errors.As(err, &validation) {
+	if validation, ok := errors.AsType[*shared.ValidationError](err); ok {
 		problem.Code, problem.Category = defaultString(validation.Code, "validation.failed"), "validation"
 		switch validation.Source {
 		case "profile":
@@ -624,10 +613,8 @@ func Classify(err error) Problem {
 		}{Kind: "validation", Source: validation.Source}
 		return problem
 	}
-	var authentication *firebase.AuthenticationError
-	if errors.As(err, &authentication) {
-		var authErr *core.AuthError
-		if errors.As(err, &authErr) {
+	if authentication, ok := errors.AsType[*firebase.AuthenticationError](err); ok {
+		if authErr, ok := errors.AsType[*core.AuthError](err); ok {
 			problem.Target = optionalString(authErr.AuthID)
 		}
 		if authentication.HTTPStatus > 0 {
@@ -664,8 +651,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var authErr *core.AuthError
-	if errors.As(err, &authErr) {
+	if authErr, ok := errors.AsType[*core.AuthError](err); ok {
 		problem.Target = optionalString(authErr.AuthID)
 		problem.Details = struct {
 			Kind string `json:"kind"`
@@ -682,8 +668,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var oauthInteraction *core.OAuthInteractionError
-	if errors.As(err, &oauthInteraction) {
+	if oauthInteraction, ok := errors.AsType[*core.OAuthInteractionError](err); ok {
 		problem.Code, problem.Category = "interaction.required", "interaction"
 		problem.Target = optionalString(oauthInteraction.AuthID)
 		problem.Details = struct {
@@ -693,8 +678,7 @@ func Classify(err error) Problem {
 		problem.Remediation = []Remediation{{Description: "authorize the auth identity in a human session", Strategy: shared.RemediationRunCommand, Argv: []string{"auth", "login", oauthInteraction.AuthID}}}
 		return problem
 	}
-	var conflict *shared.ConflictError
-	if errors.As(err, &conflict) {
+	if conflict, ok := errors.AsType[*shared.ConflictError](err); ok {
 		problem.Code, problem.Category = defaultString(conflict.Code, "resource.conflict"), "conflict"
 		problem.Retryable = conflict.Retryable
 		problem.Target = optionalString(conflict.Target)
@@ -705,8 +689,7 @@ func Classify(err error) Problem {
 		problem.Remediation = convertRemediation(conflict.Remediation)
 		return problem
 	}
-	var resolution *shared.SelectionError
-	if errors.As(err, &resolution) {
+	if resolution, ok := errors.AsType[*shared.SelectionError](err); ok {
 		resource := defaultString(resolution.Resource, "resource")
 		category, code := "not_found", resource+".not_found"
 		if resolution.Kind == "ambiguous" {
@@ -731,8 +714,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var missingGroups *importer.MissingGroupsError
-	if errors.As(err, &missingGroups) {
+	if missingGroups, ok := errors.AsType[*importer.MissingGroupsError](err); ok {
 		candidates := make([]SelectionCandidate, 0, len(missingGroups.Available))
 		for _, group := range missingGroups.Available {
 			candidates = append(candidates, SelectionCandidate{Name: group.Name, ID: group.Name})
@@ -743,8 +725,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var batch *shared.BatchError
-	if errors.As(err, &batch) {
+	if batch, ok := errors.AsType[*shared.BatchError](err); ok {
 		problem.Code = "batch.failed"
 		problem.Category = "internal"
 		failures := classifyBatchFailures(batch.Failures)
@@ -770,22 +751,19 @@ func Classify(err error) Problem {
 		problem.Code, problem.Category, problem.Retryable = "network.offline", "unavailable", true
 		return problem
 	}
-	var publishedHook *core.RemoteConfigPublishedHookError
-	if errors.As(err, &publishedHook) {
+	if publishedHook, ok := errors.AsType[*core.RemoteConfigPublishedHookError](err); ok {
 		problem.Code, problem.Category = "publication.hook_failed", "partial_success"
 		problem.Target = optionalString(publishedHook.ProjectID)
 		problem.Retryable = false
 		return problem
 	}
-	var publishedCache *core.RemoteConfigPublishedCacheError
-	if errors.As(err, &publishedCache) {
+	if publishedCache, ok := errors.AsType[*core.RemoteConfigPublishedCacheError](err); ok {
 		problem.Code, problem.Category = "publication.cache_failed", "partial_success"
 		problem.Target = optionalString(publishedCache.ProjectID)
 		problem.Retryable = false
 		return problem
 	}
-	var hookErr *corehooks.Error
-	if errors.As(err, &hookErr) {
+	if hookErr, ok := errors.AsType[*corehooks.Error](err); ok {
 		problem.Code, problem.Category = "hook.failed", "hook"
 		problem.Target = optionalString(hookErr.Command)
 		problem.Details = struct {
@@ -801,8 +779,7 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
-	var netErr net.Error
-	if errors.As(err, &netErr) {
+	if netErr, ok := errors.AsType[net.Error](err); ok {
 		problem.Code, problem.Category, problem.Retryable = "network.unavailable", "unavailable", true
 		if netErr.Timeout() {
 			problem.Code, problem.Category = "network.timeout", "timeout"
@@ -853,8 +830,7 @@ func Classify(err error) Problem {
 		}{Kind: "validation", Source: remoteValidation.Source}
 		return problem
 	}
-	var pathErr *os.PathError
-	if errors.As(err, &pathErr) {
+	if pathErr, ok := errors.AsType[*os.PathError](err); ok {
 		problem.Code, problem.Category = "file.io_failed", "io"
 		if errors.Is(err, os.ErrPermission) {
 			problem.Code, problem.Category = "filesystem.permission_denied", "permission"

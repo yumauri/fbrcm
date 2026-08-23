@@ -14,7 +14,7 @@ exactly and are sanitized before they are written.
 
 ## Requirements
 
-- Go 1.26.6 or newer, as declared by `e2e/go.mod`.
+- Go 1.27.0 or newer, as declared by `e2e/go.mod`.
 - Network access the first time Go downloads the E2E module dependencies.
 - No manual Hoverfly installation is required. Hoverfly is pinned as a Go tool
   dependency and the harness builds it automatically when `hoverfly` is not on

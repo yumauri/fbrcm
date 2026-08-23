@@ -261,7 +261,7 @@ func TestHistoryInvalidatesOnlyWhenPublishedVersionChanges(t *testing.T) {
 	m := New(nil)
 	m.projects = []projectState{{project: project, tree: &core.ParametersTree{Version: "8"}, cacheVersion: "8"}}
 	m.projectIndex[project.ProjectID] = 0
-	m.histories[project.ProjectID] = buildHistoryState(historyState{currentVersion: "8", current: &core.ParametersTree{Version: "8"}, versions: []core.RemoteConfigVersionEntry{{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "8"}}}})
+	m.histories[project.ProjectID] = buildHistoryState(historyState{currentVersion: "8", current: &core.ParametersTree{Version: "8"}, versions: []core.RemoteConfigVersionEntry{{VersionNumber: "8"}}})
 
 	m.invalidateHistoryIfVersionChanged(project.ProjectID)
 	if _, ok := m.histories[project.ProjectID]; !ok {
@@ -277,9 +277,9 @@ func TestHistoryInvalidatesOnlyWhenPublishedVersionChanges(t *testing.T) {
 func TestHistoryVersionSteppingUsesCachedPairs(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "3"},
+		{VersionNumber: "2"},
+		{VersionNumber: "1"},
 	}
 	pair := func(left, right string) historyPairData {
 		return historyPairData{previous: historyTestTree("p"), current: historyTestTree("p"), previousVersion: left, currentVersion: right}
@@ -301,9 +301,9 @@ func TestHistoryVersionSteppingUsesCachedPairs(t *testing.T) {
 
 func TestHistoryVersionKeysTargetCursorProject(t *testing.T) {
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "3"},
+		{VersionNumber: "2"},
+		{VersionNumber: "1"},
 	}
 	makeState := func() historyState {
 		state := buildHistoryState(historyState{previous: historyTestTree("p"), current: historyTestTree("p"), previousVersion: "2", currentVersion: "3", versions: versions})
@@ -346,9 +346,9 @@ func TestHistoryVersionKeysTargetCursorProject(t *testing.T) {
 func TestHistoryVersionPickerRendersAuthorsAlignedInsideCompleteBorder(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3", UpdateTime: "2026-07-13T12:34:56Z", UpdateUser: firebase.RemoteConfigUser{Email: "alice@example.com"}}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2", UpdateTime: "2026-07-12T11:22:33Z", UpdateUser: firebase.RemoteConfigUser{Name: "Bob Builder"}}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1", UpdateTime: "2026-07-11T10:20:30Z", ChangeNote: "Enable checkout v2 for production after final validation"}},
+		{VersionNumber: "3", UpdateTime: "2026-07-13T12:34:56Z", UpdateUser: firebase.RemoteConfigUser{Email: "alice@example.com"}},
+		{VersionNumber: "2", UpdateTime: "2026-07-12T11:22:33Z", UpdateUser: firebase.RemoteConfigUser{Name: "Bob Builder"}},
+		{VersionNumber: "1", UpdateTime: "2026-07-11T10:20:30Z", ChangeNote: "Enable checkout v2 for production after final validation"},
 	}
 	m := New(nil).SetBounds(0, 0, 90, 18)
 	m.projects = []projectState{{project: project, tree: historyTestTree("p")}}
@@ -501,9 +501,9 @@ func TestHistoryVersionPickerKeepsInactiveSideSelected(t *testing.T) {
 
 func TestHistoryVersionPickerBoundsDisableCrossedVersions(t *testing.T) {
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "3"},
+		{VersionNumber: "2"},
+		{VersionNumber: "1"},
 	}
 	if low, high := historyPickerBounds(len(versions), 2, 1, true); low != 1 || high != 2 {
 		t.Fatalf("left picker bounds = %d..%d, want 1..2", low, high)
@@ -516,9 +516,9 @@ func TestHistoryVersionPickerBoundsDisableCrossedVersions(t *testing.T) {
 func TestHistoryVersionPickerStagesBothSidesUntilEnter(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "3"},
+		{VersionNumber: "2"},
+		{VersionNumber: "1"},
 	}
 	state := buildHistoryState(historyState{
 		previous: historyTestTree("p"), current: historyTestTree("p"),
@@ -570,9 +570,9 @@ func TestHistoryVersionPickerStagesBothSidesUntilEnter(t *testing.T) {
 func TestHistoryVersionPickerRequestsRollbackForActiveHistoricalVersion(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}, Current: true},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "3", Current: true},
+		{VersionNumber: "2"},
+		{VersionNumber: "1"},
 	}
 	state := buildHistoryState(historyState{
 		previous: historyTestTree("p"), current: historyTestTree("p"),
@@ -618,9 +618,9 @@ func TestHistoryVersionPickerRequestsRollbackForActiveHistoricalVersion(t *testi
 func TestHistoryVersionPickerArrowSidesAndResetAppliesDefaultPair(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}, Current: true},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "3", Current: true},
+		{VersionNumber: "2"},
+		{VersionNumber: "1"},
 	}
 	state := buildHistoryState(historyState{
 		previous: historyTestTree("p"), current: historyTestTree("p"),
@@ -678,8 +678,8 @@ func TestHistoryVersionPickerScrollsProjectRowToFitMinimumHeight(t *testing.T) {
 	first := core.Project{ProjectID: "first", Name: "First"}
 	second := core.Project{ProjectID: "second", Name: "Second"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "3"}, Current: true},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}},
+		{VersionNumber: "3", Current: true},
+		{VersionNumber: "2"},
 	}
 	makeState := func(tree *core.ParametersTree) historyState {
 		return buildHistoryState(historyState{
@@ -730,8 +730,8 @@ func TestHistoryVersionPickerScrollsProjectRowToFitMinimumHeight(t *testing.T) {
 func TestHistoryVersionPickerKeepsBothTabsWhenVersionAnchorsAreClose(t *testing.T) {
 	project := core.Project{ProjectID: "demo", Name: "Demo"}
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "12", UpdateTime: "2026-07-13T12:34:56Z"}, Current: true},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "11", UpdateTime: "2026-07-12T11:22:33Z"}},
+		{VersionNumber: "12", UpdateTime: "2026-07-13T12:34:56Z", Current: true},
+		{VersionNumber: "11", UpdateTime: "2026-07-12T11:22:33Z"},
 	}
 	tree := historyTestTree(strings.Repeat("long_parameter_", 5))
 	m := New(nil).SetBounds(0, 0, 70, 18)
@@ -891,8 +891,8 @@ func TestHistoryChangesOnlyRendersResponsiveBorderStatusAndEmptyState(t *testing
 	previous := historyTreeWithParameters(core.ParametersEntry{Key: "same"})
 	current := historyTreeWithParameters(core.ParametersEntry{Key: "same"})
 	versions := []core.RemoteConfigVersionEntry{
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "2"}, Current: true},
-		{RemoteConfigVersion: firebase.RemoteConfigVersion{VersionNumber: "1"}},
+		{VersionNumber: "2", Current: true},
+		{VersionNumber: "1"},
 	}
 	m := New(nil).SetBounds(0, 0, 120, 12)
 	m.history = true
@@ -926,7 +926,7 @@ func TestHistoryChangesOnlyRendersResponsiveBorderStatusAndEmptyState(t *testing
 	}
 
 	m = m.SetBounds(0, 0, 34, 10)
-	narrowTop := strings.Split(ansi.Strip(m.ViewWithBorder(true, true)), "\n")[0]
+	narrowTop, _, _ := strings.Cut(ansi.Strip(m.ViewWithBorder(true, true)), "\n")
 	if !strings.Contains(narrowTop, "Δ") {
 		t.Fatalf("narrow history border dropped the compact mode indicator: %q", narrowTop)
 	}

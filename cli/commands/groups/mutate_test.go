@@ -21,8 +21,7 @@ func TestReadDescriptionEditTreatsExplicitFalseAsAbsent(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := readDescriptionEdit(cmd)
-	var argument *shared.ArgumentError
-	if !errors.As(err, &argument) {
+	if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
 		t.Fatalf("readDescriptionEdit error = %v, want ArgumentError", err)
 	}
 }
@@ -60,8 +59,7 @@ func TestReadDescriptionEditRejectsTruthyRemovalWithDescription(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := readDescriptionEdit(cmd)
-	var argument *shared.ArgumentError
-	if !errors.As(err, &argument) {
+	if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
 		t.Fatalf("readDescriptionEdit error = %v, want ArgumentError", err)
 	}
 }

@@ -25,16 +25,14 @@ func TestManagedFeatureDetailsRenderKnownAPIData(t *testing.T) {
 			data: &messages.ManagedFeatureViewData{
 				Kind: messages.ManagedFeatureExperiment, Project: project,
 				Experiment: &core.ExperimentEntry{
-					Experiment: firebase.Experiment{
-						Name:    "projects/123/namespaces/firebase/experiments/exp-1",
-						State:   "RUNNING",
-						EndTime: "1970-01-01T00:00:00Z",
-						Definition: firebase.ExperimentDefinition{
-							DisplayName: "Passkey signup",
-							Variants:    []firebase.ExperimentVariant{{Name: "Baseline", Weight: 1}},
-							Objectives: firebase.ExperimentObjectives{
-								ActivationEvent: firebase.ExperimentActivationEvent{Event: "app_open"},
-							},
+					Name:    "projects/123/namespaces/firebase/experiments/exp-1",
+					State:   "RUNNING",
+					EndTime: "1970-01-01T00:00:00Z",
+					Definition: firebase.ExperimentDefinition{
+						DisplayName: "Passkey signup",
+						Variants:    []firebase.ExperimentVariant{{Name: "Baseline", Weight: 1}},
+						Objectives: firebase.ExperimentObjectives{
+							ActivationEvent: firebase.ExperimentActivationEvent{Event: "app_open"},
 						},
 					},
 					References: []core.ManagedValueReference{{
@@ -69,11 +67,9 @@ func TestManagedFeatureDetailsRenderKnownAPIData(t *testing.T) {
 				Kind: messages.ManagedFeatureRollout, Project: project,
 				Template: core.ManagedFeatureTemplate{Version: "13", Source: "remote"},
 				Rollout: &core.RolloutEntry{
-					Rollout: firebase.Rollout{
-						Name:       "projects/123/namespaces/firebase/rollouts/rollout-1",
-						State:      "RUNNING",
-						Definition: firebase.RolloutDefinition{DisplayName: "Funding rollout"},
-					},
+					Name:       "projects/123/namespaces/firebase/rollouts/rollout-1",
+					State:      "RUNNING",
+					Definition: firebase.RolloutDefinition{DisplayName: "Funding rollout"},
 					References: []core.ManagedValueReference{{
 						Group: "onboarding", Parameter: "funding_minimum", Default: true,
 						ValueType: "NUMBER", Value: new("20"), Percentage: new(10.0),
@@ -135,14 +131,14 @@ func TestManagedFeatureDetailsColorState(t *testing.T) {
 			name:  "experiment",
 			state: "RUNNING",
 			lines: appendExperimentDetails(nil, 80, core.ManagedFeatureTemplate{}, &core.ExperimentEntry{
-				Experiment: firebase.Experiment{State: "RUNNING"},
+				State: "RUNNING",
 			}),
 		},
 		{
 			name:  "rollout",
 			state: "PENDING",
 			lines: appendRolloutDetails(nil, 80, core.ManagedFeatureTemplate{}, &core.RolloutEntry{
-				Rollout: firebase.Rollout{State: "PENDING"},
+				State: "PENDING",
 			}),
 		},
 	}
@@ -164,19 +160,15 @@ func TestManagedFeatureDetailsFormatAllDatesInLocalTime(t *testing.T) {
 	})
 
 	experimentLines := appendExperimentDetails(nil, 80, core.ManagedFeatureTemplate{}, &core.ExperimentEntry{
-		Experiment: firebase.Experiment{
-			StartTime:      "2026-07-28T07:25:18.123Z",
-			EndTime:        "2026-07-28T08:26:19Z",
-			LastUpdateTime: "2026-07-28T09:27:20Z",
-		},
+		StartTime:      "2026-07-28T07:25:18.123Z",
+		EndTime:        "2026-07-28T08:26:19Z",
+		LastUpdateTime: "2026-07-28T09:27:20Z",
 	})
 	rolloutLines := appendRolloutDetails(nil, 80, core.ManagedFeatureTemplate{}, &core.RolloutEntry{
-		Rollout: firebase.Rollout{
-			CreateTime:     "2026-07-29T01:02:03Z",
-			StartTime:      "2026-07-29T02:03:04Z",
-			EndTime:        "2026-07-29T03:04:05Z",
-			LastUpdateTime: "2026-07-29T04:05:06Z",
-		},
+		CreateTime:     "2026-07-29T01:02:03Z",
+		StartTime:      "2026-07-29T02:03:04Z",
+		EndTime:        "2026-07-29T03:04:05Z",
+		LastUpdateTime: "2026-07-29T04:05:06Z",
 	})
 
 	rendered := ansi.Strip(strings.Join(append(experimentLines, rolloutLines...), "\n"))

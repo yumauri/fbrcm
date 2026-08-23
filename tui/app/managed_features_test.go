@@ -28,10 +28,8 @@ func TestManagedFeatureSelectionOpensReadOnlyDetailsAndReturnsToItsTab(t *testin
 			Kind:    messages.ManagedFeatureExperiment,
 			Project: core.Project{Name: "Demo", ProjectID: "demo"},
 			Experiment: &core.ExperimentEntry{
-				Experiment: firebase.Experiment{
-					Name:       "projects/123/namespaces/firebase/experiments/exp-1",
-					Definition: firebase.ExperimentDefinition{DisplayName: "Signup"},
-				},
+				Name:       "projects/123/namespaces/firebase/experiments/exp-1",
+				Definition: firebase.ExperimentDefinition{DisplayName: "Signup"},
 			},
 		},
 	})
@@ -78,10 +76,8 @@ func TestManagedFeatureDetailsOpenFromListThenRefreshExactResource(t *testing.T)
 				return &messages.ManagedFeatureViewData{
 					Kind: messages.ManagedFeatureExperiment, Project: project,
 					Experiment: &core.ExperimentEntry{
-						Experiment: firebase.Experiment{
-							Name:       "projects/123/namespaces/firebase/experiments/exp-1",
-							Definition: firebase.ExperimentDefinition{DisplayName: "Cached experiment"},
-						},
+						Name:       "projects/123/namespaces/firebase/experiments/exp-1",
+						Definition: firebase.ExperimentDefinition{DisplayName: "Cached experiment"},
 					},
 				}
 			},
@@ -107,10 +103,8 @@ func TestManagedFeatureDetailsOpenFromListThenRefreshExactResource(t *testing.T)
 				return &messages.ManagedFeatureViewData{
 					Kind: messages.ManagedFeatureRollout, Project: project,
 					Rollout: &core.RolloutEntry{
-						Rollout: firebase.Rollout{
-							Name:       "projects/123/namespaces/firebase/rollouts/rollout-1",
-							Definition: firebase.RolloutDefinition{DisplayName: "Cached rollout"},
-						},
+						Name:       "projects/123/namespaces/firebase/rollouts/rollout-1",
+						Definition: firebase.RolloutDefinition{DisplayName: "Cached rollout"},
 						References: []core.ManagedValueReference{{Parameter: "funding"}},
 					},
 				}
@@ -179,10 +173,8 @@ func TestManagedFeatureDetailsIgnoreLateRefreshForAnotherSelection(t *testing.T)
 	m.details = m.details.SetManagedFeatureData(&messages.ManagedFeatureViewData{
 		Kind: messages.ManagedFeatureExperiment, Project: project,
 		Experiment: &core.ExperimentEntry{
-			Experiment: firebase.Experiment{
-				Name:       "projects/123/namespaces/firebase/experiments/exp-2",
-				Definition: firebase.ExperimentDefinition{DisplayName: "Current"},
-			},
+			Name:       "projects/123/namespaces/firebase/experiments/exp-2",
+			Definition: firebase.ExperimentDefinition{DisplayName: "Current"},
 		},
 	})
 
@@ -511,9 +503,8 @@ func TestManagedFeatureSelectionDoesNotDiscardDirtyDetails(t *testing.T) {
 	managed := &messages.ManagedFeatureViewData{
 		Kind:    messages.ManagedFeatureExperiment,
 		Project: core.Project{Name: "Demo", ProjectID: "demo"},
-		Experiment: &core.ExperimentEntry{Experiment: firebase.Experiment{
-			Name: "projects/demo/namespaces/firebase/experiments/exp-1",
-		}},
+		Experiment: &core.ExperimentEntry{
+			Name: "projects/demo/namespaces/firebase/experiments/exp-1"},
 	}
 
 	cmd := m.applyManagedFeatureSelection(messages.ManagedFeatureSelectionChangedMsg{Data: managed, Activate: true})
@@ -539,20 +530,18 @@ func TestManagedFeatureSelectionDoesNotDiscardDirtyDetails(t *testing.T) {
 func experimentListViewData(project core.Project, id, displayName string) *messages.ManagedFeatureViewData {
 	return &messages.ManagedFeatureViewData{
 		Kind: messages.ManagedFeatureExperiment, Project: project,
-		Experiment: &core.ExperimentEntry{Experiment: firebase.Experiment{
+		Experiment: &core.ExperimentEntry{
 			Name:       "projects/123/namespaces/firebase/experiments/" + id,
-			Definition: firebase.ExperimentDefinition{DisplayName: displayName},
-		}},
+			Definition: firebase.ExperimentDefinition{DisplayName: displayName}},
 	}
 }
 
 func rolloutListViewData(project core.Project, id, displayName string) *messages.ManagedFeatureViewData {
 	return &messages.ManagedFeatureViewData{
 		Kind: messages.ManagedFeatureRollout, Project: project,
-		Rollout: &core.RolloutEntry{Rollout: firebase.Rollout{
+		Rollout: &core.RolloutEntry{
 			Name:       "projects/123/namespaces/firebase/rollouts/" + id,
-			Definition: firebase.RolloutDefinition{DisplayName: displayName},
-		}},
+			Definition: firebase.RolloutDefinition{DisplayName: displayName}},
 	}
 }
 
@@ -562,19 +551,16 @@ func TestOpenManagedFeatureDetailsRefreshWithReloadedList(t *testing.T) {
 	m.detailsVisible = true
 	m.details = m.details.SetManagedFeatureData(&messages.ManagedFeatureViewData{
 		Kind: messages.ManagedFeatureExperiment, Project: project,
-		Experiment: &core.ExperimentEntry{Experiment: firebase.Experiment{
+		Experiment: &core.ExperimentEntry{
 			Name:       "projects/demo/namespaces/firebase/experiments/exp-1",
-			Definition: firebase.ExperimentDefinition{DisplayName: "Old"},
-		}},
+			Definition: firebase.ExperimentDefinition{DisplayName: "Old"}},
 	})
 	m.refreshOpenManagedFeatureFromList(messages.ManagedFeaturesLoadedMsg{
 		Kind: messages.ManagedFeatureExperiment, Project: project,
 		Template: core.ManagedFeatureTemplate{Version: "12", Source: "remote"},
 		Experiments: []core.ExperimentEntry{{
-			Experiment: firebase.Experiment{
-				Name:       "projects/demo/namespaces/firebase/experiments/exp-1",
-				Definition: firebase.ExperimentDefinition{DisplayName: "Fresh"},
-			},
+			Name:       "projects/demo/namespaces/firebase/experiments/exp-1",
+			Definition: firebase.ExperimentDefinition{DisplayName: "Fresh"},
 			References: []core.ManagedValueReference{{Parameter: "signup_message"}},
 		}},
 	})

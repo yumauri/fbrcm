@@ -60,8 +60,7 @@ func TestValidateBeforeVersionRequiresCanonicalPositiveDecimal(t *testing.T) {
 	}
 	for _, value := range []string{"", "0", "01", "+1", "-1", " 1", "1 ", "1.0", "one"} {
 		err := validateBeforeVersion(value)
-		var argumentErr *shared.ArgumentError
-		if !errors.As(err, &argumentErr) {
+		if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
 			t.Errorf("validateBeforeVersion(%q) = %v, want ArgumentError", value, err)
 		}
 	}
@@ -71,8 +70,7 @@ func TestVersionsListRejectsExplicitEmptyBefore(t *testing.T) {
 	cmd := New(nil)
 	cmd.SetArgs([]string{"list", "demo", "--before="})
 	err := cmd.Execute()
-	var argumentErr *shared.ArgumentError
-	if !errors.As(err, &argumentErr) {
+	if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
 		t.Fatalf("Execute() error = %v, want ArgumentError", err)
 	}
 }

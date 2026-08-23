@@ -45,21 +45,17 @@ func TestManagedFeatureCommandStructures(t *testing.T) {
 func TestFilterExperimentsByDisplayNameOnly(t *testing.T) {
 	experiments := []core.ExperimentEntry{
 		{
-			Experiment: firebase.Experiment{
-				Name: "projects/123/namespaces/firebase/experiments/passkey",
-				Definition: firebase.ExperimentDefinition{
-					DisplayName: "Passkey signup",
-					Description: "Funds onboarding",
-				},
+			Name: "projects/123/namespaces/firebase/experiments/passkey",
+			Definition: firebase.ExperimentDefinition{
+				DisplayName: "Passkey signup",
+				Description: "Funds onboarding",
 			},
 		},
 		{
-			Experiment: firebase.Experiment{
-				Name: "projects/123/namespaces/firebase/experiments/funding",
-				Definition: firebase.ExperimentDefinition{
-					DisplayName: "Funding amount",
-					Description: "Passkey description must not match",
-				},
+			Name: "projects/123/namespaces/firebase/experiments/funding",
+			Definition: firebase.ExperimentDefinition{
+				DisplayName: "Funding amount",
+				Description: "Passkey description must not match",
 			},
 		},
 	}

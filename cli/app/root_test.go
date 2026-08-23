@@ -112,8 +112,7 @@ func TestRootCommandRejectsWhitespaceOnlyInvocationValues(t *testing.T) {
 			cmd.SilenceErrors = true
 			cmd.SetArgs(args)
 			_, err := cmd.ExecuteC()
-			var argument *shared.ArgumentError
-			if !errors.As(err, &argument) {
+			if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
 				t.Fatalf("ExecuteC(%q) error = %T %v, want typed argument error", args, err, err)
 			}
 		})
@@ -266,8 +265,7 @@ func TestCommandExitCodeHonorsDiffContract(t *testing.T) {
 	if got := commandExitCode(cmd, explicit); got != 1 {
 		t.Fatalf("diff found exit code = %d, want 1", got)
 	}
-	var exitErr *shared.ExitError
-	if !errors.As(explicit, &exitErr) {
+	if _, ok := errors.AsType[*shared.ExitError](explicit); !ok {
 		t.Fatalf("explicit error = %#v", explicit)
 	}
 }

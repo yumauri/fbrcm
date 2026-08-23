@@ -91,7 +91,7 @@ func TestManagedFeatureProjectSelectionKeepsLoadedProjectsIdle(t *testing.T) {
 	m.projects[0].templateReady = true
 	m.projects[0].loaded = true
 	m.projects[0].experiments = []core.ExperimentEntry{{
-		Experiment: firebase.Experiment{Name: "projects/1/namespaces/firebase/experiments/exp-1"},
+		Name: "projects/1/namespaces/firebase/experiments/exp-1",
 	}}
 	m.syncVisible()
 
@@ -194,18 +194,16 @@ func TestManagedFeaturePanelsRenderEntitiesPerProject(t *testing.T) {
 					Kind: messages.ManagedFeatureExperiment, Project: project,
 					Template: core.ManagedFeatureTemplate{Version: "12", Source: "remote"},
 					Experiments: []core.ExperimentEntry{{
-						Experiment: firebase.Experiment{
-							Name: "projects/123/namespaces/firebase/experiments/exp-1",
-							Definition: firebase.ExperimentDefinition{
-								DisplayName: "Passkey signup",
-								Description: "Offer passkeys during signup",
-								Variants:    []firebase.ExperimentVariant{{Name: "Baseline"}, {Name: "Variant A"}},
-							},
-							State:          "RUNNING",
-							StartTime:      "2026-07-27T09:10:11Z",
-							LastUpdateTime: "2026-07-28T10:11:12Z",
+						Name: "projects/123/namespaces/firebase/experiments/exp-1",
+						Definition: firebase.ExperimentDefinition{
+							DisplayName: "Passkey signup",
+							Description: "Offer passkeys during signup",
+							Variants:    []firebase.ExperimentVariant{{Name: "Baseline"}, {Name: "Variant A"}},
 						},
-						References: []core.ManagedValueReference{{Parameter: "signup_message"}},
+						State:          "RUNNING",
+						StartTime:      "2026-07-27T09:10:11Z",
+						LastUpdateTime: "2026-07-28T10:11:12Z",
+						References:     []core.ManagedValueReference{{Parameter: "signup_message"}},
 					}},
 				}
 			},
@@ -241,11 +239,9 @@ func TestManagedFeaturePanelsRenderEntitiesPerProject(t *testing.T) {
 					Kind: messages.ManagedFeatureRollout, Project: project,
 					Template: core.ManagedFeatureTemplate{Version: "12", Source: "remote"},
 					Rollouts: []core.RolloutEntry{{
-						Rollout: firebase.Rollout{
-							Name:       "projects/123/namespaces/firebase/rollouts/rollout-1",
-							Definition: firebase.RolloutDefinition{DisplayName: "Funding rollout"},
-							State:      "RUNNING",
-						},
+						Name:       "projects/123/namespaces/firebase/rollouts/rollout-1",
+						Definition: firebase.RolloutDefinition{DisplayName: "Funding rollout"},
+						State:      "RUNNING",
 						References: []core.ManagedValueReference{{
 							Group: "funding", Parameter: "funding_minimum_amount",
 							Value: &value, Percentage: &percentage,
@@ -297,21 +293,17 @@ func TestABTestsFilterMatchesDisplayNameOnly(t *testing.T) {
 		Kind: messages.ManagedFeatureExperiment, Project: project,
 		Experiments: []core.ExperimentEntry{
 			{
-				Experiment: firebase.Experiment{
-					Name: "projects/123/namespaces/firebase/experiments/passkey",
-					Definition: firebase.ExperimentDefinition{
-						DisplayName: "Passkey signup",
-						Description: "Funding description",
-					},
+				Name: "projects/123/namespaces/firebase/experiments/passkey",
+				Definition: firebase.ExperimentDefinition{
+					DisplayName: "Passkey signup",
+					Description: "Funding description",
 				},
 			},
 			{
-				Experiment: firebase.Experiment{
-					Name: "projects/123/namespaces/firebase/experiments/funding",
-					Definition: firebase.ExperimentDefinition{
-						DisplayName: "Funding amount",
-						Description: "Passkey words in a description do not count",
-					},
+				Name: "projects/123/namespaces/firebase/experiments/funding",
+				Definition: firebase.ExperimentDefinition{
+					DisplayName: "Funding amount",
+					Description: "Passkey words in a description do not count",
 				},
 			},
 		},
@@ -342,10 +334,8 @@ func TestABTestsListOmitsUnavailableMetadataLabels(t *testing.T) {
 	m.projects = []projectState{{
 		project: project,
 		experiments: []core.ExperimentEntry{{
-			Experiment: firebase.Experiment{
-				Name:       "projects/123/namespaces/firebase/experiments/signup",
-				Definition: firebase.ExperimentDefinition{DisplayName: "Signup"},
-			},
+			Name:       "projects/123/namespaces/firebase/experiments/signup",
+			Definition: firebase.ExperimentDefinition{DisplayName: "Signup"},
 		}},
 	}}
 	m.projectIndex = map[string]int{"demo": 0}
@@ -453,10 +443,8 @@ func TestManagedFeatureEntityOpensWithEnterAndDoubleClick(t *testing.T) {
 	m, _ = m.Update(messages.ManagedFeaturesLoadedMsg{
 		Kind: messages.ManagedFeatureExperiment, Project: project,
 		Experiments: []core.ExperimentEntry{{
-			Experiment: firebase.Experiment{
-				Name:       "projects/123/namespaces/firebase/experiments/exp-1",
-				Definition: firebase.ExperimentDefinition{DisplayName: "Signup"},
-			},
+			Name:       "projects/123/namespaces/firebase/experiments/exp-1",
+			Definition: firebase.ExperimentDefinition{DisplayName: "Signup"},
 		}},
 	})
 
@@ -480,11 +468,10 @@ func TestManagedFeatureSelectionStylesBothSummaryLines(t *testing.T) {
 	m := New(nil, messages.ManagedFeatureRollout)
 	m.projects = []projectState{{
 		project: project,
-		rollouts: []core.RolloutEntry{{Rollout: firebase.Rollout{
+		rollouts: []core.RolloutEntry{{
 			Name:       "projects/demo/namespaces/firebase/rollouts/rollout-1",
 			Definition: firebase.RolloutDefinition{DisplayName: "Checkout"},
-			State:      "RUNNING",
-		}}},
+			State:      "RUNNING"}},
 	}}
 	m.projectIndex = map[string]int{"demo": 0}
 	m.syncVisible()
@@ -511,11 +498,9 @@ func TestManagedFeatureSummaryRowsRespectNarrowPanelWidth(t *testing.T) {
 		project:  project,
 		template: core.ManagedFeatureTemplate{Version: "123456789"},
 		rollouts: []core.RolloutEntry{{
-			Rollout: firebase.Rollout{
-				Name:       "projects/demo/namespaces/firebase/rollouts/long-rollout-id",
-				Definition: firebase.RolloutDefinition{DisplayName: "A very long rollout display name"},
-				State:      "RUNNING",
-			},
+			Name:       "projects/demo/namespaces/firebase/rollouts/long-rollout-id",
+			Definition: firebase.RolloutDefinition{DisplayName: "A very long rollout display name"},
+			State:      "RUNNING",
 			References: []core.ManagedValueReference{{
 				Group: "long group", Parameter: "long_parameter_name", Value: &value, Percentage: &percentage,
 			}},
@@ -541,9 +526,9 @@ func TestManagedFeaturePageNavigationUsesRenderedRowHeights(t *testing.T) {
 	m.projects = []projectState{{
 		project: project,
 		rollouts: []core.RolloutEntry{
-			{Rollout: firebase.Rollout{Name: "projects/demo/namespaces/firebase/rollouts/one"}},
-			{Rollout: firebase.Rollout{Name: "projects/demo/namespaces/firebase/rollouts/two"}},
-			{Rollout: firebase.Rollout{Name: "projects/demo/namespaces/firebase/rollouts/three"}},
+			{Name: "projects/demo/namespaces/firebase/rollouts/one"},
+			{Name: "projects/demo/namespaces/firebase/rollouts/two"},
+			{Name: "projects/demo/namespaces/firebase/rollouts/three"},
 		},
 	}}
 	m.projectIndex = map[string]int{"demo": 0}

@@ -143,8 +143,7 @@ func (s *Core) BindProjectsAuth(filters []string, authID string) (ProjectAuthBin
 		return matchProjectFilter(project, aliasesByID[project.ProjectID], filters)
 	})
 	if err != nil {
-		var lookupErr *ProjectLookupError
-		if errors.As(err, &lookupErr) {
+		if lookupErr, ok := errors.AsType[*ProjectLookupError](err); ok {
 			lookupErr.Query = strings.Join(filters, ", ")
 			if lookupErr.Query == "" {
 				lookupErr.Query = "all projects"

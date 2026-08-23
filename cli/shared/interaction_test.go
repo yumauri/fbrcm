@@ -22,8 +22,7 @@ func TestRequireYesInMachineMode(t *testing.T) {
 
 func TestNonInteractiveInputReturnsStructuredError(t *testing.T) {
 	_, err := NonInteractiveInput().Read(make([]byte, 1))
-	var interaction *InteractionError
-	if !errors.As(err, &interaction) {
+	if _, ok := errors.AsType[*InteractionError](err); !ok {
 		t.Fatalf("error = %T %v", err, err)
 	}
 }

@@ -17,20 +17,18 @@ func TestRenderExperimentsTableShowsBindingsAndListMetadataAtNaturalWidth(t *tes
 	t.Setenv("NO_COLOR", "1")
 	now := time.Date(2026, time.July, 29, 0, 0, 0, 0, time.UTC)
 	got := renderExperimentsTableAt([]core.ExperimentEntry{{
-		Experiment: firebase.Experiment{
-			Name:  "projects/123/namespaces/firebase/experiments/7",
-			State: "RUNNING",
-			Definition: firebase.ExperimentDefinition{
-				DisplayName: "Passkey signup",
-				Description: "Offer passkeys during signup",
-				Variants: []firebase.ExperimentVariant{
-					{Name: "Baseline", Weight: 1},
-					{Name: "Variant A", Weight: 1},
-				},
+		Name:  "projects/123/namespaces/firebase/experiments/7",
+		State: "RUNNING",
+		Definition: firebase.ExperimentDefinition{
+			DisplayName: "Passkey signup",
+			Description: "Offer passkeys during signup",
+			Variants: []firebase.ExperimentVariant{
+				{Name: "Baseline", Weight: 1},
+				{Name: "Variant A", Weight: 1},
 			},
-			StartTime:      "2026-07-27T10:00:00Z",
-			LastUpdateTime: "2026-07-28T23:19:00Z",
 		},
+		StartTime:      "2026-07-27T10:00:00Z",
+		LastUpdateTime: "2026-07-28T23:19:00Z",
 		References: []core.ManagedValueReference{{
 			Parameter: "signup_message", Condition: "android_beta", Percentage: new(0.0),
 		}},
@@ -58,14 +56,12 @@ func TestRenderRolloutsTableUsesRequestedColumnsAndRelativeUpdate(t *testing.T) 
 	t.Setenv("NO_COLOR", "1")
 	now := time.Date(2026, time.July, 29, 0, 0, 0, 0, time.UTC)
 	got := renderRolloutsTableAt([]core.RolloutEntry{{
-		Rollout: firebase.Rollout{
-			Name:           "projects/123/namespaces/firebase/rollouts/funding",
-			State:          "RUNNING",
-			LastUpdateTime: "2026-07-28T10:00:00Z",
-			Definition: firebase.RolloutDefinition{
-				DisplayName: "Funding rollout",
-				Description: "Do not show this description",
-			},
+		Name:           "projects/123/namespaces/firebase/rollouts/funding",
+		State:          "RUNNING",
+		LastUpdateTime: "2026-07-28T10:00:00Z",
+		Definition: firebase.RolloutDefinition{
+			DisplayName: "Funding rollout",
+			Description: "Do not show this description",
 		},
 		References: []core.ManagedValueReference{{
 			Parameter:  "funding_minimum_amount",
@@ -94,7 +90,7 @@ func TestRenderRolloutsTableUsesRequestedColumnsAndRelativeUpdate(t *testing.T) 
 func TestManagedFeatureTablesColorParametersAndConditionsLikeGet(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	rollouts := renderRolloutsTableAt([]core.RolloutEntry{{
-		Rollout: firebase.Rollout{Name: "rollouts/funding"},
+		Name: "rollouts/funding",
 		References: []core.ManagedValueReference{{
 			Parameter: "funding_minimum_amount", Condition: "beta",
 			ConditionColor: "GREEN", Percentage: new(10.0),
@@ -130,7 +126,7 @@ func TestManagedFeatureReferenceColorsRespectNoColor(t *testing.T) {
 	}
 	values := []string{
 		renderRolloutsTableAt([]core.RolloutEntry{{
-			Rollout:    firebase.Rollout{Name: "rollouts/example"},
+			Name:       "rollouts/example",
 			References: []core.ManagedValueReference{reference},
 		}}, 300, time.Now()),
 		renderPersonalizationsTableAtWidth([]core.PersonalizationEntry{{
@@ -199,15 +195,13 @@ func TestManagedFeatureTablesRespectNarrowTerminalWidth(t *testing.T) {
 		"experiments": {
 			width: 80,
 			value: renderExperimentsTableAtWidth([]core.ExperimentEntry{{
-				Experiment: firebase.Experiment{
-					Name: "projects/123/namespaces/firebase/experiments/123456",
-					Definition: firebase.ExperimentDefinition{
-						DisplayName: "An exceptionally long experiment display name that must be cropped",
-					},
-					State:          "RUNNING",
-					StartTime:      "2026-07-27T09:10:11Z",
-					LastUpdateTime: "2026-07-28T10:11:12Z",
+				Name: "projects/123/namespaces/firebase/experiments/123456",
+				Definition: firebase.ExperimentDefinition{
+					DisplayName: "An exceptionally long experiment display name that must be cropped",
 				},
+				State:          "RUNNING",
+				StartTime:      "2026-07-27T09:10:11Z",
+				LastUpdateTime: "2026-07-28T10:11:12Z",
 				References: []core.ManagedValueReference{{
 					Parameter: "a_parameter_with_a_long_name", Condition: "a_condition_with_a_long_name",
 				}},
@@ -216,11 +210,9 @@ func TestManagedFeatureTablesRespectNarrowTerminalWidth(t *testing.T) {
 		"rollouts": {
 			width: 100,
 			value: renderRolloutsTableAtWidth([]core.RolloutEntry{{
-				Rollout: firebase.Rollout{
-					Name:       "projects/123/namespaces/firebase/rollouts/rollout_123",
-					State:      "RUNNING",
-					Definition: firebase.RolloutDefinition{DisplayName: "A long gradual funding rollout"},
-				},
+				Name:       "projects/123/namespaces/firebase/rollouts/rollout_123",
+				State:      "RUNNING",
+				Definition: firebase.RolloutDefinition{DisplayName: "A long gradual funding rollout"},
 				References: []core.ManagedValueReference{{
 					Parameter: "funding_minimum_amount_with_a_long_name", Condition: "android_beta_with_a_long_name",
 					Value: new("20"), Percentage: new(10.0),
@@ -254,21 +246,19 @@ func TestManagedFeatureTablesRespectNarrowTerminalWidth(t *testing.T) {
 func TestRenderManagedFeatureDetailsShowsKnownDataAndAPILimits(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	experiment := renderExperimentDetailsAtWidth(core.ExperimentEntry{
-		Experiment: firebase.Experiment{
-			Name:    "projects/123/namespaces/firebase/experiments/7",
-			EndTime: "1970-01-01T00:00:00Z",
-			Definition: firebase.ExperimentDefinition{
-				DisplayName: "Signup",
-				Variants:    []firebase.ExperimentVariant{{Name: "Baseline", Weight: 1}},
-				Objectives: firebase.ExperimentObjectives{EventObjectives: []firebase.ExperimentEventObjective{{
-					IsPrimary: true,
-					CustomObjectiveDetails: &firebase.ExperimentCustomObjective{
-						Event: "completed_signup", CountType: "ONCE",
-					},
-				}}},
-			},
-			State: "RUNNING",
+		Name:    "projects/123/namespaces/firebase/experiments/7",
+		EndTime: "1970-01-01T00:00:00Z",
+		Definition: firebase.ExperimentDefinition{
+			DisplayName: "Signup",
+			Variants:    []firebase.ExperimentVariant{{Name: "Baseline", Weight: 1}},
+			Objectives: firebase.ExperimentObjectives{EventObjectives: []firebase.ExperimentEventObjective{{
+				IsPrimary: true,
+				CustomObjectiveDetails: &firebase.ExperimentCustomObjective{
+					Event: "completed_signup", CountType: "ONCE",
+				},
+			}}},
 		},
+		State: "RUNNING",
 		References: []core.ManagedValueReference{{
 			Group: "(root)", Parameter: "signup_message", Default: true, ValueType: "STRING",
 			Percentage: new(0.0),
@@ -310,12 +300,12 @@ func TestManagedFeatureDetailTablesRespectNarrowTerminalWidth(t *testing.T) {
 		"experiment": {
 			width: 64,
 			value: renderExperimentDetailsAtWidth(core.ExperimentEntry{
-				Experiment: firebase.Experiment{Definition: firebase.ExperimentDefinition{
+				Definition: firebase.ExperimentDefinition{
 					Variants: []firebase.ExperimentVariant{{Name: "A variant with a very long display name", Weight: 1}},
 					Objectives: firebase.ExperimentObjectives{EventObjectives: []firebase.ExperimentEventObjective{{
 						CustomObjectiveDetails: &firebase.ExperimentCustomObjective{Event: "an_extremely_long_analytics_event_name"},
 					}}},
-				}},
+				},
 				References: []core.ManagedValueReference{{
 					Group: "a_long_group", Parameter: "a_very_long_parameter_name", Condition: "a_very_long_condition",
 					Variants: []core.ManagedVariantValue{{ID: "variant", Value: new("a very long value that must be cropped")}},

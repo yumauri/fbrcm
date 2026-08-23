@@ -268,8 +268,7 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	if err != nil {
 		status, stage := "failed", "publication"
 		if published {
-			var cacheErr *core.RemoteConfigPublishedCacheError
-			if errors.As(err, &cacheErr) {
+			if _, ok := errors.AsType[*core.RemoteConfigPublishedCacheError](err); ok {
 				status, stage = "published-cache-failed", "cache"
 				filter, _ := rctarget.ExactFilter(target.ProjectID)
 				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the promotion, but the local cache update failed.", Target: target.ProjectID, Details: struct {

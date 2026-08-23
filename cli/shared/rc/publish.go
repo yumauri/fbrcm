@@ -103,8 +103,7 @@ func validateAndPublishRemoteConfig(ctx context.Context, publisher RemoteConfigP
 			return result, nil
 		}
 		failureStage := ""
-		var hookErr *corehooks.Error
-		if errors.As(err, &hookErr) {
+		if hookErr, ok := errors.AsType[*corehooks.Error](err); ok {
 			failureStage = string(hookErr.Event) + "_hook"
 		}
 		result.PublishedRaw = publishedRaw

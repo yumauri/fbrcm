@@ -192,8 +192,7 @@ func (s *Session) Run(ctx context.Context, event Event, published json.RawMessag
 		cancel()
 		if err != nil {
 			exitCode := -1
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) {
+			if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 				exitCode = exitErr.ExitCode()
 			}
 			return &Error{Event: event, Index: index, Command: command, ExitCode: exitCode, TimedOut: timedOut, Err: err, Output: tail.String()}

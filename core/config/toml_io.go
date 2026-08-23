@@ -14,8 +14,7 @@ func decodeTOMLWithOptions(data []byte, dest any, strict bool) error {
 		decoder.DisallowUnknownFields()
 	}
 	err := decoder.Decode(dest)
-	var strictErr *toml.StrictMissingError
-	if errors.As(err, &strictErr) {
+	if strictErr, ok := errors.AsType[*toml.StrictMissingError](err); ok {
 		return fmt.Errorf("%w:\n%s", err, strictErr.String())
 	}
 	return err

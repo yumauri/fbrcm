@@ -51,14 +51,12 @@ func authenticationRequestError(authType, operation string, err error) error {
 	if err == nil {
 		return nil
 	}
-	var existing *AuthenticationError
-	if errors.As(err, &existing) {
+	if _, ok := errors.AsType[*AuthenticationError](err); ok {
 		return err
 	}
 
 	result := &AuthenticationError{Kind: AuthenticationRequestFailed, AuthType: authType, Operation: operation, Err: err}
-	var retrieve *oauth2.RetrieveError
-	if errors.As(err, &retrieve) {
+	if retrieve, ok := errors.AsType[*oauth2.RetrieveError](err); ok {
 		result.RemoteCode = strings.TrimSpace(retrieve.ErrorCode)
 		if retrieve.Response != nil {
 			result.HTTPStatus = retrieve.Response.StatusCode
@@ -69,8 +67,7 @@ func authenticationRequestError(authType, operation string, err error) error {
 			}
 		}
 	}
-	var netErr net.Error
-	if errors.As(err, &netErr) {
+	if _, ok := errors.AsType[net.Error](err); ok {
 		result.Retryable = true
 	}
 	if result.HTTPStatus == http.StatusRequestTimeout || result.HTTPStatus == http.StatusTooManyRequests || result.HTTPStatus >= 500 {
