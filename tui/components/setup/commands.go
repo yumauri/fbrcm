@@ -21,6 +21,8 @@ type inspectedMsg struct {
 	err   error
 }
 
+type connectivityCheckedMsg struct{ offline bool }
+
 type authAddedMsg struct {
 	entry config.AuthEntry
 	err   error
@@ -50,6 +52,13 @@ func (m Model) inspectCmd() tea.Cmd {
 	return func() tea.Msg {
 		state, err := m.svc.InspectStartupState()
 		return inspectedMsg{state: state, err: err}
+	}
+}
+
+func checkConnectivityCmd() tea.Cmd {
+	return func() tea.Msg {
+		firebase.InitOfflineMode()
+		return connectivityCheckedMsg{offline: firebase.IsOffline()}
 	}
 }
 

@@ -8,7 +8,9 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/yumauri/fbrcm/core/about"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -49,7 +51,7 @@ func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
 	switch m.mode {
 	case modeChecking:
 		title = "Starting fbrcm"
-		lines = m.workingLines("Checking profile, authentication, and project cache…")
+		lines = m.checkingLines()
 	case modeAccounts:
 		tabs = true
 		lines = m.accountsLines(contentWidth)
@@ -347,6 +349,30 @@ func (m Model) workingLines(message string) []string {
 		"",
 		cardMutedStyle.Render("Profile: ") + cardTextStyle.Render(m.profileOrDefault()),
 	}
+}
+
+func (m Model) checkingLines() []string {
+	lines := strings.Split(about.RenderLogo(!corestyles.NoColorEnabled()), "\n")
+	lines = append(lines, "")
+	localStatus := m.spinner.View() + " " + cardTextStyle.Render("Checking profile, authentication, and project cache…")
+	if m.startupInspected {
+		localStatus = cardOKStyle.Render("✓") + " " + cardTextStyle.Render("Profile, authentication, and project cache checked.")
+	}
+	networkStatus := m.spinner.View() + " " + cardTextStyle.Render("Checking network status…")
+	if m.connectivityChecked {
+		if m.offline {
+			networkStatus = cardOKStyle.Render("•") + " " + cardTextStyle.Render("Network unavailable; offline mode enabled.")
+		} else {
+			networkStatus = cardOKStyle.Render("✓") + " " + cardTextStyle.Render("Network available.")
+		}
+	}
+	return append(lines,
+		localStatus,
+		networkStatus,
+		"",
+		cardMutedStyle.Render("Profile: ")+cardTextStyle.Render(m.profileOrDefault()),
+		"",
+	)
 }
 
 func (m Model) noProjectsLines(width int) []string {

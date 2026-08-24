@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/yumauri/fbrcm/core/env"
 )
@@ -22,6 +23,12 @@ func TestOfflineModeToggle(t *testing.T) {
 	SetOfflineMode(false)
 	if IsOffline() {
 		t.Fatal("IsOffline = true, want false after reset")
+	}
+}
+
+func TestConnectivityProbeTimeout(t *testing.T) {
+	if offlineProbeTimeout != 5*time.Second {
+		t.Fatalf("offlineProbeTimeout = %s, want 5s", offlineProbeTimeout)
 	}
 }
 

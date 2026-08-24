@@ -123,32 +123,35 @@ type ProfileRenameAnchor struct {
 type Model struct {
 	svc *core.Core
 
-	mode            mode
-	initial         bool
-	mandatory       bool
-	profile         string
-	profileOverride string
-	profiles        []string
-	profileNew      bool
-	profileTo       string
-	profileFrom     string
-	auth            []config.AuthEntry
-	projects        []core.Project
-	defaultID       string
-	requestedMode   mode
-	method          authMethod
-	cursor          int
-	error           error
-	failure         failureStage
-	authID          string
-	syncAuthID      string
-	filePath        string
-	loginBack       mode
-	loginStop       context.CancelFunc
-	loginID         uint64
-	syncBack        mode
-	syncStop        context.CancelFunc
-	syncID          uint64
+	mode                mode
+	initial             bool
+	mandatory           bool
+	profile             string
+	profileOverride     string
+	startupInspected    bool
+	connectivityChecked bool
+	offline             bool
+	profiles            []string
+	profileNew          bool
+	profileTo           string
+	profileFrom         string
+	auth                []config.AuthEntry
+	projects            []core.Project
+	defaultID           string
+	requestedMode       mode
+	method              authMethod
+	cursor              int
+	error               error
+	failure             failureStage
+	authID              string
+	syncAuthID          string
+	filePath            string
+	loginBack           mode
+	loginStop           context.CancelFunc
+	loginID             uint64
+	syncBack            mode
+	syncStop            context.CancelFunc
+	syncID              uint64
 
 	filepicker filepicker.Model
 	identity   textinput.Model
@@ -205,12 +208,13 @@ func New(svc *core.Core) Model {
 	return m
 }
 
-// Init inspects local startup state before the Projects panel starts loading.
+// Init checks connectivity and inspects local startup state before the Projects
+// panel starts loading.
 func (m Model) Init() tea.Cmd {
 	if m.svc == nil {
 		return nil
 	}
-	return tea.Batch(m.inspectCmd(), m.spinner.Tick)
+	return tea.Batch(m.inspectCmd(), checkConnectivityCmd(), m.spinner.Tick)
 }
 
 // Open reopens authentication management from an existing workspace.
@@ -225,6 +229,7 @@ func (m Model) openManagement(target mode) (Model, tea.Cmd) {
 		return m, nil
 	}
 	m.mode = modeChecking
+	m.startupInspected = false
 	m.initial = false
 	m.mandatory = false
 	m.profileNew = false

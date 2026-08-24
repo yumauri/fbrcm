@@ -12,7 +12,6 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
-	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/tui"
 )
@@ -29,9 +28,6 @@ func main() {
 		mode = corelog.ModeTUI
 	}
 	corelog.InitWithDefault(mode, defaultLogLevel(mode, os.Args[1:]))
-	if mode == corelog.ModeTUI {
-		firebase.InitOfflineMode()
-	}
 
 	svc, err := core.NewService(context.Background())
 	if err != nil {

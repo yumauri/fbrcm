@@ -11,8 +11,9 @@ is recommended when comparing values or promoting changes.
 
 ## Startup and offline mode
 
-When `FBRCM_OFFLINE` is unset, TUI startup performs a short, proxy-aware HTTPS
-connectivity probe. If the probe fails, the TUI enables offline mode and uses
+When `FBRCM_OFFLINE` is unset, the TUI opens immediately and shows a startup
+status card while it performs a proxy-aware HTTPS connectivity probe with a
+five-second timeout. If the probe fails, the TUI enables offline mode and uses
 available cached data. Defining `FBRCM_OFFLINE`, including with an empty value
 or `0`, skips the probe and enables offline mode immediately.
 

@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/about"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/styles"
@@ -65,6 +66,76 @@ func TestInitialCachedProjectsOpenWorkspaceWithoutAuth(t *testing.T) {
 	}
 	if !msg.CachedOnly {
 		t.Fatal("cached startup without auth did not request cached-only notice")
+	}
+}
+
+func TestInitialCachedProjectsWaitForConnectivityCheck(t *testing.T) {
+	m := New(nil)
+	m.mode = modeChecking
+	m.initial = true
+	m.mandatory = true
+	projects := []core.Project{{Name: "Demo", ProjectID: "demo"}}
+
+	m, cmd := m.Update(inspectedMsg{state: core.StartupState{Profile: "default", Projects: projects}})
+	if cmd != nil || m.mode != modeChecking || !m.startupInspected {
+		t.Fatalf("local inspection = mode:%v inspected:%v cmd:%v, want checking:true:nil", m.mode, m.startupInspected, cmd)
+	}
+	view := testutil.NormalizeViewSnapshot(m.View(90, 28))
+	for _, want := range []string{
+		"Profile, authentication, and project cache checked.",
+		"Checking network status…",
+	} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("startup view missing %q:\n%s", want, view)
+		}
+	}
+
+	m, cmd = m.Update(connectivityCheckedMsg{})
+	if cmd == nil || !m.connectivityChecked {
+		t.Fatalf("connectivity result = checked:%v cmd:%v, want true and workspace command", m.connectivityChecked, cmd)
+	}
+	msg, ok := cmd().(WorkspaceReadyMsg)
+	if !ok || len(msg.Projects) != 1 || msg.Projects[0].ProjectID != "demo" {
+		t.Fatalf("message = %#v, want cached demo workspace", msg)
+	}
+}
+
+func TestInitialInspectionWaitsWhenConnectivityFinishesFirst(t *testing.T) {
+	m := New(nil)
+	m.mode = modeChecking
+	m.initial = true
+	m.mandatory = true
+
+	m, cmd := m.Update(connectivityCheckedMsg{offline: true})
+	if cmd != nil || m.mode != modeChecking || !m.connectivityChecked || !m.offline {
+		t.Fatalf("connectivity result = mode:%v checked:%v offline:%v cmd:%v", m.mode, m.connectivityChecked, m.offline, cmd)
+	}
+	view := testutil.NormalizeViewSnapshot(m.View(90, 28))
+	if !strings.Contains(view, "Network unavailable; offline mode enabled.") ||
+		!strings.Contains(view, "Checking profile, authentication, and project cache…") {
+		t.Fatalf("startup view does not show completed network check and pending local inspection:\n%s", view)
+	}
+
+	m, cmd = m.Update(inspectedMsg{state: core.StartupState{Profile: "default"}})
+	if cmd != nil || m.mode != modeMethods {
+		t.Fatalf("completed startup = mode:%v cmd:%v, want authentication methods", m.mode, cmd)
+	}
+}
+
+func TestStartupCardShowsSharedLogoAndBottomPadding(t *testing.T) {
+	m := checkingTestModel(true)
+	view := ansi.Strip(m.PopupView(90, 28))
+	for logoLine := range strings.SplitSeq(about.Logo, "\n") {
+		if !strings.Contains(view, logoLine) {
+			t.Fatalf("startup card missing shared logo line %q:\n%s", logoLine, view)
+		}
+	}
+	lines := strings.Split(view, "\n")
+	if len(lines) < 3 || !strings.Contains(lines[len(lines)-3], "Profile:") {
+		t.Fatalf("startup card does not end its content with the profile row:\n%s", view)
+	}
+	if strings.Trim(lines[len(lines)-2], "│ ") != "" {
+		t.Fatalf("startup card bottom padding row = %q, want empty", lines[len(lines)-2])
 	}
 }
 
@@ -628,6 +699,7 @@ func checkingTestModel(initial bool) Model {
 	m.mode = modeChecking
 	m.initial = initial
 	m.mandatory = initial
+	m.connectivityChecked = true
 	return m
 }
 

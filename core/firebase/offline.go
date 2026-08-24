@@ -15,7 +15,7 @@ import (
 
 const (
 	offlineProbeURL     = "https://firebaseremoteconfig.googleapis.com/"
-	offlineProbeTimeout = 2 * time.Second
+	offlineProbeTimeout = 5 * time.Second
 )
 
 // ErrOffline is returned when network access is suppressed by offline mode.

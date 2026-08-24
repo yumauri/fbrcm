@@ -20,6 +20,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case inspectedMsg:
 		return m.updateInspected(msg)
+	case connectivityCheckedMsg:
+		return m.updateConnectivityChecked(msg)
 	case authAddedMsg:
 		return m.updateAuthAdded(msg)
 	case authReadyMsg:
@@ -90,6 +92,7 @@ func (m Model) updateInspected(msg inspectedMsg) (Model, tea.Cmd) {
 	m.error = nil
 	m.failure = failureNone
 	m.cursor = 0
+	m.startupInspected = true
 
 	if !m.initial {
 		m.mandatory = false
@@ -102,12 +105,27 @@ func (m Model) updateInspected(msg inspectedMsg) (Model, tea.Cmd) {
 		}
 		return m, nil
 	}
+	if !m.connectivityChecked {
+		return m, nil
+	}
+	return m.finishInitialInspection()
+}
 
-	if len(msg.state.Projects) > 0 {
+func (m Model) updateConnectivityChecked(msg connectivityCheckedMsg) (Model, tea.Cmd) {
+	m.connectivityChecked = true
+	m.offline = msg.offline
+	if !m.initial || !m.startupInspected || m.mode != modeChecking {
+		return m, nil
+	}
+	return m.finishInitialInspection()
+}
+
+func (m Model) finishInitialInspection() (Model, tea.Cmd) {
+	if len(m.projects) > 0 {
 		cachedOnly := len(m.auth) == 0
 		reset := m.profileNew
 		return m, func() tea.Msg {
-			return WorkspaceReadyMsg{Projects: msg.state.Projects, Source: "cache", CachedOnly: cachedOnly, Reset: reset}
+			return WorkspaceReadyMsg{Projects: m.projects, Source: "cache", CachedOnly: cachedOnly, Reset: reset}
 		}
 	}
 	if len(m.auth) == 0 {
@@ -193,6 +211,7 @@ func (m Model) updateProfileSwitched(msg profileSwitchedMsg) (Model, tea.Cmd) {
 	m.mandatory = true
 	m.profileNew = true
 	m.mode = modeChecking
+	m.startupInspected = false
 	m.error = nil
 	m.failure = failureNone
 	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
@@ -208,6 +227,7 @@ func (m Model) updateAuthDeleted(msg authDeletedMsg) (Model, tea.Cmd) {
 	m.mandatory = false
 	m.requestedMode = modeAccounts
 	m.mode = modeChecking
+	m.startupInspected = false
 	m.error = nil
 	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
 }
@@ -222,6 +242,7 @@ func (m Model) updateProfileDeleted(msg profileDeletedMsg) (Model, tea.Cmd) {
 	m.mandatory = false
 	m.requestedMode = modeProfiles
 	m.mode = modeChecking
+	m.startupInspected = false
 	m.error = nil
 	return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
 }
@@ -754,6 +775,7 @@ func (m Model) updateErrorKey(k string) (Model, tea.Cmd) {
 		switch m.failure {
 		case failureInspect:
 			m.mode = modeChecking
+			m.startupInspected = false
 			return m, tea.Batch(m.inspectCmd(), m.spinner.Tick)
 		case failureOpen:
 			m.mode = modeFile
