@@ -106,6 +106,14 @@ The identity needs access to the projects you want to manage. Project discovery
 uses the Cloud Resource Manager API; template reads, validation, publication,
 defaults, and history use the Firebase Remote Config API.
 
+fbrcm requests the broad `cloud-platform` OAuth scope because Google's
+interactive consent flow rejects the narrower `firebase.remoteconfig` scope,
+while the grantable `firebase` scope is insufficient for Remote Config. This
+[Firebase discussion](https://groups.google.com/g/firebase-talk/c/a8H9GcGiYuA)
+reports the same limitation. fbrcm limits its Google API calls to Cloud Resource
+Manager and Firebase Remote Config; see the [privacy policy](PRIVACY.md) for the
+data-access, local-storage, and deletion details.
+
 After setup, run the built-in diagnostic whenever you need to check credentials,
 connectivity, API access, permissions, or local storage:
 
@@ -272,6 +280,7 @@ Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 | [Expression filters](https://github.com/yumauri/fbrcm/blob/main/docs/EXPR.md) | Expression contexts, typed values, helper functions, and `jq` queries |
 | [Architecture](https://github.com/yumauri/fbrcm/blob/main/docs/architecture.md) | Package boundaries and maintainer invariants |
 | [Root group keys](https://github.com/yumauri/fbrcm/blob/main/docs/root-group-key.md) | Internal root-parameter representations |
+| [Privacy policy](PRIVACY.md) | Google API data access, OAuth scope rationale, local storage, sharing, and deletion |
 
 Every CLI command also has focused help:
 
