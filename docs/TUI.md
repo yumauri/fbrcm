@@ -71,6 +71,7 @@ From the workspace:
 | --- | --- |
 | `Ctrl+A` | Open Accounts |
 | `Ctrl+P` | Open Profiles |
+| `Ctrl+T` | Open Themes |
 | `?` | Open the action palette |
 
 Accounts can add, validate, and remove identities. They also show how many
@@ -179,6 +180,34 @@ work while it is open. `q` follows the normal quit flow while the menu is open.
 `q` quits immediately unless an open Details form has unsaved edits. In that
 case, fbrcm asks before discarding them. `Ctrl+C` always exits immediately.
 Accounts and Profiles cannot open while Details contains unsaved edits.
+
+## Theme picker
+
+Press `Ctrl+T` to open the centered Themes popup. It starts on the effective
+theme and shows the same eight-color palette preview as `fbrcm theme list`.
+Use `Up`/`Down` or `j`/`k` to move through installed themes; each valid theme is
+applied immediately so the full TUI acts as a live preview. `Home` and `End`
+jump to the first and last themes. Invalid theme files remain visible as
+unavailable and cannot be selected.
+
+Press `Enter` to save the previewed theme and close the popup. A custom theme is
+stored in the configuration layer that currently supplies the effective theme,
+or globally when no layer has selected one. Selecting `built-in` clears both
+global and local theme selections so the saved result matches the preview.
+Press `Esc` or `Ctrl+T` to close without saving and restore the theme that was
+active when the popup opened.
+
+Rows support left-click preview. Double-clicking the same theme performs the
+same save action as `Enter`. The popup enables mouse reporting temporarily even
+when Logs is focused.
+
+While the popup is open, fbrcm watches the themes directory. Saving the
+highlighted custom theme, or one of its inherited parents, reloads and applies
+the preview after a short debounce. Atomic saves that replace or rename a file
+are supported. Invalid intermediate content leaves the last valid palette
+active and displays the validation error in the popup; the preview recovers on
+the next valid save. The watcher stops when the popup closes and is not started
+for a missing themes directory, so opening the picker never creates it.
 
 ## Projects
 
@@ -555,6 +584,10 @@ fbrcm config show --scope local
 fbrcm config validate
 fbrcm config edit
 ```
+
+The TUI and human-readable CLI share the selected color theme. See
+[Theming](theming.md) for installation, inheritance, `NO_COLOR`, and the
+complete color-token reference.
 
 Mutating commands default to the global file. Pass `--scope local` explicitly
 to edit the discovered repository file, or to create `.fbrcm.toml` in the

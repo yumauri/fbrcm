@@ -203,6 +203,15 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── rename <old-name> <new-name>
 │   └── switch <name>
 │
+├── theme
+│   ├── list [--json]
+│   ├── switch <name> [--scope global|local] [--json]
+│   ├── reset [--scope global|local] [--json]
+│   ├── path <theme> [--json]
+│   ├── rename <old-name> <new-name> [--json]
+│   ├── delete <theme> [--yes|-y] [--json]
+│   └── import [<source>] [--name <name>] [--json]
+│
 ├── project
 │   ├── show <project> [--update] [--json]
 │   ├── templates
@@ -415,9 +424,9 @@ trimmed, so surrounding whitespace is significant and normally produces no
 match. Fuzzy, prefix, substring, and case-insensitive selection belongs only to
 explicit query options such as `--filter`, `--search`, and `--project`.
 
-Most commands require a selected profile before command execution. `profile`, `config`, `hooks`, `projects aliases`, `doctor`, `help`, `capabilities`, and `schema` do not. Profile state is stored below `profiles/<name>` in both the configuration and cache roots. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
+Most commands require a selected profile before command execution. `profile`, `config`, `theme`, `hooks`, `projects aliases`, `doctor`, `help`, `capabilities`, and `schema` do not. Profile state is stored below `profiles/<name>` in both the configuration and cache roots. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
 
-Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable only when the command applies that option. An effective argv profile is trimmed, then must be one nonempty filesystem-safe path segment: `.`, `..`, path separators, and leading or trailing whitespace after normalization are invalid. Detailed capability flags expose `effective`; `false` means argv accepts the flag but the command does not apply it. Conditional applicability is published as `effective_when` and repeated in input schemas as `x-fbrcm-effective-when`. The input schema marks unconditional ineffectiveness as `x-fbrcm-effective: false`. `help`, `capabilities`, `schema`, `config`, `hooks`, and `projects aliases` commands currently ignore the argv `--profile` value; root version output accepts but ignores both `--profile` and `--no-local-config`. Machine-mode `auth login` ignores `--noopen`, and machine-mode `config edit` ignores `--editor`, `--full`, and `--scope` because both commands stop before reaching the corresponding human interaction. `FBRCM_PROFILE` may still supply the envelope profile because it is external process context.
+Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable only when the command applies that option. An effective argv profile is trimmed, then must be one nonempty filesystem-safe path segment: `.`, `..`, path separators, and leading or trailing whitespace after normalization are invalid. Detailed capability flags expose `effective`; `false` means argv accepts the flag but the command does not apply it. Conditional applicability is published as `effective_when` and repeated in input schemas as `x-fbrcm-effective-when`. The input schema marks unconditional ineffectiveness as `x-fbrcm-effective: false`. `help`, `capabilities`, `schema`, `config`, `theme`, `hooks`, and `projects aliases` commands currently ignore the argv `--profile` value; root version output accepts but ignores both `--profile` and `--no-local-config`. Machine-mode `auth login` ignores `--noopen`, and machine-mode `config edit` ignores `--editor`, `--full`, and `--scope` because both commands stop before reaching the corresponding human interaction. `FBRCM_PROFILE` may still supply the envelope profile because it is external process context.
 
 At startup, fbrcm searches the current directory and every parent through the
 filesystem root for `.fbrcm.toml`. The nearest match deeply overlays the global
@@ -502,7 +511,9 @@ FBRCM_PROFILE
 `NO_COLOR` follows the [NO_COLOR standard](https://no-color.org/): every
 non-empty value disables color, including `0`, `false`, arbitrary text, and
 whitespace. It does not disable non-color terminal decoration such as bold,
-faint, italic, underline, or reverse video.
+faint, italic, underline, or reverse video. It also skips startup theme
+application. See [Theming](theming.md) for shared CLI/TUI theme behavior and
+configuration-validation exceptions.
 
 `config edit` also consults `VISUAL`, `EDITOR`, and on Unix-like systems
 `SHELL`. Directory discovery follows the operating system and may use `HOME`,
@@ -2256,7 +2267,7 @@ Shows the effective layered configuration after applying keybinding migration
 and built-in defaults. With no key, human output is TOML and includes the
 complete effective key map. `--scope global` or `--scope local` instead shows
 only values physically stored in that layer. Supported keys are `profile`,
-`powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
+`theme`, `powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
 `hooks.timeout`, `hooks.pre_publish`, `hooks.post_publish`, `projects`,
 `projects.aliases`, `projects.aliases.<alias>`, `network`,
 `network.max_concurrent_requests`, `network.requests_per_minute`,
@@ -2295,6 +2306,7 @@ repository config, or creates `.fbrcm.toml` in the current directory when none
 is found. Supported forms are:
 
 ```text
+theme <name>
 powerline_glyphs true|false
 network.max_concurrent_requests 1..64
 network.requests_per_minute 0..60000
@@ -2310,6 +2322,9 @@ projects.aliases.<alias> <project-id>   requires --scope local
 `network.retry.max_delay` must be greater than or equal to
 `network.retry.base_delay` in the effective layered configuration.
 
+The selected theme must resolve from the user-wide `themes` directory. See
+[Theming](theming.md) for its file format, inheritance, and fallback behavior.
+
 The active `profile` is read-only here; use `fbrcm profile switch <name>` or edit
 the local TOML. Only explicit overrides are stored: inherited values and
 built-in defaults are never copied into the target layer. The complete effective
@@ -2320,8 +2335,8 @@ unchanged.
 
 Leading and trailing Unicode whitespace around nested
 `keys.<block>.<action>`, `network.*`, and `projects.aliases.<alias>` keys is removed before
-lookup. The top-level `powerline_glyphs` key is compared exactly. The normalized
-machine invocation schema publishes this conditional trimming.
+lookup. The top-level `theme` and `powerline_glyphs` keys are compared exactly.
+The normalized machine invocation schema publishes this conditional trimming.
 Keybinding values accept a printable single character, `f1` through `f63`, the
 documented terminal key names, or a unique sequence of supported modifiers
 followed by one of those keys. Function-key names are canonical decimal names:
@@ -2339,7 +2354,7 @@ Flags:
 
 Removes a stored override from the selected layer. Removing a local override
 reveals the global value; removing a global override reveals the built-in
-default. The optional key may be `powerline_glyphs`, `network`,
+default. The optional key may be `theme`, `powerline_glyphs`, `network`,
 `network.max_concurrent_requests`, `network.requests_per_minute`,
 `network.rate_limit_cooldown`, `network.retry`, any `network.retry.*` scalar, `keys`,
 `keys.<block>`, or `keys.<block>.<action>`. With no key, it removes all stored preferences while
@@ -2360,7 +2375,7 @@ Flags:
 
 ### `fbrcm config validate`
 
-Strictly validates TOML structure, profile references, project aliases,
+Strictly validates TOML structure, profile and theme references, project aliases,
 keybindings, network request rate and cooldown, hook commands, and hook timeout syntax. Project aliases are
 rejected in global scope. Effective and all-scope validation also checks the
 discovered `.firebaserc` and cross-source alias conflicts. By
@@ -2646,6 +2661,120 @@ Flags:
 ```text
 -y, --yes   skip confirmation
 ```
+
+### `fbrcm theme`
+
+Prints the effective theme name. In color-enabled human output, the name is
+followed by a compact eight-color preview. It prints `built-in` when neither
+global nor local configuration selects a theme. `NO_COLOR` suppresses the
+preview. JSON output is unchanged and reports whether the built-in palette is
+active and whether the selection comes from the default, global, or local
+layer.
+
+### `fbrcm theme list`
+
+Lists the built-in palette followed by regular `.toml` files installed in the
+global themes directory, and marks the effective selection. Color-enabled human
+output includes a `Palette` column with eight representative color swatches;
+theme names use an ellipsis to fit, and very narrow terminals reduce the swatch
+count. `NO_COLOR` omits the preview column. Discovery does not validate every
+file; an invalid theme remains visible with an unavailable preview and is
+rejected when selected. JSON output is unchanged and does not include palette
+previews.
+
+### `fbrcm theme switch <name>`
+
+Validates and selects an installed theme. Global configuration is updated by
+default. `--scope local` writes the nearest `.fbrcm.toml`, so a repository can
+override the global selection. When a local override remains effective after a
+global switch, the command reports both selections. The reserved selector
+`built-in` clears the chosen layer instead of loading a file, so `fbrcm theme
+switch built-in` returns global configuration to its default.
+
+Flags:
+
+```text
+--scope global|local   configuration layer to update; default global
+```
+
+### `fbrcm theme reset`
+
+Removes the theme selection from one configuration layer. It defaults to the
+global layer and accepts `--scope local`. A local reset reveals the global
+theme; a global reset may leave a local repository theme effective. With no
+remaining selection, the built-in palette becomes effective. This is equivalent
+to `fbrcm theme switch built-in` for the same scope.
+
+Flags:
+
+```text
+--scope global|local   configuration layer to reset; default global
+```
+
+### `fbrcm theme path <theme>`
+
+Prints the canonical global path for a theme name. The path is printed even if
+that theme is not installed; JSON output includes an `exists` field.
+
+### `fbrcm theme rename <old-name> <new-name>`
+
+Renames an installed, valid theme. The operation updates direct `inherits`
+references in installed themes and updates matching selections in global and
+the currently discovered local configuration. Existing destination names are
+rejected. Reference writes are rolled back if the complete rename cannot be
+finished.
+
+### `fbrcm theme delete <theme>`
+
+Deletes one installed theme after confirmation. A theme selected by the current
+global or local configuration, or inherited directly by another installed
+theme, cannot be deleted. Yes is selected by default.
+
+Flags:
+
+```text
+-y, --yes   delete without confirmation
+```
+
+### `fbrcm theme import [source]`
+
+Imports themes from a local `.toml` file, a local directory, or an HTTP/HTTPS
+URL. A file or URL uses its filename as the theme name unless `--name` supplies
+another valid name. A directory imports its top-level regular `.toml` files as
+one batch, deriving names from filenames; `--name` is unavailable in this mode.
+Redirected TOML stdin is also accepted and requires `--name`. A positional
+source takes precedence over redirected stdin and leaves stdin unconsumed. With
+no argument or redirected stdin, human mode opens the same interactive file
+selector used by other imports; JSON mode returns `interaction.required`.
+Each imported file is limited to 1 MiB and is strictly validated, including
+installed and within-batch inheritance, before any destination is written.
+
+A single-theme import fails if its destination exists. A directory batch skips
+existing themes without overwriting them and emits one warning per skipped
+theme. JSON mode returns a batch result with imported and skipped counts, item
+statuses, and structured `theme.already_exists` warnings.
+
+Flags:
+
+```text
+--name <name>   install a single imported theme under this name
+```
+
+Examples:
+
+```sh
+fbrcm theme import ./nord.toml --name nord-dark
+fbrcm theme import ./theme-pack/
+fbrcm theme import --name nord < ./nord.toml
+```
+
+As an experimental human-only convenience on supported systems, stdin may also
+be a directory. It has the same batch, inheritance, and collision behavior as a
+positional directory. Directory stdin is intentionally omitted from the
+versioned stdin schema and capability metadata.
+
+See [Theming](theming.md) for the file format, inheritance rules, and fallback
+behavior.
 
 ### `fbrcm completion`
 

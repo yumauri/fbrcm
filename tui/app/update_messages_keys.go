@@ -209,6 +209,9 @@ func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
 		next, cmd := m.openProfileSelection()
 		return next, cmd, true
 	}
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionThemes, k) {
+		return m.openThemePicker()
+	}
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionAccounts, k) {
 		if m.details.Dirty() {
 			m.openAccountsBlockedByDirtyDetailsDialog()

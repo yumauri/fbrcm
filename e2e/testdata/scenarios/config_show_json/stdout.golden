@@ -379,6 +379,9 @@
           "quit": [
             "q"
           ],
+          "themes": [
+            "ctrl+t"
+          ],
           "workspace_menu": [
             "\\"
           ]
@@ -852,6 +855,28 @@
           ],
           "toggle_expanded": [
             "ctrl+e"
+          ]
+        },
+        "theme_picker": {
+          "cancel": [
+            "esc"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "home": [
+            "home"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "up": [
+            "up",
+            "k"
           ]
         },
         "workspace_menu": {

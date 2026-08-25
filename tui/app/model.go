@@ -7,6 +7,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/about"
 	"github.com/yumauri/fbrcm/core/config"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/components/authpicker"
 	boolpicker "github.com/yumauri/fbrcm/tui/components/boolpicker"
 	"github.com/yumauri/fbrcm/tui/components/conditions"
@@ -25,6 +26,7 @@ import (
 	renameinput "github.com/yumauri/fbrcm/tui/components/renameinput"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 	stringinput "github.com/yumauri/fbrcm/tui/components/stringinput"
+	"github.com/yumauri/fbrcm/tui/components/themepicker"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
 )
@@ -69,6 +71,7 @@ type Model struct {
 	authPicker       authpicker.Model
 	renameInput      renameinput.Model
 	projectIO        projectio.Model
+	themePicker      themepicker.Model
 	dialogQueue      []pendingDialog
 	duplicate        *duplicateSession
 	newParameter     *newParameterSession
@@ -90,6 +93,10 @@ type Model struct {
 	oauthEvents      chan core.OAuthAuthorizationEvent
 	oauthSession     *oauthAuthorizationSession
 	profileName      string
+	themeOriginal    corestyles.Palette
+
+	themeWatcher       *themeWatchSession
+	themeWatchRevision uint64
 
 	managedFeatureDetails           map[managedFeatureDetailsKey]managedFeatureDetailsEntry
 	managedFeatureDetailLoads       map[managedFeatureDetailsKey]uint64
@@ -191,6 +198,7 @@ func newModel(svc *core.Core, oauthEvents chan core.OAuthAuthorizationEvent) Mod
 		authPicker:       authpicker.New(),
 		renameInput:      renameinput.New(),
 		projectIO:        projectio.New(),
+		themePicker:      themepicker.New(),
 		details:          details.New(),
 		logs:             logs.New(svc),
 		logsHeight:       defaultLogsPanelHeight,

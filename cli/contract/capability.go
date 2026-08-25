@@ -394,7 +394,7 @@ func describe(cmd *cobra.Command) Capability {
 	if behavior.interaction != nil {
 		interaction = *behavior.interaction
 	}
-	if behavior.network != "none" && id != "auth.login" && id != "doctor" {
+	if behavior.network != "none" && id != "auth.login" && id != "doctor" && id != "theme.import" {
 		authWhen := conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))
 		if interaction.Mode == "none" {
 			interaction = InteractionCapability{Mode: "optional", JSONBehavior: "oauth_authorization_returns_interaction"}
@@ -424,6 +424,8 @@ func describe(cmd *cobra.Command) Capability {
 			kind = "oauth_credentials"
 		case "auth.add.service-account":
 			kind = "service_account_credentials"
+		case "theme.import":
+			kind = "theme"
 		}
 		value := "urn:fbrcm:schema:cli:" + Version + ":stdin:" + kind
 		stdinSchema = &value
@@ -444,7 +446,7 @@ func describe(cmd *cobra.Command) Capability {
 func profileOptionIgnored(id string) bool {
 	return id == "help" || id == "capabilities" || strings.HasPrefix(id, "schema.") ||
 		strings.HasPrefix(id, "config.") || strings.HasPrefix(id, "hooks.") ||
-		strings.HasPrefix(id, "projects.aliases.")
+		strings.HasPrefix(id, "projects.aliases.") || strings.HasPrefix(id, "theme")
 }
 
 func optionIgnored(id, name string) bool {
@@ -477,9 +479,12 @@ func containsPredicateInIdempotency(conditions []IdempotencyCondition, source, n
 	return false
 }
 
-func stdinModes(_ string, supported bool) []string {
+func stdinModes(id string, supported bool) []string {
 	if !supported {
 		return []string{}
+	}
+	if id == "theme.import" {
+		return []string{"toml_document"}
 	}
 	return []string{"json_document"}
 }

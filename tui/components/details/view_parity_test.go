@@ -1,6 +1,7 @@
 package details
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -62,6 +63,25 @@ func TestDetailsViewSnapshot(t *testing.T) {
 	got := testutil.NormalizeViewSnapshot(parityTestModel().View())
 	if got != detailsViewSnapshot {
 		t.Fatalf("snapshot mismatch\n--- got ---\n%s\n--- want ---\n%s", got, detailsViewSnapshot)
+	}
+}
+
+func TestRefreshThemeRebuildsCachedDetailsRows(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := parityTestModel()
+	before := m.View()
+	corestyles.ApplyPalette(corestyles.Palette{corestyles.TokenError: "1"})
+	t.Cleanup(corestyles.ResetPalette)
+	want := renderedStylePrefix(projectValueStyle) + "Demo Prod (demo-prod)"
+	if strings.Contains(before, want) {
+		t.Fatal("pre-theme details row unexpectedly uses preview palette")
+	}
+	if stale := m.View(); strings.Contains(stale, want) {
+		t.Fatal("cached Details row changed without a viewport refresh")
+	}
+	m = m.RefreshTheme()
+	if got := m.View(); !strings.Contains(got, want) {
+		t.Fatalf("refreshed Details row does not use preview project color:\n%s", got)
 	}
 }
 

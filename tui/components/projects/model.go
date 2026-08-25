@@ -112,6 +112,12 @@ func (m Model) SetCollapsed(collapsed bool) Model {
 	return m
 }
 
+// RefreshTheme rebuilds cached viewport rows after the runtime palette changes.
+func (m Model) RefreshTheme() Model {
+	m.refreshViewport()
+	return m
+}
+
 // SetNotice sets a non-project status line shown above the project list.
 func (m Model) SetNotice(notice string) Model {
 	m.notice = notice

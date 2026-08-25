@@ -28,6 +28,7 @@ import (
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
+	themecmd "github.com/yumauri/fbrcm/cli/commands/theme"
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
 	versionscmd "github.com/yumauri/fbrcm/cli/commands/versions"
 	"github.com/yumauri/fbrcm/cli/contract"
@@ -48,6 +49,10 @@ func isProfileCommand(cmd *cobra.Command) bool {
 
 func isConfigCommand(cmd *cobra.Command) bool {
 	return cmd.Name() == "config" || strings.HasPrefix(cmd.CommandPath(), "fbrcm config")
+}
+
+func isThemeCommand(cmd *cobra.Command) bool {
+	return cmd.Name() == "theme" || strings.HasPrefix(cmd.CommandPath(), "fbrcm theme")
 }
 
 func isHooksCommand(cmd *cobra.Command) bool {
@@ -153,7 +158,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 				return shared.InvalidArgument(err)
 			}
 			config.SetLocalConfigDisabled(noLocalConfig || stateless)
-			if cmd.Name() == "help" || contract.IsCommandGroup(cmd) || isConfigCommand(cmd) || isHooksCommand(cmd) || isProjectAliasesCommand(cmd) || isContractMetadataCommand(cmd) {
+			if cmd.Name() == "help" || contract.IsCommandGroup(cmd) || isConfigCommand(cmd) || isThemeCommand(cmd) || isHooksCommand(cmd) || isProjectAliasesCommand(cmd) || isContractMetadataCommand(cmd) {
 				initOfflineMode(shared.CommandContext(cmd), false)
 				return nil
 			}
@@ -225,6 +230,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(profilecmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))
 	rootCmd.AddCommand(projectscmd.New(s))
+	rootCmd.AddCommand(themecmd.New())
 	rootCmd.AddCommand(managedfeaturescmd.NewRollouts(s))
 	rootCmd.AddCommand(metacmd.NewCapabilities())
 	rootCmd.AddCommand(metacmd.NewSchema())

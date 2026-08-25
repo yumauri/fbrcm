@@ -23620,6 +23620,1081 @@
     "interaction_when": []
   },
   {
+    "id": "theme",
+    "path": [
+      "theme"
+    ],
+    "summary": "Manage themes",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "theme.delete",
+    "path": [
+      "theme",
+      "delete"
+    ],
+    "summary": "Delete an installed theme",
+    "arguments": [
+      {
+        "name": "theme",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      },
+      {
+        "name": "--yes",
+        "aliases": [
+          "-y"
+        ],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Delete without confirmation"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_file_delete",
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_file_delete",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": true,
+    "destructive_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "mutation_plan",
+            "operator": "is_destructive",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive_reasons": [
+      "removes an installed theme file"
+    ],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": true,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "optional",
+      "json_behavior": "confirmation_required_without_bypass"
+    },
+    "interaction_when": [
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "yes",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "runtime_state",
+            "name": "confirmation",
+            "operator": "required",
+            "value": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "theme.import",
+    "path": [
+      "theme",
+      "import"
+    ],
+    "summary": "Import themes from a file, directory, or HTTP URL",
+    "arguments": [
+      {
+        "name": "source",
+        "required": false,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--name",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Install the imported theme under this name"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:theme",
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 2,
+    "side_effects": [
+      "local_file_write",
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_file_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "conditional",
+    "network_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "theme_source",
+            "operator": "requires_network",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "conditional",
+    "idempotency_when": [
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "theme_source",
+                "operator": "is_directory",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "no",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "theme_source",
+                "operator": "is_single",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": true,
+      "stateless": false
+    },
+    "stdin_modes": [
+      "toml_document"
+    ],
+    "interaction": {
+      "mode": "optional",
+      "json_behavior": "missing_input_returns_interaction"
+    },
+    "interaction_when": [
+      {
+        "all_of": [
+          {
+            "source": "argument",
+            "name": "source",
+            "operator": "absent",
+            "value": null
+          },
+          {
+            "source": "stdin",
+            "name": "document",
+            "operator": "absent",
+            "value": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "theme.list",
+    "path": [
+      "theme",
+      "list"
+    ],
+    "summary": "List installed themes",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "theme.path",
+    "path": [
+      "theme",
+      "path"
+    ],
+    "summary": "Print a theme file path",
+    "arguments": [
+      {
+        "name": "theme",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "theme.rename",
+    "path": [
+      "theme",
+      "rename"
+    ],
+    "summary": "Rename an installed theme",
+    "arguments": [
+      {
+        "name": "old_name",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      },
+      {
+        "name": "new_name",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write",
+      "local_file_move"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_file_move",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "theme.reset",
+    "path": [
+      "theme",
+      "reset"
+    ],
+    "summary": "Reset a theme selection to the built-in palette",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--scope",
+        "aliases": [],
+        "type": "string",
+        "default": "global",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Configuration scope (global or local)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": true,
+    "destructive_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "mutation_plan",
+            "operator": "is_destructive",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive_reasons": [
+      "removes a persisted theme selection"
+    ],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "theme.switch",
+    "path": [
+      "theme",
+      "switch"
+    ],
+    "summary": "Select an installed theme",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--scope",
+        "aliases": [],
+        "type": "string",
+        "default": "global",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Configuration scope (global or local)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": true,
+    "destructive_when": [
+      {
+        "all_of": [
+          {
+            "source": "argument",
+            "name": "name",
+            "operator": "equals",
+            "value": "built-in"
+          },
+          {
+            "source": "runtime_state",
+            "name": "mutation_plan",
+            "operator": "has_changes",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive_reasons": [
+      "the built-in selector removes a persisted theme selection"
+    ],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
     "id": "update",
     "path": [
       "update"

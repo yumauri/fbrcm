@@ -1,0 +1,49 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+  "contract_version": "1.0.0",
+  "command": "theme.import",
+  "requested_command": "theme.import",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "source": "theme-pack",
+    "count": 2,
+    "imported_count": 1,
+    "skipped_count": 1,
+    "items": [
+      {
+        "theme": "existing",
+        "status": "skipped",
+        "path": "<E2E_RUN_ROOT>/environment/config/themes/existing.toml",
+        "reason": "already_exists"
+      },
+      {
+        "theme": "fresh",
+        "status": "imported",
+        "path": "<E2E_RUN_ROOT>/environment/config/themes/fresh.toml"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": [
+    {
+      "code": "theme.already_exists",
+      "message": "The theme already exists and was skipped during batch import.",
+      "target": "existing",
+      "details": {
+        "path": "<E2E_RUN_ROOT>/environment/config/themes/existing.toml"
+      },
+      "remediation": []
+    }
+  ]
+}

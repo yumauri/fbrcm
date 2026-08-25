@@ -1,0 +1,16 @@
+{
+  "name": "theme_rename_json",
+  "command_id": "theme.rename",
+  "args": ["theme", "rename", "nord", "nord-renamed", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {"root": "config", "path": "themes/nord-renamed.toml"}
+  ],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "themes/nord.toml"}
+  ],
+  "json_output": true,
+  "fixture": "theme_selection",
+  "offline": true
+}

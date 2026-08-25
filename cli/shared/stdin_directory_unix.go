@@ -1,17 +1,17 @@
 //go:build unix
 
-package get
+package shared
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"golang.org/x/sys/unix"
 )
 
-// readStdinDirectoryFile reads a child file relative to a directory passed as stdin.
-func readStdinDirectoryFile(dir *os.File, name string) ([]byte, error) {
+// OpenStdinDirectoryFile opens a child relative to a directory supplied as
+// stdin without requiring a filesystem path for that directory.
+func OpenStdinDirectoryFile(dir *os.File, name string) (*os.File, error) {
 	fd, err := unix.Openat(int(dir.Fd()), name, unix.O_RDONLY|unix.O_CLOEXEC, 0)
 	if err != nil {
 		return nil, err
@@ -21,7 +21,5 @@ func readStdinDirectoryFile(dir *os.File, name string) ([]byte, error) {
 		_ = unix.Close(fd)
 		return nil, fmt.Errorf("openat returned invalid file")
 	}
-	defer func() { _ = child.Close() }()
-
-	return io.ReadAll(child)
+	return child, nil
 }

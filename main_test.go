@@ -2,6 +2,9 @@ package main
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	charmlog "charm.land/log/v2"
@@ -32,5 +35,29 @@ func TestJSONDefaultLogLevelIsSilentUnlessEnvironmentOverridesIt(t *testing.T) {
 	t.Setenv(env.LogLevel, "debug")
 	if got := defaultLogLevel(corelog.ModeCLI, []string{"capabilities", "--json"}); got != charmlog.InfoLevel {
 		t.Fatalf("environment-overridden default = %v, want initialization default info", got)
+	}
+}
+
+func TestBundledThemesAreValid(t *testing.T) {
+	entries, err := os.ReadDir("themes")
+	if err != nil {
+		t.Fatalf("read bundled themes = %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatal("bundled themes directory is empty")
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".toml" {
+			t.Fatalf("unexpected entry in themes directory: %q", entry.Name())
+		}
+		data, readErr := os.ReadFile(filepath.Join("themes", entry.Name()))
+		if readErr != nil {
+			t.Errorf("read bundled theme %q = %v", entry.Name(), readErr)
+			continue
+		}
+		name := strings.TrimSuffix(entry.Name(), ".toml")
+		if validateErr := config.ValidateThemeData(name, data); validateErr != nil {
+			t.Errorf("validate bundled theme %q = %v", name, validateErr)
+		}
 	}
 }

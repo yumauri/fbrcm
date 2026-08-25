@@ -43,8 +43,8 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 			currentCount++
 		}
 	}
-	if currentCount != index.Count*2+9 {
-		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+9)
+	if currentCount != index.Count*2+10 {
+		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+10)
 	}
 	seen := make(map[string]bool, index.Count)
 	for _, capability := range detailed {
@@ -427,7 +427,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		t.Fatalf("draft.change-note capability = %#v", draftChangeNote)
 	}
 	for _, capability := range contract.DetailedCapabilities(root) {
-		if capability.NetworkAccess == "none" || capability.ID == "auth.login" || capability.ID == "doctor" {
+		if capability.NetworkAccess == "none" || capability.ID == "auth.login" || capability.ID == "doctor" || capability.ID == "theme.import" {
 			continue
 		}
 		if !capabilityHasPredicate(capability, "authentication_remote_access", "authentication", "requires_network") || !capabilityHasPredicate(capability, "local_file_write", "authentication", "token_persisted") || capability.Interaction.Mode != "optional" || !capabilityConditionsHavePredicate(capability.InteractionWhen, "runtime_state", "authentication", "requires_human_authorization") {
@@ -2260,6 +2260,46 @@ func TestInputSchemasPublishFileBeforeStdinSelection(t *testing.T) {
 	}
 }
 
+func TestThemeImportPublishesNamedTOMLStdin(t *testing.T) {
+	root := NewRootForContract("schema")
+	capability, err := contract.FindCapability(root, []string{"theme", "import"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !capability.Supports.Stdin || capability.StdinSchema == nil || *capability.StdinSchema != "urn:fbrcm:schema:cli:"+contract.Version+":stdin:theme" {
+		t.Fatalf("theme import stdin capability = %#v", capability)
+	}
+	if !slices.Equal(capability.StdinModes, []string{"toml_document"}) {
+		t.Fatalf("theme import stdin modes = %#v", capability.StdinModes)
+	}
+	if !capabilityConditionsHavePredicate(capability.InteractionWhen, "stdin", "document", "absent") {
+		t.Fatalf("theme import interaction conditions = %#v", capability.InteractionWhen)
+	}
+
+	id := capability.InvocationSchema
+	theme := map[string]any{"inherits": "base", "colors": map[string]any{"primary": "#FFC400", "error": "196"}}
+	validateContractValue(t, id, map[string]any{"arguments": map[string]any{}, "options": map[string]any{"name": "firebase"}, "stdin": theme}, true)
+	validateContractValue(t, id, map[string]any{"arguments": map[string]any{}, "options": map[string]any{}, "stdin": theme}, false)
+	validateContractValue(t, id, map[string]any{"arguments": map[string]any{"source": "firebase.toml"}, "options": map[string]any{}, "stdin": theme}, true)
+	validateContractValue(t, id, map[string]any{"arguments": map[string]any{"source": "./themes"}, "options": map[string]any{}, "stdin": nil}, true)
+	validateContractValue(t, id, map[string]any{"arguments": map[string]any{}, "options": map[string]any{"name": "built-in"}, "stdin": theme}, false)
+	validateContractValue(t, id, map[string]any{"arguments": map[string]any{}, "options": map[string]any{"name": "firebase"}, "stdin": map[string]any{"colors": map[string]any{"unknown": "1"}}}, false)
+
+	raw, err := schemas.ReadByID(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document map[string]any
+	if err := json.Unmarshal(raw, &document); err != nil {
+		t.Fatal(err)
+	}
+	rules := document["x-fbrcm-input-selection"].([]any)
+	rule := rules[0].(map[string]any)
+	if !slices.Equal(contractStrings(rule["sources"]), []string{"arguments.source", "stdin.document"}) {
+		t.Fatalf("theme import input selection = %#v", rule)
+	}
+}
+
 func TestPublishedCredentialStdinSchemaDescribesAcceptedCredentialKinds(t *testing.T) {
 	id := "urn:fbrcm:schema:cli:" + contract.Version + ":stdin:credentials"
 	validateContractValue(t, id, map[string]any{"installed": map[string]any{
@@ -2384,6 +2424,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	warningsByCommand := map[string][]string{
 		"get":               {"cache.stale"},
+		"theme.import":      {"theme.already_exists"},
 		"conditions.add":    postPublication,
 		"conditions.delete": postPublication,
 		"conditions.edit":   postPublication,

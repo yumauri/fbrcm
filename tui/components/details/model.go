@@ -80,6 +80,12 @@ func (m Model) SetActive(active bool) Model {
 	return m
 }
 
+// RefreshTheme rebuilds cached viewport rows after the runtime palette changes.
+func (m Model) RefreshTheme() Model {
+	m.refreshViewport()
+	return m
+}
+
 // ResetScroll resets details viewport scroll position.
 func (m Model) ResetScroll() Model {
 	m.viewport.GotoTop()

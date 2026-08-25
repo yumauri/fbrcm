@@ -13,6 +13,7 @@ import (
 
 type AppConfig struct {
 	Profile         string                         `toml:"profile,omitempty" json:"profile"`
+	Theme           string                         `toml:"theme,omitempty" json:"theme,omitempty"`
 	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty" json:"powerline_glyphs"`
 	Keys            map[string]map[string][]string `toml:"keys,omitempty" json:"keys"`
 	Network         *NetworkConfig                 `toml:"network,omitempty" json:"network,omitempty"`

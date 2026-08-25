@@ -41,7 +41,7 @@ func styleImportStrategySelectedMarker(choice *selection.Choice[mergeChoice]) st
 	if choice.Value.value == string(importStrategyOverride) {
 		return lipgloss.NewStyle().Foreground(clistyles.PaletteError).Bold(true).Render("▸ ")
 	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("32")).Bold(true).Render("▸ ")
+	return lipgloss.NewStyle().Foreground(clistyles.PaletteSuccess).Bold(true).Render("▸ ")
 }
 
 func styleConflictSelectedChoice(choice *selection.Choice[mergeChoice]) string {

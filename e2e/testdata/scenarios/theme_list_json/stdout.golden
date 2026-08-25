@@ -1,0 +1,35 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
+  "contract_version": "1.0.0",
+  "command": "theme.list",
+  "requested_command": "theme.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 2,
+    "items": [
+      {
+        "theme": "built-in",
+        "active": true,
+        "built_in": true
+      },
+      {
+        "theme": "nord",
+        "active": false,
+        "built_in": false
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

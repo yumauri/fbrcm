@@ -1,0 +1,56 @@
+# Firebase-inspired theme for fbrcm.
+# Copy this file to the themes directory next to your global config.toml,
+# then run: fbrcm config set theme firebase
+
+[colors]
+url = "#FFB300"
+
+primary = "#FFC400"
+selection = "#6D4C41"
+secondary = "#FF9100"
+highlight = "#FFD54F"
+highlight_muted = "#FFB300"
+text = "#FFF8E1"
+text_soft = "#FFE0B2"
+text_muted = "#BCAAA4"
+text_dim = "#795548"
+error = "#DD2C00"
+success = "#66BB6A"
+row_stripe = "#1C1510"
+
+condition_blue = "#42A5F5"
+condition_brown = "#8D6E63"
+condition_cyan = "#26C6DA"
+condition_deep_orange = "#FF5722"
+condition_green = "#66BB6A"
+condition_indigo = "#5C6BC0"
+condition_lime = "#D4E157"
+condition_orange = "#FF9100"
+condition_pink = "#EC407A"
+condition_purple = "#AB47BC"
+condition_teal = "#26A69A"
+
+diff_added = "#66BB6A"
+diff_removed = "#EF5350"
+diff_changed = "#FFD54F"
+diff_note = "#BCAAA4"
+
+history_added_background = "#1B4D2E"
+history_removed_background = "#5D241A"
+history_changed_background = "#5D4814"
+inactive_selection = "#3E2723"
+
+offline_foreground = "#FFF8E1"
+offline_background = "#DD2C00"
+
+log_debug = "#BCAAA4"
+log_info = "#FFC400"
+log_warn = "#FF9100"
+log_error = "#FF5722"
+log_fatal = "#DD2C00"
+log_silent = "#795548"
+log_default = "#FFF8E1"
+
+logo_start = "#FFC400"
+logo_middle = "#FF9100"
+logo_end = "#DD2C00"

@@ -195,6 +195,17 @@ func TestDefaultKeyMapIncludesProfilesAndProjectAuthBindings(t *testing.T) {
 	}
 }
 
+func TestDefaultKeyMapIncludesThemePickerBindings(t *testing.T) {
+	if got := DefaultKeyMap()[BlockGlobal][ActionThemes]; len(got) != 1 || got[0] != "ctrl+t" {
+		t.Fatalf("themes action = %v, want [ctrl+t]", got)
+	}
+	for _, action := range []Action{ActionCancel, ActionSubmit, ActionUp, ActionDown, ActionHome, ActionEnd} {
+		if len(DefaultKeyMap()[BlockThemePicker][action]) == 0 {
+			t.Fatalf("theme picker action %q has no default binding", action)
+		}
+	}
+}
+
 func TestDefaultKeyMapIncludesProjectDefaultsBinding(t *testing.T) {
 	if got := DefaultKeyMap()[BlockProjects][ActionDefaults]; len(got) != 1 || got[0] != "d" {
 		t.Fatalf("projects defaults keys = %v, want [d]", got)

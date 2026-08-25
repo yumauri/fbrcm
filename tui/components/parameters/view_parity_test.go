@@ -86,6 +86,21 @@ func TestParametersViewSnapshot(t *testing.T) {
 	}
 }
 
+func TestParametersRowsReadRuntimePaletteOnEveryView(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := parityTestModel()
+	before := m.View(true)
+	corestyles.ApplyPalette(corestyles.Palette{corestyles.TokenPrimary: "1"})
+	t.Cleanup(corestyles.ResetPalette)
+	want := parameterStyle.Render("feature_login")
+	if strings.Contains(before, want) {
+		t.Fatal("pre-theme parameter row unexpectedly uses preview palette")
+	}
+	if got := m.View(true); !strings.Contains(got, want) {
+		t.Fatalf("parameter row does not read the runtime palette on render:\n%s", got)
+	}
+}
+
 func TestInAppDefaultUsesEmptyValueStyle(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	const label = "(in-app default)"

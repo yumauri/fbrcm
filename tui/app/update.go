@@ -131,6 +131,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		next, cmd, _ := m.updateHelpPalette(msg)
 		return next, cmd
 	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok &&
+		tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionThemes, keyMsg.String()) &&
+		!m.themePicker.IsOpen() && !m.contextOverlayOpen() {
+		next, cmd, _ := m.openThemePicker()
+		return next, cmd
+	}
 	if next, cmd, ok := m.updateOpenModal(msg); ok {
 		return next, cmd
 	}
@@ -287,6 +293,7 @@ func (m *Model) applyLayout() {
 	m.dialog = m.dialog.SetBounds(0, 0, m.width, m.height)
 	m.oauthDialog = m.oauthDialog.SetBounds(0, 0, m.width, m.height)
 	m.authPicker = m.authPicker.SetBounds(0, 0, m.width, m.height)
+	m.themePicker = m.themePicker.SetBounds(0, 0, m.width, m.height)
 	m.projectIO = m.projectIO.SetBounds(0, 0, m.width, m.height)
 	detailsWidth := m.detailsWidthForLayout(layout)
 	m.details = m.details.SetBounds(layout.bottomWidth-detailsWidth, 0, detailsWidth, layout.topHeight)

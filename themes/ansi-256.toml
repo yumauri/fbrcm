@@ -1,0 +1,53 @@
+# Standard xterm-256 theme for terminals without true-color support.
+# Every value is an ANSI palette index from 0 through 255.
+
+[colors]
+url = "81"
+primary = "75"
+selection = "24"
+secondary = "215"
+highlight = "221"
+highlight_muted = "179"
+text = "255"
+text_soft = "252"
+text_muted = "245"
+text_dim = "240"
+error = "203"
+success = "78"
+row_stripe = "234"
+
+condition_blue = "75"
+condition_brown = "137"
+condition_cyan = "81"
+condition_deep_orange = "209"
+condition_green = "78"
+condition_indigo = "105"
+condition_lime = "149"
+condition_orange = "215"
+condition_pink = "211"
+condition_purple = "141"
+condition_teal = "80"
+
+diff_added = "78"
+diff_removed = "203"
+diff_changed = "221"
+diff_note = "245"
+history_added_background = "22"
+history_removed_background = "52"
+history_changed_background = "58"
+inactive_selection = "237"
+
+offline_foreground = "15"
+offline_background = "160"
+
+log_debug = "245"
+log_info = "81"
+log_warn = "221"
+log_error = "203"
+log_fatal = "170"
+log_silent = "240"
+log_default = "255"
+
+logo_start = "220"
+logo_middle = "208"
+logo_end = "196"

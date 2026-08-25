@@ -124,6 +124,11 @@ func validateAppConfig(path string, exists bool, cfg *coreconfig.AppConfig) conf
 			report.Errors = append(report.Errors, configDiagnostic{Severity: "error", Code: "missing_profile", Key: "profile", Message: fmt.Sprintf("profile %q does not exist", profile)})
 		}
 	}
+	if theme := cfg.Theme; theme != "" {
+		if err := coreconfig.ValidateConfiguredTheme(theme); err != nil {
+			report.Errors = append(report.Errors, configDiagnostic{Severity: "error", Code: "invalid_theme", Key: "theme", Message: shared.SafeErrorText(err)})
+		}
+	}
 	for _, diagnostic := range tuiconfig.ValidateConfiguredKeys(cfg.Keys) {
 		if diagnostic.Severity == "warning" {
 			report.Warnings = append(report.Warnings, diagnostic)
@@ -170,6 +175,12 @@ func configValue(state configState, key string) (any, string, error) {
 	case key == "profile":
 		source := scalarSource(strings.TrimSpace(state.Local.Profile) != "", strings.TrimSpace(state.Global.Profile) != "")
 		return state.Effective.Profile, source, nil
+	case key == "theme":
+		source := scalarSource(state.Local.Theme != "", state.Global.Theme != "")
+		if state.Effective.Theme == "" {
+			return nil, source, nil
+		}
+		return state.Effective.Theme, source, nil
 	case key == "powerline_glyphs":
 		source := scalarSource(state.Local.PowerlineGlyphs != nil, state.Global.PowerlineGlyphs != nil)
 		return *state.Effective.PowerlineGlyphs, source, nil

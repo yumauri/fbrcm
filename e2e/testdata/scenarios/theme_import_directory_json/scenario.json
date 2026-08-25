@@ -1,0 +1,14 @@
+{
+  "name": "theme_import_directory_json",
+  "command_id": "theme.import",
+  "args": ["theme", "import", "theme-pack", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {"root": "config", "path": "themes/existing.toml"},
+    {"root": "config", "path": "themes/fresh.toml"}
+  ],
+  "json_output": true,
+  "fixture": "theme_import_directory",
+  "offline": true
+}

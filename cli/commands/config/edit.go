@@ -166,7 +166,7 @@ func loadConfigStateForEdit(state configState, scope string, full bool) ([]byte,
 		if err != nil {
 			return nil, fmt.Errorf("encode full config template: %w", err)
 		}
-		header := []byte("# Complete generated template. Remove entries you do not want to override.\n# View effective bindings with: fbrcm config show keys\n\n")
+		header := []byte("# Complete generated template. Remove entries you do not want to override.\n# Theme format: https://github.com/yumauri/fbrcm/blob/main/docs/theming.md\n# theme = \"nord\"\n# View effective bindings with: fbrcm config show keys\n\n")
 		full := append(header, raw...)
 		if template.Network == nil {
 			full = append(full, []byte("\n# API requests share concurrency, pacing, retry, and 429 cooldown controls.\n# Set requests_per_minute above zero to pace requests proactively.\n# [network]\n# max_concurrent_requests = 5\n# requests_per_minute = 0\n# rate_limit_cooldown = \"30s\"\n# [network.retry]\n# max_attempts = 5\n# base_delay = \"1s\"\n# max_delay = \"10s\"\n# jitter_percent = 50\n")...)

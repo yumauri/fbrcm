@@ -256,6 +256,9 @@ status in either mode.
 JSON mode never reads a menu choice or confirmation and never launches an
 editor, file picker, or browser authorization flow.
 
+Human-only theme palette swatches emitted by `theme` and `theme list` are
+terminal presentation and are not represented in JSON DTOs or schemas.
+
 - A mutation that needs confirmation returns `interaction.required` with
   status `10`; pass `--yes` after reviewing the command.
 - Project import requires `--merge` or `--override` if the target already has
@@ -263,6 +266,11 @@ editor, file picker, or browser authorization flow.
   `--merge-resolve=import`.
 - Promotion requires `--all` or explicit selection filters. `--interactive`
   is unavailable in JSON mode.
+- `theme import --json` accepts a positional file path, directory path, or HTTP
+  URL, or a TOML document on redirected stdin. Stdin requires `--name`.
+  Directory batches skip existing theme destinations and return structured
+  `theme.already_exists` warnings. Without any input, the command returns
+  `interaction.required` instead of opening the file selector.
 - `config edit --json` always returns `interaction.required`. OAuth `auth
   login --json` first uses a valid cached access token or refresh token and
   returns `interaction.required` only when human authorization is actually
@@ -434,8 +442,9 @@ schema-valid capability. The `x-fbrcm-side-effect-semantics` map defines every
 effect value. The effect vocabulary distinguishes authentication
 network access and Firebase reads, validation, writes, and managed-feature
 deletion from local cache, file, draft, general state, and trusted-hook effects.
-Local file, cache, and draft deletion have distinct effect names, and
-`local_cache_move` separately identifies relocation of an existing cache tree;
+Local file, cache, and draft deletion have distinct effect names.
+`local_file_move` identifies theme-file renames, while `local_cache_move`
+separately identifies relocation of an existing cache tree;
 destructive
 commands publish the most specific applicable deletion effects rather than
 requiring an agent to infer deletion from `local_state_write`.
@@ -461,6 +470,18 @@ successful Firebase registry sync after a missing or empty registry. On commands
 that bypass pre-execution profile initialization, envelope-only bootstrap is
 best-effort: a filesystem failure is logged but does not change the command's
 machine outcome.
+
+Theme files affect only human terminal rendering. JSON, stateless, and
+`NO_COLOR` execution skip startup theme application, so theme selection cannot
+alter a machine envelope. Theme management remains available in JSON mode:
+list/path/current are local reads, switch and reset write configuration, delete
+removes one file, rename moves a file and may update references, and import writes one
+validated file. HTTP imports alone declare conditional network access through
+`runtime_state.theme_source requires_network`; they do not perform Firebase
+authentication. Explicit configuration commands may still read a theme file
+to validate the state they inspect or modify. See
+[Theming](theming.md).
+
 In particular, draftable remote mutations declare their unconditional or
 stdin-conditional Firebase read, Firebase validation for changed live
 candidates, confirmation-authorized publication condition, and separate
@@ -678,11 +699,14 @@ Google selects `web` and requires its redirect array, while fbrcm validates the
 ID, secret, and endpoints from `installed`; agents should prefer one complete
 object. URI rules explicitly publish `require_absolute: true` in addition to
 the exact Go parser and whitespace normalization. Service-account email fields
-publish their exact Go parser rule. OAuth, service-account, and project-import
-invocation schemas publish typed `x-fbrcm-input-selection` rules: a nonempty
-`options.from` is selected before `stdin.document`, a later stdin document is
-not consumed when the file source wins, and absence of both sources produces
-`interaction.required`. Capability lookup represents a
+publish their exact Go parser rule. OAuth, service-account, project-import, and
+theme-import invocation schemas publish typed `x-fbrcm-input-selection` rules:
+a nonempty file, directory, or URL source is selected before `stdin.document`, a later
+stdin document is not consumed when the earlier source wins, and absence of
+both sources produces `interaction.required`. Theme import publishes a
+`toml_document` stdin mode and requires `options.name` when stdin is selected.
+Its experimental human-only directory-stdin transport remains outside schemas
+and capability metadata. Capability lookup represents a
 multi-component executable command path as an argument array and publishes
 typed not-found and non-executable-group results. Help uses a separate
 longest-existing-prefix rule: unmatched suffix components are ignored, and an

@@ -13,6 +13,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/erikgeiser/promptkit v0.12.0
 	github.com/expr-lang/expr v1.17.8
+	github.com/fsnotify/fsnotify v1.10.1
 	github.com/itchyny/gojq v0.12.19
 	github.com/mattn/go-runewidth v0.0.28
 	github.com/pelletier/go-toml/v2 v2.4.3
@@ -47,6 +48,6 @@ require (
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/xo/terminfo v1.0.0 // indirect
-	golang.org/x/exp v0.0.0-20260820142414-ca536658362e // indirect
+	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/text v0.41.0 // indirect
 )

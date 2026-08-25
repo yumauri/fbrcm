@@ -1,0 +1,9 @@
+{
+  "name": "theme_current_json",
+  "command_id": "theme",
+  "args": ["theme", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "offline": true
+}

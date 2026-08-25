@@ -7,6 +7,9 @@ import (
 )
 
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
+	if m.themePicker.IsOpen() {
+		return m.updateThemePicker(msg)
+	}
 	if m.workspaceMenu {
 		return m.updateWorkspaceMenu(msg)
 	}

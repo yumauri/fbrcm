@@ -94,6 +94,12 @@ func (m Model) SetActive(active bool) Model {
 	return m
 }
 
+// RefreshTheme rebuilds the viewport after the runtime palette changes.
+func (m Model) RefreshTheme() Model {
+	m.refreshViewport()
+	return m
+}
+
 func (m *Model) moveLevel(delta int) {
 	levels := corelog.AvailableLevels()
 	current := 0

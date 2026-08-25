@@ -128,9 +128,17 @@ func loadStdinDirectoryParameterRows(cmd *cobra.Command, projectFilters []string
 			continue
 		}
 
-		raw, err := readStdinDirectoryFile(dir, name)
+		child, err := shared.OpenStdinDirectoryFile(dir, name)
 		if err != nil {
-			return true, nil, fmt.Errorf("read stdin directory file %q: %w", name, err)
+			return true, nil, fmt.Errorf("open stdin directory file %q: %w", name, err)
+		}
+		raw, readErr := io.ReadAll(child)
+		closeErr := child.Close()
+		if readErr != nil {
+			return true, nil, fmt.Errorf("read stdin directory file %q: %w", name, readErr)
+		}
+		if closeErr != nil {
+			return true, nil, fmt.Errorf("close stdin directory file %q: %w", name, closeErr)
 		}
 		if !json.Valid(raw) {
 			return true, nil, shared.InvalidInput("remote_config.invalid", "stdin_directory", fmt.Errorf("stdin directory file %q is not valid json", name))

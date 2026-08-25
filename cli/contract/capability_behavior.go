@@ -368,7 +368,7 @@ func withProjectRegistrySync(b capabilityBehavior) capabilityBehavior {
 // persists credentials; auth login declares its more specific behavior in the
 // command manifest below.
 func withMachineAuthenticationEffects(id string, b capabilityBehavior) capabilityBehavior {
-	if b.network == "none" || id == "auth.login" {
+	if b.network == "none" || id == "auth.login" || id == "theme.import" {
 		return b
 	}
 	b = b.withEffect("authentication_remote_access", conditionClause(
@@ -468,6 +468,17 @@ func withInteraction(b capabilityBehavior, mode, jsonBehavior string, when ...Be
 	return b
 }
 
+func themeSwitchBehavior() capabilityBehavior {
+	b := localWrite()
+	b.destructive = true
+	b.destructiveWhen = []BehaviorConditionClause{conditionClause(
+		predicate("argument", "name", "equals", "built-in"),
+		predicate("runtime_state", "mutation_plan", "has_changes", nil),
+	)}
+	b.destructiveReasons = []string{"the built-in selector removes a persisted theme selection"}
+	return b
+}
+
 var capabilityBehaviors = map[string]capabilityBehavior{
 	"root":                  behavior(0, "none"),
 	"help":                  behavior(0, "none"),
@@ -493,6 +504,9 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"profile":                behavior(0, "none"),
 	"profile.list":           behavior(0, "none"),
 	"profile.path":           behavior(0, "none"),
+	"theme":                  behavior(0, "none"),
+	"theme.list":             behavior(0, "none"),
+	"theme.path":             behavior(0, "none"),
 	"project.templates.show": behavior(0, "none"),
 	"projects.aliases.list":  behavior(0, "none"),
 	"projects.path":          behavior(0, "none"),
@@ -529,7 +543,29 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		predicate("runtime_state", "mutation_plan", "has_changes", nil),
 		predicate("runtime_state", "profile_cache", "available", nil),
 	)),
-	"profile.switch":          behavior(1, "none", effect("local_state_write")),
+	"profile.switch": behavior(1, "none", effect("local_state_write")),
+	"theme.delete":   destructive(localMutationEffects("local_file_delete"), "removes an installed theme file"),
+	"theme.rename": localWrite().withEffect("local_file_move", conditionClause(
+		predicate("runtime_state", "mutation_plan", "has_changes", nil),
+	)),
+	"theme.switch": themeSwitchBehavior(),
+	"theme.reset":  destructive(localWrite(), "removes a persisted theme selection"),
+	"theme.import": withInteraction(withStdin(capabilityBehavior{
+		level: 2,
+		effects: []effectBehavior{effect("local_file_write", conditionClause(
+			predicate("runtime_state", "mutation_plan", "has_changes", nil),
+		))},
+		network: "conditional",
+		networkWhen: []BehaviorConditionClause{conditionClause(
+			predicate("runtime_state", "theme_source", "requires_network", nil),
+		)},
+		idempotency: "conditional",
+		idempotencyWhen: []IdempotencyCondition{
+			{Idempotency: "yes", When: []BehaviorConditionClause{conditionClause(predicate("runtime_state", "theme_source", "is_directory", nil))}},
+			{Idempotency: "no", When: []BehaviorConditionClause{conditionClause(predicate("runtime_state", "theme_source", "is_single", nil))}},
+		},
+	}), "optional", "missing_input_returns_interaction",
+		conditionClause(predicate("argument", "source", "absent", nil), predicate("stdin", "document", "absent", nil))),
 	"project.templates.set":   localWrite(),
 	"projects.aliases.import": destructive(previewableLocalWrite(), "--conflict overwrite may replace persisted project aliases"),
 	"projects.aliases.remove": destructive(localWrite(), "removes persisted project aliases"),

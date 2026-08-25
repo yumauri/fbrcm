@@ -201,7 +201,7 @@ Use an explicit target such as `client@my-project` or
 
 ## Configuration
 
-The TUI key map and active-profile preference can be stored in the global
+The TUI key map, theme, and active-profile preference can be stored in the global
 `config.toml` or a repository `.fbrcm.toml`. fbrcm searches from the current
 directory to the filesystem root, then deeply overlays the nearest local file
 on the global configuration. Inspect the effective configuration and its
@@ -220,6 +220,7 @@ For example:
 
 ```sh
 fbrcm config set powerline_glyphs false
+fbrcm config set theme nord
 fbrcm config set keys.projects.refresh u ctrl+r
 fbrcm config set network.max_concurrent_requests 3
 fbrcm config set network.requests_per_minute 30
@@ -253,6 +254,10 @@ during startup. Use `fbrcm config show keys` as the
 authoritative key-name reference, or `fbrcm config edit --full` to stage a
 complete generated template.
 
+Themes are shareable TOML files stored under the user-wide `themes` directory.
+See [Theming](docs/theming.md) for installation, inheritance, fallback rules,
+and the complete color-token reference.
+
 Profiles keep authentication, project selection, drafts, and caches separate.
 Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 
@@ -262,6 +267,7 @@ Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 | --- | --- |
 | [Agent quickstart](https://github.com/yumauri/fbrcm/blob/main/docs/agent-quickstart.md) | Noninteractive discovery, safe mutation, structured recovery, and automation pitfalls |
 | [TUI guide](https://github.com/yumauri/fbrcm/blob/main/docs/TUI.md) | Setup, panels, shortcuts, editing, drafts, history, promotion, and key configuration |
+| [Theming](https://github.com/yumauri/fbrcm/blob/main/docs/theming.md) | Shared CLI/TUI themes, inheritance, color tokens, and fallback behavior |
 | [CLI reference](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md) | Complete command tree, flags, output contracts, template targets, and write behavior |
 | [Expression filters](https://github.com/yumauri/fbrcm/blob/main/docs/EXPR.md) | Expression contexts, typed values, helper functions, and `jq` queries |
 | [Architecture](https://github.com/yumauri/fbrcm/blob/main/docs/architecture.md) | Package boundaries and maintainer invariants |

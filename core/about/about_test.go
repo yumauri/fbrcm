@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
+
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 func TestBuildInfoTextMatchesVersionOutput(t *testing.T) {
@@ -16,6 +18,25 @@ func TestBuildInfoTextMatchesVersionOutput(t *testing.T) {
 	colored := info.Text(true)
 	if !strings.Contains(colored, "\x1b[") || ansi.Strip(colored) != want {
 		t.Fatalf("colored About text = %q, want styled %q", colored, want)
+	}
+}
+
+func TestLogoGradientUsesRuntimeTheme(t *testing.T) {
+	corestyles.ApplyPalette(corestyles.Palette{
+		corestyles.TokenLogoStart:  "#010203",
+		corestyles.TokenLogoMiddle: "#040506",
+		corestyles.TokenLogoEnd:    "#070809",
+	})
+	t.Cleanup(corestyles.ResetPalette)
+
+	if got := interpolateLogoColor(0, 101); got != (logoColor{red: 1, green: 2, blue: 3}) {
+		t.Fatalf("start = %#v", got)
+	}
+	if got := interpolateLogoColor(20, 101); got != (logoColor{red: 4, green: 5, blue: 6}) {
+		t.Fatalf("middle = %#v", got)
+	}
+	if got := interpolateLogoColor(100, 101); got != (logoColor{red: 7, green: 8, blue: 9}) {
+		t.Fatalf("end = %#v", got)
 	}
 }
 

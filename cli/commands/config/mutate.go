@@ -102,6 +102,15 @@ func setConfigValue(cfg *coreconfig.AppConfig, key string, values []string) (any
 	switch {
 	case key == "profile":
 		return nil, fmt.Errorf("profile is managed by `fbrcm profile switch <name>`")
+	case key == "theme":
+		if len(values) != 1 {
+			return nil, fmt.Errorf("theme requires exactly one theme name")
+		}
+		if err := coreconfig.ValidateThemeName(values[0]); err != nil {
+			return nil, err
+		}
+		cfg.Theme = values[0]
+		return values[0], nil
 	case key == "powerline_glyphs":
 		if len(values) != 1 {
 			return nil, fmt.Errorf("powerline_glyphs requires exactly one boolean value")
@@ -322,7 +331,8 @@ func requireLocalProjectAliasScope(key, scope string) error {
 
 func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreferences bool) (bool, error) {
 	if allPreferences {
-		changed := candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0 || candidate.Network != nil
+		changed := candidate.Theme != "" || candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0 || candidate.Network != nil
+		candidate.Theme = ""
 		candidate.PowerlineGlyphs = nil
 		candidate.Keys = map[string]map[string][]string{}
 		candidate.Network = nil
@@ -332,6 +342,10 @@ func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreference
 	switch {
 	case key == "profile":
 		return false, fmt.Errorf("profile is managed by `fbrcm profile switch <name>`")
+	case key == "theme":
+		changed := candidate.Theme != ""
+		candidate.Theme = ""
+		return changed, nil
 	case key == "powerline_glyphs":
 		changed := candidate.PowerlineGlyphs != nil
 		candidate.PowerlineGlyphs = nil

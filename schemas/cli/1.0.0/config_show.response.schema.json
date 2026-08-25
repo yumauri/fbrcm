@@ -140,6 +140,9 @@
                     "object",
                     "null"
                   ]
+                },
+                "theme": {
+                  "type": "string"
                 }
               },
               "required": [

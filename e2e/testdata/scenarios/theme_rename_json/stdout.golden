@@ -1,0 +1,26 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
+  "contract_version": "1.0.0",
+  "command": "theme.rename",
+  "requested_command": "theme.rename",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "old_theme": "nord",
+    "new_theme": "nord-renamed",
+    "effective_theme": "",
+    "changed": true
+  },
+  "errors": [],
+  "warnings": []
+}

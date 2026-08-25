@@ -51,7 +51,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "personalizations", "profile", "project", "projects", "rollouts", "schema", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "personalizations", "profile", "project", "projects", "rollouts", "schema", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -66,6 +66,13 @@ func TestRootCommandKeepsProfileBypassContract(t *testing.T) {
 	if !isProfileCommand(profile) {
 		t.Fatalf("profile list command no longer bypasses active profile setup")
 	}
+	theme, _, err := cmd.Find([]string{"theme", "list"})
+	if err != nil {
+		t.Fatalf("find theme list: %v", err)
+	}
+	if !isThemeCommand(theme) {
+		t.Fatalf("theme list command no longer bypasses active profile setup")
+	}
 }
 
 func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
@@ -75,7 +82,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{24, 24, 24}) {
+	if !reflect.DeepEqual(counts, []int{25, 25, 25}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }

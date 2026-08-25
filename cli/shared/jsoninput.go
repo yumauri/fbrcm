@@ -39,7 +39,7 @@ func ReadJSONInput(cmd *cobra.Command, fromPath, label string, onCancel error) (
 			return nil, InteractionRequiredWithArguments(fmt.Sprintf("%s input requires --from or piped stdin in JSON mode", label), "external_input", false, "--from")
 		}
 		progress.Stop()
-		selectedPath, err := pickJSONFile()
+		selectedPath, err := PickFile([]string{".json"})
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +67,9 @@ type jsonPickerModel struct {
 	cancel   bool
 }
 
-func pickJSONFile() (string, error) {
+// PickFile opens the shared interactive file selector, restricted to the
+// supplied filename extensions. It returns an empty path when canceled.
+func PickFile(allowedTypes []string) (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		currentDir = "."
@@ -75,7 +77,7 @@ func pickJSONFile() (string, error) {
 
 	picker := filepicker.New()
 	picker.CurrentDirectory = currentDir
-	picker.AllowedTypes = []string{".json"}
+	picker.AllowedTypes = append([]string(nil), allowedTypes...)
 	picker.FileAllowed = true
 	picker.DirAllowed = false
 	picker.ShowHidden = true

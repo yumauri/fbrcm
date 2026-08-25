@@ -17,6 +17,7 @@ import (
 	"github.com/yumauri/fbrcm/core/strfold"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/messages"
+	"github.com/yumauri/fbrcm/tui/styles"
 )
 
 type historyColumns struct {
@@ -25,20 +26,14 @@ type historyColumns struct {
 	leftWidth, rightWidth int
 }
 
-var (
-	historyAddedBackground   = lipgloss.Color("#315A46")
-	historyRemovedBackground = lipgloss.Color("#68434A")
-	historyChangedBackground = lipgloss.Color("#665A38")
-)
-
 func historyChangeBackground(kind diff.ChangeKind) color.Color {
 	switch kind {
 	case diff.ChangeAdded:
-		return historyAddedBackground
+		return styles.PaletteHistoryAddedBackground
 	case diff.ChangeRemoved:
-		return historyRemovedBackground
+		return styles.PaletteHistoryRemovedBackground
 	case diff.ChangeChanged:
-		return historyChangedBackground
+		return styles.PaletteHistoryChangedBackground
 	default:
 		return nil
 	}

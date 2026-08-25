@@ -115,6 +115,7 @@ func CloneAppConfig(cfg *AppConfig) *AppConfig {
 	}
 	out := &AppConfig{
 		Profile: cfg.Profile,
+		Theme:   cfg.Theme,
 		Keys:    make(map[string]map[string][]string, len(cfg.Keys)),
 	}
 	if cfg.PowerlineGlyphs != nil {

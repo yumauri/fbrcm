@@ -1,0 +1,328 @@
+{
+  "$defs": {
+    "success_data": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "imported"
+              ],
+              "type": "string"
+            },
+            "theme": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "source",
+            "status",
+            "theme"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "imported_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "imported"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ]
+                    },
+                    "then": {
+                      "allOf": [
+                        {
+                          "not": {
+                            "required": [
+                              "reason"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "status": {
+                          "const": "skipped"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "reason": {
+                          "const": "already_exists"
+                        }
+                      },
+                      "required": [
+                        "reason"
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "enum": [
+                      "already_exists"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "imported",
+                      "skipped"
+                    ],
+                    "type": "string"
+                  },
+                  "theme": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path",
+                  "status",
+                  "theme"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "skipped_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "count",
+            "imported_count",
+            "items",
+            "skipped_count",
+            "source"
+          ],
+          "type": "object",
+          "x-fbrcm-invariants": [
+            {
+              "left": {
+                "field": "count"
+              },
+              "op": "eq",
+              "right": {
+                "op": "length",
+                "value": {
+                  "field": "items"
+                }
+              }
+            },
+            {
+              "left": {
+                "field": "imported_count"
+              },
+              "op": "eq",
+              "right": {
+                "collection": {
+                  "field": "items"
+                },
+                "op": "count_where",
+                "where": {
+                  "left": {
+                    "field": "item.status"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "const": "imported"
+                  }
+                }
+              }
+            },
+            {
+              "left": {
+                "field": "skipped_count"
+              },
+              "op": "eq",
+              "right": {
+                "collection": {
+                  "field": "items"
+                },
+                "op": "count_where",
+                "where": {
+                  "left": {
+                    "field": "item.status"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "const": "skipped"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "theme.already_exists"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "theme.import"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

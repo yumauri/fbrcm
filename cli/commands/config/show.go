@@ -111,6 +111,11 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 			return nil, "absent", nil
 		}
 		return cfg.Profile, source, nil
+	case key == "theme":
+		if cfg.Theme == "" {
+			return nil, "absent", nil
+		}
+		return cfg.Theme, source, nil
 	case key == "powerline_glyphs":
 		if cfg.PowerlineGlyphs == nil {
 			return nil, "absent", nil

@@ -186,6 +186,9 @@ func applyCollectionSemantics(schema map[string]any, itemType reflect.Type) {
 	case "github.com/yumauri/fbrcm/cli/commands/profile.profileListItem":
 		appendInvariant(invariant("implies", "if", invariant("gt", "left", invariant("length", "value", invariantField("items")), "right", invariantConst(0)), "then", invariant("eq", "left", countWhere("active", true), "right", invariantConst(1))))
 		appendInvariant(invariant("implies", "if", invariant("eq", "left", invariant("length", "value", invariantField("items")), "right", invariantConst(0)), "then", invariant("eq", "left", countWhere("active", true), "right", invariantConst(0))))
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeListItem":
+		appendInvariant(invariant("eq", "left", invariant("gt", "left", countWhere("active", true), "right", invariantConst(1)), "right", invariantConst(false)))
+		appendInvariant(invariant("eq", "left", countWhere("built_in", true), "right", invariantConst(1)))
 	case "github.com/yumauri/fbrcm/cli/commands/versions.versionJSON":
 		appendInvariant(invariant("eq", "left", invariant("gt", "left", countWhere("current", true), "right", invariantConst(1)), "right", invariantConst(false)))
 	}
@@ -394,6 +397,43 @@ func applyTypeSemantics(schema map[string]any, typeOf reflect.Type) {
 		schema["x-fbrcm-invariants"] = []any{
 			invariant("iff", "left", invariant("eq", "left", invariantField("changed"), "right", invariantConst(false)), "right", invariant("eq", "left", invariantField("previous_profile"), "right", invariantField("requested_profile"))),
 			invariant("iff", "left", invariant("eq", "left", invariantField("overridden"), "right", invariantConst(false)), "right", invariant("eq", "left", invariantField("effective_profile"), "right", invariantField("requested_profile"))),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeCurrentResult":
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("iff", "left", invariant("eq", "left", invariantField("built_in"), "right", invariantConst(true)), "right", invariant("eq", "left", invariantField("theme"), "right", invariantConst(""))),
+			invariant("iff", "left", invariant("eq", "left", invariantField("source"), "right", invariantConst("default")), "right", invariant("eq", "left", invariantField("built_in"), "right", invariantConst(true))),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeRenameResult":
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("iff", "left", invariant("eq", "left", invariantField("changed"), "right", invariantConst(false)), "right", invariant("eq", "left", invariantField("old_theme"), "right", invariantField("new_theme"))),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeResetResult":
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("iff", "left", invariant("eq", "left", invariantField("changed"), "right", invariantConst(true)), "right", invariant("eq", "left", invariantField("status"), "right", invariantConst("reset"))),
+			invariant("iff", "left", invariant("eq", "left", invariantField("changed"), "right", invariantConst(false)), "right", invariant("eq", "left", invariantField("previous_theme"), "right", invariantConst("built-in"))),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeSwitchResult":
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("iff", "left", invariant("eq", "left", invariantField("changed"), "right", invariantConst(false)), "right", invariant("eq", "left", invariantField("previous_theme"), "right", invariantField("requested_theme"))),
+			invariant("iff", "left", invariant("eq", "left", invariantField("overridden"), "right", invariantConst(false)), "right", invariant("eq", "left", invariantField("effective_theme"), "right", invariantField("requested_theme"))),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeBatchImportItem":
+		schema["allOf"] = []any{
+			fieldValueShapeConstraint("status", "imported", nil, nil, []string{"reason"}),
+			fieldValueShapeConstraint("status", "skipped", map[string]any{"reason": map[string]any{"const": "already_exists"}}, []string{"reason"}, nil),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/theme.themeBatchImportResult":
+		if count, ok := properties["count"].(map[string]any); ok {
+			count["minimum"] = 1
+		}
+		if items, ok := properties["items"].(map[string]any); ok {
+			items["type"] = "array"
+			items["minItems"] = 1
+		}
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("eq", "left", invariantField("count"), "right", invariant("length", "value", invariantField("items"))),
+			invariant("eq", "left", invariantField("imported_count"), "right", invariant("count_where", "collection", invariantField("items"), "where", invariant("eq", "left", invariantField("item.status"), "right", invariantConst("imported")))),
+			invariant("eq", "left", invariantField("skipped_count"), "right", invariant("count_where", "collection", invariantField("items"), "where", invariant("eq", "left", invariantField("item.status"), "right", invariantConst("skipped")))),
 		}
 	case "github.com/yumauri/fbrcm/cli/commands/hooks.untrustResult":
 		properties["trusted"] = map[string]any{"const": false}

@@ -1,0 +1,666 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "theme": {
+      "additionalProperties": false,
+      "description": "Theme document decoded from TOML for theme import",
+      "properties": {
+        "colors": {
+          "additionalProperties": false,
+          "properties": {
+            "condition_blue": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_brown": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_cyan": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_deep_orange": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_green": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_indigo": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_lime": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_orange": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_pink": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_purple": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "condition_teal": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "diff_added": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "diff_changed": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "diff_note": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "diff_removed": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "error": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "highlight": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "highlight_muted": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "history_added_background": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "history_changed_background": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "history_removed_background": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "inactive_selection": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_debug": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_default": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_error": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_fatal": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_info": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_silent": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "log_warn": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "logo_end": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "logo_middle": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "logo_start": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "offline_background": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "offline_foreground": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "primary": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "row_stripe": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "secondary": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "selection": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "success": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "text": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "text_dim": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "text_muted": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "text_soft": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "pattern": "^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$"
+                },
+                {
+                  "pattern": "^(?:-0+|\\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$"
+                }
+              ],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "inherits": {
+          "anyOf": [
+            {
+              "const": ""
+            },
+            {
+              "not": {
+                "enum": [
+                  ".",
+                  "..",
+                  "built-in"
+                ]
+              },
+              "pattern": "^[^/\\\\\\s](?:[^/\\\\]*[^/\\\\\\s])?$"
+            }
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "allOf": [
+          {
+            "properties": {
+              "stdin": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            },
+            "required": [
+              "stdin"
+            ]
+          },
+          {
+            "properties": {
+              "arguments": {
+                "not": {
+                  "required": [
+                    "source"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "arguments"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "required": [
+              "name"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-grammar": "local .toml file path, local directory path, or absolute HTTP/HTTPS URL whose path ends in .toml",
+          "x-fbrcm-validation": [
+            {
+              "maximum_bytes": 1048576,
+              "operator": "theme_import_source"
+            }
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Install the imported theme under this name",
+          "not": {
+            "const": "built-in"
+          },
+          "type": "string"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective": false
+        },
+        "stateless": {
+          "const": false,
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/theme"
+        }
+      ]
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-input-selection": [
+    {
+      "later_sources": "ignored_without_consumption",
+      "on_missing": "interaction.required",
+      "operator": "first_available",
+      "sources": [
+        "arguments.source",
+        "stdin.document"
+      ]
+    }
+  ]
+}

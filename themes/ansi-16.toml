@@ -1,0 +1,53 @@
+# Standard 16-color ANSI theme for terminals without 256-color or true-color support.
+# Every value is an ANSI palette index from 0 through 15.
+
+[colors]
+url = "14"
+primary = "12"
+selection = "4"
+secondary = "3"
+highlight = "11"
+highlight_muted = "6"
+text = "15"
+text_soft = "7"
+text_muted = "8"
+text_dim = "8"
+error = "9"
+success = "10"
+row_stripe = "0"
+
+condition_blue = "12"
+condition_brown = "3"
+condition_cyan = "14"
+condition_deep_orange = "9"
+condition_green = "10"
+condition_indigo = "4"
+condition_lime = "10"
+condition_orange = "11"
+condition_pink = "13"
+condition_purple = "5"
+condition_teal = "6"
+
+diff_added = "10"
+diff_removed = "9"
+diff_changed = "11"
+diff_note = "8"
+history_added_background = "2"
+history_removed_background = "1"
+history_changed_background = "3"
+inactive_selection = "8"
+
+offline_foreground = "15"
+offline_background = "9"
+
+log_debug = "8"
+log_info = "14"
+log_warn = "11"
+log_error = "9"
+log_fatal = "13"
+log_silent = "8"
+log_default = "15"
+
+logo_start = "11"
+logo_middle = "3"
+logo_end = "9"

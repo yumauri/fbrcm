@@ -1,0 +1,13 @@
+{
+  "name": "theme_import_json",
+  "command_id": "theme.import",
+  "args": ["theme", "import", "firebase.toml", "--name", "firebase-e2e", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {"root": "config", "path": "themes/firebase-e2e.toml"}
+  ],
+  "json_output": true,
+  "fixture": "theme_import",
+  "offline": true
+}

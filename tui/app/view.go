@@ -18,8 +18,8 @@ var (
 
 	offlineBadgeStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("15")).
-				Background(lipgloss.Color("196")).
+				Foreground(styles.PaletteOfflineForeground).
+				Background(styles.PaletteOfflineBackground).
 				Padding(0, 1)
 
 	profileBadgeStyle = lipgloss.NewStyle().
@@ -34,7 +34,7 @@ func (m Model) View() tea.View {
 		body := m.profileOverlay(minsize.View(m.width, m.height))
 		return appView(rootStyle.Render(body), tea.MouseModeNone)
 	}
-	if m.setup.IsOpen() && !m.setup.IsPopup() && !m.oauthDialog.IsOpen() {
+	if m.setup.IsOpen() && !m.setup.IsPopup() && !m.oauthDialog.IsOpen() && !m.themePicker.IsOpen() {
 		body := m.profileOverlay(m.setup.View(m.width, m.height))
 		return appView(rootStyle.Render(body), tea.MouseModeAllMotion)
 	}
@@ -71,7 +71,7 @@ func (m Model) mouseMode() tea.MouseMode {
 	if m.setup.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
-	if m.dialog.IsOpen() || m.oauthDialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
+	if m.themePicker.IsOpen() || m.dialog.IsOpen() || m.oauthDialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
 	if m.active == panels.Logs {
@@ -145,6 +145,7 @@ func (m Model) popupWindowOpen() bool {
 
 func (m Model) contextOverlayOpen() bool {
 	return (m.setup.IsOpen() && m.setup.IsPopup()) ||
+		m.themePicker.IsOpen() ||
 		m.parameters.HistoryPickerOpen() ||
 		m.details.DropdownOpen() ||
 		m.dialog.IsOpen() ||
@@ -170,6 +171,7 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendDiffViewLayer(layers)
 	layers = m.appendDialogLayers(layers)
 	layers = m.appendProjectIOLayer(layers)
+	layers = m.appendThemePickerLayer(layers)
 	layers = m.appendSetupLayer(layers)
 	layers = m.appendOAuthDialogLayer(layers)
 	layers = m.appendOfflineLayer(layers)
@@ -177,6 +179,15 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers = m.appendAboutLayer(layers)
 	layers = m.appendProfileLayer(layers)
 	return layers
+}
+
+func (m Model) appendThemePickerLayer(layers []*lipgloss.Layer) []*lipgloss.Layer {
+	if !m.themePicker.IsOpen() {
+		return layers
+	}
+	view := m.themePicker.View()
+	x, y := m.themePicker.Position()
+	return append(layers, lipgloss.NewLayer(view).ID("theme-picker").X(x).Y(y).Z(50))
 }
 
 func (m Model) appendWorkspaceMenuLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {

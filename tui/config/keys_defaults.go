@@ -9,6 +9,7 @@ func DefaultKeyMap() KeyMap {
 			ActionHelp:                  {"?"},
 			ActionAccounts:              {"ctrl+a"},
 			ActionProfiles:              {"ctrl+p"},
+			ActionThemes:                {"ctrl+t"},
 			ActionFocusProjects:         {"1"},
 			ActionFocusParameters:       {"2"},
 			ActionFocusConditions:       {"3"},
@@ -23,6 +24,14 @@ func DefaultKeyMap() KeyMap {
 			ActionWorkspaceMenu:         {"\\"},
 		},
 		BlockWorkspaceMenu: {
+			ActionCancel: {"esc"},
+			ActionSubmit: {"enter"},
+			ActionUp:     {"up", "k"},
+			ActionDown:   {"down", "j"},
+			ActionHome:   {"home"},
+			ActionEnd:    {"end"},
+		},
+		BlockThemePicker: {
 			ActionCancel: {"esc"},
 			ActionSubmit: {"enter"},
 			ActionUp:     {"up", "k"},

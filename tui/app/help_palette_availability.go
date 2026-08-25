@@ -231,6 +231,8 @@ func (m Model) filterHelpActionAvailability(action tuiconfig.Action) (bool, stri
 
 func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 	switch {
+	case m.themePicker.IsOpen():
+		return tuiconfig.BlockThemePicker, "theme picker is open"
 	case m.setup.IsOpen():
 		if block, ok := m.setup.HelpBlock(); ok {
 			return block, ""
@@ -302,7 +304,7 @@ func isOverlayHelpBlock(block tuiconfig.Block) bool {
 	switch block {
 	case tuiconfig.BlockHistoryPicker, tuiconfig.BlockDetailsForm, tuiconfig.BlockDialog,
 		tuiconfig.BlockBoolInput, tuiconfig.BlockDiffView, tuiconfig.BlockJSONInput, tuiconfig.BlockNumberInput,
-		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockAuthPicker, tuiconfig.BlockRenameInput,
+		tuiconfig.BlockStringInput, tuiconfig.BlockMoveInput, tuiconfig.BlockAuthPicker, tuiconfig.BlockThemePicker, tuiconfig.BlockRenameInput,
 		tuiconfig.BlockWorkspaceMenu:
 		return true
 	default:

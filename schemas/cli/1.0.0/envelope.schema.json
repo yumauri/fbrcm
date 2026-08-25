@@ -84,7 +84,8 @@
                   "configuration.local_disabled",
                   "configuration.local_not_found",
                   "configuration.project_aliases_invalid",
-                  "hooks.not_configured"
+                  "hooks.not_configured",
+                  "theme.invalid"
                 ]
               }
             },
@@ -112,7 +113,8 @@
                   "project_alias.conflict",
                   "project_alias.read_only",
                   "remote_config.conflict",
-                  "resource.conflict"
+                  "resource.conflict",
+                  "theme.conflict"
                 ]
               }
             },
@@ -230,6 +232,7 @@
                   "project.not_found",
                   "resource.not_found",
                   "schema.not_found",
+                  "theme.not_found",
                   "version.not_found"
                 ]
               }
@@ -625,6 +628,7 @@
                   "profile.not_found",
                   "project.ambiguous",
                   "project.not_found",
+                  "theme.not_found",
                   "version.not_found"
                 ]
               }
@@ -662,6 +666,7 @@
                   "configuration.project_aliases_invalid",
                   "hooks.not_configured",
                   "profile.invalid",
+                  "theme.invalid",
                   "condition.invalid",
                   "remote_config.invalid",
                   "remote_config.validation_failed",
@@ -768,7 +773,8 @@
                   "profile.conflict",
                   "project_alias.conflict",
                   "project_alias.read_only",
-                  "resource.conflict"
+                  "resource.conflict",
+                  "theme.conflict"
                 ]
               }
             },
@@ -981,6 +987,9 @@
                   "result.unsuccessful",
                   "schema.not_found",
                   "stdin.remote_config.invalid",
+                  "theme.conflict",
+                  "theme.invalid",
+                  "theme.not_found",
                   "validation.failed",
                   "version.not_found"
                 ]
@@ -1086,6 +1095,9 @@
             "result.unsuccessful",
             "schema.not_found",
             "stdin.remote_config.invalid",
+            "theme.conflict",
+            "theme.invalid",
+            "theme.not_found",
             "validation.failed",
             "version.not_found"
           ],
@@ -2339,6 +2351,35 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "const": "theme.already_exists"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
           }
         ],
         "properties": {
@@ -2348,7 +2389,8 @@
               "publication.cache_stale",
               "publication.draft_cleanup_failed",
               "publication.non_atomic",
-              "publication.post_publish_hook_failed"
+              "publication.post_publish_hook_failed",
+              "theme.already_exists"
             ],
             "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
             "type": "string"

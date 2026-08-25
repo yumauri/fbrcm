@@ -127,6 +127,7 @@
                 "keys.global.help",
                 "keys.global.profiles",
                 "keys.global.quit",
+                "keys.global.themes",
                 "keys.global.workspace_menu",
                 "keys.help",
                 "keys.help.cancel",
@@ -279,6 +280,13 @@
                 "keys.string_input.save",
                 "keys.string_input.submit",
                 "keys.string_input.toggle_expanded",
+                "keys.theme_picker",
+                "keys.theme_picker.cancel",
+                "keys.theme_picker.down",
+                "keys.theme_picker.end",
+                "keys.theme_picker.home",
+                "keys.theme_picker.submit",
+                "keys.theme_picker.up",
                 "keys.workspace_menu",
                 "keys.workspace_menu.cancel",
                 "keys.workspace_menu.down",
@@ -298,7 +306,8 @@
                 "powerline_glyphs",
                 "profile",
                 "projects",
-                "projects.aliases"
+                "projects.aliases",
+                "theme"
               ]
             },
             {

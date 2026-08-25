@@ -17,7 +17,7 @@
   },
   "data": {
     "contract_version": "1.0.0",
-    "count": 94,
+    "count": 102,
     "commands": [
       {
         "id": "add",
@@ -1662,6 +1662,157 @@
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
         "side_effect_level": 1,
         "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme",
+        "path": [
+          "theme"
+        ],
+        "summary": "Manage themes",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.delete",
+        "path": [
+          "theme",
+          "delete"
+        ],
+        "summary": "Delete an installed theme",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
+        "side_effect_level": 1,
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": true,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.import",
+        "path": [
+          "theme",
+          "import"
+        ],
+        "summary": "Import themes from a file, directory, or HTTP URL",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+        "side_effect_level": 2,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": true,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.list",
+        "path": [
+          "theme",
+          "list"
+        ],
+        "summary": "List installed themes",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.path",
+        "path": [
+          "theme",
+          "path"
+        ],
+        "summary": "Print a theme file path",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.rename",
+        "path": [
+          "theme",
+          "rename"
+        ],
+        "summary": "Rename an installed theme",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.reset",
+        "path": [
+          "theme",
+          "reset"
+        ],
+        "summary": "Reset a theme selection to the built-in palette",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
+        "side_effect_level": 1,
+        "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "theme.switch",
+        "path": [
+          "theme",
+          "switch"
+        ],
+        "summary": "Select an installed theme",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:response",
+        "side_effect_level": 1,
+        "destructive": true,
         "supports": {
           "dry_run": false,
           "draft": false,

@@ -131,7 +131,9 @@ Supporting packages:
   validates conflicts;
 - `tui/messages` contains cross-component Bubble Tea messages;
 - `tui/panels` defines focus identifiers;
-- `tui/styles` owns TUI colors and reusable render styles;
+- `core/styles` owns the runtime palette shared by CLI, logging, About, and the
+  TUI; `tui/styles` owns reusable TUI render styles. See
+  [theming.md](theming.md);
 - `tui/testutil` contains rendering-test helpers.
 
 ## Charm stack

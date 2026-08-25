@@ -543,6 +543,27 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
+	if theme, ok := errors.AsType[*config.ThemeError](err); ok {
+		problem.Target = optionalString(theme.Theme)
+		switch theme.Kind {
+		case config.ThemeErrorInvalidArgument:
+			problem.Code, problem.Category = "theme.invalid", "configuration"
+			problem.Details = struct {
+				Kind   string `json:"kind"`
+				Source string `json:"source"`
+			}{Kind: "validation", Source: "theme"}
+		case config.ThemeErrorNotFound:
+			problem.Code, problem.Category = "theme.not_found", "not_found"
+			problem.Details = SelectionDetails{Kind: "selection", Resource: "theme", Query: theme.Theme, Candidates: []SelectionCandidate{}}
+		case config.ThemeErrorConflict:
+			problem.Code, problem.Category = "theme.conflict", "conflict"
+			problem.Details = struct {
+				Kind     string `json:"kind"`
+				Resource string `json:"resource"`
+			}{Kind: "conflict", Resource: "theme"}
+		}
+		return problem
+	}
 	if versionLookup, ok := errors.AsType[*core.RemoteConfigVersionLookupError](err); ok {
 		problem.Target = optionalString(versionLookup.ProjectID)
 		if versionLookup.Kind == "invalid_argument" {

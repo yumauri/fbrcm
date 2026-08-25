@@ -305,18 +305,36 @@
           "const": "first_available"
         },
         "sources": {
-          "items": false,
-          "maxItems": 2,
-          "minItems": 2,
-          "prefixItems": [
+          "oneOf": [
             {
-              "const": "options.from"
+              "items": false,
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "options.from"
+                },
+                {
+                  "const": "stdin.document"
+                }
+              ],
+              "type": "array"
             },
             {
-              "const": "stdin.document"
+              "items": false,
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "arguments.source"
+                },
+                {
+                  "const": "stdin.document"
+                }
+              ],
+              "type": "array"
             }
-          ],
-          "type": "array"
+          ]
         }
       },
       "required": [
@@ -902,6 +920,7 @@
                 "parameter_argument_resolution",
                 "personalization_id_resolution",
                 "profile_name_resolution",
+                "theme_name_resolution",
                 "project_alias_resolution",
                 "schema_id_resolution",
                 "version_resolution"
@@ -1624,6 +1643,22 @@
         {
           "additionalProperties": false,
           "properties": {
+            "maximum_bytes": {
+              "const": 1048576
+            },
+            "operator": {
+              "const": "theme_import_source"
+            }
+          },
+          "required": [
+            "operator",
+            "maximum_bytes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "absolute_parser": {
               "const": "strconv.ParseInt base 10 bitSize 64; require result \u003e 0"
             },
@@ -1880,7 +1915,7 @@
             "later_sources"
           ],
           "result": "selected_input_source_or_interaction",
-          "semantics": "Select options.from when its nonempty supplied value is present; otherwise select stdin.document when a redirected JSON document is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."
+          "semantics": "Select the first declared file, URL, or redirected document source that is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."
         }
       },
       "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/input_selection_rules",
@@ -2166,6 +2201,11 @@
           ],
           "result": "selection",
           "semantics": "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source is absent."
+        },
+        "theme_name_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Accept the reserved built-in selector or compare the positional installed-theme name exactly and case-sensitively against regular .toml files in the themes directory. No match returns theme.not_found; theme names are unique."
         },
         "version_resolution": {
           "operands": null,

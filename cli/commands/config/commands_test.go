@@ -110,6 +110,53 @@ func TestConfigSetTypedValuesAndRejectsConflict(t *testing.T) {
 	}
 }
 
+func TestConfigSetShowAndResetTheme(t *testing.T) {
+	setupConfigCommandTest(t)
+	themePath := filepath.Join(coreconfig.GetThemesDirPath(), "nord.toml")
+	if err := os.MkdirAll(filepath.Dir(themePath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(themePath, []byte("[colors]\nprimary = \"#88C0D0\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, _, err := executeConfigCommand(t, New(), "set", "theme", "nord"); err != nil {
+		t.Fatalf("set theme: %v", err)
+	}
+	stdout, _, err := executeConfigCommand(t, New(), "show", "theme", "--json")
+	if err != nil {
+		t.Fatalf("show theme: %v", err)
+	}
+	var shown configValueResult
+	if err := json.Unmarshal([]byte(stdout), &shown); err != nil {
+		t.Fatal(err)
+	}
+	if string(shown.Value) != `"nord"` || shown.Source != "global" {
+		t.Fatalf("shown theme = %#v", shown)
+	}
+	if _, _, err := executeConfigCommand(t, New(), "reset", "theme", "--yes"); err != nil {
+		t.Fatalf("reset theme: %v", err)
+	}
+	cfg, err := coreconfig.LoadAppConfigStrict()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Theme != "" {
+		t.Fatalf("theme after reset = %q", cfg.Theme)
+	}
+}
+
+func TestConfigSetRejectsMissingTheme(t *testing.T) {
+	setupConfigCommandTest(t)
+	_, _, err := executeConfigCommand(t, New(), "set", "theme", "missing")
+	if err == nil || !strings.Contains(err.Error(), "does not exist") {
+		t.Fatalf("set missing theme error = %v", err)
+	}
+	if _, statErr := os.Stat(coreconfig.GetThemesDirPath()); !errors.Is(statErr, os.ErrNotExist) {
+		t.Fatalf("themes directory stat = %v, want not exist", statErr)
+	}
+}
+
 func TestConfigSetShowAndResetNetworkPolicy(t *testing.T) {
 	setupConfigCommandTest(t)
 	for key, value := range map[string]string{

@@ -26,6 +26,7 @@ const (
 	BlockStringInput     Block = "string_input"
 	BlockMoveInput       Block = "move_input"
 	BlockAuthPicker      Block = "auth_picker"
+	BlockThemePicker     Block = "theme_picker"
 	BlockAccounts        Block = "accounts"
 	BlockProfiles        Block = "profiles"
 	BlockRenameInput     Block = "rename_input"
@@ -41,6 +42,7 @@ const (
 	ActionAbout     Action = "about"
 	ActionAccounts  Action = "accounts"
 	ActionProfiles  Action = "profiles"
+	ActionThemes    Action = "themes"
 
 	ActionFilterFuzzy      Action = "fuzzy"
 	ActionFilterStartsWith Action = "starts_with"

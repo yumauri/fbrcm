@@ -43,6 +43,7 @@ var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockStringInput,
 	tuiconfig.BlockMoveInput,
 	tuiconfig.BlockAuthPicker,
+	tuiconfig.BlockThemePicker,
 	tuiconfig.BlockRenameInput,
 	tuiconfig.BlockHelp,
 }
@@ -127,6 +128,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 		return "Move editor"
 	case tuiconfig.BlockAuthPicker:
 		return "Authentication picker"
+	case tuiconfig.BlockThemePicker:
+		return "Theme picker"
 	case tuiconfig.BlockRenameInput:
 		return "Rename editor"
 	case tuiconfig.BlockHelp:
@@ -346,6 +349,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Open accounts"
 		case tuiconfig.ActionProfiles:
 			return "Open profiles"
+		case tuiconfig.ActionThemes:
+			return "Open themes"
 		case tuiconfig.ActionHelp:
 			return "Open or close Actions"
 		case tuiconfig.ActionWorkspaceMenu:
@@ -460,6 +465,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 		return "authentication identity"
 	case tuiconfig.BlockProfiles:
 		return "profile"
+	case tuiconfig.BlockThemePicker:
+		return "theme"
 	case tuiconfig.BlockHelp:
 		return "action"
 	case tuiconfig.BlockWorkspaceMenu:
@@ -481,6 +488,8 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 		return "Open authentication account management."
 	case tuiconfig.ActionProfiles:
 		return "Open profile management."
+	case tuiconfig.ActionThemes:
+		return "Open the theme picker for live color previews and selection."
 	case tuiconfig.ActionFocusProjects, tuiconfig.ActionFocusParameters, tuiconfig.ActionFocusConditions,
 		tuiconfig.ActionFocusHistory, tuiconfig.ActionFocusABTests, tuiconfig.ActionFocusPersonalizations,
 		tuiconfig.ActionFocusRollouts, tuiconfig.ActionFocusPromote, tuiconfig.ActionFocusDetails, tuiconfig.ActionFocusLogs:

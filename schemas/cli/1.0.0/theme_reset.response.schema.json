@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "changed": {
+          "type": "boolean"
+        },
+        "effective_theme": {
+          "type": "string"
+        },
+        "previous_theme": {
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "global",
+            "local"
+          ],
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "reset",
+            "unchanged"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "changed",
+        "effective_theme",
+        "previous_theme",
+        "scope",
+        "status"
+      ],
+      "type": "object",
+      "x-fbrcm-invariants": [
+        {
+          "left": {
+            "left": {
+              "field": "changed"
+            },
+            "op": "eq",
+            "right": {
+              "const": true
+            }
+          },
+          "op": "iff",
+          "right": {
+            "left": {
+              "field": "status"
+            },
+            "op": "eq",
+            "right": {
+              "const": "reset"
+            }
+          }
+        },
+        {
+          "left": {
+            "left": {
+              "field": "changed"
+            },
+            "op": "eq",
+            "right": {
+              "const": false
+            }
+          },
+          "op": "iff",
+          "right": {
+            "left": {
+              "field": "previous_theme"
+            },
+            "op": "eq",
+            "right": {
+              "const": "built-in"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "theme.reset"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

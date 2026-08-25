@@ -4,9 +4,12 @@ package about
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	"charm.land/lipgloss/v2"
+
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 )
 
 const (
@@ -36,10 +39,17 @@ type logoColorStop struct {
 	color    logoColor
 }
 
-var logoGradient = []logoColorStop{
-	{position: 0, color: logoColor{red: 0xff, green: 0xc4, blue: 0x00}},
-	{position: 0.20, color: logoColor{red: 0xff, green: 0x91, blue: 0x00}},
-	{position: 1, color: logoColor{red: 0xdd, green: 0x2c, blue: 0x00}},
+func logoGradient() []logoColorStop {
+	return []logoColorStop{
+		{position: 0, color: themeLogoColor(corestyles.ColorLogoStart)},
+		{position: 0.20, color: themeLogoColor(corestyles.ColorLogoMiddle)},
+		{position: 1, color: themeLogoColor(corestyles.ColorLogoEnd)},
+	}
+}
+
+func themeLogoColor(value color.Color) logoColor {
+	red, green, blue, _ := value.RGBA()
+	return logoColor{red: int(red >> 8), green: int(green >> 8), blue: int(blue >> 8)}
 }
 
 // Metadata returns the version value used by Cobra after the application name.
@@ -84,19 +94,20 @@ func RenderLogo(color bool) string {
 }
 
 func interpolateLogoColor(column, width int) logoColor {
+	gradient := logoGradient()
 	if width <= 1 || column <= 0 {
-		return logoGradient[0].color
+		return gradient[0].color
 	}
 	if column >= width-1 {
-		return logoGradient[len(logoGradient)-1].color
+		return gradient[len(gradient)-1].color
 	}
 
 	position := float64(column) / float64(width-1)
 	segment := 0
-	for segment+1 < len(logoGradient)-1 && position > logoGradient[segment+1].position {
+	for segment+1 < len(gradient)-1 && position > gradient[segment+1].position {
 		segment++
 	}
-	left, right := logoGradient[segment], logoGradient[segment+1]
+	left, right := gradient[segment], gradient[segment+1]
 	fraction := (position - left.position) / (right.position - left.position)
 	return logoColor{
 		red:   interpolateLogoChannel(left.color.red, right.color.red, fraction),

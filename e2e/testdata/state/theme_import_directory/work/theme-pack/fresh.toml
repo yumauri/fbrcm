@@ -1,0 +1,4 @@
+inherits = "existing"
+
+[colors]
+error = "2"

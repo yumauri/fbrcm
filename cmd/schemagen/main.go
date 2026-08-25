@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/core/firebase"
+	corestyles "github.com/yumauri/fbrcm/core/styles"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -67,6 +68,7 @@ func main() {
 	writeSchema("stdin.credentials.schema.json", credentialsSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:credentials"))
 	writeSchema("stdin.oauth_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:oauth_credentials", "Google OAuth client credential JSON", oauthCredentialSchema()))
 	writeSchema("stdin.service_account_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:service_account_credentials", "Google service-account credential JSON", serviceAccountCredentialSchema()))
+	writeSchema("stdin.theme.schema.json", themeStdinSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:theme"))
 	for _, capability := range detailed {
 		command := root
 		if capability.ID != "root" {
@@ -339,6 +341,33 @@ func remoteConfigImportStdinSchema(id string) map[string]any {
 	return document
 }
 
+func themeStdinSchema(id string) map[string]any {
+	color := map[string]any{"type": "string", "anyOf": []any{
+		map[string]any{"pattern": `^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$`},
+		map[string]any{"pattern": `^(?:-0+|\+?0*(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$`},
+	}}
+	colors := make(map[string]any, len(corestyles.SupportedTokens()))
+	for _, token := range corestyles.SupportedTokens() {
+		colors[token] = color
+	}
+	return map[string]any{
+		"$schema":              draft,
+		"$id":                  id,
+		"description":          "Theme document decoded from TOML for theme import",
+		"type":                 "object",
+		"additionalProperties": false,
+		"properties": map[string]any{
+			"inherits": map[string]any{
+				"type": "string", "anyOf": []any{
+					map[string]any{"const": ""},
+					map[string]any{"pattern": `^[^/\\\s](?:[^/\\]*[^/\\\s])?$`, "not": map[string]any{"enum": []string{".", "..", "built-in"}}},
+				},
+			},
+			"colors": map[string]any{"type": "object", "additionalProperties": false, "properties": colors},
+		},
+	}
+}
+
 func loosenRemoteConfigForStdin(schema map[string]any) {
 	delete(schema, "x-fbrcm-validation")
 	schema["additionalProperties"] = true
@@ -505,6 +534,7 @@ func warningObjectSchema() map[string]any {
 		"publication.cache_stale":              object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cache"}}),
 		"publication.draft_cleanup_failed":     object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cleanup"}}),
 		"publication.post_publish_hook_failed": object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "post_publish_hook"}}),
+		"theme.already_exists":                 object([]string{"path"}, map[string]any{"path": map[string]any{"type": "string", "minLength": 1}}),
 	}
 	constraints := make([]any, 0, len(detailsByCode))
 	for _, code := range contract.KnownWarningCodes() {
@@ -590,12 +620,12 @@ func problemObjectSchema(selfRef string) map[string]any {
 func problemCodeConstraints() []any {
 	byCategory := map[string][]string{
 		"argument":        {"argument.invalid", "argument.unknown_command", "auth.id_invalid", "command.not_executable", "condition.ambiguous", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
-		"configuration":   {"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured"},
+		"configuration":   {"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "theme.invalid"},
 		"profile":         {"profile.invalid"},
 		"auth":            {"auth.configuration_invalid", "auth.credentials_invalid", "auth.setup_required"},
 		"permission":      {"firebase.permission_denied", "filesystem.permission_denied"},
-		"not_found":       {"auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "version.not_found"},
-		"conflict":        {"draft.exists", "hooks.changed", "parameter.exists", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "remote_config.conflict", "resource.conflict"},
+		"not_found":       {"auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
+		"conflict":        {"draft.exists", "hooks.changed", "parameter.exists", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "remote_config.conflict", "resource.conflict", "theme.conflict"},
 		"validation":      {"condition.invalid", "diagnostic.failed", "expression.invalid", "firebase.request_failed", "remote_config.invalid", "remote_config.validation_failed", "result.unsuccessful", "stdin.remote_config.invalid", "validation.failed"},
 		"timeout":         {"command.timeout", "firebase.timeout", "network.timeout"},
 		"interaction":     {"interaction.required"},
@@ -633,11 +663,11 @@ func problemCodeConstraints() []any {
 		{[]string{"hook.failed"}, []string{"hook"}},
 		{[]string{"firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout"}, []string{"remote_api"}},
 		{[]string{"resource.not_found"}, []string{"remote_api", "selection"}},
-		{[]string{"condition.ambiguous", "condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "version.not_found"}, []string{"selection"}},
-		{[]string{"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "profile.invalid", "condition.invalid", "remote_config.invalid", "remote_config.validation_failed", "stdin.remote_config.invalid"}, []string{"validation"}},
+		{[]string{"condition.ambiguous", "condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "theme.not_found", "version.not_found"}, []string{"selection"}},
+		{[]string{"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "profile.invalid", "theme.invalid", "condition.invalid", "remote_config.invalid", "remote_config.validation_failed", "stdin.remote_config.invalid"}, []string{"validation"}},
 		{[]string{"auth.credentials_invalid"}, []string{"remote_api", "validation"}},
 		{[]string{"auth.configuration_invalid", "auth.id_invalid", "auth.not_found", "auth.setup_required"}, []string{"auth"}},
-		{[]string{"draft.exists", "hooks.changed", "parameter.exists", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "resource.conflict"}, []string{"conflict"}},
+		{[]string{"draft.exists", "hooks.changed", "parameter.exists", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "resource.conflict", "theme.conflict"}, []string{"conflict"}},
 		{[]string{"remote_config.conflict"}, []string{"conflict", "remote_api"}},
 		{[]string{"batch.failed", "batch.partial_success"}, []string{"batch"}},
 		{[]string{"file.io_failed", "filesystem.permission_denied"}, []string{"file"}},
@@ -675,7 +705,7 @@ func problemCodeConstraints() []any {
 				"group.not_found", "hooks.not_configured", "interaction.required", "internal.contract_violation", "internal.unclassified", "parameter.ambiguous", "parameter.exists", "parameter.not_found",
 				"parameters_cache.not_found", "personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.not_found", "project_alias.conflict", "project_alias.read_only",
 				"publication.cache_failed", "publication.hook_failed", "remote_config.invalid", "remote_config.validation_failed", "resource.conflict", "resource.not_found",
-				"result.unsuccessful", "schema.not_found", "stdin.remote_config.invalid", "validation.failed", "version.not_found",
+				"result.unsuccessful", "schema.not_found", "stdin.remote_config.invalid", "theme.conflict", "theme.invalid", "theme.not_found", "validation.failed", "version.not_found",
 			}}},
 			"required": []string{"code"},
 		},
@@ -711,7 +741,7 @@ func problemDetailsSchema(selfRef string) map[string]any {
 func capabilitySchema(published []contract.Capability) map[string]any {
 	stringArray := map[string]any{"type": "array", "items": map[string]any{"type": "string"}}
 	scalar := map[string]any{"type": []string{"string", "boolean", "integer", "number"}}
-	effectValue := map[string]any{"enum": []string{"local_state_write", "local_file_write", "local_file_delete", "local_cache_write", "local_cache_move", "local_cache_delete", "local_draft_write", "local_draft_delete", "authentication_remote_access", "firebase_remote_read", "firebase_remote_validation", "firebase_remote_write", "firebase_managed_feature_delete", "trusted_hook_execution"}}
+	effectValue := map[string]any{"enum": []string{"local_state_write", "local_file_write", "local_file_move", "local_file_delete", "local_cache_write", "local_cache_move", "local_cache_delete", "local_draft_write", "local_draft_delete", "authentication_remote_access", "firebase_remote_read", "firebase_remote_validation", "firebase_remote_write", "firebase_managed_feature_delete", "trusted_hook_execution"}}
 	predicate := map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
@@ -719,7 +749,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		"properties": map[string]any{
 			"source":   map[string]any{"enum": []string{"argument", "option", "stdin", "context", "runtime_state"}},
 			"name":     map[string]any{"type": "string", "minLength": 1},
-			"operator": map[string]any{"enum": []string{"equals", "absent", "present", "not_usable", "configured_for_event", "executed", "not_executed", "conflicts", "write_authorized", "write_succeeded", "delete_succeeded", "available", "has_changes", "has_no_changes", "is_destructive", "accepted", "cache_write_succeeded", "sync_required", "sync_write_succeeded", "succeeded", "requires_network", "requires_human_authorization", "credentials_reused", "token_persisted", "required", "authorized_or_not_required", "persisted"}},
+			"operator": map[string]any{"enum": []string{"equals", "absent", "present", "not_usable", "configured_for_event", "executed", "not_executed", "conflicts", "write_authorized", "write_succeeded", "delete_succeeded", "available", "has_changes", "has_no_changes", "is_destructive", "accepted", "cache_write_succeeded", "sync_required", "sync_write_succeeded", "succeeded", "requires_network", "requires_human_authorization", "credentials_reused", "token_persisted", "required", "authorized_or_not_required", "persisted", "is_directory", "is_single"}},
 			"value":    map[string]any{"oneOf": []any{scalar, map[string]any{"type": "null"}}},
 		},
 		"allOf": []any{
@@ -730,7 +760,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}}, "required": []string{"source"}},
-				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication", "authentication", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity"}}}},
+				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication", "authentication", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "context"}}, "required": []string{"source"}},
@@ -757,6 +787,10 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		})
 	}
 	rules = append(rules,
+		map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}, "name": map[string]any{"const": "theme_source"}}, "required": []string{"source", "name"}},
+			"then": map[string]any{"properties": map[string]any{"operator": map[string]any{"enum": []string{"requires_network", "is_directory", "is_single"}}, "value": map[string]any{"type": "null"}}},
+		},
 		map[string]any{
 			"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}, "name": map[string]any{"const": "credential_file"}}, "required": []string{"source", "name"}},
 			"then": map[string]any{"properties": map[string]any{"operator": map[string]any{"const": "write_succeeded"}, "value": map[string]any{"type": "null"}}},
@@ -860,7 +894,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			"destructive": map[string]any{"type": "boolean"}, "destructive_when": conditionClauses, "destructive_reasons": stringArray, "idempotency": map[string]any{"enum": []string{"yes", "conditional", "no"}},
 			"idempotency_when": map[string]any{"type": "array", "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"idempotency", "when"}, "properties": map[string]any{"idempotency": map[string]any{"enum": []string{"yes", "no"}}, "when": conditionClauses}}},
 			"supports":         contract.CapabilitySupportSchema(),
-			"stdin_modes":      map[string]any{"type": "array", "uniqueItems": true, "items": map[string]any{"const": "json_document"}},
+			"stdin_modes":      map[string]any{"type": "array", "uniqueItems": true, "items": map[string]any{"enum": []string{"json_document", "toml_document"}}},
 			"interaction":      map[string]any{"type": "object", "additionalProperties": false, "required": []string{"mode", "json_behavior"}, "properties": map[string]any{"mode": map[string]any{"enum": []string{"none", "optional", "required"}}, "json_behavior": map[string]any{"enum": []string{"non_interactive", "confirmation_required_without_bypass", "destination_conflict_returns_interaction", "external_input_returns_interaction", "browser_launch_suppressed", "oauth_authorization_returns_interaction", "browser_launch_suppressed_and_oauth_authorization_returns_interaction", "declared_conditions_return_interaction", "missing_input_returns_interaction", "deletion_preview_requires_confirmation", "import_requires_explicit_strategy_and_confirmation", "promotion_requires_explicit_selection_and_confirmation"}}}},
 			"interaction_when": conditionClauses,
 		},
@@ -930,6 +964,9 @@ func runtimeStatePredicateSemantics() []any {
 		definition("diagnostic_cache_probe", "write_succeeded", "Doctor successfully created its temporary cache probe file."),
 		definition("diagnostic_cache_probe", "delete_succeeded", "Doctor successfully removed the temporary cache probe file it created."),
 		definition("diagnostic_identity", "available", "Doctor resolved a locally usable configured identity with which it can attempt its Firebase diagnostic read."),
+		definition("theme_source", "requires_network", "The theme import source uses an HTTP or HTTPS URL and therefore requires a network download."),
+		definition("theme_source", "is_directory", "The selected theme import source is a directory batch, so repeated imports preserve existing destinations and skip them with warnings."),
+		definition("theme_source", "is_single", "The selected theme import source is one file, URL, or TOML stdin document, so an existing destination makes a repeated import fail."),
 		definition("credential_file", "write_succeeded", "The command successfully created or replaced the OAuth client-secret or service-account credential file."),
 	}
 }
@@ -938,6 +975,7 @@ func sideEffectSemantics() map[string]any {
 	return map[string]any{
 		"local_state_write":               "Creates or changes local application configuration or registry state.",
 		"local_file_write":                "Creates or replaces a user-visible local file outside the command-specific cache and draft stores.",
+		"local_file_move":                 "Moves a user-visible local file to a different path without changing its logical content.",
 		"local_file_delete":               "Deletes a local configuration, credential, registry, or user-visible file.",
 		"local_cache_write":               "Creates or updates command-specific cached Remote Config data or version snapshots.",
 		"local_cache_move":                "Moves an existing local cache tree to a different application-managed path without changing its cached content.",
@@ -1011,11 +1049,23 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		}
 		definitions["credentials"] = credentials
 		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/credentials"}}}
+	case capability.ID == "theme.import":
+		theme := themeStdinSchema("")
+		delete(theme, "$schema")
+		delete(theme, "$id")
+		definitions["theme"] = theme
+		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/theme"}}}
 	}
 	result := map[string]any{"$schema": draft, "$id": capability.InvocationSchema, "$defs": definitions, "type": "object", "additionalProperties": false, "required": []string{"arguments", "options", "stdin"}, "properties": map[string]any{"arguments": map[string]any{"type": "object", "additionalProperties": false, "required": required, "properties": arguments}, "options": map[string]any{"type": "object", "additionalProperties": false, "required": requiredOptions, "properties": options}, "stdin": stdin}}
 	if slices.Contains([]string{"auth.add.oauth", "auth.add.service-account", "project.import"}, capability.ID) {
 		result["x-fbrcm-input-selection"] = []any{map[string]any{
 			"operator": "first_available", "sources": []any{"options.from", "stdin.document"},
+			"on_missing": "interaction.required", "later_sources": "ignored_without_consumption",
+		}}
+	}
+	if capability.ID == "theme.import" {
+		result["x-fbrcm-input-selection"] = []any{map[string]any{
+			"operator": "first_available", "sources": []any{"arguments.source", "stdin.document"},
 			"on_missing": "interaction.required", "later_sources": "ignored_without_consumption",
 		}}
 	}
@@ -1040,6 +1090,15 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 					map[string]any{"required": []string{"dry-run"}},
 				}},
 			}}},
+		})
+	}
+	if capability.ID == "theme.import" {
+		constraints = append(constraints, map[string]any{
+			"if": map[string]any{"allOf": []any{
+				map[string]any{"properties": map[string]any{"stdin": map[string]any{"not": map[string]any{"type": "null"}}}, "required": []string{"stdin"}},
+				map[string]any{"properties": map[string]any{"arguments": map[string]any{"not": map[string]any{"required": []string{"source"}}}}, "required": []string{"arguments"}},
+			}},
+			"then": map[string]any{"properties": map[string]any{"options": map[string]any{"required": []string{"name"}}}},
 		})
 	}
 	if len(constraints) > 0 {
@@ -1183,6 +1242,11 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 }
 
 func applyFlagSemantics(schema map[string]any, commandID, name string) {
+	if commandID == "theme.import" && name == "name" {
+		delete(schema, "pattern")
+		schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/path_segment"}}
+		schema["not"] = map[string]any{"const": "built-in"}
+	}
 	if name == "expr" {
 		schema["$ref"] = "#/$defs/expression"
 		delete(schema, "type")
@@ -1602,6 +1666,20 @@ func argumentSchema(commandID, name string) map[string]any {
 		}
 		return result
 	}
+	if strings.HasPrefix(commandID, "theme.") && slices.Contains([]string{"theme", "name", "old_name", "new_name"}, name) {
+		result := map[string]any{"$ref": "#/$defs/path_segment"}
+		if commandID == "theme.import" && name == "name" {
+			result["not"] = map[string]any{"const": "built-in"}
+		}
+		if slices.Contains([]string{"theme.delete", "theme.switch"}, commandID) || commandID == "theme.rename" && name == "old_name" {
+			addMatchingRule(result, map[string]any{"operator": "theme_name_resolution"})
+		}
+		return result
+	}
+	if commandID == "theme.import" && name == "source" {
+		schema["x-fbrcm-grammar"] = "local .toml file path, local directory path, or absolute HTTP/HTTPS URL whose path ends in .toml"
+		addValidationRule(schema, map[string]any{"operator": "theme_import_source", "maximum_bytes": 1048576})
+	}
 	if slices.Contains([]string{"experiment_id", "rollout_id"}, name) {
 		schema["pattern"] = `.*\S.*`
 		collection := strings.TrimSuffix(strings.Split(commandID, ".")[0], "s") + "s"
@@ -1699,7 +1777,7 @@ func parameterOrGroupName(commandID, name string) bool {
 
 func configKeySchema(show bool) map[string]any {
 	values := []string{
-		"powerline_glyphs", "keys", "network", "network.max_concurrent_requests",
+		"theme", "powerline_glyphs", "keys", "network", "network.max_concurrent_requests",
 		"network.requests_per_minute", "network.rate_limit_cooldown", "network.retry",
 		"network.retry.max_attempts", "network.retry.base_delay", "network.retry.max_delay",
 		"network.retry.jitter_percent",
@@ -1921,7 +1999,7 @@ func extensionLanguageMetadata() map[string]any {
 			"schema":    contract.SemanticRef("input_selection_rules"),
 			"semantics": "Evaluate sources in their declared order and select the first available source. Do not consume or apply later sources. If none is available, return the declared structured result.",
 			"operators": map[string]any{
-				"first_available": operation([]string{"sources", "on_missing", "later_sources"}, "selected_input_source_or_interaction", "Select options.from when its nonempty supplied value is present; otherwise select stdin.document when a redirected JSON document is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."),
+				"first_available": operation([]string{"sources", "on_missing", "later_sources"}, "selected_input_source_or_interaction", "Select the first declared file, URL, or redirected document source that is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."),
 			},
 		},
 		"validation": map[string]any{
@@ -1985,6 +2063,7 @@ func extensionLanguageMetadata() map[string]any {
 				"parameter_argument_resolution":   operation(nil, "selection", "Compare the untrimmed positional parameter selector exactly and case-sensitively against canonical parameter keys across root and groups. It conflicts with options.filter and composes with the other selector sources declared by selection_composition; zero matches produce the command's documented empty or no-op result."),
 				"personalization_id_resolution":   operation(nil, "selection", "Compare the untrimmed positional personalization ID exactly and case-sensitively against canonical IDs and return personalization.not_found on zero matches."),
 				"profile_name_resolution":         operation(nil, "selection", "Compare the positional existing-profile name exactly and case-sensitively against canonical profile directory names. No match returns profile.not_found; profile names are unique."),
+				"theme_name_resolution":           operation(nil, "selection", "Accept the reserved built-in selector or compare the positional installed-theme name exactly and case-sensitively against regular .toml files in the themes directory. No match returns theme.not_found; theme names are unique."),
 				"project_alias_resolution":        operation(nil, "selection", "Compare the positional existing project-alias name exactly and case-sensitively against canonical repository alias keys. No match is a successful unchanged result because alias removal is idempotent; alias keys are unique."),
 				"schema_id_resolution":            operation(nil, "selection", "Look up the complete schema ID by exact case-sensitive equality in the embedded schema registry and return schema.not_found on zero matches; multiple matches are impossible because schema IDs are unique."),
 				"version_resolution":              operation(nil, "selection", "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, and versions.diff defaults an omitted to argument to current."),
@@ -2404,6 +2483,13 @@ func configSetConstraint() map[string]any {
 	oneBoolean := map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{"enum": []string{"true", "false"}}}
 	variants := []any{argumentVariant(map[string]any{"const": "powerline_glyphs"}, oneBoolean, false)}
 	variants = append(variants, argumentVariant(
+		map[string]any{"const": "theme"},
+		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{
+			"type": "string", "pattern": `^[^/\\\s](?:[^/\\]*[^/\\\s])?$`, "not": map[string]any{"enum": []string{".", ".."}},
+		}},
+		false,
+	))
+	variants = append(variants, argumentVariant(
 		map[string]any{"const": "network.max_concurrent_requests"},
 		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{
 			"type": "string", "pattern": `^(?:[1-9]|[1-5][0-9]|6[0-4])$`,
@@ -2654,6 +2740,8 @@ func commandWarningCodes(commandID string) []string {
 			"publication.non_atomic",
 			"publication.post_publish_hook_failed",
 		}
+	case "theme.import":
+		return []string{"theme.already_exists"}
 	default:
 		return nil
 	}

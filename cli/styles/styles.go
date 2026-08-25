@@ -21,6 +21,7 @@ var (
 	PaletteSlateDim    = corestyles.ColorSlateDim
 	PaletteSlateDark   = corestyles.ColorSlateDark
 	PaletteError       = corestyles.ColorError
+	PaletteSuccess     = corestyles.ColorSuccess
 
 	ColorRowStripe = corestyles.ColorRowStripe
 	ColorAdded     = corestyles.ColorAdded

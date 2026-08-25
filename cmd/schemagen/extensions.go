@@ -122,6 +122,7 @@ func extensionSchemaDefinitions() map[string]any {
 		object([]string{"operator", "parser", "normalization", "require_absolute"}, map[string]any{"operator": map[string]any{"const": "parse_uri"}, "parser": map[string]any{"const": "net/url.ParseRequestURI"}, "normalization": map[string]any{"const": "trim_unicode_whitespace"}, "require_absolute": map[string]any{"const": true}}),
 		object([]string{"operator", "allow_empty"}, map[string]any{"operator": map[string]any{"const": "reject_raw_whitespace_only"}, "allow_empty": map[string]any{"const": true}}),
 		object([]string{"operator", "specification"}, map[string]any{"operator": map[string]any{"const": "parse_time"}, "specification": map[string]any{"const": "Go time.RFC3339"}}),
+		object([]string{"operator", "maximum_bytes"}, map[string]any{"operator": map[string]any{"const": "theme_import_source"}, "maximum_bytes": map[string]any{"const": 1048576}}),
 		object([]string{"operator", "absolute_parser", "relative_parser", "maximum_relative_distance"}, map[string]any{
 			"operator":                  map[string]any{"const": "parse_version_selector"},
 			"absolute_parser":           map[string]any{"const": "strconv.ParseInt base 10 bitSize 64; require result > 0"},
@@ -190,9 +191,10 @@ func extensionSchemaDefinitions() map[string]any {
 	inputSelectionRule := object([]string{"operator", "sources", "on_missing", "later_sources"}, map[string]any{
 		"operator": map[string]any{"const": "first_available"},
 		"sources": map[string]any{
-			"type": "array", "minItems": 2, "maxItems": 2,
-			"prefixItems": []any{map[string]any{"const": "options.from"}, map[string]any{"const": "stdin.document"}},
-			"items":       false,
+			"oneOf": []any{
+				map[string]any{"type": "array", "minItems": 2, "maxItems": 2, "prefixItems": []any{map[string]any{"const": "options.from"}, map[string]any{"const": "stdin.document"}}, "items": false},
+				map[string]any{"type": "array", "minItems": 2, "maxItems": 2, "prefixItems": []any{map[string]any{"const": "arguments.source"}, map[string]any{"const": "stdin.document"}}, "items": false},
+			},
 		},
 		"on_missing":    map[string]any{"const": "interaction.required"},
 		"later_sources": map[string]any{"const": "ignored_without_consumption"},
@@ -311,6 +313,7 @@ func extensionSchemaDefinitions() map[string]any {
 				"parameter_argument_resolution",
 				"personalization_id_resolution",
 				"profile_name_resolution",
+				"theme_name_resolution",
 				"project_alias_resolution",
 				"schema_id_resolution",
 				"version_resolution",

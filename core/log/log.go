@@ -23,11 +23,6 @@ const (
 
 const SilentLevel charmlog.Level = 42
 
-const (
-	urlColor         = "117"
-	silentLevelColor = "245"
-)
-
 type manager struct {
 	mu             sync.RWMutex
 	mode           Mode
@@ -116,9 +111,16 @@ func AvailableLevels() []charmlog.Level {
 
 func LevelColor(level charmlog.Level) string {
 	if level == SilentLevel {
-		return silentLevelColor
+		return corestyles.SilentLevelColor()
 	}
 	return corestyles.LogLevelColor(level)
+}
+
+// RefreshStyles reapplies colors after the runtime theme has been selected.
+func RefreshStyles() {
+	global.mu.Lock()
+	defer global.mu.Unlock()
+	global.logger.SetStyles(loggerStyles())
 }
 
 func (m *manager) init(mode Mode, defaults ...charmlog.Level) {
@@ -209,7 +211,10 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 
 func loggerStyles() *charmlog.Styles {
 	styles := charmlog.DefaultStyles()
-	styles.Values["url"] = lipgloss.NewStyle().Foreground(lipgloss.Color(urlColor))
+	for _, level := range []charmlog.Level{charmlog.DebugLevel, charmlog.InfoLevel, charmlog.WarnLevel, charmlog.ErrorLevel, charmlog.FatalLevel} {
+		styles.Levels[level] = styles.Levels[level].Foreground(corestyles.LogLevelLipglossColor(level))
+	}
+	styles.Values["url"] = lipgloss.NewStyle().Foreground(corestyles.ColorURL)
 	return styles
 }
 

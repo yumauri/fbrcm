@@ -11,20 +11,26 @@ import (
 )
 
 var (
-	PaletteBlueBright  = corestyles.ColorBlueBright
-	PaletteBlueDeep    = corestyles.ColorBlueDeep
-	PaletteOrange      = corestyles.ColorOrange
-	PaletteYellow      = corestyles.ColorYellow
-	PaletteGold        = corestyles.ColorGold
-	PaletteSlateBright = corestyles.ColorSlateBright
-	PaletteSlate       = corestyles.ColorSlate
-	PaletteSlateDim    = corestyles.ColorSlateDim
-	PaletteSlateDark   = corestyles.ColorSlateDark
-	PaletteError       = corestyles.ColorError
-	PaletteSuccess     = corestyles.ColorConditionGreen
-	PaletteAdded       = corestyles.ColorAdded
-	PaletteRemoved     = corestyles.ColorRemoved
-	PaletteChanged     = corestyles.ColorChanged
+	PaletteBlueBright               = corestyles.ColorBlueBright
+	PaletteBlueDeep                 = corestyles.ColorBlueDeep
+	PaletteOrange                   = corestyles.ColorOrange
+	PaletteYellow                   = corestyles.ColorYellow
+	PaletteGold                     = corestyles.ColorGold
+	PaletteSlateBright              = corestyles.ColorSlateBright
+	PaletteSlate                    = corestyles.ColorSlate
+	PaletteSlateDim                 = corestyles.ColorSlateDim
+	PaletteSlateDark                = corestyles.ColorSlateDark
+	PaletteError                    = corestyles.ColorError
+	PaletteSuccess                  = corestyles.ColorSuccess
+	PaletteAdded                    = corestyles.ColorAdded
+	PaletteRemoved                  = corestyles.ColorRemoved
+	PaletteChanged                  = corestyles.ColorChanged
+	PaletteHistoryAddedBackground   = corestyles.ColorHistoryAddedBackground
+	PaletteHistoryRemovedBackground = corestyles.ColorHistoryRemovedBackground
+	PaletteHistoryChangedBackground = corestyles.ColorHistoryChangedBackground
+	PaletteInactiveSelection        = corestyles.ColorInactiveSelection
+	PaletteOfflineForeground        = corestyles.ColorOfflineForeground
+	PaletteOfflineBackground        = corestyles.ColorOfflineBackground
 
 	PanelBorderInactive = lipgloss.NewStyle().
 				Foreground(PaletteSlateDark)

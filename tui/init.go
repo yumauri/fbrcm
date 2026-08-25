@@ -9,6 +9,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/about"
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/tui/app"
@@ -17,6 +18,15 @@ import (
 
 func Init(s *core.Core, version, commit, date string) {
 	corelog.For("tui").Debug("start tui")
+	if !env.NoColorEnabled() {
+		resolved, err := config.ApplyConfiguredTheme()
+		corelog.RefreshStyles()
+		if err != nil {
+			corelog.For("theme").Warn("theme unavailable; using built-in colors", "err", err)
+		} else if resolved.Name != "" {
+			corelog.For("theme").Debug("theme loaded", "theme", resolved.Name, "path", resolved.Path)
+		}
+	}
 	if err := s.ConfigureFirebaseRequests(); err != nil {
 		corelog.For("tui").Error("network config load failed", "err", err)
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)

@@ -707,7 +707,7 @@ const (
 	historyPickerArrowWidth          = 1
 )
 
-var historyPickerInactiveSelectionColor = lipgloss.Color("#343A43")
+var historyPickerInactiveSelectionColor = styles.PaletteInactiveSelection
 
 func pickerVersionTableRow(leftVersion, published, author, changeNote, rightVersion string, versionWidth, publishedWidth, authorWidth, noteWidth int) string {
 	left := strings.Repeat(" ", historyPickerArrowWidth) + " " + leftVersion

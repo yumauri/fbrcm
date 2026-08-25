@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "count": 197,
+    "count": 214,
     "items": [
       "urn:fbrcm:schema:cli:1.0.0:capability",
       "urn:fbrcm:schema:cli:1.0.0:command:add:input",
@@ -193,6 +193,22 @@
       "urn:fbrcm:schema:cli:1.0.0:command:schema.list:response",
       "urn:fbrcm:schema:cli:1.0.0:command:schema.show:input",
       "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.list:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.path:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:theme:response",
       "urn:fbrcm:schema:cli:1.0.0:command:update:input",
       "urn:fbrcm:schema:cli:1.0.0:command:update:response",
       "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:input",
@@ -214,7 +230,8 @@
       "urn:fbrcm:schema:cli:1.0.0:stdin:oauth_credentials",
       "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
       "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config_import",
-      "urn:fbrcm:schema:cli:1.0.0:stdin:service_account_credentials"
+      "urn:fbrcm:schema:cli:1.0.0:stdin:service_account_credentials",
+      "urn:fbrcm:schema:cli:1.0.0:stdin:theme"
     ]
   },
   "errors": [],
