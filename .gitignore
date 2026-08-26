@@ -20,6 +20,14 @@ go.work.sum
 # Vendor
 vendor/
 
+# Documentation site
+node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+docs/site/privacy-policy.md
+docs/site/public/llms.txt
+docs/site/public/LICENSE.txt
+
 # IDE/editor
 .idea/
 .vscode/

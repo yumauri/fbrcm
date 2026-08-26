@@ -1,0 +1,216 @@
+:root {
+  --fbrcm-logo-gradient: linear-gradient(90deg, #ffc400 0%, #ff9100 20%, #dd2c00 100%);
+  --vp-c-brand-1: #e85d2a;
+  --vp-c-brand-2: #d84c1c;
+  --vp-c-brand-3: #bd3f16;
+  --vp-c-brand-soft: rgba(232, 93, 42, 0.14);
+  --vp-c-tip-1: #e85d2a;
+  --vp-c-tip-2: #d84c1c;
+  --vp-c-tip-3: #bd3f16;
+  --vp-c-tip-soft: rgba(232, 93, 42, 0.14);
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: var(--fbrcm-logo-gradient);
+  --vp-home-hero-image-background-image:
+    radial-gradient(circle at 32% 22%, rgba(246, 162, 58, 0.42), transparent 42%),
+    radial-gradient(circle at 72% 74%, rgba(128, 90, 213, 0.36), transparent 46%);
+  --vp-home-hero-image-filter: blur(42px);
+}
+
+.dark {
+  --vp-c-bg: #0d0e13;
+  --vp-c-bg-alt: #12131a;
+  --vp-c-bg-elv: #181922;
+  --vp-c-bg-soft: #181922;
+  --vp-c-brand-1: #ff8a50;
+  --vp-c-brand-2: #f8753a;
+  --vp-c-brand-3: #e85d2a;
+  --vp-c-brand-soft: rgba(248, 117, 58, 0.16);
+}
+
+body {
+  font-feature-settings: 'ss01' 1, 'cv02' 1;
+}
+
+.VPNavBarTitle .title {
+  letter-spacing: -0.03em;
+}
+
+.VPNavBarTitle .title span {
+  color: transparent;
+  background: var(--fbrcm-logo-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+  .VPNavBar .VPNavBarAppearance,
+  .VPNavBar .VPNavBarSocialLinks {
+    display: flex;
+    align-items: center;
+  }
+
+  .VPNavBar .VPNavBarExtra {
+    display: none;
+  }
+}
+
+.VPHome {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-bottom: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.VPContent.is-home {
+  display: flex;
+  flex-direction: column;
+}
+
+.VPHome .VPHero {
+  display: flex;
+  flex: 1;
+}
+
+.VPHome .VPHero > .container {
+  width: 100%;
+  margin-block: auto;
+}
+
+.VPHome::before {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1100px;
+  height: 620px;
+  background-image:
+    linear-gradient(rgba(232, 93, 42, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 93, 42, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+  content: '';
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.VPHero .name,
+.VPHero .text {
+  letter-spacing: -0.045em;
+}
+
+.VPHero .name {
+  color: var(--vp-c-text-1);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.VPHero .fbrcm-letter {
+  -webkit-text-fill-color: currentColor;
+}
+
+.VPHero .fbrcm-letter-f {
+  color: #ffc400;
+}
+
+.VPHero .fbrcm-letter-b {
+  color: #ffa900;
+}
+
+.VPHero .fbrcm-letter-r {
+  color: #ff9100;
+}
+
+.VPHero .fbrcm-letter-c {
+  color: #ee5e00;
+}
+
+.VPHero .fbrcm-letter-m {
+  color: #dd2c00;
+}
+
+@media (max-width: 959px) {
+  .VPHero .name {
+    line-height: 1.05;
+  }
+
+  .VPHero .fbrcm-title-line {
+    display: block;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero .fbrcm-title-line + .fbrcm-title-line::before {
+    content: ' ';
+  }
+}
+
+.VPHero .tagline {
+  max-width: 620px;
+}
+
+.VPHome .VPHero .VPButton.medium {
+  border-radius: 8px;
+}
+
+.VPHero .image-src {
+  max-width: 560px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 28px 80px rgba(19, 13, 7, 0.34);
+}
+
+@media (min-width: 960px) {
+  .VPHome .VPHero {
+    padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 48px);
+  }
+
+  .VPHome .VPHero.has-image .container {
+    flex-direction: column;
+    max-width: 960px;
+    text-align: center;
+  }
+
+  .VPHome .VPHero.has-image .main {
+    order: 2;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .VPHome .VPHero.has-image .name,
+  .VPHome .VPHero.has-image .text {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .VPHome .VPHero.has-image .name {
+    white-space: nowrap;
+  }
+
+  .VPHome .VPHero.has-image .tagline {
+    margin: 0 auto;
+  }
+
+  .VPHome .VPHero.has-image .actions {
+    justify-content: center;
+  }
+
+  .VPHome .VPHero.has-image .image {
+    order: 1;
+    min-height: 0;
+    margin: 0 0 36px;
+  }
+
+  .VPHome .VPHero.has-image .image-container {
+    width: 680px;
+    height: 360px;
+    transform: none;
+  }
+
+  .VPHome .VPHero.has-image .image-src {
+    max-width: 600px;
+    max-height: 360px;
+  }
+}

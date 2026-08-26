@@ -300,6 +300,25 @@ go build -o fbrcm .
 go test ./...
 ```
 
+### Documentation site
+
+The VitePress site uses the curated Markdown files under `docs/site/`. The
+long-form project documents in `docs/` remain separate from the website:
+
+```sh
+cd docs
+npm ci
+npm run dev
+```
+
+Use `npm run build` to create a production build locally.
+
+The development and production commands generate the human-readable
+`/privacy-policy` page from the repository-root `PRIVACY.md` and copy the
+repository-root `llms.txt` and `LICENSE` byte-for-byte to `/llms.txt` and
+`/LICENSE.txt`. Edit only the root source files; their generated website copies
+are ignored by Git.
+
 ## Security notes
 
 Treat OAuth client files, OAuth tokens, and service-account keys as secrets.
