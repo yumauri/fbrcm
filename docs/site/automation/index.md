@@ -2,11 +2,11 @@
 
 fbrcm publishes a versioned machine interface for CI jobs, scripts, and LLM
 agents. Always use `--json`; human tables, colors, diffs, and prompts are not a
-stable parsing surface.
+stable interface for parsers.
 
 ## Discover the installed binary
 
-Do not hard-code an assumed command surface. Ask the binary what it supports:
+Do not hard-code an assumed command set. Ask the binary what it supports:
 
 ```sh
 fbrcm capabilities --json
@@ -78,8 +78,8 @@ Earlier successful targets are not rolled back after another target fails.
 
 JSON mode never opens a prompt, editor, file picker, or browser. If human input
 is required, fbrcm returns an `interaction.required` problem with status 10.
-Surface that request or retry only after the caller explicitly supplies the
-required choice.
+Show that request to a human, or retry only after the caller explicitly
+supplies the required choice.
 
 ## Run without local state
 

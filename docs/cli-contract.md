@@ -7,7 +7,7 @@ present. Human output is unchanged when `--json` is absent.
 For a concise integration workflow and safe usage examples, start with the
 [agent quickstart](agent-quickstart.md).
 
-The normative definition of “authoritative for agents,” the finite audit
+The normative definition of "authoritative for agents," the finite audit
 matrix, required evidence, and pass/fail criteria are in
 [`cli-contract-audit.md`](cli-contract-audit.md). Contract reviews MUST use a
 frozen version of that standard and MUST NOT introduce new acceptance criteria
@@ -138,7 +138,7 @@ same operation may succeed without changing its inputs. It is false when the
 caller must supply interaction or when Firebase has already accepted a publish
 and only local post-publication work failed.
 
-`remediation` contains safe suggested argument vectors when fbrcm can provide
+`remediation` contains safe suggested argument lists when fbrcm can provide
 one. Each remediation has a `description`, a non-empty `argv` array, and a
 `strategy` that defines how to use that array:
 
@@ -146,7 +146,7 @@ one. Each remediation has a `description`, a non-empty `argv` array, and a
   added or replacing the corresponding options;
 - `replace_selector`: replace the original ambiguous selector with this exact
   selector;
-- `run_command`: run `argv` as the complete fbrcm subcommand argument vector
+- `run_command`: run `argv` as the complete fbrcm subcommand argument list
   (the executable name itself is omitted).
 
 Agents must branch on `strategy`; they must not guess whether `argv` is a full
@@ -154,7 +154,7 @@ command or an option fragment from its contents or description.
 When interaction is required, `details.kind: "interaction"` reports an
 `interaction_type`, nullable `required_option`, and `destructive` marker. A
 missing option value (for example `--from` or `--merge-resolve`) is described
-there without emitting a remediation vector. Remediation is present only when
+there without emitting a remediation argument list. Remediation is present only when
 fbrcm knows a complete, directly reusable argv fragment.
 
 Problems are classified from typed source errors (`ArgumentError`,
@@ -422,7 +422,7 @@ required editors, promotion selection, and whether a confirmation
 is actually required after planning. These operators use
 `null` values because the state and operator fully define the test. Context
 currently exposes only the Boolean `offline` value. `network_when` is populated
-whenever `network_access` is `conditional`. This lets a planner determine, for example,
+whenever `network_access` is `conditional`. A planner can therefore determine
 that `get` with stdin cannot access the network, `draft diff` contacts Firebase
 only for `--against=current` without `--cached`, and all valid `project import`
 flows require Firebase even when the imported document comes from stdin.
@@ -450,7 +450,7 @@ commands publish the most specific applicable deletion effects rather than
 requiring an agent to infer deletion from `local_state_write`.
 OAuth and service-account imports also declare `local_file_write`, conditioned
 on successful creation or replacement of their credential file. Network-capable
-commands additionally declare `authentication_remote_access` when credentials
+commands also declare `authentication_remote_access` when credentials
 must contact an identity provider or metadata service and `local_file_write`
 when a non-dry OAuth flow persists a new or refreshed token. Doctor declares
 the remote authentication access but not token persistence because its
@@ -486,7 +486,7 @@ In particular, draftable remote mutations declare their unconditional or
 stdin-conditional Firebase read, Firebase validation for changed live
 candidates, confirmation-authorized publication condition, and separate
 `local_draft_write` condition. Publication workflows distinguish pre_publish
-hook execution—which can occur during dry-run—from post_publish execution after
+hook execution, which can occur during dry-run, from post_publish execution after
 Firebase acceptance. An explicit draft-publish change note also declares the
 intermediate local draft write performed before publication.
 
@@ -542,7 +542,7 @@ algorithm; condition and group searches publish case-insensitive substring
 fields; and parameter search publishes its simultaneous normalized-text and
 raw-text variants. Invocation-level composition rules declare repeated values
 as OR, distinct supplied selector sources as AND, and absent sources as
-matching all candidates. Target-aware rules additionally declare unqualified
+matching all candidates. Target-aware rules also declare unqualified
 enabled-template expansion, explicit single-template selection, and
 client-target canonicalization. Invocation schemas for bulk `--project`
 commands declare the all-configured-project and enabled-template default.
@@ -634,7 +634,7 @@ their 256-code-point limits. Positional get/update/delete parameter selectors ar
 mutually exclusive with `--filter`; duplicate source and target must differ
 by exact code-point comparison after the target's declared creation-name
 normalization. `config show`, `config reset`, and `config set`
-publish their distinct closed key vocabularies. `config set` additionally
+publish their distinct closed key vocabularies. `config set` also
 publishes key-specific value arity and types, its terminal-key grammar,
 modifier-token uniqueness rule, and the required local scope for repository
 aliases. Function keys use canonical
@@ -656,7 +656,7 @@ decimal integer when supplied: empty values, signs, zero, leading zeros,
 whitespace, and non-decimal forms are rejected before target resolution.
 Selector and filter-query syntax is modeled
 with patterns, enums, normalization, and typed matching rules. Experiment and
-rollout IDs additionally publish a `managed_feature_id` validation rule that
+rollout IDs also publish a `managed_feature_id` validation rule that
 accepts an untrimmed slash-free ID exactly as supplied or the exact
 case-sensitive resolved-project Firebase resource name; remote selection still
 succeeds only for an exact canonical existing ID. Positional condition
@@ -931,9 +931,9 @@ alias-removal states, auth-bind item status/reason pairs,
 import/promotion/publication/version states, config-validation diagnostic
 severity, and direct mutation status fields are expressed with Draft 2020-12
 conditions. Count and size fields are nonnegative. Closed response
-vocabularies—including configuration scopes and sources, diagnostic codes,
+vocabularies, including configuration scopes and sources, diagnostic codes,
 alias-import conflict policies, diff change kinds, auth types, template kinds,
-draft comparison bases, version operations, and managed-feature kinds—are enums
+draft comparison bases, version operations, and managed-feature kinds, are enums
 or command-specific constants rather than open strings. Auth results correlate
 the outer identity and type with their path object and enforce the credential
 paths applicable to each auth type. Project template results require a unique,
@@ -1044,7 +1044,7 @@ patch version.
 
 `schemas/cli/contract.lock.json` fingerprints the current generated schemas
 and capability goldens and records whether that contract has been released.
-While `released` is `false`, the unreleased v1 surface may be corrected without
+While `released` is `false`, the unreleased v1 contract may be corrected without
 inventing a version bump. Once it is set to `true`, the generator rejects a
 different fingerprint at the same version. Generation happens in a staging
 directory and validates the lock before replacing checked-in files, so a lock

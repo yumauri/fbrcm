@@ -22,7 +22,8 @@ status `12`.
 
 ## 1. Discover before you act
 
-Don't guess flags from memory or from this doc going stale — ask the binary.
+Don't guess flags from memory or trust this document to stay current. Ask the
+binary.
 
 ```
 fbrcm capabilities --json
@@ -44,8 +45,8 @@ fbrcm capabilities project import --json
 ```
 
 This returns full argument/flag docs, response and error schema URNs, network
-access conditions, idempotency, dry-run/draft support, and interaction rules —
-enough to construct a correct call without reading source.
+access conditions, idempotency, dry-run/draft support, and interaction rules.
+That is enough to construct a correct call without reading source.
 
 If you need to validate a response shape programmatically:
 
@@ -108,20 +109,20 @@ ask for confirmation and you didn't pass `--yes`, it returns a structured
 `interaction.required` problem instead of hanging. Other required human input,
 such as OAuth authorization or an unavailable file/editor choice, uses the
 same structured problem. Retry with `--yes` only when the caller has explicitly
-authorized the described write; otherwise surface the interaction to a human.
+authorized the described write. Otherwise, show the interaction to a human.
 
 ## 6. Handle errors by structure, not by text
 
 Every failure is a typed problem with a `category`, and remediation (when
 safe) carries a `strategy`:
 
-- `retry_with_arguments` — augment your original invocation
-- `replace_selector` — substitute the given exact selector
-- `run_command` — a complete, ready-to-run fbrcm argv
+- `retry_with_arguments`: add the arguments to your original invocation
+- `replace_selector`: replace the selector with the given exact value
+- `run_command`: use the complete, ready-to-run fbrcm argument list
 
 Branch on `strategy`, not on the human-readable message. When a batch
 mutation partially fails, each failed item includes a target-aware
-`retry_selector` (e.g. `=my-project`) — pass it back as `--project
+`retry_selector`, such as `=my-project`. Pass it back as `--project
 <retry_selector>` to retry only what failed, rather than reprocessing the
 whole batch. A remediation describes a technically valid recovery; it does not
 grant permission to perform a destructive or remote action. Recheck the target
@@ -171,8 +172,8 @@ diff, and rollback.
 
 Commands that take one direct target require a literal Firebase project ID,
 optionally qualified with `client@` or `server@` when that command supports
-template selection. Parameter mutations, `get`, and `groups list` additionally
-support live project discovery and filtering; managed-feature commands require
+template selection. Parameter mutations, `get`, and `groups list` also support
+live project discovery and filtering. Managed-feature commands require
 an unqualified physical project ID:
 
 ```text
@@ -240,7 +241,7 @@ fbrcm draft publish my-app --yes --json
 
 ## Pitfalls
 
-- Don't parse human-readable tables — they're for terminals, not agents; use `--json` for everything.
+- Don't parse human-readable tables. They're for terminals, not agents. Use `--json` for everything.
 - `--yes` authorizes the confirmation branch; it does not skip Firebase validation or make an unsafe retry idempotent.
 - Positional selectors for existing resources are exact, case-sensitive, and untrimmed. Depending on the command, a mismatch produces either a typed not-found failure or a successful no-op. Use query flags such as `--filter`, `--search`, and `--project` only where the detailed command capability publishes them.
-- A `published-cache-failed` result means Firebase already accepted the write. Follow its structured remediation—normally a targeted `get --update`—instead of retrying the mutation.
+- A `published-cache-failed` result means Firebase already accepted the write. Follow its structured remediation, normally a targeted `get --update`, instead of retrying the mutation.

@@ -1,4 +1,4 @@
-# Privacy Policy for fbrcm
+# Privacy policy for fbrcm
 
 Last updated: August 25, 2026
 

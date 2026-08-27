@@ -83,7 +83,7 @@ If `FBRCM_PROFILE` selected the current profile, the Profiles tab treats it as
 pinned. Restart without the environment variable to switch profiles
 interactively.
 
-### OAuth Desktop app
+### OAuth desktop app
 
 Create a Desktop app OAuth client in Google Cloud:
 
@@ -113,7 +113,7 @@ fbrcm auth add service-account production \
 
 The account needs the relevant project discovery and Remote Config permissions.
 
-### Google Cloud CLI Application Default Credentials
+### Google Cloud CLI application default credentials
 
 Create ADC first, then select the gcloud identity during setup:
 
@@ -313,7 +313,7 @@ the condition.
 Condition order affects value resolution, so moves are reviewed as Remote
 Config changes rather than treated as cosmetic sorting.
 
-## A/B Tests, Personalizations, and Rollouts
+## A/B tests, personalizations, and rollouts
 
 The three managed-feature tabs are read-only and show entities grouped by
 selected Firebase project. Press `Enter`, or double-click an entity, to open its
@@ -429,7 +429,7 @@ results dialog reports all outcomes.
 
 ## Import, export, and defaults
 
-The Projects-panel cursor—not marked-project state—determines the target of
+The Projects-panel cursor, not marked-project state, determines the target of
 `i`, `e`, and `d`.
 
 ### Import

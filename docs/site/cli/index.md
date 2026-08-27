@@ -9,7 +9,7 @@ fbrcm draft list
 ```
 
 Use `fbrcm help <command>` for flags accepted by the installed version and the
-[command index](/reference/commands) for a map of the complete surface.
+[command index](/reference/commands) for a map of the complete command set.
 
 ## Global behavior
 

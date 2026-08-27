@@ -5,7 +5,7 @@ run for a disposable preview or a draft when several edits belong together.
 
 ## Choose dry run or draft
 
-Use `--dry-run` when you want to answer “what would this command do?” without
+Use `--dry-run` when you want to answer "what would this command do?" without
 persisting anything:
 
 ```sh
@@ -46,7 +46,7 @@ Compare the draft with the immutable base it started from:
 fbrcm draft diff staging --against base
 ```
 
-This operation is local. It answers “what did I change?”
+This operation is local. It answers "what did I change?"
 
 To preview what publication would do against the latest Firebase state:
 

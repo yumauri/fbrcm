@@ -50,7 +50,7 @@ local intent is no longer needed.
 ## Offline mode appeared unexpectedly
 
 The TUI enters offline mode after its startup connectivity probe fails. The CLI
-enters offline mode whenever `FBRCM_OFFLINE` is defined—even as an empty value
+enters offline mode whenever `FBRCM_OFFLINE` is defined, even as an empty value
 or `0`.
 
 Check proxy variables and unset the override when live access is intended:

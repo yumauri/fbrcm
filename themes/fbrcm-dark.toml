@@ -1,0 +1,53 @@
+# fbrcm website palette for terminals using a dark background.
+# The terminal background itself should be #0D0E13 for the closest match.
+
+[colors]
+url = "#FF8A50"
+primary = "#FF8A50"
+selection = "#331E19"
+secondary = "#F8753A"
+highlight = "#FFC400"
+highlight_muted = "#E69A2B"
+text = "#DFDFD6"
+text_soft = "#B8B8B2"
+text_muted = "#98989F"
+text_dim = "#6A6A71"
+error = "#FF6B6B"
+success = "#4CC38A"
+row_stripe = "#12131A"
+
+condition_blue = "#6EA8FE"
+condition_brown = "#C7926B"
+condition_cyan = "#56D4DD"
+condition_deep_orange = "#FF7A45"
+condition_green = "#4CC38A"
+condition_indigo = "#8B8CF8"
+condition_lime = "#A7D95B"
+condition_orange = "#FF9F43"
+condition_pink = "#F27EB1"
+condition_purple = "#C58AF9"
+condition_teal = "#4CC9B0"
+
+diff_added = "#4CC38A"
+diff_removed = "#FF6B6B"
+diff_changed = "#FFC400"
+diff_note = "#98989F"
+history_added_background = "#17382B"
+history_removed_background = "#442228"
+history_changed_background = "#403715"
+inactive_selection = "#181922"
+
+offline_foreground = "#DFDFD6"
+offline_background = "#BD3F16"
+
+log_debug = "#98989F"
+log_info = "#FF8A50"
+log_warn = "#FFC400"
+log_error = "#FF6B6B"
+log_fatal = "#C58AF9"
+log_silent = "#6A6A71"
+log_default = "#DFDFD6"
+
+logo_start = "#FFC400"
+logo_middle = "#FF9100"
+logo_end = "#DD2C00"

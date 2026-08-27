@@ -1,4 +1,4 @@
-# Expression Filtering
+# Expression filtering
 
 `fbrcm` supports `--expr` on several commands and `:` expression mode in the TUI Projects, Parameters, History, and Conditions panels. Expressions are powered by [expr-lang](https://expr-lang.org/docs/language-definition), with extra `fbrcm` context and helper functions for Firebase Remote Config.
 
@@ -12,7 +12,7 @@ fbrcm get --expr 'value | jq(.enabled == true)'
 
 In the TUI, press `:` while one of the supported panels is active and type the expression without a prefix. A temporarily invalid expression is shown in red with a single-line compiler diagnostic overlaid on the panel's bottom border while the panel retains the last valid result. The diagnostic does not change the filter or panel height. Text filters and expression filters use separate remembered input values.
 
-## Error Behavior
+## Error behavior
 
 An invalid expression is an error, not a query that matched nothing. CLI
 commands return nonzero for compilation, context-loading, and evaluation
@@ -27,7 +27,7 @@ red and appear on the panel border. The attempted filter is rejected and the
 last successfully filtered result remains visible. Editing the expression
 clears the evaluation diagnostic and tries the new expression.
 
-## Language Overview
+## Language overview
 
 Expr-lang is a small expression language. `--expr` must evaluate to a boolean.
 
@@ -64,7 +64,7 @@ value | jq(.enabled == true)
 
 This calls `jq(value, ".enabled == true")`.
 
-## Commands With `--expr`
+## Commands with `--expr`
 
 `--expr` is supported by these commands:
 
@@ -89,7 +89,7 @@ Commands use one of three expression contexts: parameter, condition, or project 
 
 The TUI Projects panel uses project context, Parameters and History use parameter context, and Conditions uses condition context. History evaluates the newer parameter state, or the older state when a parameter was removed.
 
-## Parameter Context
+## Parameter context
 
 Parameter context is used by:
 
@@ -164,7 +164,7 @@ fbrcm get --expr 'conditionals["cond_a"] == true'
 fbrcm get --expr 'conditionals["cond_b"] > 50'
 ```
 
-## Condition Context
+## Condition context
 
 Condition context is used by:
 
@@ -201,7 +201,7 @@ fbrcm conditions list demo --expr 'any(usages, #.parameter startsWith "legacy_")
 fbrcm conditions list demo --expr 'any(usages, #.value_type == "BOOLEAN" && #.value == true)'
 ```
 
-## Project Context
+## Project context
 
 Project context is used by:
 
@@ -246,7 +246,7 @@ fbrcm projects list --expr 'parameters["some_flag"].value == true'
 fbrcm add new_param --type boolean --value true --expr 'parameters["old_param"].value == true'
 ```
 
-## Value Typing
+## Value typing
 
 Remote Config values are stored as strings by Firebase, but `fbrcm` converts expression values by `valueType`:
 
@@ -312,7 +312,7 @@ conditionals["cond_a"] == true
 (conditionals["cond_b"] | jq(.enabled == true))
 ```
 
-## Custom Helper Functions
+## Custom helper functions
 
 `fbrcm` adds these helper functions:
 
@@ -345,7 +345,7 @@ is_json(value) && !is_empty(value)
 
 For `value`, `is_empty(value)` is true if default or any conditional value is empty.
 
-## JSON Filtering With `jq`
+## JSON filtering with `jq`
 
 `fbrcm` embeds [gojq](https://github.com/itchyny/gojq), a pure-Go jq implementation. It does not require the external `jq` binary.
 
@@ -393,7 +393,7 @@ If a jq expression returns booleans, `fbrcm` treats any `true` result as a match
 
 Invalid JSON values are ignored by `jq(...)`.
 
-## Command Examples
+## Command examples
 
 Show boolean params enabled anywhere:
 

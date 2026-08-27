@@ -20,7 +20,7 @@ operations, and machine-readable output.
 > [fbrcm vs. Firebase CLI](https://github.com/yumauri/fbrcm/blob/main/docs/firebase-cli-comparison.md) for feature parity,
 > command equivalents, and the Remote Config workflows fbrcm adds.
 
-It is designed for work that spans more than one Firebase project:
+fbrcm is most useful when work spans more than one Firebase project:
 
 - inspect parameters, groups, conditions, and version history;
 - compare and promote configuration between projects or template types;
@@ -253,14 +253,13 @@ also resolved automatically. Use `fbrcm projects aliases import --from
 
 Network requests share a configurable concurrency limit and Firebase 429
 cooldowns across workers. A positive
-`network.requests_per_minute` additionally paces requests by API and quota
-consumer; its default zero leaves proactive pacing disabled. Retry attempts,
-exponential delays, and jitter are configurable under `network.retry`.
-Configuration
-files stay sparse: built-in values are applied in memory and are not written
-during startup. Use `fbrcm config show keys` as the
-authoritative key-name reference, or `fbrcm config edit --full` to stage a
-complete generated template.
+`network.requests_per_minute` paces requests by API and quota consumer when set
+to a positive value. Its default of zero disables proactive pacing. Retry
+attempts, exponential delays, and jitter are configurable under
+`network.retry`. Configuration files stay sparse. fbrcm applies built-in values
+in memory and does not write them during startup. Use `fbrcm config show keys`
+as the authoritative key-name reference, or `fbrcm config edit --full` to stage
+a complete generated template.
 
 Themes are shareable TOML files stored under the user-wide `themes` directory.
 See [Theming](docs/theming.md) for installation, inheritance, fallback rules,

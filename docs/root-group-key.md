@@ -92,10 +92,10 @@ The `core.NormalizeRemoteConfigGroupKey` facade delegates to
 
 ## Related code
 
-- `core/rootgroup/rootgroup.go` — canonical constants
-- `core/parameters/tree.go` — synthetic root tree node
-- `core/conditions/tree.go` — root-group condition usages
-- `core/draft/normalize.go` — `TreeKey` to `WireKey`
-- `core/rc/mutate/slot.go` — wire-level parameter slots
-- `core/filter/expr_env.go` and `expr_compare_equal.go` — expression sentinel
-- `core/rc/diff/format.go` — human-facing root label
+- `core/rootgroup/rootgroup.go`: canonical constants
+- `core/parameters/tree.go`: synthetic root tree node
+- `core/conditions/tree.go`: root-group condition usages
+- `core/draft/normalize.go`: `TreeKey` to `WireKey`
+- `core/rc/mutate/slot.go`: wire-level parameter slots
+- `core/filter/expr_env.go` and `expr_compare_equal.go`: expression sentinel
+- `core/rc/diff/format.go`: human-facing root label

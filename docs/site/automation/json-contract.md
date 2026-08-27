@@ -69,7 +69,7 @@ Remediation vectors declare how they are used:
 
 - `retry_with_arguments` augments the original invocation;
 - `replace_selector` replaces an ambiguous selector; and
-- `run_command` is a complete fbrcm subcommand argument vector.
+- `run_command` is a complete fbrcm subcommand argument list.
 
 A remediation describes a technically valid recovery. Callers must still
 check scope, side effects, and authorization before executing it.

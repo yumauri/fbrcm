@@ -95,14 +95,14 @@ ETag protection. Conflicts and validation failures keep the draft intact.
 
 ## Import, export, and promotion
 
-In Projects, `i`, `e`, and `d` operate on the project under the cursor—not the
+In Projects, `i`, `e`, and `d` operate on the project under the cursor, not the
 set of marked projects.
 
 - Import supports merge or replacement, item selection, filtering, condition
   cleanup, and per-conflict choices.
 - Export writes the effective Remote Config template.
 - Application defaults downloads platform-specific defaults from Firebase.
-- Promotion compares one source target with another and lets you select the
-  parameters, groups, and conditions to transfer.
+- Promotion compares one source target with another. You select the parameters,
+  groups, and conditions to transfer.
 
 All resulting writes rejoin the same review, draft, and publication workflow.

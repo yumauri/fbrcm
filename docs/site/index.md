@@ -10,6 +10,7 @@ hero:
       text: Get started
       link: /guide/
   image:
-    src: https://raw.githubusercontent.com/yumauri/fbrcm/main/vhs/demo.gif
+    light: /fbrcm-light.gif
+    dark: /fbrcm-dark.gif
     alt: fbrcm terminal interface showing Firebase Remote Config projects and parameters
 ---

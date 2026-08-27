@@ -8,7 +8,7 @@ the global `--json` flag. It is normative for contract reviews and for every
 future executable CLI command or machine-contract change.
 
 The purpose of this standard is to make an audit reproducible. An auditor does
-not decide what “authoritative” means while conducting an audit. The term,
+not decide what "authoritative" means while conducting an audit. The term,
 scope, criteria, evidence, and verdicts are fixed below.
 
 Normative words `MUST`, `MUST NOT`, `REQUIRED`, `SHOULD`, and `MAY` use the
@@ -112,7 +112,7 @@ For this project, the CLI JSON contract is **authoritative for agents** if and
 only if all acceptance criteria in section 7 pass for the complete command
 inventory and there are no unresolved findings under this standard.
 
-“Authoritative” means all of the following, no more and no less:
+"Authoritative" means all of the following, no more and no less:
 
 1. An agent can discover every executable machine operation.
 2. An agent can construct every supported invocation without scraping help or
@@ -241,7 +241,7 @@ completion.
 These 51 criteria are the only criteria that produce findings under standard
 `1.0.0`.
 
-### INV — Inventory and identity
+### INV: inventory and identity
 
 - **INV-01**: The sets in section 3 MUST be equal.
 - **INV-02**: Command IDs, argv paths, schema IDs, filenames, and schema
@@ -251,7 +251,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **INV-04**: Every executable command MUST return an envelope in JSON mode,
   including root, help, completion, parsing failures, and startup failures.
 
-### ARG — Arguments, options, and normalization
+### ARG: arguments, options, and normalization
 
 - **ARG-01**: Argument arity, required/repeated state, option type, default,
   alias, repeatability, and required state MUST match Cobra and runtime parsing.
@@ -268,7 +268,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **ARG-07**: Validation intentionally deferred to runtime MUST have a typed,
   documented semantic annotation and a structured failure.
 
-### SEL — Selection and composition
+### SEL: selection and composition
 
 - **SEL-01**: Every selector MUST satisfy definition 1.5.
 - **SEL-02**: Positional shorthand transformations MUST be published and their
@@ -281,7 +281,7 @@ These 51 criteria are the only criteria that produce findings under standard
   algorithm used by the specific command; a shared selector MUST NOT be reused
   when command-local behavior differs.
 
-### STDIN — Standard input
+### STDIN: standard input
 
 - **STDIN-01**: `supports.stdin`, `stdin_modes`, `stdin_schema`, and the input
   schema's `stdin` property MUST agree with runtime JSON-document handling.
@@ -292,7 +292,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **STDIN-04**: Unpublished experimental human-only stdin behavior MUST remain
   absent from machine schemas and capabilities.
 
-### OUT — Envelope and success data
+### OUT: envelope and success data
 
 - **OUT-01**: JSON stdout MUST contain exactly one schema-valid envelope and one
   trailing newline, with no prompt, table, usage, progress, or raw artifact.
@@ -307,7 +307,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **OUT-06**: Artifact encoding, media type, destination, overwrite, byte size,
   and digest invariants MUST match the exact returned or written bytes.
 
-### ERR — Problems, warnings, and exit status
+### ERR: problems, warnings, and exit status
 
 - **ERR-01**: Every runtime failure source MUST be classified from a typed error
   rather than message text.
@@ -323,7 +323,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **ERR-06**: Every warning MUST be non-fatal, schema-valid, and accompanied by
   typed details and safe remediation when declared.
 
-### BEH — Effects and retry safety
+### BEH: effects and retry safety
 
 - **BEH-01**: Every reachable local, authentication, network, Firebase, hook,
   cache, draft, registry, profile, and artifact effect MUST appear in
@@ -339,7 +339,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **BEH-06**: Capability predicates MUST reference existing arguments, options,
   contexts, and defined runtime-state semantics with correct JSON value types.
 
-### INT — Non-interactive operation
+### INT: non-interactive operation
 
 - **INT-01**: JSON mode MUST NOT prompt, open a browser, editor, or file picker,
   or consume stdin as an interaction response.
@@ -350,7 +350,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **INT-04**: A preview returned with an interaction problem MUST validate as
   usable partial data under the command response schema.
 
-### DOC — Documentation agreement
+### DOC: documentation agreement
 
 - **DOC-01**: `docs/CLI.md`, `docs/cli-contract.md`, schemas, capabilities, and
   runtime MUST agree on every machine-visible command, argument, flag, default,
@@ -363,7 +363,7 @@ These 51 criteria are the only criteria that produce findings under standard
 - **DOC-04**: Examples claimed to be valid MUST validate and execute through the
   intended branch; examples claimed invalid MUST be rejected as documented.
 
-### GEN — Generation and regression protection
+### GEN: generation and regression protection
 
 - **GEN-01**: `go run ./cmd/schemagen` MUST complete successfully from a clean
   tree and a second run MUST produce byte-identical schemas and goldens.
@@ -401,7 +401,7 @@ test classes below.
 | Artifact | Every artifact command | Inline and destination forms, media/encoding variants, overwrite interaction, bytes, size, and SHA-256. |
 | Determinism | Entire contract | Two generation runs with no byte differences. |
 
-“As applicable” is determined solely from the command's code paths and declared
+"As applicable" is determined solely from the command's code paths and declared
 capability branches, not auditor preference. A test class is `N/A` only when
 the corresponding command-record cell explains why the branch cannot occur.
 
@@ -410,7 +410,7 @@ coverage and schema validation, not one test function per matrix cell.
 
 ## 7. Finite acceptance criteria
 
-The contract receives verdict **AUTHORITATIVE — PASS** only when all of these
+The contract receives verdict **AUTHORITATIVE: PASS** only when all of these
 conditions are true:
 
 1. The audit basis records the repository revision and audit-standard version.
@@ -428,9 +428,9 @@ conditions are true:
 12. The final workspace diff contains only intended changes and no unexplained
     generated or unrelated modifications.
 
-Failure of any condition produces verdict **NOT AUTHORITATIVE — FAIL** with a
-finite list of criterion-linked findings. There is no intermediate “probably
-authoritative” verdict.
+Failure of any condition produces verdict **NOT AUTHORITATIVE: FAIL** with a
+finite list of criterion-linked findings. There is no intermediate "probably
+authoritative" verdict.
 
 Once all twelve conditions pass, the auditor MUST call the contract
 authoritative under this standard. The auditor MUST NOT withhold acceptance for
@@ -501,7 +501,7 @@ Input schemas: <count>
 Response schemas: <count>
 Shared schemas: <count>
 Pre-existing dirty files: <list or none>
-Verdict: AUTHORITATIVE — PASS | NOT AUTHORITATIVE — FAIL
+Verdict: AUTHORITATIVE: PASS | NOT AUTHORITATIVE: FAIL
 Findings: <count>
 ```
 
@@ -541,13 +541,13 @@ A full audit follows these steps once, in order:
    captured envelope against its advertised schema.
 6. Record only criterion-linked findings. Fix them without changing the frozen
    standard; if product authorization is required, identify the runtime remedy
-   and pause that finding without creating substitute criteria.
+   and pause that finding without inventing replacement criteria.
 7. Regenerate twice, rerun every affected record, then run the complete test,
    vet, lint, and diff checks.
 8. Evaluate the twelve section-7 conditions and issue exactly one of the two
    permitted verdicts.
 
-If the verdict is `NOT AUTHORITATIVE — FAIL`, a later repair audit starts from
+If the verdict is `NOT AUTHORITATIVE: FAIL`, a later repair audit starts from
 the same standard version unless the standard was separately revised. It may
 reuse passing records whose runtime, schemas, capabilities, documentation, and
 evidence did not change, and MUST retest every changed or dependent record.

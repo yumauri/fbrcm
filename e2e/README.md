@@ -265,7 +265,7 @@ permissions required by the selected scenarios. A middleware guard derives its
 method, host, path, and optional exact-query allowlist from each scenario's
 `expected_http` entries; anything else is blocked before reaching an upstream
 service. This supports multi-host read flows and explicitly declared
-methods—including mutations in a recording sequence—without broadly allowing
+methods, including mutations in a recording sequence, without broadly allowing
 access to other endpoints. Captured fixtures are checked for supplied tokens and
 common credential fields before being saved.
 
@@ -443,7 +443,7 @@ path.
 ### Scenario state fixtures
 
 The harness always creates deterministic base auth and project state. A scenario
-may additionally set `"fixture": "fixture-name"`. Set `"local_config": true`
+may also set `"fixture": "fixture-name"`. Set `"local_config": true`
 when the command must discover repository files such as `.fbrcm.toml` or
 `.firebaserc`; local configuration remains disabled by default to prevent state
 outside the fixture from leaking into a test. The corresponding directory under

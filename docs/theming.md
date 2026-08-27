@@ -6,7 +6,7 @@ TUI. The built-in theme is the application's original color palette.
 In the TUI, press `Ctrl+T` to open the theme picker. Moving its cursor previews
 each theme immediately, `Enter` saves the selection, and `Esc` restores the
 previous palette. While the picker is open, editing the highlighted custom
-theme—or any theme it inherits from—reloads the preview automatically. See
+theme and any theme it inherits from reload the preview automatically. See
 [TUI: Theme picker](TUI.md#theme-picker) for keyboard, mouse, live editing, and
 configuration-layer behavior.
 
@@ -209,7 +209,7 @@ parent, or inheritance cycle produces one warning and applies the complete
 built-in palette. A partially resolved theme is never used.
 
 `fbrcm config set theme`, `fbrcm config edit`, and `fbrcm config validate` are
-strict and report an invalid selected theme as a configuration error. This
-lets normal startup remain safe while explicit configuration workflows catch
+strict and report an invalid selected theme as a configuration error. Normal
+startup remains available, while explicit configuration workflows still catch
 mistakes. Fix the file or remove the selection to restore successful
 validation.

@@ -90,7 +90,7 @@ On a new profile, guided setup offers three authentication methods:
 - Google Cloud CLI Application Default Credentials.
 
 The selected identity must be able to discover the projects you need and read
-their Remote Config templates. Write workflows additionally require permission
+their Remote Config templates. Write workflows also require permission
 to validate and publish templates.
 
 Run the diagnostic whenever you need to check credentials, connectivity,
@@ -122,8 +122,8 @@ project.
 
 ## Preview before writing
 
-Remote Config publication replaces a complete template, so fbrcm makes review
-part of every write:
+Remote Config publication replaces a complete template. In human mode, fbrcm
+shows a diff and asks for confirmation before a write:
 
 ```sh
 fbrcm update feature_enabled \

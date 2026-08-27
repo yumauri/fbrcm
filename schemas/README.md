@@ -1,4 +1,4 @@
-# CLI JSON Schemas
+# CLI JSON schemas
 
 `cli/1.0.0/` is generated and checked in. It contains Draft 2020-12 input and
 response schemas for every executable CLI command plus the shared envelope,
@@ -29,7 +29,7 @@ runtime-state predicate and side-effect semantics.
 
 The shared problem schema requires each remediation to declare a `strategy`
 (`retry_with_arguments`, `replace_selector`, or `run_command`) and a non-empty
-`argv`, so consumers never have to infer whether the vector is a full command
+`argv`, so consumers never have to infer whether the list is a full command
 or an edit to the original invocation. The envelope schema constrains success,
 partial success, and failure to their valid combinations of exit status, data,
 and errors, including the required mapping from the first problem category to
@@ -53,5 +53,5 @@ go run ./cmd/schemagen
 Review both the schemas and
 `cli/app/testdata/contract_v1_capabilities.golden.json`. The
 `cli/contract.lock.json` fingerprint makes generation fail when the machine
-surface changes without a contract-version bump. Do not edit generated schema
+interface changes without a contract-version bump. Do not edit generated schema
 files or the lock by hand.

@@ -2,7 +2,7 @@
 
 `fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode. See the [TUI guide](TUI.md) for the interactive workflow. Agents and scripts should start with the [agent quickstart](agent-quickstart.md); the global `--json` flag enables the versioned [machine contract](cli-contract.md).
 
-## Command Tree
+## Command tree
 
 ```text
 fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] [--json] [--timeout <duration>]
@@ -356,7 +356,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
         └── --use-in-app-default
 ```
 
-## Shared Behavior
+## Shared behavior
 
 All commands support `--help`. Root also supports `--version`. With `--json`,
 implicit `--help`/`-h` is represented by the separate `help` operation and its
@@ -485,7 +485,7 @@ FBRCM_CACHE_DIR
 FBRCM_PROFILE
 ```
 
-### Environment Variables
+### Environment variables
 
 | Variable | Behavior |
 | --- | --- |
@@ -532,7 +532,7 @@ identities do not gain an implicit target fallback. The authenticated principal 
 values fail as typed authentication configuration or credential errors before
 fbrcm starts OAuth interaction or sends an API request.
 
-### Filter Queries
+### Filter queries
 
 Flags named `--project` or `--filter` use mode-prefixed query strings:
 
@@ -556,7 +556,7 @@ composition: values within a repeated selector are ORed, distinct supplied
 selector sources such as `--filter`, `--group`, `--search`, and `--expr` are
 ANDed, and an absent selector source matches all candidates.
 
-### Client and Server Template Targets
+### Client and server template targets
 
 Remote Config commands accept a template target wherever their command syntax shows a Remote Config `<project>` or a `--project` filter:
 
@@ -568,7 +568,7 @@ server@project-id   server template in the firebase-server namespace
 
 The prefix comes before a filter mode. For example, `-p 'server@=api-prod'` selects the server template of exactly `api-prod`, while `-p 'client@^mobile-'` selects client templates whose project name or ID starts with `mobile-`. Repeated flags can mix client and server targets in one invocation. Target prefixes are recognized case-insensitively and canonicalized to lowercase. Query flags trim outer whitespace and whitespace around the project query after an explicit prefix. Positional target selectors preserve the project name or ID exactly without trimming. Explicit `client@` remains distinct from an unqualified target during selection, though both canonicalize to the same client target identity.
 
-Each cached project stores its enabled template selections and one primary template. New and existing projects default to client-only. An unqualified bulk filter, or no `--project` filter, expands every matched project to its configured enabled templates. An unqualified positional `<project>` selects that project's primary template. Explicit `client@` and `server@` prefixes always select exactly that template, independently of the saved selections. Target-aware matching annotations publish all three rules and client-target canonicalization to the unqualified project ID. Invocation schemas for bulk `--project` commands additionally publish their no-filter default over all configured projects and enabled templates.
+Each cached project stores its enabled template selections and one primary template. New and existing projects default to client-only. An unqualified bulk filter, or no `--project` filter, expands every matched project to its configured enabled templates. An unqualified positional `<project>` selects that project's primary template. Explicit `client@` and `server@` prefixes always select exactly that template, independently of the saved selections. Target-aware matching annotations publish all three rules and client-target canonicalization to the unqualified project ID. Invocation schemas for bulk `--project` commands also publish their no-filter default over all configured projects and enabled templates.
 
 The target syntax applies to `add`, `get`, `update`, `delete`, `duplicate`, and `groups`; all `conditions` and `versions` commands; `draft` commands; `project export`, `project import`, and `project defaults`; and the source and destination of `projects diff` and `projects promote`.
 
@@ -585,7 +585,7 @@ $(fbrcm draft path)/server@project-id.json     server draft
 
 Client and server templates have independent Firebase histories. CLI output uses the canonical target ID: unqualified for client templates and `server@project-id` for server templates.
 
-### Positional Project Resolution
+### Positional project resolution
 
 Template-aware commands first parse the optional `client@` or `server@` prefix, then resolve the remaining positional `<project>` in this order:
 
@@ -619,11 +619,11 @@ Aliases therefore remain usable for drafts that outlive the project registry.
 This also permits `show --raw` and `discard` for drafts whose project is no
 longer present in the projects cache.
 
-### Parameter Search
+### Parameter search
 
 Parameter-context commands also support `--search <text>`. It searches parameter name, description, default value, conditional values, condition names, and condition expressions. Name/description/condition-name matching is case-insensitive and ignores punctuation; value/expression matching is case-sensitive. `--search` is ANDed with `--filter` and parameter-context `--expr`.
 
-### Expression Filters
+### Expression filters
 
 `--expr` uses expr-lang and must evaluate to boolean. See [EXPR.md](EXPR.md) for full context fields and helper functions.
 
@@ -664,7 +664,7 @@ add
 duplicate
 ```
 
-### Stdin Remote Config Mode
+### Stdin Remote Config mode
 
 `get`, `add`, `update`, and `delete` switch to stdin mode when stdin is piped. In stdin mode, command reads Firebase Remote Config JSON from stdin and writes modified JSON or query output to stdout. Remote Firebase writes are not performed. These commands also accept an fbrcm parameters cache JSON file and read its internal `remote_config` field.
 
@@ -791,7 +791,7 @@ browser.
 Every structured error and warning remediation declares how its non-empty
 `argv` must be used: `retry_with_arguments` augments the original invocation,
 `replace_selector` substitutes an exact selector, and `run_command` is a
-complete fbrcm subcommand argument vector. Agents should branch on that
+complete fbrcm subcommand argument list. Agents should branch on that
 `strategy` instead of interpreting remediation text.
 
 Direct Remote Config mutations put an ordered target result collection in the envelope's `data` field:
@@ -824,7 +824,7 @@ Direct Remote Config mutations put an ordered target result collection in the en
 }
 ```
 
-`validated`, `validation_source`, and `selection` are always present. `selection.default_scope` reports whether the command used its unqualified default project scope, `resolved_target_count` reports its target breadth, and `matched_item_count` reports the selected items in this target. For `status: "unchanged"`, `changed_item_count` is zero and `no_op_reason` distinguishes `no_match` from `already_applied`; changed and failed states use their status-specific count rules and have a null no-op reason. Drafted, would-draft, and unchanged results use local validation provenance; published, would-publish, and post-publication failures use Firebase provenance. Validation, publication, conflict, preparation, and draft failures constrain `validated`, `validation_source`, and `error.stage` to the phase actually reached. `previous_version`, `published_version`, and `change_note` are `null` when unavailable or omitted. A target-level `error` is either `null` or a structured object with a stage and a redacted, bounded message. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. Batch envelope errors additionally retain typed per-target codes, categories, retryability, details, and remediation under `errors[].details.failures`. An all-failed batch uses its first target's category for the process status and is retryable only when every failed target is retryable. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. Envelope warnings carry structured non-fatal publication/cache/hook conditions and safe remediation argv. JSON mode does not imply `--yes`: when confirmation would be required, the command returns structured `interaction.required` instead of prompting. In stdin transformation mode, `add`, `update`, and `delete` wrap the transformed Remote Config as an artifact in `data`; `--change-note` is unavailable because no publication or draft write occurs.
+`validated`, `validation_source`, and `selection` are always present. `selection.default_scope` reports whether the command used its unqualified default project scope, `resolved_target_count` reports its target breadth, and `matched_item_count` reports the selected items in this target. For `status: "unchanged"`, `changed_item_count` is zero and `no_op_reason` distinguishes `no_match` from `already_applied`; changed and failed states use their status-specific count rules and have a null no-op reason. Drafted, would-draft, and unchanged results use local validation provenance; published, would-publish, and post-publication failures use Firebase provenance. Validation, publication, conflict, preparation, and draft failures constrain `validated`, `validation_source`, and `error.stage` to the phase actually reached. `previous_version`, `published_version`, and `change_note` are `null` when unavailable or omitted. A target-level `error` is either `null` or a structured object with a stage and a redacted, bounded message. A failed target that is safe to retry includes an exact, target-aware `retry_selector`, such as `=my-project` or `server@=my-project`; pass it back as `--project <retry_selector>`. Batch envelope errors also retain typed per-target codes, categories, retryability, details, and remediation under `errors[].details.failures`. An all-failed batch uses its first target's category for the process status and is retryable only when every failed target is retryable. A `published-cache-failed` target has no retry selector because Firebase was already updated and the correct recovery is a cache refresh. Envelope warnings carry structured non-fatal publication/cache/hook conditions and safe remediation argv. JSON mode does not imply `--yes`: when confirmation would be required, the command returns structured `interaction.required` instead of prompting. In stdin transformation mode, `add`, `update`, and `delete` wrap the transformed Remote Config as an artifact in `data`; `--change-note` is unavailable because no publication or draft write occurs.
 
 If Firebase accepts a publish but the returned state cannot be saved locally, the outcome is reported as `published-cache-failed`, not as an unpublished project. Refresh that project's cache instead of blindly retrying the mutation. For coordinated changes, `--draft` provides reviewable and recoverable intent, but publishing those drafts is still non-atomic across projects.
 
@@ -884,7 +884,7 @@ pair, including cache freshness and stale-fallback behavior. Predicate values an
 types. `project import` is correctly marked as requiring Firebase even when its
 document comes from stdin; cache-only version and project comparisons use the
 `cached=false` predicate; historical version lookup also reports whether its
-selector/cache state requires network resolution, and draft diff additionally
+selector/cache state requires network resolution, and draft diff also
 requires `against=current` before it can contact Firebase.
 `side_effect_when` gives one condition record per declared side effect.
 Empty side-effect, behavior-condition, destructive-condition, idempotency,
@@ -910,11 +910,11 @@ conditions, and confirmation is reported only when the planned operation
 actually requires it. Local writes and output-file writes likewise carry
 change/authorization predicates, post-publish hooks require accepted
 publication, and idempotency distinguishes stdin transformations and end-state
-local writes—including OAuth token persistence by `auth login`—from unsafe
-remote retries. Dry-run retry safety additionally
+local writes, including OAuth token persistence by `auth login`, from unsafe
+remote retries. Dry-run retry safety also
 depends on whether a trusted hook actually executed.
 Every JSON command declares the conditional default-profile bootstrap write.
-Commands that resolve a project through the live registry additionally declare
+Commands that resolve a project through the live registry also declare
 `runtime_state.project_registry sync_write_succeeded`, because a missing or
 empty registry is synchronized from Firebase and persisted before the requested
 operation. `config edit --json` declares no editor or destination-file write

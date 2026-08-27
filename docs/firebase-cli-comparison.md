@@ -7,12 +7,12 @@ publish Firebase Remote Config. They are optimized for different workflows:
 - **Firebase CLI** is a general Firebase deployment tool. It works especially
   well when a repository already uses `firebase.json`, `.firebaserc`, project
   aliases, and deployment hooks for several Firebase products.
-- **fbrcm** is a Remote Config workbench. It is designed for interactive
-  inspection, targeted edits, local drafts, comparisons, and promotion across
+- **fbrcm** focuses on Remote Config. It supports interactive inspection,
+  targeted edits, local drafts, comparisons, and promotion across
   many projects and both client and server templates. Repository hooks can
   enforce policy across every fbrcm publication path.
 
-This comparison covers the documented Firebase CLI surface and
+This comparison covers the documented Firebase CLI command set and
 `firebase-tools` 15.25.1 as of August 1, 2026. Consult the
 [current Firebase CLI reference](https://firebase.google.com/docs/cli) when
 using a later release.
@@ -48,10 +48,10 @@ careful production edits, exports, and migration work.
 ## Feature parity
 
 **✅ Yes** means the workflow has a dedicated command or interface.
-**⚠️ Partial** means it is possible, but requires editing a complete template,
-scripting separate invocations, or accepting a narrower workflow. **❌ No**
-means the workflow is unavailable, while **➖ No direct equivalent** indicates
-that the other tool approaches the same concern differently.
+**⚠️ Partial** means it requires editing a complete template, scripting
+separate invocations, or accepting a narrower workflow. **❌ No** means the
+workflow is unavailable. **➖ No direct equivalent** means the other tool
+approaches the same concern differently.
 
 | Capability | Firebase CLI | fbrcm | Notes |
 | --- | --- | --- | --- |
@@ -152,7 +152,7 @@ fbrcm projects diff staging-project production-project
 The exit status is `0` for no differences and `1` for differences. Operational
 failures use fbrcm's semantic failure statuses, such as `2` for invalid
 arguments, `3` for configuration or profile failures, and `8` for an invalid
-expression, making the command suitable for CI drift checks.
+expression. CI jobs can use these statuses for drift checks.
 
 ### Promote selected changes
 
@@ -236,7 +236,7 @@ deterministic.
 
 ### Safety and local state
 
-Both tools use Firebase ETags. fbrcm additionally keeps local drafts and
+Both tools use Firebase ETags. fbrcm also keeps local drafts and
 historical snapshots. Immediate fbrcm writes refuse to bypass an existing
 draft, and draft publication rebases local intent rather than silently
 overwriting unrelated remote changes.
