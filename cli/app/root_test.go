@@ -194,6 +194,38 @@ func TestRootCommandRejectsWhitespaceOnlyInvocationValues(t *testing.T) {
 	}
 }
 
+func TestRootCommandCompletesEmptyTokenWithoutInitialization(t *testing.T) {
+	t.Setenv(env.Profile, "../invalid")
+
+	for _, completionCommand := range []string{cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd} {
+		t.Run(completionCommand, func(t *testing.T) {
+			initializationCalls := 0
+			cmd := newRootCommandWithOfflineInit(nil, "1.2.3", "abc123", "2026-06-14", func(context.Context, bool) {
+				initializationCalls++
+			})
+			var stdout bytes.Buffer
+			cmd.SetOut(&stdout)
+			cmd.SetErr(&bytes.Buffer{})
+			cmd.SilenceErrors = true
+			cmd.SilenceUsage = true
+			cmd.SetArgs([]string{completionCommand, "auth", "add", ""})
+
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("execute completion: %v", err)
+			}
+			output := stdout.String()
+			for _, want := range []string{"gcloud", "oauth", "service-account", ":4\n"} {
+				if !strings.Contains(output, want) {
+					t.Fatalf("completion output %q does not contain %q", output, want)
+				}
+			}
+			if initializationCalls != 0 {
+				t.Fatalf("initialization calls = %d, want 0", initializationCalls)
+			}
+		})
+	}
+}
+
 func TestCommandProgressMessageUsesMeaningfulPhases(t *testing.T) {
 	root := &cobra.Command{Use: "fbrcm"}
 	projects := &cobra.Command{Use: "projects"}

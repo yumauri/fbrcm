@@ -91,6 +91,12 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			return cmd.Help()
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Cobra represents the token currently being completed as the final
+			// argument to its hidden completion command. That token is commonly
+			// empty, and completion must not initialize application state.
+			if cmd.Name() == cobra.ShellCompRequestCmd {
+				return nil
+			}
 			if err := shared.ValidateNonBlankInputs(cmd, args); err != nil {
 				return err
 			}
