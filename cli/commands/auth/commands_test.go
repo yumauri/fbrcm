@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -92,6 +93,20 @@ func TestAuthAddGCloudAndList(t *testing.T) {
 }
 
 func TestAuthAddAndManageQuotaProject(t *testing.T) {
+	adcPath := filepath.Join(t.TempDir(), "application_default_credentials.json")
+	adc := []byte(`{
+		"type": "authorized_user",
+		"client_id": "test-client-id.apps.googleusercontent.com",
+		"client_secret": "test-client-secret",
+		"refresh_token": "test-refresh-token",
+		"quota_project_id": "adc-billing-project"
+	}`)
+	if err := os.WriteFile(adcPath, adc, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", adcPath)
+	t.Setenv(env.GoogleCloudQuotaProject, "")
+
 	svc := setupAuthCommandTest(t)
 	addCmd := newAddGCloudCommand(svc)
 	if err := addCmd.Flags().Set("quota-project", "billing-project"); err != nil {
@@ -116,8 +131,13 @@ func TestAuthAddAndManageQuotaProject(t *testing.T) {
 		t.Fatal(err)
 	}
 	unset := newQuotaProjectUnsetCommand(svc)
+	out.Reset()
+	unset.SetOut(&out)
 	if err := unset.RunE(unset, []string{"main"}); err != nil {
 		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "Effective quota project: adc-billing-project") || !strings.Contains(out.String(), "Source: credentials") {
+		t.Fatalf("unset output = %q", out.String())
 	}
 	entries, _, err := svc.ListAuth()
 	if err != nil {
