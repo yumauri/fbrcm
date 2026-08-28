@@ -1,8 +1,10 @@
 # Drafts
 
-Drafts are local, profile-scoped, and independent for client and server
-templates. They let several targeted commands compose into one reviewed
-publication.
+A draft stores unpublished edits in the active profile. Client and server
+templates have separate drafts. Later mutation commands add their edits to the
+same target's draft.
+
+Examples use `example-project-id` as a physical Firebase project ID.
 
 ## List drafts
 
@@ -12,8 +14,8 @@ fbrcm draft list --filter '^prod'
 ```
 
 The list includes the canonical target, base version, update time, change
-counts, status, and optional change note. Invalid draft envelopes remain
-visible so they can be recovered or discarded.
+counts, status, and optional change note. fbrcm keeps invalid draft envelopes
+visible so you can recover or discard them.
 
 ## Create or extend a draft
 
@@ -21,13 +23,13 @@ Any supported mutation can use `--draft`:
 
 ```sh
 fbrcm update payments_enabled \
-  --project '=staging' \
+  --project '=example-project-id' \
   --type boolean \
   --value true \
   --draft
 
 fbrcm groups add payments \
-  --project '=staging' \
+  --project '=example-project-id' \
   --description 'Payment configuration' \
   --draft
 ```
@@ -37,9 +39,9 @@ Later mutations compose onto the same target-specific draft.
 ## Inspect and export
 
 ```sh
-fbrcm draft show staging
-fbrcm draft show staging --to candidate.json
-fbrcm draft show staging --raw --to draft-envelope.json
+fbrcm draft show example-project-id
+fbrcm draft show example-project-id --to candidate.json
+fbrcm draft show example-project-id --raw --to draft-envelope.json
 ```
 
 Normal output is the validated working Remote Config candidate. `--raw` emits
@@ -50,10 +52,10 @@ when normal draft decoding fails.
 
 ```sh
 # Purely local: base → stored draft.
-fbrcm draft diff staging --against base
+fbrcm draft diff example-project-id --against base
 
 # Live preview: current Firebase → rebased candidate.
-fbrcm draft diff staging --against current
+fbrcm draft diff example-project-id --against current
 ```
 
 Add parameter, group, expression, or search filters to focus a large diff. A
@@ -63,17 +65,18 @@ status 0 when it does not.
 ## Set the Firebase change note
 
 ```sh
-fbrcm draft change-note staging 'Prepare payments launch'
-fbrcm draft change-note staging --clear
+fbrcm draft change-note example-project-id 'Prepare payments launch'
+fbrcm draft change-note example-project-id --clear
 ```
 
-The note is stored with the draft and sent as the published Firebase version
-description. `draft publish --change-note` can override it for one invocation.
+fbrcm stores the note with the draft and sends it as the published Firebase
+version description. `draft publish --change-note` can override it for one
+invocation.
 
 ## Publish
 
 ```sh
-fbrcm draft publish staging
+fbrcm draft publish example-project-id
 fbrcm draft publish --all --dry-run
 ```
 
@@ -85,7 +88,7 @@ target failures and report every outcome.
 ## Discard
 
 ```sh
-fbrcm draft discard staging
+fbrcm draft discard example-project-id
 fbrcm draft discard --all
 ```
 

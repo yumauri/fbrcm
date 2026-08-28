@@ -1,9 +1,8 @@
-# Mental model
+# How fbrcm works
 
-fbrcm sits between your terminal and the Firebase Remote Config API. It does
-not introduce a backend or an additional source of truth: published templates
-remain in Firebase, while fbrcm keeps only the local state needed for faster
-work and safer changes.
+fbrcm calls the Firebase Remote Config API from your machine. Published
+templates stay in Firebase. fbrcm stores credentials, project registrations,
+caches, and drafts locally. It has no intermediary backend.
 
 ## Projects and template targets
 
@@ -17,8 +16,8 @@ which defaults to the client template. Use a qualified target whenever the
 distinction matters:
 
 ```sh
-fbrcm get --project 'client@=acme-production'
-fbrcm get --project 'server@=acme-production'
+fbrcm get --project 'client@=example-project-id'
+fbrcm get --project 'server@=example-project-id'
 ```
 
 Client and server targets have separate caches, drafts, and version histories.
@@ -30,15 +29,17 @@ A profile is an isolated fbrcm workspace. It contains:
 - registered authentication identities;
 - discovered and selected projects;
 - cached templates and version snapshots;
-- active drafts; and
-- the active-profile preference.
+- active drafts.
 
-Profiles are useful when you work with unrelated organizations, credentials,
-or project sets. Switch interactively with `Ctrl+P`, or use:
+fbrcm stores the active-profile preference in global configuration. The
+preference points to one of these workspaces.
+
+Use separate profiles for unrelated organizations, credentials, or project
+sets. Switch interactively with `Ctrl+P`, or use:
 
 ```sh
 fbrcm profile list
-fbrcm profile switch work
+fbrcm profile switch personal
 ```
 
 ## Repository aliases
@@ -48,13 +49,13 @@ aliases live in the nearest `.fbrcm.toml`:
 
 ```toml
 [projects.aliases]
-staging = "acme-staging-42"
-prod = "acme-production-42"
+staging = "example-staging-project-id"
+prod = "example-production-project-id"
 ```
 
-Firebase CLI aliases from `.firebaserc` are resolved too. Because aliases are
-repository-scoped and profile-independent, teams can commit them and use the
-same names locally and in CI.
+fbrcm also resolves Firebase CLI aliases from `.firebaserc`. Aliases belong to
+the repository instead of a profile, so teams can commit them and use the same
+names locally and in CI.
 
 ```sh
 fbrcm projects aliases import --from .firebaserc --dry-run
@@ -74,14 +75,13 @@ fbrcm distinguishes three states:
 | Draft | Local edit intent that has not been published |
 
 Normal reads use a valid draft when one exists; otherwise they use cached
-published state and refresh it when requested. A draft is not just a replacement
-template: it retains the base used to calculate local intent and later detect
-conflicts.
+published state and refresh it when requested. A draft contains the edited
+template and the base used to calculate local intent and detect conflicts.
 
 ## TUI and CLI
 
-The TUI and CLI operate on the same profiles, projects, caches, drafts, themes,
-and configuration.
+The TUI and CLI read the same profiles, projects, caches, drafts, themes, and
+configuration.
 
 - Use the TUI when discovery, comparison, or visual review is the main task.
 - Use human-readable CLI output for focused terminal operations.
@@ -96,5 +96,5 @@ you intend to change one parameter. fbrcm therefore turns targeted operations
 into a complete candidate template, shows the diff, validates the candidate,
 and publishes it with ETag protection.
 
-That is why [dry runs and drafts](./safe-changes) are central rather than
-optional polish.
+Even a one-parameter change produces a full candidate template. Use a
+[dry run or draft](./safe-changes) to inspect that candidate before publication.

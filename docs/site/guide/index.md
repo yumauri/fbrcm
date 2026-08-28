@@ -1,8 +1,36 @@
 # Getting started
 
-fbrcm is a terminal manager for Firebase Remote Config. Use the interactive TUI
-to explore and edit projects, or use the CLI for scripts, repeatable operations,
-and machine-readable output.
+After these steps, fbrcm will have one working credential, a saved project
+list, and a cached Remote Config template. The last step previews a change
+without publishing it. Choose the TUI setup or the CLI-only setup.
+
+## What you need
+
+Two Google Cloud project roles appear during setup:
+
+- **Firebase project.** This is the project whose Remote Config you want to manage.
+  fbrcm discovers accessible Firebase projects, so you do not need to know all
+  of their IDs in advance.
+- **Quota project.** This is the project Google should charge for API quota and
+  billing. You must know this physical project ID before the first discovery,
+  and your Google identity needs `serviceusage.services.use` on it.
+
+They may be the same physical Google Cloud project. The quota project does not
+grant access to Remote Config; your identity still needs the appropriate
+permissions on every Firebase project it manages.
+
+If you do not have a usable quota project, ask your Google Cloud administrator
+which project to use and for `serviceusage.services.use` on it. fbrcm cannot
+perform the first targetless project discovery without one.
+
+You also need one of these credential sources:
+
+- a Google OAuth Desktop app client JSON;
+- a service-account key JSON; or
+- Google Cloud CLI Application Default Credentials (ADC).
+
+If these terms are unfamiliar, read [Authentication and project discovery](./authentication)
+before choosing a setup path.
 
 ## Install
 
@@ -75,95 +103,190 @@ go install github.com/yumauri/fbrcm@latest
 </template>
 </ContentTabs>
 
-## Connect an identity
+Confirm that the binary is available:
 
-Launch fbrcm without arguments:
+```sh
+fbrcm --version
+```
+
+## Option 1: guided setup in the TUI
+
+Start fbrcm without arguments:
 
 ```sh
 fbrcm
 ```
 
-On a new profile, guided setup offers three authentication methods:
+On a new profile, the setup screen asks you to:
 
-- an OAuth Desktop app client;
-- a service-account JSON key; or
-- Google Cloud CLI Application Default Credentials.
+1. Choose OAuth, service-account, or gcloud ADC authentication.
+2. Import or validate the selected credentials.
+3. Enter the physical Google Cloud project ID to use as the quota project.
+4. Complete browser authorization when OAuth requires it.
+5. Let fbrcm discover and save the accessible Firebase projects.
 
-The selected identity must be able to discover the projects you need and read
-their Remote Config templates. Write workflows also require permission
-to validate and publish templates.
+After the workspace opens, select a project in the left panel and select a
+parameter in the main panel. Press `?` anywhere to find available actions
+without memorizing shortcuts.
 
-### Choose a quota project
-
-As part of adding an identity, guided setup asks for a Google Cloud project to
-use for quota and billing attribution. This value is required for the first
-project discovery: before fbrcm knows which Firebase projects are accessible,
-the request is targetless and has no target project ID to use as a fallback for
-`X-Goog-User-Project`.
-
-Enter a physical Google Cloud project ID on which the authenticated principal
-has `serviceusage.services.use`. fbrcm saves it as the identity's default and
-uses it for discovery and whenever a selected project has no more specific
-override.
-
-For CLI setup, pass `--quota-project <project-id>` to `fbrcm auth add`, or set
-the value on an existing identity:
-
-```sh
-fbrcm auth quota-project set main my-quota-project
-```
-
-See [Quota and billing project](/reference/configuration#quota-and-billing-project)
-for precedence, environment overrides, and per-project settings.
-
-Run the diagnostic whenever you need to check credentials, connectivity,
-permissions, or local storage:
+Run the diagnostic from another terminal if setup reports an error:
 
 ```sh
 fbrcm doctor
 ```
 
-## Inspect your first parameter
+Continue with the [TUI overview](/tui/) when you want to edit or compare data
+interactively.
 
-The TUI opens with the project list on the left and Remote Config data in the
-main workspace. Select a project, then choose a parameter to open its details.
-Press `?` at any time to search the available actions and shortcuts.
+## Option 2: setup using only the CLI
 
-The equivalent CLI workflow is:
+The examples below use these concrete names:
+
+| Example value | Meaning |
+| --- | --- |
+| `example-auth-name` | The local name fbrcm uses for the credential |
+| `example-quota-project-id` | The Google Cloud project ID used for quota and billing |
+| `example-project-id` | The Firebase project ID you want to manage |
+
+`example-auth-name` is not a command or a Google account name. It is the name
+fbrcm uses to refer to this credential.
+
+### 1. Add one authentication identity
+
+Choose exactly one of the following methods.
+
+<ContentTabs
+  aria-label="Authentication method"
+  :tabs="[
+    { id: 'gcloud', label: 'Google Cloud CLI' },
+    { id: 'oauth', label: 'OAuth Desktop app' },
+    { id: 'service-account', label: 'Service account' }
+  ]"
+>
+<template #gcloud>
+
+If you already use the Google Cloud CLI, run:
 
 ```sh
-# Discover accessible projects.
-fbrcm projects list --update
+gcloud auth application-default login
 
-# Inspect one parameter across production-like projects.
-fbrcm get feature_enabled --project '^prod'
+fbrcm auth add gcloud example-auth-name \
+  --quota-project example-quota-project-id
+
+fbrcm auth login example-auth-name
 ```
 
-Project filters support fuzzy, prefix, contains, and exact matching. Use an
-exact selector such as `=my-project-id` when a command must target one physical
-project.
+The final command validates that fbrcm can load the ADC credentials. It does
+not start another fbrcm-managed OAuth flow.
 
-## Preview before writing
+</template>
+<template #oauth>
 
-Remote Config publication replaces a complete template. In human mode, fbrcm
-shows a diff and asks for confirmation before a write:
+Create a Desktop app client in
+[Google Cloud OAuth clients](https://console.cloud.google.com/auth/clients),
+download its JSON file, and run:
+
+```sh
+fbrcm auth add oauth example-auth-name \
+  --from /path/to/client-secret.json \
+  --quota-project example-quota-project-id
+
+fbrcm auth login example-auth-name
+```
+
+`auth login` opens the Google consent flow when no usable cached token exists.
+Add `--noopen` if you want fbrcm to print the authorization URL without opening
+the browser automatically.
+
+</template>
+<template #service-account>
+
+Use a service-account key when your environment requires one:
+
+```sh
+fbrcm auth add service-account example-service-account-auth \
+  --from /path/to/service-account.json \
+  --quota-project example-quota-project-id
+
+fbrcm auth login example-service-account-auth
+```
+
+The login command validates the stored key; it does not open a browser.
+
+</template>
+</ContentTabs>
+
+### 2. Discover projects
+
+Discover accessible Firebase projects and save them in the active profile:
+
+```sh
+fbrcm projects update
+```
+
+The command uses every configured identity. At this point, that is the identity
+you just added. Later, `fbrcm projects list` reads the saved list and
+`fbrcm projects list --update` refreshes it before printing.
+
+### 3. Inspect Remote Config
+
+First list the saved projects:
+
+```sh
+fbrcm projects list
+```
+
+Then replace `example-project-id` with one Firebase project ID from that output:
+
+```sh
+fbrcm get --project '=example-project-id'
+```
+
+This lists parameters from exactly that project. To inspect one parameter, add
+its key:
+
+```sh
+fbrcm get feature_enabled --project '=example-project-id'
+```
+
+The leading `=` means exact project matching. It prevents a short name from
+accidentally matching several projects.
+
+### 4. Check the complete setup
+
+```sh
+fbrcm doctor
+```
+
+The report checks local files, credentials, quota-project resolution, project
+discovery, and Remote Config access. It also checks
+`serviceusage.services.use`, `cloudconfig.configs.get`, and
+`cloudconfig.configs.update`.
+
+## Preview your first change
+
+Remote Config publication replaces a complete template. Start with a dry run,
+which fetches and validates the candidate but does not publish or save it:
 
 ```sh
 fbrcm update feature_enabled \
-  --project '=my-project-id' \
+  --project '=example-project-id' \
   --type boolean \
   --value true \
   --dry-run
 ```
 
-Use `--draft` instead of `--dry-run` to save the change locally for later
-review. See [Safe changes](./safe-changes) for the complete workflow.
+Inspect the matched-item count and diff. When the result is correct, either
+rerun without `--dry-run` for an immediate reviewed publication or replace it
+with `--draft` to save the change locally.
 
-## Next steps
+## Where to go next
 
-- Read the [mental model](./mental-model) before working across several
-  projects or templates.
-- Follow the [TUI overview](/tui/) for interactive navigation.
-- Open the [CLI overview](/cli/) for command conventions and targeting.
-- Use [Agent workflows](/automation/) when calling fbrcm from an LLM, CI job,
-  or other automation.
+- [Authentication and project discovery](./authentication) explains auth IDs,
+  quota projects, multiple identities, and project bindings.
+- [How fbrcm works](./mental-model) explains profiles, aliases, caches, drafts,
+  and client/server templates.
+- [Safe changes](./safe-changes) walks through dry runs, drafts, conflict
+  handling, and publication.
+- [CLI overview](/cli/) explains command syntax, selectors, and output modes.
+- [Automation and agents](/automation/) covers stable JSON execution.

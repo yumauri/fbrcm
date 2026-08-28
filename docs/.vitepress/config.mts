@@ -6,9 +6,9 @@ const socialImage = siteUrl ? `${siteUrl}/og.png` : undefined
 
 export default defineConfig({
   title: 'fbrcm',
-  titleTemplate: ':title · fbrcm',
+  titleTemplate: 'fbrcm - :title',
   description:
-    'A terminal manager for inspecting, comparing, and safely changing Firebase Remote Config across projects.',
+    'A TUI and CLI for managing Firebase Remote Config across Google Cloud projects.',
   lang: 'en-US',
   srcDir: 'site',
   base: '/',
@@ -16,25 +16,29 @@ export default defineConfig({
   lastUpdated: true,
   sitemap: siteUrl ? { hostname: `${siteUrl}/` } : undefined,
   head: [
+    ['link', { rel: 'icon', href: '/favicon.ico', sizes: '32x32' }],
+    ['link', { rel: 'icon', href: '/icon.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
+    ['link', { rel: 'manifest', href: '/manifest.webmanifest' }],
     ['meta', { name: 'theme-color', content: '#f57c32' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:title', content: 'fbrcm · Remote Config, under control.' }],
+    ['meta', { property: 'og:title', content: 'fbrcm · Firebase Remote Config manager' }],
     [
       'meta',
       {
         property: 'og:description',
         content:
-          'Inspect, compare, stage, and publish Firebase Remote Config changes from one terminal workflow.'
+          'Manage Firebase Remote Config across Google Cloud projects with a TUI or CLI.'
       }
     ],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'fbrcm · Remote Config, under control.' }],
+    ['meta', { name: 'twitter:title', content: 'fbrcm · Firebase Remote Config manager' }],
     [
       'meta',
       {
         name: 'twitter:description',
         content:
-          'Inspect, compare, stage, and publish Firebase Remote Config changes from one terminal workflow.'
+          'Manage Firebase Remote Config across Google Cloud projects with a TUI or CLI.'
       }
     ],
     ...(socialImage
@@ -51,6 +55,8 @@ export default defineConfig({
     lineNumbers: true
   },
   themeConfig: {
+    logo: { src: '/fbrcm-logo.svg', alt: 'fbrcm' },
+    siteTitle: false,
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'TUI', link: '/tui/' },
@@ -68,8 +74,9 @@ export default defineConfig({
         text: 'Start here',
         items: [
           { text: 'Getting started', link: '/guide/' },
-          { text: 'Mental model', link: '/guide/mental-model' },
-          { text: 'Safe changes', link: '/guide/safe-changes' }
+          { text: 'Authentication and discovery', link: '/guide/authentication' },
+          { text: 'How fbrcm works', link: '/guide/mental-model' },
+          { text: 'Safe change workflow', link: '/guide/safe-changes' }
         ]
       },
       {
@@ -80,7 +87,7 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Command line',
+        text: 'CLI workflows',
         items: [
           { text: 'CLI overview', link: '/cli/' },
           { text: 'Parameters and conditions', link: '/cli/parameters' },
@@ -98,11 +105,11 @@ export default defineConfig({
       },
       {
         text: 'Reference',
-        collapsed: true,
         items: [
           { text: 'Filtering', link: '/reference/filtering' },
           { text: 'Configuration', link: '/reference/configuration' },
           { text: 'Themes', link: '/reference/themes' },
+          { text: 'Hooks', link: '/reference/hooks' },
           { text: 'Command index', link: '/reference/commands' },
           { text: 'Troubleshooting', link: '/reference/troubleshooting' }
         ]

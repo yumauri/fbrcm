@@ -1,13 +1,17 @@
 # History and managed features
 
-fbrcm exposes Remote Config version history and the Firebase-managed features
-bound to published client templates.
+These commands read Remote Config version history and the Firebase-managed
+features bound to published client templates.
+
+Examples use `example-project-id` as a physical Firebase project ID. Version,
+experiment, rollout, and personalization IDs come from the corresponding list
+command.
 
 ## List and inspect versions
 
 ```sh
-fbrcm versions list staging
-fbrcm versions show staging 42
+fbrcm versions list example-project-id
+fbrcm versions show example-project-id 42
 ```
 
 Version lists combine Firebase history with locally retained snapshots when
@@ -17,7 +21,7 @@ window, so consider exporting important versions before clearing the cache.
 ## Compare versions
 
 ```sh
-fbrcm versions diff staging 41 42
+fbrcm versions diff example-project-id 41 42
 ```
 
 Omit the second version to compare a historical version with the current
@@ -27,7 +31,7 @@ can narrow the diff.
 ## Export a version
 
 ```sh
-fbrcm versions export staging 42 --to remote-config-v42.json
+fbrcm versions export example-project-id 42 --to remote-config-v42.json
 ```
 
 Export is useful for audit artifacts, recovery, or review outside fbrcm.
@@ -35,8 +39,8 @@ Export is useful for audit artifacts, recovery, or review outside fbrcm.
 ## Roll back or restore
 
 ```sh
-fbrcm versions rollback staging 42 --dry-run
-fbrcm versions restore staging 42 --dry-run
+fbrcm versions rollback example-project-id 42 --dry-run
+fbrcm versions restore example-project-id 42 --dry-run
 ```
 
 - **Rollback** asks Firebase to roll the project back to a retained version.
@@ -50,9 +54,9 @@ confirmation, and ETag safeguards.
 ## A/B tests
 
 ```sh
-fbrcm experiments list staging
-fbrcm experiments show staging experiment-id
-fbrcm experiments delete staging experiment-id
+fbrcm experiments list example-project-id
+fbrcm experiments show example-project-id experiment-id
+fbrcm experiments delete example-project-id experiment-id
 ```
 
 List and show combine experiment metadata with bindings found in the published
@@ -62,9 +66,9 @@ confirmation and machine-contract rules.
 ## Rollouts
 
 ```sh
-fbrcm rollouts list staging
-fbrcm rollouts show staging rollout-id
-fbrcm rollouts delete staging rollout-id
+fbrcm rollouts list example-project-id
+fbrcm rollouts show example-project-id rollout-id
+fbrcm rollouts delete example-project-id rollout-id
 ```
 
 Rollout views combine the public rollout API with parameter-value bindings from
@@ -73,14 +77,14 @@ the published template.
 ## Personalizations
 
 ```sh
-fbrcm personalizations list staging
-fbrcm personalizations show staging personalization-id
+fbrcm personalizations list example-project-id
+fbrcm personalizations show example-project-id personalization-id
 ```
 
 Firebase exposes personalization bindings through the template but does not
 provide candidate values or result metrics through this API. Personalization
 commands are therefore read-only.
 
-Managed-feature commands apply to client templates. Server targets are omitted
+Managed-feature commands apply to client templates. fbrcm omits server targets
 because Firebase exposes these features under the client Remote Config
 namespace.

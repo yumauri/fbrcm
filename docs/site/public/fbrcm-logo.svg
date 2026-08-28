@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="115" height="30" viewBox="0 0 115 30">
+  <title>fbrcm</title>
+  <style>
+    .letter {
+        opacity: 0;
+        animation-duration: 1.6s;
+        animation-fill-mode: forwards;
+        animation-timing-function: steps(1, end);
+    }
+
+    .letter-f { animation-name: reveal-f; }
+    .letter-b { animation-name: reveal-b; }
+    .letter-r { animation-name: reveal-r; }
+    .letter-c { animation-name: reveal-c; }
+    .letter-m { animation-name: reveal-m; }
+
+    .cursor {
+        transform: translateX(-86px);
+        animation: move-cursor 1.6s steps(1, end) forwards;
+    }
+
+    @keyframes reveal-f {
+        0%, 62.49% { opacity: 0; }
+        62.5%, 100% { opacity: 1; }
+    }
+
+    @keyframes reveal-b {
+        0%, 69.36% { opacity: 0; }
+        69.375%, 100% { opacity: 1; }
+    }
+
+    @keyframes reveal-r {
+        0%, 78.42% { opacity: 0; }
+        78.4375%, 100% { opacity: 1; }
+    }
+
+    @keyframes reveal-c {
+        0%, 84.05% { opacity: 0; }
+        84.0625%, 100% { opacity: 1; }
+    }
+
+    @keyframes reveal-m {
+        0%, 92.49% { opacity: 0; }
+        92.5%, 100% { opacity: 1; }
+    }
+
+    @keyframes move-cursor {
+        0%, 62.49% { transform: translateX(-86px); }
+        62.5%, 69.36% { transform: translateX(-70px); }
+        69.375%, 78.42% { transform: translateX(-54px); }
+        78.4375%, 84.05% { transform: translateX(-44px); }
+        84.0625%, 92.49% { transform: translateX(-28px); }
+        92.5%, 100% { transform: translateX(0); }
+    }
+
+    /* @media (prefers-reduced-motion: reduce) {
+        .letter {
+            opacity: 1;
+            animation: none;
+        }
+
+        .cursor {
+            transform: translateX(0);
+            animation: none;
+        }
+    } */
+  </style>
+
+  <path d="M 3 5 L 12 15 L 3 25" fill="none" stroke="#ffc400" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />
+
+  <g>
+    <path class="letter letter-f" fill="#ffc400" d="M28.656 10.374V13.339H19.244V10.374ZM21.883 25V8.532Q21.883 7.172 22.426 6.259Q22.969 5.345 24 4.881Q25.032 4.416 26.492 4.416Q27.234 4.416 27.884 4.45Q28.533 4.484 28.795 4.51L28.632 7.47Q28.45 7.453 28.028 7.438Q27.607 7.422 27.278 7.422Q26.389 7.422 26.014 7.811Q25.639 8.199 25.639 9.064V25Z" />
+    <path class="letter letter-b" fill="#ffa900" d="M38.648 25.291Q37.632 25.291 36.799 24.98Q35.966 24.669 35.341 24.095Q34.716 23.522 34.316 22.739H34.253V25H30.552V4.629H34.311V12.514H34.359Q34.782 11.773 35.396 11.233Q36.009 10.694 36.831 10.397Q37.652 10.1 38.671 10.1Q40.5 10.1 41.902 11.036Q43.304 11.972 44.103 13.677Q44.901 15.382 44.901 17.684Q44.901 19.997 44.115 21.705Q43.329 23.414 41.924 24.353Q40.518 25.291 38.648 25.291ZM37.679 22.204Q38.732 22.204 39.494 21.662Q40.256 21.12 40.673 20.106Q41.09 19.092 41.09 17.681Q41.09 16.264 40.674 15.258Q40.257 14.252 39.496 13.712Q38.734 13.172 37.679 13.172Q36.6 13.172 35.804 13.73Q35.008 14.289 34.576 15.299Q34.145 16.309 34.145 17.681Q34.145 19.044 34.577 20.062Q35.01 21.08 35.807 21.642Q36.604 22.204 37.679 22.204Z" />
+    <path class="letter letter-r" fill="#ff9100" d="M47.052 25V10.374H50.68V12.844H50.749Q51.151 11.547 52.035 10.891Q52.919 10.235 54.308 10.235Q54.65 10.235 54.958 10.254Q55.266 10.272 55.499 10.297V13.592Q55.286 13.556 54.798 13.517Q54.31 13.478 53.81 13.478Q52.959 13.478 52.276 13.862Q51.594 14.246 51.202 14.989Q50.811 15.731 50.811 16.812V25Z" />
+    <path class="letter letter-c" fill="#ee5e00" d="M63.605 25.323Q61.44 25.323 59.817 24.361Q58.195 23.399 57.297 21.684Q56.4 19.968 56.4 17.715Q56.4 15.45 57.297 13.728Q58.195 12.006 59.817 11.041Q61.44 10.076 63.605 10.076Q64.981 10.076 66.143 10.474Q67.306 10.871 68.185 11.597Q69.064 12.322 69.604 13.322Q70.145 14.321 70.28 15.537L66.653 15.694Q66.556 15.12 66.312 14.651Q66.068 14.183 65.686 13.845Q65.305 13.507 64.796 13.323Q64.287 13.14 63.652 13.14Q62.559 13.14 61.788 13.707Q61.017 14.274 60.611 15.301Q60.205 16.328 60.205 17.712Q60.205 19.081 60.611 20.105Q61.017 21.129 61.788 21.694Q62.558 22.259 63.652 22.259Q64.289 22.259 64.793 22.078Q65.298 21.896 65.67 21.555Q66.043 21.215 66.287 20.734Q66.531 20.252 66.643 19.663L70.287 19.818Q70.172 21.03 69.638 22.035Q69.104 23.04 68.22 23.778Q67.335 24.516 66.163 24.919Q64.991 25.323 63.605 25.323Z" />
+    <path class="letter letter-m" fill="#dd2c00" d="M72.052 25V10.374H75.654L75.692 13.693H75.435Q75.812 12.471 76.505 11.672Q77.198 10.874 78.115 10.482Q79.031 10.09 80.041 10.09Q81.698 10.09 82.868 11.064Q84.037 12.039 84.341 13.74H83.902Q84.191 12.595 84.902 11.779Q85.613 10.963 86.626 10.526Q87.638 10.09 88.821 10.09Q90.202 10.09 91.3 10.69Q92.398 11.29 93.033 12.447Q93.669 13.603 93.669 15.284V25H89.909V15.91Q89.909 14.548 89.167 13.895Q88.424 13.241 87.352 13.241Q86.534 13.241 85.935 13.598Q85.335 13.955 85.008 14.588Q84.68 15.221 84.68 16.059V25H81.041V15.775Q81.041 14.619 80.341 13.93Q79.641 13.241 78.535 13.241Q77.792 13.241 77.171 13.59Q76.55 13.939 76.181 14.613Q75.811 15.287 75.811 16.266V25Z" />
+  </g>
+
+  <!--<path d="M 15 25 L 21 20 L 27 25" fill="none" stroke="#dd2c00" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />-->
+  <!--<path d="M 31 25 L 37 20 L 43 25" fill="none" stroke="#dd2c00" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />-->
+  <!--<path d="M 47 25 L 53 20 L 59 25" fill="none" stroke="#dd2c00" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />-->
+  <!--<path d="M 57 25 L 63 20 L 69 25" fill="none" stroke="#dd2c00" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />-->
+  <!--<path d="M 73 25 L 79 20 L 85 25" fill="none" stroke="#dd2c00" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />-->
+  <path class="cursor" d="M 101 25 L 107 20 L 113 25" fill="none" stroke="#dd2c00" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" />
+</svg>

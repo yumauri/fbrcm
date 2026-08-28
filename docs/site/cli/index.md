@@ -8,19 +8,47 @@ fbrcm get feature_enabled
 fbrcm draft list
 ```
 
+If you have not configured credentials and discovered projects yet, complete
+the [CLI-only setup path](/guide/#option-2-setup-using-only-the-cli) first.
+
 Use `fbrcm help <command>` for flags accepted by the installed version and the
 [command index](/reference/commands) for a map of the complete command set.
+
+## How to read command examples
+
+Angle-bracket names describe positional arguments; do not type the brackets.
+For example, the command syntax is:
+
+```text
+fbrcm auth quota-project set <auth-id> <quota-project-id>
+```
+
+In a concrete invocation:
+
+```sh
+fbrcm auth quota-project set example-auth-name example-quota-project-id
+```
+
+- `auth`, `quota-project`, and `set` are nested commands.
+- `example-auth-name` is a local auth ID chosen when the credential was added.
+- `example-quota-project-id` is a physical Google Cloud project ID.
+
+Examples throughout this site use `example-project-id` as a physical Firebase
+project ID, `staging` and `prod` as optional repository aliases, and
+`feature_enabled` as a parameter key. Replace them with your own values.
 
 ## Global behavior
 
 Global options may appear before or after the command:
 
 ```sh
-fbrcm --profile production get feature_enabled
+fbrcm --profile personal get feature_enabled
 fbrcm --json projects list
 fbrcm projects list --json
-fbrcm --stateless get feature_enabled --project '=my-project'
 ```
+
+`--profile personal` requires that profile to exist already. Create or select
+it persistently with `fbrcm profile switch personal`.
 
 Important global controls include:
 
@@ -37,8 +65,8 @@ Most multi-project commands accept repeatable `--project` / `-p` filters.
 
 ```sh
 fbrcm get feature_enabled --project prod
-fbrcm get feature_enabled --project '^prod'
-fbrcm get feature_enabled --project '=acme-production-42'
+fbrcm get feature_enabled --project '^acme-'
+fbrcm get feature_enabled --project '=example-project-id'
 ```
 
 Filter prefixes are:
@@ -54,7 +82,7 @@ Repeated project filters are ORed. Use `client@` or `server@` before a project
 query to select a specific template type:
 
 ```sh
-fbrcm get --project 'server@=acme-production-42'
+fbrcm get --project 'server@=example-project-id'
 ```
 
 ## Human and machine output
@@ -64,7 +92,7 @@ versioned envelope on success or failure and never opens prompts, editors,
 browsers, or file pickers.
 
 ```sh
-fbrcm --json get feature_enabled --project '=prod'
+fbrcm --json get feature_enabled --project '=example-project-id'
 ```
 
 Machine consumers should inspect structured problem codes and semantic exit
@@ -98,14 +126,18 @@ project-scoped failure and reports every result.
 
 ## Stateless mode
 
-Stateless mode is intended for CI or disposable environments:
+Stateless mode runs in CI or a disposable environment without fbrcm-managed
+local state:
 
 ```sh
-FBRCM_GOOGLE_ACCESS_TOKEN="$TOKEN" \
+GOOGLE_CLOUD_QUOTA_PROJECT=example-quota-project-id \
+FBRCM_GOOGLE_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)" \
   fbrcm --stateless --json get feature_enabled \
-  --project '=acme-production-42'
+  --project '=example-project-id'
 ```
 
 It does not read or write the project registry, caches, drafts, profiles, or
-publication hooks. Draft operations are unavailable because there is nowhere
-to persist them.
+publication hooks. fbrcm keeps the short-lived token in memory. Draft
+operations are unavailable because there is nowhere to persist them. See
+[Automation and agents](/automation/) for stateless permissions and capability
+discovery.

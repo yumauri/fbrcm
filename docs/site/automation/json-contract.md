@@ -1,9 +1,8 @@
 # JSON contract
 
-Adding `--json` selects fbrcm's stable machine contract. Every invocation
-writes exactly one JSON document followed by one newline to stdout, including
-argument and startup failures. Parse stdout only; explicitly enabled logs and
-trusted hooks may write to stderr.
+With `--json`, every invocation writes one JSON document and one trailing
+newline to stdout. This includes argument and startup failures. Parse stdout
+only. Explicitly enabled logs and trusted hooks may write to stderr.
 
 ## Envelope
 
@@ -17,7 +16,7 @@ Every response contains the same top-level fields:
   "requested_command": "projects.list",
   "outcome": "success",
   "exit_code": 0,
-  "producer": { "name": "fbrcm", "version": "1.8.0" },
+  "producer": { "name": "fbrcm", "version": "0.20.0" },
   "context": {
     "profile": "default",
     "offline": false,
@@ -32,7 +31,8 @@ Every response contains the same top-level fields:
 
 `data` is the command DTO, an artifact DTO, or `null` when no usable result
 exists. Collections use `{ "count", "items" }`; singular resources use an
-object.
+object. `producer.version` is the installed fbrcm release and therefore differs
+from the example as new versions are published.
 
 ## Outcomes and exit statuses
 
@@ -65,7 +65,7 @@ Each error has stable `code`, `category`, `retryable`, `target`, `stage`,
 `details`, and `remediation` fields in addition to its message. Branch on
 `code` or `category`, never on message text.
 
-Remediation vectors declare how they are used:
+Each remediation includes one of these strategies:
 
 - `retry_with_arguments` augments the original invocation;
 - `replace_selector` replaces an ambiguous selector; and

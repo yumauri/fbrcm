@@ -14,8 +14,8 @@ fbrcm theme reset --scope local
 fbrcm theme path nord
 ```
 
-A local selection is stored in `.fbrcm.toml`, but custom theme files always
-live in the user-wide `themes` directory next to global `config.toml`.
+fbrcm stores a local selection in `.fbrcm.toml`. Custom theme files live in the
+user-wide `themes` directory next to global `config.toml`.
 
 Import one file, a directory, stdin, or an HTTPS URL:
 
@@ -26,8 +26,8 @@ fbrcm theme import --name nord < ./nord.toml
 fbrcm theme import https://example.com/themes/nord.toml
 ```
 
-Imports are validated before any write. Single imports reject an existing
-destination; directory imports skip existing names and report warnings.
+fbrcm validates imports before writing. A single-file import rejects an existing
+destination. A directory import skips existing names and reports warnings.
 
 ## Theme file
 

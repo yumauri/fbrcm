@@ -3,12 +3,15 @@
 The parameter commands operate on selected client or server templates. With no
 project filter, multi-project commands process every enabled configured target.
 
+Examples use `example-project-id` as a physical Firebase project ID. The leading `=`
+on `--project` requests an exact match.
+
 ## Read parameters
 
 Get one parameter across projects:
 
 ```sh
-fbrcm get feature_enabled --project '^prod'
+fbrcm get feature_enabled --project '^acme-prod'
 ```
 
 List parameters selected by search or an expression:
@@ -29,21 +32,21 @@ Useful selectors include:
 --update               revalidate caches before reading
 ```
 
-When one exact project is selected, human output omits the redundant project
+When you select one exact project, human output omits the redundant project
 column. Machine output retains complete target context.
 
 ## Add and duplicate
 
 ```sh
 fbrcm add checkout_enabled \
-  --project '=staging' \
+  --project '=example-project-id' \
   --type boolean \
   --value false \
   --description 'Enable the new checkout' \
   --draft
 
 fbrcm duplicate checkout_enabled checkout_enabled_v2 \
-  --project '=staging' \
+  --project '=example-project-id' \
   --draft
 ```
 
@@ -54,7 +57,7 @@ valid JSON:
 fbrcm add checkout_config \
   --type json \
   --value '{"enabled":false,"variant":"control"}' \
-  --project '=staging' \
+  --project '=example-project-id' \
   --dry-run
 ```
 
@@ -64,7 +67,7 @@ Update a known parameter:
 
 ```sh
 fbrcm update checkout_enabled \
-  --project '=staging' \
+  --project '=example-project-id' \
   --type boolean \
   --value true \
   --dry-run
@@ -75,7 +78,7 @@ parameters:
 
 ```sh
 fbrcm update \
-  --project '^staging' \
+  --project '^example-staging-' \
   --filter '^checkout_' \
   --type boolean \
   --value false \
@@ -88,23 +91,25 @@ Always inspect the matched-item count and diff before applying a broad update.
 
 ```sh
 fbrcm delete old_checkout_flag \
-  --project '=staging' \
+  --project '=example-project-id' \
   --dry-run
 ```
 
-Deleting a parameter does not implicitly remove an empty group. Empty and
-description-only groups are preserved unless you use an explicit group delete.
-Firebase-managed and unknown future values are protected from parameter
-deletion.
+Deleting a parameter does not remove an empty group. fbrcm preserves empty and
+description-only groups unless you run an explicit group delete. It also blocks
+parameter deletion for Firebase-managed and unknown future values.
 
 ## Manage groups
 
 ```sh
-fbrcm groups list --project '=staging'
-fbrcm groups add checkout --description 'Checkout controls' --project '=staging' --draft
-fbrcm groups edit checkout --description 'Checkout and payment controls' --project '=staging' --draft
-fbrcm groups rename checkout checkout_v2 --project '=staging' --draft
-fbrcm groups delete checkout_v2 --project '=staging' --dry-run
+fbrcm groups list --project '=example-project-id'
+fbrcm groups add checkout --description 'Checkout controls' --project '=example-project-id' --draft
+fbrcm groups edit checkout \
+  --description 'Checkout and payment controls' \
+  --project '=example-project-id' \
+  --draft
+fbrcm groups rename checkout checkout_v2 --project '=example-project-id' --draft
+fbrcm groups delete checkout_v2 --project '=example-project-id' --dry-run
 ```
 
 Group names selected for edit, rename, or delete match exactly and
@@ -113,29 +118,29 @@ case-sensitively. Deleting a group removes all parameters inside it.
 ## Inspect conditions
 
 ```sh
-fbrcm conditions list staging
-fbrcm conditions show staging "iOS users"
-fbrcm conditions validate staging
+fbrcm conditions list example-project-id
+fbrcm conditions show example-project-id "iOS users"
+fbrcm conditions validate example-project-id
 ```
 
-Conditions are shown in Firebase evaluation order. `show` includes the
-parameters and conditional values that reference the selected condition.
+The list follows Firebase evaluation order. `show` includes the parameters and
+conditional values that reference the selected condition.
 
 ## Change conditions
 
 ```sh
-fbrcm conditions add staging "Beta users" \
+fbrcm conditions add example-project-id "Beta users" \
   --expression 'percent <= 10' \
   --color ORANGE \
   --draft
 
-fbrcm conditions edit staging "Beta users" \
+fbrcm conditions edit example-project-id "Beta users" \
   --expression 'percent <= 20' \
   --draft
 
-fbrcm conditions move staging "Beta users" 1 --draft
-fbrcm conditions rename staging "Beta users" "Early access" --draft
-fbrcm conditions delete staging "Early access" --dry-run
+fbrcm conditions move example-project-id "Beta users" 1 --draft
+fbrcm conditions rename example-project-id "Beta users" "Early access" --draft
+fbrcm conditions delete example-project-id "Early access" --dry-run
 ```
 
 Rename updates every conditional-value reference. Delete removes the condition

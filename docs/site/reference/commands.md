@@ -1,8 +1,10 @@
 # Command index
 
-This is a map of the CLI, not a flag-by-flag manual. Use
-`fbrcm help <command>` for the installed binary's human help or
-`fbrcm capabilities <command...> --json` for a machine-readable definition.
+Use this page to find a command. Run `fbrcm help <command>` for its full set of
+flags, or `fbrcm capabilities <command...> --json` for a machine-readable
+definition from the installed binary.
+Complete [CLI-only setup](/guide/#option-2-setup-using-only-the-cli) before using
+project or Remote Config commands for the first time.
 
 ## Parameters and structure
 
@@ -56,6 +58,7 @@ This is a map of the CLI, not a flag-by-flag manual. Use
 | `projects path` | Print the project registry path |
 | `project show` | Inspect one project registration |
 | `project templates show/set` | Inspect or change enabled template types |
+| `project quota-project show/set/unset` | Inspect or override one project's quota project |
 | `project open` | Open or return the Firebase Console URL |
 | `project export` / `import` | Move Remote Config documents |
 | `project defaults` | Download application defaults |
@@ -81,7 +84,9 @@ This is a map of the CLI, not a flag-by-flag manual. Use
 | `cache list/path/clear` | Inspect or remove cached templates |
 | `config path/show/set/reset/validate/edit` | Manage configuration |
 | `hooks status/fingerprint/trust/untrust` | Manage repository hook trust |
-| `auth list/add/login/path/delete/bind` | Manage identities and bindings |
+| `auth list/add/login/path/delete` | Add, validate, inspect, or remove identities |
+| `auth quota-project show/set/unset` | Manage an identity's default quota project |
+| `auth bind` | Select the identity used by saved projects |
 | `profile list/switch/rename/path/delete` | Manage isolated workspaces |
 | `theme list/switch/reset/path/rename/delete/import` | Manage palettes |
 | `completion` | Generate shell completion scripts |

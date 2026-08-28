@@ -47,9 +47,9 @@ them.
 Firebase Remote Config identifies
 `https://www.googleapis.com/auth/firebase.remoteconfig` as a narrower scope in
 some API responses and documentation, but Google's interactive OAuth consent
-flow rejects that scope with `invalid_scope`. The grantable
-`https://www.googleapis.com/auth/firebase` scope is rejected by the Remote
-Config API with `insufficient_scope`. Google Cloud CLI Application Default
+flow rejects that scope with `invalid_scope`. The Remote Config API rejects the
+grantable `https://www.googleapis.com/auth/firebase` scope with
+`insufficient_scope`. Google Cloud CLI Application Default
 Credentials also require `cloud-platform` during user authorization. A
 [public Firebase discussion](https://groups.google.com/g/firebase-talk/c/a8H9GcGiYuA)
 reports the same narrower-scope problem.
@@ -64,7 +64,7 @@ move to a narrower usable scope if Google makes one available for these flows.
 
 ## How fbrcm uses Google data
 
-Google data is used only to provide user-invoked fbrcm features. These features
+fbrcm uses Google data only for actions invoked by the user. These actions
 include selecting a quota project for Google API requests; discovering and
 displaying projects; reading, searching, comparing, and exporting Remote Config
 data; creating local caches and drafts; validating candidate templates; and
@@ -83,9 +83,9 @@ explicitly sends or copies it elsewhere. The exact paths can be inspected with
 `fbrcm doctor`, `fbrcm profile path <profile>`, and
 `fbrcm auth path <auth-id>`.
 
-By default, configuration is stored under `.config/fbrcm` in the user's home
-directory, unless an XDG or fbrcm path override is configured. Cache storage
-uses the operating system's user-cache directory, such as
+By default, fbrcm stores configuration under `.config/fbrcm` in the user's home
+directory, unless the user configures an XDG or fbrcm path override. fbrcm stores
+caches in the operating system's user-cache directory, such as
 `~/Library/Caches/fbrcm` on macOS, `~/.cache/fbrcm` on many Linux systems, or
 the local application-data directory on Windows. The `FBRCM_CONFIG_DIR` and
 `FBRCM_CACHE_DIR` environment variables can override these roots.
@@ -108,10 +108,10 @@ them through Google's authentication library and does not copy them into an
 fbrcm credential file. A token supplied to stateless mode through
 `FBRCM_GOOGLE_ACCESS_TOKEN` is used in memory and is not persisted by fbrcm.
 
-A quota project ID selected through `GOOGLE_CLOUD_QUOTA_PROJECT` or read from
-Google Cloud CLI Application Default Credentials is used at runtime and is not
-copied into fbrcm configuration unless the user explicitly saves that ID as an
-authentication identity or project setting.
+fbrcm uses a quota project ID from `GOOGLE_CLOUD_QUOTA_PROJECT` or Google Cloud
+CLI Application Default Credentials at runtime. It does not copy the ID into
+fbrcm configuration unless the user explicitly saves it as an authentication
+identity or project setting.
 
 Command output, HTTP logs, and files written to an explicitly selected export
 destination may contain Google data. This can include configured or effective
@@ -123,8 +123,8 @@ by the user may retain that output independently of fbrcm.
 
 For its Google integration, fbrcm sends OAuth credentials and Google data only
 to Google's OAuth services, the Google Cloud Resource Manager API, and the
-Firebase Remote Config API as needed for the requested operation. These
-transfers are handled under Google's own terms and privacy policies. fbrcm does
+Firebase Remote Config API as needed for the requested operation. Google
+handles these transfers under its own terms and privacy policies. fbrcm does
 not sell Google user data, share it with advertisers or data brokers, or
 transfer it to the fbrcm developer or a developer-operated service.
 

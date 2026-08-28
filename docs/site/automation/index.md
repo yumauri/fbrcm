@@ -1,8 +1,11 @@
 # Automation and agents
 
-fbrcm publishes a versioned machine interface for CI jobs, scripts, and LLM
-agents. Always use `--json`; human tables, colors, diffs, and prompts are not a
-stable interface for parsers.
+Add `--json` to calls made by CI jobs, scripts, and LLM agents. The command then
+returns one versioned JSON envelope instead of terminal tables, colors, diffs,
+or prompts.
+
+The stateful examples assume you have already configured a profile through the
+[CLI-only setup path](/guide/#option-2-setup-using-only-the-cli).
 
 ## Discover the installed binary
 
@@ -23,7 +26,7 @@ Resolve the exact target and inspect current state first:
 
 ```sh
 fbrcm projects list --json
-fbrcm get feature_enabled --project '=my-project-id' --json
+fbrcm get feature_enabled --project '=example-project-id' --json
 ```
 
 Use exact selectors in automation. A fuzzy name that is convenient at a
@@ -36,7 +39,7 @@ publishing it:
 
 ```sh
 fbrcm update feature_enabled \
-  --project '=my-project-id' \
+  --project '=example-project-id' \
   --type boolean \
   --value true \
   --dry-run \
@@ -47,14 +50,14 @@ For multi-step or human-reviewed work, prefer a draft:
 
 ```sh
 fbrcm update feature_enabled \
-  --project '=my-project-id' \
+  --project '=example-project-id' \
   --type boolean \
   --value true \
   --draft \
   --json
 
-fbrcm draft diff my-project-id --against current --json
-fbrcm draft publish my-project-id --yes --json
+fbrcm draft diff example-project-id --against current --json
+fbrcm draft publish example-project-id --yes --json
 ```
 
 `--yes` authorizes a documented confirmation. It does not disable Firebase
@@ -76,8 +79,8 @@ Earlier successful targets are not rolled back after another target fails.
 
 ## Interaction never blocks JSON mode
 
-JSON mode never opens a prompt, editor, file picker, or browser. If human input
-is required, fbrcm returns an `interaction.required` problem with status 10.
+JSON mode never opens a prompt, editor, file picker, or browser. If an operation
+needs human input, fbrcm returns an `interaction.required` problem with status 10.
 Show that request to a human, or retry only after the caller explicitly
 supplies the required choice.
 
@@ -86,15 +89,19 @@ supplies the required choice.
 Supported commands can operate from a short-lived access token:
 
 ```sh
-FBRCM_GOOGLE_ACCESS_TOKEN="$TOKEN" \
+GOOGLE_CLOUD_QUOTA_PROJECT=example-quota-project-id \
+FBRCM_GOOGLE_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)" \
   fbrcm --stateless get feature_enabled \
-  --project '=my-project-id' \
+  --project '=example-project-id' \
   --json
 ```
 
 Stateless mode skips fbrcm-managed profiles, project registrations, caches,
 drafts, and hooks. It still permits explicit caller-selected input and output
-files. Discover current coverage from `supports.stateless` in capabilities.
+files. fbrcm keeps the token in memory and never writes it. The token's
+principal needs `serviceusage.services.use` on `example-quota-project-id` and Remote Config
+access on `example-project-id`. Check `supports.stateless` in the capability record
+before running a command this way.
 
 Continue with the [JSON contract](./json-contract) for the envelope, exit
 statuses, schemas, and artifact results.

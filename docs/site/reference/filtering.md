@@ -1,7 +1,8 @@
 # Filtering and expressions
 
-Use lightweight query flags for names and keys. Use `--search` for broad text
-discovery and `--expr` when selection depends on typed Remote Config data.
+Use `--project` and `--filter` to match project names and parameter keys. Use
+`--search` to search text fields, or `--expr` to select typed Remote Config
+data.
 
 ## Query modes
 
@@ -15,8 +16,8 @@ Flags named `--project` or `--filter` accept a mode prefix:
 | `=` | Exact, case-insensitive |
 
 ```sh
-fbrcm get --project '^prod' --filter '^checkout_'
-fbrcm get --project '=acme-prod-42' --filter '=feature_enabled'
+fbrcm get --project '^acme-prod' --filter '^checkout_'
+fbrcm get --project '=example-project-id' --filter '=feature_enabled'
 ```
 
 Repeated values of the same selector are ORed. Different selector sources are
@@ -67,9 +68,9 @@ allow a stored boolean or number to match its string representation.
 `usage_count`, and `usages`, plus the project fields:
 
 ```sh
-fbrcm conditions list staging --expr 'usage_count == 0'
-fbrcm conditions list staging --expr 'priority <= 5'
-fbrcm conditions list staging \
+fbrcm conditions list example-project-id --expr 'usage_count == 0'
+fbrcm conditions list example-project-id --expr 'priority <= 5'
+fbrcm conditions list example-project-id \
   --expr 'any(usages, #.parameter startsWith "legacy_")'
 ```
 

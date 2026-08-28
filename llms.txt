@@ -6,12 +6,14 @@ fbrcm is not a thin wrapper around Firebase's Remote Config API. It adds cross-p
 
 ## Start here for automation
 
-- [Agent quickstart](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/agent-quickstart.md): fastest path for an agent to discover commands, validate output, and make safe changes
+- [Agent quickstart](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/agent-quickstart.md): discover commands, validate output, and preview changes before publication
 - [CLI machine contract](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/cli-contract.md): full JSON envelope schema, error categories, exit statuses, retry semantics
 - [CLI reference](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/CLI.md): complete command tree, flags, and per-command behavior
 - [Expression filters](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/EXPR.md): expr-lang syntax and context fields for `--expr`
 
-Self-describing at runtime: `fbrcm capabilities --json` lists every command with its schema URNs, side-effect level, and destructive marker; exact command lookup returns detailed effects and conditions. `fbrcm schema list --json` and `fbrcm schema show <id> --json` return the embedded JSON Schemas directly, so an agent does not need separately shipped schema files to validate output shape.
+## Runtime discovery
+
+`fbrcm capabilities --json` lists every command with its schema URNs, side-effect level, and destructive marker. An exact command lookup returns its effects and conditions. `fbrcm schema list --json` and `fbrcm schema show <id> --json` return the embedded JSON Schemas, so an agent can validate output against the installed release.
 
 ## Reference
 

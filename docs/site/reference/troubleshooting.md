@@ -10,6 +10,11 @@ fbrcm doctor --json
 It checks credentials, connectivity, Firebase and Cloud Resource Manager API
 access, permissions, quota-project configuration, and local storage.
 
+`doctor` expects both `cloudconfig.configs.get` and
+`cloudconfig.configs.update` on cached Firebase projects. A deliberately
+read-only identity can still use read commands even though the update-permission
+check fails.
+
 ## No projects appear
 
 Synchronize the registry:
@@ -28,27 +33,41 @@ Inspect identities and log in again:
 
 ```sh
 fbrcm auth list
-fbrcm auth login my-auth
-fbrcm auth quota-project show my-auth
+fbrcm auth login example-auth-name
+fbrcm auth quota-project show example-auth-name
 ```
+
+Replace `example-auth-name` with the auth ID shown by `fbrcm auth list`.
 
 OAuth may require a browser in human mode. JSON mode never opens one and
 returns structured interaction details instead. Service-account and gcloud
 identities validate their existing credentials without an OAuth browser flow.
 
 If project discovery reports that a quota project is required, set an
-auth-level default with `fbrcm auth quota-project set`. For a single cached
-Firebase project, inspect or override the selection with `fbrcm project
-quota-project show|set|unset`. ADC `quota_project_id` is considered only for
-gcloud identities. `fbrcm doctor` verifies both resolution and
-`serviceusage.services.use` access.
+auth-level default. The two positional arguments are the local auth ID and the
+physical quota project ID:
+
+```sh
+fbrcm auth quota-project set example-auth-name example-quota-project-id
+```
+
+For a single cached Firebase project, inspect or override the selection with:
+
+```sh
+fbrcm project quota-project show example-project-id
+fbrcm project quota-project set example-project-id example-quota-project-id
+fbrcm project quota-project unset example-project-id
+```
+
+ADC `quota_project_id` is considered only for gcloud identities. `fbrcm doctor`
+verifies both resolution and `serviceusage.services.use` access.
 
 ## Reads look stale
 
 Force a live cache revalidation:
 
 ```sh
-fbrcm get --project '=my-project-id' --update
+fbrcm get --project '=example-project-id' --update
 ```
 
 Check whether a local draft is active, because normal effective reads include
@@ -76,7 +95,7 @@ review again. Do not blindly retry a complete-template publication.
 Draft conflicts preserve the draft. Use:
 
 ```sh
-fbrcm draft diff my-project-id --against current
+fbrcm draft diff example-project-id --against current
 ```
 
 ## An editor does not return

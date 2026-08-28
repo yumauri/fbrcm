@@ -25,11 +25,14 @@ one process.
 ## Change settings
 
 ```sh
-fbrcm config set log.level warn
+fbrcm config set network.max_concurrent_requests 3
 fbrcm config set theme nord --scope local
 fbrcm config reset theme --scope local
 fbrcm config edit
 ```
+
+Set the logging level with `FBRCM_LOG_LEVEL`. It is not a persisted `config set`
+key.
 
 `config edit` validates the staged file before replacing the active one. The
 editor comes from `--editor`, `FBRCM_EDITOR`, `VISUAL`, then `EDITOR`.
@@ -40,8 +43,8 @@ Commit stable project names with the repository:
 
 ```toml
 [projects.aliases]
-staging = "acme-staging-42"
-prod = "acme-production-42"
+staging = "example-staging-project-id"
+prod = "example-production-project-id"
 ```
 
 The aliases are profile-independent. fbrcm also reads Firebase CLI aliases
@@ -58,7 +61,7 @@ from the `.firebaserc` associated with the nearest Firebase project root.
 | `FBRCM_LOG_LEVEL` | Set `debug`, `info`, `warn`, `error`, `fatal`, or `silent` |
 | `FBRCM_EDITOR` | Select an editor command and arguments |
 | `FBRCM_NO_LOCAL_CONFIG` | Ignore repository configuration |
-| `FBRCM_HOOK_TRUST` | Trust the exact repository hook fingerprint in CI |
+| `FBRCM_HOOK_TRUST` | Trust the exact [repository hook](./hooks) fingerprint in CI |
 | `NO_COLOR` | Disable color for any non-empty value |
 | `GOOGLE_CLOUD_QUOTA_PROJECT` | Select the Google Cloud quota/billing project |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Configure the HTTP transport |
@@ -75,15 +78,29 @@ Every authenticated Firebase and Cloud Resource Manager request carries
 5. the physical target Firebase project
 
 If a targetless request cannot resolve a value, fbrcm stops before network
-access. Manage persisted values with:
+access. The syntax for persisted values is:
+
+```text
+fbrcm auth quota-project show <auth-id>
+fbrcm auth quota-project set <auth-id> <quota-project-id>
+fbrcm auth quota-project unset <auth-id>
+fbrcm project quota-project set <project> <quota-project-id>
+fbrcm project quota-project unset <project>
+```
+
+For example:
 
 ```sh
-fbrcm auth quota-project show main
-fbrcm auth quota-project set main shared-billing-project
-fbrcm auth quota-project unset main
-fbrcm project quota-project set production production-billing-project
-fbrcm project quota-project unset production
+fbrcm auth quota-project show example-auth-name
+fbrcm auth quota-project set example-auth-name example-quota-project-id
+fbrcm auth quota-project unset example-auth-name
+fbrcm project quota-project set example-project-id example-quota-project-id
+fbrcm project quota-project unset example-project-id
 ```
+
+`example-auth-name` is a local auth ID. The other values are Google Cloud
+project IDs. See [Authentication and project discovery](/guide/authentication)
+for the first-run setup and the distinction between these identifiers.
 
 The authenticated principal needs `serviceusage.services.use` on the effective
 quota project. The guided first-run setup also asks for an auth-level quota
@@ -107,18 +124,3 @@ network.retry.jitter_percent
 Defaults allow five concurrent requests, disable proactive per-minute pacing,
 and make up to five replayable attempts with bounded exponential delay. A
 Firebase `Retry-After` header takes precedence over calculated waits.
-
-## Publication hooks
-
-Repository hooks can validate or gate a candidate before publication and react
-after publication. Because they execute local commands, fbrcm requires an exact
-trust fingerprint:
-
-```sh
-fbrcm hooks status
-fbrcm hooks fingerprint
-fbrcm hooks trust
-```
-
-For non-interactive use, set `FBRCM_HOOK_TRUST` to the exact fingerprint.
-Stateless mode disables configured hooks.

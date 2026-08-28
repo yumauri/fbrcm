@@ -6,8 +6,13 @@ Run `fbrcm` without arguments to open the interactive interface:
 fbrcm
 ```
 
+On a new profile, this opens guided authentication and project discovery before
+the workspace. See the [guided setup steps](/guide/#option-1-guided-setup-in-the-tui)
+or [Authentication and project discovery](/guide/authentication) if you need to
+prepare credentials and a quota project first.
+
 The minimum supported terminal size is 80 columns by 20 rows. A wider terminal
-is useful when comparing projects or promoting changes.
+shows more of a project comparison or promotion at once.
 
 ## Workspace layout
 

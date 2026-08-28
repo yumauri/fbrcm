@@ -4,11 +4,14 @@ Projects are local registrations of physical Firebase projects and the
 identity used to access them. Forgetting one removes local fbrcm state; it does
 not delete or change the Firebase project.
 
+This page assumes authentication is already configured. For the first
+synchronization, follow [Authentication and project discovery](/guide/authentication).
+
 ## Discover and inspect projects
 
 ```sh
 fbrcm projects list --update
-fbrcm project show staging
+fbrcm project show example-project-id
 ```
 
 `projects list` reads the local registry and optionally synchronizes accessible
@@ -17,14 +20,26 @@ projects. `project show` displays one resolved project and its local metadata.
 The initial discovery request is targetless, so fbrcm must resolve a quota
 project before it can synchronize anything. Guided setup stores an auth-level
 default. For an identity added through the CLI, supply `--quota-project` during
-`auth add` or configure it afterward:
+`auth add`:
 
 ```sh
-fbrcm auth quota-project set main my-quota-project
+fbrcm auth add gcloud example-auth-name --quota-project example-quota-project-id
 ```
 
-The authenticated principal needs `serviceusage.services.use` on that Google
-Cloud project. See [Quota and billing project](/reference/configuration#quota-and-billing-project)
+For an existing identity, the syntax and a concrete example are:
+
+```text
+fbrcm auth quota-project set <auth-id> <quota-project-id>
+```
+
+```sh
+fbrcm auth quota-project set example-auth-name example-quota-project-id
+```
+
+`example-auth-name` is the local auth ID; `example-quota-project-id` is the physical Google Cloud
+quota project ID. The authenticated principal needs
+`serviceusage.services.use` on that project. See
+[Quota and billing project](/reference/configuration#quota-and-billing-project)
 for the full resolution order.
 
 Use `fbrcm doctor` when discovery fails. It checks credentials, connectivity,
@@ -33,8 +48,8 @@ API access, permissions, and local storage in one report.
 ## Use repository aliases
 
 ```sh
-fbrcm projects aliases set staging acme-staging-42
-fbrcm projects aliases set prod acme-production-42
+fbrcm projects aliases set staging example-staging-project-id
+fbrcm projects aliases set prod example-production-project-id
 fbrcm projects aliases list
 ```
 
@@ -45,8 +60,9 @@ fbrcm projects aliases import --from .firebaserc --dry-run
 fbrcm projects aliases import --from .firebaserc
 ```
 
-Native aliases are stored in the nearest `.fbrcm.toml`; Firebase aliases remain
-in `.firebaserc`. Conflicting definitions are rejected.
+fbrcm stores native aliases in the nearest `.fbrcm.toml`; Firebase aliases remain
+in `.firebaserc`. fbrcm rejects conflicting definitions. The remaining examples
+use `staging` and `prod` after you define these aliases.
 
 ## Choose client or server templates
 

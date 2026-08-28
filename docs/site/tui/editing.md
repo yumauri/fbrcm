@@ -1,7 +1,7 @@
 # Editing and drafts in the TUI
 
-The Details panel is both an inspector and an edit form. Select a parameter,
-group, condition, or value and press `Enter` to open it.
+The Details panel shows the selected item and contains its edit form. Select a
+parameter, group, condition, or value and press `Enter` to open it.
 
 ## Parameters and groups
 
@@ -72,8 +72,8 @@ GUI editors must wait for the file to close:
 FBRCM_EDITOR="code --wait" fbrcm
 ```
 
-JSON is validated and compacted after the editor exits. Invalid content is not
-applied, and the recovery file remains available so you can reopen it.
+After the editor exits, fbrcm validates and compacts JSON. It rejects invalid
+content and keeps the recovery file so you can reopen it.
 
 The built-in JSON editor uses `Ctrl+F` to format and `Ctrl+S` or `Ctrl+Enter` to
 save. Large values automatically use the external-editor path.

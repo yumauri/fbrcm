@@ -31,16 +31,13 @@ body {
   font-feature-settings: 'ss01' 1, 'cv02' 1;
 }
 
-.VPNavBarTitle .title {
-  letter-spacing: -0.03em;
+.VPNavBarTitle .logo {
+  height: 24px;
+  margin-right: 0;
 }
 
-.VPNavBarTitle .title span {
-  color: transparent;
-  background: var(--fbrcm-logo-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+footer.VPFooter.VPFooter {
+  border-top: 0;
 }
 
 @media (min-width: 768px) and (max-width: 1279px) {
@@ -138,11 +135,9 @@ body {
   .VPHero .fbrcm-title-line {
     display: block;
   }
-}
 
-@media (min-width: 960px) {
-  .VPHero .fbrcm-title-line + .fbrcm-title-line::before {
-    content: ' ';
+  .VPHero .fbrcm-title-space {
+    display: none;
   }
 }
 
