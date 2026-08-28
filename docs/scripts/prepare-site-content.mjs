@@ -2,6 +2,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { writeLlmsFull } from './llms-full.mjs'
+
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
 const docsDirectory = resolve(scriptDirectory, '..')
 const repositoryRoot = resolve(docsDirectory, '..')
@@ -12,6 +14,7 @@ const llmsSource = resolve(repositoryRoot, 'llms.txt')
 const licenseSource = resolve(repositoryRoot, 'LICENSE')
 const privacyPage = resolve(siteDirectory, 'privacy-policy.md')
 const llmsAsset = resolve(siteDirectory, 'public', 'llms.txt')
+const llmsFullAsset = resolve(siteDirectory, 'public', 'llms-full.txt')
 const licenseAsset = resolve(siteDirectory, 'public', 'LICENSE.txt')
 
 const privacyFrontmatter = `---
@@ -33,5 +36,6 @@ await mkdir(dirname(llmsAsset), { recursive: true })
 await Promise.all([
   writeFile(privacyPage, privacyFrontmatter + privacyMarkdown),
   writeFile(llmsAsset, llmsText),
+  writeLlmsFull(siteDirectory, llmsFullAsset),
   writeFile(licenseAsset, licenseText)
 ])

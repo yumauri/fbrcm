@@ -26,6 +26,7 @@ docs/.vitepress/cache/
 docs/.vitepress/dist/
 docs/site/privacy-policy.md
 docs/site/public/llms.txt
+docs/site/public/llms-full.txt
 docs/site/public/LICENSE.txt
 
 # IDE/editor

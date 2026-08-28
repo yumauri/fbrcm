@@ -11,7 +11,8 @@
     "dev": "vitepress dev .",
     "prebuild": "npm run prepare:site",
     "build": "vitepress build .",
-    "preview": "vitepress preview ."
+    "preview": "vitepress preview .",
+    "test": "node --test scripts/*.test.mjs"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"

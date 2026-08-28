@@ -1,8 +1,16 @@
 import { defineConfig } from 'vitepress'
+import { writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { writeMarkdownPages } from '../scripts/markdown-pages.mjs'
+import { pageHeadDevPlugin, pageRoute } from '../scripts/page-head.mjs'
+import { renderRobotsTxt, robotsDevPlugin } from '../scripts/robots.mjs'
 
 const repository = 'https://github.com/yumauri/fbrcm'
 const siteUrl = process.env.DOCS_SITE_URL?.replace(/\/+$/, '')
 const socialImage = siteUrl ? `${siteUrl}/og.png` : undefined
+const siteDirectory = fileURLToPath(new URL('../site', import.meta.url))
 
 export default defineConfig({
   title: 'fbrcm',
@@ -12,9 +20,36 @@ export default defineConfig({
   lang: 'en-US',
   srcDir: 'site',
   base: '/',
+  vite: {
+    plugins: [robotsDevPlugin(siteUrl), pageHeadDevPlugin(siteUrl)]
+  },
   cleanUrls: true,
   lastUpdated: true,
   sitemap: siteUrl ? { hostname: `${siteUrl}/` } : undefined,
+  buildEnd: async ({ outDir }) => {
+    await Promise.all([
+      writeMarkdownPages(siteDirectory, outDir),
+      writeFile(resolve(outDir, 'robots.txt'), renderRobotsTxt(siteUrl))
+    ])
+  },
+  transformHead: ({ pageData }) => {
+    if (pageData.isNotFound) return
+
+    const markdownPath = `/${pageData.relativePath.replaceAll('\\', '/')}`
+    const pageHead = [
+      ['link', { rel: 'alternate', type: 'text/markdown', href: markdownPath }],
+      ['link', { rel: 'describedby', type: 'text/plain', href: '/llms.txt' }]
+    ]
+
+    if (siteUrl) {
+      pageHead.unshift([
+        'link',
+        { rel: 'canonical', href: `${siteUrl}${pageRoute(pageData.relativePath)}` }
+      ])
+    }
+
+    return pageHead
+  },
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico', sizes: '32x32' }],
     ['link', { rel: 'icon', href: '/icon.svg', type: 'image/svg+xml' }],
@@ -136,7 +171,7 @@ export default defineConfig({
     },
     footer: {
       message:
-        '<a href="/privacy-policy">Privacy policy</a> · <a href="/llms.txt">llms.txt</a> · <a href="/LICENSE.txt">MIT License</a> · 2026'
+        '<a href="/privacy-policy">Privacy policy</a> · <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a> · <a href="/LICENSE.txt">MIT License</a> · 2026'
     }
   }
 })
