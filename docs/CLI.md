@@ -188,13 +188,17 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │
 ├── auth
 │   ├── list [--json]
-│   ├── add oauth <auth-id> [--from <path>] [--label <label>]
-│   ├── add service-account <auth-id> [--from <path>] [--label <label>]
-│   ├── add gcloud <auth-id> [--label <label>]
+│   ├── add oauth <auth-id> [--from <path>] [--label <label>] [--quota-project <project-id>]
+│   ├── add service-account <auth-id> [--from <path>] [--label <label>] [--quota-project <project-id>]
+│   ├── add gcloud <auth-id> [--label <label>] [--quota-project <project-id>]
 │   ├── login <auth-id> [--noopen]
 │   ├── path <auth-id> [--json]
 │   ├── delete <auth-id> [--yes|-y]
-│   └── bind --auth <auth-id> [--project|-p <query>]...
+│   ├── bind --auth <auth-id> [--project|-p <query>]...
+│   └── quota-project
+│       ├── show <auth-id>
+│       ├── set <auth-id> <quota-project-id>
+│       └── unset <auth-id>
 │
 ├── profile
 │   ├── list [--json]
@@ -220,6 +224,10 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │       ├── --templates client|server|client,server
 │   │       ├── --primary client|server
 │   │       └── --json
+│   ├── quota-project
+│   │   ├── show <project>
+│   │   ├── set <project> <quota-project-id>
+│   │   └── unset <project>
 │   ├── open <project>
 │   ├── defaults <project> [--format json|xml|plist] [--to <path>] [--yes|-y]
 │   ├── export <project> [--to <path>] [--yes|-y]
@@ -361,7 +369,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 All commands support `--help`. Root also supports `--version`. With `--json`,
 implicit `--help`/`-h` is represented by the separate `help` operation and its
 invocation and response schemas, rather than being repeated in every command's
-option schema. Version text uses the root response schema, and the root
+option schema. Generated completion scripts are returned in `data.text` by the
+selected `completion.<shell>` response schema. Version text uses the root response schema, and the root
 capability publishes both `--version` and its `-v` alias. Human version output
 starts with a Firebase-colored `fbrcm` text logo and ends with the author's
 contact information. `NO_COLOR` removes the logo styling; JSON version text is
@@ -424,9 +433,9 @@ trimmed, so surrounding whitespace is significant and normally produces no
 match. Fuzzy, prefix, substring, and case-insensitive selection belongs only to
 explicit query options such as `--filter`, `--search`, and `--project`.
 
-Most commands require a selected profile before command execution. `profile`, `config`, `theme`, `hooks`, `projects aliases`, `doctor`, `help`, `capabilities`, and `schema` do not. Profile state is stored below `profiles/<name>` in both the configuration and cache roots. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
+Most commands require a selected profile before command execution. `profile`, `config`, `theme`, `hooks`, `projects aliases`, `doctor`, `help`, `completion`, `capabilities`, and `schema` do not. Profile state is stored below `profiles/<name>` in both the configuration and cache roots. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
 
-Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable only when the command applies that option. An effective argv profile is trimmed, then must be one nonempty filesystem-safe path segment: `.`, `..`, path separators, and leading or trailing whitespace after normalization are invalid. Detailed capability flags expose `effective`; `false` means argv accepts the flag but the command does not apply it. Conditional applicability is published as `effective_when` and repeated in input schemas as `x-fbrcm-effective-when`. The input schema marks unconditional ineffectiveness as `x-fbrcm-effective: false`. `help`, `capabilities`, `schema`, `config`, `theme`, `hooks`, and `projects aliases` commands currently ignore the argv `--profile` value; root version output accepts but ignores both `--profile` and `--no-local-config`. Machine-mode `auth login` ignores `--noopen`, and machine-mode `config edit` ignores `--editor`, `--full`, and `--scope` because both commands stop before reaching the corresponding human interaction. `FBRCM_PROFILE` may still supply the envelope profile because it is external process context.
+Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable only when the command applies that option. An effective argv profile is trimmed, then must be one nonempty filesystem-safe path segment: `.`, `..`, path separators, and leading or trailing whitespace after normalization are invalid. Detailed capability flags expose `effective`; `false` means argv accepts the flag but the command does not apply it. Conditional applicability is published as `effective_when` and repeated in input schemas as `x-fbrcm-effective-when`. The input schema marks unconditional ineffectiveness as `x-fbrcm-effective: false`. `help`, `completion`, `capabilities`, `schema`, `config`, `theme`, `hooks`, and `projects aliases` commands currently ignore the argv `--profile` value; root version output accepts but ignores both `--profile` and `--no-local-config`. Machine-mode `auth login` ignores `--noopen`, and machine-mode `config edit` ignores `--editor`, `--full`, and `--scope` because both commands stop before reaching the corresponding human interaction. `FBRCM_PROFILE` may still supply the envelope profile because it is external process context.
 
 At startup, fbrcm searches the current directory and every parent through the
 filesystem root for `.fbrcm.toml`. The nearest match deeply overlays the global
@@ -520,17 +529,18 @@ configuration-validation exceptions.
 `USERPROFILE`, `LOCALAPPDATA`, or `APPDATA`.
 
 `GOOGLE_CLOUD_QUOTA_PROJECT` is the standard Google Cloud environment override.
-A nonempty trimmed value applies to every configured auth type and takes
-precedence over `quota_project_id` in Application Default Credentials and over
-fbrcm's gcloud and stateless access-token target-project fallbacks. The ADC
-quota project remains available only to gcloud identities. When neither
-override is available, gcloud identities and stateless access-token requests
-use the request's target project where one exists; project listing has no
-target and therefore no such fallback. Configured OAuth and service-account
-identities do not gain an implicit target fallback. The authenticated principal must have
+A nonempty trimmed value applies to every configured auth type. The complete
+precedence is the environment override, the selected project's persisted
+override, the auth identity's persisted default, ADC `quota_project_id` for a
+gcloud identity only, and finally the request's physical target project. OAuth
+and service-account credential files never supply an implicit credential quota
+project. Targetless requests such as project discovery must resolve one of the
+first four sources or fbrcm fails before sending the request; it never leaves
+`X-Goog-User-Project` unset. The authenticated principal must have
 `serviceusage.services.use` on the selected quota project. Invalid nonempty
 values fail as typed authentication configuration or credential errors before
-fbrcm starts OAuth interaction or sends an API request.
+fbrcm starts OAuth interaction or sends an API request. Use `auth quota-project`
+and `project quota-project` to manage persisted values without editing files.
 
 ### Filter queries
 
@@ -794,6 +804,123 @@ Every structured error and warning remediation declares how its non-empty
 complete fbrcm subcommand argument list. Agents should branch on that
 `strategy` instead of interpreting remediation text.
 
+The following maintained inventory assigns every executable machine operation
+to this reference, including commands documented by a shared section. Contract
+tests compare it exactly with the executable Cobra inventory.
+
+<!-- cli-contract-command-inventory:start -->
+```text
+add
+auth.add.gcloud
+auth.add.oauth
+auth.add.service-account
+auth.bind
+auth.delete
+auth.list
+auth.login
+auth.path
+auth.quota-project.set
+auth.quota-project.show
+auth.quota-project.unset
+cache.clear
+cache.list
+cache.path
+capabilities
+completion.bash
+completion.fish
+completion.powershell
+completion.zsh
+conditions.add
+conditions.delete
+conditions.edit
+conditions.list
+conditions.move
+conditions.rename
+conditions.show
+conditions.validate
+config.edit
+config.path
+config.reset
+config.set
+config.show
+config.validate
+delete
+doctor
+draft.change-note
+draft.diff
+draft.discard
+draft.list
+draft.path
+draft.publish
+draft.show
+duplicate
+experiments.delete
+experiments.list
+experiments.show
+get
+groups.add
+groups.delete
+groups.edit
+groups.list
+groups.rename
+help
+hooks.fingerprint
+hooks.status
+hooks.trust
+hooks.untrust
+personalizations.list
+personalizations.show
+profile
+profile.delete
+profile.list
+profile.path
+profile.rename
+profile.switch
+project.defaults
+project.export
+project.import
+project.open
+project.quota-project.set
+project.quota-project.show
+project.quota-project.unset
+project.show
+project.templates.set
+project.templates.show
+projects.aliases.import
+projects.aliases.list
+projects.aliases.remove
+projects.aliases.set
+projects.diff
+projects.forget
+projects.list
+projects.path
+projects.promote
+projects.reset
+projects.update
+rollouts.delete
+rollouts.list
+rollouts.show
+root
+schema.list
+schema.show
+theme
+theme.delete
+theme.import
+theme.list
+theme.path
+theme.rename
+theme.reset
+theme.switch
+update
+versions.diff
+versions.export
+versions.list
+versions.restore
+versions.rollback
+versions.show
+```
+<!-- cli-contract-command-inventory:end -->
+
 Direct Remote Config mutations put an ordered target result collection in the envelope's `data` field:
 
 ```json
@@ -848,7 +975,7 @@ Flags:
     --timeout <duration>    limit the complete command
 ```
 
-`--profile` defaults from `FBRCM_PROFILE`. It applies to CLI commands that use profile state. Help, contract metadata, configuration, hooks, and project-alias commands accept but ignore it; root `--version` also ignores both `--profile` and `--no-local-config`. Commands advertising `supports.stateless: true` in `fbrcm capabilities --json` accept `--stateless`; other commands reject it. Successful stateless setup emits an info-level `stateless mode enabled` log record with component `cli.stateless` and the stable command ID. Credential values are never logged. `FBRCM_PROFILE` selects and pins the profile when starting the TUI with no arguments; restart without it to create or switch profiles interactively.
+`--profile` defaults from `FBRCM_PROFILE`. It applies to CLI commands that use profile state. Help, completion, contract metadata, configuration, hooks, and project-alias commands accept but ignore it; root `--version` also ignores both `--profile` and `--no-local-config`. Commands advertising `supports.stateless: true` in `fbrcm capabilities --json` accept `--stateless`; other commands reject it. Successful stateless setup emits an info-level `stateless mode enabled` log record with component `cli.stateless` and the stable command ID. Credential values are never logged. `FBRCM_PROFILE` selects and pins the profile when starting the TUI with no arguments; restart without it to create or switch profiles interactively.
 
 `--json` and `--timeout` also apply to every CLI subcommand. Use `fbrcm capabilities --json` for machine-readable command discovery and `fbrcm schema list --json` to enumerate the embedded JSON Schemas.
 Every JSON envelope includes both `command`, identifying the published response
@@ -1459,7 +1586,11 @@ In JSON mode, `data.items` contains one status result per selected project and `
 
 ### `fbrcm project show <project>`
 
-Shows cached project metadata, enabled and primary templates, the selected auth identity used for project operations, and every configured auth identity that discovered the project during synchronization. `<project>` uses the shared positional project resolution described above.
+Shows cached project metadata, enabled and primary templates, quota-project
+configuration and resolution, the selected auth identity used for project
+operations, and every configured auth identity that discovered the project
+during synchronization. `<project>` uses the shared positional project
+resolution described above.
 
 Flags:
 
@@ -1507,6 +1638,16 @@ fbrcm project templates set northstar-wallet --templates client,server
 fbrcm project templates set northstar-wallet --templates client,server --primary server
 fbrcm project templates set northstar-wallet --primary client
 ```
+
+### `fbrcm project quota-project show|set|unset`
+
+Manages the quota-project override for one cached physical Firebase project.
+`show <project>` reports the configured override, effective project, and source.
+`set <project> <quota-project-id>` persists an override; `unset <project>`
+removes it and restores auth, ADC, or target fallback. Project names, IDs, and
+repository aliases use normal cached resolution, while `client@` and `server@`
+prefixes are rejected because the setting belongs to the physical project.
+The project override takes precedence over the auth identity's default.
 
 ### `fbrcm project open <project>`
 
@@ -1996,7 +2137,10 @@ Flags:
 
 With root `--stateless`, this command uses `FBRCM_GOOGLE_ACCESS_TOKEN` to discover accessible projects directly from Cloud Resource Manager. Discovery follows every result page and enriches each project with its current project metadata. It does not select a profile or read or write the project registry, auth configuration, repository aliases, caches, drafts, or hooks. `--filter` still matches remote display names and project IDs, but cannot match repository aliases; `--url` remains available. `--update` is rejected because stateless discovery is already live. `--expr` is applied after `--filter` and directly fetches the current client Remote Config template for each remaining project to build the normal project expression context (`conditions`, `groups`, and `parameters`); projects removed by `--filter` do not incur that template request. These expression reads remain uncached and do not create drafts or run hooks. Stateless JSON leaves local-only fields such as `auth_id`, `discovered_by`, aliases, and `synced_at` empty and uses the default client template metadata.
 
-The initial project-list request has no target project from which to infer a quota project. If the token's identity requires consumer-quota attribution, set `GOOGLE_CLOUD_QUOTA_PROJECT` explicitly.
+The initial project-list request has no target project from which to infer a
+quota project. In stateless mode, `GOOGLE_CLOUD_QUOTA_PROJECT` is therefore
+required. In normal profile mode, configure the environment override, the auth
+identity's quota project, or—for gcloud identities only—an ADC quota project.
 
 ### `fbrcm projects update`
 
@@ -2012,7 +2156,7 @@ Flags:
 --auth <auth-id>       sync projects for one auth identity
 ```
 
-Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project JSON includes `aliases`, `disabled`, `templates`, and `primary_template`; `aliases` is always a sorted array, templates are a nonempty unique `client`/`server` set, and `primary_template` belongs to that set. Persisted `updated_at` and `synced_at` values are emitted as stored and therefore remain plain strings in the response schema. Human project listings include an Aliases column and mark disabled identities in the Auth column.
+Project synchronization retains projects that are no longer accessible instead of deleting them. A project with no accessible auth identity is marked disabled. If a later update discovers it through another configured identity, the project is automatically rebound to that identity and enabled. Project-specific quota overrides survive synchronization and rebinding. Project JSON includes `aliases`, `disabled`, `templates`, `primary_template`, and the optional configured quota project; `project show --json` also reports the effective quota project and its source. `aliases` is always a sorted array, templates are a nonempty unique `client`/`server` set, and `primary_template` belongs to that set. Persisted `updated_at` and `synced_at` values are emitted as stored and therefore remain plain strings in the response schema. Human project listings include an Aliases column and mark disabled identities in the Auth column.
 
 ### `fbrcm projects forget`
 
@@ -2482,7 +2626,7 @@ Flags:
 --json   print auth identities as JSON
 ```
 
-In JSON mode, `data.items` contains identities and `data.count` contains their count. Every identity includes a `default` boolean; exactly the configured default identity has `default: true`.
+In JSON mode, `data.items` contains identities and `data.count` contains their count. Every identity includes a `default` boolean; exactly the configured default identity has `default: true`. The optional `quota_project_id` is the persisted auth-level default.
 
 ### `fbrcm auth add oauth <auth-id>`
 
@@ -2514,6 +2658,8 @@ Flags:
 ```text
 --from <path>      import client secret from file
 --label <label>    auth identity label
+--quota-project <project-id>
+                   persist the identity's quota-project default
 ```
 
 ### `fbrcm auth add service-account <auth-id>`
@@ -2535,6 +2681,8 @@ Flags:
 ```text
 --from <path>      import service account key from file
 --label <label>    auth identity label
+--quota-project <project-id>
+                   persist the identity's quota-project default
 ```
 
 ### `fbrcm auth add gcloud <auth-id>`
@@ -2542,13 +2690,30 @@ Flags:
 Adds or replaces a [Google Cloud CLI](https://cloud.google.com/cli) ADC
 identity. Run `gcloud auth application-default login` first so ADC discovery
 can find credentials. If the selected ADC JSON contains `quota_project_id`,
-fbrcm uses it unless `GOOGLE_CLOUD_QUOTA_PROJECT` overrides it for the process.
+fbrcm uses it only when neither the environment nor persisted project/auth
+configuration supplies a quota project.
 
 Flags:
 
 ```text
 --label <label>    auth identity label
+--quota-project <project-id>
+                   persist the identity's quota-project default
 ```
+
+The `--quota-project` option on `auth add` is a persistent setup option, not a
+one-invocation runtime override. Replacing an existing identity without this
+option preserves its current persisted quota project.
+
+### `fbrcm auth quota-project show|set|unset`
+
+Manages one auth identity's targetless-request quota project. `show <auth-id>`
+reports the configured value, effective value, and source. `set <auth-id>
+<quota-project-id>` persists a new default. `unset <auth-id>` removes it; a
+gcloud identity may then use its ADC `quota_project_id`, while OAuth and
+service-account identities become unresolved for targetless requests unless
+`GOOGLE_CLOUD_QUOTA_PROJECT` is set. All three commands support the global
+`--json` envelope.
 
 ### `fbrcm auth login <auth-id>`
 
@@ -2779,6 +2944,10 @@ behavior.
 ### `fbrcm completion`
 
 Generates shell completion scripts.
+
+With `--json`, the generated script is wrapped in the command response envelope
+as `data.text`; it is never written as a second, unwrapped stdout document.
+Completion generation does not initialize a profile or Firebase client.
 
 Commands:
 

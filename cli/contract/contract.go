@@ -634,6 +634,25 @@ func Classify(err error) Problem {
 		}{Kind: "validation", Source: validation.Source}
 		return problem
 	}
+	if quotaRequired, ok := errors.AsType[*firebase.QuotaProjectRequiredError](err); ok {
+		problem.Code, problem.Category = "auth.quota_project_required", "auth"
+		if authErr, hasAuth := errors.AsType[*core.AuthError](err); hasAuth {
+			problem.Target = optionalString(authErr.AuthID)
+		}
+		problem.Details = struct {
+			Kind            string `json:"kind"`
+			TargetProjectID string `json:"target_project_id"`
+			Targetless      bool   `json:"targetless"`
+		}{Kind: "quota_project", TargetProjectID: quotaRequired.TargetProjectID, Targetless: quotaRequired.TargetProjectID == ""}
+		return problem
+	}
+	if _, ok := errors.AsType[*firebase.QuotaProjectInvariantError](err); ok {
+		problem.Code, problem.Category = "internal.contract_violation", "internal"
+		problem.Details = struct {
+			Kind string `json:"kind"`
+		}{Kind: "internal"}
+		return problem
+	}
 	if authentication, ok := errors.AsType[*firebase.AuthenticationError](err); ok {
 		if authErr, ok := errors.AsType[*core.AuthError](err); ok {
 			problem.Target = optionalString(authErr.AuthID)

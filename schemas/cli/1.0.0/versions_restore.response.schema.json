@@ -465,6 +465,60 @@
           }
         },
         {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "auth.configuration_invalid",
+                      "auth.credentials_invalid",
+                      "auth.not_found",
+                      "auth.quota_project_required",
+                      "auth.setup_required",
+                      "batch.failed",
+                      "batch.partial_success",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "draft.exists",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "firebase.permission_denied",
+                      "firebase.rate_limited",
+                      "firebase.request_failed",
+                      "firebase.service_unavailable",
+                      "firebase.timeout",
+                      "hook.failed",
+                      "interaction.required",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "network.offline",
+                      "network.timeout",
+                      "network.unavailable",
+                      "profile.invalid",
+                      "project.ambiguous",
+                      "project.not_found",
+                      "publication.cache_failed",
+                      "publication.hook_failed",
+                      "remote_config.conflict",
+                      "remote_config.invalid",
+                      "remote_config.validation_failed",
+                      "resource.not_found",
+                      "version.not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
           "if": {
             "properties": {
               "outcome": {

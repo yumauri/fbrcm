@@ -21,7 +21,7 @@ type File struct {
 
 var ErrEmptyProjectsFile = errors.New("projects config is empty")
 
-const ProjectsConfigVersion = 2
+const ProjectsConfigVersion = 1
 
 type Project struct {
 	Name            string          `json:"name"`
@@ -32,6 +32,7 @@ type Project struct {
 	UpdatedAt       string          `json:"updated_at,omitempty"`
 	SyncedAt        string          `json:"synced_at,omitempty"`
 	AuthID          string          `json:"auth_id"`
+	QuotaProjectID  string          `json:"quota_project_id,omitempty"`
 	Disabled        bool            `json:"disabled,omitempty"`
 	Templates       []rctarget.Kind `json:"templates,omitempty"`
 	PrimaryTemplate rctarget.Kind   `json:"primary_template,omitempty"`
@@ -127,6 +128,11 @@ func LoadProjects() ([]Project, error) {
 		}
 		if strings.TrimSpace(project.AuthID) == "" {
 			return nil, invalidConfiguration(path, "validation", fmt.Errorf("project %s missing auth_id", project.ProjectID))
+		}
+		if project.QuotaProjectID != "" {
+			if err := ValidateQuotaProjectID(project.QuotaProjectID); err != nil {
+				return nil, invalidConfiguration(path, "validation", fmt.Errorf("project %s: %w", project.ProjectID, err))
+			}
 		}
 		if err := project.NormalizeTemplatePreferences(); err != nil {
 			return nil, invalidConfiguration(path, "validation", err)

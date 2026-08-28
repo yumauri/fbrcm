@@ -66,6 +66,7 @@ func (m Model) addAuthCmd() tea.Cmd {
 	method := m.method
 	authID := m.authID
 	path := m.filePath
+	quotaProjectID := m.quotaProject.Value()
 	return func() tea.Msg {
 		var (
 			entry config.AuthEntry
@@ -81,12 +82,12 @@ func (m Model) addAuthCmd() tea.Cmd {
 				return authAddedMsg{err: fmt.Errorf("selected file is not valid JSON")}
 			}
 			if method == methodOAuth {
-				entry, err = m.svc.AddOAuthAuth(authID, "", data)
+				entry, err = m.svc.AddOAuthAuthWithQuotaProject(authID, "", data, quotaProjectID)
 			} else {
-				entry, err = m.svc.AddServiceAccountAuth(authID, "", data)
+				entry, err = m.svc.AddServiceAccountAuthWithQuotaProject(authID, "", data, quotaProjectID)
 			}
 		case methodGCloud:
-			entry, err = m.svc.AddGCloudAuth(authID, "")
+			entry, err = m.svc.AddGCloudAuthWithQuotaProject(authID, "", quotaProjectID)
 		default:
 			err = fmt.Errorf("unsupported authentication method")
 		}

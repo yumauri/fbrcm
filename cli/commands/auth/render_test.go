@@ -47,12 +47,30 @@ func TestRenderAuthTablePlainText(t *testing.T) {
 	table := renderAuthTable([]config.AuthEntry{
 		{ID: "main", Type: config.AuthTypeOAuth, Label: "Main"},
 		{ID: "svc", Type: config.AuthTypeServiceAccount, Label: "Service"},
-	}, "main")
+	}, "main", 120)
 
 	for _, want := range []string{"Auth", "main", "oauth", "Main", "✓", "svc", "service-account"} {
 		if !strings.Contains(table, want) {
 			t.Fatalf("renderAuthTable = %q, want substring %q", table, want)
 		}
+	}
+}
+
+func TestRenderAuthTableCropsFlexibleColumnsAtNarrowWidth(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+
+	output := renderAuthTable([]config.AuthEntry{{
+		ID: "main", Type: config.AuthTypeOAuth,
+		Label: "A deliberately long identity label", QuotaProjectID: "a-deliberately-long-quota-project-id",
+	}}, "main", 64)
+
+	for line := range strings.SplitSeq(output, "\n") {
+		if width := len([]rune(line)); width > 64 {
+			t.Fatalf("rendered line width = %d, want <= 64: %q", width, line)
+		}
+	}
+	if !strings.Contains(output, "…") {
+		t.Fatalf("renderAuthTable = %q, want cropped flexible content", output)
 	}
 }
 

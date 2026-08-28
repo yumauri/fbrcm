@@ -126,8 +126,8 @@ Run the test promptly because the
 [access token](https://docs.cloud.google.com/sdk/gcloud/reference/auth/application-default/print-access-token)
 normally expires after one hour.
 
-If ADC requires a quota project, configure it alongside the Firebase target in
-`testdata/suite.json`:
+Configure the quota project alongside the Firebase target in
+`testdata/suite.json`, especially for targetless project-discovery scenarios:
 
 ```json
 {
@@ -139,10 +139,13 @@ If ADC requires a quota project, configure it alongside the Firebase target in
 }
 ```
 
-The harness maps `quota_project_id` to `GOOGLE_CLOUD_QUOTA_PROJECT`, causing fbrcm
-to send `X-Goog-User-Project`. The field is optional and deliberately does not
-default to `project_id`, because the Firebase target and quota project can differ.
-The ADC identity also needs `serviceusage.services.use` on the quota project.
+The harness maps `quota_project_id` to `GOOGLE_CLOUD_QUOTA_PROJECT`. fbrcm sends
+that value in `X-Goog-User-Project` on every authenticated Firebase and Cloud
+Resource Manager request. The field deliberately does not default to
+`project_id`, because the Firebase target and quota project can differ. The ADC
+identity also needs `serviceusage.services.use` on the quota project.
+Replay and capture runs reject a request before proxying when this header is
+missing or has a different value, and journal validation checks it again.
 
 ### Update existing snapshots
 

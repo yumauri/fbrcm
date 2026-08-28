@@ -211,7 +211,9 @@ func (s *Service) getManagedFeatureJSON(ctx context.Context, projectIdentifier, 
 	if err != nil {
 		return fmt.Errorf("create Remote Config %s request: %w", collection, err)
 	}
-	s.setQuotaProject(req, targetProjectID)
+	if _, err := s.setQuotaProject(req, targetProjectID); err != nil {
+		return fmt.Errorf("select Remote Config %s quota project: %w", collection, err)
+	}
 	logHTTPRequest(logger.With("project_id", targetProjectID, "resource", resource), req)
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -243,7 +245,9 @@ func (s *Service) deleteManagedFeature(ctx context.Context, projectIdentifier, t
 	if err != nil {
 		return fmt.Errorf("create Remote Config %s delete request: %w", collection, err)
 	}
-	s.setQuotaProject(req, targetProjectID)
+	if _, err := s.setQuotaProject(req, targetProjectID); err != nil {
+		return fmt.Errorf("select Remote Config %s delete quota project: %w", collection, err)
+	}
 	logHTTPRequest(logger.With("project_id", targetProjectID, "resource", resource), req)
 	resp, err := s.httpClient.Do(req)
 	if err != nil {

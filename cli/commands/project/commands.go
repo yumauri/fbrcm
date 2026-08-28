@@ -29,6 +29,7 @@ func New(svc *core.Core) *cobra.Command {
 	projectCmd.AddCommand(
 		newShowCommand(svc),
 		newTemplatesCommand(svc),
+		newQuotaProjectCommand(svc),
 		newOpenCommand(svc, browser.OpenURL),
 		newExportCommand(svc),
 		newImportCommand(svc),
@@ -37,6 +38,9 @@ func New(svc *core.Core) *cobra.Command {
 	contract.MustRegisterResponsePath(projectCmd, "show", shared.ProjectJSON{})
 	contract.MustRegisterResponsePath(projectCmd, "templates show", projectTemplatesJSON{})
 	contract.MustRegisterResponsePath(projectCmd, "templates set", projectTemplatesJSON{})
+	for _, path := range []string{"quota-project show", "quota-project set", "quota-project unset"} {
+		contract.MustRegisterResponsePath(projectCmd, path, projectQuotaProjectResult{})
+	}
 	contract.MustRegisterResponsePath(projectCmd, "open", projectOpenResult{})
 	contract.MustRegisterResponsePath(projectCmd, "export", contract.ArtifactData{})
 	contract.MustRegisterResponsePath(projectCmd, "import", importpkg.Result{})

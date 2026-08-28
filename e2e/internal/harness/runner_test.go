@@ -14,13 +14,15 @@ func TestValidateJournalChecksExactHTTPContract(t *testing.T) {
 	journal.Entries[0].Request.Destination = "firebase.example:443"
 	journal.Entries[0].Request.Path = "/v1/fixture"
 	journal.Entries[0].Request.Query = "validateOnly=true"
+	journal.Entries[0].Request.Headers = map[string][]string{"X-Goog-User-Project": {"billing-project"}}
 	journal.Entries[0].Response.Status = http.StatusInternalServerError
 	expected := []HTTPExpectation{{
-		Method: http.MethodGet,
-		Host:   "firebase.example",
-		Path:   "/v1/fixture",
-		Query:  "validateOnly=true",
-		Status: http.StatusInternalServerError,
+		Method:         http.MethodGet,
+		Host:           "firebase.example",
+		Path:           "/v1/fixture",
+		Query:          "validateOnly=true",
+		Status:         http.StatusInternalServerError,
+		QuotaProjectID: "billing-project",
 	}}
 	if err := validateJournal(journal, expected, false, false); err != nil {
 		t.Fatal(err)
@@ -28,6 +30,22 @@ func TestValidateJournalChecksExactHTTPContract(t *testing.T) {
 	journal.Entries[0].Request.Path = "/v1/unexpected"
 	if err := validateJournal(journal, expected, false, false); err == nil {
 		t.Fatal("validateJournal accepted an unexpected path")
+	}
+}
+
+func TestValidateJournalRejectsWrongQuotaProject(t *testing.T) {
+	journal := Journal{Total: 1, Entries: []JournalEntry{{Mode: "simulate"}}}
+	journal.Entries[0].Request.Method = http.MethodGet
+	journal.Entries[0].Request.Destination = "firebaseremoteconfig.googleapis.com"
+	journal.Entries[0].Request.Path = "/v1/projects/demo/remoteConfig"
+	journal.Entries[0].Request.Headers = map[string][]string{"X-Goog-User-Project": {"wrong-project"}}
+	journal.Entries[0].Response.Status = http.StatusOK
+	expected := []HTTPExpectation{{
+		Method: http.MethodGet, Host: "firebaseremoteconfig.googleapis.com", Path: "/v1/projects/demo/remoteConfig",
+		Status: http.StatusOK, QuotaProjectID: "billing-project",
+	}}
+	if err := validateJournal(journal, expected, false, false); err == nil || !strings.Contains(err.Error(), "X-Goog-User-Project") {
+		t.Fatalf("validateJournal quota-project error = %v", err)
 	}
 }
 

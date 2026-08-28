@@ -89,6 +89,48 @@ func TestAddGCloudAuthAndAuthPaths(t *testing.T) {
 	}
 }
 
+func TestAuthQuotaProjectPersistsAndSurvivesCredentialReplacement(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+
+	entry, err := svc.AddGCloudAuthWithQuotaProject("main", "Main", "billing-project")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entry.QuotaProjectID != "billing-project" {
+		t.Fatalf("quota project = %q", entry.QuotaProjectID)
+	}
+	entry, err = svc.AddGCloudAuth("main", "Renamed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entry.QuotaProjectID != "billing-project" {
+		t.Fatalf("quota project after replacement = %q", entry.QuotaProjectID)
+	}
+
+	entry, previous, changed, err := svc.SetAuthQuotaProject("main", "other-billing-project")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed || previous != "billing-project" || entry.QuotaProjectID != "other-billing-project" {
+		t.Fatalf("set result = %+v, previous %q, changed %v", entry, previous, changed)
+	}
+	entry, previous, changed, err = svc.SetAuthQuotaProject("main", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed || previous != "other-billing-project" || entry.QuotaProjectID != "" {
+		t.Fatalf("unset result = %+v, previous %q, changed %v", entry, previous, changed)
+	}
+
+	authFile, err := config.LoadAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if authFile.Version != 1 {
+		t.Fatalf("auth config version = %d, want 1", authFile.Version)
+	}
+}
+
 func TestAddOAuthAuthWritesSecretAndListAuth(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 

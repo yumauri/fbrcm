@@ -33,6 +33,11 @@
 - Do not add command-local JSON formats, `map[string]any` machine payloads, human tables or usage text on JSON stdout, or prompts, editors, file pickers, and browser launches in JSON mode. Raw content must use the contract artifact DTO.
 - For every new command or machine-contract change, update `docs/CLI.md` and `docs/cli-contract.md`, run `go run ./cmd/schemagen`, review the generated schemas and `cli/app/testdata/contract_v1_capabilities.golden.json`, and add success, failure, interaction, exit-code, and schema/golden coverage appropriate to the command.
 
+## Pre-1.0 contract evolution
+
+- Until fbrcm version 1.0.0, breaking changes to persisted configuration and versioned machine contracts are allowed. Keep their format and contract version numbers at `1`, and do not add backward-compatibility migrations solely for a pre-1.0 breaking change unless the user explicitly requests them.
+- Version 1.0.0 freezes those versioned contracts. Treat compatibility, migrations, and version bumps as required design concerns for changes made after that release.
+
 ## User-visible wording
 
 - Use grammatically correct singular and plural forms in all CLI, TUI, error, log, and documentation text. Never display shortcuts such as `project(s)`.

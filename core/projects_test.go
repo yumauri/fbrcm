@@ -30,12 +30,13 @@ func TestMergeProjectsReturnsSortedProjects(t *testing.T) {
 	}
 }
 
-func TestMergeProjectsPreservesTemplatePreferences(t *testing.T) {
+func TestMergeProjectsPreservesLocalTemplateAndQuotaPreferences(t *testing.T) {
 	now := time.Date(2026, 7, 20, 12, 0, 0, 0, time.UTC)
 	existing := []config.Project{{
 		Name:            "Demo",
 		ProjectID:       "demo",
 		AuthID:          "main",
+		QuotaProjectID:  "billing-project",
 		DiscoveredBy:    []string{"main"},
 		Templates:       []rctarget.Kind{rctarget.Client, rctarget.Server},
 		PrimaryTemplate: rctarget.Server,
@@ -46,7 +47,7 @@ func TestMergeProjectsPreservesTemplatePreferences(t *testing.T) {
 		DiscoveredBy: []string{"main"},
 	}}
 	got := mergeProjects(existing, incoming, "main", []string{"main"}, "", now)
-	if len(got) != 1 || got[0].PrimaryTemplate != rctarget.Server || len(got[0].Templates) != 2 {
+	if len(got) != 1 || got[0].PrimaryTemplate != rctarget.Server || len(got[0].Templates) != 2 || got[0].QuotaProjectID != "billing-project" {
 		t.Fatalf("merged project preferences = %#v", got)
 	}
 }

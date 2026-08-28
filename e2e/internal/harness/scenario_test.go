@@ -122,7 +122,7 @@ func TestLoadScenariosAcceptsZeroHTTPAndExpandsProject(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	scenarios, err := LoadScenarios(root, Suite{ProjectID: "fixture-project"})
+	scenarios, err := LoadScenarios(root, Suite{ProjectID: "fixture-project", QuotaProjectID: "billing-project"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,8 +138,36 @@ func TestLoadScenariosAcceptsZeroHTTPAndExpandsProject(t *testing.T) {
 		t.Fatalf("absent state path = %#v", absent)
 	}
 	remote := scenarios[1]
-	if remote.Args[2] != "fixture-project" || remote.ExpectedHTTP[0].Method != "GET" || remote.ExpectedHTTP[0].Path != "/v1/projects/fixture-project/versions" || !remote.HTTPReplayOnly {
+	if remote.Args[2] != "fixture-project" || remote.ExpectedHTTP[0].Method != "GET" || remote.ExpectedHTTP[0].Path != "/v1/projects/fixture-project/versions" || remote.ExpectedHTTP[0].QuotaProjectID != "" || !remote.HTTPReplayOnly {
 		t.Fatalf("expanded remote scenario = %#v", remote)
+	}
+}
+
+func TestLoadScenariosRequiresQuotaProjectForGoogleAPIRequests(t *testing.T) {
+	root := t.TempDir()
+	directory := filepath.Join(root, "remote")
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	raw := `{
+  "name":"remote",
+  "command_id":"projects.list",
+  "args":["--stateless","projects","list","--json"],
+  "expected_exit_code":0,
+  "expected_http":[{"method":"get","host":"cloudresourcemanager.googleapis.com","path":"/v1/projects","status":200}]
+}`
+	if err := os.WriteFile(filepath.Join(directory, "scenario.json"), []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadScenarios(root, Suite{ProjectID: "fixture-project"}); err == nil {
+		t.Fatal("LoadScenarios accepted a Google API request without a quota project")
+	}
+	scenarios, err := LoadScenarios(root, Suite{ProjectID: "fixture-project", QuotaProjectID: "billing-project"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := scenarios[0].ExpectedHTTP[0].QuotaProjectID; got != "billing-project" {
+		t.Fatalf("quota project = %q, want billing-project", got)
 	}
 }
 

@@ -29,11 +29,19 @@ Inspect identities and log in again:
 ```sh
 fbrcm auth list
 fbrcm auth login my-auth
+fbrcm auth quota-project show my-auth
 ```
 
 OAuth may require a browser in human mode. JSON mode never opens one and
 returns structured interaction details instead. Service-account and gcloud
 identities validate their existing credentials without an OAuth browser flow.
+
+If project discovery reports that a quota project is required, set an
+auth-level default with `fbrcm auth quota-project set`. For a single cached
+Firebase project, inspect or override the selection with `fbrcm project
+quota-project show|set|unset`. ADC `quota_project_id` is considered only for
+gcloud identities. `fbrcm doctor` verifies both resolution and
+`serviceusage.services.use` access.
 
 ## Reads look stale
 

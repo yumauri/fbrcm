@@ -59,6 +59,9 @@
         "auth_id": {
           "type": "string"
         },
+        "configured_quota_project_id": {
+          "type": "string"
+        },
         "disabled": {
           "type": "boolean"
         },
@@ -70,6 +73,9 @@
             "array",
             "null"
           ]
+        },
+        "effective_quota_project_id": {
+          "type": "string"
         },
         "etag": {
           "type": "string"
@@ -88,6 +94,16 @@
           "type": "string"
         },
         "project_id": {
+          "type": "string"
+        },
+        "quota_project_source": {
+          "enum": [
+            "environment",
+            "project",
+            "auth",
+            "credentials",
+            "target"
+          ],
           "type": "string"
         },
         "state": {
@@ -173,6 +189,50 @@
           "properties": {
             "warnings": {
               "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "auth.configuration_invalid",
+                      "auth.credentials_invalid",
+                      "auth.not_found",
+                      "auth.quota_project_required",
+                      "auth.setup_required",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "firebase.permission_denied",
+                      "firebase.rate_limited",
+                      "firebase.request_failed",
+                      "firebase.service_unavailable",
+                      "firebase.timeout",
+                      "interaction.required",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "network.offline",
+                      "network.timeout",
+                      "network.unavailable",
+                      "profile.invalid",
+                      "project.ambiguous",
+                      "project.not_found",
+                      "resource.not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
               "type": "array"
             }
           }

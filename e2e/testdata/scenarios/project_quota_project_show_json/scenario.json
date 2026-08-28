@@ -1,0 +1,9 @@
+{
+  "name": "project_quota_project_show_json",
+  "command_id": "project.quota-project.show",
+  "args": ["project", "quota-project", "show", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "quota_projects"
+}

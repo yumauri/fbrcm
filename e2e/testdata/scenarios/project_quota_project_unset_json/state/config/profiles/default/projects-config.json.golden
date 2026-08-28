@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "synced_at": "2024-01-01T00:00:00Z",
+      "auth_id": "e2e",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    }
+  ],
+  "synced_at": "<E2E_SYNCED_AT>"
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:response",
+  "contract_version": "1.0.0",
+  "command": "project.quota-project.show",
+  "requested_command": "project.quota-project.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": "Northstar Wallet",
+    "project_id": "northstar-wallet",
+    "auth_id": "e2e",
+    "configured_quota_project_id": "project-billing-project",
+    "effective_quota_project_id": "northstar-wallet",
+    "source": "environment",
+    "changed": false,
+    "status": "shown"
+  },
+  "errors": [],
+  "warnings": []
+}

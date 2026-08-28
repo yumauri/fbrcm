@@ -257,6 +257,40 @@
           }
         },
         {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "interaction.required",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "network.offline",
+                      "network.timeout",
+                      "network.unavailable",
+                      "stdin.remote_config.invalid",
+                      "theme.conflict",
+                      "theme.invalid",
+                      "validation.failed"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
           "if": {
             "properties": {
               "outcome": {

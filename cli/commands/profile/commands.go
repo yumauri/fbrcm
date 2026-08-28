@@ -41,6 +41,7 @@ func newListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List profiles",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {

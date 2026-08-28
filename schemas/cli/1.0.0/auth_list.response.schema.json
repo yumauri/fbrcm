@@ -23,6 +23,9 @@
               "label": {
                 "type": "string"
               },
+              "quota_project_id": {
+                "type": "string"
+              },
               "service_account_path": {
                 "type": "string"
               },
@@ -198,6 +201,34 @@
           "properties": {
             "warnings": {
               "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "auth.configuration_invalid",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "profile.invalid"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
               "type": "array"
             }
           }

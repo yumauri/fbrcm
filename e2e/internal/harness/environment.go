@@ -182,7 +182,7 @@ func PrepareEnvironment(root, fixturesRoot string, suite Suite, proxyURL, certif
 
 func writeProjectsFixture(path string, suite Suite) error {
 	return writeJSONFile(path, map[string]any{
-		"version": 2,
+		"version": 1,
 		"projects": []map[string]any{{
 			"name":             suite.ProjectName,
 			"project_id":       suite.ProjectID,

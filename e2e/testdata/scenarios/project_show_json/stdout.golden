@@ -20,6 +20,8 @@
     "project_id": "northstar-wallet",
     "aliases": [],
     "auth_id": "e2e",
+    "effective_quota_project_id": "northstar-wallet",
+    "quota_project_source": "environment",
     "disabled": false,
     "templates": [
       "client"

@@ -35,6 +35,7 @@ func newStatusCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show effective hooks and local trust status",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			resolution, err := corehooks.Resolve()
 			if err != nil {
@@ -65,6 +66,7 @@ func newFingerprintCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "fingerprint",
 		Short: "Print the effective local hooks fingerprint",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			resolution, err := corehooks.Resolve()
 			if err != nil {
@@ -91,6 +93,7 @@ func newTrustCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "trust",
 		Short: "Trust the current local hook definition",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			resolution, err := corehooks.Resolve()
 			if err != nil {
@@ -148,6 +151,7 @@ func newUntrustCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "untrust",
 		Short: "Remove trust for the current local config",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			resolution, changed, err := corehooks.UntrustCurrent()
 			if err != nil {

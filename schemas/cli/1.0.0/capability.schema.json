@@ -360,6 +360,46 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameter.exists",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -995,6 +1035,16 @@
             "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
           },
           {
+            "name": "--quota-project",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Persist the Google Cloud quota project for this auth identity"
+          },
+          {
             "name": "--stateless",
             "aliases": [],
             "type": "bool",
@@ -1019,6 +1069,21 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.id_invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "resource.conflict"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -1172,6 +1237,16 @@
             "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
           },
           {
+            "name": "--quota-project",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Persist the Google Cloud quota project for this auth identity"
+          },
+          {
             "name": "--stateless",
             "aliases": [],
             "type": "bool",
@@ -1196,6 +1271,23 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:oauth_credentials",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.id_invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "resource.conflict",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -1384,6 +1476,16 @@
             "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
           },
           {
+            "name": "--quota-project",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Persist the Google Cloud quota project for this auth identity"
+          },
+          {
             "name": "--stateless",
             "aliases": [],
             "type": "bool",
@@ -1408,6 +1510,23 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:service_account_credentials",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.id_invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "resource.conflict",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -1614,6 +1733,24 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -1747,6 +1884,20 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.not_found",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -1913,6 +2064,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2028,6 +2191,26 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "authentication_remote_access",
@@ -2187,6 +2370,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.not_found",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2210,6 +2406,467 @@
         ],
         "network_access": "none",
         "network_when": [],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
+        "id": "auth.quota-project.set",
+        "path": [
+          "auth",
+          "quota-project",
+          "set"
+        ],
+        "summary": "Set an auth identity's quota project",
+        "arguments": [
+          {
+            "name": "auth_id",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          },
+          {
+            "name": "quota_project_id",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.not_found",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
+        "side_effect_level": 1,
+        "side_effects": [
+          "local_state_write"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "mutation_plan",
+                    "operator": "has_changes",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "none",
+        "network_when": [],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
+        "id": "auth.quota-project.show",
+        "path": [
+          "auth",
+          "quota-project",
+          "show"
+        ],
+        "summary": "Show an auth identity's quota-project resolution",
+        "arguments": [
+          {
+            "name": "auth_id",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid"
+        ],
+        "side_effect_level": 2,
+        "side_effects": [
+          "authentication_remote_access",
+          "local_state_write"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "authentication_remote_access",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "quota_project_credentials",
+                    "operator": "requires_network",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "quota_project_credentials",
+                "operator": "requires_network",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
+        "id": "auth.quota-project.unset",
+        "path": [
+          "auth",
+          "quota-project",
+          "unset"
+        ],
+        "summary": "Remove an auth identity's quota-project setting",
+        "arguments": [
+          {
+            "name": "auth_id",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid"
+        ],
+        "side_effect_level": 2,
+        "side_effects": [
+          "local_state_write",
+          "authentication_remote_access"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "mutation_plan",
+                    "operator": "has_changes",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "authentication_remote_access",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "quota_project_credentials",
+                    "operator": "requires_network",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "quota_project_credentials",
+                "operator": "requires_network",
+                "value": null
+              }
+            ]
+          }
+        ],
         "destructive": false,
         "destructive_when": [],
         "destructive_reasons": [],
@@ -2297,6 +2954,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_cache_delete",
@@ -2447,6 +3116,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2545,6 +3225,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2649,6 +3340,14 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.not_executable",
+          "command.not_found",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2757,6 +3456,12 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2865,6 +3570,12 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -2973,6 +3684,12 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -3081,6 +3798,12 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -3288,6 +4011,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "condition.invalid",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -3927,6 +4688,45 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "condition.invalid",
+          "condition.not_found",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -4609,6 +5409,45 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "condition.invalid",
+          "condition.not_found",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -5242,6 +6081,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -5683,6 +6551,45 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "condition.invalid",
+          "condition.not_found",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -6328,6 +7235,45 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "condition.invalid",
+          "condition.not_found",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -6935,6 +7881,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "condition.not_found",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -7310,6 +8285,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "condition.invalid",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -7553,6 +8557,16 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -7672,6 +8686,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -7799,6 +8825,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -7966,6 +9005,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -8097,6 +9148,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -8205,6 +9268,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "validation.failed"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -8419,6 +9495,47 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameter.ambiguous",
+          "parameter.not_found",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -9072,6 +10189,32 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "diagnostic.failed",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "local_file_write",
@@ -9280,6 +10423,21 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.ambiguous",
+          "draft.not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_draft_write",
@@ -9545,6 +10703,37 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.ambiguous",
+          "draft.not_found",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -9782,6 +10971,22 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.ambiguous",
+          "draft.not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_draft_delete",
@@ -9944,6 +11149,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -10042,6 +11258,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -10189,6 +11416,45 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.ambiguous",
+          "draft.not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameters_cache.not_found",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -10712,6 +11978,22 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.ambiguous",
+          "draft.not_found",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_file_write",
@@ -10937,6 +12219,47 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameter.ambiguous",
+          "parameter.exists",
+          "parameter.not_found",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -11534,6 +12857,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -11858,6 +13209,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -12141,6 +13520,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -12477,6 +13884,38 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameter.ambiguous",
+          "parameter.not_found",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -12984,6 +14423,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -13629,6 +15106,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -14307,6 +15822,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -14935,6 +16488,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -15382,6 +16963,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -15948,6 +17567,12 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -16046,6 +17671,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "hooks.not_configured",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -16144,6 +17780,16 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -16254,6 +17900,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "hooks.changed",
+          "hooks.not_configured",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -16385,6 +18044,16 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -16553,6 +18222,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -16956,6 +18653,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "personalization.not_found",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -17311,6 +19037,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -17428,6 +19165,20 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.conflict",
+          "profile.invalid",
+          "profile.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_file_delete",
@@ -17622,6 +19373,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -17727,6 +19489,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "profile.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -17838,6 +19612,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.conflict",
+          "profile.invalid",
+          "profile.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -17981,6 +19768,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -18119,6 +19917,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -18385,6 +20211,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -18785,6 +20639,46 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config_import",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -19421,6 +21315,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -19576,6 +21498,471 @@
     },
     {
       "const": {
+        "id": "project.quota-project.set",
+        "path": [
+          "project",
+          "quota-project",
+          "set"
+        ],
+        "summary": "Set a project's quota-project override",
+        "arguments": [
+          {
+            "name": "project",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          },
+          {
+            "name": "quota_project_id",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
+        "side_effect_level": 1,
+        "side_effects": [
+          "local_state_write"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "mutation_plan",
+                    "operator": "has_changes",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "none",
+        "network_when": [],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
+        "id": "project.quota-project.show",
+        "path": [
+          "project",
+          "quota-project",
+          "show"
+        ],
+        "summary": "Show a project's quota-project resolution",
+        "arguments": [
+          {
+            "name": "project",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
+        "side_effect_level": 2,
+        "side_effects": [
+          "authentication_remote_access",
+          "local_state_write"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "authentication_remote_access",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "quota_project_credentials",
+                    "operator": "requires_network",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "quota_project_credentials",
+                "operator": "requires_network",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
+        "id": "project.quota-project.unset",
+        "path": [
+          "project",
+          "quota-project",
+          "unset"
+        ],
+        "summary": "Remove a project's quota-project override",
+        "arguments": [
+          {
+            "name": "project",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
+        "side_effect_level": 2,
+        "side_effects": [
+          "local_state_write",
+          "authentication_remote_access"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "mutation_plan",
+                    "operator": "has_changes",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "authentication_remote_access",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "quota_project_credentials",
+                    "operator": "requires_network",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "quota_project_credentials",
+                "operator": "requires_network",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
         "id": "project.show",
         "path": [
           "project",
@@ -19670,6 +22057,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -19970,6 +22385,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -20092,6 +22520,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -20233,6 +22674,21 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.project_aliases_invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "project_alias.conflict",
+          "project_alias.read_only"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -20384,6 +22840,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.project_aliases_invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -20502,6 +22970,21 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.project_aliases_invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "project_alias.conflict",
+          "project_alias.read_only"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -20672,6 +23155,21 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.project_aliases_invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "project_alias.conflict",
+          "project_alias.read_only"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -20925,6 +23423,36 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -21167,6 +23695,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -21421,6 +23962,33 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -21693,6 +24261,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -21940,6 +24519,45 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -22444,6 +25062,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -22652,6 +25282,33 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -22845,6 +25502,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -23157,6 +25842,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -23440,6 +26153,34 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -23709,6 +26450,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "argument.unknown_command",
+          "command.canceled",
+          "command.not_executable",
+          "command.not_found",
+          "command.timeout",
+          "configuration.invalid",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -23807,6 +26560,12 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -23912,6 +26671,13 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "internal.contract_violation",
+          "schema.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -24009,6 +26775,17 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -24126,6 +26903,20 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "theme.conflict",
+          "theme.invalid",
+          "theme.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_file_delete",
@@ -24293,6 +27084,24 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:theme",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "stdin.remote_config.invalid",
+          "theme.conflict",
+          "theme.invalid",
+          "validation.failed"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "local_file_write",
@@ -24468,6 +27277,16 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -24573,6 +27392,16 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -24684,6 +27513,19 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "theme.conflict",
+          "theme.invalid",
+          "theme.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write",
@@ -24824,6 +27666,16 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -24968,6 +27820,18 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "theme.invalid",
+          "theme.not_found"
+        ],
         "side_effect_level": 1,
         "side_effects": [
           "local_state_write"
@@ -25317,6 +28181,47 @@
         "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameter.ambiguous",
+          "parameter.not_found",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found",
+          "stdin.remote_config.invalid"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -26096,6 +29001,36 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found",
+          "version.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -26463,6 +29398,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found",
+          "version.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -26891,6 +29855,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found",
+          "version.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -27144,6 +30137,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found",
+          "version.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -27625,6 +30656,44 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "draft.exists",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "hook.failed",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.not_found",
+          "version.not_found"
+        ],
         "side_effect_level": 3,
         "side_effects": [
           "firebase_remote_read",
@@ -28154,6 +31223,35 @@
         "stdin_schema": null,
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:response",
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "profile.invalid",
+          "project.ambiguous",
+          "project.not_found",
+          "resource.not_found",
+          "version.not_found"
+        ],
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
@@ -28497,6 +31595,7 @@
                           "mutation_plan",
                           "publication",
                           "authentication",
+                          "quota_project_credentials",
                           "version_request",
                           "external_editor",
                           "promotion_selection",
@@ -28789,6 +31888,32 @@
                     "properties": {
                       "operator": {
                         "const": "available"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "quota_project_credentials"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "requires_network"
                       },
                       "value": {
                         "type": "null"
@@ -29416,6 +32541,7 @@
                                 "mutation_plan",
                                 "publication",
                                 "authentication",
+                                "quota_project_credentials",
                                 "version_request",
                                 "external_editor",
                                 "promotion_selection",
@@ -29708,6 +32834,32 @@
                           "properties": {
                             "operator": {
                               "const": "available"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "quota_project_credentials"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "requires_network"
                             },
                             "value": {
                               "type": "null"
@@ -30290,6 +33442,7 @@
                                 "mutation_plan",
                                 "publication",
                                 "authentication",
+                                "quota_project_credentials",
                                 "version_request",
                                 "external_editor",
                                 "promotion_selection",
@@ -30582,6 +33735,32 @@
                           "properties": {
                             "operator": {
                               "const": "available"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "quota_project_credentials"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "requires_network"
                             },
                             "value": {
                               "type": "null"
@@ -31148,6 +34327,7 @@
                           "mutation_plan",
                           "publication",
                           "authentication",
+                          "quota_project_credentials",
                           "version_request",
                           "external_editor",
                           "promotion_selection",
@@ -31440,6 +34620,32 @@
                     "properties": {
                       "operator": {
                         "const": "available"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "quota_project_credentials"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "requires_network"
                       },
                       "value": {
                         "type": "null"
@@ -31975,6 +35181,7 @@
                           "mutation_plan",
                           "publication",
                           "authentication",
+                          "quota_project_credentials",
                           "version_request",
                           "external_editor",
                           "promotion_selection",
@@ -32267,6 +35474,32 @@
                     "properties": {
                       "operator": {
                         "const": "available"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "quota_project_credentials"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "requires_network"
                       },
                       "value": {
                         "type": "null"
@@ -32736,6 +35969,84 @@
       },
       "type": "array"
     },
+    "problem_codes": {
+      "items": {
+        "enum": [
+          "argument.invalid",
+          "argument.unknown_command",
+          "auth.configuration_invalid",
+          "auth.credentials_invalid",
+          "auth.id_invalid",
+          "auth.not_found",
+          "auth.quota_project_required",
+          "auth.setup_required",
+          "batch.failed",
+          "batch.partial_success",
+          "command.canceled",
+          "command.not_executable",
+          "command.not_found",
+          "command.timeout",
+          "condition.invalid",
+          "condition.not_found",
+          "configuration.invalid",
+          "configuration.local_disabled",
+          "configuration.local_not_found",
+          "configuration.project_aliases_invalid",
+          "diagnostic.failed",
+          "draft.ambiguous",
+          "draft.exists",
+          "draft.not_found",
+          "expression.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "firebase.permission_denied",
+          "firebase.rate_limited",
+          "firebase.request_failed",
+          "firebase.service_unavailable",
+          "firebase.timeout",
+          "group.not_found",
+          "hook.failed",
+          "hooks.changed",
+          "hooks.not_configured",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "network.offline",
+          "network.timeout",
+          "network.unavailable",
+          "parameter.ambiguous",
+          "parameter.exists",
+          "parameter.not_found",
+          "parameters_cache.not_found",
+          "personalization.not_found",
+          "profile.conflict",
+          "profile.invalid",
+          "profile.not_found",
+          "project.ambiguous",
+          "project.not_found",
+          "project_alias.conflict",
+          "project_alias.read_only",
+          "publication.cache_failed",
+          "publication.hook_failed",
+          "remote_config.conflict",
+          "remote_config.invalid",
+          "remote_config.validation_failed",
+          "resource.conflict",
+          "resource.not_found",
+          "result.unsuccessful",
+          "schema.not_found",
+          "stdin.remote_config.invalid",
+          "theme.conflict",
+          "theme.invalid",
+          "theme.not_found",
+          "validation.failed",
+          "version.not_found"
+        ]
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
     "response_schema": {
       "pattern": "^urn:fbrcm:schema:cli:1\\.0\\.0:command:[a-z0-9.-]+:response$",
       "type": "string"
@@ -32830,6 +36141,7 @@
                                 "mutation_plan",
                                 "publication",
                                 "authentication",
+                                "quota_project_credentials",
                                 "version_request",
                                 "external_editor",
                                 "promotion_selection",
@@ -33122,6 +36434,32 @@
                           "properties": {
                             "operator": {
                               "const": "available"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "quota_project_credentials"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "requires_network"
                             },
                             "value": {
                               "type": "null"
@@ -33675,6 +37013,7 @@
     "stdin_schema",
     "response_schema",
     "error_schema",
+    "problem_codes",
     "side_effect_level",
     "side_effects",
     "side_effect_when",
@@ -33876,6 +37215,12 @@
       "name": "diagnostic_identity",
       "operator": "available",
       "semantics": "Doctor resolved a locally usable configured identity with which it can attempt its Firebase diagnostic read.",
+      "source": "runtime_state"
+    },
+    {
+      "name": "quota_project_credentials",
+      "operator": "requires_network",
+      "semantics": "Resolving a gcloud identity's ADC quota_project_id may need to contact the metadata service because no higher-precedence environment, project, or auth quota project is configured.",
       "source": "runtime_state"
     },
     {

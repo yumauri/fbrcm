@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -78,6 +79,36 @@ func TestSetProjectTemplatePreferencesPersistsViewsAndPrimary(t *testing.T) {
 	}
 	if persisted.PrimaryTemplate != rctarget.Server || len(persisted.Templates) != 2 {
 		t.Fatalf("persisted preferences = %#v", persisted)
+	}
+}
+
+func TestSetProjectQuotaProjectPersistsOnVersionOne(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", AuthID: "main"}}, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+
+	project, previous, changed, err := svc.SetProjectQuotaProject("server@demo", "billing-project")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !changed || previous != "" || project.QuotaProjectID != "billing-project" {
+		t.Fatalf("set result = %+v, previous %q, changed %v", project, previous, changed)
+	}
+	persisted, err := svc.ProjectByID("demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if persisted.QuotaProjectID != "billing-project" {
+		t.Fatalf("persisted quota project = %q", persisted.QuotaProjectID)
+	}
+
+	raw, err := os.ReadFile(config.GetProjectsFilePath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"version": 1`) {
+		t.Fatalf("projects config = %s, want version 1", raw)
 	}
 }
 
@@ -218,7 +249,7 @@ func TestSyncProjectsForAuthUsesFirebaseStub(t *testing.T) {
 			}
 			return nil, errors.New("unexpected request: " + req.URL.String())
 		}),
-	})
+	}).WithQuotaProjectOverride("test-quota-project")
 	injectFirebaseService(t, svc, "main", client)
 
 	projects, source, err := svc.SyncProjectsForAuth(context.Background(), "main")
@@ -251,6 +282,31 @@ func TestSyncProjectsForAuthEmptyRegistryKeepsRequestedIdentityInError(t *testin
 	_, _, err := svc.SyncProjectsForAuth(context.Background(), "main")
 	if err == nil || !strings.Contains(err.Error(), `auth "main" is not configured`) || !strings.Contains(err.Error(), authSetupHint) {
 		t.Fatalf("SyncProjectsForAuth = %v, want requested auth error with setup guidance", err)
+	}
+}
+
+func TestSyncProjectsRequiresQuotaProjectBeforeLoadingOAuthOrCallingAPI(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	auth := config.DefaultOAuthAuthEntry("main", "Main")
+	if err := config.SaveAuth(&config.AuthFile{
+		Version: config.AuthConfigVersion, DefaultAuthID: "main", Auth: []config.AuthEntry{auth},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	called := false
+	svc.InjectFirebaseService("main", firebase.NewServiceWithHTTPClient(&http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		called = true
+		return nil, errors.New("unexpected API request")
+	})}))
+
+	_, _, err := svc.SyncProjectsForAuth(context.Background(), "main")
+	var authErr *AuthError
+	var quotaErr *firebase.QuotaProjectRequiredError
+	if !errors.As(err, &authErr) || authErr.Kind != "quota_project_required" || !errors.As(err, &quotaErr) {
+		t.Fatalf("SyncProjectsForAuth error = %#v", err)
+	}
+	if called {
+		t.Fatal("Firebase API was called before quota-project resolution")
 	}
 }
 
@@ -290,7 +346,7 @@ func TestListProjectsForExecutionUsesDirectDiscoveryWithoutLocalState(t *testing
 				return nil, errors.New("unexpected request: " + req.URL.String())
 			}
 		}),
-	})
+	}).WithQuotaProjectOverride("test-quota-project")
 	ctx := WithExecutionPolicy(context.Background(), StatelessExecutionPolicy())
 	ctx, err := WithDirectFirebaseDiscoveryService(ctx, direct)
 	if err != nil {

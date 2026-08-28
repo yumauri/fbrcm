@@ -4,6 +4,21 @@
     "pairs": [
       {
         "request": {
+          "body": [{"matcher": "exact", "value": "{\"permissions\":[\"serviceusage.services.use\"]}"}],
+          "destination": [{"matcher": "exact", "value": "cloudresourcemanager.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "POST"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet:testIamPermissions"}],
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"permissions\":[\"serviceusage.services.use\"]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
           "body": [{"matcher": "exact", "value": ""}],
           "destination": [{"matcher": "exact", "value": "cloudresourcemanager.googleapis.com"}],
           "method": [{"matcher": "exact", "value": "GET"}],

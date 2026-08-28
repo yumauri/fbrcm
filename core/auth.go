@@ -1,10 +1,12 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -88,6 +90,20 @@ func (s *Core) ListAuth() ([]config.AuthEntry, string, error) {
 
 // AddOAuthAuth adds or replaces OAuth auth identity.
 func (s *Core) AddOAuthAuth(authID, label string, secret []byte) (config.AuthEntry, error) {
+	return s.addOAuthAuth(authID, label, secret, nil)
+}
+
+// AddOAuthAuthWithQuotaProject adds or replaces an OAuth identity and stores
+// its quota-project default.
+func (s *Core) AddOAuthAuthWithQuotaProject(authID, label string, secret []byte, quotaProjectID string) (config.AuthEntry, error) {
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	return s.addOAuthAuth(authID, label, secret, &quotaProjectID)
+}
+
+func (s *Core) addOAuthAuth(authID, label string, secret []byte, quotaProjectID *string) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
 		return config.AuthEntry{}, err
 	}
@@ -100,6 +116,7 @@ func (s *Core) AddOAuthAuth(authID, label string, secret []byte) (config.AuthEnt
 	}
 	previousAuth, hadPrevious := authFile.FindAuth(authID)
 	entry := config.DefaultOAuthAuthEntry(authID, label)
+	applyAuthQuotaProject(&entry, previousAuth, hadPrevious, quotaProjectID)
 	authFile = config.UpsertAuthEntry(authFile, entry)
 	if err := config.SaveAuth(authFile); err != nil {
 		return config.AuthEntry{}, err
@@ -136,6 +153,20 @@ func (s *Core) AddOAuthAuth(authID, label string, secret []byte) (config.AuthEnt
 
 // AddServiceAccountAuth adds or replaces service account auth identity.
 func (s *Core) AddServiceAccountAuth(authID, label string, key []byte) (config.AuthEntry, error) {
+	return s.addServiceAccountAuth(authID, label, key, nil)
+}
+
+// AddServiceAccountAuthWithQuotaProject adds or replaces a service-account
+// identity and stores its quota-project default.
+func (s *Core) AddServiceAccountAuthWithQuotaProject(authID, label string, key []byte, quotaProjectID string) (config.AuthEntry, error) {
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	return s.addServiceAccountAuth(authID, label, key, &quotaProjectID)
+}
+
+func (s *Core) addServiceAccountAuth(authID, label string, key []byte, quotaProjectID *string) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
 		return config.AuthEntry{}, err
 	}
@@ -148,6 +179,7 @@ func (s *Core) AddServiceAccountAuth(authID, label string, key []byte) (config.A
 	}
 	previous, hadPrevious := authFile.FindAuth(authID)
 	entry := config.DefaultServiceAccountAuthEntry(authID, label)
+	applyAuthQuotaProject(&entry, previous, hadPrevious, quotaProjectID)
 	authFile = config.UpsertAuthEntry(authFile, entry)
 	if err := config.SaveAuth(authFile); err != nil {
 		return config.AuthEntry{}, err
@@ -170,6 +202,20 @@ func (s *Core) AddServiceAccountAuth(authID, label string, key []byte) (config.A
 
 // AddGCloudAuth adds or replaces gcloud ADC auth identity.
 func (s *Core) AddGCloudAuth(authID, label string) (config.AuthEntry, error) {
+	return s.addGCloudAuth(authID, label, nil)
+}
+
+// AddGCloudAuthWithQuotaProject adds or replaces a gcloud ADC identity and
+// stores its quota-project default.
+func (s *Core) AddGCloudAuthWithQuotaProject(authID, label, quotaProjectID string) (config.AuthEntry, error) {
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	return s.addGCloudAuth(authID, label, &quotaProjectID)
+}
+
+func (s *Core) addGCloudAuth(authID, label string, quotaProjectID *string) (config.AuthEntry, error) {
 	if err := config.ValidateAuthID(authID); err != nil {
 		return config.AuthEntry{}, err
 	}
@@ -179,6 +225,7 @@ func (s *Core) AddGCloudAuth(authID, label string) (config.AuthEntry, error) {
 	}
 	previous, hadPrevious := authFile.FindAuth(authID)
 	entry := config.DefaultGCloudAuthEntry(authID, label)
+	applyAuthQuotaProject(&entry, previous, hadPrevious, quotaProjectID)
 	authFile = config.UpsertAuthEntry(authFile, entry)
 	if err := config.SaveAuth(authFile); err != nil {
 		return config.AuthEntry{}, err
@@ -190,6 +237,61 @@ func (s *Core) AddGCloudAuth(authID, label string) (config.AuthEntry, error) {
 	}
 	s.dropFirebaseService(authID)
 	return entry, nil
+}
+
+func applyAuthQuotaProject(entry *config.AuthEntry, previous config.AuthEntry, hadPrevious bool, quotaProjectID *string) {
+	if quotaProjectID != nil {
+		entry.QuotaProjectID = strings.TrimSpace(*quotaProjectID)
+		return
+	}
+	if hadPrevious {
+		entry.QuotaProjectID = previous.QuotaProjectID
+	}
+}
+
+// SetAuthQuotaProject sets or clears one auth identity's quota project.
+func (s *Core) SetAuthQuotaProject(authID, quotaProjectID string) (config.AuthEntry, string, bool, error) {
+	if err := config.ValidateAuthID(authID); err != nil {
+		return config.AuthEntry{}, "", false, &AuthError{Kind: "invalid_argument", AuthID: authID, Err: err}
+	}
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if quotaProjectID != "" {
+		if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+			return config.AuthEntry{}, "", false, err
+		}
+	}
+	authFile, err := loadAuthWithSetupHint()
+	if err != nil {
+		return config.AuthEntry{}, "", false, err
+	}
+	for i := range authFile.Auth {
+		if authFile.Auth[i].ID != authID {
+			continue
+		}
+		previous := authFile.Auth[i].QuotaProjectID
+		changed := previous != quotaProjectID
+		if !changed {
+			return authFile.Auth[i], previous, false, nil
+		}
+		authFile.Auth[i].QuotaProjectID = quotaProjectID
+		if err := config.SaveAuth(authFile); err != nil {
+			return config.AuthEntry{}, previous, false, err
+		}
+		s.dropFirebaseService(authID)
+		return authFile.Auth[i], previous, true, nil
+	}
+	return config.AuthEntry{}, "", false, authNotConfiguredError(authFile, authID)
+}
+
+// ResolveAuthQuotaProject resolves the targetless quota policy for one auth
+// identity without sending an API request.
+func (s *Core) ResolveAuthQuotaProject(ctx context.Context, authID string) (config.AuthEntry, firebase.QuotaProjectSelection, error) {
+	auth, err := s.authEntry(authID)
+	if err != nil {
+		return config.AuthEntry{}, firebase.QuotaProjectSelection{Source: firebase.QuotaProjectSourceUnresolved}, err
+	}
+	selection, err := firebase.ResolveQuotaProjectForAuth(ctx, auth, "", "")
+	return auth, selection, err
 }
 
 // AuthPaths gets resolved paths for auth id.

@@ -63,6 +63,32 @@ from the `.firebaserc` associated with the nearest Firebase project root.
 | `GOOGLE_CLOUD_QUOTA_PROJECT` | Select the Google Cloud quota/billing project |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Configure the HTTP transport |
 
+## Quota and billing project
+
+Every authenticated Firebase and Cloud Resource Manager request carries
+`X-Goog-User-Project`. fbrcm resolves it in this order:
+
+1. `GOOGLE_CLOUD_QUOTA_PROJECT`
+2. the selected project's persisted override
+3. the selected auth identity's persisted default
+4. ADC `quota_project_id`, for gcloud auth only
+5. the physical target Firebase project
+
+If a targetless request cannot resolve a value, fbrcm stops before network
+access. Manage persisted values with:
+
+```sh
+fbrcm auth quota-project show main
+fbrcm auth quota-project set main shared-billing-project
+fbrcm auth quota-project unset main
+fbrcm project quota-project set production production-billing-project
+fbrcm project quota-project unset production
+```
+
+The authenticated principal needs `serviceusage.services.use` on the effective
+quota project. The guided first-run setup also asks for an auth-level quota
+project.
+
 ## Network controls
 
 Authenticated requests share concurrency, pacing, rate-limit cooldown, and

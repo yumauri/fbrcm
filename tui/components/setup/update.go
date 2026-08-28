@@ -65,6 +65,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.identity, cmd = m.identity.Update(msg)
 			return m, cmd
 		}
+		if m.mode == modeQuotaProject {
+			var cmd tea.Cmd
+			m.quotaProject, cmd = m.quotaProject.Update(msg)
+			return m, cmd
+		}
 		if m.mode == modeProfiles && m.profileInputSelected() {
 			var cmd tea.Cmd
 			m.profileIn, cmd = m.profileIn.Update(msg)
@@ -154,10 +159,7 @@ func (m Model) updateAuthAdded(msg authAddedMsg) (Model, tea.Cmd) {
 	m.mode = modeAuthenticating
 	m.error = nil
 	m.failure = failureNone
-	back := modeMethods
-	if m.method == methodOAuth || m.method == methodServiceAccount {
-		back = modeFile
-	}
+	back := modeQuotaProject
 	loginCmd := m.startLogin(back)
 	return m, tea.Batch(loginCmd, m.spinner.Tick, clearScreenCmd())
 }
@@ -263,6 +265,8 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m.updateIdentityKey(msg, k)
 	case modeFile:
 		return m.updateFileKey(msg, k)
+	case modeQuotaProject:
+		return m.updateQuotaProjectKey(msg, k)
 	case modeAuthenticating:
 		return m.updateAuthenticatingKey(k)
 	case modeDiscovering:
@@ -678,8 +682,9 @@ func (m Model) continueSelectedMethod() (Model, tea.Cmd) {
 	m.error = nil
 	m.failure = failureNone
 	if m.method == methodGCloud {
-		m.mode = modeAdding
-		return m, tea.Batch(m.addAuthCmd(), m.spinner.Tick)
+		m.mode = modeQuotaProject
+		m.quotaProject.SetValue("")
+		return m, m.quotaProject.Focus()
 	}
 	m.mode = modeFile
 	return m, m.filepicker.Init()
@@ -707,9 +712,44 @@ func (m Model) updateFilepicker(msg tea.Msg) (Model, tea.Cmd) {
 	m.filepicker, cmd = m.filepicker.Update(msg)
 	if selected, path := m.filepicker.DidSelectFile(msg); selected {
 		m.filePath = path
-		m.mode = modeAdding
-		return m, tea.Batch(m.addAuthCmd(), m.spinner.Tick, clearScreenCmd())
+		m.mode = modeQuotaProject
+		m.quotaProject.SetValue("")
+		return m, tea.Batch(m.quotaProject.Focus(), clearScreenCmd())
 	}
+	return m, cmd
+}
+
+func (m Model) updateQuotaProjectKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
+	switch k {
+	case "esc":
+		m.quotaProject.Blur()
+		if m.method == methodGCloud {
+			if len(m.auth) > 0 {
+				m.mode = modeIdentity
+				return m, m.identity.Focus()
+			}
+			m.mode = modeMethods
+			m.cursor = int(m.method)
+			return m, nil
+		}
+		m.mode = modeFile
+		return m, m.filepicker.Init()
+	case "enter":
+		value := strings.TrimSpace(m.quotaProject.Value())
+		if err := config.ValidateQuotaProjectID(value); err != nil {
+			m.quotaProject.Err = err
+			return m, nil
+		}
+		m.quotaProject.SetValue(value)
+		m.quotaProject.Err = nil
+		m.quotaProject.Blur()
+		m.mode = modeAdding
+		return m, tea.Batch(m.addAuthCmd(), m.spinner.Tick)
+	case "q":
+		return m, requestQuitCmd()
+	}
+	var cmd tea.Cmd
+	m.quotaProject, cmd = m.quotaProject.Update(msg)
 	return m, cmd
 }
 
@@ -804,12 +844,8 @@ func (m Model) updateErrorKey(k string) (Model, tea.Cmd) {
 		case failureOpen:
 			m.mode = modeFile
 		case failureAdd:
-			if m.method == methodGCloud {
-				m.mode = modeMethods
-				m.cursor = int(m.method)
-			} else {
-				m.mode = modeFile
-			}
+			m.mode = modeQuotaProject
+			return m, m.quotaProject.Focus()
 		case failureLogin:
 			m.mode = m.loginBack
 			m.error = nil

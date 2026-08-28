@@ -39,6 +39,35 @@ func TestInitialEmptyStateOpensAuthenticationMethods(t *testing.T) {
 	}
 }
 
+func TestGCloudSetupRequiresQuotaProjectBeforeAddingAuth(t *testing.T) {
+	m := New(nil)
+	m.mode = modeMethods
+	m.method = methodGCloud
+	m.cursor = int(methodGCloud)
+	m.authID = "default"
+
+	m, _ = m.Update(keyText("enter"))
+	if m.mode != modeQuotaProject {
+		t.Fatalf("mode = %v, want quota project", m.mode)
+	}
+	view := testutil.NormalizeViewSnapshot(m.View(90, 28))
+	for _, want := range []string{"Quota project", "X-Goog-User-Project", "serviceusage.services.use"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("quota-project view missing %q:\n%s", want, view)
+		}
+	}
+
+	m, cmd := m.Update(keyText("enter"))
+	if cmd != nil || m.mode != modeQuotaProject || m.quotaProject.Err == nil {
+		t.Fatalf("empty quota submit = mode:%v cmd:%v err:%v", m.mode, cmd, m.quotaProject.Err)
+	}
+	m.quotaProject.SetValue("billing-project")
+	m, cmd = m.Update(keyText("enter"))
+	if cmd == nil || m.mode != modeAdding || m.quotaProject.Value() != "billing-project" {
+		t.Fatalf("valid quota submit = mode:%v cmd:%v value:%q", m.mode, cmd != nil, m.quotaProject.Value())
+	}
+}
+
 func TestSetupFilePickerMatchesCLIFilePickerPresentation(t *testing.T) {
 	m := New(nil)
 	if !m.filepicker.ShowPermissions || !m.filepicker.ShowSize {

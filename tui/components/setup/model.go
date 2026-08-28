@@ -30,6 +30,7 @@ const (
 	modeMethods
 	modeIdentity
 	modeFile
+	modeQuotaProject
 	modeAdding
 	modeAuthenticating
 	modeDiscovering
@@ -153,11 +154,12 @@ type Model struct {
 	syncStop            context.CancelFunc
 	syncID              uint64
 
-	filepicker filepicker.Model
-	identity   textinput.Model
-	profileIn  textinput.Model
-	spinner    spinner.Model
-	lastClick  mouseutil.ClickTracker
+	filepicker   filepicker.Model
+	identity     textinput.Model
+	quotaProject textinput.Model
+	profileIn    textinput.Model
+	spinner      spinner.Model
+	lastClick    mouseutil.ClickTracker
 }
 
 // New creates startup setup. A nil service keeps setup disabled for isolated
@@ -182,6 +184,13 @@ func New(svc *core.Core) Model {
 	identity.SetStyles(inputstyles.TextInput())
 	identity.SetWidth(36)
 	identity.Blur()
+	quotaProject := textinput.New()
+	quotaProject.Prompt = ""
+	quotaProject.Placeholder = "Google Cloud quota project ID"
+	quotaProject.CharLimit = 128
+	quotaProject.SetStyles(inputstyles.TextInput())
+	quotaProject.SetWidth(44)
+	quotaProject.Blur()
 	profileIn := textinput.New()
 	profileIn.Prompt = ""
 	profileIn.Placeholder = "new profile"
@@ -193,14 +202,15 @@ func New(svc *core.Core) Model {
 	spin.Style = styles.SecondaryTitleSpinner
 
 	m := Model{
-		svc:        svc,
-		mode:       modeHidden,
-		initial:    true,
-		mandatory:  true,
-		filepicker: picker,
-		identity:   identity,
-		profileIn:  profileIn,
-		spinner:    spin,
+		svc:          svc,
+		mode:         modeHidden,
+		initial:      true,
+		mandatory:    true,
+		filepicker:   picker,
+		identity:     identity,
+		quotaProject: quotaProject,
+		profileIn:    profileIn,
+		spinner:      spin,
 	}
 	if svc != nil {
 		m.mode = modeChecking

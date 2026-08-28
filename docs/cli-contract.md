@@ -30,6 +30,9 @@ to stdout. Explicit or implicit help places generated help text in `data.text`
 under the `help` response schema. Root `--version` places its generated logo,
 build metadata, and author contact text in `data.text` under the root response
 schema without terminal styling.
+Each `completion.<shell> --json` operation likewise places the generated shell
+script in `data.text` under its own response schema and bypasses profile and
+Firebase initialization.
 Invoking a non-executable command group without a subcommand is also help and
 uses the `help` response schema. An invalid subcommand below a group is an
 argument failure under the published root response schema; it never advertises
@@ -196,11 +199,16 @@ waits remain part of the same invocation and are canceled by its context. JSON
 mode does not change this behavior.
 
 The published error schema defines every current `details.kind` object and an
-enum of all codes emitted by this contract version. Known codes constrain their
-category and, where invariant, retryability and details kind. Response schemas
-also constrain the first error category to its documented exit status; a code,
-category, details kind, and status cannot contradict one another. The envelope
-schema likewise enumerates warning codes and constrains their details.
+enum of all codes emitted by this contract version. Each detailed capability
+publishes its command-reachable top-level set as `problem_codes`, and its
+response schema constrains `errors[].code` to exactly that set. Known codes
+constrain their category and, where invariant, retryability and details kind.
+Response schemas also constrain the first error category to its documented
+exit status; a code, category, details kind, and status cannot contradict one
+another. Nested `BatchError` target failures are an explicit open extension
+point because they describe target operations rather than the aggregating
+command; current target codes still use the shared typed problem shapes. The
+envelope schema likewise enumerates warning codes and constrains their details.
 
 `BatchError` details preserve every typed failed target under `failures`, with
 its target, code, category, bounded message, retryability, stage, details, and
@@ -375,6 +383,8 @@ Every executable command's detailed capability record contains:
   whether each accepted flag is effective for that command;
 - input and response schema URNs, the shared structured-error schema URN, plus
   a stdin schema when applicable;
+- the closed `problem_codes` set reachable as top-level failures for that
+  command;
 - side-effect level (`0` read-only through `3` remote/external), concrete side
   effects, per-effect conditions, network requirements, and network conditions;
 - destructive markers, typed destructive conditions, and human-readable
@@ -716,11 +726,25 @@ embedded-ID matching and a typed `schema.not_found` result.
 
 `GOOGLE_CLOUD_QUOTA_PROJECT` is inherited process context rather than a command
 argument, so it is not represented in invocation schemas or capability flags.
-An invalid nonempty environment value fails before auth interaction or network
-access as `auth.configuration_invalid`; invalid `quota_project_id` metadata in
-the ADC selected for a gcloud identity fails as `auth.credentials_invalid`.
-Both are non-retryable auth-category failures with semantic exit status 4 and
-retain the selected auth identity as their problem target.
+Persisted auth and project quota values are represented by the typed
+`auth.quota-project.show|set|unset` and
+`project.quota-project.show|set|unset` commands. Their responses distinguish
+configured and effective values and enumerate the resolution source.
+
+Every authenticated Firebase and Cloud Resource Manager request includes
+`X-Goog-User-Project`. Stateful precedence is the environment override,
+project override, auth default, ADC `quota_project_id` for gcloud auth only,
+then the physical request target. OAuth and service-account credential files
+never contribute the ADC credential source. A targetless request with no
+resolved source fails before network access as `auth.quota_project_required`;
+its details identify `targetless: true`. An invalid nonempty environment value
+fails before auth interaction or network access as
+`auth.configuration_invalid`; invalid command input is `argument.invalid`, and
+an invalid manually edited persisted file is `configuration.invalid`. Invalid
+`quota_project_id` metadata in ADC selected for a gcloud identity fails as
+`auth.credentials_invalid`. Auth-category failures use semantic exit status 4
+and retain the selected auth identity as their problem target when one is
+available.
 
 `FBRCM_GOOGLE_ACCESS_TOKEN` is inherited process context. The explicit root
 `--stateless` option selects profileless static-token authentication for the
@@ -1018,9 +1042,10 @@ against the published rule schema and fails on an unknown operator, a missing
 operand, an extra operand, or the wrong annotation wire type.
 
 Schema generation stages the complete v1 schema directory, capability goldens,
-and contract lock, then publishes those assets as one rollback-capable rename
-transaction. A failed publication restores every previous asset instead of
-leaving a partially replaced schema directory.
+the command-by-test-class audit-evidence golden, and contract lock, then
+publishes those assets as one rollback-capable rename transaction. A failed
+publication restores every previous asset instead of leaving a partially
+replaced schema directory.
 
 Regenerate the registry after any command-contract change:
 
@@ -1030,7 +1055,10 @@ go run ./cmd/schemagen
 
 Contract tests require every executable command to have both schemas,
 resolvable local or semantic references, and a complete capability record in
-the reviewed golden file. Runtime conformance tests execute a failure envelope
+the reviewed golden file. They also expand the audit-evidence golden into all
+15 section-6 test classes for every executable command, require either known
+test/scenario IDs or a justified `N/A` in every cell, and reject stale evidence
+references or applicability decisions. Runtime conformance tests execute a failure envelope
 for every executable command and validate it with a Draft 2020-12 validator;
 focused scenarios cover success, empty/no-op data, invalid input and
 expressions, interaction, validation sources, timeout/cancellation, mixed
@@ -1042,8 +1070,9 @@ status requires a new major contract version. Additive optional fields and new
 commands require a minor version. Documentation-only corrections may use a
 patch version.
 
-`schemas/cli/contract.lock.json` fingerprints the current generated schemas
-and capability goldens and records whether that contract has been released.
+`schemas/cli/contract.lock.json` fingerprints the current generated schemas,
+capability goldens, and audit-evidence golden and records whether that contract
+has been released.
 While `released` is `false`, the unreleased v1 contract may be corrected without
 inventing a version bump. Once it is set to `true`, the generator rejects a
 different fingerprint at the same version. Generation happens in a staging

@@ -28,6 +28,7 @@ type AuthEntry struct {
 	ID                 string `json:"id"`
 	Type               string `json:"type"`
 	Label              string `json:"label"`
+	QuotaProjectID     string `json:"quota_project_id,omitempty"`
 	ClientSecretPath   string `json:"client_secret_path,omitempty"`
 	TokenPath          string `json:"token_path,omitempty"`
 	ServiceAccountPath string `json:"service_account_path,omitempty"`
@@ -200,6 +201,11 @@ func validateAuthFile(file *AuthFile) error {
 			return fmt.Errorf("duplicate auth id %q", entry.ID)
 		}
 		seen[entry.ID] = struct{}{}
+		if entry.QuotaProjectID != "" {
+			if err := ValidateQuotaProjectID(entry.QuotaProjectID); err != nil {
+				return fmt.Errorf("auth %s: %w", entry.ID, err)
+			}
+		}
 		switch entry.Type {
 		case AuthTypeOAuth:
 			if strings.TrimSpace(entry.ClientSecretPath) == "" {

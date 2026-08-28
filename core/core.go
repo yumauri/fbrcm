@@ -262,6 +262,60 @@ func (s *Core) SetProjectTemplatePreferences(projectID string, templates []rctar
 	return Project{}, fmt.Errorf("project %q is not in projects config", target.ProjectID)
 }
 
+// SetProjectQuotaProject sets or clears the quota-project override for one
+// physical Firebase project.
+func (s *Core) SetProjectQuotaProject(projectID, quotaProjectID string) (Project, string, bool, error) {
+	target, err := rctarget.Parse(projectID)
+	if err != nil {
+		return Project{}, "", false, err
+	}
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if quotaProjectID != "" {
+		if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+			return Project{}, "", false, err
+		}
+	}
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return Project{}, "", false, err
+	}
+	for i := range projects {
+		if projects[i].ProjectID != target.ProjectID {
+			continue
+		}
+		previous := projects[i].QuotaProjectID
+		changed := previous != quotaProjectID
+		if !changed {
+			return projects[i], previous, false, nil
+		}
+		projects[i].QuotaProjectID = quotaProjectID
+		if err := config.SaveProjects(projects, time.Now().UTC()); err != nil {
+			return Project{}, previous, false, err
+		}
+		return projects[i], previous, true, nil
+	}
+	return Project{}, "", false, fmt.Errorf("project %q is not in projects config", target.ProjectID)
+}
+
+// ResolveProjectQuotaProject resolves the effective quota project for one
+// configured physical Firebase project without sending an API request.
+func (s *Core) ResolveProjectQuotaProject(ctx context.Context, projectID string) (Project, firebase.QuotaProjectSelection, error) {
+	target, err := rctarget.Parse(projectID)
+	if err != nil {
+		return Project{}, firebase.QuotaProjectSelection{Source: firebase.QuotaProjectSourceUnresolved}, err
+	}
+	project, err := s.ProjectByID(target.ProjectID)
+	if err != nil {
+		return Project{}, firebase.QuotaProjectSelection{Source: firebase.QuotaProjectSourceUnresolved}, err
+	}
+	auth, err := s.authEntry(project.AuthID)
+	if err != nil {
+		return Project{}, firebase.QuotaProjectSelection{Source: firebase.QuotaProjectSourceUnresolved}, err
+	}
+	selection, err := firebase.ResolveQuotaProjectForAuth(ctx, auth, project.QuotaProjectID, target.ProjectID)
+	return project, selection, err
+}
+
 func (s *Core) SyncProjects(ctx context.Context) ([]Project, string, error) {
 	corelog.For("core").Info("projects sync requested")
 	projects, err := s.syncProjects(ctx, "")
@@ -413,6 +467,9 @@ func (s *Core) syncProjects(ctx context.Context, onlyAuthID string) ([]Project, 
 	incomingByID := map[string]config.Project{}
 	discoveredByID := map[string][]string{}
 	for _, auth := range authEntries {
+		if _, quotaErr := firebase.ResolveQuotaProjectForAuth(ctx, auth, "", ""); quotaErr != nil {
+			return nil, withAuthFailureID(auth.ID, quotaErr)
+		}
 		fb, err := s.firebaseServiceForAuth(ctx, auth.ID)
 		if err != nil {
 			return nil, err
@@ -420,6 +477,9 @@ func (s *Core) syncProjects(ctx context.Context, onlyAuthID string) ([]Project, 
 		projects, err := fb.ListProjects(ctx)
 		if err != nil {
 			logger.Error("firebase projects sync failed", "auth_id", auth.ID, "err", err)
+			if _, ok := errors.AsType[*firebase.QuotaProjectRequiredError](err); ok {
+				return nil, &AuthError{Kind: "quota_project_required", AuthID: auth.ID, Err: err}
+			}
 			return nil, fmt.Errorf("firebase error: %w", err)
 		}
 		for _, project := range toConfigProjects(projects) {

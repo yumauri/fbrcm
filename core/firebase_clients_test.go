@@ -5,7 +5,9 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
@@ -76,6 +78,31 @@ func TestFirebaseServiceForProjectRejectsConfiguredResolutionWhenLocalReadsDisab
 	}
 	if policyErr.Capability != "local-state reads" || policyErr.Operation != "configured Firebase service resolution" {
 		t.Fatalf("policy error = %#v", policyErr)
+	}
+}
+
+func TestFirebaseServiceForProjectAppliesPersistedQuotaOverride(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+	if _, err := svc.AddGCloudAuthWithQuotaProject("main", "Main", "auth-billing-project"); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveProjects([]config.Project{{
+		Name: "Demo", ProjectID: "demo", AuthID: "main", QuotaProjectID: "project-billing-project",
+	}}, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	svc.InjectFirebaseService("main", firebase.NewServiceWithHTTPClient(nil))
+
+	fb, err := svc.firebaseServiceForProject(context.Background(), "demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := fb.QuotaProject("demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if selection.ProjectID != "project-billing-project" || selection.Source != firebase.QuotaProjectSourceProject {
+		t.Fatalf("selection = %+v", selection)
 	}
 }
 

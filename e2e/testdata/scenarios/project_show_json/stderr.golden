@@ -20,3 +20,5 @@
 [1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
 [1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
 [1mINFO[m loaded projects from cache [2mcomponent[m[2m=[mcore [2mcount[m[2m=[m1
+[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
+[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z

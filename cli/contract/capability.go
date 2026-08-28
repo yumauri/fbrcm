@@ -81,6 +81,7 @@ type Capability struct {
 	StdinSchema        *string                   `json:"stdin_schema"`
 	ResponseSchema     string                    `json:"response_schema"`
 	ErrorSchema        string                    `json:"error_schema"`
+	ProblemCodes       []string                  `json:"problem_codes"`
 	SideEffectLevel    int                       `json:"side_effect_level"`
 	SideEffects        []string                  `json:"side_effects"`
 	SideEffectWhen     []SideEffectCondition     `json:"side_effect_when"`
@@ -180,6 +181,14 @@ func validateCapability(capability Capability) error {
 	}
 	if !capability.Supports.Stdin && len(capability.StdinModes) != 0 {
 		return fmt.Errorf("stdin modes declared without stdin support")
+	}
+	if len(capability.ProblemCodes) == 0 || !sort.StringsAreSorted(capability.ProblemCodes) {
+		return fmt.Errorf("problem_codes must be a non-empty sorted set")
+	}
+	for index, code := range capability.ProblemCodes {
+		if index > 0 && capability.ProblemCodes[index-1] == code || !slices.Contains(knownProblemCodeValues, code) {
+			return fmt.Errorf("problem_codes contains duplicate or unknown code %q", code)
+		}
 	}
 	flags := make(map[string]bool, len(capability.Flags))
 	for _, flag := range capability.Flags {
@@ -394,7 +403,7 @@ func describe(cmd *cobra.Command) Capability {
 	if behavior.interaction != nil {
 		interaction = *behavior.interaction
 	}
-	if behavior.network != "none" && id != "auth.login" && id != "doctor" && id != "theme.import" {
+	if behavior.network != "none" && id != "auth.login" && id != "doctor" && id != "theme.import" && !quotaProjectCredentialResolutionCommand(id) {
 		authWhen := conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))
 		if interaction.Mode == "none" {
 			interaction = InteractionCapability{Mode: "optional", JSONBehavior: "oauth_authorization_returns_interaction"}
@@ -430,7 +439,7 @@ func describe(cmd *cobra.Command) Capability {
 		value := "urn:fbrcm:schema:cli:" + Version + ":stdin:" + kind
 		stdinSchema = &value
 	}
-	return Capability{
+	capability := Capability{
 		ID: id, Path: path, Summary: cmd.Short, Arguments: arguments, Flags: flags,
 		InvocationSchema: "urn:fbrcm:schema:cli:" + Version + ":command:" + id + ":input",
 		StdinSchema:      stdinSchema, ResponseSchema: SchemaID(id), ErrorSchema: ErrorSchemaID(),
@@ -441,6 +450,8 @@ func describe(cmd *cobra.Command) Capability {
 		IdempotencyWhen: cloneIdempotencyConditions(behavior.idempotencyWhen), Supports: support, StdinModes: stdinModes(id, support.Stdin), Interaction: interaction,
 		InteractionWhen: interactionWhen,
 	}
+	capability.ProblemCodes = CommandProblemCodes(capability)
+	return capability
 }
 
 func profileOptionIgnored(id string) bool {

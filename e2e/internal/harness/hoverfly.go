@@ -48,10 +48,11 @@ type Journal struct {
 type JournalEntry struct {
 	Mode    string `json:"mode"`
 	Request struct {
-		Method      string `json:"method"`
-		Destination string `json:"destination"`
-		Path        string `json:"path"`
-		Query       string `json:"query"`
+		Method      string              `json:"method"`
+		Destination string              `json:"destination"`
+		Path        string              `json:"path"`
+		Query       string              `json:"query"`
+		Headers     map[string][]string `json:"headers"`
 	} `json:"request"`
 	Response struct {
 		Status int `json:"status"`

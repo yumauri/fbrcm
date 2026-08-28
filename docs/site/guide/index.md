@@ -93,6 +93,29 @@ The selected identity must be able to discover the projects you need and read
 their Remote Config templates. Write workflows also require permission
 to validate and publish templates.
 
+### Choose a quota project
+
+As part of adding an identity, guided setup asks for a Google Cloud project to
+use for quota and billing attribution. This value is required for the first
+project discovery: before fbrcm knows which Firebase projects are accessible,
+the request is targetless and has no target project ID to use as a fallback for
+`X-Goog-User-Project`.
+
+Enter a physical Google Cloud project ID on which the authenticated principal
+has `serviceusage.services.use`. fbrcm saves it as the identity's default and
+uses it for discovery and whenever a selected project has no more specific
+override.
+
+For CLI setup, pass `--quota-project <project-id>` to `fbrcm auth add`, or set
+the value on an existing identity:
+
+```sh
+fbrcm auth quota-project set main my-quota-project
+```
+
+See [Quota and billing project](/reference/configuration#quota-and-billing-project)
+for precedence, environment overrides, and per-project settings.
+
 Run the diagnostic whenever you need to check credentials, connectivity,
 permissions, or local storage:
 

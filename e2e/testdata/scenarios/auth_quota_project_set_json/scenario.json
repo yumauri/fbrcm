@@ -1,0 +1,12 @@
+{
+  "name": "auth_quota_project_set_json",
+  "command_id": "auth.quota-project.set",
+  "args": ["auth", "quota-project", "set", "e2e", "shared-billing-project", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "config",
+    "path": "profiles/default/auth-config.json"
+  }],
+  "json_output": true
+}

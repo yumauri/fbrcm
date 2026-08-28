@@ -12,6 +12,7 @@ import (
 
 const (
 	projectVariable         = "${PROJECT_ID}"
+	quotaProjectVariable    = "${QUOTA_PROJECT_ID}"
 	e2eAccessTokenVariable  = "${FBRCM_E2E_ACCESS_TOKEN}"
 	defaultTerminalWidth    = 200
 	defaultScenarioLogLevel = "debug"
@@ -86,11 +87,12 @@ type StatePathExpectation struct {
 
 // HTTPExpectation is the exact observable HTTP exchange expected from a scenario.
 type HTTPExpectation struct {
-	Method string `json:"method"`
-	Host   string `json:"host"`
-	Path   string `json:"path"`
-	Query  string `json:"query,omitempty"`
-	Status int    `json:"status"`
+	Method         string `json:"method"`
+	Host           string `json:"host"`
+	Path           string `json:"path"`
+	Query          string `json:"query,omitempty"`
+	Status         int    `json:"status"`
+	QuotaProjectID string `json:"quota_project_id,omitempty"`
 }
 
 func LoadSuite(path string) (Suite, error) {
@@ -202,11 +204,22 @@ func LoadScenarios(root string, suite Suite) ([]Scenario, error) {
 			expectation.Host = strings.TrimSpace(expectation.Host)
 			expectation.Path = strings.ReplaceAll(strings.TrimSpace(expectation.Path), projectVariable, suite.ProjectID)
 			expectation.Query = strings.TrimSpace(expectation.Query)
+			expectation.QuotaProjectID = strings.ReplaceAll(strings.TrimSpace(expectation.QuotaProjectID), quotaProjectVariable, suite.QuotaProjectID)
 			if expectation.Method == "" || expectation.Host == "" || expectation.Path == "" {
 				return nil, fmt.Errorf("scenario %s expected_http entry %d requires method, host, and path", scenario.Name, index+1)
 			}
 			if expectation.Status < 100 || expectation.Status > 599 {
 				return nil, fmt.Errorf("scenario %s expected_http entry %d has invalid status %d", scenario.Name, index+1, expectation.Status)
+			}
+			if requiresQuotaProjectHeader(expectation.Host) {
+				if expectation.QuotaProjectID == "" {
+					expectation.QuotaProjectID = suite.QuotaProjectID
+				}
+				if expectation.QuotaProjectID == "" {
+					return nil, fmt.Errorf("scenario %s expected_http entry %d requires a quota project", scenario.Name, index+1)
+				}
+			} else if expectation.QuotaProjectID != "" {
+				return nil, fmt.Errorf("scenario %s expected_http entry %d declares a quota project for unsupported host %s", scenario.Name, index+1, expectation.Host)
 			}
 		}
 		if scenario.HTTPReplayOnly && len(scenario.ExpectedHTTP) == 0 {
@@ -313,6 +326,11 @@ func LoadScenarios(root string, suite Suite) ([]Scenario, error) {
 		}
 	}
 	return scenarios, nil
+}
+
+func requiresQuotaProjectHeader(host string) bool {
+	host = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(host)), ":443")
+	return host == "cloudresourcemanager.googleapis.com" || host == "firebaseremoteconfig.googleapis.com"
 }
 
 // OrderScenariosForMode makes every declared recording sequence a mandatory,

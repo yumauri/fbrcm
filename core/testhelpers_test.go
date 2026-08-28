@@ -30,7 +30,7 @@ func setupCoreTestEnv(t *testing.T) *Core {
 
 func seedAuthAndProject(t *testing.T, svc *Core, authID, projectID string) {
 	t.Helper()
-	if _, err := svc.AddGCloudAuth(authID, authID); err != nil {
+	if _, err := svc.AddGCloudAuthWithQuotaProject(authID, authID, "test-quota-project"); err != nil {
 		t.Fatalf("AddGCloudAuth returned error: %v", err)
 	}
 	projects := []config.Project{{

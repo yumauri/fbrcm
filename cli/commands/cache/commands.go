@@ -28,6 +28,7 @@ func newPathCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "path",
 		Short: "Print cached Remote Config snapshots directory path",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
@@ -51,6 +52,7 @@ func newClearCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "clear",
 		Short: "Clear cached Remote Config snapshots",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {
@@ -127,6 +129,7 @@ func newListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List cached Remote Config snapshots",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {

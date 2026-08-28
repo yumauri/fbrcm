@@ -19,6 +19,7 @@ func TestRequestControllerPacesSharedRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	req.Header.Set("X-Goog-User-Project", "test-quota-project")
 	if _, err := transport.RoundTrip(req); err != nil {
 		t.Fatal(err)
 	}
@@ -37,6 +38,7 @@ func TestRequestControllerCooldownIsSharedAcrossTransports(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	req.Header.Set("X-Goog-User-Project", "test-quota-project")
 	controller.recordRateLimit(requestScheduleKey(req), requestControllerResponse(req, http.StatusTooManyRequests))
 	started := time.Now()
 
@@ -76,6 +78,7 @@ func TestResilientTransportUses429FallbackCooldown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	req.Header.Set("X-Goog-User-Project", "test-quota-project")
 	started := time.Now()
 	resp, err := transport.RoundTrip(req)
 	if err != nil {

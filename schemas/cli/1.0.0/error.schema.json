@@ -12,7 +12,6 @@
               "argument.unknown_command",
               "auth.id_invalid",
               "command.not_executable",
-              "condition.ambiguous",
               "draft.ambiguous",
               "parameter.ambiguous",
               "project.ambiguous"
@@ -616,7 +615,6 @@
         "properties": {
           "code": {
             "enum": [
-              "condition.ambiguous",
               "condition.not_found",
               "draft.ambiguous",
               "draft.not_found",
@@ -945,7 +943,6 @@
               "command.canceled",
               "command.not_executable",
               "command.not_found",
-              "condition.ambiguous",
               "condition.invalid",
               "condition.not_found",
               "configuration.invalid",
@@ -1037,6 +1034,7 @@
         "auth.credentials_invalid",
         "auth.id_invalid",
         "auth.not_found",
+        "auth.quota_project_required",
         "auth.setup_required",
         "batch.failed",
         "batch.partial_success",
@@ -1044,7 +1042,6 @@
         "command.not_executable",
         "command.not_found",
         "command.timeout",
-        "condition.ambiguous",
         "condition.invalid",
         "condition.not_found",
         "configuration.invalid",

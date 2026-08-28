@@ -19,7 +19,7 @@ func New(svc *core.Core) *cobra.Command {
 		Use:   "auth",
 		Short: "Manage auth identities",
 	}
-	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newDeleteCommand(svc), newBindCommand(svc))
+	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newDeleteCommand(svc), newBindCommand(svc), newQuotaProjectCommand(svc))
 	contract.MustRegisterResponsePath(authCmd, "list", []authListItem{})
 	for _, path := range []string{"add oauth", "add service-account", "add gcloud"} {
 		contract.MustRegisterResponsePath(authCmd, path, authMutationResult{})
@@ -28,6 +28,9 @@ func New(svc *core.Core) *cobra.Command {
 	contract.MustRegisterResponsePath(authCmd, "path", authPathResult{})
 	contract.MustRegisterResponsePath(authCmd, "delete", authDeleteResult{})
 	contract.MustRegisterResponsePath(authCmd, "bind", authBindResult{})
+	for _, path := range []string{"quota-project show", "quota-project set", "quota-project unset"} {
+		contract.MustRegisterResponsePath(authCmd, path, quotaProjectResult{})
+	}
 	return authCmd
 }
 
@@ -35,6 +38,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List auth identities",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
@@ -47,7 +51,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 			if jsonOut {
 				return shared.WriteJSON(cmd, newAuthListItems(entries, defaultAuthID))
 			}
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderAuthTable(entries, defaultAuthID))
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderAuthTable(entries, defaultAuthID, shared.TerminalWidth()))
 			return nil
 		},
 	}
@@ -88,7 +92,16 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 			if err := firebase.ValidateOAuthClientSecret(data); err != nil {
 				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
 			}
-			entry, err := svc.AddOAuthAuth(args[0], label, data)
+			var entry config.AuthEntry
+			if cmd.Flags().Changed("quota-project") {
+				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
+				if flagErr != nil {
+					return flagErr
+				}
+				entry, err = svc.AddOAuthAuthWithQuotaProject(args[0], label, data, quotaProjectID)
+			} else {
+				entry, err = svc.AddOAuthAuth(args[0], label, data)
+			}
 			if err != nil {
 				return err
 			}
@@ -106,6 +119,7 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 	}
 	cmd.Flags().String("from", "", "Import OAuth client secret from file path; if omitted, read stdin or open file picker")
 	cmd.Flags().String("label", "", "Auth identity label")
+	cmd.Flags().String("quota-project", "", "Persist the Google Cloud quota project for this auth identity")
 	return cmd
 }
 
@@ -133,7 +147,16 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 			if err := firebase.ValidateServiceAccountKey(data); err != nil {
 				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
 			}
-			entry, err := svc.AddServiceAccountAuth(args[0], label, data)
+			var entry config.AuthEntry
+			if cmd.Flags().Changed("quota-project") {
+				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
+				if flagErr != nil {
+					return flagErr
+				}
+				entry, err = svc.AddServiceAccountAuthWithQuotaProject(args[0], label, data, quotaProjectID)
+			} else {
+				entry, err = svc.AddServiceAccountAuth(args[0], label, data)
+			}
 			if err != nil {
 				return err
 			}
@@ -151,6 +174,7 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 	}
 	cmd.Flags().String("from", "", "Import service account key from file path; if omitted, read stdin or open file picker")
 	cmd.Flags().String("label", "", "Auth identity label")
+	cmd.Flags().String("quota-project", "", "Persist the Google Cloud quota project for this auth identity")
 	return cmd
 }
 
@@ -167,7 +191,16 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			entry, err := svc.AddGCloudAuth(args[0], label)
+			var entry config.AuthEntry
+			if cmd.Flags().Changed("quota-project") {
+				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
+				if flagErr != nil {
+					return flagErr
+				}
+				entry, err = svc.AddGCloudAuthWithQuotaProject(args[0], label, quotaProjectID)
+			} else {
+				entry, err = svc.AddGCloudAuth(args[0], label)
+			}
 			if err != nil {
 				return err
 			}
@@ -180,6 +213,7 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 		},
 	}
 	cmd.Flags().String("label", "", "Auth identity label")
+	cmd.Flags().String("quota-project", "", "Persist the Google Cloud quota project for this auth identity")
 	return cmd
 }
 
@@ -347,15 +381,16 @@ func newBindCommand(svc *core.Core) *cobra.Command {
 }
 
 type authMutationResult struct {
-	AuthID string         `json:"auth_id"`
-	Type   string         `json:"type" contract:"enum=oauth|service-account|gcloud"`
-	Label  string         `json:"label"`
-	Status string         `json:"status" contract:"enum=added"`
-	Paths  authPathResult `json:"paths"`
+	AuthID         string         `json:"auth_id"`
+	Type           string         `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Label          string         `json:"label"`
+	QuotaProjectID string         `json:"quota_project_id,omitempty"`
+	Status         string         `json:"status" contract:"enum=added"`
+	Paths          authPathResult `json:"paths"`
 }
 
 func newAuthMutationResult(entry config.AuthEntry, status string, paths core.AuthPaths) authMutationResult {
-	return authMutationResult{AuthID: entry.ID, Type: entry.Type, Label: entry.Label, Status: status, Paths: authPathPayload(entry, paths)}
+	return authMutationResult{AuthID: entry.ID, Type: entry.Type, Label: entry.Label, QuotaProjectID: entry.QuotaProjectID, Status: status, Paths: authPathPayload(entry, paths)}
 }
 
 type authLoginResult struct {

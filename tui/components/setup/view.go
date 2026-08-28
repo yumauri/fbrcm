@@ -67,6 +67,9 @@ func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
 	case modeFile:
 		title = m.methodName()
 		lines = m.fileLines(contentWidth)
+	case modeQuotaProject:
+		title = "Quota project"
+		lines = m.quotaProjectLines(contentWidth)
 	case modeAdding:
 		title = m.methodName()
 		lines = m.workingLines("Validating and importing credentials…")
@@ -219,6 +222,9 @@ func (m Model) accountsLines(width int) []string {
 		} else {
 			label += "  ·  unused"
 		}
+		if entry.QuotaProjectID != "" {
+			label += "  ·  quota " + entry.QuotaProjectID
+		}
 		lines = append(lines, setupListLine(label, m.cursor == index))
 	}
 	lines = append(lines,
@@ -237,6 +243,22 @@ func (m Model) accountsLines(width int) []string {
 		lines = append(lines[:len(lines)-1], cardErrorStyle.Render(m.error.Error()), "", lines[len(lines)-1])
 	}
 	return lines
+}
+
+func (m Model) quotaProjectLines(width int) []string {
+	return []string{
+		"Choose the Google Cloud project used for quota and billing attribution.",
+		"fbrcm will send it as X-Goog-User-Project during project discovery.",
+		"The authenticated principal needs serviceusage.services.use on it.",
+		"",
+		m.quotaProject.View(),
+		"",
+		setupHelp(width,
+			[2]string{"enter", "save and continue"},
+			[2]string{"esc", "back"},
+			[2]string{"q", "quit"},
+		),
+	}
 }
 
 func (m Model) profilesLines(width int) []string {

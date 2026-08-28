@@ -14,38 +14,74 @@ import (
 
 func TestQuotaProjectPolicyPrecedence(t *testing.T) {
 	tests := []struct {
-		name   string
-		policy quotaProjectPolicy
-		target string
-		want   string
+		name       string
+		policy     quotaProjectPolicy
+		target     string
+		want       string
+		wantSource QuotaProjectSource
+		wantErr    bool
 	}{
 		{
-			name: "environment overrides credentials and target",
+			name: "environment overrides every configured source",
 			policy: quotaProjectPolicy{
 				environmentQuotaProjectID: "environment-project",
+				projectQuotaProjectID:     "project-override",
+				authQuotaProjectID:        "auth-default",
 				credentialQuotaProjectID:  "credential-project",
 				useTargetProjectQuota:     true,
 			},
-			target: "target-project",
-			want:   "environment-project",
+			target:     "target-project",
+			want:       "environment-project",
+			wantSource: QuotaProjectSourceEnvironment,
 		},
 		{
-			name: "credentials override target",
+			name: "project override beats auth and credentials",
+			policy: quotaProjectPolicy{
+				projectQuotaProjectID:    "project-override",
+				authQuotaProjectID:       "auth-default",
+				credentialQuotaProjectID: "credential-project",
+				useTargetProjectQuota:    true,
+			},
+			target:     "target-project",
+			want:       "project-override",
+			wantSource: QuotaProjectSourceProject,
+		},
+		{
+			name: "auth default beats credentials and target",
+			policy: quotaProjectPolicy{
+				authQuotaProjectID:       "auth-default",
+				credentialQuotaProjectID: "credential-project",
+				useTargetProjectQuota:    true,
+			},
+			target:     "target-project",
+			want:       "auth-default",
+			wantSource: QuotaProjectSourceAuth,
+		},
+		{
+			name: "ADC credentials override target",
 			policy: quotaProjectPolicy{
 				credentialQuotaProjectID: "credential-project",
 				useTargetProjectQuota:    true,
 			},
-			target: "target-project",
-			want:   "credential-project",
+			target:     "target-project",
+			want:       "credential-project",
+			wantSource: QuotaProjectSourceCredentials,
 		},
-		{name: "gcloud target fallback", policy: quotaProjectPolicy{useTargetProjectQuota: true}, target: "target-project", want: "target-project"},
-		{name: "project listing has no target fallback", policy: quotaProjectPolicy{useTargetProjectQuota: true}},
-		{name: "oauth and service account have no implicit target fallback", target: "target-project"},
+		{name: "target fallback", policy: quotaProjectPolicy{useTargetProjectQuota: true}, target: "target-project", want: "target-project", wantSource: QuotaProjectSourceTarget},
+		{name: "targetless request is unresolved", policy: quotaProjectPolicy{useTargetProjectQuota: true}, wantSource: QuotaProjectSourceUnresolved, wantErr: true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if got := test.policy.projectID(test.target); got != test.want {
-				t.Fatalf("projectID(%q) = %q, want %q", test.target, got, test.want)
+			got, err := test.policy.selectProject(test.target)
+			if test.wantErr {
+				if _, ok := errors.AsType[*QuotaProjectRequiredError](err); !ok {
+					t.Fatalf("selectProject(%q) error = %#v, want QuotaProjectRequiredError", test.target, err)
+				}
+			} else if err != nil {
+				t.Fatalf("selectProject(%q) error = %v", test.target, err)
+			}
+			if got.ProjectID != test.want || got.Source != test.wantSource {
+				t.Fatalf("selectProject(%q) = %+v, want project %q from %q", test.target, got, test.want, test.wantSource)
 			}
 		})
 	}
@@ -129,6 +165,37 @@ func TestCredentialQuotaProjectID(t *testing.T) {
 	}
 }
 
+func TestResolveQuotaProjectIgnoresADCCredentialsOutsideGCloudAuth(t *testing.T) {
+	t.Setenv(coreenv.GoogleCloudQuotaProject, "")
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/that/must/not-be-read.json")
+	for _, authType := range []string{config.AuthTypeOAuth, config.AuthTypeServiceAccount} {
+		t.Run(authType, func(t *testing.T) {
+			selection, err := ResolveQuotaProjectForAuth(context.Background(), config.AuthEntry{Type: authType}, "", "target-project")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if selection.ProjectID != "target-project" || selection.Source != QuotaProjectSourceTarget {
+				t.Fatalf("selection = %+v, want target fallback", selection)
+			}
+		})
+	}
+}
+
+func TestResolveQuotaProjectDoesNotLoadADCWhenHigherPrecedenceSourceExists(t *testing.T) {
+	t.Setenv(coreenv.GoogleCloudQuotaProject, "")
+	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/that/must/not-be-read.json")
+
+	selection, err := ResolveQuotaProjectForAuth(context.Background(), config.AuthEntry{
+		Type: config.AuthTypeGCloud, QuotaProjectID: "auth-project",
+	}, "project-override", "target-project")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if selection.ProjectID != "project-override" || selection.Source != QuotaProjectSourceProject {
+		t.Fatalf("selection = %+v", selection)
+	}
+}
+
 func TestServiceFromAuthResultAppliesEnvironmentAcrossIdentityPolicies(t *testing.T) {
 	for _, test := range []struct {
 		name   string
@@ -139,12 +206,14 @@ func TestServiceFromAuthResultAppliesEnvironmentAcrossIdentityPolicies(t *testin
 		{name: "gcloud", result: authHTTPClientResult{client: http.DefaultClient, credentialQuotaProjectID: "adc-project", useTargetProjectQuota: true}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			svc := serviceFromAuthHTTPClientResult(test.result, "environment-project")
+			svc := serviceFromAuthHTTPClientResult(test.result, "environment-project", "auth-project")
 			req, err := http.NewRequest(http.MethodGet, "https://example.com", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
-			svc.setQuotaProject(req, "target-project")
+			if _, err := svc.setQuotaProject(req, "target-project"); err != nil {
+				t.Fatal(err)
+			}
 			if got := req.Header.Get("X-Goog-User-Project"); got != "environment-project" {
 				t.Fatalf("quota project header = %q", got)
 			}

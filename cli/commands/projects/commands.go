@@ -127,6 +127,7 @@ func newListCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List projects using cache-first loading",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := shared.CommandContext(cmd)
 			forceUpdate, err := cmd.Flags().GetBool("update")
@@ -168,6 +169,7 @@ func newUpdateCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update projects from Firebase into cache",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			authID, err := cmd.Flags().GetString("auth")
 			if err != nil {
@@ -203,6 +205,7 @@ func newPathCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "path",
 		Short: "Print projects config file path",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
@@ -229,6 +232,7 @@ func newResetCommand(svc *core.Core) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "reset",
 		Short: "Reset the cached projects registry",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			yes, err := cmd.Flags().GetBool("yes")
 			if err != nil {

@@ -14,6 +14,19 @@ fbrcm project show staging
 `projects list` reads the local registry and optionally synchronizes accessible
 projects. `project show` displays one resolved project and its local metadata.
 
+The initial discovery request is targetless, so fbrcm must resolve a quota
+project before it can synchronize anything. Guided setup stores an auth-level
+default. For an identity added through the CLI, supply `--quota-project` during
+`auth add` or configure it afterward:
+
+```sh
+fbrcm auth quota-project set main my-quota-project
+```
+
+The authenticated principal needs `serviceusage.services.use` on that Google
+Cloud project. See [Quota and billing project](/reference/configuration#quota-and-billing-project)
+for the full resolution order.
+
 Use `fbrcm doctor` when discovery fails. It checks credentials, connectivity,
 API access, permissions, and local storage in one report.
 

@@ -158,6 +158,9 @@
           ],
           "type": "object"
         },
+        "quota_project_id": {
+          "type": "string"
+        },
         "status": {
           "enum": [
             "added"
@@ -242,6 +245,39 @@
           "properties": {
             "warnings": {
               "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "auth.configuration_invalid",
+                      "auth.credentials_invalid",
+                      "auth.id_invalid",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "interaction.required",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "profile.invalid",
+                      "resource.conflict",
+                      "stdin.remote_config.invalid"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
               "type": "array"
             }
           }

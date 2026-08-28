@@ -1,6 +1,6 @@
 {
   "contract_version": "1.0.0",
-  "count": 102,
+  "count": 108,
   "commands": [
     {
       "id": "add",
@@ -166,6 +166,66 @@
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:response",
       "side_effect_level": 1,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "auth.quota-project.set",
+      "path": [
+        "auth",
+        "quota-project",
+        "set"
+      ],
+      "summary": "Set an auth identity's quota project",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:response",
+      "side_effect_level": 1,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "auth.quota-project.show",
+      "path": [
+        "auth",
+        "quota-project",
+        "show"
+      ],
+      "summary": "Show an auth identity's quota-project resolution",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:response",
+      "side_effect_level": 2,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "auth.quota-project.unset",
+      "path": [
+        "auth",
+        "quota-project",
+        "unset"
+      ],
+      "summary": "Remove an auth identity's quota-project setting",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:response",
+      "side_effect_level": 2,
       "destructive": false,
       "supports": {
         "dry_run": false,
@@ -1268,6 +1328,66 @@
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
+      }
+    },
+    {
+      "id": "project.quota-project.set",
+      "path": [
+        "project",
+        "quota-project",
+        "set"
+      ],
+      "summary": "Set a project's quota-project override",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:response",
+      "side_effect_level": 1,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "project.quota-project.show",
+      "path": [
+        "project",
+        "quota-project",
+        "show"
+      ],
+      "summary": "Show a project's quota-project resolution",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:response",
+      "side_effect_level": 2,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "project.quota-project.unset",
+      "path": [
+        "project",
+        "quota-project",
+        "unset"
+      ],
+      "summary": "Remove a project's quota-project override",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:response",
+      "side_effect_level": 2,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
       }
     },
     {

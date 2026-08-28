@@ -33,6 +33,7 @@ func newPathCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "path",
 		Short: "Print a configuration file path",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {

@@ -37,6 +37,30 @@ func TestProfileRootPrintsActiveProfile(t *testing.T) {
 	}
 }
 
+func TestProfileRootJSON(t *testing.T) {
+	setupProfileTest(t)
+	if err := config.SwitchProfile("work"); err != nil {
+		t.Fatal(err)
+	}
+
+	root := &cobra.Command{Use: "fbrcm"}
+	root.PersistentFlags().Bool("json", false, "")
+	root.AddCommand(New())
+	root.SetArgs([]string{"profile", "--json"})
+	var out bytes.Buffer
+	root.SetOut(&out)
+	if err := root.Execute(); err != nil {
+		t.Fatalf("profile root JSON = %v", err)
+	}
+	var result profileCurrentResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("decode profile root result: %v; output=%q", err, out.String())
+	}
+	if result.Profile != "work" {
+		t.Fatalf("JSON result = %#v", result)
+	}
+}
+
 func TestProfileListJSON(t *testing.T) {
 	setupProfileTest(t)
 	if err := config.SwitchProfile("alpha"); err != nil {

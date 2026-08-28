@@ -54,6 +54,29 @@
           }
         },
         {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "command.canceled",
+                      "command.timeout",
+                      "internal.contract_violation",
+                      "schema.not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
           "if": {
             "properties": {
               "outcome": {

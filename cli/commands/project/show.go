@@ -1,7 +1,9 @@
 package project
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -52,6 +54,18 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 					return err
 				}
 			}
+			var quotaSelection firebase.QuotaProjectSelection
+			if stateless {
+				quotaSelection, err = firebase.ResolveQuotaProjectForAuth(ctx, config.AuthEntry{}, "", project.ProjectID)
+			} else {
+				_, quotaSelection, err = svc.ResolveProjectQuotaProject(ctx, project.ProjectID)
+			}
+			if err != nil && !stateless && errors.Is(err, os.ErrNotExist) {
+				quotaSelection, err = firebase.ResolveQuotaProjectForAuth(ctx, config.AuthEntry{}, project.QuotaProjectID, project.ProjectID)
+			}
+			if err != nil {
+				return err
+			}
 			jsonOut, err := cmd.Flags().GetBool("json")
 			if err != nil {
 				return err
@@ -61,20 +75,32 @@ func newShowCommand(svc *core.Core) *cobra.Command {
 				if aliasErr != nil {
 					return aliasErr
 				}
-				return shared.WriteJSON(cmd, shared.NewProjectJSONWithAliases(project, aliases, true))
+				payload := shared.NewProjectJSONWithAliases(project, aliases, true)
+				payload.EffectiveQuotaProjectID = quotaSelection.ProjectID
+				payload.QuotaProjectSource = quotaSelection.Source
+				return shared.WriteJSON(cmd, payload)
 			}
 
 			aliases, aliasErr := projectAliasesForExecution(project.ProjectID, stateless)
 			if aliasErr != nil {
 				return aliasErr
 			}
-			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderProjectDetailsWithAliases(project, aliases))
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderProjectDetailsWithQuota(project, aliases, quotaSelection))
 			return err
 		},
 	}
 	cmd.Flags().Bool("update", false, "Update projects from Firebase before printing")
 	cmd.Flags().Bool("json", false, "Print project details as JSON")
 	return cmd
+}
+
+func renderProjectDetailsWithQuota(project core.Project, aliases []string, quota firebase.QuotaProjectSelection) string {
+	configured := displayProjectValue(project.QuotaProjectID)
+	return renderProjectDetailsWithAliases(project, aliases) + "\n" + strings.Join([]string{
+		"Quota project override: " + configured,
+		"Effective quota project: " + displayProjectValue(quota.ProjectID),
+		"Quota project source: " + string(quota.Source),
+	}, "\n")
 }
 
 func projectAliasesForExecution(projectID string, stateless bool) ([]string, error) {

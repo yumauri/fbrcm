@@ -3,6 +3,7 @@ package firebase
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -82,6 +83,7 @@ func TestResilientTransportDryRunSendsValidationButSuppressesPublication(t *test
 		t.Fatal(err)
 	}
 	validation.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(`{}`)), nil }
+	validation.Header.Set("X-Goog-User-Project", "test-quota-project")
 	validationResp, err := transport.RoundTrip(validation)
 	if err != nil {
 		t.Fatal(err)
@@ -253,5 +255,25 @@ func TestCloneRequestPreservesQuotaProjectHeader(t *testing.T) {
 	}
 	if got := cloned.Header.Get("X-Goog-User-Project"); got != "billing-project" {
 		t.Fatalf("cloned quota project header = %q", got)
+	}
+}
+
+func TestResilientTransportRejectsMissingQuotaProjectBeforeNetwork(t *testing.T) {
+	called := false
+	transport := newResilientTransport(roundTripFunc(func(*http.Request) (*http.Response, error) {
+		called = true
+		return nil, io.EOF
+	}))
+	req, err := http.NewRequest(http.MethodGet, "https://cloudresourcemanager.googleapis.com/v1/projects", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = transport.RoundTrip(req)
+	if _, ok := errors.AsType[*QuotaProjectInvariantError](err); !ok {
+		t.Fatalf("RoundTrip error = %#v, want QuotaProjectInvariantError", err)
+	}
+	if called {
+		t.Fatal("transport called despite missing X-Goog-User-Project")
 	}
 }

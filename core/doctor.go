@@ -114,6 +114,15 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 	}
 
 	if report.Offline {
+		if authErr == nil {
+			for _, auth := range authFile.Auth {
+				detail := "runtime quota-project resolution skipped in offline mode"
+				if auth.QuotaProjectID != "" {
+					detail = "configured: " + auth.QuotaProjectID + " (auth)"
+				}
+				report.add("quota-project:"+auth.ID, DoctorWarn, "Quota project ("+auth.ID+")", detail)
+			}
+		}
 		report.add("network", DoctorWarn, "Network", "offline mode enabled; live API and permission checks skipped")
 		return report
 	}
@@ -144,6 +153,20 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 			}
 			continue
 		}
+		quotaSelection, quotaErr := fb.QuotaProject("")
+		if quotaErr != nil {
+			report.add("quota-project:"+auth.ID, DoctorFail, fmt.Sprintf("Quota project (%s)", auth.ID), quotaErr.Error())
+			continue
+		}
+		report.add("quota-project:"+auth.ID, DoctorPass, fmt.Sprintf("Quota project (%s)", auth.ID), quotaSelection.ProjectID+" ("+string(quotaSelection.Source)+")")
+		grantedQuotaPermissions, quotaPermissionErr := fb.TestProjectPermissions(ctx, quotaSelection.ProjectID, []string{"serviceusage.services.use"})
+		if quotaPermissionErr != nil {
+			report.add("quota-permission:"+auth.ID, DoctorFail, fmt.Sprintf("Quota-project permission (%s)", auth.ID), quotaPermissionErr.Error())
+		} else if !slices.Contains(grantedQuotaPermissions, "serviceusage.services.use") {
+			report.add("quota-permission:"+auth.ID, DoctorFail, fmt.Sprintf("Quota-project permission (%s)", auth.ID), "missing: serviceusage.services.use on "+quotaSelection.ProjectID)
+		} else {
+			report.add("quota-permission:"+auth.ID, DoctorPass, fmt.Sprintf("Quota-project permission (%s)", auth.ID), "serviceusage.services.use on "+quotaSelection.ProjectID)
+		}
 		if _, err := fb.ListProjects(ctx); err != nil {
 			report.add("api:cloud-resource-manager:"+auth.ID, DoctorFail, fmt.Sprintf("Cloud Resource Manager API (%s)", auth.ID), err.Error())
 			if report.addContextFailure(ctx) {
@@ -162,7 +185,7 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 			if project.AuthID != auth.ID {
 				continue
 			}
-			report.checkFirebaseProject(ctx, fb, project)
+			report.checkFirebaseProject(ctx, fb.WithQuotaProjectOverride(project.QuotaProjectID), project)
 			if report.addContextFailure(ctx) {
 				return report
 			}

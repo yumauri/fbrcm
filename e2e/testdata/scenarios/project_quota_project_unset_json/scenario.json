@@ -1,0 +1,14 @@
+{
+  "name": "project_quota_project_unset_json",
+  "command_id": "project.quota-project.unset",
+  "args": ["project", "quota-project", "unset", "${PROJECT_ID}", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "config",
+    "path": "profiles/default/projects-config.json",
+    "json_replacements": {"/synced_at": "<E2E_SYNCED_AT>"}
+  }],
+  "json_output": true,
+  "fixture": "quota_projects"
+}

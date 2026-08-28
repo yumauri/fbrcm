@@ -300,6 +300,9 @@ func TestValidateProfileNameAndAuthID(t *testing.T) {
 }
 
 func TestLoadAuthMissingCorruptAndRoundTrip(t *testing.T) {
+	if AuthConfigVersion != 1 {
+		t.Fatalf("AuthConfigVersion = %d, want 1 before v1.0.0", AuthConfigVersion)
+	}
 	setupTestDirs(t)
 	if err := SwitchProfile(DefaultProfileName); err != nil {
 		t.Fatalf("SwitchProfile returned error: %v", err)
@@ -325,6 +328,7 @@ func TestLoadAuthMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 
 	entry := DefaultOAuthAuthEntry("main", "Main OAuth")
+	entry.QuotaProjectID = "billing-project"
 	file := UpsertAuthEntry(nil, entry)
 	if err := SaveAuth(file); err != nil {
 		t.Fatalf("SaveAuth returned error: %v", err)
@@ -336,12 +340,15 @@ func TestLoadAuthMissingCorruptAndRoundTrip(t *testing.T) {
 		t.Fatalf("LoadAuth returned error: %v", err)
 	}
 	got, ok := loaded.FindAuth("main")
-	if !ok || got.Label != "Main OAuth" {
+	if !ok || got.Label != "Main OAuth" || got.QuotaProjectID != "billing-project" {
 		t.Fatalf("FindAuth = %+v, ok=%v", got, ok)
 	}
 }
 
 func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
+	if ProjectsConfigVersion != 1 {
+		t.Fatalf("ProjectsConfigVersion = %d, want 1 before v1.0.0", ProjectsConfigVersion)
+	}
 	setupTestDirs(t)
 	if err := SwitchProfile(DefaultProfileName); err != nil {
 		t.Fatalf("SwitchProfile returned error: %v", err)
@@ -366,10 +373,11 @@ func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 	}
 
 	projects := []Project{{
-		Name:      "Demo",
-		ProjectID: "demo",
-		AuthID:    "main",
-		Disabled:  true,
+		Name:           "Demo",
+		ProjectID:      "demo",
+		AuthID:         "main",
+		QuotaProjectID: "billing-project",
+		Disabled:       true,
 	}}
 	if err := SaveProjects(projects, time.Now()); err != nil {
 		t.Fatalf("SaveProjects returned error: %v", err)
@@ -380,11 +388,24 @@ func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadProjects returned error: %v", err)
 	}
-	if len(loaded) != 1 || loaded[0].ProjectID != "demo" || !loaded[0].Disabled {
+	if len(loaded) != 1 || loaded[0].ProjectID != "demo" || loaded[0].QuotaProjectID != "billing-project" || !loaded[0].Disabled {
 		t.Fatalf("LoadProjects = %+v, want demo project", loaded)
 	}
 	if got := loaded[0].TemplateKinds(); len(got) != 1 || got[0] != "client" {
 		t.Fatalf("default template kinds = %v, want client", got)
+	}
+}
+
+func TestValidateQuotaProjectID(t *testing.T) {
+	for _, valid := range []string{"billing-project", "123456789012"} {
+		if err := ValidateQuotaProjectID(valid); err != nil {
+			t.Fatalf("ValidateQuotaProjectID(%q) = %v", valid, err)
+		}
+	}
+	for _, invalid := range []string{"", " billing-project", "billing project", "server@billing-project", "billing@project"} {
+		if err := ValidateQuotaProjectID(invalid); err == nil {
+			t.Fatalf("ValidateQuotaProjectID(%q) succeeded", invalid)
+		}
 	}
 }
 

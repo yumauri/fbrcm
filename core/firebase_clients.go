@@ -29,7 +29,11 @@ func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) 
 	if project.Disabled {
 		return nil, fmt.Errorf("project %q is disabled; run projects update to rediscover it", projectID)
 	}
-	return s.firebaseServiceForAuth(ctx, project.AuthID)
+	fb, err := s.firebaseServiceForAuth(ctx, project.AuthID)
+	if err != nil {
+		return nil, err
+	}
+	return fb.WithQuotaProjectOverride(project.QuotaProjectID), nil
 }
 
 func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*firebase.Service, error) {
@@ -79,6 +83,9 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 }
 
 func withAuthFailureID(authID string, err error) error {
+	if _, ok := errors.AsType[*firebase.QuotaProjectRequiredError](err); ok {
+		return &AuthError{Kind: "quota_project_required", AuthID: authID, Err: err}
+	}
 	if authentication, ok := errors.AsType[*firebase.AuthenticationError](err); ok {
 		return &AuthError{Kind: authentication.Kind, AuthID: authID, Err: err}
 	}

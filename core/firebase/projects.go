@@ -69,7 +69,9 @@ func (s *Service) ListProjects(ctx context.Context) ([]Project, error) {
 			q.Set("pageToken", pageToken)
 		}
 		req.URL.RawQuery = q.Encode()
-		s.setQuotaProject(req, "")
+		if _, err := s.setQuotaProject(req, ""); err != nil {
+			return nil, fmt.Errorf("select project-list quota project: %w", err)
+		}
 		logHTTPRequest(logger.With("page", page), req)
 
 		resp, err := s.httpClient.Do(req)
@@ -212,7 +214,9 @@ func (s *Service) GetProject(ctx context.Context, projectID string) (Project, er
 		logger.Error("create project details request failed", "project_id", projectID, "err", err)
 		return Project{}, fmt.Errorf("create project details request: %w", err)
 	}
-	s.setQuotaProject(req, projectID)
+	if _, err := s.setQuotaProject(req, projectID); err != nil {
+		return Project{}, fmt.Errorf("select project-details quota project: %w", err)
+	}
 
 	logHTTPRequest(logger.With("project_id", projectID), req)
 	resp, err := s.httpClient.Do(req)

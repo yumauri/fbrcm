@@ -2,9 +2,9 @@ package auth
 
 import (
 	"charm.land/lipgloss/v2"
-	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/ansi"
 
-	clistyles "github.com/yumauri/fbrcm/cli/styles"
+	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 )
@@ -22,48 +22,51 @@ func newAuthListItems(entries []config.AuthEntry, defaultAuthID string) []authLi
 	return items
 }
 
-func renderAuthTable(entries []config.AuthEntry, defaultAuthID string) string {
+func renderAuthTable(entries []config.AuthEntry, defaultAuthID string, terminalWidth int) string {
 	rows := make([][]string, 0, len(entries))
 	idWidth := lipgloss.Width("Auth")
 	typeWidth := lipgloss.Width("Type")
 	labelWidth := lipgloss.Width("Label")
+	quotaWidth := lipgloss.Width("Quota Project")
 	defaultWidth := lipgloss.Width("Default")
 	for _, entry := range entries {
 		marker := ""
 		if entry.ID == defaultAuthID {
 			marker = "✓"
 		}
-		rows = append(rows, []string{entry.ID, entry.Type, entry.Label, marker})
+		quotaProjectID := entry.QuotaProjectID
+		if quotaProjectID == "" {
+			quotaProjectID = "—"
+		}
+		rows = append(rows, []string{entry.ID, entry.Type, entry.Label, quotaProjectID, marker})
 		idWidth = max(idWidth, lipgloss.Width(entry.ID))
 		typeWidth = max(typeWidth, lipgloss.Width(entry.Type))
 		labelWidth = max(labelWidth, lipgloss.Width(entry.Label))
+		quotaWidth = max(quotaWidth, lipgloss.Width(quotaProjectID))
 		defaultWidth = max(defaultWidth, lipgloss.Width(marker))
 	}
-	styleFunc := func(row, col int) lipgloss.Style {
-		style := lipgloss.NewStyle().Padding(0, 1)
-		if clistyles.NoColorEnabled() {
-			return style
+	const decorationWidth = 16
+	overflow := idWidth + typeWidth + labelWidth + quotaWidth + defaultWidth + decorationWidth - terminalWidth
+	if terminalWidth > 0 && overflow > 0 {
+		reduction := min(overflow, max(labelWidth-1, 0))
+		labelWidth -= reduction
+		overflow -= reduction
+		if overflow > 0 {
+			reduction = min(overflow, max(quotaWidth-1, 0))
+			quotaWidth -= reduction
 		}
-		if row == table.HeaderRow {
-			return style.Bold(true).Foreground(clistyles.PaletteSlateBright)
+		for i := range rows {
+			rows[i][2] = ansi.Truncate(rows[i][2], labelWidth, "…")
+			rows[i][3] = ansi.Truncate(rows[i][3], quotaWidth, "…")
 		}
-		if col == 0 {
-			return style.Foreground(clistyles.PaletteSlateBright)
-		}
-		return style.Foreground(clistyles.PaletteSlateDim)
 	}
-	tbl := table.New().
-		Headers("Auth", "Type", "Label", "Default").
-		Rows(rows...).
-		Width(idWidth + typeWidth + labelWidth + defaultWidth + 13).
-		Border(lipgloss.NormalBorder()).
-		BorderHeader(true).
-		BorderRow(false).
-		StyleFunc(styleFunc)
-	if !clistyles.NoColorEnabled() {
-		tbl = tbl.BorderStyle(clistyles.BorderStyle(false))
-	}
-	return tbl.String()
+	return shared.StyledTable(
+		[]string{"Auth", "Type", ansi.Truncate("Label", labelWidth, "…"), ansi.Truncate("Quota Project", quotaWidth, "…"), "Default"},
+		rows,
+		[]int{idWidth, typeWidth, labelWidth, quotaWidth, defaultWidth},
+		nil,
+		nil,
+	)
 }
 
 type authPathResult struct {

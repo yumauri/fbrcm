@@ -89,6 +89,45 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 	}
 }
 
+func TestEveryExecutableCommandHasDocumentationInventoryEntry(t *testing.T) {
+	raw, err := os.ReadFile("../../docs/CLI.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const start = "<!-- cli-contract-command-inventory:start -->"
+	const end = "<!-- cli-contract-command-inventory:end -->"
+	text := string(raw)
+	startIndex := strings.Index(text, start)
+	endIndex := strings.Index(text, end)
+	if startIndex < 0 || endIndex < 0 || endIndex <= startIndex {
+		t.Fatal("docs/CLI.md has no valid CLI contract command inventory")
+	}
+	block := text[startIndex+len(start) : endIndex]
+	documented := make([]string, 0)
+	seen := make(map[string]bool)
+	for line := range strings.SplitSeq(block, "\n") {
+		id := strings.TrimSpace(line)
+		if id == "" || id == "```text" || id == "```" {
+			continue
+		}
+		if seen[id] {
+			t.Fatalf("duplicate documentation inventory entry %q", id)
+		}
+		seen[id] = true
+		documented = append(documented, id)
+	}
+	slices.Sort(documented)
+	capabilities := contract.DetailedCapabilities(NewRootForContract("documentation"))
+	executable := make([]string, 0, len(capabilities))
+	for _, capability := range capabilities {
+		executable = append(executable, capability.ID)
+	}
+	slices.Sort(executable)
+	if !slices.Equal(documented, executable) {
+		t.Fatalf("documentation inventory = %v, want executable commands %v", documented, executable)
+	}
+}
+
 func TestCollectionResponseSchemasDescribeItemDTOs(t *testing.T) {
 	tests := []struct {
 		id     string
@@ -135,6 +174,38 @@ func TestResponseStatusAndValidationSourceFieldsAreSemantic(t *testing.T) {
 				if schema["enum"] == nil && schema["const"] == nil && schema["$ref"] != contract.SemanticRef("validation_source") {
 					t.Errorf("%s has unconstrained validation_source schema %#v", capability.ID, schema)
 				}
+			}
+		})
+	}
+}
+
+func TestQuotaProjectResponseSchemasConstrainCommandReachableStatuses(t *testing.T) {
+	tests := map[string][]string{
+		"auth.quota-project.show":     {"shown"},
+		"auth.quota-project.set":      {"set", "unchanged"},
+		"auth.quota-project.unset":    {"unset", "unchanged"},
+		"project.quota-project.show":  {"shown"},
+		"project.quota-project.set":   {"set", "unchanged"},
+		"project.quota-project.unset": {"unset", "unchanged"},
+	}
+	for commandID, want := range tests {
+		t.Run(commandID, func(t *testing.T) {
+			raw, err := schemas.ReadByID(contract.SchemaID(commandID))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var document map[string]any
+			if err := json.Unmarshal(raw, &document); err != nil {
+				t.Fatal(err)
+			}
+			data := document["$defs"].(map[string]any)["success_data"].(map[string]any)
+			status := data["properties"].(map[string]any)["status"].(map[string]any)
+			got := contractStrings(status["enum"])
+			if value, ok := status["const"].(string); ok {
+				got = []string{value}
+			}
+			if !slices.Equal(got, want) {
+				t.Fatalf("status values = %v, want %v", got, want)
 			}
 		})
 	}
@@ -419,6 +490,15 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 	if doctor.NetworkAccess != "conditional" || len(doctor.NetworkWhen) != 1 || len(doctor.NetworkWhen[0].AllOf) != 2 || doctor.NetworkWhen[0].AllOf[0].Source != "context" || doctor.NetworkWhen[0].AllOf[0].Name != "offline" || doctor.NetworkWhen[0].AllOf[0].Value != false || doctor.NetworkWhen[0].AllOf[1].Name != "diagnostic_identity" || !slices.Contains(doctor.SideEffects, "local_file_write") || !slices.Contains(doctor.SideEffects, "local_file_delete") || !capabilityHasPredicate(doctor, "authentication_remote_access", "authentication", "requires_network") || capabilityHasPredicate(doctor, "local_file_write", "authentication", "token_persisted") || doctor.Interaction.Mode != "none" {
 		t.Fatalf("doctor capability = %#v", doctor)
 	}
+	for _, path := range [][]string{{"auth", "quota-project", "show"}, {"auth", "quota-project", "unset"}, {"project", "quota-project", "show"}, {"project", "quota-project", "unset"}} {
+		quotaCapability, findErr := contract.FindCapability(root, path)
+		if findErr != nil {
+			t.Fatal(findErr)
+		}
+		if quotaCapability.NetworkAccess != "conditional" || !capabilityHasPredicate(quotaCapability, "authentication_remote_access", "quota_project_credentials", "requires_network") || capabilityHasPredicate(quotaCapability, "local_file_write", "authentication", "token_persisted") || quotaCapability.Interaction.Mode != "none" {
+			t.Fatalf("%s quota-project capability = %#v", quotaCapability.ID, quotaCapability)
+		}
+	}
 	draftChangeNote, err := contract.FindCapability(root, []string{"draft", "change-note"})
 	if err != nil {
 		t.Fatal(err)
@@ -427,7 +507,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		t.Fatalf("draft.change-note capability = %#v", draftChangeNote)
 	}
 	for _, capability := range contract.DetailedCapabilities(root) {
-		if capability.NetworkAccess == "none" || capability.ID == "auth.login" || capability.ID == "doctor" || capability.ID == "theme.import" {
+		if capability.NetworkAccess == "none" || capability.ID == "auth.login" || capability.ID == "doctor" || capability.ID == "theme.import" || strings.Contains(capability.ID, ".quota-project.") {
 			continue
 		}
 		if !capabilityHasPredicate(capability, "authentication_remote_access", "authentication", "requires_network") || !capabilityHasPredicate(capability, "local_file_write", "authentication", "token_persisted") || capability.Interaction.Mode != "optional" || !capabilityConditionsHavePredicate(capability.InteractionWhen, "runtime_state", "authentication", "requires_human_authorization") {
@@ -585,7 +665,7 @@ func TestDetailedCapabilitiesConformToStandaloneSchema(t *testing.T) {
 		if capability.SideEffectLevel < 1 || !unconditionalLocalWrite && !capabilityHasPredicate(capability, "local_state_write", "profile_bootstrap", "required") {
 			t.Fatalf("%s omits JSON envelope profile bootstrap: %#v", capability.ID, capability.SideEffectWhen)
 		}
-		if capability.SideEffects == nil || capability.SideEffectWhen == nil || capability.NetworkWhen == nil || capability.DestructiveWhen == nil || capability.IdempotencyWhen == nil || capability.StdinModes == nil || capability.InteractionWhen == nil {
+		if capability.ProblemCodes == nil || capability.SideEffects == nil || capability.SideEffectWhen == nil || capability.NetworkWhen == nil || capability.DestructiveWhen == nil || capability.IdempotencyWhen == nil || capability.StdinModes == nil || capability.InteractionWhen == nil {
 			t.Fatalf("%s has nullable machine arrays: %#v", capability.ID, capability)
 		}
 		if capability.NetworkAccess == "conditional" && len(capability.NetworkWhen) == 0 {
@@ -793,6 +873,18 @@ func TestJSONHelpAndVersionUseConformingResponseSchemas(t *testing.T) {
 	}
 }
 
+func TestJSONCompletionCommandsUseConformingResponseSchemas(t *testing.T) {
+	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
+		t.Run(shell, func(t *testing.T) {
+			envelope, raw := executeJSONContract(t, "completion", shell, "--json")
+			if envelope.Command != "completion."+shell || envelope.Outcome != "success" || envelope.ExitCode != 0 {
+				t.Fatalf("envelope = %#v", envelope)
+			}
+			validateContractDocument(t, envelope.Schema, raw)
+		})
+	}
+}
+
 func TestInvalidChangeNoteIsTypedArgumentFailure(t *testing.T) {
 	t.Setenv(env.GoogleAccessToken, "test-token")
 	envelope, raw := executeJSONContract(t, "add", "flag", "--type", "string", "--value", "on", "--change-note", "line one\nline two", "--yes", "--stateless", "--json")
@@ -869,6 +961,50 @@ func TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema(t *testing.T) 
 				t.Fatalf("envelope = %#v", envelope)
 			}
 			validateContractDocument(t, capability.ResponseSchema, raw)
+		})
+	}
+}
+
+func TestEveryExecutableCommandCobraArityMatchesCapability(t *testing.T) {
+	root := NewRootForContract("arity")
+	for _, capability := range contract.DetailedCapabilities(root) {
+		t.Run(capability.ID, func(t *testing.T) {
+			cmd := commandForCapability(t, root, capability)
+			if cmd.Args == nil {
+				if capability.ID != "root" && capability.ID != "help" {
+					t.Fatal("executable command has no Cobra arity validator")
+				}
+				return
+			}
+			minimal := make([]string, 0, len(capability.Arguments))
+			required := 0
+			repeated := false
+			for _, argument := range capability.Arguments {
+				if argument.Required {
+					required++
+					minimal = append(minimal, "audit-value")
+				}
+				if argument.Repeated {
+					repeated = true
+				}
+			}
+			if err := cmd.Args(cmd, minimal); err != nil {
+				t.Fatalf("minimal arity %d rejected: %v", len(minimal), err)
+			}
+			if required > 0 {
+				if err := cmd.Args(cmd, minimal[:len(minimal)-1]); err == nil {
+					t.Fatalf("too few arguments (%d) accepted", len(minimal)-1)
+				}
+			}
+			if !repeated {
+				maximum := make([]string, len(capability.Arguments))
+				for index := range maximum {
+					maximum[index] = "audit-value"
+				}
+				if err := cmd.Args(cmd, append(maximum, "extra")); err == nil {
+					t.Fatalf("too many arguments (%d) accepted", len(maximum)+1)
+				}
+			}
 		})
 	}
 }
@@ -2487,6 +2623,102 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 				t.Fatalf("warnings = %v, want %v", gotWarnings, wantWarnings)
 			}
 		})
+	}
+}
+
+func TestCommandResponseSchemasConstrainReachableProblemCodes(t *testing.T) {
+	root := NewRootForContract("test")
+	known := contract.KnownProblemCodes()
+	for _, capability := range contract.DetailedCapabilities(root) {
+		t.Run(capability.ID, func(t *testing.T) {
+			if len(capability.ProblemCodes) == 0 || !slices.IsSorted(capability.ProblemCodes) {
+				t.Fatalf("problem codes are not a non-empty sorted set: %v", capability.ProblemCodes)
+			}
+			for _, code := range capability.ProblemCodes {
+				if !slices.Contains(known, code) {
+					t.Errorf("unknown problem code %q", code)
+				}
+			}
+			raw, err := schemas.ReadByID(capability.ResponseSchema)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var document map[string]any
+			if err := json.Unmarshal(raw, &document); err != nil {
+				t.Fatal(err)
+			}
+			commandSchema := document["allOf"].([]any)[1].(map[string]any)
+			constraints := commandSchema["allOf"].([]any)
+			var got []string
+			for _, rawConstraint := range constraints {
+				constraint := rawConstraint.(map[string]any)
+				properties, _ := constraint["properties"].(map[string]any)
+				errorsSchema, ok := properties["errors"].(map[string]any)
+				if !ok {
+					continue
+				}
+				items := errorsSchema["items"].(map[string]any)
+				code := items["properties"].(map[string]any)["code"].(map[string]any)
+				got = contractStrings(code["enum"])
+			}
+			if !slices.Equal(got, capability.ProblemCodes) {
+				t.Fatalf("response problem codes = %v, want capability values %v", got, capability.ProblemCodes)
+			}
+		})
+	}
+
+	get, err := contract.FindCapability(root, []string{"get"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(get.ProblemCodes, "schema.not_found") {
+		t.Fatal("get advertises schema.not_found")
+	}
+	schemaShow, err := contract.FindCapability(root, []string{"schema", "show"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(schemaShow.ProblemCodes, "schema.not_found") {
+		t.Fatal("schema.show omits schema.not_found")
+	}
+	for _, path := range [][]string{{"help"}, {"completion", "bash"}, {"schema", "list"}} {
+		capability, findErr := contract.FindCapability(root, path)
+		if findErr != nil {
+			t.Fatal(findErr)
+		}
+		for _, impossible := range []string{"configuration.invalid", "file.io_failed", "filesystem.permission_denied", "internal.unclassified", "profile.invalid", "profile.not_found"} {
+			if slices.Contains(capability.ProblemCodes, impossible) {
+				t.Errorf("%s advertises unreachable startup problem %s", capability.ID, impossible)
+			}
+		}
+	}
+}
+
+func TestEnvelopeProblemCodesAreOpenOnlyForNestedBatchTargets(t *testing.T) {
+	raw, err := schemas.ReadByID(contract.EnvelopeSchemaID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document map[string]any
+	if err := json.Unmarshal(raw, &document); err != nil {
+		t.Fatal(err)
+	}
+	errorSchema := document["$defs"].(map[string]any)["error"].(map[string]any)
+	code := errorSchema["properties"].(map[string]any)["code"].(map[string]any)
+	if _, closed := code["enum"]; closed || code["x-fbrcm-open-extension"] == nil {
+		t.Fatalf("envelope nested problem extension = %#v", code)
+	}
+	errorRaw, err := schemas.ReadByID(contract.ErrorSchemaID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reusable map[string]any
+	if err := json.Unmarshal(errorRaw, &reusable); err != nil {
+		t.Fatal(err)
+	}
+	reusableCode := reusable["properties"].(map[string]any)["code"].(map[string]any)
+	if got := contractStrings(reusableCode["enum"]); !slices.Equal(got, contract.KnownProblemCodes()) {
+		t.Fatalf("reusable error code catalog = %v", got)
 	}
 }
 

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
@@ -103,6 +104,73 @@ func TestRootCommandDefinesProfileOverride(t *testing.T) {
 	statelessFlag := cmd.PersistentFlags().Lookup("stateless")
 	if statelessFlag == nil || !strings.Contains(statelessFlag.Usage, "without profiles") || !strings.Contains(statelessFlag.Usage, env.GoogleAccessToken) {
 		t.Fatalf("stateless flag = %#v", statelessFlag)
+	}
+}
+
+func TestQuotaProjectManagementCommandsProduceMachineEnvelopes(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.GoogleCloudQuotaProject, "")
+	if err := config.SetProfileOverride(""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = config.SetProfileOverride("") })
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	authEntry := config.DefaultOAuthAuthEntry("main", "Main")
+	authEntry.QuotaProjectID = "auth-billing-project"
+	if err := config.SaveAuth(&config.AuthFile{
+		Version: config.AuthConfigVersion, DefaultAuthID: "main",
+		Auth: []config.AuthEntry{authEntry},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", AuthID: "main"}}, time.Now().UTC()); err != nil {
+		t.Fatal(err)
+	}
+	svc, err := core.NewService(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, args := range [][]string{
+		{"auth", "quota-project", "show", "main"},
+		{"auth", "quota-project", "set", "main", "new-auth-billing-project"},
+		{"project", "quota-project", "set", "demo", "project-billing-project"},
+		{"project", "quota-project", "show", "demo"},
+		{"project", "quota-project", "unset", "demo"},
+		{"auth", "quota-project", "unset", "main"},
+	} {
+		cmd := newRootCommandWithOfflineInit(svc, "1.2.3", "abc123", "2026-06-14", func(context.Context, bool) {})
+		var captured bytes.Buffer
+		cmd.SetOut(&captured)
+		cmd.SetErr(&bytes.Buffer{})
+		cmd.SilenceErrors = true
+		cmd.SilenceUsage = true
+		cmd.SetArgs(append([]string{"--json"}, args...))
+		executed, executeErr := cmd.ExecuteC()
+		if executeErr != nil {
+			t.Fatalf("%v: %v", args, executeErr)
+		}
+		envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil)
+		if envelope.Outcome != "success" || envelope.ExitCode != 0 || envelope.Command != strings.Join(args[:3], ".") {
+			t.Fatalf("%v envelope = %#v", args, envelope)
+		}
+	}
+
+	cmd := newRootCommandWithOfflineInit(svc, "1.2.3", "abc123", "2026-06-14", func(context.Context, bool) {})
+	var captured bytes.Buffer
+	cmd.SetOut(&captured)
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SilenceErrors = true
+	cmd.SilenceUsage = true
+	cmd.SetArgs([]string{"--json", "auth", "quota-project", "set", "main", "server@invalid"})
+	executed, executeErr := cmd.ExecuteC()
+	envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), executeErr)
+	if envelope.ExitCode != 2 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "argument.invalid" {
+		t.Fatalf("invalid quota envelope = %#v", envelope)
 	}
 }
 

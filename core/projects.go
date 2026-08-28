@@ -46,6 +46,7 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 		if previous, ok := byID[project.ProjectID]; ok {
 			project.Templates = append([]rctarget.Kind(nil), previous.Templates...)
 			project.PrimaryTemplate = previous.PrimaryTemplate
+			project.QuotaProjectID = previous.QuotaProjectID
 			if onlyAuthID != "" {
 				project.DiscoveredBy = appendUnique(previous.DiscoveredBy, onlyAuthID)
 			}
@@ -103,6 +104,7 @@ func mergeProjects(existing, incoming []config.Project, defaultAuthID string, au
 
 func sameProject(left, right config.Project) bool {
 	authSame := left.AuthID == right.AuthID &&
+		left.QuotaProjectID == right.QuotaProjectID &&
 		left.Disabled == right.Disabled &&
 		strings.Join(left.DiscoveredBy, "\x00") == strings.Join(right.DiscoveredBy, "\x00")
 	if left.ETag != "" && right.ETag != "" {

@@ -91,6 +91,43 @@ func TestAuthAddGCloudAndList(t *testing.T) {
 	}
 }
 
+func TestAuthAddAndManageQuotaProject(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	addCmd := newAddGCloudCommand(svc)
+	if err := addCmd.Flags().Set("quota-project", "billing-project"); err != nil {
+		t.Fatal(err)
+	}
+	if err := addCmd.RunE(addCmd, []string{"main"}); err != nil {
+		t.Fatal(err)
+	}
+
+	show := newQuotaProjectShowCommand(svc)
+	var out bytes.Buffer
+	show.SetOut(&out)
+	if err := show.RunE(show, []string{"main"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "Effective quota project: billing-project") || !strings.Contains(out.String(), "Source: auth") {
+		t.Fatalf("show output = %q", out.String())
+	}
+
+	set := newQuotaProjectSetCommand(svc)
+	if err := set.RunE(set, []string{"main", "other-billing-project"}); err != nil {
+		t.Fatal(err)
+	}
+	unset := newQuotaProjectUnsetCommand(svc)
+	if err := unset.RunE(unset, []string{"main"}); err != nil {
+		t.Fatal(err)
+	}
+	entries, _, err := svc.ListAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].QuotaProjectID != "" {
+		t.Fatalf("entries after unset = %+v", entries)
+	}
+}
+
 func TestAuthPathCommand(t *testing.T) {
 	svc := setupAuthCommandTest(t)
 	if _, err := svc.AddGCloudAuth("main", "Main"); err != nil {

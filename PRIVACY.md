@@ -1,6 +1,6 @@
 # Privacy policy for fbrcm
 
-Last updated: August 25, 2026
+Last updated: August 28, 2026
 
 fbrcm is a local command-line and terminal application for managing Firebase
 Remote Config. It has no developer-operated backend, does not include telemetry
@@ -27,7 +27,10 @@ fbrcm accesses:
 - Google Cloud project metadata available to the authenticated identity,
   including project names, IDs, numbers, lifecycle state, ETags, and update
   times;
-- the result of permission checks for the project operations fbrcm needs;
+- quota project IDs configured by the user or obtained from Google Cloud CLI
+  Application Default Credentials, and the result of checking whether the
+  authenticated identity can use the selected quota project;
+- the result of other permission checks for the project operations fbrcm needs;
 - Firebase Remote Config client and server templates, including parameters,
   values, descriptions, groups, conditions, ETags, and version metadata;
 - Remote Config defaults and version history; and
@@ -51,6 +54,10 @@ Credentials also require `cloud-platform` during user authorization. A
 [public Firebase discussion](https://groups.google.com/g/firebase-talk/c/a8H9GcGiYuA)
 reports the same narrower-scope problem.
 
+fbrcm also uses the Google Cloud Resource Manager API to discover projects and
+check required permissions. Those operations require a compatible Google Cloud
+scope and are not covered by a Firebase-only scope.
+
 As a result, `cloud-platform` is currently the only working scope for fbrcm's
 interactive OAuth and user Application Default Credentials flows. fbrcm will
 move to a narrower usable scope if Google makes one available for these flows.
@@ -58,9 +65,10 @@ move to a narrower usable scope if Google makes one available for these flows.
 ## How fbrcm uses Google data
 
 Google data is used only to provide user-invoked fbrcm features. These features
-include discovering and displaying projects; reading, searching, comparing,
-and exporting Remote Config data; creating local caches and drafts; validating
-candidate templates; and applying changes selected by the user.
+include selecting a quota project for Google API requests; discovering and
+displaying projects; reading, searching, comparing, and exporting Remote Config
+data; creating local caches and drafts; validating candidate templates; and
+applying changes selected by the user.
 
 Depending on the command, an explicit user action can publish or restore a
 Remote Config template, roll back a version, or delete a selected Remote Config
@@ -87,7 +95,8 @@ Stored data can include:
 - OAuth client configuration and service-account key files in the profile
   configuration directory;
 - OAuth access and refresh tokens in a profile cache file named `token.json`;
-- the local authentication registry and project metadata;
+- the local authentication registry and project metadata, including quota project
+  IDs explicitly configured for an authentication identity or project;
 - complete Remote Config template caches and historical version snapshots; and
 - complete base and edited Remote Config templates in local drafts.
 
@@ -99,10 +108,16 @@ them through Google's authentication library and does not copy them into an
 fbrcm credential file. A token supplied to stateless mode through
 `FBRCM_GOOGLE_ACCESS_TOKEN` is used in memory and is not persisted by fbrcm.
 
-Command output and files written to an explicitly selected export destination
-may contain Google data. Terminal software, shell history, CI systems, backups,
-or other programs chosen by the user may retain that output independently of
-fbrcm.
+A quota project ID selected through `GOOGLE_CLOUD_QUOTA_PROJECT` or read from
+Google Cloud CLI Application Default Credentials is used at runtime and is not
+copied into fbrcm configuration unless the user explicitly saves that ID as an
+authentication identity or project setting.
+
+Command output, HTTP logs, and files written to an explicitly selected export
+destination may contain Google data. This can include configured or effective
+quota project IDs and information about how a quota project was selected.
+Terminal software, shell history, CI systems, backups, or other programs chosen
+by the user may retain that output independently of fbrcm.
 
 ## Network transfers and sharing
 
@@ -113,13 +128,22 @@ transfers are handled under Google's own terms and privacy policies. fbrcm does
 not sell Google user data, share it with advertisers or data brokers, or
 transfer it to the fbrcm developer or a developer-operated service.
 
-Users can configure publication hooks. For each publication, fbrcm provides
-those local commands with temporary files containing the current, candidate,
-and, after publication, published Remote Config templates. A hook can transmit
-that data wherever its author programmed it to do so. Repository hooks require
-explicit trust, but global hooks are controlled by the user and are trusted
-automatically. Users are responsible for the privacy behavior of hooks,
-proxies, scripts, pipes, and other programs they configure around fbrcm.
+Authenticated requests to the Google Cloud Resource Manager and Firebase Remote
+Config APIs include the effective quota project ID in the
+`X-Goog-User-Project` request header. Google uses this project as the consumer
+for request quota and billing. fbrcm may also ask Google Cloud Resource Manager
+whether the authenticated identity has the `serviceusage.services.use`
+permission on that quota project.
+
+fbrcm does not transmit Google user data through publication hooks by default.
+Hooks are opt-in, disabled unless configured, and execute only local commands
+supplied or explicitly trusted by the user. When a hook is configured, fbrcm
+provides it with temporary files containing the current, candidate, and, after
+publication, published Remote Config templates. A hook can transmit that data
+wherever its author programmed it to do so. Repository hooks require explicit
+trust, but global hooks are controlled by the user and are trusted automatically.
+Users are responsible for the privacy behavior of hooks, proxies, scripts,
+pipes, and other programs they configure around fbrcm.
 
 ## Security
 

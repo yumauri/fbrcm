@@ -22,7 +22,7 @@ func TestListProjectsAndGetProject(t *testing.T) {
 				return nil, io.EOF
 			}
 		}),
-	})
+	}).WithQuotaProjectOverride("test-quota-project")
 
 	projects, err := svc.ListProjects(context.Background())
 	if err != nil {
@@ -53,7 +53,7 @@ func TestListProjectsSkipsDeleteRequested(t *testing.T) {
 			}
 			return nil, io.EOF
 		}),
-	})
+	}).WithQuotaProjectOverride("test-quota-project")
 
 	projects, err := svc.ListProjects(context.Background())
 	if err != nil {

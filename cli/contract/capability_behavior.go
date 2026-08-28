@@ -170,6 +170,30 @@ func projectsListRead() capabilityBehavior {
 	)
 }
 
+func quotaProjectResolutionBehavior(base capabilityBehavior) capabilityBehavior {
+	when := []BehaviorConditionClause{conditionClause(
+		predicate("runtime_state", "quota_project_credentials", "requires_network", nil),
+	)}
+	base.level = 2
+	base.network = "conditional"
+	base.networkWhen = when
+	base = base.withEffect("authentication_remote_access", when...)
+	return base
+}
+
+func quotaProjectShowBehavior() capabilityBehavior {
+	return quotaProjectResolutionBehavior(behavior(0, "none"))
+}
+
+func quotaProjectCredentialResolutionCommand(id string) bool {
+	switch id {
+	case "auth.quota-project.show", "auth.quota-project.unset", "project.quota-project.show", "project.quota-project.unset":
+		return true
+	default:
+		return false
+	}
+}
+
 func stdinRemoteMutation() capabilityBehavior {
 	return remoteMutation("conditional", []BehaviorConditionClause{conditionClause(predicate("stdin", "document", "absent", nil))}, true)
 }
@@ -368,7 +392,7 @@ func withProjectRegistrySync(b capabilityBehavior) capabilityBehavior {
 // persists credentials; auth login declares its more specific behavior in the
 // command manifest below.
 func withMachineAuthenticationEffects(id string, b capabilityBehavior) capabilityBehavior {
-	if b.network == "none" || id == "auth.login" || id == "theme.import" {
+	if b.network == "none" || id == "auth.login" || id == "theme.import" || quotaProjectCredentialResolutionCommand(id) {
 		return b
 	}
 	b = b.withEffect("authentication_remote_access", conditionClause(
@@ -490,37 +514,41 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"completion.powershell": behavior(0, "none"),
 	"completion.zsh":        behavior(0, "none"),
 
-	"auth.list":              behavior(0, "none"),
-	"auth.path":              behavior(0, "none"),
-	"cache.list":             behavior(0, "none"),
-	"cache.path":             behavior(0, "none"),
-	"config.path":            behavior(0, "none"),
-	"config.show":            behavior(0, "none"),
-	"config.validate":        behavior(0, "none"),
-	"draft.list":             behavior(0, "none"),
-	"draft.path":             behavior(0, "none"),
-	"hooks.fingerprint":      behavior(0, "none"),
-	"hooks.status":           behavior(0, "none"),
-	"profile":                behavior(0, "none"),
-	"profile.list":           behavior(0, "none"),
-	"profile.path":           behavior(0, "none"),
-	"theme":                  behavior(0, "none"),
-	"theme.list":             behavior(0, "none"),
-	"theme.path":             behavior(0, "none"),
-	"project.templates.show": behavior(0, "none"),
-	"projects.aliases.list":  behavior(0, "none"),
-	"projects.path":          behavior(0, "none"),
+	"auth.list":                  behavior(0, "none"),
+	"auth.path":                  behavior(0, "none"),
+	"auth.quota-project.show":    quotaProjectShowBehavior(),
+	"cache.list":                 behavior(0, "none"),
+	"cache.path":                 behavior(0, "none"),
+	"config.path":                behavior(0, "none"),
+	"config.show":                behavior(0, "none"),
+	"config.validate":            behavior(0, "none"),
+	"draft.list":                 behavior(0, "none"),
+	"draft.path":                 behavior(0, "none"),
+	"hooks.fingerprint":          behavior(0, "none"),
+	"hooks.status":               behavior(0, "none"),
+	"profile":                    behavior(0, "none"),
+	"profile.list":               behavior(0, "none"),
+	"profile.path":               behavior(0, "none"),
+	"theme":                      behavior(0, "none"),
+	"theme.list":                 behavior(0, "none"),
+	"theme.path":                 behavior(0, "none"),
+	"project.templates.show":     behavior(0, "none"),
+	"project.quota-project.show": quotaProjectShowBehavior(),
+	"projects.aliases.list":      behavior(0, "none"),
+	"projects.path":              behavior(0, "none"),
 
 	"auth.add.gcloud": destructive(authReplacement(nonIdempotent(localWrite())), "replaces an existing auth identity and may remove its credential files"),
 	"auth.add.oauth": withInteraction(withStdin(destructive(credentialFileWrite(authReplacement(nonIdempotent(localWrite()))), "replaces an existing auth identity and may remove its cached token or credential files")), "optional", "missing_input_returns_interaction",
 		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "from", "equals", ""))),
 	"auth.add.service-account": withInteraction(withStdin(destructive(credentialFileWrite(authReplacement(nonIdempotent(localWrite()))), "replaces an existing auth identity and may remove its credential files")), "optional", "missing_input_returns_interaction",
 		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "from", "equals", ""))),
-	"auth.bind":    localWrite(),
-	"auth.delete":  destructive(localMutationEffects("local_state_write", "local_file_delete"), "removes stored authentication material"),
-	"cache.clear":  destructive(localMutationEffects("local_cache_delete"), "removes cached Remote Config data"),
-	"config.reset": destructive(localWrite(), "removes persisted configuration values"),
-	"config.set":   localWrite(),
+	"auth.bind":                localWrite(),
+	"auth.quota-project.set":   localWrite(),
+	"auth.quota-project.unset": quotaProjectResolutionBehavior(localWrite()),
+	"auth.delete":              destructive(localMutationEffects("local_state_write", "local_file_delete"), "removes stored authentication material"),
+	"cache.clear":              destructive(localMutationEffects("local_cache_delete"), "removes cached Remote Config data"),
+	"config.reset":             destructive(localWrite(), "removes persisted configuration values"),
+	"config.set":               localWrite(),
 	"draft.change-note": {
 		level: 1,
 		effects: []effectBehavior{effect("local_draft_write",
@@ -566,12 +594,14 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		},
 	}), "optional", "missing_input_returns_interaction",
 		conditionClause(predicate("argument", "source", "absent", nil), predicate("stdin", "document", "absent", nil))),
-	"project.templates.set":   localWrite(),
-	"projects.aliases.import": destructive(previewableLocalWrite(), "--conflict overwrite may replace persisted project aliases"),
-	"projects.aliases.remove": destructive(localWrite(), "removes persisted project aliases"),
-	"projects.aliases.set":    destructive(localWrite(), "replaces an existing project alias when the mapping changes"),
-	"projects.forget":         destructive(localMutationEffects("local_state_write", "local_cache_delete", "local_draft_delete"), "removes projects from the local registry and deletes their cached templates, version snapshots, and drafts"),
-	"projects.reset":          destructive(localMutationEffects("local_state_write", "local_file_delete"), "replaces the local project registry"),
+	"project.templates.set":       localWrite(),
+	"project.quota-project.set":   localWrite(),
+	"project.quota-project.unset": quotaProjectResolutionBehavior(localWrite()),
+	"projects.aliases.import":     destructive(previewableLocalWrite(), "--conflict overwrite may replace persisted project aliases"),
+	"projects.aliases.remove":     destructive(localWrite(), "removes persisted project aliases"),
+	"projects.aliases.set":        destructive(localWrite(), "replaces an existing project alias when the mapping changes"),
+	"projects.forget":             destructive(localMutationEffects("local_state_write", "local_cache_delete", "local_draft_delete"), "removes projects from the local registry and deletes their cached templates, version snapshots, and drafts"),
+	"projects.reset":              destructive(localMutationEffects("local_state_write", "local_file_delete"), "replaces the local project registry"),
 
 	"draft.show": withInteraction(behavior(1, "none", effect("local_file_write",
 		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "optional", "destination_conflict_returns_interaction",

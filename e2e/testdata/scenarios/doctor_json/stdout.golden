@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "count": 11,
+    "count": 13,
     "items": [
       {
         "profile": "default",
@@ -97,6 +97,26 @@
         "status": "pass",
         "check": "Network",
         "detail": "online"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
+        "offline": false,
+        "id": "quota-project:e2e",
+        "status": "pass",
+        "check": "Quota project (e2e)",
+        "detail": "northstar-wallet (environment)"
+      },
+      {
+        "profile": "default",
+        "config_dir": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+        "cache_dir": "<E2E_RUN_ROOT>/environment/cache/profiles/default",
+        "offline": false,
+        "id": "quota-permission:e2e",
+        "status": "pass",
+        "check": "Quota-project permission (e2e)",
+        "detail": "serviceusage.services.use on northstar-wallet"
       },
       {
         "profile": "default",

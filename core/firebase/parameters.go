@@ -239,7 +239,9 @@ func (s *Service) GetRemoteConfig(ctx context.Context, projectID string, version
 		logger.Error("create remote config request failed", "project_id", projectID, "err", err)
 		return nil, "", fmt.Errorf("create remote config request: %w", err)
 	}
-	s.setQuotaProject(req, targetProjectID)
+	if _, err := s.setQuotaProject(req, targetProjectID); err != nil {
+		return nil, "", fmt.Errorf("select remote config quota project: %w", err)
+	}
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)
@@ -311,7 +313,9 @@ func (s *Service) updateRemoteConfig(ctx context.Context, projectID string, raw 
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.Header.Set("If-Match", strings.TrimSpace(etag))
-	s.setQuotaProject(req, targetProjectID)
+	if _, err := s.setQuotaProject(req, targetProjectID); err != nil {
+		return nil, "", fmt.Errorf("select remote config update quota project: %w", err)
+	}
 	req.GetBody = func() (io.ReadCloser, error) {
 		return io.NopCloser(bytes.NewReader(body)), nil
 	}
@@ -399,7 +403,9 @@ func (s *Service) ListRemoteConfigVersions(ctx context.Context, projectID string
 		logger.Error("create remote config version request failed", "project_id", projectID, "err", err)
 		return RemoteConfigVersionsPage{}, fmt.Errorf("create remote config version request: %w", err)
 	}
-	s.setQuotaProject(req, targetProjectID)
+	if _, err := s.setQuotaProject(req, targetProjectID); err != nil {
+		return RemoteConfigVersionsPage{}, fmt.Errorf("select version-list quota project: %w", err)
+	}
 	logHTTPRequest(logger.With("project_id", projectID), req)
 
 	resp, err := s.httpClient.Do(req)
@@ -449,7 +455,9 @@ func (s *Service) RollbackRemoteConfig(ctx context.Context, projectID, versionNu
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(body)), nil }
-	s.setQuotaProject(req, targetProjectID)
+	if _, err := s.setQuotaProject(req, targetProjectID); err != nil {
+		return nil, "", fmt.Errorf("select rollback quota project: %w", err)
+	}
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("rollback remote config: %w", err)

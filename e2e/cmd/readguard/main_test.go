@@ -18,6 +18,24 @@ func TestValidateAllowsReadsToConfiguredHost(t *testing.T) {
 	}
 }
 
+func TestValidateRequiresConfiguredQuotaProjectHeader(t *testing.T) {
+	method := "GET"
+	destination := "firebaseremoteconfig.googleapis.com:443"
+	path := "/v1/projects/demo/remoteConfig"
+	value := payload{}
+	value.Request.Method = &method
+	value.Request.Destination = &destination
+	value.Request.Path = &path
+	allowed := []allowedRequest{{Method: method, Host: "firebaseremoteconfig.googleapis.com", Path: path, QuotaProjectID: "billing-project"}}
+	if err := validate(value, allowed); err == nil {
+		t.Fatal("validate accepted a request without X-Goog-User-Project")
+	}
+	value.Request.Headers = map[string][]string{"x-goog-user-project": {"billing-project"}}
+	if err := validate(value, allowed); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestValidateBlocksUnexpectedMethod(t *testing.T) {
 	method := "PUT"
 	destination := "firebase.example"

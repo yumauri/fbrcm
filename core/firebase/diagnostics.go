@@ -199,7 +199,9 @@ func (s *Service) TestProjectPermissions(ctx context.Context, projectID string, 
 		return nil, fmt.Errorf("create permission request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	s.setQuotaProject(req, projectID)
+	if _, err := s.setQuotaProject(req, projectID); err != nil {
+		return nil, fmt.Errorf("select permission-check quota project: %w", err)
+	}
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("test Firebase permissions: %w", err)

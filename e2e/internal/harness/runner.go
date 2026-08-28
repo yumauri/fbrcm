@@ -339,6 +339,9 @@ func validateJournal(journal Journal, expected []HTTPExpectation, capture, unord
 		if want.Query != "" && entry.Request.Query != want.Query {
 			return fmt.Errorf("request %d query = %q, want %q", index+1, entry.Request.Query, want.Query)
 		}
+		if got := headerValue(entry.Request.Headers, "X-Goog-User-Project"); got != want.QuotaProjectID {
+			return fmt.Errorf("request %d X-Goog-User-Project = %q, want %q", index+1, got, want.QuotaProjectID)
+		}
 		if entry.Response.Status != want.Status {
 			return fmt.Errorf("request %d status = %d, want %d", index+1, entry.Response.Status, want.Status)
 		}
@@ -353,7 +356,20 @@ func journalEntryMatches(entry JournalEntry, want HTTPExpectation, wantMode stri
 	if entry.Request.Destination != want.Host && entry.Request.Destination != want.Host+":443" {
 		return false
 	}
-	return want.Query == "" || entry.Request.Query == want.Query
+	if want.Query != "" && entry.Request.Query != want.Query {
+		return false
+	}
+	return headerValue(entry.Request.Headers, "X-Goog-User-Project") == want.QuotaProjectID
+}
+
+func headerValue(headers map[string][]string, name string) string {
+	for key, values := range headers {
+		if !strings.EqualFold(key, name) || len(values) == 0 {
+			continue
+		}
+		return strings.TrimSpace(values[0])
+	}
+	return ""
 }
 
 func emptySimulation() []byte {

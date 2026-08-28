@@ -10,18 +10,20 @@ import (
 
 type payload struct {
 	Request struct {
-		Method      *string `json:"method"`
-		Destination *string `json:"destination"`
-		Path        *string `json:"path"`
-		Query       *string `json:"query"`
+		Method      *string             `json:"method"`
+		Destination *string             `json:"destination"`
+		Path        *string             `json:"path"`
+		Query       *string             `json:"query"`
+		Headers     map[string][]string `json:"headers"`
 	} `json:"request"`
 }
 
 type allowedRequest struct {
-	Method string `json:"method"`
-	Host   string `json:"host"`
-	Path   string `json:"path"`
-	Query  string `json:"query,omitempty"`
+	Method         string `json:"method"`
+	Host           string `json:"host"`
+	Path           string `json:"path"`
+	Query          string `json:"query,omitempty"`
+	QuotaProjectID string `json:"quota_project_id,omitempty"`
 }
 
 func main() {
@@ -54,11 +56,21 @@ func validate(value payload, allowed []allowedRequest) error {
 		if method == request.Method &&
 			(destination == request.Host || destination == request.Host+":443") &&
 			path == request.Path &&
-			(request.Query == "" || query == request.Query) {
+			(request.Query == "" || query == request.Query) &&
+			headerValue(value.Request.Headers, "X-Goog-User-Project") == request.QuotaProjectID {
 			return nil
 		}
 	}
 	return fmt.Errorf("E2E proxy blocked unexpected request %s %s%s", method, destination, path)
+}
+
+func headerValue(headers map[string][]string, name string) string {
+	for key, values := range headers {
+		if strings.EqualFold(key, name) && len(values) > 0 {
+			return strings.TrimSpace(values[0])
+		}
+	}
+	return ""
 }
 
 func decodeAllowedRequests(raw string) ([]allowedRequest, error) {

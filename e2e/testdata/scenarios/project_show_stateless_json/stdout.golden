@@ -23,6 +23,8 @@
     "state": "ACTIVE",
     "etag": "W/\"1ea994f67032507a\"",
     "auth_id": "",
+    "effective_quota_project_id": "northstar-wallet",
+    "quota_project_source": "environment",
     "disabled": false,
     "templates": [
       "client"

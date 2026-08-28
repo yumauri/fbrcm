@@ -566,6 +566,12 @@ func applyCommandResponseSemantics(commandID string, typeOf reflect.Type, schema
 	case "hooks.trust":
 		properties["local_hooks"] = map[string]any{"const": true}
 		properties["trusted"] = map[string]any{"const": true}
+	case "auth.quota-project.show", "project.quota-project.show":
+		properties["status"] = map[string]any{"const": "shown"}
+	case "auth.quota-project.set", "project.quota-project.set":
+		properties["status"] = map[string]any{"enum": []string{"set", "unchanged"}}
+	case "auth.quota-project.unset", "project.quota-project.unset":
+		properties["status"] = map[string]any{"enum": []string{"unset", "unchanged"}}
 	}
 }
 

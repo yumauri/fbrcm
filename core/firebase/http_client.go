@@ -47,6 +47,9 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		logDryRun(logger, req)
 		return dryRunResponse(req)
 	}
+	if requiresQuotaProjectHeader(req) && strings.TrimSpace(req.Header.Get("X-Goog-User-Project")) == "" {
+		return nil, &QuotaProjectInvariantError{Method: req.Method, Host: req.URL.Hostname()}
+	}
 
 	policy := t.controller.Policy()
 	attempts := policy.Retry.MaxAttempts
@@ -100,6 +103,18 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 
 	return nil, fmt.Errorf("request retries exhausted")
+}
+
+func requiresQuotaProjectHeader(req *http.Request) bool {
+	if req == nil || req.URL == nil {
+		return false
+	}
+	switch strings.ToLower(req.URL.Hostname()) {
+	case "cloudresourcemanager.googleapis.com", "firebaseremoteconfig.googleapis.com":
+		return true
+	default:
+		return false
+	}
 }
 
 func shouldDryRun(req *http.Request) bool {

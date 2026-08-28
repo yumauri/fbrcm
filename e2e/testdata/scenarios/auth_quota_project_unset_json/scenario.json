@@ -1,0 +1,13 @@
+{
+  "name": "auth_quota_project_unset_json",
+  "command_id": "auth.quota-project.unset",
+  "args": ["auth", "quota-project", "unset", "e2e", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{
+    "root": "config",
+    "path": "profiles/default/auth-config.json"
+  }],
+  "json_output": true,
+  "fixture": "quota_projects"
+}

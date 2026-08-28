@@ -29,20 +29,29 @@ func main() {
 		fmt.Fprintln(os.Stderr, "schemagen takes no arguments")
 		os.Exit(2)
 	}
-	root := app.NewRootForContract("schema")
-	index := contract.Capabilities(root)
-	detailed := contract.DetailedCapabilities(root)
 	stageRoot, err := os.MkdirTemp(".", ".fbrcm-schemagen-")
 	if err != nil {
 		panic(err)
 	}
 	defer func() { _ = os.RemoveAll(stageRoot) }()
+	stageGeneratedContract(stageRoot)
+	if err := publishGeneratedContract(stageRoot); err != nil {
+		panic(err)
+	}
+}
+
+func stageGeneratedContract(stageRoot string) {
+	root := app.NewRootForContract("schema")
+	index := contract.Capabilities(root)
+	detailed := contract.DetailedCapabilities(root)
 	goldenDir := filepath.Join(stageRoot, "cli", "app", "testdata")
 	major, _, _ := strings.Cut(contract.Version, ".")
 	goldenName := "contract_v" + major + "_capabilities.golden.json"
 	detailedGoldenName := "contract_v" + major + "_capabilities_detailed.golden.json"
+	auditEvidenceGoldenName := "contract_v" + major + "_audit_evidence.golden.json"
 	write(goldenDir, goldenName, index)
 	write(goldenDir, detailedGoldenName, detailed)
+	write(goldenDir, auditEvidenceGoldenName, buildAuditEvidenceMatrix(root, detailed))
 	outDir := filepath.Join(stageRoot, "schemas", "cli", contract.Version)
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		panic(err)
@@ -91,10 +100,7 @@ func main() {
 		writeSchema(base+".input.schema.json", inputSchema(capability, command))
 		writeSchema(base+".response.schema.json", responseSchema(capability, dataSchema, successDataSchema))
 	}
-	enforceContractLock(stageRoot, outDir, filepath.Join(goldenDir, goldenName), filepath.Join(goldenDir, detailedGoldenName))
-	if err := publishGeneratedContract(stageRoot); err != nil {
-		panic(err)
-	}
+	enforceContractLock(stageRoot, outDir, filepath.Join(goldenDir, goldenName), filepath.Join(goldenDir, detailedGoldenName), filepath.Join(goldenDir, auditEvidenceGoldenName))
 }
 
 type contractLock struct {
@@ -185,6 +191,7 @@ func publishGeneratedContract(stageRoot string) error {
 		{staged: filepath.Join(stageRoot, "schemas", "cli", contract.Version), target: filepath.Join("schemas", "cli", contract.Version)},
 		{staged: filepath.Join(stageRoot, "cli", "app", "testdata", "contract_v"+major+"_capabilities.golden.json"), target: filepath.Join("cli", "app", "testdata", "contract_v"+major+"_capabilities.golden.json")},
 		{staged: filepath.Join(stageRoot, "cli", "app", "testdata", "contract_v"+major+"_capabilities_detailed.golden.json"), target: filepath.Join("cli", "app", "testdata", "contract_v"+major+"_capabilities_detailed.golden.json")},
+		{staged: filepath.Join(stageRoot, "cli", "app", "testdata", "contract_v"+major+"_audit_evidence.golden.json"), target: filepath.Join("cli", "app", "testdata", "contract_v"+major+"_audit_evidence.golden.json")},
 		{staged: filepath.Join(stageRoot, "schemas", "cli", "contract.lock.json"), target: filepath.Join("schemas", "cli", "contract.lock.json")},
 	}
 	return publishTransaction(items)
@@ -504,7 +511,7 @@ func serviceAccountCredentialSchema() map[string]any {
 }
 
 func envelopeSchema() map[string]any {
-	problem := problemObjectSchema("#/$defs/error")
+	problem := problemObjectSchema("#/$defs/error", nil)
 	return map[string]any{
 		"$schema": draft, "$id": contract.EnvelopeSchemaID(), "type": "object", "additionalProperties": false,
 		"$defs":    map[string]any{"error": problem},
@@ -592,19 +599,25 @@ func failureCategoryStatusConstraints() []any {
 }
 
 func errorSchema() map[string]any {
-	result := problemObjectSchema("#")
+	result := problemObjectSchema("#", contract.KnownProblemCodes())
 	result["$schema"] = draft
 	result["$id"] = contract.ErrorSchemaID()
 	return result
 }
 
-func problemObjectSchema(selfRef string) map[string]any {
+func problemObjectSchema(selfRef string, codes []string) map[string]any {
+	code := map[string]any{"type": "string", "pattern": `^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$`}
+	if len(codes) > 0 {
+		code["enum"] = codes
+	} else {
+		code["x-fbrcm-open-extension"] = "Nested batch target failures may carry any syntactically valid future problem code; current top-level command codes are closed by each command response schema."
+	}
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
 		"required":             []string{"code", "category", "message", "retryable", "target", "stage", "details", "remediation"},
 		"properties": map[string]any{
-			"code":        map[string]any{"type": "string", "pattern": `^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$`, "enum": contract.KnownProblemCodes()},
+			"code":        code,
 			"category":    map[string]any{"enum": []string{"argument", "configuration", "profile", "auth", "permission", "not_found", "conflict", "validation", "timeout", "interaction", "unavailable", "partial_success", "io", "hook", "canceled", "internal"}},
 			"message":     map[string]any{"type": "string", "maxLength": 4097},
 			"retryable":   map[string]any{"type": "boolean"},
@@ -619,7 +632,7 @@ func problemObjectSchema(selfRef string) map[string]any {
 
 func problemCodeConstraints() []any {
 	byCategory := map[string][]string{
-		"argument":        {"argument.invalid", "argument.unknown_command", "auth.id_invalid", "command.not_executable", "condition.ambiguous", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
+		"argument":        {"argument.invalid", "argument.unknown_command", "auth.id_invalid", "command.not_executable", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
 		"configuration":   {"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "theme.invalid"},
 		"profile":         {"profile.invalid"},
 		"auth":            {"auth.configuration_invalid", "auth.credentials_invalid", "auth.setup_required"},
@@ -663,7 +676,7 @@ func problemCodeConstraints() []any {
 		{[]string{"hook.failed"}, []string{"hook"}},
 		{[]string{"firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout"}, []string{"remote_api"}},
 		{[]string{"resource.not_found"}, []string{"remote_api", "selection"}},
-		{[]string{"condition.ambiguous", "condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "theme.not_found", "version.not_found"}, []string{"selection"}},
+		{[]string{"condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "theme.not_found", "version.not_found"}, []string{"selection"}},
 		{[]string{"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "profile.invalid", "theme.invalid", "condition.invalid", "remote_config.invalid", "remote_config.validation_failed", "stdin.remote_config.invalid"}, []string{"validation"}},
 		{[]string{"auth.credentials_invalid"}, []string{"remote_api", "validation"}},
 		{[]string{"auth.configuration_invalid", "auth.id_invalid", "auth.not_found", "auth.setup_required"}, []string{"auth"}},
@@ -699,7 +712,7 @@ func problemCodeConstraints() []any {
 		"if": map[string]any{
 			"properties": map[string]any{"code": map[string]any{"enum": []string{
 				"argument.invalid", "argument.unknown_command", "auth.configuration_invalid", "auth.credentials_invalid", "auth.id_invalid", "auth.not_found", "auth.setup_required",
-				"command.canceled", "command.not_executable", "command.not_found", "condition.ambiguous", "condition.invalid", "condition.not_found",
+				"command.canceled", "command.not_executable", "command.not_found", "condition.invalid", "condition.not_found",
 				"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "diagnostic.failed",
 				"draft.ambiguous", "draft.exists", "draft.not_found", "expression.invalid", "file.io_failed", "filesystem.permission_denied", "firebase.permission_denied", "firebase.request_failed",
 				"group.not_found", "hooks.not_configured", "interaction.required", "internal.contract_violation", "internal.unclassified", "parameter.ambiguous", "parameter.exists", "parameter.not_found",
@@ -760,7 +773,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}}, "required": []string{"source"}},
-				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication", "authentication", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
+				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication", "authentication", "quota_project_credentials", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "context"}}, "required": []string{"source"}},
@@ -780,6 +793,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		{"import_merge_resolution", "required"},
 		{"draft_change_note", "persisted"},
 		{"diagnostic_identity", "available"},
+		{"quota_project_credentials", "requires_network"},
 	} {
 		rules = append(rules, map[string]any{
 			"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}, "name": map[string]any{"const": state.name}}, "required": []string{"source", "name"}},
@@ -883,12 +897,12 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		"x-fbrcm-runtime-state-semantics": runtimeStatePredicateSemantics(),
 		"x-fbrcm-side-effect-semantics":   sideEffectSemantics(),
 		"oneOf":                           publishedRecords,
-		"required":                        []string{"id", "path", "summary", "arguments", "flags", "invocation_schema", "stdin_schema", "response_schema", "error_schema", "side_effect_level", "side_effects", "side_effect_when", "network_access", "network_when", "destructive", "destructive_when", "destructive_reasons", "idempotency", "idempotency_when", "supports", "stdin_modes", "interaction", "interaction_when"},
+		"required":                        []string{"id", "path", "summary", "arguments", "flags", "invocation_schema", "stdin_schema", "response_schema", "error_schema", "problem_codes", "side_effect_level", "side_effects", "side_effect_when", "network_access", "network_when", "destructive", "destructive_when", "destructive_reasons", "idempotency", "idempotency_when", "supports", "stdin_modes", "interaction", "interaction_when"},
 		"properties": map[string]any{
 			"id": map[string]any{"type": "string", "pattern": `^(?:root|[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*)$`}, "path": map[string]any{"type": "array", "items": map[string]any{"type": "string", "pattern": `^[a-z][a-z0-9-]*$`}}, "summary": map[string]any{"type": "string"},
 			"arguments":         map[string]any{"type": "array", "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"name", "required", "repeated", "schema"}, "properties": map[string]any{"name": map[string]any{"type": "string"}, "required": map[string]any{"type": "boolean"}, "repeated": map[string]any{"type": "boolean"}, "schema": map[string]any{"type": "string"}}}},
 			"flags":             map[string]any{"type": "array", "items": flag},
-			"invocation_schema": map[string]any{"type": "string", "pattern": `^urn:fbrcm:schema:cli:` + regexp.QuoteMeta(contract.Version) + `:command:[a-z0-9.-]+:input$`}, "stdin_schema": map[string]any{"type": []string{"string", "null"}, "pattern": `^urn:fbrcm:schema:cli:` + regexp.QuoteMeta(contract.Version) + `:stdin:[a-z0-9_]+$`}, "response_schema": map[string]any{"type": "string", "pattern": `^urn:fbrcm:schema:cli:` + regexp.QuoteMeta(contract.Version) + `:command:[a-z0-9.-]+:response$`}, "error_schema": map[string]any{"const": contract.ErrorSchemaID()}, "side_effect_level": map[string]any{"type": "integer", "minimum": 0, "maximum": 3}, "side_effects": map[string]any{"type": "array", "uniqueItems": true, "items": effectValue},
+			"invocation_schema": map[string]any{"type": "string", "pattern": `^urn:fbrcm:schema:cli:` + regexp.QuoteMeta(contract.Version) + `:command:[a-z0-9.-]+:input$`}, "stdin_schema": map[string]any{"type": []string{"string", "null"}, "pattern": `^urn:fbrcm:schema:cli:` + regexp.QuoteMeta(contract.Version) + `:stdin:[a-z0-9_]+$`}, "response_schema": map[string]any{"type": "string", "pattern": `^urn:fbrcm:schema:cli:` + regexp.QuoteMeta(contract.Version) + `:command:[a-z0-9.-]+:response$`}, "error_schema": map[string]any{"const": contract.ErrorSchemaID()}, "problem_codes": map[string]any{"type": "array", "minItems": 1, "uniqueItems": true, "items": map[string]any{"enum": contract.KnownProblemCodes()}}, "side_effect_level": map[string]any{"type": "integer", "minimum": 0, "maximum": 3}, "side_effects": map[string]any{"type": "array", "uniqueItems": true, "items": effectValue},
 			"side_effect_when": map[string]any{"type": "array", "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"effect", "when"}, "properties": map[string]any{"effect": effectValue, "when": conditionClauses}}},
 			"network_access":   map[string]any{"enum": []string{"none", "conditional", "required"}}, "network_when": conditionClauses,
 			"destructive": map[string]any{"type": "boolean"}, "destructive_when": conditionClauses, "destructive_reasons": stringArray, "idempotency": map[string]any{"enum": []string{"yes", "conditional", "no"}},
@@ -964,6 +978,7 @@ func runtimeStatePredicateSemantics() []any {
 		definition("diagnostic_cache_probe", "write_succeeded", "Doctor successfully created its temporary cache probe file."),
 		definition("diagnostic_cache_probe", "delete_succeeded", "Doctor successfully removed the temporary cache probe file it created."),
 		definition("diagnostic_identity", "available", "Doctor resolved a locally usable configured identity with which it can attempt its Firebase diagnostic read."),
+		definition("quota_project_credentials", "requires_network", "Resolving a gcloud identity's ADC quota_project_id may need to contact the metadata service because no higher-precedence environment, project, or auth quota project is configured."),
 		definition("theme_source", "requires_network", "The theme import source uses an HTTP or HTTPS URL and therefore requires a network download."),
 		definition("theme_source", "is_directory", "The selected theme import source is a directory batch, so repeated imports preserve existing destinations and skip them with warnings."),
 		definition("theme_source", "is_single", "The selected theme import source is one file, URL, or TOML stdin document, so an existing destination makes a repeated import fail."),
@@ -1643,6 +1658,9 @@ func argumentSchema(commandID, name string) map[string]any {
 		schema["pattern"] = `.*\S.*`
 	}
 	if commandID == "projects.aliases.set" && name == "project_id" {
+		return map[string]any{"$ref": "#/$defs/physical_project_id"}
+	}
+	if name == "quota_project_id" {
 		return map[string]any{"$ref": "#/$defs/physical_project_id"}
 	}
 	if strings.HasPrefix(commandID, "projects.aliases.") && name == "alias" {
@@ -2626,13 +2644,7 @@ func responseSchema(capability contract.Capability, dataSchema, successDataSchem
 			"then": map[string]any{"properties": map[string]any{"data": map[string]any{"$ref": "#/$defs/success_data"}}},
 		},
 	}
-	reachableOutcomes := []string{"success", "failure"}
-	if slices.Contains(capability.SideEffects, "firebase_remote_write") {
-		reachableOutcomes = []string{"success", "partial_success", "failure"}
-	}
-	if _, impossible := successDataSchema["not"]; impossible && len(successDataSchema) == 1 {
-		reachableOutcomes = []string{"failure"}
-	}
+	reachableOutcomes := commandReachableOutcomes(capability, successDataSchema)
 	constraints = append(constraints, map[string]any{
 		"properties": map[string]any{"outcome": map[string]any{"enum": reachableOutcomes}},
 	})
@@ -2649,6 +2661,17 @@ func responseSchema(capability contract.Capability, dataSchema, successDataSchem
 	}
 	constraints = append(constraints, map[string]any{
 		"properties": map[string]any{"warnings": warningConstraint},
+	})
+	constraints = append(constraints, map[string]any{
+		"properties": map[string]any{
+			"errors": map[string]any{
+				"type": "array",
+				"items": map[string]any{
+					"properties": map[string]any{"code": map[string]any{"enum": capability.ProblemCodes}},
+					"required":   []string{"code"},
+				},
+			},
+		},
 	})
 	if isDiffCommand {
 		for _, result := range []struct {
@@ -2720,6 +2743,17 @@ func responseSchema(capability contract.Capability, dataSchema, successDataSchem
 			},
 		},
 	}
+}
+
+func commandReachableOutcomes(capability contract.Capability, successDataSchema map[string]any) []string {
+	result := []string{"success", "failure"}
+	if slices.Contains(capability.SideEffects, "firebase_remote_write") {
+		result = []string{"success", "partial_success", "failure"}
+	}
+	if _, impossible := successDataSchema["not"]; impossible && len(successDataSchema) == 1 {
+		return []string{"failure"}
+	}
+	return result
 }
 
 func commandWarningCodes(commandID string) []string {
