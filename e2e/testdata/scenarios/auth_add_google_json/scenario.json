@@ -1,0 +1,10 @@
+{
+  "name": "auth_add_google_json",
+  "command_id": "auth.add.google",
+  "args": ["auth", "add", "google", "google-secondary", "--label", "Synthetic built-in Google identity", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{"root": "config", "path": "profiles/default/auth-config.json"}],
+  "json_output": true,
+  "offline": true
+}

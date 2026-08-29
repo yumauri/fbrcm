@@ -48,3 +48,15 @@ jobs:
           args: release --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FBRCM_GOOGLE_OAUTH_CLIENT_ID: ci-test-client-id.apps.googleusercontent.com
+          FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ci-test-client-secret
+
+      - name: Verify snapshot does not expose plaintext OAuth credentials
+        env:
+          FBRCM_GOOGLE_OAUTH_CLIENT_ID: ci-test-client-id.apps.googleusercontent.com
+          FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ci-test-client-secret
+        run: go run ./cmd/genoauthclient -verify dist
+
+      - name: Remove generated OAuth client source
+        if: always()
+        run: go run ./cmd/genoauthclient -clean

@@ -7,6 +7,45 @@
           "if": {
             "properties": {
               "type": {
+                "const": "google"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "required": [
+                    "client_secret_path"
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "required": [
+                    "service_account_path"
+                  ]
+                }
+              }
+            ],
+            "properties": {
+              "token_path": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "token_path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "oauth"
               }
             },
@@ -139,6 +178,7 @@
         },
         "type": {
           "enum": [
+            "google",
             "oauth",
             "service-account",
             "gcloud"

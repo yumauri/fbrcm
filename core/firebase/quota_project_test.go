@@ -168,7 +168,7 @@ func TestCredentialQuotaProjectID(t *testing.T) {
 func TestResolveQuotaProjectIgnoresADCCredentialsOutsideGCloudAuth(t *testing.T) {
 	t.Setenv(coreenv.GoogleCloudQuotaProject, "")
 	t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/that/must/not-be-read.json")
-	for _, authType := range []string{config.AuthTypeOAuth, config.AuthTypeServiceAccount} {
+	for _, authType := range []string{config.AuthTypeGoogle, config.AuthTypeOAuth, config.AuthTypeServiceAccount} {
 		t.Run(authType, func(t *testing.T) {
 			selection, err := ResolveQuotaProjectForAuth(context.Background(), config.AuthEntry{Type: authType}, "", "target-project")
 			if err != nil {

@@ -2,6 +2,7 @@
 completions/
 dist/
 fbrcm
+internal/builtinoauth/credentials_generated.go
 *.exe
 *.exe~
 *.dll

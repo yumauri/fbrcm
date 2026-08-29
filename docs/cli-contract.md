@@ -279,11 +279,12 @@ terminal presentation and are not represented in JSON DTOs or schemas.
   Directory batches skip existing theme destinations and return structured
   `theme.already_exists` warnings. Without any input, the command returns
   `interaction.required` instead of opening the file selector.
-- `config edit --json` always returns `interaction.required`. OAuth `auth
-  login --json` first uses a valid cached access token or refresh token and
-  returns `interaction.required` only when human authorization is actually
-  needed. Any other JSON command that encounters an OAuth
-  identity without a usable token also returns `interaction.required`, with
+- `config edit --json` always returns `interaction.required`. For `google` and
+  imported `oauth`, `auth login --json` first tries a valid cached access token
+  or refresh token. It returns `interaction.required` only when human
+  authorization is needed. Any other JSON command that encounters either
+  browser OAuth identity without a usable token also returns
+  `interaction.required`, with
   `details.kind: "oauth_authorization"` and an `auth login <auth-id>`
   remediation; it never starts a listener or opens a browser. Service-account
   and gcloud `auth login --json` validate their existing credentials without
@@ -458,13 +459,14 @@ separately identifies relocation of an existing cache tree;
 destructive
 commands publish the most specific applicable deletion effects rather than
 requiring an agent to infer deletion from `local_state_write`.
-OAuth and service-account imports also declare `local_file_write`, conditioned
-on successful creation or replacement of their credential file. Network-capable
-commands also declare `authentication_remote_access` when credentials
-must contact an identity provider or metadata service and `local_file_write`
-when a non-dry OAuth flow persists a new or refreshed token. Doctor declares
-the remote authentication access but not token persistence because its
-diagnostic client refreshes only in memory.
+Imported OAuth and service-account auth commands also declare
+`local_file_write` when they successfully create or replace a credential file.
+Network-capable commands declare `authentication_remote_access` when they may
+contact an identity provider or metadata service. They declare
+`local_file_write` when a Google or imported OAuth flow may persist a new or
+refreshed token outside dry-run. Doctor declares remote authentication access
+but not token persistence because its diagnostic client refreshes only in
+memory.
 Every machine invocation declares `local_state_write` coverage for possible
 envelope profile bootstrap. Commands without an unconditional local-state write
 use the condition `runtime_state.profile_bootstrap required`: by default, final
@@ -699,7 +701,7 @@ stdin decoding. `project import` uses a separate
 `stdin:remote_config_import` schema because it also requires the local
 `firebase.NormalizeRemoteConfigForUpdate` validation performed before import
 selection and transformation. Published stdin modes contain only normalized
-JSON documents. OAuth and
+JSON documents. Imported OAuth and
 service-account auth commands reference distinct
 credential-object schemas whose required IDs, secrets, keys, email address,
 and endpoint URIs match runtime validation. A sole OAuth `installed` or `web`
@@ -734,9 +736,10 @@ configured and effective values and enumerate the resolution source.
 Every authenticated Firebase and Cloud Resource Manager request includes
 `X-Goog-User-Project`. Stateful precedence is the environment override,
 project override, auth default, ADC `quota_project_id` for gcloud auth only,
-then the physical request target. OAuth and service-account credential files
-never contribute the ADC credential source. A targetless request with no
-resolved source fails before network access as `auth.quota_project_required`;
+then the physical request target. Credential files for Google OAuth, imported
+OAuth, and service accounts never supply the ADC credential source. A
+targetless request with no resolved source fails before network access as
+`auth.quota_project_required`;
 its details identify `targetless: true`. An invalid nonempty environment value
 fails before auth interaction or network access as
 `auth.configuration_invalid`; invalid command input is `argument.invalid`, and
@@ -916,9 +919,9 @@ managed-feature commands require a physical ID without a prefix; template-aware
 commands publish client as the default when `options.stateless` is true.
 Capability side-effect and
 interaction conditions mark profile bootstrap, project-registry persistence,
-configured-auth token persistence, identity-provider access, and OAuth
-authorization as stateful-only; an explicitly requested `--to` write remains
-available in either mode.
+configured-auth token persistence, identity-provider access, and browser
+authorization for Google or imported OAuth identities as stateful-only. An
+explicitly requested `--to` write remains available in either mode.
 
 Direct mutation result DTOs expose selection and no-op provenance:
 

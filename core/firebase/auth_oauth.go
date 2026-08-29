@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"github.com/yumauri/fbrcm/core/browser"
+	"github.com/yumauri/fbrcm/core/config"
 	corelog "github.com/yumauri/fbrcm/core/log"
 )
 
@@ -94,7 +95,6 @@ func oauthTerminalOutputEnabled(ctx context.Context) bool {
 // Create HTTP client configured with OAuth2 credentials
 func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, autoOpen bool) (*http.Client, error) {
 	logger := corelog.For("firebase")
-	persistAuthState := !IsDryRun(ctx)
 	logger.Info("load oauth client secret", "path", clientSecretPath)
 
 	clientSecretData, err := os.ReadFile(clientSecretPath)
@@ -106,8 +106,22 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 	oauthCfg, err := google.ConfigFromJSON(clientSecretData, cloudPlatformScope)
 	if err != nil {
 		logger.Error("parse oauth client secret failed", "path", clientSecretPath, "err", err)
-		return nil, credentialAuthenticationError("oauth", "load_credentials", fmt.Errorf("parsing OAuth client secret: %w", err))
+		return nil, credentialAuthenticationError(config.AuthTypeOAuth, "load_credentials", fmt.Errorf("parsing OAuth client secret: %w", err))
 	}
+	return oauthHTTPClientWithConfig(ctx, config.AuthTypeOAuth, oauthCfg, tokenPath, autoOpen)
+}
+
+func googleOAuthHTTPClient(ctx context.Context, credentials OAuthClientCredentials, tokenPath string, autoOpen bool) (*http.Client, error) {
+	oauthCfg, err := credentials.config()
+	if err != nil {
+		return nil, credentialAuthenticationError(config.AuthTypeGoogle, "load_credentials", err)
+	}
+	return oauthHTTPClientWithConfig(ctx, config.AuthTypeGoogle, oauthCfg, tokenPath, autoOpen)
+}
+
+func oauthHTTPClientWithConfig(ctx context.Context, authType string, oauthCfg *oauth2.Config, tokenPath string, autoOpen bool) (*http.Client, error) {
+	logger := corelog.For("firebase")
+	persistAuthState := !IsDryRun(ctx)
 
 	tok, err := readCachedToken(tokenPath)
 	if err != nil {
@@ -141,15 +155,16 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 
 	baseTokenSource := oauthCfg.TokenSource(ctx, tok)
 	tokenSource := &persistingTokenSource{
-		base:    baseTokenSource,
-		persist: persistAuthState,
-		path:    tokenPath,
+		base:     baseTokenSource,
+		authType: authType,
+		persist:  persistAuthState,
+		path:     tokenPath,
 	}
 
 	hadRefreshToken, err := refreshOAuthToken(tokenSource, tok)
 	if err != nil {
 		if !oauthRefreshRequiresAuthorization(err, hadRefreshToken) {
-			return nil, authenticationRequestError("oauth", "refresh_token", err)
+			return nil, authenticationRequestError(authType, "refresh_token", err)
 		}
 		logger.Warn("oauth token refresh requires reauthorization", "has_refresh_token", hadRefreshToken)
 		tok, err = authorizeDesktopClient(ctx, oauthCfg, true, autoOpen)
@@ -165,9 +180,10 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 		}
 		baseTokenSource = oauthCfg.TokenSource(ctx, tok)
 		tokenSource = &persistingTokenSource{
-			base:    baseTokenSource,
-			persist: persistAuthState,
-			path:    tokenPath,
+			base:     baseTokenSource,
+			authType: authType,
+			persist:  persistAuthState,
+			path:     tokenPath,
 		}
 	}
 
@@ -179,6 +195,7 @@ func oauthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string, au
 		func(cached *oauth2.Token) (oauth2.TokenSource, *oauth2.Token, error) {
 			return recoverRejectedOAuthToken(
 				ctx,
+				authType,
 				oauthCfg,
 				cached,
 				tokenPath,

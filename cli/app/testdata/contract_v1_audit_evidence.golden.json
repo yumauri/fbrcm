@@ -254,6 +254,91 @@
       }
     },
     {
+      "id": "auth.add.google",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:auth_add_google_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:auth_add_google_json"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
       "id": "auth.add.oauth",
       "classes": {
         "artifact": {

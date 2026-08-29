@@ -22,6 +22,9 @@ import (
 
 type Core struct {
 	ctx context.Context
+	// googleOAuthCredentials are injected by official builds and are never
+	// persisted in profile configuration.
+	googleOAuthCredentials firebase.OAuthClientCredentials
 	// firebase stores firebase clients by auth id.
 	firebase map[string]*firebase.Service
 	// firebaseMu protects firebase clients.
@@ -44,19 +47,46 @@ type Core struct {
 	hookOutput io.Writer
 }
 
-func NewService(ctx context.Context) (*Core, error) {
+// ServiceOption configures process-scoped Core dependencies.
+type ServiceOption func(*Core)
+
+// WithGoogleOAuthClientCredentials supplies fbrcm's built-in Desktop OAuth
+// client. Empty values leave the google auth method unavailable while keeping
+// the other authentication methods usable.
+func WithGoogleOAuthClientCredentials(clientID, clientSecret string) ServiceOption {
+	return func(s *Core) {
+		s.googleOAuthCredentials = firebase.OAuthClientCredentials{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+		}
+	}
+}
+
+// GoogleAuthAvailable reports whether this build has a complete built-in
+// Google Desktop OAuth client.
+func (s *Core) GoogleAuthAvailable() bool {
+	return s != nil && s.googleOAuthCredentials.Validate() == nil
+}
+
+func NewService(ctx context.Context, options ...ServiceOption) (*Core, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	corelog.For("core").Debug("core service initialized")
 
-	return &Core{
+	service := &Core{
 		ctx:              ctx,
 		firebase:         make(map[string]*firebase.Service),
 		firebaseRequests: firebase.NewRequestController(firebase.DefaultRequestPolicy()),
 		oauthAutoOpen:    true,
-	}, nil
+	}
+	for _, option := range options {
+		if option != nil {
+			option(service)
+		}
+	}
+	return service, nil
 }
 
 func (s *Core) ListProjects(ctx context.Context) ([]Project, string, error) {
@@ -348,7 +378,7 @@ func (s *Core) EnsureAuthLogin(ctx context.Context, authID string, noOpen bool) 
 	}
 	serviceCtx = s.WithFirebaseRequestController(serviceCtx)
 	serviceCtx, autoOpen := s.oauthAuthorizationContext(serviceCtx, authID, !noOpen)
-	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, autoOpen)
+	fb, err := firebase.NewServiceForAuth(serviceCtx, auth, autoOpen, s.googleOAuthCredentials)
 	if err != nil {
 		logger.Error("login failed", "err", err)
 		if errors.Is(err, firebase.ErrOAuthInteractionRequired) {

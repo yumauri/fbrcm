@@ -195,7 +195,7 @@ func responseReachableOutcomes(raw []byte) []string {
 
 func isAuditMutation(commandID string) bool {
 	return slices.Contains([]string{
-		"add", "auth.add.gcloud", "auth.add.oauth", "auth.add.service-account", "auth.bind", "auth.delete", "auth.login", "auth.quota-project.set", "auth.quota-project.unset",
+		"add", "auth.add.gcloud", "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.bind", "auth.delete", "auth.login", "auth.quota-project.set", "auth.quota-project.unset",
 		"cache.clear", "conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename", "config.edit", "config.reset", "config.set", "delete", "draft.change-note", "draft.discard", "draft.publish", "duplicate",
 		"experiments.delete", "groups.add", "groups.delete", "groups.edit", "groups.rename", "hooks.trust", "hooks.untrust", "profile", "profile.delete", "profile.rename", "profile.switch", "project.import", "project.quota-project.set", "project.quota-project.unset",
 		"projects.aliases.import", "projects.aliases.remove", "projects.aliases.set", "projects.forget", "projects.promote", "projects.reset", "projects.update", "rollouts.delete", "theme.delete", "theme.import", "theme.rename", "theme.reset", "theme.switch", "update", "versions.restore", "versions.rollback",

@@ -53,9 +53,9 @@ func ResolveCLI(ctx context.Context, e2eRoot, binaryPath, goRunPath, outputDirec
 			return Command{}, fmt.Errorf("stat go-run path: %w", err)
 		}
 		if !info.IsDir() {
-			return Command{Path: "go", PrefixArgs: []string{"run", filepath.Base(absolute)}, Directory: filepath.Dir(absolute), EnvironmentOverride: goEnvironment}, nil
+			return Command{Path: "go", PrefixArgs: append(e2eGoRunArgs(), filepath.Base(absolute)), Directory: filepath.Dir(absolute), EnvironmentOverride: goEnvironment}, nil
 		}
-		return Command{Path: "go", PrefixArgs: []string{"run", "."}, Directory: absolute, EnvironmentOverride: goEnvironment}, nil
+		return Command{Path: "go", PrefixArgs: append(e2eGoRunArgs(), "."), Directory: absolute, EnvironmentOverride: goEnvironment}, nil
 	}
 
 	repoRoot := filepath.Dir(e2eRoot)
@@ -64,7 +64,7 @@ func ResolveCLI(ctx context.Context, e2eRoot, binaryPath, goRunPath, outputDirec
 		name += ".exe"
 	}
 	output := filepath.Join(outputDirectory, name)
-	cmd := exec.CommandContext(ctx, "go", "build", "-o", output, ".")
+	cmd := exec.CommandContext(ctx, "go", "build", "-tags=fbrcm_e2e", "-o", output, ".")
 	cmd.Dir = repoRoot
 	var combined bytes.Buffer
 	cmd.Stdout = &combined
@@ -73,6 +73,10 @@ func ResolveCLI(ctx context.Context, e2eRoot, binaryPath, goRunPath, outputDirec
 		return Command{}, fmt.Errorf("build fbrcm: %w\n%s", err, combined.String())
 	}
 	return Command{Path: output}, nil
+}
+
+func e2eGoRunArgs() []string {
+	return []string{"run", "-tags=fbrcm_e2e"}
 }
 
 func BuildReadGuard(ctx context.Context, e2eRoot, outputDirectory string) (string, error) {

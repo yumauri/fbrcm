@@ -548,7 +548,7 @@ func applyCommandResponseSemantics(commandID string, typeOf reflect.Type, schema
 	}
 	properties, _ := schema["properties"].(map[string]any)
 	switch commandID {
-	case "auth.add.oauth", "auth.add.service-account", "auth.add.gcloud":
+	case "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.add.gcloud":
 		authType := strings.TrimPrefix(commandID, "auth.add.")
 		properties["type"] = map[string]any{"const": authType}
 		if paths, ok := properties["paths"].(map[string]any); ok {
@@ -577,9 +577,10 @@ func applyCommandResponseSemantics(commandID string, typeOf reflect.Type, schema
 
 func applyAuthTypeSemantics(schema map[string]any) {
 	properties := schema["properties"].(map[string]any)
-	properties["type"] = map[string]any{"type": "string", "enum": []string{"oauth", "service-account", "gcloud"}}
+	properties["type"] = map[string]any{"type": "string", "enum": []string{"google", "oauth", "service-account", "gcloud"}}
 	nonempty := map[string]any{"type": "string", "minLength": 1}
 	schema["allOf"] = []any{
+		fieldValueShapeConstraint("type", "google", map[string]any{"token_path": nonempty}, []string{"token_path"}, []string{"client_secret_path", "service_account_path"}),
 		fieldValueShapeConstraint("type", "oauth", map[string]any{"client_secret_path": nonempty, "token_path": nonempty}, []string{"client_secret_path", "token_path"}, []string{"service_account_path"}),
 		fieldValueShapeConstraint("type", "service-account", map[string]any{"service_account_path": nonempty}, []string{"service_account_path"}, []string{"client_secret_path", "token_path"}),
 		fieldValueShapeConstraint("type", "gcloud", map[string]any{}, nil, []string{"client_secret_path", "token_path", "service_account_path"}),

@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core/about"
+	"github.com/yumauri/fbrcm/core/config"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
@@ -76,11 +77,11 @@ func (m Model) PopupViewWithFocus(width, height int, focused bool) string {
 	case modeAuthenticating:
 		title = m.methodName()
 		message := "Validating credentials…"
-		if m.authMethodForID(m.authID) == methodOAuth {
+		if isBrowserOAuthMethod(m.authMethodForID(m.authID)) {
 			message = "Waiting for browser authorization…"
 		}
 		lines = m.workingLines(message)
-		if m.authMethodForID(m.authID) == methodOAuth {
+		if isBrowserOAuthMethod(m.authMethodForID(m.authID)) {
 			lines = append(lines,
 				"",
 				cardMutedStyle.Render("A browser window should open. fbrcm waits for the local callback."),
@@ -176,10 +177,19 @@ func setupTabTitle(action tuiconfig.Action, defaultKey, title string) (string, s
 }
 
 func (m Model) methodsLines(width int) []string {
+	googleLine := setupListLine("Continue with Google", m.cursor == int(methodGoogle))
+	googleDetail := "    Sign in using fbrcm's built-in OAuth client—no Google Cloud setup"
+	if !m.googleAvailable {
+		googleLine = "  " + cardMutedStyle.Render("Continue with Google (unavailable)")
+		googleDetail = "    This build does not include fbrcm's built-in OAuth client"
+	}
 	lines := []string{
 		"Connect Google credentials to discover your Firebase projects.",
 		"",
 		cardMutedStyle.Render("Profile: ") + cardTextStyle.Render(m.profileOrDefault()),
+		"",
+		googleLine,
+		cardMutedStyle.Render(googleDetail),
 		"",
 		setupListLine("OAuth desktop login", m.cursor == int(methodOAuth)),
 		cardMutedStyle.Render("    Choose a desktop client JSON, then sign in in a browser"),
@@ -462,6 +472,8 @@ func (m Model) authMethodForID(id string) authMethod {
 			continue
 		}
 		switch entry.Type {
+		case config.AuthTypeGoogle:
+			return methodGoogle
 		case "oauth":
 			return methodOAuth
 		case "service-account":
@@ -471,4 +483,8 @@ func (m Model) authMethodForID(id string) authMethod {
 		}
 	}
 	return m.method
+}
+
+func isBrowserOAuthMethod(method authMethod) bool {
+	return method == methodGoogle || method == methodOAuth
 }

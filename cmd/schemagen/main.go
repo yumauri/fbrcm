@@ -1057,7 +1057,7 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		delete(remote, "$id")
 		definitions["remote_config"] = remote
 		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/remote_config"}}}
-	case strings.HasPrefix(capability.ID, "auth.add.") && capability.ID != "auth.add.gcloud":
+	case strings.HasPrefix(capability.ID, "auth.add.") && !slices.Contains([]string{"auth.add.gcloud", "auth.add.google"}, capability.ID):
 		credentials := oauthCredentialSchema()
 		if capability.ID == "auth.add.service-account" {
 			credentials = serviceAccountCredentialSchema()

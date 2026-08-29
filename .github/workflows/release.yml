@@ -40,6 +40,19 @@ jobs:
       - name: Test
         run: go test -count=1 ./...
 
+      - name: Verify credentialed build does not expose plaintext OAuth credentials
+        env:
+          FBRCM_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_ID }}
+          FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_SECRET }}
+        run: |
+          go run ./cmd/genoauthclient
+          go build -tags=fbrcm_google_auth -o "${RUNNER_TEMP}/fbrcm-oauth-check" .
+          go run ./cmd/genoauthclient -verify "${RUNNER_TEMP}/fbrcm-oauth-check"
+
+      - name: Remove preflight OAuth client source
+        if: always()
+        run: go run ./cmd/genoauthclient -clean
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -50,3 +63,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
           SCOOP_GITHUB_TOKEN: ${{ secrets.SCOOP_GITHUB_TOKEN }}
+          FBRCM_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_ID }}
+          FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_SECRET }}
+
+      - name: Remove release OAuth client source
+        if: always()
+        run: go run ./cmd/genoauthclient -clean

@@ -1,6 +1,6 @@
 {
   "contract_version": "1.0.0",
-  "count": 108,
+  "count": 109,
   "commands": [
     {
       "id": "add",
@@ -30,6 +30,26 @@
       "summary": "Add gcloud ADC auth identity",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
+      "side_effect_level": 1,
+      "destructive": true,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "auth.add.google",
+      "path": [
+        "auth",
+        "add",
+        "google"
+      ],
+      "summary": "Add Google OAuth auth identity",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {

@@ -32,6 +32,10 @@ func TestAuthPathPayloadAndLines(t *testing.T) {
 	if got, want := authPathLines(auth, paths), []string{"/auth/client.json", "/auth/token.json"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("oauth path lines = %#v, want %#v", got, want)
 	}
+	google := config.AuthEntry{ID: "google", Type: config.AuthTypeGoogle}
+	if got, want := authPathLines(google, paths), []string{"/auth/token.json"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("google path lines = %#v, want %#v", got, want)
+	}
 	service := config.AuthEntry{ID: "svc", Type: config.AuthTypeServiceAccount}
 	if got, want := authPathLines(service, core.AuthPaths{ServiceAccountPath: "/auth/service.json"}), []string{"/auth/service.json"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("service account path lines = %#v, want %#v", got, want)
@@ -45,11 +49,12 @@ func TestRenderAuthTablePlainText(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 
 	table := renderAuthTable([]config.AuthEntry{
+		{ID: "google", Type: config.AuthTypeGoogle, Label: "Built-in"},
 		{ID: "main", Type: config.AuthTypeOAuth, Label: "Main"},
 		{ID: "svc", Type: config.AuthTypeServiceAccount, Label: "Service"},
 	}, "main", 120)
 
-	for _, want := range []string{"Auth", "main", "oauth", "Main", "✓", "svc", "service-account"} {
+	for _, want := range []string{"Auth", "google", "Built-in", "main", "oauth", "Main", "✓", "svc", "service-account"} {
 		if !strings.Contains(table, want) {
 			t.Fatalf("renderAuthTable = %q, want substring %q", table, want)
 		}

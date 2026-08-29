@@ -129,6 +129,7 @@ func (t *oauthUnauthorizedTransport) recoverAfterUnauthorized(observedGeneration
 
 func recoverRejectedOAuthToken(
 	ctx context.Context,
+	authType string,
 	oauthCfg *oauth2.Config,
 	cached *oauth2.Token,
 	tokenPath string,
@@ -138,10 +139,10 @@ func recoverRejectedOAuthToken(
 	logger := corelog.For("firebase")
 	logger.Warn("oauth access token rejected; attempting forced refresh")
 
-	token, refreshErr := forceRefreshOAuthToken(ctx, oauthCfg, cached)
+	token, refreshErr := forceRefreshOAuthToken(ctx, authType, oauthCfg, cached)
 	if refreshErr != nil {
 		if !oauthRefreshRequiresAuthorization(refreshErr, cached != nil && cached.RefreshToken != "") {
-			return nil, nil, authenticationRequestError("oauth", "refresh_token", refreshErr)
+			return nil, nil, authenticationRequestError(authType, "refresh_token", refreshErr)
 		}
 		logger.Warn("forced oauth token refresh requires reauthorization", "err", refreshErr)
 		if IsOffline() {
@@ -166,13 +167,14 @@ func recoverRejectedOAuthToken(
 	source := &persistingTokenSource{
 		base:      oauthCfg.TokenSource(ctx, token),
 		lastToken: cloneOAuthToken(token),
+		authType:  authType,
 		persist:   persist,
 		path:      tokenPath,
 	}
 	return source, token, nil
 }
 
-func forceRefreshOAuthToken(ctx context.Context, oauthCfg *oauth2.Config, cached *oauth2.Token) (*oauth2.Token, error) {
+func forceRefreshOAuthToken(ctx context.Context, authType string, oauthCfg *oauth2.Config, cached *oauth2.Token) (*oauth2.Token, error) {
 	if cached == nil || cached.RefreshToken == "" {
 		return nil, fmt.Errorf("OAuth refresh token is missing")
 	}
@@ -181,7 +183,7 @@ func forceRefreshOAuthToken(ctx context.Context, oauthCfg *oauth2.Config, cached
 	expired.Expiry = time.Unix(0, 0)
 	token, err := oauthCfg.TokenSource(ctx, &expired).Token()
 	if err != nil {
-		return nil, authenticationRequestError("oauth", "refresh_token", err)
+		return nil, authenticationRequestError(authType, "refresh_token", err)
 	}
 	return token, nil
 }

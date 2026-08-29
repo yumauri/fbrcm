@@ -52,6 +52,23 @@ missing `cloudconfig.configs.update` permission.
 
 ## Authentication methods
 
+### Google sign-in
+
+Official fbrcm release binaries include fbrcm's OAuth Desktop client. You do
+not need to create a Google Cloud OAuth client or download a client JSON:
+
+```sh
+fbrcm auth add google example-auth-name \
+  --quota-project example-quota-project-id
+fbrcm auth login example-auth-name
+```
+
+The login command opens Google's authorization flow and caches the resulting
+token locally.
+
+A plain source build omits the built-in client. Use one of the other three
+methods, or follow the repository README to build with a local client.
+
 ### Google Cloud CLI ADC
 
 Create Application Default Credentials outside fbrcm:
@@ -87,8 +104,10 @@ Complete authorization separately:
 fbrcm auth login example-auth-name
 ```
 
-fbrcm caches tokens locally for later commands. Use `fbrcm auth path example-auth-name`
-to inspect the exact client-secret and token paths.
+fbrcm caches tokens locally for later commands. Use
+`fbrcm auth path example-auth-name` to inspect the exact client-secret and token
+paths. This bring-your-own method stores its imported client separately from
+the built-in `google` method.
 
 ### Service-account key
 
@@ -116,7 +135,7 @@ targetless request.
 The simplest setup is to save it while adding the identity:
 
 ```sh
-fbrcm auth add gcloud example-auth-name --quota-project example-quota-project-id
+fbrcm auth add google example-auth-name --quota-project example-quota-project-id
 ```
 
 For an existing identity, inspect or change it with:

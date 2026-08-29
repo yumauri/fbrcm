@@ -23,6 +23,7 @@
         },
         "type": {
           "enum": [
+            "google",
             "oauth",
             "service-account",
             "gcloud"

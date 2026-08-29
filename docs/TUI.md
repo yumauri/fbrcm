@@ -51,11 +51,12 @@ click inside or outside the popup also closes it.
 When the active profile has neither authentication nor cached projects, the TUI
 opens guided setup instead of an empty workspace. It can:
 
-1. import an OAuth Desktop app client JSON and complete browser authorization;
-2. import a service-account JSON key;
-3. validate existing [Google Cloud CLI](https://cloud.google.com/cli)
+1. authorize with fbrcm's built-in Google OAuth client;
+2. import an OAuth Desktop app client JSON and complete browser authorization;
+3. import a service-account JSON key;
+4. validate existing [Google Cloud CLI](https://cloud.google.com/cli)
    Application Default Credentials;
-4. discover the projects available to the selected identity.
+5. discover the projects available to the selected identity.
 
 OAuth authorization is cancellable. The authorization dialog shows the complete
 URL and offers **Open Browser**, **Copy Link**, and **Cancel**. It closes after a
@@ -82,6 +83,24 @@ tab. An inactive profile can also be removed; the active profile cannot.
 If `FBRCM_PROFILE` selected the current profile, the Profiles tab treats it as
 pinned. Restart without the environment variable to switch profiles
 interactively.
+
+### Continue with Google
+
+Official release binaries list this option first. It uses fbrcm's built-in
+OAuth Desktop client. You do not need to select a client JSON or create a
+Google Cloud OAuth client. Choose a quota project and complete browser
+authorization. fbrcm stores only the resulting token in the profile cache.
+
+If either built-in OAuth client value is missing, the option stays visible as
+`Continue with Google (unavailable)` but appears muted. Keyboard and mouse
+navigation skip it. The other three authentication methods remain available.
+
+The equivalent CLI flow is:
+
+```sh
+fbrcm auth add google default --quota-project example-quota-project-id
+fbrcm auth login default
+```
 
 ### OAuth desktop app
 

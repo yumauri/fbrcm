@@ -1,13 +1,50 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/yumauri/fbrcm/core/config"
 )
+
+func TestGoogleAuthAvailableRequiresCompleteBuiltInClient(t *testing.T) {
+	tests := []struct {
+		name         string
+		clientID     string
+		clientSecret string
+		want         bool
+	}{
+		{name: "missing both"},
+		{name: "missing secret", clientID: "client-id"},
+		{name: "missing id", clientSecret: "client-secret"},
+		{name: "blank values", clientID: "  ", clientSecret: "\t"},
+		{name: "complete", clientID: "client-id", clientSecret: "client-secret", want: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			svc, err := NewService(
+				context.Background(),
+				WithGoogleOAuthClientCredentials(test.clientID, test.clientSecret),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := svc.GoogleAuthAvailable(); got != test.want {
+				t.Fatalf("GoogleAuthAvailable() = %v, want %v", got, test.want)
+			}
+		})
+	}
+
+	var nilService *Core
+	if nilService.GoogleAuthAvailable() {
+		t.Fatal("nil Core reports Google auth available")
+	}
+}
 
 func TestLoadRequiredAuthMissingIncludesSetupGuidance(t *testing.T) {
 	_ = setupCoreTestEnv(t)
@@ -156,6 +193,88 @@ func TestAddOAuthAuthWritesSecretAndListAuth(t *testing.T) {
 	}
 	if len(entries) != 1 || entries[0].ID != "oauth" {
 		t.Fatalf("entries = %+v, want oauth", entries)
+	}
+}
+
+func TestAddGoogleAuthUsesBuiltInClientWithoutPersistingIt(t *testing.T) {
+	_ = setupCoreTestEnv(t)
+	svc, err := NewService(context.Background(), WithGoogleOAuthClientCredentials("test-client-id", "test-client-secret"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	entry, err := svc.AddGoogleAuthWithQuotaProject("google", "Google", "billing-project")
+	if err != nil {
+		t.Fatalf("AddGoogleAuthWithQuotaProject = %v", err)
+	}
+	if entry.Type != config.AuthTypeGoogle || entry.QuotaProjectID != "billing-project" {
+		t.Fatalf("entry = %+v", entry)
+	}
+	if entry.ClientSecretPath != "" || entry.ServiceAccountPath != "" || entry.TokenPath == "" {
+		t.Fatalf("google entry paths = %+v, want token only", entry)
+	}
+
+	auth, paths, err := svc.AuthPaths("google")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if auth.Type != config.AuthTypeGoogle || paths.TokenPath == "" || paths.ClientSecretPath != "" || paths.ServiceAccountPath != "" {
+		t.Fatalf("AuthPaths = auth:%+v paths:%+v", auth, paths)
+	}
+	raw, err := os.ReadFile(config.GetAuthFilePath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"test-client-id", "test-client-secret", "client_secret_path", "service_account_path"} {
+		if strings.Contains(string(raw), forbidden) {
+			t.Fatalf("auth config persisted %q: %s", forbidden, raw)
+		}
+	}
+}
+
+func TestAddGoogleAuthWithoutBuiltInClientFailsBeforePersistence(t *testing.T) {
+	svc := setupCoreTestEnv(t)
+
+	_, err := svc.AddGoogleAuth("google", "Google")
+	var authErr *AuthError
+	if !errors.As(err, &authErr) || authErr.Kind != "configuration" {
+		t.Fatalf("AddGoogleAuth error = %#v, want configuration AuthError", err)
+	}
+	if !strings.Contains(err.Error(), "unavailable in this build") {
+		t.Fatalf("AddGoogleAuth error = %q", err)
+	}
+	if _, statErr := os.Stat(config.GetAuthFilePath()); !errors.Is(statErr, os.ErrNotExist) {
+		t.Fatalf("auth config exists after failed add: %v", statErr)
+	}
+}
+
+func TestAddGoogleAuthReplacesImportedOAuthFiles(t *testing.T) {
+	_ = setupCoreTestEnv(t)
+	svc, err := NewService(context.Background(), WithGoogleOAuthClientCredentials("test-client-id", "test-client-secret"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.AddOAuthAuth("main", "Imported", validOAuthClientSecret()); err != nil {
+		t.Fatal(err)
+	}
+	_, oldPaths, err := svc.AuthPaths("main")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(oldPaths.TokenPath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(oldPaths.TokenPath, []byte(`{"access_token":"old"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := svc.AddGoogleAuth("main", "Built-in"); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{oldPaths.ClientSecretPath, oldPaths.TokenPath} {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("replaced OAuth file still exists at %s: %v", path, err)
+		}
 	}
 }
 

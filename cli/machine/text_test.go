@@ -9,7 +9,7 @@ import (
 func TestSafeTextRedactsAndBoundsMachineText(t *testing.T) {
 	secret := "super-secret-value"
 	long := strings.Repeat("x", MaxSafeTextRunes+100)
-	got := SafeErrorText(errors.New(`failed: {"access_token":"` + secret + `"} bearer ` + secret + ` token=` + secret + ` ` + long))
+	got := SafeErrorText(errors.New(`failed: {"access_token":"` + secret + `","client_id":"` + secret + `"} bearer ` + secret + ` token=` + secret + ` client_id=` + secret + ` ` + long))
 	if strings.Contains(got, secret) || !strings.Contains(got, "[REDACTED]") {
 		t.Fatalf("SafeErrorText exposed a secret: %q", got)
 	}

@@ -25,7 +25,7 @@ func TestFormatHeadersRedactsSensitiveValues(t *testing.T) {
 }
 
 func TestRedactedURLString(t *testing.T) {
-	raw, err := url.Parse("https://example.com/oauth?access_token=secret&page=1")
+	raw, err := url.Parse("https://example.com/oauth?access_token=secret&client_id=semi-private-id&page=1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,8 +33,14 @@ func TestRedactedURLString(t *testing.T) {
 	if strings.Contains(got, "secret") {
 		t.Fatalf("redacted URL leaked token: %q", got)
 	}
+	if strings.Contains(got, "semi-private-id") {
+		t.Fatalf("redacted URL leaked client ID: %q", got)
+	}
 	if !strings.Contains(got, "access_token=%5BREDACTED%5D") && !strings.Contains(got, "access_token=[REDACTED]") {
 		t.Fatalf("redacted URL = %q, want redacted access_token", got)
+	}
+	if !strings.Contains(got, "client_id=%5BREDACTED%5D") && !strings.Contains(got, "client_id=[REDACTED]") {
+		t.Fatalf("redacted URL = %q, want redacted client_id", got)
 	}
 }
 
