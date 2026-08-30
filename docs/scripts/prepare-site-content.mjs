@@ -10,9 +10,11 @@ const repositoryRoot = resolve(docsDirectory, '..')
 const siteDirectory = resolve(docsDirectory, 'site')
 
 const privacySource = resolve(repositoryRoot, 'PRIVACY.md')
+const termsSource = resolve(repositoryRoot, 'TERMS.md')
 const llmsSource = resolve(repositoryRoot, 'llms.txt')
 const licenseSource = resolve(repositoryRoot, 'LICENSE')
 const privacyPage = resolve(siteDirectory, 'privacy-policy.md')
+const termsPage = resolve(siteDirectory, 'terms.md')
 const llmsAsset = resolve(siteDirectory, 'public', 'llms.txt')
 const llmsFullAsset = resolve(siteDirectory, 'public', 'llms-full.txt')
 const licenseAsset = resolve(siteDirectory, 'public', 'LICENSE.txt')
@@ -26,15 +28,30 @@ editLink: false
 
 `
 
-const [privacyMarkdown, llmsText, licenseText] = await Promise.all([
+const termsFrontmatter = `---
+title: Terms of Service
+description: The terms that apply to the official fbrcm application and website.
+sidebar: false
+editLink: false
+---
+
+`
+
+const [privacyMarkdown, termsSourceMarkdown, llmsText, licenseText] = await Promise.all([
   readFile(privacySource, 'utf8'),
+  readFile(termsSource, 'utf8'),
   readFile(llmsSource),
   readFile(licenseSource)
 ])
 
+const termsMarkdown = termsSourceMarkdown
+  .replaceAll('](PRIVACY.md)', '](/privacy-policy)')
+  .replaceAll('](LICENSE)', '](/LICENSE.txt)')
+
 await mkdir(dirname(llmsAsset), { recursive: true })
 await Promise.all([
   writeFile(privacyPage, privacyFrontmatter + privacyMarkdown),
+  writeFile(termsPage, termsFrontmatter + termsMarkdown),
   writeFile(llmsAsset, llmsText),
   writeLlmsFull(siteDirectory, llmsFullAsset),
   writeFile(licenseAsset, licenseText)

@@ -12,6 +12,7 @@ test('maps Markdown source paths to clean website routes', () => {
   assert.equal(pageRoute('guide/index.md'), '/guide/')
   assert.equal(pageRoute('reference/configuration.md'), '/reference/configuration')
   assert.equal(pageRoute('privacy-policy.md'), '/privacy-policy')
+  assert.equal(pageRoute('terms.md'), '/terms')
 })
 
 test('normalizes source paths from Windows builds', () => {

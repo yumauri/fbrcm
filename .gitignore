@@ -26,6 +26,7 @@ node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 docs/site/privacy-policy.md
+docs/site/terms.md
 docs/site/public/llms.txt
 docs/site/public/llms-full.txt
 docs/site/public/LICENSE.txt

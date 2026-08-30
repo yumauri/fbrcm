@@ -171,7 +171,7 @@ export default defineConfig({
     },
     footer: {
       message:
-        '<a href="/privacy-policy">Privacy policy</a> · <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a> · <a href="/LICENSE.txt">MIT License</a> · 2026'
+        '<a href="/privacy-policy">Privacy policy</a> · <a href="/terms">Terms of Service</a> · <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a> · <a href="/LICENSE.txt">MIT License</a> · 2026'
     }
   }
 })
