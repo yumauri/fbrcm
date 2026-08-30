@@ -92,6 +92,10 @@ source build leaves it out. In that build, the `google` authentication method
 reports that the built-in client is unavailable. The `oauth`,
 `service-account`, and `gcloud` methods continue to work.
 
+> **Unavailable — Google verification pending:** The built-in `google` method
+> will remain unavailable until Google completes verification of fbrcm's OAuth
+> application. Use `oauth`, `service-account`, or `gcloud` in the meantime.
+
 For local development, build with a Desktop client from values in the current
 shell. This does not add the client JSON to the repository or runtime
 configuration:
@@ -117,7 +121,8 @@ fbrcm
 
 On a new profile, fbrcm opens guided setup. It supports:
 
-- Google sign-in using fbrcm's built-in shared OAuth client;
+- Google sign-in using fbrcm's built-in shared OAuth client (**unavailable —
+  Google verification pending**);
 - an OAuth Desktop app client;
 - a service-account JSON key;
 - existing [Google Cloud CLI](https://cloud.google.com/cli) Application Default

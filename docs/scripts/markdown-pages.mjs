@@ -64,6 +64,13 @@ function flattenContentTabs(markdown) {
   )
 }
 
+function flattenBadges(markdown) {
+  return markdown.replace(
+    /<Badge\b[^>]*\btext=(['"])(.*?)\1[^>]*\/>/g,
+    (_badge, _quote, label) => `**${label}**`
+  )
+}
+
 function markdownTarget(target) {
   if (
     target.startsWith('#') ||
@@ -110,7 +117,9 @@ function fallbackHeading(relativePath, frontmatter) {
 
 export function renderMarkdownPage(source, relativePath) {
   const { body: sourceBody, frontmatter } = splitFrontmatter(source)
-  let body = rewriteInternalLinks(flattenContentTabs(sourceBody)).trim()
+  let body = rewriteInternalLinks(
+    flattenBadges(flattenContentTabs(sourceBody))
+  ).trim()
 
   if (!/^#\s+\S/m.test(body)) {
     const heading = fallbackHeading(relativePath, frontmatter)

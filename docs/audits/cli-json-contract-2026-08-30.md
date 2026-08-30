@@ -12,6 +12,10 @@ Pre-existing dirty files: none
 Verdict: **AUTHORITATIVE: PASS**
 Findings: `0` unresolved (`5` found and closed)
 
+Availability note: the command contract is implemented, but the built-in Google
+sign-in method remains unavailable until Google completes verification of
+fbrcm's OAuth application.
+
 The audit scope was frozen at branch revision `5331bd60af2a5217c62071b28cb8ea0ec0a98594`
 before repair. The generated contract lock is unreleased and has SHA-256
 `3024c7a03609f20b0d0cf04de354c8b55dc33e95c9064a5af9ce9c68cabadcb9`.

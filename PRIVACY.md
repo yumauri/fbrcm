@@ -109,7 +109,9 @@ fbrcm credential file. A token supplied to stateless mode through
 `FBRCM_GOOGLE_ACCESS_TOKEN` is used in memory and is not persisted by fbrcm.
 
 Official release binaries include fbrcm's built-in OAuth Desktop client. fbrcm
-does not store this client in the user's profile configuration.
+does not store this client in the user's profile configuration. The built-in
+Google sign-in method is unavailable until Google completes verification of
+fbrcm's OAuth application.
 
 The separate bring-your-own `oauth` method stores the client JSON selected by
 the user.

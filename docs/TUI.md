@@ -51,7 +51,8 @@ click inside or outside the popup also closes it.
 When the active profile has neither authentication nor cached projects, the TUI
 opens guided setup instead of an empty workspace. It can:
 
-1. authorize with fbrcm's built-in Google OAuth client;
+1. authorize with fbrcm's built-in Google OAuth client (**unavailable — Google
+   verification pending**);
 2. import an OAuth Desktop app client JSON and complete browser authorization;
 3. import a service-account JSON key;
 4. validate existing [Google Cloud CLI](https://cloud.google.com/cli)
@@ -90,6 +91,11 @@ Official release binaries list this option first. It uses fbrcm's built-in
 OAuth Desktop client. You do not need to select a client JSON or create a
 Google Cloud OAuth client. Choose a quota project and complete browser
 authorization. fbrcm stores only the resulting token in the profile cache.
+
+> **Unavailable — Google verification pending:** This option will remain
+> unavailable until Google completes verification of fbrcm's OAuth application.
+> Use OAuth desktop app, service account, or Google Cloud CLI ADC in the
+> meantime.
 
 If either built-in OAuth client value is missing, the option stays visible as
 `Continue with Google (unavailable)` but appears muted. Keyboard and mouse

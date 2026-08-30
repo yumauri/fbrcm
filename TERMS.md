@@ -7,6 +7,9 @@ client, and the fbrcm documentation website. fbrcm is a local command-line and
 terminal application for managing Firebase Remote Config. It does not provide
 user accounts or a developer-operated backend.
 
+The built-in Google sign-in method is unavailable until Google completes
+verification of fbrcm's OAuth application.
+
 By using the official application or website, you agree to these terms. If you
 do not agree, do not use them.
 

@@ -2631,13 +2631,17 @@ Flags:
 
 In JSON mode, `data.items` contains identities and `data.count` contains their count. Every identity includes a `default` boolean; exactly the configured default identity has `default: true`. The optional `quota_project_id` is the persisted auth-level default.
 
-### `fbrcm auth add google <auth-id>`
+### `fbrcm auth add google <auth-id>` — unavailable pending Google verification
 
 Adds or replaces an interactive OAuth identity that uses fbrcm's built-in
 Google Desktop client. The command accepts neither a credential file nor stdin.
 It does not copy the built-in client into profile configuration. Official
 release binaries contain the client. A plain source build without the built-in
 client returns `auth.configuration_invalid` and leaves existing state unchanged.
+
+The built-in `google` method will remain unavailable until Google completes
+verification of fbrcm's OAuth application. Use `auth add oauth`,
+`auth add service-account`, or `auth add gcloud` in the meantime.
 
 Flags:
 
