@@ -188,6 +188,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │
 ├── auth
 │   ├── list [--json]
+│   ├── add google <auth-id> [--label <label>] [--quota-project <project-id>]
 │   ├── add oauth <auth-id> [--from <path>] [--label <label>] [--quota-project <project-id>]
 │   ├── add service-account <auth-id> [--from <path>] [--label <label>] [--quota-project <project-id>]
 │   ├── add gcloud <auth-id> [--label <label>] [--quota-project <project-id>]
@@ -793,10 +794,10 @@ Failure exit statuses are output-format independent: the same invocation uses
 the same semantic status with or without `--json`. Human mode changes only the
 presentation of the failure.
 
-If any Firebase command encounters an OAuth identity that still needs browser
-authorization, JSON mode returns `interaction.required` with a safe
-`auth login <auth-id>` remediation before creating a listener or launching a
-browser.
+If a Firebase command encounters a `google` or imported `oauth` identity that
+still needs browser authorization, JSON mode returns `interaction.required`
+with a safe `auth login <auth-id>` remediation. It does so before creating a
+listener or launching a browser.
 
 Every structured error and warning remediation declares how its non-empty
 `argv` must be used: `retry_with_arguments` augments the original invocation,
@@ -812,6 +813,7 @@ tests compare it exactly with the executable Cobra inventory.
 ```text
 add
 auth.add.gcloud
+auth.add.google
 auth.add.oauth
 auth.add.service-account
 auth.bind
@@ -1025,13 +1027,14 @@ The same schema defines every side-effect value under
 Firebase reads, Firebase validation, confirmation-authorized publication,
 local draft writes, cache updates, and trusted-hook execution. Pre-publish
 hooks can execute during dry-run; post-publish hooks require Firebase
-acceptance. OAuth and service-account imports declare a conditional
-`local_file_write` for their credential file. Every command that may construct
-a Firebase client also declares conditional authentication remote access,
-possible non-dry OAuth token-file persistence, and OAuth human-authorization
-interaction. Doctor declares only the remote authentication effect because it
-does not persist refreshed credentials or authorize interactively. Interaction
-behavior is a stable enum rather than free-form wording. Command-specific
+acceptance. Imported OAuth and service-account auth commands declare a
+conditional `local_file_write` for their credential file. Every command that
+may construct a Firebase client also declares conditional authentication remote
+access, possible token-file persistence when a Google or imported OAuth flow
+runs outside dry-run, and human interaction for browser authorization. Doctor
+declares only the remote authentication effect because it neither persists
+refreshed credentials nor authorizes interactively. Interaction behavior is a
+stable enum rather than free-form wording. Command-specific
 missing-input and selection clauses are preserved alongside confirmation
 conditions, and confirmation is reported only when the planned operation
 actually requires it. Local writes and output-file writes likewise carry
@@ -2628,6 +2631,25 @@ Flags:
 
 In JSON mode, `data.items` contains identities and `data.count` contains their count. Every identity includes a `default` boolean; exactly the configured default identity has `default: true`. The optional `quota_project_id` is the persisted auth-level default.
 
+### `fbrcm auth add google <auth-id>`
+
+Adds or replaces an interactive OAuth identity that uses fbrcm's built-in
+Google Desktop client. The command accepts neither a credential file nor stdin.
+It does not copy the built-in client into profile configuration. Official
+release binaries contain the client. A plain source build without the built-in
+client returns `auth.configuration_invalid` and leaves existing state unchanged.
+
+Flags:
+
+```text
+--label <label>    auth identity label
+--quota-project <project-id>
+                   persist the identity's quota-project default
+```
+
+Run `fbrcm auth login <auth-id>` to complete browser authorization. The cached
+token is the only credential file that fbrcm manages for this auth type.
+
 ### `fbrcm auth add oauth <auth-id>`
 
 Adds or replaces an OAuth identity and imports its desktop client secret JSON.
@@ -2703,27 +2725,30 @@ Flags:
 
 The `--quota-project` option on `auth add` is a persistent setup option, not a
 one-invocation runtime override. Replacing an existing identity without this
-option preserves its current persisted quota project.
+option preserves its current persisted quota project. Its value is trimmed,
+then validated as a literal physical Google Cloud project ID; selector prefixes
+and query syntax are not accepted.
 
 ### `fbrcm auth quota-project show|set|unset`
 
 Manages one auth identity's targetless-request quota project. `show <auth-id>`
 reports the configured value, effective value, and source. `set <auth-id>
 <quota-project-id>` persists a new default. `unset <auth-id>` removes it; a
-gcloud identity may then use its ADC `quota_project_id`, while OAuth and
-service-account identities become unresolved for targetless requests unless
-`GOOGLE_CLOUD_QUOTA_PROJECT` is set. All three commands support the global
-`--json` envelope.
+gcloud identity may then use its ADC `quota_project_id`, while Google OAuth,
+imported OAuth, and service-account identities become unresolved for targetless
+requests unless `GOOGLE_CLOUD_QUOTA_PROJECT` is set. All three commands support
+the global `--json` envelope.
 
 ### `fbrcm auth login <auth-id>`
 
-Authenticates or validates an auth identity. OAuth uses a valid cached token,
-refreshes it when possible, and starts browser login only when needed;
-service-account validates the key; gcloud validates ADC discovery. In JSON
-mode, OAuth returns `interaction.required` only when human authorization is
-needed. OAuth refresh may contact Google's token endpoint and persist a token;
-gcloud ADC discovery may contact the metadata server when no local ADC source
-is available. Service-account and gcloud validation remain non-interactive.
+Authenticates or validates an auth identity. The `google` and imported `oauth`
+methods first try a valid cached token, then refresh it when possible. They
+start browser login only when neither works. Service-account validates the key,
+and gcloud validates ADC discovery. In JSON mode, either browser OAuth type
+returns `interaction.required` only when human authorization is needed. OAuth
+refresh may contact Google's token endpoint and persist a token. Gcloud ADC
+discovery may contact the metadata server when no local ADC source is available.
+Service-account and gcloud validation remain non-interactive.
 Malformed stored credentials return typed auth failures. A missing or revoked
 OAuth grant can require human authorization, while transient token-endpoint
 network, timeout, rate-limit, and service errors retain typed retryable failures
@@ -2750,7 +2775,10 @@ Flags:
 
 ### `fbrcm auth delete <auth-id>`
 
-Deletes an auth identity and its client secret/token files.
+Deletes an auth identity and its managed client-secret, token, or key files.
+In JSON success data, `deleted_paths` contains exactly the managed files for the
+deleted type: one token path for `google`, the client-secret and token paths for
+imported `oauth`, one key path for `service-account`, and `null` for `gcloud`.
 
 Flags:
 

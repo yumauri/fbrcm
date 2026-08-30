@@ -25,6 +25,7 @@ perform the first targetless project discovery without one.
 
 You also need one of these credential sources:
 
+- fbrcm's built-in Google OAuth client in an official release;
 - a Google OAuth Desktop app client JSON;
 - a service-account key JSON; or
 - Google Cloud CLI Application Default Credentials (ADC).
@@ -100,6 +101,10 @@ Install from source with Go 1.27.0 or newer:
 go install github.com/yumauri/fbrcm@latest
 ```
 
+A plain source build omits fbrcm's official Google OAuth client. The other three
+authentication methods remain available. Follow the repository README to build
+the `google` method with a local client.
+
 </template>
 </ContentTabs>
 
@@ -119,7 +124,8 @@ fbrcm
 
 On a new profile, the setup screen asks you to:
 
-1. Choose OAuth, service-account, or gcloud ADC authentication.
+1. Choose built-in Google sign-in, imported OAuth, service-account, or gcloud
+   ADC authentication.
 2. Import or validate the selected credentials.
 3. Enter the physical Google Cloud project ID to use as the quota project.
 4. Complete browser authorization when OAuth requires it.
@@ -158,11 +164,27 @@ Choose exactly one of the following methods.
 <ContentTabs
   aria-label="Authentication method"
   :tabs="[
+    { id: 'google', label: 'Continue with Google' },
     { id: 'gcloud', label: 'Google Cloud CLI' },
     { id: 'oauth', label: 'OAuth Desktop app' },
     { id: 'service-account', label: 'Service account' }
   ]"
 >
+<template #google>
+
+Official fbrcm releases include the application's shared OAuth client. Add an
+identity without creating a Google Cloud client or downloading a client JSON:
+
+```sh
+fbrcm auth add google example-auth-name \
+  --quota-project example-quota-project-id
+
+fbrcm auth login example-auth-name
+```
+
+The final command opens Google's consent flow when authorization is needed.
+
+</template>
 <template #gcloud>
 
 If you already use the Google Cloud CLI, run:

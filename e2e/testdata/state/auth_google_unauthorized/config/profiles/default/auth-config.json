@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "default_auth_id": "google",
+  "auth": [
+    {
+      "id": "google",
+      "type": "google",
+      "label": "Unauthorized built-in Google fixture",
+      "quota_project_id": "billing-project",
+      "token_path": "auth/google/token.json"
+    }
+  ]
+}

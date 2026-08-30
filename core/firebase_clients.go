@@ -64,7 +64,7 @@ func (s *Core) firebaseServiceForAuth(ctx context.Context, authID string) (*fire
 			return nil, err
 		}
 		authCtx, autoOpen := s.oauthAuthorizationContext(serviceCtx, authID, true)
-		fb, err := firebase.NewServiceForAuth(authCtx, auth, autoOpen)
+		fb, err := firebase.NewServiceForAuth(authCtx, auth, autoOpen, s.googleOAuthCredentials)
 		if err != nil {
 			if errors.Is(err, firebase.ErrOAuthInteractionRequired) {
 				return nil, &OAuthInteractionError{AuthID: authID, Err: err}
@@ -143,6 +143,10 @@ func removeAuthFiles(auth config.AuthEntry) error {
 		if err := removeFileIfPresent(config.OAuthClientSecretPath(auth)); err != nil {
 			return fmt.Errorf("remove client secret: %w", err)
 		}
+		if err := removeFileIfPresent(config.OAuthTokenPath(auth)); err != nil {
+			return fmt.Errorf("remove token: %w", err)
+		}
+	case config.AuthTypeGoogle:
 		if err := removeFileIfPresent(config.OAuthTokenPath(auth)); err != nil {
 			return fmt.Errorf("remove token: %w", err)
 		}

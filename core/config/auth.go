@@ -12,6 +12,7 @@ import (
 const (
 	AuthConfigVersion      = 1
 	AuthTypeOAuth          = "oauth"
+	AuthTypeGoogle         = "google"
 	AuthTypeServiceAccount = "service-account"
 	AuthTypeGCloud         = "gcloud"
 )
@@ -92,6 +93,22 @@ func DefaultOAuthAuthEntry(id, label string) AuthEntry {
 		ClientSecretPath: filepath.ToSlash(filepath.Join("auth", id, "client-secret.json")),
 		TokenPath:        filepath.ToSlash(filepath.Join("auth", id, "token.json")),
 	}
+}
+
+// DefaultGoogleAuthEntry builds a built-in Google OAuth auth entry for id.
+func DefaultGoogleAuthEntry(id, label string) AuthEntry {
+	return AuthEntry{
+		ID:        id,
+		Type:      AuthTypeGoogle,
+		Label:     label,
+		TokenPath: filepath.ToSlash(filepath.Join("auth", id, "token.json")),
+	}
+}
+
+// IsInteractiveOAuthAuthType reports whether the auth type uses the shared
+// browser OAuth flow and a profile-scoped token cache.
+func IsInteractiveOAuthAuthType(authType string) bool {
+	return authType == AuthTypeOAuth || authType == AuthTypeGoogle
 }
 
 // DefaultServiceAccountAuthEntry builds default service account auth entry for id.
@@ -213,6 +230,19 @@ func validateAuthFile(file *AuthFile) error {
 			}
 			if err := validateAuthStoragePath(entry.ClientSecretPath, entry.ID, "client-secret.json"); err != nil {
 				return fmt.Errorf("auth %s client secret path: %w", entry.ID, err)
+			}
+			if strings.TrimSpace(entry.TokenPath) == "" {
+				return fmt.Errorf("auth %s token path is empty", entry.ID)
+			}
+			if err := validateAuthStoragePath(entry.TokenPath, entry.ID, "token.json"); err != nil {
+				return fmt.Errorf("auth %s token path: %w", entry.ID, err)
+			}
+		case AuthTypeGoogle:
+			if strings.TrimSpace(entry.ClientSecretPath) != "" {
+				return fmt.Errorf("auth %s client secret path must be empty", entry.ID)
+			}
+			if strings.TrimSpace(entry.ServiceAccountPath) != "" {
+				return fmt.Errorf("auth %s service account path must be empty", entry.ID)
 			}
 			if strings.TrimSpace(entry.TokenPath) == "" {
 				return fmt.Errorf("auth %s token path is empty", entry.ID)

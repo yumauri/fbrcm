@@ -29,7 +29,7 @@ func TestInitialEmptyStateOpensAuthenticationMethods(t *testing.T) {
 		t.Fatalf("mode=%v mandatory=%v, want methods mandatory", m.mode, m.mandatory)
 	}
 	view := testutil.NormalizeViewSnapshot(m.View(90, 28))
-	for _, want := range []string{"Authenticate", "Profile: default", "OAuth desktop login", "Service account", "Existing gcloud credentials"} {
+	for _, want := range []string{"Authenticate", "Profile: default", "Continue with Google", "built-in OAuth client", "OAuth desktop login", "Service account", "Existing gcloud credentials"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("setup view missing %q:\n%s", want, view)
 		}
@@ -65,6 +65,58 @@ func TestGCloudSetupRequiresQuotaProjectBeforeAddingAuth(t *testing.T) {
 	m, cmd = m.Update(keyText("enter"))
 	if cmd == nil || m.mode != modeAdding || m.quotaProject.Value() != "billing-project" {
 		t.Fatalf("valid quota submit = mode:%v cmd:%v value:%q", m.mode, cmd != nil, m.quotaProject.Value())
+	}
+}
+
+func TestGoogleSetupUsesQuotaProjectWithoutFilePicker(t *testing.T) {
+	m := New(nil)
+	m.googleAvailable = true
+	m.mode = modeMethods
+	m.cursor = int(methodGoogle)
+	m.authID = "default"
+
+	m, _ = m.Update(keyText("enter"))
+	if m.method != methodGoogle || m.mode != modeQuotaProject {
+		t.Fatalf("method=%v mode=%v, want Google quota project", m.method, m.mode)
+	}
+	if strings.Contains(testutil.NormalizeViewSnapshot(m.View(90, 28)), "Select OAuth client") {
+		t.Fatal("Google setup unexpectedly opened the OAuth client file picker")
+	}
+}
+
+func TestUnavailableGoogleMethodIsMutedAndUnselectable(t *testing.T) {
+	m := New(nil)
+	m.mode = modeMethods
+
+	if m.cursor != int(methodOAuth) {
+		t.Fatalf("initial cursor = %d, want OAuth method %d", m.cursor, methodOAuth)
+	}
+	lines := m.methodsLines(72)
+	wantLine := "  " + cardMutedStyle.Render("Continue with Google (unavailable)")
+	if lines[4] != wantLine {
+		t.Fatalf("unavailable Google line = %q, want muted line %q", lines[4], wantLine)
+	}
+	if got := ansi.Strip(lines[5]); got != "    This build does not include fbrcm's built-in OAuth client" {
+		t.Fatalf("unavailable Google detail = %q", got)
+	}
+
+	m.cursor = int(methodOAuth)
+	m, _ = m.Update(keyText("up"))
+	if m.cursor != int(methodGCloud) {
+		t.Fatalf("cursor after up = %d, want gcloud method %d", m.cursor, methodGCloud)
+	}
+	m, _ = m.Update(keyText("down"))
+	if m.cursor != int(methodOAuth) {
+		t.Fatalf("cursor after down = %d, want OAuth method %d", m.cursor, methodOAuth)
+	}
+
+	m.cursor = int(methodGoogle)
+	m, cmd := m.Update(keyText("enter"))
+	if cmd != nil || m.mode != modeMethods || m.cursor != int(methodOAuth) {
+		t.Fatalf("forced unavailable submit = mode:%v cursor:%d cmd:%v", m.mode, m.cursor, cmd)
+	}
+	if got, ok := m.selectionIndexAtBodyRow(4); ok || got != int(methodGoogle) {
+		t.Fatalf("unavailable Google mouse row = %d, %v; want %d, false", got, ok, methodGoogle)
 	}
 }
 
@@ -415,7 +467,7 @@ func TestAuthenticateAndProfileListRowsUseTwoColumnInset(t *testing.T) {
 	m := checkingTestModel(true)
 	m.mode = modeMethods
 	methodLines := m.methodsLines(72)
-	for _, index := range []int{4, 7, 10} {
+	for _, index := range []int{4, 7, 10, 13} {
 		if got := ansi.Strip(methodLines[index]); !strings.HasPrefix(got, "  ") || strings.HasPrefix(got, "   ") {
 			t.Fatalf("authentication row %d inset = %q, want exactly two spaces", index, got)
 		}
@@ -432,6 +484,25 @@ func TestAuthenticateAndProfileListRowsUseTwoColumnInset(t *testing.T) {
 	}
 	if view := ansi.Strip(strings.Join(profileLines, "\n")); strings.Contains(view, "+ new profile") || !strings.Contains(view, "  new profile") {
 		t.Fatalf("profiles do not render an inline new profile row:\n%s", view)
+	}
+}
+
+func TestAuthenticationMethodMouseRowsMatchRenderedChoices(t *testing.T) {
+	m := checkingTestModel(true)
+	m.mode = modeMethods
+	for _, test := range []struct {
+		row    int
+		method authMethod
+	}{
+		{row: 4, method: methodGoogle},
+		{row: 7, method: methodOAuth},
+		{row: 10, method: methodServiceAccount},
+		{row: 13, method: methodGCloud},
+	} {
+		got, ok := m.selectionIndexAtBodyRow(test.row)
+		if !ok || got != int(test.method) {
+			t.Fatalf("row %d = %d, %v; want %d", test.row, got, ok, test.method)
+		}
 	}
 }
 
@@ -725,6 +796,8 @@ func (e errTest) Error() string { return string(e) }
 
 func checkingTestModel(initial bool) Model {
 	m := New(nil)
+	m.googleAvailable = true
+	m.cursor = int(methodGoogle)
 	m.mode = modeChecking
 	m.initial = initial
 	m.mandatory = initial

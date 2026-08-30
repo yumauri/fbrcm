@@ -1,6 +1,6 @@
 # Privacy policy for fbrcm
 
-Last updated: August 28, 2026
+Last updated: August 30, 2026
 
 fbrcm is a local command-line and terminal application for managing Firebase
 Remote Config. It has no developer-operated backend, does not include telemetry
@@ -92,8 +92,8 @@ the local application-data directory on Windows. The `FBRCM_CONFIG_DIR` and
 
 Stored data can include:
 
-- OAuth client configuration and service-account key files in the profile
-  configuration directory;
+- user-imported OAuth client configuration and service-account key files in
+  the profile configuration directory;
 - OAuth access and refresh tokens in a profile cache file named `token.json`;
 - the local authentication registry and project metadata, including quota project
   IDs explicitly configured for an authentication identity or project;
@@ -107,6 +107,12 @@ Application Default Credentials remain managed by Google Cloud CLI; fbrcm uses
 them through Google's authentication library and does not copy them into an
 fbrcm credential file. A token supplied to stateless mode through
 `FBRCM_GOOGLE_ACCESS_TOKEN` is used in memory and is not persisted by fbrcm.
+
+Official release binaries include fbrcm's built-in OAuth Desktop client. fbrcm
+does not store this client in the user's profile configuration.
+
+The separate bring-your-own `oauth` method stores the client JSON selected by
+the user.
 
 fbrcm uses a quota project ID from `GOOGLE_CLOUD_QUOTA_PROJECT` or Google Cloud
 CLI Application Default Credentials at runtime. It does not copy the ID into
@@ -167,7 +173,7 @@ no longer retains the corresponding version.
 Users can remove local data with the following commands:
 
 - `fbrcm auth delete <auth-id>` removes an fbrcm identity and its locally stored
-  OAuth client, token, or service-account key files;
+  imported OAuth client, token, or service-account key files;
 - `fbrcm cache clear` removes cached Remote Config version snapshots;
 - `fbrcm draft discard --all` removes all drafts in the active profile;
 - `fbrcm projects forget` removes tracked projects and their associated

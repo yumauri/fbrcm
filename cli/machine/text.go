@@ -8,9 +8,9 @@ import (
 const MaxSafeTextRunes = 4096
 
 var (
-	jsonSecretPattern = regexp.MustCompile(`(?i)("(?:access_token|refresh_token|client_secret|private_key|password|token)"\s*:\s*")[^"]*(")`)
+	jsonSecretPattern = regexp.MustCompile(`(?i)("(?:access_token|refresh_token|client_id|client_secret|private_key|password|token)"\s*:\s*")[^"]*(")`)
 	bearerPattern     = regexp.MustCompile(`(?i)(bearer\s+)[A-Za-z0-9._~+/=-]+`)
-	assignmentSecret  = regexp.MustCompile(`(?i)((?:token|secret|password|private_key)\s*[=:]\s*)\S+`)
+	assignmentSecret  = regexp.MustCompile(`(?i)((?:client_id|token|secret|password|private_key)\s*[=:]\s*)\S+`)
 )
 
 // SafeText redacts common credential forms and bounds machine-visible text.

@@ -24,7 +24,7 @@ func setupAuthCommandTest(t *testing.T) *core.Core {
 	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
 		t.Fatal(err)
 	}
-	svc, err := core.NewService(context.Background())
+	svc, err := core.NewService(context.Background(), core.WithGoogleOAuthClientCredentials("test-client-id", "test-client-secret"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,6 +89,66 @@ func TestAuthAddGCloudAndList(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "main") {
 		t.Fatalf("output = %q, want main auth", out.String())
+	}
+}
+
+func TestAuthAddGoogleUsesBuiltInClient(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	cmd := newAddGoogleCommand(svc)
+	if err := cmd.Flags().Set("label", "Google"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Flags().Set("quota-project", "  billing-project  "); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	if err := cmd.RunE(cmd, []string{"google"}); err != nil {
+		t.Fatalf("auth add google = %v", err)
+	}
+	if !strings.Contains(out.String(), "oauth client: built into fbrcm") {
+		t.Fatalf("output = %q", out.String())
+	}
+	entries, _, err := svc.ListAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Type != config.AuthTypeGoogle || entries[0].QuotaProjectID != "billing-project" || entries[0].ClientSecretPath != "" {
+		t.Fatalf("entries = %+v", entries)
+	}
+}
+
+func TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	cmd := newAddGoogleCommand(svc)
+	if err := cmd.Flags().Set("quota-project", "client@billing-project"); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"google"})
+	problem := contract.Classify(err)
+	if problem.Code != "argument.invalid" || problem.Category != "argument" {
+		t.Fatalf("problem = %#v", problem)
+	}
+	entries, _, listErr := svc.ListAuth()
+	if listErr != nil {
+		t.Fatal(listErr)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("invalid invocation persisted entries: %+v", entries)
+	}
+}
+
+func TestAuthAddGoogleClassifiesMissingBuiltInClient(t *testing.T) {
+	_ = setupAuthCommandTest(t)
+	svc, err := core.NewService(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := newAddGoogleCommand(svc)
+	err = cmd.RunE(cmd, []string{"google"})
+	problem := contract.Classify(err)
+	if problem.Code != "auth.configuration_invalid" || problem.Category != "auth" {
+		t.Fatalf("problem = %#v", problem)
 	}
 }
 

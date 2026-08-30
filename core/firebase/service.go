@@ -23,7 +23,7 @@ type authHTTPClientResult struct {
 }
 
 // NewServiceForAuth constructs service for auth entry with options.
-func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool) (*Service, error) {
+func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool, googleCredentials ...OAuthClientCredentials) (*Service, error) {
 	logger := corelog.For("firebase")
 	logger.Debug("create firebase service", "auth_id", auth.ID, "auth_type", auth.Type)
 	ctx, err := withEnvironmentTLSRoots(ctx)
@@ -35,7 +35,7 @@ func NewServiceForAuth(ctx context.Context, auth config.AuthEntry, autoOpen bool
 	if err != nil {
 		return nil, err
 	}
-	result, err := authHTTPClient(ctx, auth, autoOpen)
+	result, err := authHTTPClient(ctx, auth, autoOpen, firstOAuthClientCredentials(googleCredentials))
 	if err != nil {
 		logger.Error("create firebase http client failed", "err", err)
 		return nil, err
@@ -70,7 +70,7 @@ func NewServiceWithAccessToken(ctx context.Context, accessToken string) (*Servic
 
 // NewDiagnosticServiceForAuth constructs a service without starting an
 // interactive OAuth authorization flow or persisting refreshed credentials.
-func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*Service, error) {
+func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry, googleCredentials ...OAuthClientCredentials) (*Service, error) {
 	ctx, err := withEnvironmentTLSRoots(ctx)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func NewDiagnosticServiceForAuth(ctx context.Context, auth config.AuthEntry) (*S
 	if err != nil {
 		return nil, err
 	}
-	result, err := diagnosticAuthHTTPClient(ctx, auth)
+	result, err := diagnosticAuthHTTPClient(ctx, auth, firstOAuthClientCredentials(googleCredentials))
 	if err != nil {
 		return nil, err
 	}
@@ -129,10 +129,17 @@ func ResolveQuotaProjectForAuth(ctx context.Context, auth config.AuthEntry, proj
 	return policy.selectProject(targetProjectID)
 }
 
-func diagnosticAuthHTTPClient(ctx context.Context, auth config.AuthEntry) (authHTTPClientResult, error) {
+func diagnosticAuthHTTPClient(ctx context.Context, auth config.AuthEntry, googleCredentials OAuthClientCredentials) (authHTTPClientResult, error) {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		client, err := diagnosticOAuthHTTPClient(ctx, config.OAuthClientSecretPath(auth), config.OAuthTokenPath(auth))
+		return authHTTPClientResult{client: client, useTargetProjectQuota: true}, err
+	case config.AuthTypeGoogle:
+		oauthCfg, err := googleCredentials.config()
+		if err != nil {
+			return authHTTPClientResult{}, credentialAuthenticationError(config.AuthTypeGoogle, "load_credentials", err)
+		}
+		client, err := diagnosticOAuthHTTPClientWithConfig(ctx, config.AuthTypeGoogle, oauthCfg, config.OAuthTokenPath(auth))
 		return authHTTPClientResult{client: client, useTargetProjectQuota: true}, err
 	case config.AuthTypeServiceAccount:
 		client, err := serviceAccountHTTPClient(ctx, config.ServiceAccountKeyPath(auth))
@@ -160,10 +167,13 @@ func NewServiceWithHTTPClient(client *http.Client) *Service {
 	}
 }
 
-func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool) (authHTTPClientResult, error) {
+func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool, googleCredentials OAuthClientCredentials) (authHTTPClientResult, error) {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		client, err := oauthHTTPClient(ctx, config.OAuthClientSecretPath(auth), config.OAuthTokenPath(auth), autoOpen)
+		return authHTTPClientResult{client: client, useTargetProjectQuota: true}, err
+	case config.AuthTypeGoogle:
+		client, err := googleOAuthHTTPClient(ctx, googleCredentials, config.OAuthTokenPath(auth), autoOpen)
 		return authHTTPClientResult{client: client, useTargetProjectQuota: true}, err
 	case config.AuthTypeServiceAccount:
 		client, err := serviceAccountHTTPClient(ctx, config.ServiceAccountKeyPath(auth))
@@ -174,6 +184,13 @@ func authHTTPClient(ctx context.Context, auth config.AuthEntry, autoOpen bool) (
 	default:
 		return authHTTPClientResult{}, errAuthRequired()
 	}
+}
+
+func firstOAuthClientCredentials(values []OAuthClientCredentials) OAuthClientCredentials {
+	if len(values) == 0 {
+		return OAuthClientCredentials{}
+	}
+	return values[0]
 }
 
 // WithQuotaProjectOverride returns an immutable project-scoped service view.

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -21,7 +22,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 	authCmd.AddCommand(newListCommand(svc), newAddCommand(svc), newLoginCommand(svc), newPathCommand(svc), newDeleteCommand(svc), newBindCommand(svc), newQuotaProjectCommand(svc))
 	contract.MustRegisterResponsePath(authCmd, "list", []authListItem{})
-	for _, path := range []string{"add oauth", "add service-account", "add gcloud"} {
+	for _, path := range []string{"add google", "add oauth", "add service-account", "add gcloud"} {
 		contract.MustRegisterResponsePath(authCmd, path, authMutationResult{})
 	}
 	contract.MustRegisterResponsePath(authCmd, "login", authLoginResult{})
@@ -64,7 +65,50 @@ func newAddCommand(svc *core.Core) *cobra.Command {
 		Use:   "add",
 		Short: "Add auth identity",
 	}
-	cmd.AddCommand(newAddOAuthCommand(svc), newAddServiceAccountCommand(svc), newAddGCloudCommand(svc))
+	cmd.AddCommand(newAddGoogleCommand(svc), newAddOAuthCommand(svc), newAddServiceAccountCommand(svc), newAddGCloudCommand(svc))
+	return cmd
+}
+
+func newAddGoogleCommand(svc *core.Core) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "google <auth-id>",
+		Short: "Add Google OAuth auth identity",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := config.ValidateAuthID(args[0]); err != nil {
+				return shared.InvalidArgument(err)
+			}
+			label, err := cmd.Flags().GetString("label")
+			if err != nil {
+				return err
+			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
+			var entry config.AuthEntry
+			if hasQuotaProject {
+				entry, err = svc.AddGoogleAuthWithQuotaProject(args[0], label, quotaProjectID)
+			} else {
+				entry, err = svc.AddGoogleAuth(args[0], label)
+			}
+			if err != nil {
+				return err
+			}
+			_, paths, err := svc.AuthPaths(entry.ID)
+			if err != nil {
+				return err
+			}
+			if contract.Enabled(cmd) {
+				return shared.WriteJSON(cmd, newAuthMutationResult(entry, "added", paths))
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔐 added auth: %s\n", entry.ID)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "oauth client: built into fbrcm")
+			return nil
+		},
+	}
+	cmd.Flags().String("label", "", "Auth identity label")
+	cmd.Flags().String("quota-project", "", "Persist the Google Cloud quota project for this auth identity")
 	return cmd
 }
 
@@ -92,12 +136,12 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 			if err := firebase.ValidateOAuthClientSecret(data); err != nil {
 				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddOAuthAuthWithQuotaProject(args[0], label, data, quotaProjectID)
 			} else {
 				entry, err = svc.AddOAuthAuth(args[0], label, data)
@@ -147,12 +191,12 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 			if err := firebase.ValidateServiceAccountKey(data); err != nil {
 				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddServiceAccountAuthWithQuotaProject(args[0], label, data, quotaProjectID)
 			} else {
 				entry, err = svc.AddServiceAccountAuth(args[0], label, data)
@@ -191,12 +235,12 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddGCloudAuthWithQuotaProject(args[0], label, quotaProjectID)
 			} else {
 				entry, err = svc.AddGCloudAuth(args[0], label)
@@ -215,6 +259,21 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().String("label", "", "Auth identity label")
 	cmd.Flags().String("quota-project", "", "Persist the Google Cloud quota project for this auth identity")
 	return cmd
+}
+
+func authAddQuotaProject(cmd *cobra.Command) (string, bool, error) {
+	if !cmd.Flags().Changed("quota-project") {
+		return "", false, nil
+	}
+	quotaProjectID, err := cmd.Flags().GetString("quota-project")
+	if err != nil {
+		return "", false, err
+	}
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+		return "", false, shared.InvalidArgument(err)
+	}
+	return quotaProjectID, true, nil
 }
 
 func newLoginCommand(svc *core.Core) *cobra.Command {
@@ -238,7 +297,7 @@ func newLoginCommand(svc *core.Core) *cobra.Command {
 				return shared.WriteJSON(cmd, authLoginResult{AuthID: auth.ID, Type: auth.Type, Status: "authenticated", Paths: authPathPayload(auth, paths)})
 			}
 			switch auth.Type {
-			case config.AuthTypeOAuth:
+			case config.AuthTypeOAuth, config.AuthTypeGoogle:
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔑 authenticated: %s\n", paths.TokenPath)
 			case config.AuthTypeServiceAccount:
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🔑 authenticated: %s\n", paths.ServiceAccountPath)
@@ -382,7 +441,7 @@ func newBindCommand(svc *core.Core) *cobra.Command {
 
 type authMutationResult struct {
 	AuthID         string         `json:"auth_id"`
-	Type           string         `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Type           string         `json:"type" contract:"enum=google|oauth|service-account|gcloud"`
 	Label          string         `json:"label"`
 	QuotaProjectID string         `json:"quota_project_id,omitempty"`
 	Status         string         `json:"status" contract:"enum=added"`
@@ -395,14 +454,14 @@ func newAuthMutationResult(entry config.AuthEntry, status string, paths core.Aut
 
 type authLoginResult struct {
 	AuthID string         `json:"auth_id"`
-	Type   string         `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Type   string         `json:"type" contract:"enum=google|oauth|service-account|gcloud"`
 	Status string         `json:"status" contract:"enum=authenticated"`
 	Paths  authPathResult `json:"paths"`
 }
 
 type authDeleteResult struct {
 	AuthID       string   `json:"auth_id"`
-	Type         string   `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Type         string   `json:"type" contract:"enum=google|oauth|service-account|gcloud"`
 	Status       string   `json:"status" contract:"enum=deleted"`
 	DeletedPaths []string `json:"deleted_paths"`
 }

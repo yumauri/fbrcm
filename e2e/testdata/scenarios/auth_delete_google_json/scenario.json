@@ -1,0 +1,12 @@
+{
+  "name": "auth_delete_google_json",
+  "command_id": "auth.delete",
+  "args": ["auth", "delete", "google", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [{"root": "config", "path": "profiles/default/auth-config.json"}],
+  "expected_absent_state_paths": [{"root": "cache", "path": "profiles/default/auth/google/token.json"}],
+  "json_output": true,
+  "fixture": "auth_google",
+  "offline": true
+}

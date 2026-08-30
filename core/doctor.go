@@ -78,7 +78,7 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 	authDiagnostics := make(map[string]firebase.AuthDiagnostic)
 	if authErr == nil {
 		for _, auth := range authFile.Auth {
-			diagnostic, err := firebase.InspectAuth(auth)
+			diagnostic, err := firebase.InspectAuth(auth, s.googleOAuthCredentials)
 			checkName := fmt.Sprintf("Credentials (%s)", auth.ID)
 			if err != nil {
 				report.add("credentials:"+auth.ID, DoctorFail, checkName, err.Error())
@@ -96,7 +96,7 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 				detail += "; " + diagnostic.CredentialWarning
 			}
 			report.add("credentials:"+auth.ID, status, checkName, detail)
-			if auth.Type == config.AuthTypeOAuth {
+			if config.IsInteractiveOAuthAuthType(auth.Type) {
 				report.addOAuthTokenCheck(auth.ID, diagnostic)
 			}
 		}
@@ -142,8 +142,8 @@ func (s *Core) Doctor(ctx context.Context) DoctorReport {
 		if !localAuthOK[auth.ID] {
 			continue
 		}
-		fb, err := firebase.NewDiagnosticServiceForAuth(ctx, auth)
-		if auth.Type == config.AuthTypeOAuth && (err == nil || ctx.Err() == nil) {
+		fb, err := firebase.NewDiagnosticServiceForAuth(ctx, auth, s.googleOAuthCredentials)
+		if config.IsInteractiveOAuthAuthType(auth.Type) && (err == nil || ctx.Err() == nil) {
 			report.updateOAuthTokenRefresh(auth.ID, authDiagnostics[auth.ID], err)
 		}
 		if err != nil {

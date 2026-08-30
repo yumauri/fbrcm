@@ -136,6 +136,7 @@ func (m Model) finishInitialInspection() (Model, tea.Cmd) {
 	if len(m.auth) == 0 {
 		m.mandatory = true
 		m.mode = modeMethods
+		m.cursor = m.firstAvailableMethod()
 		return m, nil
 	}
 
@@ -295,7 +296,7 @@ func (m Model) updateAccountsKey(k string) (Model, tea.Cmd) {
 	case tuiconfig.Matches(tuiconfig.BlockAccounts, tuiconfig.ActionSubmit, k):
 		if m.cursor == len(m.auth) {
 			m.mode = modeMethods
-			m.cursor = 0
+			m.cursor = m.firstAvailableMethod()
 			return m, nil
 		}
 		m.authID = m.selectedAccountID()
@@ -328,10 +329,14 @@ func (m Model) updateMethodsKey(k string) (Model, tea.Cmd) {
 	}
 	switch k {
 	case "up", "k":
-		m.moveCursor(-1, 3)
+		m.moveMethodCursor(-1)
 	case "down", "j":
-		m.moveCursor(1, 3)
+		m.moveMethodCursor(1)
 	case "enter":
+		if !m.methodAvailable(authMethod(m.cursor)) {
+			m.cursor = m.firstAvailableMethod()
+			return m, nil
+		}
 		m.method = authMethod(m.cursor)
 		m.authID = m.suggestedAuthID()
 		if len(m.auth) > 0 {
@@ -544,10 +549,12 @@ func (m Model) selectionIndexAtBodyRow(row int) (int, bool) {
 	case modeMethods:
 		switch row {
 		case 4:
-			return int(methodOAuth), true
+			return int(methodGoogle), m.googleAvailable
 		case 7:
-			return int(methodServiceAccount), true
+			return int(methodOAuth), true
 		case 10:
+			return int(methodServiceAccount), true
+		case 13:
 			return int(methodGCloud), true
 		}
 	case modeNoProjects:
@@ -615,7 +622,7 @@ func (m Model) returnFromProfiles() (Model, tea.Cmd) {
 		m.cursor = 0
 	} else {
 		m.mode = modeMethods
-		m.cursor = 0
+		m.cursor = m.firstAvailableMethod()
 	}
 	return m, nil
 }
@@ -681,7 +688,7 @@ func (m Model) updateIdentityKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) {
 func (m Model) continueSelectedMethod() (Model, tea.Cmd) {
 	m.error = nil
 	m.failure = failureNone
-	if m.method == methodGCloud {
+	if m.method == methodGoogle || m.method == methodGCloud {
 		m.mode = modeQuotaProject
 		m.quotaProject.SetValue("")
 		return m, m.quotaProject.Focus()
@@ -723,7 +730,7 @@ func (m Model) updateQuotaProjectKey(msg tea.KeyMsg, k string) (Model, tea.Cmd) 
 	switch k {
 	case "esc":
 		m.quotaProject.Blur()
-		if m.method == methodGCloud {
+		if m.method == methodGoogle || m.method == methodGCloud {
 			if len(m.auth) > 0 {
 				m.mode = modeIdentity
 				return m, m.identity.Focus()
@@ -797,7 +804,7 @@ func (m Model) updateNoProjectsKey(k string) (Model, tea.Cmd) {
 			return m, tea.Batch(syncCmd, m.spinner.Tick)
 		case 1:
 			m.mode = modeMethods
-			m.cursor = 0
+			m.cursor = m.firstAvailableMethod()
 		case 2:
 			reset := m.profileNew
 			return m, func() tea.Msg { return WorkspaceReadyMsg{Source: "firebase", Reset: reset} }
@@ -857,6 +864,7 @@ func (m Model) updateErrorKey(k string) (Model, tea.Cmd) {
 				m.cursor = 0
 			} else {
 				m.mode = modeMethods
+				m.cursor = m.firstAvailableMethod()
 			}
 		case failureSwitch:
 			m.mode = modeProfiles
@@ -880,6 +888,27 @@ func (m *Model) moveCursor(delta, count int) {
 		return
 	}
 	m.cursor = (m.cursor + delta + count) % count
+}
+
+func (m Model) firstAvailableMethod() int {
+	if m.googleAvailable {
+		return int(methodGoogle)
+	}
+	return int(methodOAuth)
+}
+
+func (m Model) methodAvailable(method authMethod) bool {
+	return method != methodGoogle || m.googleAvailable
+}
+
+func (m *Model) moveMethodCursor(delta int) {
+	for range 4 {
+		m.moveCursor(delta, 4)
+		if m.methodAvailable(authMethod(m.cursor)) {
+			return
+		}
+	}
+	m.cursor = m.firstAvailableMethod()
 }
 
 func (m *Model) setFailure(stage failureStage, err error) {

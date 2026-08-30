@@ -13,6 +13,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/internal/builtinoauth"
 	"github.com/yumauri/fbrcm/tui"
 )
 
@@ -29,7 +30,11 @@ func main() {
 	}
 	corelog.InitWithDefault(mode, defaultLogLevel(mode, os.Args[1:]))
 
-	svc, err := core.NewService(context.Background())
+	googleOAuthClientID, googleOAuthClientSecret := builtinoauth.Credentials()
+	svc, err := core.NewService(
+		context.Background(),
+		core.WithGoogleOAuthClientCredentials(googleOAuthClientID, googleOAuthClientSecret),
+	)
 	if err != nil {
 		corelog.For("main").Error("application initialization failed", "err", err)
 		if mode == corelog.ModeCLI && contract.JSONRequested(os.Args[1:]) {

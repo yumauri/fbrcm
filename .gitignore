@@ -2,6 +2,7 @@
 completions/
 dist/
 fbrcm
+internal/builtinoauth/credentials_generated.go
 *.exe
 *.exe~
 *.dll
@@ -41,5 +42,6 @@ client_secret.json
 projects-config.json
 token.json
 .fbrcm.toml
+!e2e/testdata/state/**/token.json
 !e2e/testdata/state/**/.fbrcm.toml
 .firebaserc

@@ -345,6 +345,36 @@ func TestLoadAuthMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 }
 
+func TestGoogleAuthEntryPersistsOnlyItsTokenPath(t *testing.T) {
+	setupTestDirs(t)
+	if err := SwitchProfile(DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	entry := DefaultGoogleAuthEntry("google", "Google")
+	if entry.Type != AuthTypeGoogle || entry.TokenPath == "" || entry.ClientSecretPath != "" || entry.ServiceAccountPath != "" {
+		t.Fatalf("DefaultGoogleAuthEntry = %+v", entry)
+	}
+	if !IsInteractiveOAuthAuthType(entry.Type) || !IsInteractiveOAuthAuthType(AuthTypeOAuth) || IsInteractiveOAuthAuthType(AuthTypeGCloud) {
+		t.Fatal("interactive OAuth auth-type classification is incorrect")
+	}
+	if err := SaveAuth(UpsertAuthEntry(nil, entry)); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := LoadAuth()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := loaded.FindAuth("google")
+	if !ok || !reflect.DeepEqual(got, entry) {
+		t.Fatalf("round trip = %+v, ok=%v; want %+v", got, ok, entry)
+	}
+
+	entry.ClientSecretPath = "auth/google/client-secret.json"
+	if err := SaveAuth(UpsertAuthEntry(nil, entry)); err == nil || !strings.Contains(err.Error(), "client secret path must be empty") {
+		t.Fatalf("SaveAuth accepted a persisted built-in client path: %v", err)
+	}
+}
+
 func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 	if ProjectsConfigVersion != 1 {
 		t.Fatalf("ProjectsConfigVersion = %d, want 1 before v1.0.0", ProjectsConfigVersion)

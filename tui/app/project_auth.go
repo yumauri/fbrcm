@@ -174,6 +174,8 @@ func (m *Model) closeAuthPicker() {
 
 func authTypeName(value string) string {
 	switch value {
+	case config.AuthTypeGoogle:
+		return "Google OAuth"
 	case config.AuthTypeOAuth:
 		return "OAuth"
 	case config.AuthTypeServiceAccount:

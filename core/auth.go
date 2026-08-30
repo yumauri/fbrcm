@@ -151,6 +151,49 @@ func (s *Core) addOAuthAuth(authID, label string, secret []byte, quotaProjectID 
 	return entry, nil
 }
 
+// AddGoogleAuth adds or replaces an identity that uses fbrcm's built-in Google
+// Desktop OAuth client.
+func (s *Core) AddGoogleAuth(authID, label string) (config.AuthEntry, error) {
+	return s.addGoogleAuth(authID, label, nil)
+}
+
+// AddGoogleAuthWithQuotaProject adds or replaces a built-in Google OAuth
+// identity and stores its quota-project default.
+func (s *Core) AddGoogleAuthWithQuotaProject(authID, label, quotaProjectID string) (config.AuthEntry, error) {
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	return s.addGoogleAuth(authID, label, &quotaProjectID)
+}
+
+func (s *Core) addGoogleAuth(authID, label string, quotaProjectID *string) (config.AuthEntry, error) {
+	if err := config.ValidateAuthID(authID); err != nil {
+		return config.AuthEntry{}, err
+	}
+	if err := s.googleOAuthCredentials.Validate(); err != nil {
+		return config.AuthEntry{}, &AuthError{Kind: "configuration", AuthID: authID, Err: err}
+	}
+	authFile, err := loadAuthOrEmpty()
+	if err != nil {
+		return config.AuthEntry{}, err
+	}
+	previous, hadPrevious := authFile.FindAuth(authID)
+	entry := config.DefaultGoogleAuthEntry(authID, label)
+	applyAuthQuotaProject(&entry, previous, hadPrevious, quotaProjectID)
+	authFile = config.UpsertAuthEntry(authFile, entry)
+	if err := config.SaveAuth(authFile); err != nil {
+		return config.AuthEntry{}, err
+	}
+	if hadPrevious && previous.Type != config.AuthTypeGoogle {
+		if err := removeAuthFiles(previous); err != nil {
+			return config.AuthEntry{}, err
+		}
+	}
+	s.dropFirebaseService(authID)
+	return entry, nil
+}
+
 // AddServiceAccountAuth adds or replaces service account auth identity.
 func (s *Core) AddServiceAccountAuth(authID, label string, key []byte) (config.AuthEntry, error) {
 	return s.addServiceAccountAuth(authID, label, key, nil)
@@ -307,6 +350,8 @@ func (s *Core) AuthPaths(authID string) (config.AuthEntry, AuthPaths, error) {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		paths.ClientSecretPath = config.OAuthClientSecretPath(auth)
+		paths.TokenPath = config.OAuthTokenPath(auth)
+	case config.AuthTypeGoogle:
 		paths.TokenPath = config.OAuthTokenPath(auth)
 	case config.AuthTypeServiceAccount:
 		paths.ServiceAccountPath = config.ServiceAccountKeyPath(auth)

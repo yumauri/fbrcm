@@ -52,6 +52,23 @@ missing `cloudconfig.configs.update` permission.
 
 ## Authentication methods
 
+### Google sign-in
+
+Official fbrcm release binaries include fbrcm's OAuth Desktop client. You do
+not need to create a Google Cloud OAuth client or download a client JSON:
+
+```sh
+fbrcm auth add google example-auth-name \
+  --quota-project example-quota-project-id
+fbrcm auth login example-auth-name
+```
+
+The login command opens Google's authorization flow and caches the resulting
+token locally.
+
+A plain source build omits the built-in client. Use one of the other three
+methods, or follow the repository README to build with a local client.
+
 ### Google Cloud CLI ADC
 
 Create Application Default Credentials outside fbrcm:
@@ -75,6 +92,38 @@ environment, project, or auth-level setting takes precedence. Passing
 
 Create a Desktop app OAuth client, download its JSON, and register it:
 
+::: details Where to get client-secret.json
+
+1. Open [Google Auth Platform → Clients](https://console.cloud.google.com/auth/clients)
+   and select the Google Cloud project that will own the OAuth client.
+2. If Google asks you to register the application first, complete the displayed
+   setup for the app name, user-support email, audience, and developer contact.
+   This is the current Google Auth Platform version of configuring an OAuth
+   consent screen.
+3. If you select an **External** audience and the publishing status is
+   **Testing**, open **Google Auth Platform → Audience** and add the Google
+   account that you will use with `fbrcm auth login` under **Test users**.
+   fbrcm requests the Cloud Platform scope, so authorization is not covered by
+   Google's basic-profile exception.
+4. Click **Create client**, choose **Desktop app**, give the client a recognizable
+   name, and click **Create**.
+5. Download the JSON when the client is created. You may rename the downloaded
+   file to `client-secret.json`; fbrcm does not require that exact filename.
+
+For an External app in Testing, Google expires the authorization after seven
+days, including an offline refresh token. You must then run `fbrcm auth login`
+again. See Google's [app registration](https://support.google.com/cloud/answer/15544987)
+and [audience and test-user](https://support.google.com/cloud/answer/15549945)
+documentation for the current rules.
+
+Google only exposes newly created client secrets in full at creation time, so
+keep the downloaded JSON somewhere private. If it is lost, create or rotate the
+client credentials. Never commit this file to a repository. See Google's
+[OAuth client instructions](https://support.google.com/cloud/answer/15549257)
+for the current console workflow.
+
+:::
+
 ```sh
 fbrcm auth add oauth example-auth-name \
   --from /path/to/client-secret.json \
@@ -87,12 +136,36 @@ Complete authorization separately:
 fbrcm auth login example-auth-name
 ```
 
-fbrcm caches tokens locally for later commands. Use `fbrcm auth path example-auth-name`
-to inspect the exact client-secret and token paths.
+fbrcm caches tokens locally for later commands. Use
+`fbrcm auth path example-auth-name` to inspect the exact client-secret and token
+paths. This bring-your-own method stores its imported client separately from
+the built-in `google` method.
 
 ### Service-account key
 
 Register and validate an existing JSON key:
+
+::: details Where to get service-account.json
+
+1. Open [IAM & Admin → Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts)
+   and select the project that owns the service account.
+2. Create a service account, or open the email address of an existing one.
+3. Grant the service account roles containing the permissions listed in
+   [Required permissions](#required-permissions) on the relevant quota and
+   Firebase projects.
+4. Open **Keys**, choose **Add key → Create new key**, select **JSON**, and click
+   **Create**.
+5. The browser downloads the key. You may rename it to `service-account.json`;
+   fbrcm does not require that exact filename.
+
+The private key can be downloaded only when it is created. Store it securely
+and never commit it to a repository. If key creation is unavailable, an
+organization policy may prohibit service-account keys; ask the Google Cloud
+administrator rather than weakening that policy without review. See Google's
+[service-account key instructions](https://cloud.google.com/iam/docs/keys-create-delete)
+for details.
+
+:::
 
 ```sh
 fbrcm auth add service-account example-service-account-auth \
@@ -116,7 +189,7 @@ targetless request.
 The simplest setup is to save it while adding the identity:
 
 ```sh
-fbrcm auth add gcloud example-auth-name --quota-project example-quota-project-id
+fbrcm auth add google example-auth-name --quota-project example-quota-project-id
 ```
 
 For an existing identity, inspect or change it with:

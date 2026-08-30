@@ -71,7 +71,7 @@ func renderAuthTable(entries []config.AuthEntry, defaultAuthID string, terminalW
 
 type authPathResult struct {
 	ID                 string `json:"id"`
-	Type               string `json:"type" contract:"enum=oauth|service-account|gcloud"`
+	Type               string `json:"type" contract:"enum=google|oauth|service-account|gcloud"`
 	AuthConfigPath     string `json:"auth_config_path"`
 	ProfileConfigPath  string `json:"profile_config_path"`
 	ClientSecretPath   string `json:"client_secret_path,omitempty"`
@@ -91,6 +91,8 @@ func authPathLines(auth config.AuthEntry, paths core.AuthPaths) []string {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		return nonEmptyStrings(paths.ClientSecretPath, paths.TokenPath)
+	case config.AuthTypeGoogle:
+		return nonEmptyStrings(paths.TokenPath)
 	case config.AuthTypeServiceAccount:
 		return nonEmptyStrings(paths.ServiceAccountPath)
 	default:

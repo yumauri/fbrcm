@@ -538,6 +538,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"projects.path":              behavior(0, "none"),
 
 	"auth.add.gcloud": destructive(authReplacement(nonIdempotent(localWrite())), "replaces an existing auth identity and may remove its credential files"),
+	"auth.add.google": destructive(authReplacement(nonIdempotent(localWrite())), "replaces an existing auth identity and may remove its cached token or credential files"),
 	"auth.add.oauth": withInteraction(withStdin(destructive(credentialFileWrite(authReplacement(nonIdempotent(localWrite()))), "replaces an existing auth identity and may remove its cached token or credential files")), "optional", "missing_input_returns_interaction",
 		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "from", "equals", ""))),
 	"auth.add.service-account": withInteraction(withStdin(destructive(credentialFileWrite(authReplacement(nonIdempotent(localWrite()))), "replaces an existing auth identity and may remove its credential files")), "optional", "missing_input_returns_interaction",

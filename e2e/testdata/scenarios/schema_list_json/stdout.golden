@@ -16,13 +16,15 @@
     "draft": false
   },
   "data": {
-    "count": 226,
+    "count": 228,
     "items": [
       "urn:fbrcm:schema:cli:1.0.0:capability",
       "urn:fbrcm:schema:cli:1.0.0:command:add:input",
       "urn:fbrcm:schema:cli:1.0.0:command:add:response",
       "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:input",
       "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:response",
       "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:input",
       "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response",
       "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:input",

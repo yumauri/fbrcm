@@ -92,7 +92,7 @@ func isSensitiveHeader(key string) bool {
 // isSensitiveQueryParam reports whether a query parameter value should be redacted from logs.
 func isSensitiveQueryParam(key string) bool {
 	switch strings.ToLower(key) {
-	case "access_token", "authuser", "client_secret", "code", "code_challenge", "code_verifier", "id_token", "password", "refresh_token", "state", "token":
+	case "access_token", "authuser", "client_id", "client_secret", "code", "code_challenge", "code_verifier", "id_token", "password", "refresh_token", "state", "token":
 		return true
 	default:
 		return false

@@ -73,6 +73,8 @@ func (m Model) addAuthCmd() tea.Cmd {
 			err   error
 		)
 		switch method {
+		case methodGoogle:
+			entry, err = m.svc.AddGoogleAuthWithQuotaProject(authID, "", quotaProjectID)
 		case methodOAuth, methodServiceAccount:
 			data, readErr := os.ReadFile(path)
 			if readErr != nil {

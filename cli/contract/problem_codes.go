@@ -124,6 +124,10 @@ func CommandProblemCodes(capability Capability) []string {
 	case strings.HasPrefix(id, "auth."):
 		add("auth.configuration_invalid")
 		switch {
+		case id == "auth.add.google":
+			// The built-in client is build-scoped, so this command can fail
+			// configuration validation but does not parse caller credentials or
+			// perform a conflict-producing create operation.
 		case strings.HasPrefix(id, "auth.add."):
 			add("auth.credentials_invalid", "auth.id_invalid", "resource.conflict")
 		case id == "auth.bind":

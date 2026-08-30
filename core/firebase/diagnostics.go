@@ -110,7 +110,7 @@ func validateCredentialURI(field, value string) error {
 
 // InspectAuth validates local credential and token files without contacting
 // Google or starting an authorization flow.
-func InspectAuth(auth config.AuthEntry) (AuthDiagnostic, error) {
+func InspectAuth(auth config.AuthEntry, googleCredentials ...OAuthClientCredentials) (AuthDiagnostic, error) {
 	switch auth.Type {
 	case config.AuthTypeOAuth:
 		secretPath := config.OAuthClientSecretPath(auth)
@@ -136,6 +136,11 @@ func InspectAuth(auth config.AuthEntry) (AuthDiagnostic, error) {
 			TokenExpired:    !token.Valid(),
 			HasRefreshToken: strings.TrimSpace(token.RefreshToken) != "",
 		}, nil
+	case config.AuthTypeGoogle:
+		if err := firstOAuthClientCredentials(googleCredentials).Validate(); err != nil {
+			return AuthDiagnostic{}, err
+		}
+		return inspectOAuthToken(config.OAuthTokenPath(auth))
 	case config.AuthTypeServiceAccount:
 		path := config.ServiceAccountKeyPath(auth)
 		key, err := os.ReadFile(path)
@@ -160,6 +165,22 @@ func InspectAuth(auth config.AuthEntry) (AuthDiagnostic, error) {
 	}
 }
 
+func inspectOAuthToken(tokenPath string) (AuthDiagnostic, error) {
+	token, err := readCachedToken(tokenPath)
+	if err != nil {
+		return AuthDiagnostic{TokenPath: tokenPath, TokenError: err.Error()}, nil
+	}
+	if token == nil {
+		return AuthDiagnostic{TokenPath: tokenPath, TokenError: "OAuth token is missing"}, nil
+	}
+	return AuthDiagnostic{
+		TokenPath:       tokenPath,
+		TokenExpiry:     token.Expiry,
+		TokenExpired:    !token.Valid(),
+		HasRefreshToken: strings.TrimSpace(token.RefreshToken) != "",
+	}, nil
+}
+
 func diagnosticOAuthHTTPClient(ctx context.Context, clientSecretPath, tokenPath string) (*http.Client, error) {
 	secret, err := os.ReadFile(clientSecretPath)
 	if err != nil {
@@ -169,6 +190,10 @@ func diagnosticOAuthHTTPClient(ctx context.Context, clientSecretPath, tokenPath 
 	if err != nil {
 		return nil, fmt.Errorf("parsing OAuth client secret: %w", err)
 	}
+	return diagnosticOAuthHTTPClientWithConfig(ctx, config.AuthTypeOAuth, oauthCfg, tokenPath)
+}
+
+func diagnosticOAuthHTTPClientWithConfig(ctx context.Context, authType string, oauthCfg *oauth2.Config, tokenPath string) (*http.Client, error) {
 	token, err := readCachedToken(tokenPath)
 	if err != nil {
 		return nil, err
@@ -181,7 +206,10 @@ func diagnosticOAuthHTTPClient(ctx context.Context, clientSecretPath, tokenPath 
 	}
 	refreshed, err := oauthCfg.TokenSource(ctx, token).Token()
 	if err != nil {
-		return nil, fmt.Errorf("refresh OAuth token: %w", err)
+		if authType == config.AuthTypeOAuth {
+			return nil, fmt.Errorf("refresh OAuth token: %w", err)
+		}
+		return nil, authenticationRequestError(authType, "refresh_token", err)
 	}
 	return wrapAuthHTTPClient(ctx, oauth2.NewClient(ctx, oauth2.StaticTokenSource(refreshed))), nil
 }

@@ -42,7 +42,7 @@ func redactedURL(raw string) string {
 	query := parsed.Query()
 	for key := range query {
 		switch strings.ToLower(key) {
-		case "access_token", "authuser", "client_secret", "code", "code_challenge", "code_verifier", "id_token", "password", "refresh_token", "state", "token":
+		case "access_token", "authuser", "client_id", "client_secret", "code", "code_challenge", "code_verifier", "id_token", "password", "refresh_token", "state", "token":
 			query.Set(key, "[REDACTED]")
 		}
 	}

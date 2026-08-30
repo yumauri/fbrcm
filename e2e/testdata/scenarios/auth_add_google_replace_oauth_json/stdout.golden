@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:response",
+  "contract_version": "1.0.0",
+  "command": "auth.add.google",
+  "requested_command": "auth.add.google",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "auth_id": "e2e",
+    "type": "google",
+    "label": "Built-in replacement",
+    "status": "added",
+    "paths": {
+      "id": "e2e",
+      "type": "google",
+      "auth_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default/auth-config.json",
+      "profile_config_path": "<E2E_RUN_ROOT>/environment/config/profiles/default",
+      "token_path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json"
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

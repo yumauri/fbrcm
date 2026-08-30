@@ -44,7 +44,8 @@ const (
 type authMethod int
 
 const (
-	methodOAuth authMethod = iota
+	methodGoogle authMethod = iota
+	methodOAuth
 	methodServiceAccount
 	methodGCloud
 )
@@ -140,6 +141,7 @@ type Model struct {
 	projects            []core.Project
 	defaultID           string
 	requestedMode       mode
+	googleAvailable     bool
 	method              authMethod
 	cursor              int
 	error               error
@@ -202,16 +204,18 @@ func New(svc *core.Core) Model {
 	spin.Style = styles.SecondaryTitleSpinner
 
 	m := Model{
-		svc:          svc,
-		mode:         modeHidden,
-		initial:      true,
-		mandatory:    true,
-		filepicker:   picker,
-		identity:     identity,
-		quotaProject: quotaProject,
-		profileIn:    profileIn,
-		spinner:      spin,
+		svc:             svc,
+		mode:            modeHidden,
+		initial:         true,
+		mandatory:       true,
+		googleAvailable: svc != nil && svc.GoogleAuthAvailable(),
+		filepicker:      picker,
+		identity:        identity,
+		quotaProject:    quotaProject,
+		profileIn:       profileIn,
+		spinner:         spin,
 	}
+	m.cursor = m.firstAvailableMethod()
 	if svc != nil {
 		m.mode = modeChecking
 	}
@@ -355,6 +359,8 @@ func (m Model) selectedProfile() string {
 
 func (m Model) methodName() string {
 	switch m.method {
+	case methodGoogle:
+		return "Continue with Google"
 	case methodOAuth:
 		return "OAuth desktop login"
 	case methodServiceAccount:
@@ -368,6 +374,8 @@ func (m Model) methodName() string {
 
 func authTypeLabel(value string) string {
 	switch value {
+	case config.AuthTypeGoogle:
+		return "Google OAuth"
 	case config.AuthTypeOAuth:
 		return "OAuth"
 	case config.AuthTypeServiceAccount:

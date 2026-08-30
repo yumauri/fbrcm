@@ -2,6 +2,9 @@
   "$defs": {
     "path_segment": {
       "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "physical_project_id": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_id"
     }
   },
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:input",
@@ -49,9 +52,20 @@
           ]
         },
         "quota-project": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/physical_project_id"
+            }
+          ],
           "description": "Persist the Google Cloud quota project for this auth identity",
-          "pattern": ".*\\S.*",
-          "type": "string"
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
         },
         "stateless": {
           "const": false,

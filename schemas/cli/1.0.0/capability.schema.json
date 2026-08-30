@@ -1180,6 +1180,195 @@
     },
     {
       "const": {
+        "id": "auth.add.google",
+        "path": [
+          "auth",
+          "add",
+          "google"
+        ],
+        "summary": "Add Google OAuth auth identity",
+        "arguments": [
+          {
+            "name": "auth_id",
+            "required": true,
+            "repeated": false,
+            "schema": "string"
+          }
+        ],
+        "flags": [
+          {
+            "name": "--label",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Auth identity label"
+          },
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--quota-project",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Persist the Google Cloud quota project for this auth identity"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "auth.configuration_invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
+        "side_effect_level": 1,
+        "side_effects": [
+          "local_state_write",
+          "local_file_delete"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "mutation_plan",
+                    "operator": "has_changes",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "local_file_delete",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "mutation_plan",
+                    "operator": "is_destructive",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "none",
+        "network_when": [],
+        "destructive": true,
+        "destructive_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "is_destructive",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "destructive_reasons": [
+          "replaces an existing auth identity and may remove its cached token or credential files"
+        ],
+        "idempotency": "no",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
         "id": "auth.add.oauth",
         "path": [
           "auth",

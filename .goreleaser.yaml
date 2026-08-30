@@ -5,6 +5,7 @@ project_name: fbrcm
 before:
   hooks:
     - go mod tidy
+    - go run ./cmd/genoauthclient
     - mkdir -p completions
     - sh -c 'go run . completion bash > completions/fbrcm.bash'
     - sh -c 'go run . completion zsh > completions/fbrcm.zsh'
@@ -21,6 +22,8 @@ builds:
       - amd64
       - arm64
     main: ./
+    tags:
+      - fbrcm_google_auth
     ldflags:
       - -s -w
       - -X main.version={{.Version}}

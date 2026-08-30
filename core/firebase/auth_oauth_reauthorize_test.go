@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+
+	"github.com/yumauri/fbrcm/core/config"
 )
 
 func TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid(t *testing.T) {
@@ -90,7 +92,7 @@ func TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid(t *testi
 		Expiry:       time.Now().Add(time.Hour),
 	}
 
-	_, recovered, err := recoverRejectedOAuthToken(ctx, cfg, cached, tokenPath, true, false)
+	_, recovered, err := recoverRejectedOAuthToken(ctx, config.AuthTypeOAuth, cfg, cached, tokenPath, true, false)
 	if err != nil {
 		t.Fatalf("recoverRejectedOAuthToken = %v", err)
 	}
@@ -124,7 +126,7 @@ func TestRecoverRejectedOAuthTokenPreservesTransientRefreshFailure(t *testing.T)
 	cached := &oauth2.Token{AccessToken: "expired", RefreshToken: "refresh", Expiry: time.Unix(0, 0)}
 	ctx := WithOAuthInteractionAllowed(context.Background(), false)
 
-	_, _, err := recoverRejectedOAuthToken(ctx, cfg, cached, filepath.Join(t.TempDir(), "token.json"), true, false)
+	_, _, err := recoverRejectedOAuthToken(ctx, config.AuthTypeOAuth, cfg, cached, filepath.Join(t.TempDir(), "token.json"), true, false)
 	if errors.Is(err, ErrOAuthInteractionRequired) {
 		t.Fatalf("transient refresh failure became interaction required: %v", err)
 	}
