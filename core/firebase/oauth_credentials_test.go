@@ -3,6 +3,7 @@ package firebase
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -28,6 +29,16 @@ func TestGoogleServiceRejectsMissingBuiltInCredentialsAsGoogleAuthFailure(t *tes
 	var authentication *AuthenticationError
 	if !errors.As(err, &authentication) || authentication.AuthType != config.AuthTypeGoogle || authentication.Kind != AuthenticationCredentialsInvalid || authentication.Operation != "load_credentials" {
 		t.Fatalf("NewServiceForAuth error = %#v", err)
+	}
+}
+
+func TestGoogleOAuthMissingTokenPrefersInteractionInNonInteractiveOfflineContext(t *testing.T) {
+	SetOfflineMode(true)
+	t.Cleanup(func() { SetOfflineMode(false) })
+	ctx := WithOAuthInteractionAllowed(context.Background(), false)
+	_, err := googleOAuthHTTPClient(ctx, OAuthClientCredentials{ClientID: "client-id", ClientSecret: "client-secret"}, filepath.Join(t.TempDir(), "token.json"), false)
+	if !errors.Is(err, ErrOAuthInteractionRequired) {
+		t.Fatalf("googleOAuthHTTPClient error = %v, want interaction required", err)
 	}
 }
 

@@ -377,6 +377,15 @@ func applyTypeSemantics(schema map[string]any, typeOf reflect.Type) {
 			invariant("eq", "left", invariantField("auth_id"), "right", invariantField("paths.id")),
 			invariant("eq", "left", invariantField("type"), "right", invariantField("paths.type")),
 		}
+	case "github.com/yumauri/fbrcm/cli/commands/auth.authDeleteResult":
+		onePath := map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": map[string]any{"type": "string", "minLength": 1}}
+		twoPaths := map[string]any{"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": map[string]any{"type": "string", "minLength": 1}}
+		schema["allOf"] = []any{
+			fieldValueConstraint("type", "google", map[string]any{"deleted_paths": onePath}),
+			fieldValueConstraint("type", "oauth", map[string]any{"deleted_paths": twoPaths}),
+			fieldValueConstraint("type", "service-account", map[string]any{"deleted_paths": onePath}),
+			fieldValueConstraint("type", "gcloud", map[string]any{"deleted_paths": map[string]any{"type": "null"}}),
+		}
 	case "github.com/yumauri/fbrcm/cli/shared.ProjectJSON":
 		applyProjectTemplateSemantics(schema)
 		if aliases, ok := properties["aliases"].(map[string]any); ok {

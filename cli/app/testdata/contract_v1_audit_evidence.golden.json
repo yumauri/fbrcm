@@ -4,6 +4,8 @@
   "catalog": {
     "app.arity": "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
     "app.artifact_schema": "cli/app/contract_test.go#TestArtifactSchemasConstrainCommandReachableEncodings",
+    "app.auth_add_quota_schema": "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
+    "app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",
     "app.boundaries": "cli/app/contract_test.go#TestInvocationSchemasRejectMachineOnlyAndTypedValueContradictions",
     "app.capability_behavior": "cli/app/contract_test.go#TestDetailedCapabilityGoldenCoversAuthoritativeBehavior",
     "app.completion_success": "cli/app/contract_test.go#TestJSONCompletionCommandsUseConformingResponseSchemas",
@@ -21,6 +23,7 @@
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
     "app.warning_runtime": "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
+    "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
     "contract.artifact_runtime": "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
     "contract.batch_runtime": "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
@@ -264,42 +267,52 @@
         },
         "boundary": {
           "evidence": [
+            "app.auth_add_quota_schema",
             "app.boundaries",
             "app.invocation_semantics",
-            "e2e:auth_add_google_json"
+            "auth.google_quota_failure",
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "determinism": {
           "evidence": [
             "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
             "app.discovery",
-            "e2e:auth_add_google_json"
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
-            "e2e:auth_add_google_json"
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
-            "e2e:auth_add_google_json"
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "failure": {
           "evidence": [
+            "app.auth_google_configuration_failure",
             "app.failure_codes",
             "app.failure_runtime",
             "app.unknown_option",
-            "e2e:auth_add_google_json"
+            "auth.google_quota_failure",
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "interaction": {
@@ -308,16 +321,20 @@
         "invocation": {
           "evidence": [
             "app.arity",
+            "app.auth_add_quota_schema",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_add_google_json"
+            "auth.google_quota_failure",
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "no_op": {
           "evidence": [
             "app.no_op",
             "app.response_invariants",
-            "e2e:auth_add_google_json"
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "selection": {
@@ -330,7 +347,8 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "e2e:auth_add_google_json"
+            "e2e:auth_add_google_json",
+            "e2e:auth_add_google_replace_oauth_json"
           ]
         },
         "warning": {
@@ -624,6 +642,7 @@
             "app.boundaries",
             "app.invocation_semantics",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -631,6 +650,7 @@
         "determinism": {
           "evidence": [
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json",
             "schemagen.determinism"
@@ -640,6 +660,7 @@
           "evidence": [
             "app.discovery",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -649,6 +670,7 @@
             "app.capability_behavior",
             "app.effectiveness",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -657,6 +679,7 @@
           "evidence": [
             "app.capability_behavior",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -667,6 +690,7 @@
             "app.failure_runtime",
             "app.unknown_option",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -675,6 +699,7 @@
           "evidence": [
             "app.interaction",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -685,6 +710,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -694,6 +720,7 @@
             "app.no_op",
             "app.response_invariants",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -702,6 +729,7 @@
           "evidence": [
             "app.selection",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -714,6 +742,7 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:auth_delete_gcloud_json",
+            "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
             "e2e:auth_delete_service_account_json"
           ]
@@ -736,11 +765,13 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json",
             "schemagen.determinism"
           ]
@@ -748,6 +779,7 @@
         "discovery": {
           "evidence": [
             "app.discovery",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
@@ -755,12 +787,14 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
@@ -769,6 +803,7 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.unknown_option",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
@@ -780,6 +815,7 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
@@ -796,6 +832,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
+            "e2e:auth_list_google_json",
             "e2e:auth_list_json"
           ]
         },
@@ -816,58 +853,78 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "no_op": {
           "evidence": [
             "app.no_op",
-            "app.response_invariants"
+            "app.response_invariants",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "selection": {
           "evidence": [
-            "app.selection"
+            "app.selection",
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "stdin": {
@@ -877,7 +934,8 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "auth.oauth_success"
+            "e2e:auth_login_google_interaction_json",
+            "e2e:auth_login_google_json"
           ]
         },
         "warning": {
@@ -898,11 +956,13 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json",
             "schemagen.determinism"
           ]
@@ -910,6 +970,7 @@
         "discovery": {
           "evidence": [
             "app.discovery",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
@@ -917,12 +978,14 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
@@ -931,6 +994,7 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.unknown_option",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
@@ -942,6 +1006,7 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
@@ -951,6 +1016,7 @@
         "selection": {
           "evidence": [
             "app.selection",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },
@@ -961,6 +1027,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
+            "e2e:auth_path_google_json",
             "e2e:auth_path_json"
           ]
         },

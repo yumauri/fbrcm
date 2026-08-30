@@ -1264,8 +1264,6 @@
         "problem_codes": [
           "argument.invalid",
           "auth.configuration_invalid",
-          "auth.credentials_invalid",
-          "auth.id_invalid",
           "command.canceled",
           "command.timeout",
           "configuration.invalid",
@@ -1273,8 +1271,7 @@
           "filesystem.permission_denied",
           "internal.contract_violation",
           "internal.unclassified",
-          "profile.invalid",
-          "resource.conflict"
+          "profile.invalid"
         ],
         "side_effect_level": 1,
         "side_effects": [

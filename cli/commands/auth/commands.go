@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -81,12 +82,12 @@ func newAddGoogleCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddGoogleAuthWithQuotaProject(args[0], label, quotaProjectID)
 			} else {
 				entry, err = svc.AddGoogleAuth(args[0], label)
@@ -135,12 +136,12 @@ func newAddOAuthCommand(svc *core.Core) *cobra.Command {
 			if err := firebase.ValidateOAuthClientSecret(data); err != nil {
 				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddOAuthAuthWithQuotaProject(args[0], label, data, quotaProjectID)
 			} else {
 				entry, err = svc.AddOAuthAuth(args[0], label, data)
@@ -190,12 +191,12 @@ func newAddServiceAccountCommand(svc *core.Core) *cobra.Command {
 			if err := firebase.ValidateServiceAccountKey(data); err != nil {
 				return &shared.ValidationError{Code: "auth.credentials_invalid", Source: "auth", Stage: "input", Target: args[0], Err: err}
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddServiceAccountAuthWithQuotaProject(args[0], label, data, quotaProjectID)
 			} else {
 				entry, err = svc.AddServiceAccountAuth(args[0], label, data)
@@ -234,12 +235,12 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			quotaProjectID, hasQuotaProject, err := authAddQuotaProject(cmd)
+			if err != nil {
+				return err
+			}
 			var entry config.AuthEntry
-			if cmd.Flags().Changed("quota-project") {
-				quotaProjectID, flagErr := cmd.Flags().GetString("quota-project")
-				if flagErr != nil {
-					return flagErr
-				}
+			if hasQuotaProject {
 				entry, err = svc.AddGCloudAuthWithQuotaProject(args[0], label, quotaProjectID)
 			} else {
 				entry, err = svc.AddGCloudAuth(args[0], label)
@@ -258,6 +259,21 @@ func newAddGCloudCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().String("label", "", "Auth identity label")
 	cmd.Flags().String("quota-project", "", "Persist the Google Cloud quota project for this auth identity")
 	return cmd
+}
+
+func authAddQuotaProject(cmd *cobra.Command) (string, bool, error) {
+	if !cmd.Flags().Changed("quota-project") {
+		return "", false, nil
+	}
+	quotaProjectID, err := cmd.Flags().GetString("quota-project")
+	if err != nil {
+		return "", false, err
+	}
+	quotaProjectID = strings.TrimSpace(quotaProjectID)
+	if err := config.ValidateQuotaProjectID(quotaProjectID); err != nil {
+		return "", false, shared.InvalidArgument(err)
+	}
+	return quotaProjectID, true, nil
 }
 
 func newLoginCommand(svc *core.Core) *cobra.Command {

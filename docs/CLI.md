@@ -2725,7 +2725,9 @@ Flags:
 
 The `--quota-project` option on `auth add` is a persistent setup option, not a
 one-invocation runtime override. Replacing an existing identity without this
-option preserves its current persisted quota project.
+option preserves its current persisted quota project. Its value is trimmed,
+then validated as a literal physical Google Cloud project ID; selector prefixes
+and query syntax are not accepted.
 
 ### `fbrcm auth quota-project show|set|unset`
 
@@ -2774,6 +2776,9 @@ Flags:
 ### `fbrcm auth delete <auth-id>`
 
 Deletes an auth identity and its managed client-secret, token, or key files.
+In JSON success data, `deleted_paths` contains exactly the managed files for the
+deleted type: one token path for `google`, the client-secret and token paths for
+imported `oauth`, one key path for `service-account`, and `null` for `gcloud`.
 
 Flags:
 

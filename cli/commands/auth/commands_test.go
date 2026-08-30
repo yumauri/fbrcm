@@ -98,7 +98,7 @@ func TestAuthAddGoogleUsesBuiltInClient(t *testing.T) {
 	if err := cmd.Flags().Set("label", "Google"); err != nil {
 		t.Fatal(err)
 	}
-	if err := cmd.Flags().Set("quota-project", "billing-project"); err != nil {
+	if err := cmd.Flags().Set("quota-project", "  billing-project  "); err != nil {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
@@ -115,6 +115,26 @@ func TestAuthAddGoogleUsesBuiltInClient(t *testing.T) {
 	}
 	if len(entries) != 1 || entries[0].Type != config.AuthTypeGoogle || entries[0].QuotaProjectID != "billing-project" || entries[0].ClientSecretPath != "" {
 		t.Fatalf("entries = %+v", entries)
+	}
+}
+
+func TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure(t *testing.T) {
+	svc := setupAuthCommandTest(t)
+	cmd := newAddGoogleCommand(svc)
+	if err := cmd.Flags().Set("quota-project", "client@billing-project"); err != nil {
+		t.Fatal(err)
+	}
+	err := cmd.RunE(cmd, []string{"google"})
+	problem := contract.Classify(err)
+	if problem.Code != "argument.invalid" || problem.Category != "argument" {
+		t.Fatalf("problem = %#v", problem)
+	}
+	entries, _, listErr := svc.ListAuth()
+	if listErr != nil {
+		t.Fatal(listErr)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("invalid invocation persisted entries: %+v", entries)
 	}
 }
 

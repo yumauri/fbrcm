@@ -1257,6 +1257,11 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 }
 
 func applyFlagSemantics(schema map[string]any, commandID, name string) {
+	if strings.HasPrefix(commandID, "auth.add.") && name == "quota-project" {
+		delete(schema, "pattern")
+		schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/physical_project_id"}}
+		addNormalization(schema, "trim_unicode_whitespace")
+	}
 	if commandID == "theme.import" && name == "name" {
 		delete(schema, "pattern")
 		schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/path_segment"}}

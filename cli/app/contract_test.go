@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -19,6 +20,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/shared"
 	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
@@ -1104,6 +1106,36 @@ func TestTypedFailureScenariosConformToRuntimeSchema(t *testing.T) {
 	}
 }
 
+func TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure(t *testing.T) {
+	rootDir := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(rootDir, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(rootDir, "cache"))
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	svc, err := core.NewService(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := newRootCommand(svc, "test", "test", "test")
+	var captured bytes.Buffer
+	root.SetOut(&captured)
+	root.SetErr(&bytes.Buffer{})
+	root.SetArgs([]string{"auth", "add", "google", "google", "--json"})
+	root.SilenceErrors, root.SilenceUsage = true, true
+	shared.SetMachineMode(true)
+	t.Cleanup(func() { shared.SetMachineMode(false) })
+	executed, runErr := root.ExecuteC()
+	envelope := contract.BuildEnvelope(executed, "test", captured.Bytes(), runErr)
+	if envelope.Command != "auth.add.google" || envelope.Outcome != "failure" || envelope.ExitCode != 4 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "auth.configuration_invalid" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	validateContractDocument(t, envelope.Schema, marshalEnvelope(t, envelope))
+	if _, statErr := os.Stat(config.GetAuthFilePath()); !errors.Is(statErr, os.ErrNotExist) {
+		t.Fatalf("auth config exists after pre-persistence failure: %v", statErr)
+	}
+}
+
 func TestPostPublicationFailureEnvelopesAndWarningsConform(t *testing.T) {
 	root := NewRootForContract("test")
 	update, _, err := root.Find([]string{"update"})
@@ -1973,6 +2005,30 @@ func TestInvocationSchemasPublishProfileAndAuthIdentifierGrammar(t *testing.T) {
 	}, false)
 }
 
+func TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar(t *testing.T) {
+	for _, commandID := range []string{"auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.add.gcloud"} {
+		t.Run(commandID, func(t *testing.T) {
+			schemaID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:" + commandID + ":input"
+			raw, err := schemas.ReadByID(schemaID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, marker := range []string{`"$ref": "#/$defs/physical_project_id"`, `"operator": "trim_unicode_whitespace"`} {
+				if !bytes.Contains(raw, []byte(marker)) {
+					t.Errorf("schema omits quota-project marker %s", marker)
+				}
+			}
+			arguments := map[string]any{"auth_id": "google"}
+			validateContractValue(t, schemaID, map[string]any{
+				"arguments": arguments, "options": map[string]any{"quota-project": "billing-project"}, "stdin": nil,
+			}, true)
+			validateContractValue(t, schemaID, map[string]any{
+				"arguments": arguments, "options": map[string]any{"quota-project": "client@billing-project"}, "stdin": nil,
+			}, false)
+		})
+	}
+}
+
 func TestInvocationSchemasPublishQueryAndManagedFeatureSemantics(t *testing.T) {
 	getID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:get:input"
 	getRaw, err := schemas.ReadByID(getID)
@@ -2681,6 +2737,18 @@ func TestCommandResponseSchemasConstrainReachableProblemCodes(t *testing.T) {
 	if !slices.Contains(schemaShow.ProblemCodes, "schema.not_found") {
 		t.Fatal("schema.show omits schema.not_found")
 	}
+	googleAdd, err := contract.FindCapability(root, []string{"auth", "add", "google"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(googleAdd.ProblemCodes, "auth.configuration_invalid") {
+		t.Fatal("auth.add.google omits its build-credential configuration failure")
+	}
+	for _, impossible := range []string{"auth.credentials_invalid", "auth.id_invalid", "resource.conflict"} {
+		if slices.Contains(googleAdd.ProblemCodes, impossible) {
+			t.Errorf("auth.add.google advertises unreachable problem %s", impossible)
+		}
+	}
 	for _, path := range [][]string{{"help"}, {"completion", "bash"}, {"schema", "list"}} {
 		capability, findErr := contract.FindCapability(root, path)
 		if findErr != nil {
@@ -2906,6 +2974,13 @@ func TestResponseSchemasRejectImpossibleDTOStates(t *testing.T) {
 			raw:  `{"auth_id":"main","type":"oauth","label":"Main","status":"added","paths":{"id":"main","type":"oauth","auth_config_path":"/config/auth.json","profile_config_path":"/config/profile.json","client_secret_path":"/config/client.json","token_path":"/config/token.json"}}`,
 			edit: func(data map[string]any) {
 				data["paths"].(map[string]any)["service_account_path"] = "/config/service.json"
+			},
+		},
+		{
+			path: []string{"auth", "delete"},
+			raw:  `{"auth_id":"google","type":"google","status":"deleted","deleted_paths":["/cache/token.json"]}`,
+			edit: func(data map[string]any) {
+				data["deleted_paths"] = []any{"/cache/token.json", "/config/client.json"}
 			},
 		},
 		{

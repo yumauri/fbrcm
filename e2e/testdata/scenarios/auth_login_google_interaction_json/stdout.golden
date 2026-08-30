@@ -1,0 +1,45 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:response",
+  "contract_version": "1.0.0",
+  "command": "auth.login",
+  "requested_command": "auth.login",
+  "outcome": "failure",
+  "exit_code": 10,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": null,
+  "errors": [
+    {
+      "code": "interaction.required",
+      "category": "interaction",
+      "message": "OAuth browser authorization is required",
+      "retryable": false,
+      "target": "google",
+      "stage": null,
+      "details": {
+        "kind": "oauth_authorization",
+        "auth_id": "google"
+      },
+      "remediation": [
+        {
+          "description": "authorize the auth identity in a human session",
+          "strategy": "run_command",
+          "argv": [
+            "auth",
+            "login",
+            "google"
+          ]
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

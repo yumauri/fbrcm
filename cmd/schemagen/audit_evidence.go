@@ -71,6 +71,14 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 				continue
 			}
 			evidence := append([]string(nil), generatedAuditBaseEvidence(class)...)
+			if capability.ID == "auth.add.google" {
+				switch class {
+				case "boundary", "invocation":
+					evidence = append(evidence, "app.auth_add_quota_schema", "auth.google_quota_failure")
+				case "failure":
+					evidence = append(evidence, "app.auth_google_configuration_failure", "auth.google_quota_failure")
+				}
+			}
 			for _, scenario := range scenarios[capability.ID] {
 				evidence = append(evidence, "e2e:"+scenario)
 			}
@@ -87,33 +95,36 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
-		"app.arity":                 "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
-		"app.artifact_schema":       "cli/app/contract_test.go#TestArtifactSchemasConstrainCommandReachableEncodings",
-		"app.boundaries":            "cli/app/contract_test.go#TestInvocationSchemasRejectMachineOnlyAndTypedValueContradictions",
-		"app.capability_behavior":   "cli/app/contract_test.go#TestDetailedCapabilityGoldenCoversAuthoritativeBehavior",
-		"app.completion_success":    "cli/app/contract_test.go#TestJSONCompletionCommandsUseConformingResponseSchemas",
-		"app.discovery":             "cli/app/contract_test.go#TestEveryExecutableCommandHasCapabilityAndPublishedSchemas",
-		"app.effectiveness":         "cli/app/contract_test.go#TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas",
-		"app.failure_codes":         "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableProblemCodes",
-		"app.failure_runtime":       "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
-		"app.interaction":           "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
-		"app.invocation_semantics":  "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
-		"app.no_op":                 "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
-		"app.outcomes":              "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
-		"app.response_invariants":   "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
-		"app.selection":             "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
-		"app.stdin":                 "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
-		"app.stdin_restrictions":    "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
-		"app.unknown_option":        "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
-		"app.warning_runtime":       "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
-		"auth.oauth_success":        "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
-		"contract.artifact_runtime": "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
-		"contract.batch_runtime":    "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
-		"draft.publish_success":     "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
-		"profile.root_success":      "cli/commands/profile/commands_test.go#TestProfileRootJSON",
-		"schemagen.determinism":     "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
-		"theme.mutation_success":    "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
-		"versions.restore_success":  "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
+		"app.arity":                             "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
+		"app.auth_add_quota_schema":             "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
+		"app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",
+		"app.artifact_schema":                   "cli/app/contract_test.go#TestArtifactSchemasConstrainCommandReachableEncodings",
+		"app.boundaries":                        "cli/app/contract_test.go#TestInvocationSchemasRejectMachineOnlyAndTypedValueContradictions",
+		"app.capability_behavior":               "cli/app/contract_test.go#TestDetailedCapabilityGoldenCoversAuthoritativeBehavior",
+		"app.completion_success":                "cli/app/contract_test.go#TestJSONCompletionCommandsUseConformingResponseSchemas",
+		"app.discovery":                         "cli/app/contract_test.go#TestEveryExecutableCommandHasCapabilityAndPublishedSchemas",
+		"app.effectiveness":                     "cli/app/contract_test.go#TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas",
+		"app.failure_codes":                     "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableProblemCodes",
+		"app.failure_runtime":                   "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
+		"app.interaction":                       "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
+		"app.invocation_semantics":              "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
+		"app.no_op":                             "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
+		"app.outcomes":                          "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
+		"app.response_invariants":               "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
+		"app.selection":                         "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
+		"app.stdin":                             "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
+		"app.stdin_restrictions":                "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
+		"app.unknown_option":                    "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
+		"app.warning_runtime":                   "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
+		"auth.oauth_success":                    "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
+		"auth.google_quota_failure":             "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
+		"contract.artifact_runtime":             "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
+		"contract.batch_runtime":                "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
+		"draft.publish_success":                 "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
+		"profile.root_success":                  "cli/commands/profile/commands_test.go#TestProfileRootJSON",
+		"schemagen.determinism":                 "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
+		"theme.mutation_success":                "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
+		"versions.restore_success":              "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
 	}
 }
 

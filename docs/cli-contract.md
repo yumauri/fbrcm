@@ -733,6 +733,11 @@ Persisted auth and project quota values are represented by the typed
 `project.quota-project.show|set|unset` commands. Their responses distinguish
 configured and effective values and enumerate the resolution source.
 
+The `--quota-project` option on every `auth add` operation trims Unicode
+surrounding whitespace before normalized-invocation validation. The resulting
+value must satisfy the literal physical-project-ID grammar; target prefixes and
+selector/query syntax are invalid arguments.
+
 Every authenticated Firebase and Cloud Resource Manager request includes
 `X-Goog-User-Project`. Stateful precedence is the environment override,
 project override, auth default, ADC `quota_project_id` for gcloud auth only,
@@ -941,6 +946,11 @@ Direct mutation result DTOs expose selection and no-op provenance:
 `already_applied` when items matched but required no change. The selection
 object is present on every direct Remote Config mutation target, including
 successful changes and failures.
+
+`auth delete` success data correlates `type` with `deleted_paths`: `google` and
+`service-account` return one nonempty path, imported `oauth` returns two unique
+nonempty paths, and `gcloud` returns `null` because no application-managed
+credential file exists.
 
 ## Published schemas and versioning
 

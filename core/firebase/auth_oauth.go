@@ -129,6 +129,10 @@ func oauthHTTPClientWithConfig(ctx context.Context, authType string, oauthCfg *o
 		return nil, err
 	}
 	if tok == nil {
+		if !oauthInteractionAllowed(ctx) {
+			logger.Info("oauth token cache miss requires interaction in non-interactive context")
+			return nil, ErrOAuthInteractionRequired
+		}
 		if IsOffline() {
 			logger.Warn("offline mode, cannot start oauth authorization flow")
 			return nil, ErrOffline
