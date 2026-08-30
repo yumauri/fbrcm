@@ -63,18 +63,23 @@ func run(args []string) error {
 	if err := writeGeneratedSource(*output, source); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "generated masked OAuth client source at %s\n", *output)
+	if clientID == "" {
+		fmt.Fprintf(os.Stderr, "generated OAuth client source without credentials at %s\n", *output)
+	} else {
+		fmt.Fprintf(os.Stderr, "generated masked OAuth client source at %s\n", *output)
+	}
 	return nil
 }
 
 func credentialsFromEnvironment() (string, string, error) {
 	clientID := strings.TrimSpace(os.Getenv(clientIDEnvironment))
 	clientSecret := strings.TrimSpace(os.Getenv(clientSecretEnvironment))
-	if clientID == "" {
-		return "", "", fmt.Errorf("%s is empty", clientIDEnvironment)
-	}
-	if clientSecret == "" {
-		return "", "", fmt.Errorf("%s is empty", clientSecretEnvironment)
+	if (clientID == "") != (clientSecret == "") {
+		missing := clientIDEnvironment
+		if clientID != "" {
+			missing = clientSecretEnvironment
+		}
+		return "", "", fmt.Errorf("%s is empty; configure both OAuth credential variables or neither", missing)
 	}
 	return clientID, clientSecret, nil
 }
@@ -201,6 +206,9 @@ func verifyNoPlaintext(path, clientID, clientSecret string) error {
 			{name: "client ID", value: clientID},
 			{name: "client secret", value: clientSecret},
 		} {
+			if credential.value == "" {
+				continue
+			}
 			if bytes.Contains(content, []byte(credential.value)) {
 				return fmt.Errorf("%s contains the plaintext OAuth %s", candidate, credential.name)
 			}

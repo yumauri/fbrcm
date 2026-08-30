@@ -40,7 +40,7 @@ jobs:
       - name: Test
         run: go test -count=1 ./...
 
-      - name: Verify credentialed build does not expose plaintext OAuth credentials
+      - name: Verify OAuth release build
         env:
           FBRCM_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_ID }}
           FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_SECRET }}

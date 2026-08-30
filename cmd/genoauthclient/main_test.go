@@ -69,19 +69,68 @@ func TestVerifyNoPlaintextDetectsCredentialExposure(t *testing.T) {
 	}
 }
 
-func TestCredentialsFromEnvironmentRequiresBothValues(t *testing.T) {
+func TestCredentialsFromEnvironmentAllowsNeitherValue(t *testing.T) {
+	t.Setenv(clientIDEnvironment, "")
+	t.Setenv(clientSecretEnvironment, "")
+
+	clientID, clientSecret, err := credentialsFromEnvironment()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if clientID != "" || clientSecret != "" {
+		t.Fatal("credentialsFromEnvironment returned credentials for an uncredentialed build")
+	}
+}
+
+func TestCredentialsFromEnvironmentRequiresCompletePair(t *testing.T) {
 	t.Setenv(clientIDEnvironment, testClientID)
 	t.Setenv(clientSecretEnvironment, "")
 	if _, _, err := credentialsFromEnvironment(); err == nil || !strings.Contains(err.Error(), clientSecretEnvironment) {
 		t.Fatalf("missing-secret error = %v", err)
 	}
 
+	t.Setenv(clientIDEnvironment, "")
 	t.Setenv(clientSecretEnvironment, testClientSecret)
+	if _, _, err := credentialsFromEnvironment(); err == nil || !strings.Contains(err.Error(), clientIDEnvironment) {
+		t.Fatalf("missing-client-ID error = %v", err)
+	}
+
+	t.Setenv(clientIDEnvironment, testClientID)
 	clientID, clientSecret, err := credentialsFromEnvironment()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if clientID != testClientID || clientSecret != testClientSecret {
 		t.Fatal("credentialsFromEnvironment returned unexpected values")
+	}
+}
+
+func TestRunGeneratesUncredentialedSourceWhenEnvironmentIsEmpty(t *testing.T) {
+	t.Setenv(clientIDEnvironment, "")
+	t.Setenv(clientSecretEnvironment, "")
+	output := filepath.Join(t.TempDir(), "credentials_generated.go")
+
+	if err := run([]string{"-output", output}); err != nil {
+		t.Fatal(err)
+	}
+	source, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := parser.ParseFile(token.NewFileSet(), output, source, parser.AllErrors); err != nil {
+		t.Fatalf("generated uncredentialed source does not parse: %v", err)
+	}
+	if bytes.Contains(source, []byte(testClientID)) || bytes.Contains(source, []byte(testClientSecret)) {
+		t.Fatal("generated uncredentialed source contains test credentials")
+	}
+}
+
+func TestVerifyNoPlaintextAllowsEmptyCredentials(t *testing.T) {
+	directory := t.TempDir()
+	if err := os.WriteFile(filepath.Join(directory, "uncredentialed-binary"), []byte("application bytes"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyNoPlaintext(directory, "", ""); err != nil {
+		t.Fatal(err)
 	}
 }
