@@ -94,7 +94,7 @@ func CommandProblemCodes(capability Capability) []string {
 			"publication.cache_failed", "publication.hook_failed", "remote_config.conflict",
 			"remote_config.invalid", "remote_config.validation_failed",
 		)
-		if capability.ID != "draft.publish" {
+		if capability.ID != "draft.publish" && capability.ID != "apply" {
 			add("draft.exists")
 		}
 	}
@@ -214,7 +214,7 @@ func CommandProblemCodes(capability Capability) []string {
 		add("interaction.required")
 	}
 	if capability.Supports.Plan {
-		add("plan.exists", "plan.invalid", "plan.integrity_failed")
+		add("plan.exists")
 	}
 
 	result := make([]string, 0, len(set))

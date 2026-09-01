@@ -24,13 +24,14 @@ import (
 // PlanCreatedResult is the machine result returned by mutation commands in
 // --plan-out mode.
 type PlanCreatedResult struct {
-	PlanID               string    `json:"plan_id"`
-	Path                 string    `json:"path"`
-	CreatedAt            time.Time `json:"created_at"`
-	CommandID            string    `json:"command_id"`
-	TargetCount          int       `json:"target_count"`
-	PublishTargetCount   int       `json:"publish_target_count"`
-	UnchangedTargetCount int       `json:"unchanged_target_count"`
+	PlanID               string                   `json:"plan_id"`
+	Path                 string                   `json:"path"`
+	Artifact             publication.FileArtifact `json:"artifact"`
+	CreatedAt            time.Time                `json:"created_at"`
+	CommandID            string                   `json:"command_id"`
+	TargetCount          int                      `json:"target_count"`
+	PublishTargetCount   int                      `json:"publish_target_count"`
+	UnchangedTargetCount int                      `json:"unchanged_target_count"`
 }
 
 func runRemotePlanLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, defaultScope bool, operation, path string, planner RemoteMutationPlanner) (RemoteMutationTotals, error) {
@@ -118,7 +119,7 @@ func runRemotePlanLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, 
 	if err := createPlanFile(path, raw); err != nil {
 		return totals, err
 	}
-	result := &PlanCreatedResult{PlanID: plan.PlanID, Path: path, CreatedAt: plan.CreatedAt, CommandID: operation, TargetCount: len(plan.Targets)}
+	result := &PlanCreatedResult{PlanID: plan.PlanID, Path: path, Artifact: publication.NewFileArtifact(path, raw), CreatedAt: plan.CreatedAt, CommandID: operation, TargetCount: len(plan.Targets)}
 	for _, target := range plan.Targets {
 		if target.Action == publication.ActionPublish {
 			result.PublishTargetCount++
@@ -143,7 +144,7 @@ func WritePublicationPlan(cmd *cobra.Command, plan *publication.Plan, path strin
 	if err := createPlanFile(path, raw); err != nil {
 		return nil, err
 	}
-	result := &PlanCreatedResult{PlanID: plan.PlanID, Path: path, CreatedAt: plan.CreatedAt, CommandID: plan.Operation.CommandID, TargetCount: len(plan.Targets)}
+	result := &PlanCreatedResult{PlanID: plan.PlanID, Path: path, Artifact: publication.NewFileArtifact(path, raw), CreatedAt: plan.CreatedAt, CommandID: plan.Operation.CommandID, TargetCount: len(plan.Targets)}
 	for _, target := range plan.Targets {
 		if target.Action == publication.ActionPublish {
 			result.PublishTargetCount++

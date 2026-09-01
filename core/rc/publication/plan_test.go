@@ -90,4 +90,30 @@ func TestPlanRejectsInvalidExecutionAndValidationProvenance(t *testing.T) {
 	if err := Seal(plan); err == nil || !strings.Contains(err.Error(), "validation source") {
 		t.Fatalf("invalid validation source error = %v", err)
 	}
+
+	plan = testPlan(t)
+	plan.Targets[0].Validation.Source = "local"
+	if err := Seal(plan); err == nil || !strings.Contains(err.Error(), "Firebase validation provenance") {
+		t.Fatalf("publish provenance error = %v", err)
+	}
+
+	plan = testPlan(t)
+	plan.Targets[0].Action = ActionNone
+	plan.Targets[0].Candidate = plan.Targets[0].Base
+	plan.Targets[0].Validation.Source = "firebase"
+	if err := Seal(plan); err == nil || !strings.Contains(err.Error(), "local validation provenance") {
+		t.Fatalf("unchanged provenance error = %v", err)
+	}
+}
+
+func TestPlanRejectsEmptyTargetsAndNonObjectRemoteConfig(t *testing.T) {
+	plan := New("test", "update", "stateless", nil)
+	if err := Seal(plan); err == nil || !strings.Contains(err.Error(), "at least one target") {
+		t.Fatalf("empty plan error = %v", err)
+	}
+	for _, raw := range []json.RawMessage{json.RawMessage(`null`), json.RawMessage(`[]`)} {
+		if _, err := RemoteConfigDigest(raw); err == nil {
+			t.Fatalf("RemoteConfigDigest(%s) error = %v", raw, err)
+		}
+	}
 }

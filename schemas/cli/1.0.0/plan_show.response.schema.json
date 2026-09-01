@@ -30,7 +30,7 @@
           "type": "integer"
         },
         "target_count": {
-          "minimum": 0,
+          "minimum": 1,
           "type": "integer"
         },
         "targets": {
@@ -74,10 +74,8 @@
             ],
             "type": "object"
           },
-          "type": [
-            "array",
-            "null"
-          ]
+          "minItems": 1,
+          "type": "array"
         }
       },
       "required": [
@@ -91,7 +89,42 @@
         "target_count",
         "targets"
       ],
-      "type": "object"
+      "type": "object",
+      "x-fbrcm-invariants": [
+        {
+          "left": {
+            "field": "target_count"
+          },
+          "op": "eq",
+          "right": {
+            "op": "length",
+            "value": {
+              "field": "targets"
+            }
+          }
+        },
+        {
+          "left": {
+            "field": "publish_target_count"
+          },
+          "op": "eq",
+          "right": {
+            "collection": {
+              "field": "targets"
+            },
+            "op": "count_where",
+            "where": {
+              "left": {
+                "field": "item.action"
+              },
+              "op": "eq",
+              "right": {
+                "const": "publish"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",

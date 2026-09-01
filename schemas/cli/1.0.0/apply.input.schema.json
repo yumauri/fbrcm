@@ -75,7 +75,7 @@
               ]
             },
             "command_id": {
-              "minLength": 1,
+              "pattern": ".*\\S.*",
               "type": "string"
             },
             "selection": {}
@@ -94,7 +94,7 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "minLength": 1,
+              "pattern": ".*\\S.*",
               "type": "string"
             },
             "version": {
@@ -127,12 +127,48 @@
                     "base": {
                       "properties": {
                         "etag": {
-                          "minLength": 1,
+                          "pattern": ".*\\S.*",
                           "type": "string"
                         }
                       },
                       "required": [
                         "etag"
+                      ]
+                    },
+                    "validation": {
+                      "properties": {
+                        "source": {
+                          "const": "firebase"
+                        }
+                      },
+                      "required": [
+                        "source"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "action": {
+                      "const": "none"
+                    }
+                  },
+                  "required": [
+                    "action"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "validation": {
+                      "properties": {
+                        "source": {
+                          "const": "local"
+                        }
+                      },
+                      "required": [
+                        "source"
                       ]
                     }
                   }
@@ -154,75 +190,39 @@
                     "type": "string"
                   },
                   "remote_config": {
-                    "additionalProperties": false,
+                    "additionalProperties": true,
                     "properties": {
                       "conditions": {
                         "items": {
                           "additionalProperties": false,
                           "properties": {
                             "expression": {
-                              "pattern": ".*\\S.*",
-                              "type": "string",
-                              "x-fbrcm-validation": [
-                                {
-                                  "grammar": "condition_expression",
-                                  "operator": "remote_validate",
-                                  "service": "firebase_remote_config"
-                                }
-                              ]
+                              "type": "string"
                             },
                             "name": {
-                              "pattern": ".*\\S.*",
                               "type": "string"
                             },
                             "tagColor": {
-                              "pattern": "^(?:|[Cc][Oo][Nn][Dd][Ii][Tt][Ii][Oo][Nn]_[Dd][Ii][Ss][Pp][Ll][Aa][Yy]_[Cc][Oo][Ll][Oo][Rr]_[Uu][Nn][Ss][Pp][Ee][Cc][Ii][Ff][Ii][Ee][Dd]|[Bb][Ll][Uu][Ee]|[Bb][Rr][Oo][Ww][Nn]|[Cc][Yy][Aa][Nn]|[Dd][Ee][Ee][Pp]_[Oo][Rr][Aa][Nn][Gg][Ee]|[Gg][Rr][Ee][Ee][Nn]|[Ii][Nn][Dd][Ii][Gg][Oo]|[Ll][Ii][Mm][Ee]|[Oo][Rr][Aa][Nn][Gg][Ee]|[Pp][Ii][Nn][Kk]|[Pp][Uu][Rr][Pp][Ll][Ee]|[Tt][Ee][Aa][Ll])$",
-                              "type": "string",
-                              "x-fbrcm-normalized-values": [
-                                "CONDITION_DISPLAY_COLOR_UNSPECIFIED",
-                                "BLUE",
-                                "BROWN",
-                                "CYAN",
-                                "DEEP_ORANGE",
-                                "GREEN",
-                                "INDIGO",
-                                "LIME",
-                                "ORANGE",
-                                "PINK",
-                                "PURPLE",
-                                "TEAL"
-                              ]
+                              "type": "string"
                             }
                           },
-                          "required": [
-                            "expression",
-                            "name"
-                          ],
                           "type": "object"
                         },
                         "type": [
                           "array",
                           "null"
-                        ],
-                        "uniqueItems": true,
-                        "x-fbrcm-validation": [
-                          {
-                            "field": "name",
-                            "operator": "unique_by"
-                          }
                         ]
                       },
                       "parameterGroups": {
                         "additionalProperties": {
-                          "additionalProperties": false,
+                          "additionalProperties": true,
                           "properties": {
                             "description": {
-                              "maxLength": 256,
                               "type": "string"
                             },
                             "parameters": {
                               "additionalProperties": {
-                                "additionalProperties": false,
+                                "additionalProperties": true,
                                 "properties": {
                                   "conditionalValues": {
                                     "additionalProperties": {
@@ -402,28 +402,14 @@
                                     ]
                                   },
                                   "description": {
-                                    "maxLength": 256,
                                     "type": "string"
                                   },
                                   "valueType": {
-                                    "enum": [
-                                      "",
-                                      "PARAMETER_VALUE_TYPE_UNSPECIFIED",
-                                      "STRING",
-                                      "BOOLEAN",
-                                      "NUMBER",
-                                      "JSON"
-                                    ],
                                     "type": "string"
                                   }
                                 },
                                 "required": [],
                                 "type": "object"
-                              },
-                              "propertyNames": {
-                                "maxLength": 256,
-                                "minLength": 1,
-                                "type": "string"
                               },
                               "type": [
                                 "object",
@@ -434,11 +420,6 @@
                           "required": [],
                           "type": "object"
                         },
-                        "propertyNames": {
-                          "maxLength": 256,
-                          "minLength": 1,
-                          "type": "string"
-                        },
                         "type": [
                           "object",
                           "null"
@@ -446,7 +427,7 @@
                       },
                       "parameters": {
                         "additionalProperties": {
-                          "additionalProperties": false,
+                          "additionalProperties": true,
                           "properties": {
                             "conditionalValues": {
                               "additionalProperties": {
@@ -626,28 +607,14 @@
                               ]
                             },
                             "description": {
-                              "maxLength": 256,
                               "type": "string"
                             },
                             "valueType": {
-                              "enum": [
-                                "",
-                                "PARAMETER_VALUE_TYPE_UNSPECIFIED",
-                                "STRING",
-                                "BOOLEAN",
-                                "NUMBER",
-                                "JSON"
-                              ],
                               "type": "string"
                             }
                           },
                           "required": [],
                           "type": "object"
-                        },
-                        "propertyNames": {
-                          "maxLength": 256,
-                          "minLength": 1,
-                          "type": "string"
                         },
                         "type": [
                           "object",
@@ -655,7 +622,7 @@
                         ]
                       },
                       "version": {
-                        "additionalProperties": false,
+                        "additionalProperties": true,
                         "properties": {
                           "description": {
                             "type": "string"
@@ -670,21 +637,18 @@
                             "type": "string"
                           },
                           "updateTime": {
-                            "format": "date-time",
                             "type": "string"
                           },
                           "updateType": {
                             "type": "string"
                           },
                           "updateUser": {
-                            "additionalProperties": false,
+                            "additionalProperties": true,
                             "properties": {
                               "email": {
-                                "format": "email",
                                 "type": "string"
                               },
                               "imageUrl": {
-                                "format": "uri",
                                 "type": "string"
                               },
                               "name": {
@@ -706,9 +670,8 @@
                     "type": "object",
                     "x-fbrcm-validation": [
                       {
-                        "grammar": "template",
-                        "operator": "remote_validate",
-                        "service": "firebase_remote_config"
+                        "operator": "local_validate",
+                        "validator": "firebase.PrepareRemoteConfigUpdate"
                       }
                     ]
                   },
@@ -733,75 +696,39 @@
                     "type": "string"
                   },
                   "remote_config": {
-                    "additionalProperties": false,
+                    "additionalProperties": true,
                     "properties": {
                       "conditions": {
                         "items": {
                           "additionalProperties": false,
                           "properties": {
                             "expression": {
-                              "pattern": ".*\\S.*",
-                              "type": "string",
-                              "x-fbrcm-validation": [
-                                {
-                                  "grammar": "condition_expression",
-                                  "operator": "remote_validate",
-                                  "service": "firebase_remote_config"
-                                }
-                              ]
+                              "type": "string"
                             },
                             "name": {
-                              "pattern": ".*\\S.*",
                               "type": "string"
                             },
                             "tagColor": {
-                              "pattern": "^(?:|[Cc][Oo][Nn][Dd][Ii][Tt][Ii][Oo][Nn]_[Dd][Ii][Ss][Pp][Ll][Aa][Yy]_[Cc][Oo][Ll][Oo][Rr]_[Uu][Nn][Ss][Pp][Ee][Cc][Ii][Ff][Ii][Ee][Dd]|[Bb][Ll][Uu][Ee]|[Bb][Rr][Oo][Ww][Nn]|[Cc][Yy][Aa][Nn]|[Dd][Ee][Ee][Pp]_[Oo][Rr][Aa][Nn][Gg][Ee]|[Gg][Rr][Ee][Ee][Nn]|[Ii][Nn][Dd][Ii][Gg][Oo]|[Ll][Ii][Mm][Ee]|[Oo][Rr][Aa][Nn][Gg][Ee]|[Pp][Ii][Nn][Kk]|[Pp][Uu][Rr][Pp][Ll][Ee]|[Tt][Ee][Aa][Ll])$",
-                              "type": "string",
-                              "x-fbrcm-normalized-values": [
-                                "CONDITION_DISPLAY_COLOR_UNSPECIFIED",
-                                "BLUE",
-                                "BROWN",
-                                "CYAN",
-                                "DEEP_ORANGE",
-                                "GREEN",
-                                "INDIGO",
-                                "LIME",
-                                "ORANGE",
-                                "PINK",
-                                "PURPLE",
-                                "TEAL"
-                              ]
+                              "type": "string"
                             }
                           },
-                          "required": [
-                            "expression",
-                            "name"
-                          ],
                           "type": "object"
                         },
                         "type": [
                           "array",
                           "null"
-                        ],
-                        "uniqueItems": true,
-                        "x-fbrcm-validation": [
-                          {
-                            "field": "name",
-                            "operator": "unique_by"
-                          }
                         ]
                       },
                       "parameterGroups": {
                         "additionalProperties": {
-                          "additionalProperties": false,
+                          "additionalProperties": true,
                           "properties": {
                             "description": {
-                              "maxLength": 256,
                               "type": "string"
                             },
                             "parameters": {
                               "additionalProperties": {
-                                "additionalProperties": false,
+                                "additionalProperties": true,
                                 "properties": {
                                   "conditionalValues": {
                                     "additionalProperties": {
@@ -981,28 +908,14 @@
                                     ]
                                   },
                                   "description": {
-                                    "maxLength": 256,
                                     "type": "string"
                                   },
                                   "valueType": {
-                                    "enum": [
-                                      "",
-                                      "PARAMETER_VALUE_TYPE_UNSPECIFIED",
-                                      "STRING",
-                                      "BOOLEAN",
-                                      "NUMBER",
-                                      "JSON"
-                                    ],
                                     "type": "string"
                                   }
                                 },
                                 "required": [],
                                 "type": "object"
-                              },
-                              "propertyNames": {
-                                "maxLength": 256,
-                                "minLength": 1,
-                                "type": "string"
                               },
                               "type": [
                                 "object",
@@ -1013,11 +926,6 @@
                           "required": [],
                           "type": "object"
                         },
-                        "propertyNames": {
-                          "maxLength": 256,
-                          "minLength": 1,
-                          "type": "string"
-                        },
                         "type": [
                           "object",
                           "null"
@@ -1025,7 +933,7 @@
                       },
                       "parameters": {
                         "additionalProperties": {
-                          "additionalProperties": false,
+                          "additionalProperties": true,
                           "properties": {
                             "conditionalValues": {
                               "additionalProperties": {
@@ -1205,28 +1113,14 @@
                               ]
                             },
                             "description": {
-                              "maxLength": 256,
                               "type": "string"
                             },
                             "valueType": {
-                              "enum": [
-                                "",
-                                "PARAMETER_VALUE_TYPE_UNSPECIFIED",
-                                "STRING",
-                                "BOOLEAN",
-                                "NUMBER",
-                                "JSON"
-                              ],
                               "type": "string"
                             }
                           },
                           "required": [],
                           "type": "object"
-                        },
-                        "propertyNames": {
-                          "maxLength": 256,
-                          "minLength": 1,
-                          "type": "string"
                         },
                         "type": [
                           "object",
@@ -1234,7 +1128,7 @@
                         ]
                       },
                       "version": {
-                        "additionalProperties": false,
+                        "additionalProperties": true,
                         "properties": {
                           "description": {
                             "type": "string"
@@ -1249,21 +1143,18 @@
                             "type": "string"
                           },
                           "updateTime": {
-                            "format": "date-time",
                             "type": "string"
                           },
                           "updateType": {
                             "type": "string"
                           },
                           "updateUser": {
-                            "additionalProperties": false,
+                            "additionalProperties": true,
                             "properties": {
                               "email": {
-                                "format": "email",
                                 "type": "string"
                               },
                               "imageUrl": {
-                                "format": "uri",
                                 "type": "string"
                               },
                               "name": {
@@ -1285,9 +1176,8 @@
                     "type": "object",
                     "x-fbrcm-validation": [
                       {
-                        "grammar": "template",
-                        "operator": "remote_validate",
-                        "service": "firebase_remote_config"
+                        "operator": "local_validate",
+                        "validator": "firebase.PrepareRemoteConfigUpdate"
                       }
                     ]
                   },
@@ -1312,7 +1202,7 @@
                 ]
               },
               "project_id": {
-                "minLength": 1,
+                "pattern": ".*\\S.*",
                 "type": "string"
               },
               "source": {
@@ -1322,7 +1212,7 @@
                     "type": "string"
                   },
                   "kind": {
-                    "minLength": 1,
+                    "pattern": ".*\\S.*",
                     "type": "string"
                   }
                 },
@@ -1332,7 +1222,7 @@
                 "type": "object"
               },
               "target": {
-                "minLength": 1,
+                "pattern": ".*\\S.*",
                 "type": "string"
               },
               "template_kind": {
@@ -1376,10 +1266,8 @@
             ],
             "type": "object"
           },
-          "type": [
-            "array",
-            "null"
-          ]
+          "minItems": 1,
+          "type": "array"
         }
       },
       "required": [
@@ -1392,7 +1280,22 @@
         "producer",
         "targets"
       ],
-      "type": "object"
+      "type": "object",
+      "x-fbrcm-validation": [
+        {
+          "checks": [
+            "nonempty_targets",
+            "canonical_target_order",
+            "unique_target_ids",
+            "snapshot_sha256",
+            "none_snapshot_equality",
+            "action_validation_provenance",
+            "content_derived_plan_id"
+          ],
+          "operator": "publication_plan_integrity",
+          "validator": "publication.Validate"
+        }
+      ]
     },
     "stateless_target_selector": {
       "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\\s][^@\\s]*$",
@@ -1575,5 +1478,16 @@
     "options",
     "stdin"
   ],
-  "type": "object"
+  "type": "object",
+  "x-fbrcm-input-selection": [
+    {
+      "missing_stdin": "plan.invalid",
+      "non_stdin": "read_file",
+      "operator": "path_or_stdin_document",
+      "path": "arguments.plan",
+      "stdin": "stdin.document",
+      "stdin_path": "-",
+      "unused_stdin": "ignored_without_consumption"
+    }
+  ]
 }

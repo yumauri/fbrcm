@@ -17,18 +17,24 @@
     "app.invocation_semantics": "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
     "app.no_op": "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
     "app.outcomes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
+    "app.plan_capability_boundaries": "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
+    "app.plan_invocation_schema": "cli/app/contract_test.go#TestPublicationPlanInvocationSchemasPublishIntegrityAndInputSelection",
     "app.response_invariants": "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
     "app.selection": "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
     "app.stdin": "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
     "app.warning_runtime": "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
+    "apply.draft_cleanup_runtime": "cli/commands/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
     "apply.no_change_success": "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
+    "apply.status_runtime": "cli/commands/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
+    "apply.warning_runtime": "cli/commands/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
     "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
     "contract.artifact_runtime": "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
     "contract.batch_runtime": "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
     "draft.publish_success": "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
+    "plan.artifact_runtime": "cli/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
     "plan.metadata_success": "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
     "profile.root_success": "cli/commands/profile/commands_test.go#TestProfileRootJSON",
     "schemagen.determinism": "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
@@ -45,7 +51,8 @@
             "contract.artifact_runtime",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
-            "e2e:parameter_add_stateless_json"
+            "e2e:parameter_add_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "batch": {
@@ -61,6 +68,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
             "e2e:parameter_add_stateless_json"
@@ -86,6 +94,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
             "e2e:parameter_add_stateless_json"
@@ -94,6 +103,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
             "e2e:parameter_add_stateless_json"
@@ -112,6 +122,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
             "e2e:parameter_add_stateless_json"
@@ -121,6 +132,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
@@ -146,6 +158,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.plan_invocation_schema",
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:parameter_add_dry_run_json",
@@ -159,7 +172,8 @@
             "app.response_invariants",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
-            "e2e:parameter_add_stateless_json"
+            "e2e:parameter_add_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -182,83 +196,105 @@
         "batch": {
           "evidence": [
             "app.outcomes",
-            "contract.batch_runtime"
+            "contract.batch_runtime",
+            "e2e:apply_stateless_json"
           ]
         },
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "app.plan_capability_boundaries",
+            "e2e:apply_stateless_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:apply_stateless_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:apply_stateless_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:apply_stateless_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "app.plan_capability_boundaries",
+            "e2e:apply_stateless_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apply_stateless_json"
           ]
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "app.plan_capability_boundaries",
+            "e2e:apply_stateless_json"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.plan_invocation_schema",
+            "app.unknown_option",
+            "e2e:apply_stateless_json"
           ]
         },
         "no_op": {
           "evidence": [
             "app.no_op",
-            "app.response_invariants"
+            "app.response_invariants",
+            "apply.status_runtime",
+            "e2e:apply_stateless_json"
           ]
         },
         "selection": {
           "evidence": [
-            "app.selection"
+            "app.selection",
+            "e2e:apply_stateless_json"
           ]
         },
         "stdin": {
           "evidence": [
+            "app.plan_invocation_schema",
             "app.stdin",
-            "app.stdin_restrictions"
+            "app.stdin_restrictions",
+            "e2e:apply_stateless_json"
           ]
         },
         "success": {
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "apply.no_change_success"
+            "apply.status_runtime",
+            "e2e:apply_stateless_json"
           ]
         },
         "warning": {
           "evidence": [
             "app.outcomes",
-            "app.warning_runtime"
+            "app.warning_runtime",
+            "apply.draft_cleanup_runtime",
+            "apply.warning_runtime",
+            "e2e:apply_stateless_json"
           ]
         }
       }
@@ -2021,7 +2057,13 @@
       "id": "conditions.add",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:conditions_add_json",
+            "e2e:conditions_add_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -2035,6 +2077,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
           ]
@@ -2057,6 +2100,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
           ]
@@ -2064,6 +2108,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
           ]
@@ -2080,6 +2125,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
           ]
@@ -2088,6 +2134,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
@@ -2116,7 +2163,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:conditions_add_json",
-            "e2e:conditions_add_stateless_json"
+            "e2e:conditions_add_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -2133,7 +2181,13 @@
       "id": "conditions.delete",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:conditions_delete_json",
+            "e2e:conditions_delete_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -2147,6 +2201,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
           ]
@@ -2169,6 +2224,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
           ]
@@ -2176,6 +2232,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
           ]
@@ -2192,6 +2249,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
           ]
@@ -2200,6 +2258,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
@@ -2228,7 +2287,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:conditions_delete_json",
-            "e2e:conditions_delete_stateless_json"
+            "e2e:conditions_delete_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -2245,7 +2305,13 @@
       "id": "conditions.edit",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:conditions_edit_json",
+            "e2e:conditions_edit_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -2259,6 +2325,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
           ]
@@ -2281,6 +2348,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
           ]
@@ -2288,6 +2356,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
           ]
@@ -2304,6 +2373,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
           ]
@@ -2312,6 +2382,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
@@ -2340,7 +2411,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:conditions_edit_json",
-            "e2e:conditions_edit_stateless_json"
+            "e2e:conditions_edit_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -2454,7 +2526,13 @@
       "id": "conditions.move",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:conditions_move_json",
+            "e2e:conditions_move_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -2468,6 +2546,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
           ]
@@ -2490,6 +2569,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
           ]
@@ -2497,6 +2577,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
           ]
@@ -2513,6 +2594,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
           ]
@@ -2521,6 +2603,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
@@ -2549,7 +2632,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:conditions_move_json",
-            "e2e:conditions_move_stateless_json"
+            "e2e:conditions_move_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -2566,7 +2650,13 @@
       "id": "conditions.rename",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:conditions_rename_json",
+            "e2e:conditions_rename_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -2580,6 +2670,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
           ]
@@ -2602,6 +2693,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
           ]
@@ -2609,6 +2701,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
           ]
@@ -2625,6 +2718,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
           ]
@@ -2633,6 +2727,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
@@ -2661,7 +2756,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:conditions_rename_json",
-            "e2e:conditions_rename_stateless_json"
+            "e2e:conditions_rename_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -3386,7 +3482,8 @@
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
-            "e2e:project_import_stateless_cleanup_json"
+            "e2e:project_import_stateless_cleanup_json",
+            "plan.artifact_runtime"
           ]
         },
         "batch": {
@@ -3403,6 +3500,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
@@ -3431,6 +3529,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
@@ -3440,6 +3539,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
@@ -3460,6 +3560,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
@@ -3470,6 +3571,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
@@ -3498,6 +3600,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.plan_invocation_schema",
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:parameter_delete_dry_run_json",
@@ -3513,7 +3616,8 @@
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
-            "e2e:project_import_stateless_cleanup_json"
+            "e2e:project_import_stateless_cleanup_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -4050,7 +4154,11 @@
       "id": "draft.publish",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -4061,7 +4169,8 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "app.plan_invocation_schema"
           ]
         },
         "determinism": {
@@ -4077,12 +4186,14 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "app.plan_capability_boundaries"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "app.plan_capability_boundaries"
           ]
         },
         "failure": {
@@ -4094,13 +4205,15 @@
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "app.plan_capability_boundaries"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option"
           ]
         },
@@ -4122,7 +4235,8 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "draft.publish_success"
+            "draft.publish_success",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -4225,7 +4339,14 @@
       "id": "duplicate",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:parameter_duplicate_dry_run_json",
+            "e2e:parameter_duplicate_json",
+            "e2e:parameter_duplicate_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -4240,6 +4361,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
             "e2e:parameter_duplicate_stateless_json"
@@ -4265,6 +4387,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
             "e2e:parameter_duplicate_stateless_json"
@@ -4273,6 +4396,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
             "e2e:parameter_duplicate_stateless_json"
@@ -4291,6 +4415,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
             "e2e:parameter_duplicate_stateless_json"
@@ -4300,6 +4425,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
@@ -4332,7 +4458,8 @@
             "app.response_invariants",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
-            "e2e:parameter_duplicate_stateless_json"
+            "e2e:parameter_duplicate_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -4807,7 +4934,13 @@
       "id": "groups.add",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:groups_add_json",
+            "e2e:groups_add_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -4821,6 +4954,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
           ]
@@ -4843,6 +4977,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
           ]
@@ -4850,6 +4985,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
           ]
@@ -4866,6 +5002,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
           ]
@@ -4874,6 +5011,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
@@ -4902,7 +5040,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:groups_add_json",
-            "e2e:groups_add_stateless_json"
+            "e2e:groups_add_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -4919,7 +5058,13 @@
       "id": "groups.delete",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:groups_delete_json",
+            "e2e:groups_delete_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -4933,6 +5078,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
           ]
@@ -4955,6 +5101,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
           ]
@@ -4962,6 +5109,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
           ]
@@ -4978,6 +5126,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
           ]
@@ -4986,6 +5135,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
@@ -5014,7 +5164,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:groups_delete_json",
-            "e2e:groups_delete_stateless_json"
+            "e2e:groups_delete_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -5031,7 +5182,13 @@
       "id": "groups.edit",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:groups_edit_json",
+            "e2e:groups_edit_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -5045,6 +5202,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
           ]
@@ -5067,6 +5225,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
           ]
@@ -5074,6 +5233,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
           ]
@@ -5090,6 +5250,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
           ]
@@ -5098,6 +5259,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
@@ -5126,7 +5288,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:groups_edit_json",
-            "e2e:groups_edit_stateless_json"
+            "e2e:groups_edit_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -5240,7 +5403,13 @@
       "id": "groups.rename",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:groups_rename_json",
+            "e2e:groups_rename_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -5254,6 +5423,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
           ]
@@ -5276,6 +5446,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
           ]
@@ -5283,6 +5454,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
           ]
@@ -5299,6 +5471,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
           ]
@@ -5307,6 +5480,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
@@ -5335,7 +5509,8 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:groups_rename_json",
-            "e2e:groups_rename_stateless_json"
+            "e2e:groups_rename_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -5978,35 +6153,41 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "e2e:plan_show_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:plan_show_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:plan_show_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:plan_show_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "e2e:plan_show_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:plan_show_json"
           ]
         },
         "interaction": {
@@ -6016,7 +6197,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:plan_show_json"
           ]
         },
         "no_op": {
@@ -6028,14 +6210,15 @@
         "stdin": {
           "evidence": [
             "app.stdin",
-            "app.stdin_restrictions"
+            "app.stdin_restrictions",
+            "e2e:plan_show_json"
           ]
         },
         "success": {
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "plan.metadata_success"
+            "e2e:plan_show_json"
           ]
         },
         "warning": {
@@ -6055,35 +6238,41 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "e2e:plan_validate_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:plan_validate_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:plan_validate_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:plan_validate_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "e2e:plan_validate_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:plan_validate_json"
           ]
         },
         "interaction": {
@@ -6093,7 +6282,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:plan_validate_json"
           ]
         },
         "no_op": {
@@ -6105,14 +6295,15 @@
         "stdin": {
           "evidence": [
             "app.stdin",
-            "app.stdin_restrictions"
+            "app.stdin_restrictions",
+            "e2e:plan_validate_json"
           ]
         },
         "success": {
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "plan.metadata_success"
+            "e2e:plan_validate_json"
           ]
         },
         "warning": {
@@ -6897,7 +7088,12 @@
       "id": "project.import",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:project_import_stateless_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -6910,6 +7106,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:project_import_stateless_json"
           ]
         },
@@ -6929,12 +7126,14 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:project_import_stateless_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:project_import_stateless_json"
           ]
         },
@@ -6949,6 +7148,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:project_import_stateless_json"
           ]
         },
@@ -6956,6 +7156,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:project_import_stateless_json"
           ]
@@ -6975,6 +7176,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.plan_invocation_schema",
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:project_import_stateless_json"
@@ -6984,7 +7186,8 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "e2e:project_import_stateless_json"
+            "e2e:project_import_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -8331,7 +8534,12 @@
       "id": "projects.promote",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:projects_promote_stateless_dry_run_json",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -8344,6 +8552,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
         },
@@ -8363,12 +8572,14 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
         },
@@ -8383,6 +8594,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
         },
@@ -8390,6 +8602,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
@@ -8414,7 +8627,8 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "e2e:projects_promote_stateless_dry_run_json"
+            "e2e:projects_promote_stateless_dry_run_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -9818,7 +10032,8 @@
             "contract.artifact_runtime",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
-            "e2e:parameter_update_stateless_json"
+            "e2e:parameter_update_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "batch": {
@@ -9834,6 +10049,7 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
             "e2e:parameter_update_stateless_json"
@@ -9859,6 +10075,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.plan_capability_boundaries",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
             "e2e:parameter_update_stateless_json"
@@ -9867,6 +10084,7 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.plan_capability_boundaries",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
             "e2e:parameter_update_stateless_json"
@@ -9885,6 +10103,7 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.plan_capability_boundaries",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
             "e2e:parameter_update_stateless_json"
@@ -9894,6 +10113,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
@@ -9919,6 +10139,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.plan_invocation_schema",
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:parameter_update_dry_run_json",
@@ -9932,7 +10153,8 @@
             "app.response_invariants",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
-            "e2e:parameter_update_stateless_json"
+            "e2e:parameter_update_stateless_json",
+            "plan.artifact_runtime"
           ]
         },
         "warning": {
@@ -10256,7 +10478,11 @@
       "id": "versions.restore",
       "classes": {
         "artifact": {
-          "not_applicable": "The command does not return a contract artifact DTO."
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "plan.artifact_runtime"
+          ]
         },
         "batch": {
           "evidence": [
@@ -10267,7 +10493,8 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "app.plan_invocation_schema"
           ]
         },
         "determinism": {
@@ -10283,12 +10510,14 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "app.plan_capability_boundaries"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "app.plan_capability_boundaries"
           ]
         },
         "failure": {
@@ -10300,13 +10529,15 @@
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "app.plan_capability_boundaries"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.plan_invocation_schema",
             "app.unknown_option"
           ]
         },
@@ -10328,6 +10559,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
+            "plan.artifact_runtime",
             "versions.restore_success"
           ]
         },

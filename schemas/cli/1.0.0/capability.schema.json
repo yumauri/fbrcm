@@ -400,8 +400,6 @@
           "network.unavailable",
           "parameter.exists",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -839,6 +837,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -1033,6 +1058,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -1162,7 +1193,6 @@
           "command.canceled",
           "command.timeout",
           "configuration.invalid",
-          "draft.exists",
           "file.io_failed",
           "filesystem.permission_denied",
           "firebase.permission_denied",
@@ -1196,6 +1226,7 @@
           "firebase_remote_write",
           "firebase_remote_validation",
           "trusted_hook_execution",
+          "local_draft_delete",
           "authentication_remote_access",
           "local_file_write",
           "local_state_write"
@@ -1203,7 +1234,18 @@
         "side_effect_when": [
           {
             "effect": "firebase_remote_read",
-            "when": []
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "publication_plan",
+                    "operator": "has_publish_targets",
+                    "value": null
+                  }
+                ]
+              }
+            ]
           },
           {
             "effect": "local_cache_write",
@@ -1354,6 +1396,33 @@
             ]
           },
           {
+            "effect": "local_draft_delete",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "dry-run",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "source_draft_cleanup",
+                    "operator": "required",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "effect": "authentication_remote_access",
             "when": [
               {
@@ -1417,8 +1486,19 @@
             ]
           }
         ],
-        "network_access": "required",
-        "network_when": [],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "publication_plan",
+                "operator": "has_publish_targets",
+                "value": null
+              }
+            ]
+          }
+        ],
         "destructive": true,
         "destructive_when": [
           {
@@ -1428,6 +1508,28 @@
                 "name": "mutation_plan",
                 "operator": "is_destructive",
                 "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "source_draft_cleanup",
+                "operator": "required",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
               }
             ]
           }
@@ -1459,6 +1561,21 @@
                 "all_of": [
                   {
                     "source": "runtime_state",
+                    "name": "publication_plan",
+                    "operator": "has_no_publish_targets",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "yes",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
                     "name": "confirmation",
                     "operator": "required",
                     "value": null
@@ -1473,10 +1590,16 @@
               {
                 "all_of": [
                   {
-                    "source": "option",
-                    "name": "dry-run",
-                    "operator": "equals",
-                    "value": true
+                    "source": "runtime_state",
+                    "name": "publication_plan",
+                    "operator": "has_publish_targets",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "confirmation",
+                    "operator": "authorized_or_not_required",
+                    "value": null
                   },
                   {
                     "source": "runtime_state",
@@ -1494,57 +1617,21 @@
               {
                 "all_of": [
                   {
-                    "source": "option",
-                    "name": "dry-run",
-                    "operator": "equals",
-                    "value": true
-                  },
-                  {
                     "source": "runtime_state",
-                    "name": "trusted_hook",
-                    "operator": "executed",
-                    "value": null
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "idempotency": "yes",
-            "when": [
-              {
-                "all_of": [
-                  {
-                    "source": "runtime_state",
-                    "name": "mutation_plan",
-                    "operator": "has_no_changes",
-                    "value": null
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "idempotency": "no",
-            "when": [
-              {
-                "all_of": [
-                  {
-                    "source": "option",
-                    "name": "dry-run",
-                    "operator": "equals",
-                    "value": false
-                  },
-                  {
-                    "source": "runtime_state",
-                    "name": "mutation_plan",
-                    "operator": "has_changes",
+                    "name": "publication_plan",
+                    "operator": "has_publish_targets",
                     "value": null
                   },
                   {
                     "source": "runtime_state",
                     "name": "confirmation",
                     "operator": "authorized_or_not_required",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
                     "value": null
                   }
                 ]
@@ -4876,8 +4963,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -5256,6 +5341,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -5427,6 +5539,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -5623,8 +5741,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -6022,6 +6138,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -6193,6 +6336,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -6419,8 +6568,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -6799,6 +6946,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -6970,6 +7144,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -7631,8 +7811,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -8011,6 +8189,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -8182,6 +8387,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -8384,8 +8595,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -8764,6 +8973,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -8935,6 +9171,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -10722,8 +10964,6 @@
           "parameter.ambiguous",
           "parameter.not_found",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -11180,6 +11420,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -11374,6 +11641,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -12723,8 +12996,6 @@
           "network.unavailable",
           "parameters_cache.not_found",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -13090,6 +13361,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -13234,6 +13532,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -13616,8 +13920,6 @@
           "parameter.exists",
           "parameter.not_found",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -13996,6 +14298,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -14167,6 +14496,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -15890,8 +16225,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -16270,6 +16603,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -16441,6 +16801,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -16642,8 +17008,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -17041,6 +17405,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -17212,6 +17603,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -17433,8 +17830,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -17813,6 +18208,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -17984,6 +18406,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -18644,8 +19072,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -19024,6 +19450,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -19195,6 +19648,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -22645,8 +23104,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -23039,6 +23496,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -23212,6 +23696,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -26615,8 +27105,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -26944,6 +27432,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -27088,6 +27603,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -30363,8 +30884,6 @@
           "parameter.ambiguous",
           "parameter.not_found",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -30821,6 +31340,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -31015,6 +31561,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -32394,8 +32946,6 @@
           "network.timeout",
           "network.unavailable",
           "plan.exists",
-          "plan.integrity_failed",
-          "plan.invalid",
           "profile.invalid",
           "project.ambiguous",
           "project.not_found",
@@ -32682,6 +33232,33 @@
                     "name": "plan-out",
                     "operator": "present",
                     "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "not_executed",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "idempotency": "no",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "plan-out",
+                    "operator": "present",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "trusted_hook",
+                    "operator": "executed",
+                    "value": null
                   }
                 ]
               }
@@ -32826,6 +33403,12 @@
                 "name": "confirmation",
                 "operator": "required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -33883,6 +34466,8 @@
                           "output_destination",
                           "credential_file",
                           "mutation_plan",
+                          "publication_plan",
+                          "source_draft_cleanup",
                           "publication",
                           "authentication",
                           "quota_project_credentials",
@@ -34204,6 +34789,61 @@
                     "properties": {
                       "operator": {
                         "const": "requires_network"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "publication_plan"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "enum": [
+                          "has_publish_targets",
+                          "has_no_publish_targets"
+                        ]
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "source_draft_cleanup"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "required"
                       },
                       "value": {
                         "type": "null"
@@ -34605,6 +35245,8 @@
                     "available",
                     "has_changes",
                     "has_no_changes",
+                    "has_publish_targets",
+                    "has_no_publish_targets",
                     "is_destructive",
                     "accepted",
                     "cache_write_succeeded",
@@ -34829,6 +35471,8 @@
                                 "output_destination",
                                 "credential_file",
                                 "mutation_plan",
+                                "publication_plan",
+                                "source_draft_cleanup",
                                 "publication",
                                 "authentication",
                                 "quota_project_credentials",
@@ -35150,6 +35794,61 @@
                           "properties": {
                             "operator": {
                               "const": "requires_network"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "publication_plan"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "enum": [
+                                "has_publish_targets",
+                                "has_no_publish_targets"
+                              ]
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "source_draft_cleanup"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "required"
                             },
                             "value": {
                               "type": "null"
@@ -35551,6 +36250,8 @@
                           "available",
                           "has_changes",
                           "has_no_changes",
+                          "has_publish_targets",
+                          "has_no_publish_targets",
                           "is_destructive",
                           "accepted",
                           "cache_write_succeeded",
@@ -35730,6 +36431,8 @@
                                 "output_destination",
                                 "credential_file",
                                 "mutation_plan",
+                                "publication_plan",
+                                "source_draft_cleanup",
                                 "publication",
                                 "authentication",
                                 "quota_project_credentials",
@@ -36051,6 +36754,61 @@
                           "properties": {
                             "operator": {
                               "const": "requires_network"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "publication_plan"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "enum": [
+                                "has_publish_targets",
+                                "has_no_publish_targets"
+                              ]
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "source_draft_cleanup"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "required"
                             },
                             "value": {
                               "type": "null"
@@ -36452,6 +37210,8 @@
                           "available",
                           "has_changes",
                           "has_no_changes",
+                          "has_publish_targets",
+                          "has_no_publish_targets",
                           "is_destructive",
                           "accepted",
                           "cache_write_succeeded",
@@ -36615,6 +37375,8 @@
                           "output_destination",
                           "credential_file",
                           "mutation_plan",
+                          "publication_plan",
+                          "source_draft_cleanup",
                           "publication",
                           "authentication",
                           "quota_project_credentials",
@@ -36936,6 +37698,61 @@
                     "properties": {
                       "operator": {
                         "const": "requires_network"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "publication_plan"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "enum": [
+                          "has_publish_targets",
+                          "has_no_publish_targets"
+                        ]
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "source_draft_cleanup"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "required"
                       },
                       "value": {
                         "type": "null"
@@ -37337,6 +38154,8 @@
                     "available",
                     "has_changes",
                     "has_no_changes",
+                    "has_publish_targets",
+                    "has_no_publish_targets",
                     "is_destructive",
                     "accepted",
                     "cache_write_succeeded",
@@ -37469,6 +38288,8 @@
                           "output_destination",
                           "credential_file",
                           "mutation_plan",
+                          "publication_plan",
+                          "source_draft_cleanup",
                           "publication",
                           "authentication",
                           "quota_project_credentials",
@@ -37790,6 +38611,61 @@
                     "properties": {
                       "operator": {
                         "const": "requires_network"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "publication_plan"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "enum": [
+                          "has_publish_targets",
+                          "has_no_publish_targets"
+                        ]
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "source_draft_cleanup"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "required"
                       },
                       "value": {
                         "type": "null"
@@ -38191,6 +39067,8 @@
                     "available",
                     "has_changes",
                     "has_no_changes",
+                    "has_publish_targets",
+                    "has_no_publish_targets",
                     "is_destructive",
                     "accepted",
                     "cache_write_succeeded",
@@ -38434,6 +39312,8 @@
                                 "output_destination",
                                 "credential_file",
                                 "mutation_plan",
+                                "publication_plan",
+                                "source_draft_cleanup",
                                 "publication",
                                 "authentication",
                                 "quota_project_credentials",
@@ -38755,6 +39635,61 @@
                           "properties": {
                             "operator": {
                               "const": "requires_network"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "publication_plan"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "enum": [
+                                "has_publish_targets",
+                                "has_no_publish_targets"
+                              ]
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "source_draft_cleanup"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "required"
                             },
                             "value": {
                               "type": "null"
@@ -39156,6 +40091,8 @@
                           "available",
                           "has_changes",
                           "has_no_changes",
+                          "has_publish_targets",
+                          "has_no_publish_targets",
                           "is_destructive",
                           "accepted",
                           "cache_write_succeeded",
@@ -39388,6 +40325,24 @@
       "name": "mutation_plan",
       "operator": "has_no_changes",
       "semantics": "The completed command-specific plan is equal to its comparison baseline and requires no content mutation.",
+      "source": "runtime_state"
+    },
+    {
+      "name": "publication_plan",
+      "operator": "has_publish_targets",
+      "semantics": "The validated publication plan contains at least one target whose recorded action is publish. Apply performs Firebase preflight reads for every such target, including targets that preflight classifies as already applied.",
+      "source": "runtime_state"
+    },
+    {
+      "name": "publication_plan",
+      "operator": "has_no_publish_targets",
+      "semantics": "Every target in the validated publication plan has the recorded action none, so apply performs no Firebase preflight or publication request.",
+      "source": "runtime_state"
+    },
+    {
+      "name": "source_draft_cleanup",
+      "operator": "required",
+      "semantics": "A non-dry-run stateful apply target records a draft source whose fingerprint still matches, and the target was either already applied or publication completed without a post-publication failure; apply then attempts to delete that source draft.",
       "source": "runtime_state"
     },
     {

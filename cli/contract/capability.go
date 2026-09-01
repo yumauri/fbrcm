@@ -398,10 +398,25 @@ func describe(cmd *cobra.Command) Capability {
 	if support.ConfirmationBypass {
 		interaction = InteractionCapability{Mode: "optional", JSONBehavior: "confirmation_required_without_bypass"}
 		if !containsPredicate(interactionWhen, "option", "yes", "equals") {
-			interactionWhen = append(interactionWhen, conditionClause(
+			confirmation := conditionClause(
 				predicate("option", "yes", "equals", false),
 				predicate("runtime_state", "confirmation", "required", nil),
-			))
+			)
+			if support.Plan {
+				confirmation.AllOf = append(confirmation.AllOf, predicate("option", "plan-out", "equals", ""))
+			}
+			interactionWhen = append(interactionWhen, confirmation)
+		}
+	}
+	if support.Plan {
+		for index := range interactionWhen {
+			if slices.ContainsFunc(interactionWhen[index].AllOf, func(item BehaviorPredicate) bool {
+				return item.Source == "option" && item.Name == "yes" && item.Operator == "equals"
+			}) && !slices.ContainsFunc(interactionWhen[index].AllOf, func(item BehaviorPredicate) bool {
+				return item.Source == "option" && item.Name == "plan-out" && item.Operator == "equals"
+			}) {
+				interactionWhen[index].AllOf = append(interactionWhen[index].AllOf, predicate("option", "plan-out", "equals", ""))
+			}
 		}
 	}
 	if behavior.interaction != nil {

@@ -657,6 +657,90 @@ func idempotencyHasPredicate(conditions []contract.IdempotencyCondition, idempot
 	})
 }
 
+func TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries(t *testing.T) {
+	root := NewRootForContract("schema")
+	apply, err := contract.FindCapability(root, []string{"apply"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if apply.NetworkAccess != "conditional" || !capabilityConditionsHavePredicate(apply.NetworkWhen, "runtime_state", "publication_plan", "has_publish_targets") {
+		t.Fatalf("apply network boundary = %#v", apply.NetworkWhen)
+	}
+	if !capabilityHasPredicate(apply, "firebase_remote_read", "publication_plan", "has_publish_targets") || !capabilityHasPredicate(apply, "local_draft_delete", "source_draft_cleanup", "required") {
+		t.Fatalf("apply effect boundaries = %#v", apply.SideEffectWhen)
+	}
+	if apply.Idempotency != "conditional" || !idempotencyHasPredicate(apply.IdempotencyWhen, "yes", "runtime_state", "publication_plan", "has_no_publish_targets") || !idempotencyHasPredicate(apply.IdempotencyWhen, "yes", "runtime_state", "trusted_hook", "not_executed") || !idempotencyHasPredicate(apply.IdempotencyWhen, "no", "runtime_state", "trusted_hook", "executed") {
+		t.Fatalf("apply retry boundary = %#v", apply.IdempotencyWhen)
+	}
+	if slices.Contains(apply.ProblemCodes, "draft.exists") {
+		t.Fatal("apply advertises unreachable draft.exists")
+	}
+
+	for _, capability := range contract.DetailedCapabilities(root) {
+		if !capability.Supports.Plan {
+			continue
+		}
+		if !slices.Contains(capability.ProblemCodes, "plan.exists") || slices.Contains(capability.ProblemCodes, "plan.invalid") || slices.Contains(capability.ProblemCodes, "plan.integrity_failed") {
+			t.Errorf("%s plan-output problems = %v", capability.ID, capability.ProblemCodes)
+		}
+		if !capabilityConditionsHavePredicate(capability.InteractionWhen, "option", "plan-out", "equals") {
+			t.Errorf("%s confirmation does not exclude plan output: %#v", capability.ID, capability.InteractionWhen)
+		}
+		if !idempotencyHasPredicate(capability.IdempotencyWhen, "yes", "runtime_state", "trusted_hook", "not_executed") || !idempotencyHasPredicate(capability.IdempotencyWhen, "no", "runtime_state", "trusted_hook", "executed") {
+			t.Errorf("%s plan-output retry boundary = %#v", capability.ID, capability.IdempotencyWhen)
+		}
+	}
+}
+
+func TestPublicationPlanInvocationSchemasPublishIntegrityAndInputSelection(t *testing.T) {
+	root := NewRootForContract("schema")
+	for _, path := range [][]string{{"apply"}, {"plan", "show"}, {"plan", "validate"}} {
+		capability, err := contract.FindCapability(root, path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw, err := schemas.ReadByID(capability.InvocationSchema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var document map[string]any
+		if err := json.Unmarshal(raw, &document); err != nil {
+			t.Fatal(err)
+		}
+		selection := document["x-fbrcm-input-selection"].([]any)[0].(map[string]any)
+		if selection["operator"] != "path_or_stdin_document" || selection["stdin_path"] != "-" || selection["unused_stdin"] != "ignored_without_consumption" {
+			t.Errorf("%s input selection = %#v", capability.ID, selection)
+		}
+		plan := document["$defs"].(map[string]any)["publication_plan"].(map[string]any)
+		validation := plan["x-fbrcm-validation"].([]any)[0].(map[string]any)
+		if validation["operator"] != "publication_plan_integrity" || validation["validator"] != "publication.Validate" {
+			t.Errorf("%s plan validation = %#v", capability.ID, validation)
+		}
+		targets := plan["properties"].(map[string]any)["targets"].(map[string]any)
+		if targets["minItems"] != float64(1) {
+			t.Errorf("%s plan target minimum = %#v", capability.ID, targets["minItems"])
+		}
+	}
+
+	for _, capability := range contract.DetailedCapabilities(root) {
+		if !capability.Supports.Plan {
+			continue
+		}
+		raw, err := schemas.ReadByID(capability.InvocationSchema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var document map[string]any
+		if err := json.Unmarshal(raw, &document); err != nil {
+			t.Fatal(err)
+		}
+		option := document["properties"].(map[string]any)["options"].(map[string]any)["properties"].(map[string]any)["plan-out"].(map[string]any)
+		if option["not"].(map[string]any)["const"] != "-" || option["x-fbrcm-normalization"] == nil {
+			t.Errorf("%s plan-out schema = %#v", capability.ID, option)
+		}
+	}
+}
+
 func TestDetailedCapabilitiesConformToStandaloneSchema(t *testing.T) {
 	id := "urn:fbrcm:schema:cli:" + contract.Version + ":capability"
 	for _, capability := range contract.DetailedCapabilities(NewRootForContract("schema")) {
@@ -3018,6 +3102,20 @@ func TestResponseSchemasRejectImpossibleDTOStates(t *testing.T) {
 			raw:  `[{"target":"demo","status":"published-hook-failed","changed_item_count":1,"previous_version":"1","published_version":"2","draft":false,"dry_run":false,"validated":true,"validation_source":"firebase","error":{"stage":"post_publish_hook","message":"hook failed"},"retry_selector":null,"change_note":null,"selection":{"default_scope":true,"resolved_target_count":1,"matched_item_count":1},"no_op_reason":null}]`,
 			edit: func(data map[string]any) {
 				data["items"].([]any)[0].(map[string]any)["error"].(map[string]any)["stage"] = "preparation"
+			},
+		},
+		{
+			path: []string{"apply"},
+			raw:  `{"plan_id":"sha256:0000000000000000000000000000000000000000000000000000000000000000","dry_run":false,"published_count":1,"items":[{"target":"demo","status":"published","previous_version":"1","published_version":"2","validated":true,"validation_source":"firebase"}]}`,
+			edit: func(data map[string]any) {
+				data["items"].([]any)[0].(map[string]any)["published_version"] = ""
+			},
+		},
+		{
+			path: []string{"apply"},
+			raw:  `{"plan_id":"sha256:0000000000000000000000000000000000000000000000000000000000000000","dry_run":false,"published_count":0,"items":[{"target":"demo","status":"unchanged","previous_version":"1","validated":true,"validation_source":"local"}]}`,
+			edit: func(data map[string]any) {
+				data["items"].([]any)[0].(map[string]any)["status"] = "would-publish"
 			},
 		},
 	}

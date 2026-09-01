@@ -79,6 +79,28 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 					evidence = append(evidence, "app.auth_google_configuration_failure", "auth.google_quota_failure")
 				}
 			}
+			if capability.Supports.Plan {
+				switch class {
+				case "artifact", "success":
+					evidence = append(evidence, "plan.artifact_runtime")
+				case "boundary", "invocation", "stdin":
+					evidence = append(evidence, "app.plan_invocation_schema")
+				case "effectiveness", "effects", "interaction":
+					evidence = append(evidence, "app.plan_capability_boundaries")
+				}
+			}
+			if capability.ID == "apply" {
+				switch class {
+				case "boundary", "effects", "interaction":
+					evidence = append(evidence, "app.plan_capability_boundaries")
+				case "invocation", "stdin":
+					evidence = append(evidence, "app.plan_invocation_schema")
+				case "success", "no_op":
+					evidence = append(evidence, "apply.status_runtime")
+				case "warning":
+					evidence = append(evidence, "apply.draft_cleanup_runtime", "apply.warning_runtime")
+				}
+			}
 			for _, scenario := range scenarios[capability.ID] {
 				evidence = append(evidence, "e2e:"+scenario)
 			}
@@ -110,6 +132,8 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.invocation_semantics":              "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
 		"app.no_op":                             "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
 		"app.outcomes":                          "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
+		"app.plan_capability_boundaries":        "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
+		"app.plan_invocation_schema":            "cli/app/contract_test.go#TestPublicationPlanInvocationSchemasPublishIntegrityAndInputSelection",
 		"app.response_invariants":               "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
 		"app.selection":                         "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
 		"app.stdin":                             "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
@@ -117,6 +141,9 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.unknown_option":                    "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
 		"app.warning_runtime":                   "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
 		"apply.no_change_success":               "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
+		"apply.status_runtime":                  "cli/commands/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
+		"apply.draft_cleanup_runtime":           "cli/commands/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
+		"apply.warning_runtime":                 "cli/commands/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
 		"auth.oauth_success":                    "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
 		"auth.google_quota_failure":             "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
 		"contract.artifact_runtime":             "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
@@ -124,6 +151,7 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"draft.publish_success":                 "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
 		"profile.root_success":                  "cli/commands/profile/commands_test.go#TestProfileRootJSON",
 		"plan.metadata_success":                 "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
+		"plan.artifact_runtime":                 "cli/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
 		"schemagen.determinism":                 "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
 		"theme.mutation_success":                "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
 		"versions.restore_success":              "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",

@@ -7,11 +7,11 @@
           "type": "string"
         },
         "target_count": {
-          "minimum": 0,
+          "minimum": 1,
           "type": "integer"
         },
         "valid": {
-          "type": "boolean"
+          "const": true
         }
       },
       "required": [

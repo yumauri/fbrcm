@@ -89,6 +89,31 @@ type Source struct {
 	Fingerprint string `json:"fingerprint,omitempty"`
 }
 
+// FileArtifact describes the exact private plan bytes written to disk without
+// embedding the sensitive plan document in a machine response.
+type FileArtifact struct {
+	MediaType   string `json:"media_type"`
+	Encoding    string `json:"encoding"`
+	Destination string `json:"destination"`
+	SizeBytes   int64  `json:"size_bytes"`
+	SHA256      string `json:"sha256"`
+	Overwritten bool   `json:"overwritten"`
+}
+
+// NewFileArtifact returns metadata for one exclusively created publication
+// plan file.
+func NewFileArtifact(destination string, raw []byte) FileArtifact {
+	digest := sha256.Sum256(raw)
+	return FileArtifact{
+		MediaType:   "application/vnd.fbrcm.publication-plan+json",
+		Encoding:    "none",
+		Destination: destination,
+		SizeBytes:   int64(len(raw)),
+		SHA256:      hex.EncodeToString(digest[:]),
+		Overwritten: false,
+	}
+}
+
 type ErrorKind string
 
 const (
@@ -174,6 +199,9 @@ func Validate(plan *Plan) error {
 	if plan.Execution.HookDefinitionSHA256 != "" && !validSHA256(plan.Execution.HookDefinitionSHA256) {
 		return invalid(errors.New("hook_definition_sha256 must be a lowercase SHA-256 digest"))
 	}
+	if len(plan.Targets) == 0 {
+		return invalid(errors.New("publication plan must contain at least one target"))
+	}
 	seen := make(map[string]struct{}, len(plan.Targets))
 	previous := ""
 	for _, target := range plan.Targets {
@@ -208,6 +236,12 @@ func Validate(plan *Plan) error {
 		}
 		if target.Validation.Source != "local" && target.Validation.Source != "firebase" {
 			return invalid(fmt.Errorf("target %s has unsupported validation source %q", target.Target, target.Validation.Source))
+		}
+		if target.Action == ActionNone && target.Validation.Source != "local" {
+			return invalid(fmt.Errorf("unchanged target %s must have local validation provenance", target.Target))
+		}
+		if target.Action == ActionPublish && target.Validation.Source != "firebase" {
+			return invalid(fmt.Errorf("publish target %s must have Firebase validation provenance", target.Target))
 		}
 		if target.Validation.ValidatedAt.IsZero() {
 			return invalid(fmt.Errorf("target %s validation provenance is incomplete", target.Target))
@@ -291,6 +325,13 @@ func Parse(raw []byte) (*Plan, error) {
 
 // RemoteConfigDigest returns the SHA-256 of the canonical normalized template.
 func RemoteConfigDigest(raw json.RawMessage) (string, error) {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &object); err != nil || object == nil {
+		if err == nil {
+			err = errors.New("remote config must be a JSON object")
+		}
+		return "", fmt.Errorf("normalize Remote Config: %w", err)
+	}
 	normalized, err := firebase.PrepareRemoteConfigUpdate(raw)
 	if err != nil {
 		return "", fmt.Errorf("normalize Remote Config: %w", err)

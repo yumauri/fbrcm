@@ -19,6 +19,10 @@ func TestExtensionValidatorsAcceptPublishedRuleShapes(t *testing.T) {
 				"operator": "condition_priority", "operation": "add", "project_argument": "arguments.project",
 				"maximum": "resolved_condition_count_plus_one", "zero_behavior": "append",
 			},
+			map[string]any{
+				"operator": "publication_plan_integrity", "validator": "publication.Validate",
+				"checks": []any{"nonempty_targets", "canonical_target_order", "unique_target_ids", "snapshot_sha256", "none_snapshot_equality", "action_validation_provenance", "content_derived_plan_id"},
+			},
 		},
 		"x-fbrcm-normalization": []any{
 			map[string]any{"operator": "trim_unicode_whitespace", "source": "argv", "target": "normalized_invocation"},
@@ -69,6 +73,10 @@ func TestExtensionValidatorsAcceptPublishedRuleShapes(t *testing.T) {
 			map[string]any{
 				"operator": "first_available", "sources": []any{"options.from", "stdin.document"},
 				"on_missing": "interaction.required", "later_sources": "ignored_without_consumption",
+			},
+			map[string]any{
+				"operator": "path_or_stdin_document", "path": "arguments.plan", "stdin": "stdin.document",
+				"stdin_path": "-", "non_stdin": "read_file", "unused_stdin": "ignored_without_consumption", "missing_stdin": "plan.invalid",
 			},
 		},
 	}

@@ -99,14 +99,7 @@ func run(cmd *cobra.Command, svc *core.Core, path string) error {
 			publishTargets++
 		}
 	}
-	if publishTargets > 1 && !dryRun {
-		if !contract.Enabled(cmd) {
-			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: plan targets are published independently. Successful publications are not rolled back if another target fails.")
-		}
-		shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.non_atomic", Message: "Plan targets are published independently; successful publications are not rolled back when another target fails.", Details: struct {
-			TargetCount int `json:"target_count"`
-		}{TargetCount: publishTargets}})
-	}
+	addNonAtomicWarning(cmd, publishTargets, dryRun)
 	targetIDs := make([]string, 0, len(plan.Targets))
 	for _, target := range plan.Targets {
 		if target.Action == publication.ActionPublish {
@@ -163,39 +156,10 @@ func run(cmd *cobra.Command, svc *core.Core, path string) error {
 		}
 		publishCtx := core.WithPublicationPreHooksComplete(itemCtx)
 		publishedRaw, _, publishErr := svc.PublishRemoteConfigWithETag(publishCtx, item.plan.Target, item.plan.Candidate.RemoteConfig, item.etag)
-		entry := item.result
-		entry.Status = statusPublished
-		entry.Validated = true
-		entry.ValidationSource = core.ValidationSourceFirebase
-		if len(publishedRaw) > 0 {
-			if cfg, parseErr := firebase.ParseRemoteConfig(publishedRaw); parseErr == nil {
-				entry.PublishedVersion = cfg.Version.VersionNumber
-			}
-		}
+		entry, accepted := classifyPublishResult(cmd, item.plan.Target, item.result, publishedRaw, publishErr)
 		if publishErr != nil {
-			entry.Error = &targetError{Stage: "publication", Message: machine.SafeErrorText(publishErr)}
-			var hookErr *core.RemoteConfigPublishedHookError
-			var cacheErr *core.RemoteConfigPublishedCacheError
-			switch {
-			case errors.As(publishErr, &hookErr):
-				entry.Status = statusPublishedHookFailed
-				entry.Error.Stage = "post_publish_hook"
-				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the plan target, but a post_publish hook failed.", Target: item.plan.Target, Details: struct {
-					Stage string `json:"stage"`
-				}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
+			if accepted {
 				output.Published++
-			case errors.As(publishErr, &cacheErr):
-				entry.Status = statusPublishedCacheFailed
-				entry.Error.Stage = "cache"
-				selector, _ := rctarget.ExactFilter(item.plan.Target)
-				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the plan target, but the local cache update failed.", Target: item.plan.Target, Details: struct {
-					Stage string `json:"stage"`
-				}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the successfully published target instead of reapplying the plan", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", selector}}}})
-				output.Published++
-			case sharedrc.IsRemoteConfigConflict(publishErr):
-				entry.Status = statusConflict
-			default:
-				entry.Status = statusPublishFailed
 			}
 			failures = append(failures, machine.BatchFailure{Target: item.plan.Target, Err: publishErr})
 		} else {
@@ -215,6 +179,57 @@ func run(cmd *cobra.Command, svc *core.Core, path string) error {
 		return &machine.BatchError{Operation: "plan apply", FailedTargets: failed, Failures: failures, SuccessfulTargetCount: len(prepared) - len(failures), PublishedTargetCount: output.Published}
 	}
 	return nil
+}
+
+func addNonAtomicWarning(cmd *cobra.Command, publishTargets int, dryRun bool) {
+	if publishTargets <= 1 || dryRun {
+		return
+	}
+	if !contract.Enabled(cmd) {
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Warning: plan targets are published independently. Successful publications are not rolled back if another target fails.")
+	}
+	shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.non_atomic", Message: "Plan targets are published independently; successful publications are not rolled back when another target fails.", Details: struct {
+		TargetCount int `json:"target_count"`
+	}{TargetCount: publishTargets}})
+}
+
+func classifyPublishResult(cmd *cobra.Command, target string, entry targetResult, publishedRaw json.RawMessage, publishErr error) (targetResult, bool) {
+	entry.Status = statusPublished
+	entry.Validated = true
+	entry.ValidationSource = core.ValidationSourceFirebase
+	if len(publishedRaw) > 0 {
+		if cfg, parseErr := firebase.ParseRemoteConfig(publishedRaw); parseErr == nil {
+			entry.PublishedVersion = cfg.Version.VersionNumber
+		}
+	}
+	if publishErr == nil {
+		return entry, true
+	}
+	entry.Error = &targetError{Stage: "publication", Message: machine.SafeErrorText(publishErr)}
+	var hookErr *core.RemoteConfigPublishedHookError
+	var cacheErr *core.RemoteConfigPublishedCacheError
+	switch {
+	case errors.As(publishErr, &hookErr):
+		entry.Status = statusPublishedHookFailed
+		entry.Error.Stage = "post_publish_hook"
+		shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the plan target, but a post_publish hook failed.", Target: target, Details: struct {
+			Stage string `json:"stage"`
+		}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
+		return entry, true
+	case errors.As(publishErr, &cacheErr):
+		entry.Status = statusPublishedCacheFailed
+		entry.Error.Stage = "cache"
+		selector, _ := rctarget.ExactFilter(target)
+		shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the plan target, but the local cache update failed.", Target: target, Details: struct {
+			Stage string `json:"stage"`
+		}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the successfully published target instead of reapplying the plan", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", selector}}}})
+		return entry, true
+	case sharedrc.IsRemoteConfigConflict(publishErr):
+		entry.Status = statusConflict
+	default:
+		entry.Status = statusPublishFailed
+	}
+	return entry, false
 }
 
 func planTarget(plan *publication.Plan, targetID string) publication.Target {
@@ -281,32 +296,46 @@ func preflight(ctx context.Context, svc *core.Core, plan *publication.Plan) ([]p
 		if err != nil {
 			return nil, output, err
 		}
-		currentDigest, err := publication.RemoteConfigDigest(cache.RemoteConfig)
+		item, entry, targetStale, err := classifyPreflightTarget(target, cache.RemoteConfig, cache.ETag)
 		if err != nil {
 			return nil, output, err
 		}
-		baseCfg, err := firebase.ParseRemoteConfig(cache.RemoteConfig)
-		if err != nil {
-			return nil, output, err
-		}
-		entry := targetResult{Target: target.Target, PreviousVersion: baseCfg.Version.VersionNumber}
-		if currentDigest == target.Candidate.SHA256 {
-			entry.Status = statusAlreadyApplied
-			entry.Validated = true
-			entry.ValidationSource = core.ValidationSourceLocal
-			output.Items = append(output.Items, entry)
+		if entry != nil {
+			output.Items = append(output.Items, *entry)
 			continue
 		}
-		if cache.ETag != target.Base.ETag || currentDigest != target.Base.SHA256 {
+		if targetStale {
 			stale = append(stale, target.Target)
 			continue
 		}
-		prepared = append(prepared, preparedTarget{plan: target, current: cache.RemoteConfig, etag: cache.ETag, result: entry})
+		prepared = append(prepared, *item)
 	}
 	if len(stale) > 0 {
 		return nil, output, &machine.ConflictError{Code: "plan.stale", Resource: "remote_config", Target: strings.Join(stale, ","), Retryable: false, Err: fmt.Errorf("publication plan is stale for %s; generate and review a new plan", strings.Join(stale, ", "))}
 	}
 	return prepared, output, nil
+}
+
+func classifyPreflightTarget(target publication.Target, current json.RawMessage, etag string) (*preparedTarget, *targetResult, bool, error) {
+	currentDigest, err := publication.RemoteConfigDigest(current)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	baseCfg, err := firebase.ParseRemoteConfig(current)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	entry := targetResult{Target: target.Target, PreviousVersion: baseCfg.Version.VersionNumber}
+	if currentDigest == target.Candidate.SHA256 {
+		entry.Status = statusAlreadyApplied
+		entry.Validated = true
+		entry.ValidationSource = core.ValidationSourceLocal
+		return nil, &entry, false, nil
+	}
+	if etag != target.Base.ETag || currentDigest != target.Base.SHA256 {
+		return nil, nil, true, nil
+	}
+	return &preparedTarget{plan: target, current: current, etag: etag, result: entry}, nil, false, nil
 }
 
 func renderDiffs(prepared []preparedTarget) string {

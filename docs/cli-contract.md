@@ -537,6 +537,13 @@ commands are arbitrary local processes and may themselves be non-idempotent.
 Applying an immutable plan is retry-safe only after preflight establishes each
 target's state: a candidate digest already present is `already-applied`, an
 unchanged planned base may proceed, and any third state is `plan.stale`.
+For a plan containing publish actions, an authorized retry is declared safe
+only when no trusted hook executed; if an arbitrary trusted hook executed, the
+invocation is not declared idempotent even when Firebase publication later
+converges. A plan containing only `none` actions performs no Firebase request
+and is retry-safe. Plan creation follows the same hook boundary: exclusive file
+creation is retry-safe when no trusted hook ran, and is not declared safe after
+a trusted pre-publish hook ran.
 
 Authentication failures retain their source semantics. Missing or malformed
 stored credentials are auth failures. OAuth `invalid_grant` or a missing
@@ -719,7 +726,15 @@ JSON documents. `apply`, `plan show`, and `plan validate` accept a strict
 publication-plan document when their positional path is `-` and reference
 `stdin:publication_plan`; invalid, tampered, and unsupported documents retain
 the typed `plan.invalid`, `plan.integrity_failed`, and
-`plan.unsupported_version` problems. Imported OAuth and
+`plan.unsupported_version` problems. Their `path_or_stdin_document` input rule
+states that `-` consumes one stdin document, while a file path reads the file
+and leaves stdin unconsumed. The plan schema publishes
+`publication_plan_integrity` checks for a nonempty, canonical, unique target
+set, snapshot digests, `none` equality, action/validation provenance, and the
+content-derived plan ID. Embedded templates accept the forward-compatible
+shape used by the runtime decoder and publish the offline
+`firebase.PrepareRemoteConfigUpdate` validation boundary; plan inspection does
+not claim remote Firebase validation. Imported OAuth and
 service-account auth commands reference distinct
 credential-object schemas whose required IDs, secrets, keys, email address,
 and endpoint URIs match runtime validation. A sole OAuth `installed` or `web`
@@ -1012,12 +1027,19 @@ mean that the represented operation changed or would change Firebase state.
 Live publication of an unchanged draft remains `already-applied` because that
 operation removes the redundant local draft.
 Plan-creation variants return `plan_id`, private destination `path`,
-`created_at`, `command_id`, and total/publish/unchanged target counts. `plan
-show` returns a non-secret summary, while `plan validate` returns the verified
-ID and count. `apply` returns its plan ID, dry-run marker, accepted publication
-count, and typed per-target statuses. Publication plans themselves remain file
-artifacts rather than response DTOs because they contain complete Remote Config
-values and are written only to the explicitly requested private path.
+`created_at`, `command_id`, total/publish/unchanged target counts, and
+non-secret metadata for the exact file artifact: fixed publication-plan media
+type, `none` encoding, destination, byte size, lowercase SHA-256, and
+`overwritten: false`. The destination equals `path`, and the total count is the
+sum of the publish and unchanged counts. `plan show` returns a non-secret
+summary whose counts correlate with its target array, while `plan validate`
+returns `valid: true` and the verified nonzero count. `apply` returns its plan
+ID, dry-run marker, accepted publication count, and typed per-target statuses;
+the count includes `published`, `published-hook-failed`, and
+`published-cache-failed`. Status-specific schema branches constrain dry-run
+reachability, validation provenance, publication-version presence, and error
+stage. The sensitive publication-plan document remains a private file rather
+than response content.
 Experiment and rollout deletion previews correlate `status: "would-delete"`
 with a failure envelope containing `interaction.required`; `status: "deleted"`
 requires a success envelope. Deterministic machine fields such as

@@ -520,11 +520,53 @@ func withPlanOutputEffects(b capabilityBehavior) capabilityBehavior {
 			)
 		}
 	}
-	b.idempotencyWhen = append([]IdempotencyCondition{{
-		Idempotency: "yes",
-		When:        []BehaviorConditionClause{conditionClause(predicate("option", "plan-out", "present", nil))},
-	}}, b.idempotencyWhen...)
+	b.idempotencyWhen = append([]IdempotencyCondition{
+		{Idempotency: "yes", When: []BehaviorConditionClause{conditionClause(
+			predicate("option", "plan-out", "present", nil),
+			predicate("runtime_state", "trusted_hook", "not_executed", nil),
+		)}},
+		{Idempotency: "no", When: []BehaviorConditionClause{conditionClause(
+			predicate("option", "plan-out", "present", nil),
+			predicate("runtime_state", "trusted_hook", "executed", nil),
+		)}},
+	}, b.idempotencyWhen...)
 	return b
+}
+
+func publicationPlanApplyBehavior() capabilityBehavior {
+	publishTargets := conditionClause(predicate("runtime_state", "publication_plan", "has_publish_targets", nil))
+	noPublishTargets := conditionClause(predicate("runtime_state", "publication_plan", "has_no_publish_targets", nil))
+	cleanup := conditionClause(
+		predicate("option", "dry-run", "equals", false),
+		predicate("runtime_state", "source_draft_cleanup", "required", nil),
+	)
+	b := destructive(requiredPublication(false), "publishes the exact Remote Config templates recorded in a plan")
+	b.network = "conditional"
+	b.networkWhen = []BehaviorConditionClause{publishTargets}
+	for index := range b.effects {
+		if b.effects[index].name == "firebase_remote_read" {
+			b.effects[index].when = []BehaviorConditionClause{publishTargets}
+		}
+	}
+	b = b.withEffect("local_draft_delete", cleanup)
+	cleanupDestructive := conditionClause(append(append([]BehaviorPredicate{}, cleanup.AllOf...), predicate("option", "stateless", "equals", false))...)
+	b.destructiveWhen = append(b.destructiveWhen, cleanupDestructive)
+	b.idempotency = "conditional"
+	b.idempotencyWhen = []IdempotencyCondition{
+		{Idempotency: "yes", When: []BehaviorConditionClause{noPublishTargets}},
+		{Idempotency: "yes", When: []BehaviorConditionClause{conditionClause(predicate("runtime_state", "confirmation", "required", nil))}},
+		{Idempotency: "yes", When: []BehaviorConditionClause{conditionClause(
+			predicate("runtime_state", "publication_plan", "has_publish_targets", nil),
+			predicate("runtime_state", "confirmation", "authorized_or_not_required", nil),
+			predicate("runtime_state", "trusted_hook", "not_executed", nil),
+		)}},
+		{Idempotency: "no", When: []BehaviorConditionClause{conditionClause(
+			predicate("runtime_state", "publication_plan", "has_publish_targets", nil),
+			predicate("runtime_state", "confirmation", "authorized_or_not_required", nil),
+			predicate("runtime_state", "trusted_hook", "executed", nil),
+		)}},
+	}
+	return withStdin(b)
 }
 
 func withInteraction(b capabilityBehavior, mode, jsonBehavior string, when ...BehaviorConditionClause) capabilityBehavior {
@@ -742,7 +784,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		conditionClause(predicate("runtime_state", "promotion_selection", "required", nil))),
 	"versions.restore":  destructive(requiredPublication(false), "replaces the current Remote Config template"),
 	"versions.rollback": destructive(requiredPublication(false), "replaces the current Remote Config template"),
-	"apply":             withStdin(destructive(requiredPublication(false), "publishes the exact Remote Config templates recorded in a plan")),
+	"apply":             publicationPlanApplyBehavior(),
 }
 
 func init() {

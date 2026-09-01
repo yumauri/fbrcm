@@ -726,6 +726,13 @@ fresh base templates, validates every changed candidate with Firebase, and
 runs the effective trusted pre-publish hooks. If any target cannot be prepared
 or validated, no plan file is created.
 
+In JSON mode, successful plan creation reports non-secret artifact metadata
+for the exact bytes written: media type
+`application/vnd.fbrcm.publication-plan+json`, encoding `none`, destination,
+byte size, lowercase SHA-256 digest, and `overwritten: false`. The sensitive
+plan document itself is never embedded in stdout. The reported target count is
+the sum of the publish and unchanged counts.
+
 Each plan records its format version, content-derived plan ID, producer and
 operation, execution policy, hook-definition fingerprint, selection
 provenance, exact target/base ETags, normalized template digests, complete base
@@ -746,9 +753,14 @@ pre-publish hooks are validated before the first write. Multi-target apply is
 non-atomic once publication begins, so successful targets are not rolled back
 if a later independent target fails. Matching source drafts are removed only
 after a live apply; drafts changed since planning are preserved with a warning.
+An apply with only `none` actions is fully offline. An apply with publish
+actions performs Firebase preflight reads. Retrying is safe when no trusted
+hook ran (already-applied candidates converge without republishing), but is not
+declared safe after an arbitrary trusted hook executed.
 
 The plan commands accept `-` as the input path to read one plan JSON document
-from stdin. Their standalone schema is
+from stdin; any stdin supplied with a non-`-` path is ignored without being
+consumed. Their standalone schema is
 `urn:fbrcm:schema:cli:1.0.0:publication_plan`; the normalized stdin schema is
 `urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan`.
 
@@ -1209,6 +1221,11 @@ skips the aggregate confirmation. `--json` returns `plan_id`, `dry_run`,
 `published_count`, and one typed item per target; statuses are `unchanged`,
 `would-publish`, `published`, `already-applied`, `conflict`, `publish-failed`,
 `published-hook-failed`, and `published-cache-failed`.
+`published_count` counts Firebase-accepted targets, including accepted targets
+whose post-publish hook or cache update failed. Dry runs can return only
+`unchanged`, `would-publish`, or `already-applied`; live runs never return
+`would-publish`. Every status fixes its validation provenance and applicable
+publication version or error stage.
 
 Use `<plan>` as `-` to read stdin. Stateful apply uses the active profile and
 requires the plan's effective hook fingerprint to match. A stateless plan must
