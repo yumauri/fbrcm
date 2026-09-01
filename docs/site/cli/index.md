@@ -118,11 +118,16 @@ Common write controls are:
 | --- | --- |
 | `--dry-run` | Validate and preview without publishing or writing local state |
 | `--draft` | Save the mutation into a local draft |
+| `--plan-out <path>` | Write an immutable validated publication plan instead of publishing |
 | `--change-note <text>` | Attach a single-line Firebase version note |
 | `--yes` / `-y` | Accept the human confirmation non-interactively |
 
 Batch mutations are per-target and non-atomic. fbrcm continues after a
 project-scoped failure and reports every result.
+
+Use a [draft](/cli/drafts) to compose and revise several edits in the active
+profile. Use a [plan](/cli/plans) to preserve one exact candidate for review,
+handoff, or later application.
 
 ## Stateless mode
 

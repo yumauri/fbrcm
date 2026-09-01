@@ -128,6 +128,7 @@ export default defineConfig({
           { text: 'Parameters and conditions', link: '/cli/parameters' },
           { text: 'Projects and templates', link: '/cli/projects' },
           { text: 'Drafts', link: '/cli/drafts' },
+          { text: 'Plans', link: '/cli/plans' },
           { text: 'History and managed features', link: '/cli/history' }
         ]
       },

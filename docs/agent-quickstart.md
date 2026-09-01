@@ -38,6 +38,13 @@ fbrcm capabilities --json |
   jq -r '.data.commands[] | select(.supports.stateless) | .path | join(" ")'
 ```
 
+Discover commands that can create an immutable publication plan:
+
+```
+fbrcm capabilities --json |
+  jq -r '.data.commands[] | select(.supports.plan) | .path | join(" ")'
+```
+
 Look up one command in detail:
 
 ```
@@ -45,7 +52,7 @@ fbrcm capabilities project import --json
 ```
 
 This returns full argument/flag docs, response and error schema URNs, network
-access conditions, idempotency, dry-run/draft support, and interaction rules.
+access conditions, idempotency, dry-run/draft/plan support, and interaction rules.
 That is enough to construct a correct call without reading source.
 
 If you need to validate a response shape programmatically:
@@ -87,11 +94,11 @@ validation-only request and suppresses publication. Check `validated` and
 concurrent update or another transient failure. Trusted pre-publish hooks may
 run during dry-run, so also inspect the declared side effects and warnings.
 
-## 4. Prefer drafts for anything multi-step or reviewable
+## 4. Use drafts while a change is evolving
 
 Direct Remote Config mutations publish after confirmation; in JSON mode they
-require `--yes` when confirmation is needed. For anything an agent should not
-publish immediately, stage it instead:
+require `--yes` when confirmation is needed. When the desired result still
+needs several edits, stage and review them as a draft:
 
 ```
 fbrcm update feature_enabled --project '=my-app' --type boolean --value true --draft --json
@@ -102,7 +109,68 @@ fbrcm draft publish my-app --yes --json
 A target with an unpublished draft refuses direct (non-draft) Remote Config
 writes, so draft state is a safety rail, not just a convenience.
 
-## 5. Confirmations never block JSON mode
+## 5. Use plans for approval and execution handoff
+
+A plan is a private, integrity-protected file containing exact base and
+candidate templates. Prefer it when the agent must prepare a validated change
+now, but a human or another process will authorize or execute that exact change
+later. Create it directly from a supported mutation:
+
+```
+fbrcm update feature_enabled \
+  --project '=my-app' \
+  --type boolean \
+  --value true \
+  --plan-out release.fbrcm-plan.json \
+  --json
+```
+
+Or compose several changes in a draft first, then seal the effective publish
+candidate:
+
+```
+fbrcm draft publish my-app --plan-out release.fbrcm-plan.json --json
+```
+
+Plan creation fetches fresh bases, Firebase-validates every changed candidate,
+and runs effective trusted pre-publish hooks. It does not publish or change
+draft state. If any target cannot be prepared, no plan file is created.
+
+Verify the file and inspect its non-secret machine summary before requesting
+authorization:
+
+```
+fbrcm plan validate release.fbrcm-plan.json --json
+fbrcm plan show release.fbrcm-plan.json --json
+```
+
+`plan validate` is an offline integrity check, not a freshness check. Apply
+preflights all targets and refuses `plan.stale` if Firebase no longer matches
+the recorded base; it never silently rebases or replans. For an authorized
+non-interactive preview and publication:
+
+```
+fbrcm apply release.fbrcm-plan.json --dry-run --yes --json
+fbrcm apply release.fbrcm-plan.json --yes --json
+```
+
+The dry run rechecks current state, Firebase validation, and effective trusted
+pre-publish hooks without publishing or cleaning up a source draft. The live
+apply publishes the recorded candidate. Multi-target apply becomes non-atomic
+after publication starts, so inspect every item status.
+
+A stateful plan must be applied statefully with the same effective hook
+configuration. A plan created with `--stateless` must be applied with
+`--stateless`. Retrying converges for targets already at the candidate, but is
+not declared safe after an arbitrary trusted hook executes. Create a new plan
+after any stale-base failure.
+
+Plan files contain complete Remote Config templates and metadata. Keep them out
+of logs and source control, transfer them only through an approved secure
+channel, and apply your normal secret-retention policy. See the
+[Plans website guide](site/cli/plans.md) for the full workflow.
+
+## 6. Confirmations never block JSON mode
 
 `--json` never triggers an interactive prompt. If a command would normally
 ask for confirmation and you didn't pass `--yes`, it returns a structured
@@ -111,7 +179,7 @@ such as OAuth authorization or an unavailable file/editor choice, uses the
 same structured problem. Retry with `--yes` only when the caller has explicitly
 authorized the described write. Otherwise, show the interaction to a human.
 
-## 6. Handle errors by structure, not by text
+## 7. Handle errors by structure, not by text
 
 Every failure is a typed problem with a `category`, and remediation (when
 safe) carries a `strategy`:
@@ -128,7 +196,7 @@ whole batch. A remediation describes a technically valid recovery; it does not
 grant permission to perform a destructive or remote action. Recheck the target
 scope and capability metadata before executing it.
 
-## 7. Batch operations are per-target, not all-or-nothing
+## 8. Batch operations are per-target, not all-or-nothing
 
 Commands touching multiple projects (`update`, `delete`, `draft publish`,
 `projects promote`, ...) process independent targets and expose their results
@@ -137,7 +205,7 @@ top-level `errors`, and every `items[].status`. Do not infer the batch result
 from process status alone, and do not assume that earlier successful targets
 were rolled back after a later failure.
 
-## 8. Useful environment variables for automation
+## 9. Useful environment variables for automation
 
 | Variable | Use |
 | --- | --- |
@@ -193,10 +261,11 @@ FBRCM_GOOGLE_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)
 
 Stateless execution disables application-managed local reads, local writes,
 and configured hooks. Explicit caller-selected input and output files remain
-allowed. Where present, `--update` and `--cached` are rejected because stateless
-reads are already live and cannot use snapshots; mutations that offer `--draft`
-also reject it. Omitting `--stateless` retains normal cache, draft, profile, and
-hook behavior.
+allowed, including plan files. Where present, `--update` and `--cached` are
+rejected because stateless reads are already live and cannot use snapshots;
+mutations that offer `--draft` also reject it. A plan created statelessly must
+be applied statelessly. Omitting `--stateless` retains normal cache, draft,
+profile, and hook behavior.
 
 `fbrcm --stateless projects list --json` discovers projects live without the
 profile project registry. Filters match remote project names and IDs only;
@@ -233,22 +302,26 @@ fbrcm capabilities update --json
 # 2. read current state
 fbrcm get feature_enabled --project '=my-app' --json
 
-# 3. preview
-fbrcm update feature_enabled --project '=my-app' --type boolean --value true --dry-run --json
+# 3. create an exact validated plan
+fbrcm update feature_enabled --project '=my-app' --type boolean --value true \
+  --plan-out release.fbrcm-plan.json --json
 
-# 4. stage as draft
-fbrcm update feature_enabled --project '=my-app' --type boolean --value true --draft --json
+# 4. verify its integrity and machine summary
+fbrcm plan validate release.fbrcm-plan.json --json
+fbrcm plan show release.fbrcm-plan.json --json
 
-# 5. review the effective publish diff
-fbrcm draft diff my-app --against current --json
+# 5. preflight without publication after authorization
+fbrcm apply release.fbrcm-plan.json --dry-run --yes --json
 
-# 6. publish
-fbrcm draft publish my-app --yes --json
+# 6. apply the exact reviewed candidate after authorization
+fbrcm apply release.fbrcm-plan.json --yes --json
 ```
 
 ## Pitfalls
 
 - Don't parse human-readable tables. They're for terminals, not agents. Use `--json` for everything.
 - `--yes` authorizes the confirmation branch; it does not skip Firebase validation or make an unsafe retry idempotent.
+- A valid plan is not necessarily current. Only `apply` preflight establishes that every target still matches its recorded base or candidate.
+- Do not print, commit, or attach publication plans casually. Their JSON contains complete base and candidate Remote Config templates.
 - Positional selectors for existing resources are exact, case-sensitive, and untrimmed. Depending on the command, a mismatch produces either a typed not-found failure or a successful no-op. Use query flags such as `--filter`, `--search`, and `--project` only where the detailed command capability publishes them.
 - A `published-cache-failed` result means Firebase already accepted the write. Follow its structured remediation, normally a targeted `get --update`, instead of retrying the mutation.

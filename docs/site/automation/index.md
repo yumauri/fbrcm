@@ -18,7 +18,7 @@ fbrcm schema list --json
 ```
 
 Capability records describe arguments, flags, schemas, side effects,
-interaction, and support for stateless, dry-run, and draft execution.
+interaction, and support for stateless, dry-run, draft, and plan execution.
 
 ## Read before writing
 
@@ -32,7 +32,7 @@ fbrcm get feature_enabled --project '=example-project-id' --json
 Use exact selectors in automation. A fuzzy name that is convenient at a
 terminal can become ambiguous as projects are added.
 
-## Preview, then stage
+## Preview, then choose a review boundary
 
 When a capability reports dry-run support, validate the real candidate without
 publishing it:
@@ -46,7 +46,7 @@ fbrcm update feature_enabled \
   --json
 ```
 
-For multi-step or human-reviewed work, prefer a draft:
+Use a draft while several edits still need to be composed or revised:
 
 ```sh
 fbrcm update feature_enabled \
@@ -57,8 +57,29 @@ fbrcm update feature_enabled \
   --json
 
 fbrcm draft diff example-project-id --against current --json
-fbrcm draft publish example-project-id --yes --json
 ```
+
+Use a plan when an agent must hand off one exact, validated candidate for
+approval or later execution. A plan can be created directly by a supported
+mutation or sealed from a draft:
+
+```sh
+fbrcm draft publish example-project-id \
+  --plan-out release.fbrcm-plan.json \
+  --json
+
+fbrcm plan validate release.fbrcm-plan.json --json
+fbrcm plan show release.fbrcm-plan.json --json
+fbrcm apply release.fbrcm-plan.json --dry-run --yes --json
+fbrcm apply release.fbrcm-plan.json --yes --json
+```
+
+Plan creation fetches fresh bases, validates the exact changed candidates, and
+runs effective trusted pre-publish hooks without publishing. Apply refuses a
+target that no longer matches the recorded base instead of recalculating the
+change. Treat the plan file as sensitive because it contains complete base and
+candidate templates. See [Plans](/cli/plans) for integrity, concurrency,
+stateless, cleanup, and retry behavior.
 
 `--yes` authorizes a documented confirmation. It does not disable Firebase
 validation, make a retry safe, or turn a destructive action into an authorized
@@ -98,10 +119,12 @@ FBRCM_GOOGLE_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)
 
 Stateless mode skips fbrcm-managed profiles, project registrations, caches,
 drafts, and hooks. It still permits explicit caller-selected input and output
-files. fbrcm keeps the token in memory and never writes it. The token's
-principal needs `serviceusage.services.use` on `example-quota-project-id` and Remote Config
-access on `example-project-id`. Check `supports.stateless` in the capability record
-before running a command this way.
+files, including publication plans. A stateless plan must later be applied
+with `--stateless`. fbrcm keeps the token in memory and never writes it. The
+token's principal needs `serviceusage.services.use` on
+`example-quota-project-id` and Remote Config access on `example-project-id`.
+Check `supports.stateless` in the capability record before running a command
+this way.
 
 Continue with the [JSON contract](./json-contract) for the envelope, exit
 statuses, schemas, and artifact results.

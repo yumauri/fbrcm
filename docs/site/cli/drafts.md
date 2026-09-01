@@ -94,3 +94,6 @@ fbrcm draft discard --all
 
 Discarding is a local deletion. Human mode shows the base-to-draft diff before
 confirmation; `--yes` accepts the confirmation non-interactively.
+
+When the draft is ready for an approval or execution handoff, create an exact
+[publication plan](/cli/plans) with `draft publish --plan-out <path>`.

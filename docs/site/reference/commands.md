@@ -46,6 +46,14 @@ project or Remote Config commands for the first time.
 | `draft publish` | Validate and publish drafts |
 | `draft discard` | Remove local draft state |
 
+## Plans
+
+| Command | Purpose |
+| --- | --- |
+| `plan show` | Verify a publication plan and show its targets and diffs |
+| `plan validate` | Verify publication plan structure and integrity |
+| `apply` | Preflight and apply the exact candidates in a publication plan |
+
 ## Projects and templates
 
 | Command | Purpose |
