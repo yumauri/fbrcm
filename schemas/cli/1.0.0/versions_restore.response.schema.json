@@ -1,406 +1,453 @@
 {
   "$defs": {
     "success_data": {
-      "additionalProperties": false,
-      "allOf": [
+      "oneOf": [
         {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "unchanged"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": false
-              },
-              "error": {
-                "type": "null"
-              },
-              "published_version": {
-                "type": "null"
-              },
-              "validated": {
-                "const": true
-              },
-              "validation_source": {
-                "const": "local"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "would-publish"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": true
-              },
-              "error": {
-                "type": "null"
-              },
-              "published_version": {
-                "type": "null"
-              },
-              "validated": {
-                "const": true
-              },
-              "validation_source": {
-                "const": "firebase"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "published"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": false
-              },
-              "error": {
-                "type": "null"
-              },
-              "published_version": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "validated": {
-                "const": true
-              },
-              "validation_source": {
-                "const": "firebase"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "failed"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": true
-              },
-              "error": {
-                "properties": {
-                  "stage": {
-                    "const": "preparation"
-                  }
-                },
-                "required": [
-                  "stage"
-                ],
-                "type": "object"
-              },
-              "published_version": {
-                "type": "null"
-              },
-              "validated": {
-                "const": false
-              },
-              "validation_source": {
-                "const": "local"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "validation-failed"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": true
-              },
-              "error": {
-                "properties": {
-                  "stage": {
-                    "const": "validation"
-                  }
-                },
-                "required": [
-                  "stage"
-                ],
-                "type": "object"
-              },
-              "published_version": {
-                "type": "null"
-              },
-              "validated": {
-                "const": false
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "published-local-update-failed"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": false
-              },
-              "error": {
-                "properties": {
-                  "stage": {
-                    "const": "cache"
-                  }
-                },
-                "required": [
-                  "stage"
-                ],
-                "type": "object"
-              },
-              "published_version": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "validated": {
-                "const": true
-              },
-              "validation_source": {
-                "const": "firebase"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "published-hook-failed"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": false
-              },
-              "error": {
-                "properties": {
-                  "stage": {
-                    "const": "post_publish_hook"
-                  }
-                },
-                "required": [
-                  "stage"
-                ],
-                "type": "object"
-              },
-              "published_version": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "validated": {
-                "const": true
-              },
-              "validation_source": {
-                "const": "firebase"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "status": {
-                "const": "published-cache-failed"
-              }
-            },
-            "required": [
-              "status"
-            ]
-          },
-          "then": {
-            "properties": {
-              "changed": {
-                "const": true
-              },
-              "dry_run": {
-                "const": false
-              },
-              "error": {
-                "properties": {
-                  "stage": {
-                    "const": "cache"
-                  }
-                },
-                "required": [
-                  "stage"
-                ],
-                "type": "object"
-              },
-              "published_version": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "validated": {
-                "const": true
-              },
-              "validation_source": {
-                "const": "firebase"
-              }
-            }
-          }
-        }
-      ],
-      "properties": {
-        "change_note": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "changed": {
-          "type": "boolean"
-        },
-        "dry_run": {
-          "type": "boolean"
-        },
-        "error": {
           "additionalProperties": false,
-          "properties": {
-            "message": {
-              "maxLength": 4097,
-              "type": "string",
-              "x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated"
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "unchanged"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": false
+                  },
+                  "error": {
+                    "type": "null"
+                  },
+                  "published_version": {
+                    "type": "null"
+                  },
+                  "validated": {
+                    "const": true
+                  },
+                  "validation_source": {
+                    "const": "local"
+                  }
+                }
+              }
             },
-            "stage": {
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "would-publish"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": true
+                  },
+                  "error": {
+                    "type": "null"
+                  },
+                  "published_version": {
+                    "type": "null"
+                  },
+                  "validated": {
+                    "const": true
+                  },
+                  "validation_source": {
+                    "const": "firebase"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "published"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": false
+                  },
+                  "error": {
+                    "type": "null"
+                  },
+                  "published_version": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "validated": {
+                    "const": true
+                  },
+                  "validation_source": {
+                    "const": "firebase"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "failed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": true
+                  },
+                  "error": {
+                    "properties": {
+                      "stage": {
+                        "const": "preparation"
+                      }
+                    },
+                    "required": [
+                      "stage"
+                    ],
+                    "type": "object"
+                  },
+                  "published_version": {
+                    "type": "null"
+                  },
+                  "validated": {
+                    "const": false
+                  },
+                  "validation_source": {
+                    "const": "local"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "validation-failed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": true
+                  },
+                  "error": {
+                    "properties": {
+                      "stage": {
+                        "const": "validation"
+                      }
+                    },
+                    "required": [
+                      "stage"
+                    ],
+                    "type": "object"
+                  },
+                  "published_version": {
+                    "type": "null"
+                  },
+                  "validated": {
+                    "const": false
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "published-local-update-failed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": false
+                  },
+                  "error": {
+                    "properties": {
+                      "stage": {
+                        "const": "cache"
+                      }
+                    },
+                    "required": [
+                      "stage"
+                    ],
+                    "type": "object"
+                  },
+                  "published_version": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "validated": {
+                    "const": true
+                  },
+                  "validation_source": {
+                    "const": "firebase"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "published-hook-failed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": false
+                  },
+                  "error": {
+                    "properties": {
+                      "stage": {
+                        "const": "post_publish_hook"
+                      }
+                    },
+                    "required": [
+                      "stage"
+                    ],
+                    "type": "object"
+                  },
+                  "published_version": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "validated": {
+                    "const": true
+                  },
+                  "validation_source": {
+                    "const": "firebase"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "published-cache-failed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "changed": {
+                    "const": true
+                  },
+                  "dry_run": {
+                    "const": false
+                  },
+                  "error": {
+                    "properties": {
+                      "stage": {
+                        "const": "cache"
+                      }
+                    },
+                    "required": [
+                      "stage"
+                    ],
+                    "type": "object"
+                  },
+                  "published_version": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "validated": {
+                    "const": true
+                  },
+                  "validation_source": {
+                    "const": "firebase"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "change_note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "changed": {
+              "type": "boolean"
+            },
+            "dry_run": {
+              "type": "boolean"
+            },
+            "error": {
+              "additionalProperties": false,
+              "properties": {
+                "message": {
+                  "maxLength": 4097,
+                  "type": "string",
+                  "x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated"
+                },
+                "stage": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "message",
+                "stage"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "operation": {
+              "const": "restore"
+            },
+            "previous_version": {
               "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "published_version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source_version": {
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "unchanged",
+                "would-publish",
+                "published",
+                "failed",
+                "validation-failed",
+                "published-local-update-failed",
+                "published-hook-failed",
+                "published-cache-failed"
+              ],
+              "type": "string"
+            },
+            "validated": {
+              "type": "boolean"
+            },
+            "validation_source": {
+              "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_source"
             }
           },
           "required": [
-            "message",
-            "stage"
+            "change_note",
+            "changed",
+            "dry_run",
+            "error",
+            "operation",
+            "previous_version",
+            "project_id",
+            "published_version",
+            "source_version",
+            "status",
+            "validated",
+            "validation_source"
           ],
-          "type": [
-            "object",
-            "null"
-          ]
+          "type": "object"
         },
-        "operation": {
-          "const": "restore"
-        },
-        "previous_version": {
-          "type": "string"
-        },
-        "project_id": {
-          "type": "string"
-        },
-        "published_version": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "source_version": {
-          "type": "string"
-        },
-        "status": {
-          "enum": [
-            "unchanged",
-            "would-publish",
-            "published",
-            "failed",
-            "validation-failed",
-            "published-local-update-failed",
-            "published-hook-failed",
-            "published-cache-failed"
+        {
+          "additionalProperties": false,
+          "properties": {
+            "command_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "operation": {
+              "const": "restore"
+            },
+            "path": {
+              "type": "string"
+            },
+            "plan_id": {
+              "type": "string"
+            },
+            "publish_target_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "target_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "unchanged_target_count": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "command_id",
+            "created_at",
+            "path",
+            "plan_id",
+            "publish_target_count",
+            "target_count",
+            "unchanged_target_count"
           ],
-          "type": "string"
-        },
-        "validated": {
-          "type": "boolean"
-        },
-        "validation_source": {
-          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_source"
+          "type": "object"
         }
-      },
-      "required": [
-        "change_note",
-        "changed",
-        "dry_run",
-        "error",
-        "operation",
-        "previous_version",
-        "project_id",
-        "published_version",
-        "source_version",
-        "status",
-        "validated",
-        "validation_source"
-      ],
-      "type": "object"
+      ]
     }
   },
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:response",
@@ -497,6 +544,9 @@
                       "network.offline",
                       "network.timeout",
                       "network.unavailable",
+                      "plan.exists",
+                      "plan.integrity_failed",
+                      "plan.invalid",
                       "profile.invalid",
                       "project.ambiguous",
                       "project.not_found",

@@ -1,0 +1,9 @@
+{
+  "name": "plan_show_json",
+  "command_id": "plan.show",
+  "args": ["plan", "show", "publication-plan.json", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "publication_plan"
+}

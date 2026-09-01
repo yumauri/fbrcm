@@ -1,0 +1,15 @@
+{
+  "name": "apply_stateless_json",
+  "command_id": "apply",
+  "args": ["--stateless", "apply", "publication-plan.json", "--yes", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "cache", "path": "profiles/default/drafts"}
+  ],
+  "envs": {"FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"},
+  "json_output": true,
+  "fixture": "publication_plan"
+}

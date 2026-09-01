@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/yumauri/fbrcm/cli/shared/planflag"
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
@@ -19,6 +20,7 @@ const (
 	parameterFilterFlagHelp = "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated"
 	parameterSearchFlagHelp = "Search parameters by name, description, values, and conditions"
 	dryRunFlagHelp          = "Preview the requested mutation without applying it"
+	planOutFlagHelp         = "Write an immutable validated publication plan instead of applying the mutation"
 )
 
 func AddProjectFilterFlag(cmd *cobra.Command) {
@@ -40,6 +42,21 @@ func AddParameterFilterFlags(cmd *cobra.Command) {
 
 func AddDryRunFlag(cmd *cobra.Command) {
 	cmd.Flags().Bool("dry-run", false, dryRunFlagHelp)
+}
+
+// AddPlanOutFlag enables immutable publication-plan output for one mutation
+// command. The plan mode is intentionally distinct from draft and dry-run.
+func AddPlanOutFlag(cmd *cobra.Command) {
+	cmd.Flags().String("plan-out", "", planOutFlagHelp)
+	for _, name := range []string{"dry-run", "draft", "yes"} {
+		if cmd.Flags().Lookup(name) != nil {
+			cmd.MarkFlagsMutuallyExclusive("plan-out", name)
+		}
+	}
+}
+
+func PlanOutputPath(cmd *cobra.Command) (string, bool, error) {
+	return planflag.OutputPath(cmd)
 }
 
 func AddChangeNoteFlag(cmd *cobra.Command) {

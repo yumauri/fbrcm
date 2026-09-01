@@ -107,6 +107,42 @@
           }
         }
       }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "draft"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "dry-run"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "yes"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -191,6 +227,11 @@
         "no-local-config": {
           "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
           "type": "boolean"
+        },
+        "plan-out": {
+          "description": "Write an immutable validated publication plan instead of applying the mutation",
+          "pattern": ".*\\S.*",
+          "type": "string"
         },
         "profile": {
           "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",

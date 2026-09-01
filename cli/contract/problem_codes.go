@@ -14,6 +14,7 @@ var knownProblemCodeValues = []string{
 	"group.not_found", "hook.failed", "hooks.changed", "hooks.not_configured", "interaction.required", "internal.contract_violation", "internal.unclassified",
 	"network.offline", "network.timeout", "network.unavailable", "parameter.ambiguous", "parameter.exists", "parameter.not_found", "parameters_cache.not_found",
 	"personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.not_found", "project_alias.conflict", "project_alias.read_only", "publication.cache_failed", "publication.hook_failed",
+	"plan.exists", "plan.integrity_failed", "plan.invalid", "plan.stale", "plan.unsupported_version",
 	"theme.conflict", "theme.invalid", "theme.not_found",
 	"remote_config.conflict", "remote_config.invalid", "remote_config.validation_failed", "resource.conflict", "resource.not_found", "result.unsuccessful", "schema.not_found", "stdin.remote_config.invalid", "validation.failed", "version.not_found",
 }
@@ -24,6 +25,7 @@ var knownWarningCodeValues = []string{
 	"publication.draft_cleanup_failed",
 	"publication.non_atomic",
 	"publication.post_publish_hook_failed",
+	"plan.source_draft_changed",
 	"theme.already_exists",
 }
 
@@ -96,7 +98,7 @@ func CommandProblemCodes(capability Capability) []string {
 			add("draft.exists")
 		}
 	}
-	if capability.Supports.Stdin {
+	if capability.Supports.Stdin && !slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID) {
 		add("stdin.remote_config.invalid")
 	}
 	if capabilityHasFlag(capability, "--expr") {
@@ -114,6 +116,10 @@ func CommandProblemCodes(capability Capability) []string {
 		add("command.not_executable", "command.not_found")
 	case id == "schema.show":
 		add("schema.not_found")
+	case id == "apply":
+		add("plan.integrity_failed", "plan.invalid", "plan.stale", "plan.unsupported_version")
+	case strings.HasPrefix(id, "plan."):
+		add("plan.integrity_failed", "plan.invalid", "plan.unsupported_version")
 	case strings.HasPrefix(id, "config."):
 		add("configuration.local_disabled", "configuration.local_not_found")
 		if id == "config.validate" {
@@ -207,6 +213,9 @@ func CommandProblemCodes(capability Capability) []string {
 	case "experiments.delete", "rollouts.delete":
 		add("interaction.required")
 	}
+	if capability.Supports.Plan {
+		add("plan.exists", "plan.invalid", "plan.integrity_failed")
+	}
 
 	result := make([]string, 0, len(set))
 	for value := range set {
@@ -228,14 +237,14 @@ func commandCanReturnUnclassified(commandID string) bool {
 }
 
 func commandLoadsConfiguration(commandID string) bool {
-	if commandIsContractMetadata(commandID) || commandID == "config.edit" {
+	if commandIsContractMetadata(commandID) || strings.HasPrefix(commandID, "plan.") || commandID == "config.edit" {
 		return false
 	}
 	return true
 }
 
 func commandUsesProfile(commandID string) bool {
-	if commandIsContractMetadata(commandID) || strings.HasPrefix(commandID, "config.") || strings.HasPrefix(commandID, "theme.") || strings.HasPrefix(commandID, "hooks.") || strings.HasPrefix(commandID, "projects.aliases.") {
+	if commandIsContractMetadata(commandID) || strings.HasPrefix(commandID, "plan.") || strings.HasPrefix(commandID, "config.") || strings.HasPrefix(commandID, "theme.") || strings.HasPrefix(commandID, "hooks.") || strings.HasPrefix(commandID, "projects.aliases.") {
 		return false
 	}
 	return true

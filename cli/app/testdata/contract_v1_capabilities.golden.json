@@ -1,6 +1,6 @@
 {
   "contract_version": "1.0.0",
-  "count": 109,
+  "count": 112,
   "commands": [
     {
       "id": "add",
@@ -15,6 +15,26 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
+        "confirmation_bypass": true,
+        "stdin": true,
+        "stateless": true
+      }
+    },
+    {
+      "id": "apply",
+      "path": [
+        "apply"
+      ],
+      "summary": "Apply an immutable publication plan",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:response",
+      "side_effect_level": 3,
+      "destructive": true,
+      "supports": {
+        "dry_run": true,
+        "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": true,
         "stateless": true
@@ -35,6 +55,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -55,6 +76,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -75,6 +97,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": true,
         "stateless": false
@@ -95,6 +118,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": true,
         "stateless": false
@@ -114,6 +138,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -133,6 +158,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -152,6 +178,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -171,6 +198,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -190,6 +218,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -210,6 +239,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -230,6 +260,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -250,6 +281,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -269,6 +301,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -288,6 +321,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -307,6 +341,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -325,6 +360,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -344,6 +380,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -363,6 +400,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -382,6 +420,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -401,6 +440,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -420,6 +460,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -439,6 +480,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -458,6 +500,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -477,6 +520,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -496,6 +540,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -515,6 +560,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -534,6 +580,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -553,6 +600,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -572,6 +620,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -591,6 +640,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -610,6 +660,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -629,6 +680,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -648,6 +700,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -667,6 +720,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -685,6 +739,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": true,
         "stateless": true
@@ -703,6 +758,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -722,6 +778,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -741,6 +798,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -760,6 +818,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -779,6 +838,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -798,6 +858,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -817,6 +878,7 @@
       "supports": {
         "dry_run": true,
         "draft": false,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -836,6 +898,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -854,6 +917,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -873,6 +937,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -892,6 +957,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -911,6 +977,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -929,6 +996,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": true,
         "stateless": true
@@ -948,6 +1016,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -967,6 +1036,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -986,6 +1056,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -1005,6 +1076,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1024,6 +1096,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -1042,6 +1115,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1061,6 +1135,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1080,6 +1155,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1099,6 +1175,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1118,6 +1195,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1137,6 +1215,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1156,9 +1235,50 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
+      }
+    },
+    {
+      "id": "plan.show",
+      "path": [
+        "plan",
+        "show"
+      ],
+      "summary": "Show a publication plan and its diffs",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",
+      "side_effect_level": 1,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "plan": false,
+        "confirmation_bypass": false,
+        "stdin": true,
+        "stateless": false
+      }
+    },
+    {
+      "id": "plan.validate",
+      "path": [
+        "plan",
+        "validate"
+      ],
+      "summary": "Validate publication plan structure and integrity",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:response",
+      "side_effect_level": 1,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "plan": false,
+        "confirmation_bypass": false,
+        "stdin": true,
+        "stateless": false
       }
     },
     {
@@ -1174,6 +1294,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1193,6 +1314,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1212,6 +1334,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1231,6 +1354,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1250,6 +1374,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1269,6 +1394,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1288,6 +1414,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -1307,6 +1434,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -1326,6 +1454,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": true,
         "stateless": true
@@ -1345,6 +1474,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1365,6 +1495,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1385,6 +1516,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1405,6 +1537,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1424,6 +1557,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1444,6 +1578,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1464,6 +1599,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1484,6 +1620,7 @@
       "supports": {
         "dry_run": true,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1504,6 +1641,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1524,6 +1662,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1544,6 +1683,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1563,6 +1703,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1582,6 +1723,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1601,6 +1743,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1620,6 +1763,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1639,6 +1783,7 @@
       "supports": {
         "dry_run": true,
         "draft": false,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -1658,6 +1803,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1677,6 +1823,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1696,6 +1843,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -1715,6 +1863,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1734,6 +1883,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1750,6 +1900,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1769,6 +1920,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1788,6 +1940,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1806,6 +1959,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1825,6 +1979,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -1844,6 +1999,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": true,
         "stateless": false
@@ -1863,6 +2019,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1882,6 +2039,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1901,6 +2059,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1920,6 +2079,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1939,6 +2099,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": false
@@ -1957,6 +2118,7 @@
       "supports": {
         "dry_run": true,
         "draft": true,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": true,
         "stateless": true
@@ -1976,6 +2138,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -1995,6 +2158,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -2014,6 +2178,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true
@@ -2033,6 +2198,7 @@
       "supports": {
         "dry_run": true,
         "draft": false,
+        "plan": true,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": false
@@ -2052,6 +2218,7 @@
       "supports": {
         "dry_run": true,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": true,
         "stdin": false,
         "stateless": true
@@ -2071,6 +2238,7 @@
       "supports": {
         "dry_run": false,
         "draft": false,
+        "plan": false,
         "confirmation_bypass": false,
         "stdin": false,
         "stateless": true

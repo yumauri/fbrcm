@@ -1156,6 +1156,46 @@
           ]
         },
         {
+          "additionalProperties": false,
+          "properties": {
+            "command_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "plan_id": {
+              "type": "string"
+            },
+            "publish_target_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "target_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "unchanged_target_count": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "command_id",
+            "created_at",
+            "path",
+            "plan_id",
+            "publish_target_count",
+            "target_count",
+            "unchanged_target_count"
+          ],
+          "type": "object"
+        },
+        {
           "$defs": {
             "artifact_json_content": {
               "$anchor": "artifact_json_content",
@@ -2029,6 +2069,9 @@
                       "network.unavailable",
                       "parameter.ambiguous",
                       "parameter.not_found",
+                      "plan.exists",
+                      "plan.integrity_failed",
+                      "plan.invalid",
                       "profile.invalid",
                       "project.ambiguous",
                       "project.not_found",

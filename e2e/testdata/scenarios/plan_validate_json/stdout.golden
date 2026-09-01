@@ -1,0 +1,25 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:response",
+  "contract_version": "1.0.0",
+  "command": "plan.validate",
+  "requested_command": "plan.validate",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "plan_id": "sha256:d327f74e312ebe75e43ac4685897c90b5f46c397b795f9c07d7daf6948693bc3",
+    "valid": true,
+    "target_count": 1
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -2,9 +2,11 @@ package projects
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/erikgeiser/promptkit/selection"
@@ -18,6 +20,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -77,6 +80,7 @@ func newPromoteCommand(svc *core.Core) *cobra.Command {
 	shared.AddDryRunFlag(cmd)
 	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Skip final publish confirmation")
+	shared.AddPlanOutFlag(cmd)
 	cmd.Flags().Bool("json", false, "Print promotion result as JSON")
 	return cmd
 }
@@ -225,6 +229,11 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	}
 	plan.Items = filterPromotionItems(plan.Items, plan.Diff, opts)
 	if len(plan.Items) == 0 {
+		if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+			return planErr
+		} else if planning {
+			return writePromotionPublicationPlan(ctx, cmd, svc, source, target, sourceCfg, opts, map[rcpromote.ItemID]bool{}, planPath)
+		}
 		return writePromoteNoChanges(cmd, source, target, opts)
 	}
 
@@ -233,6 +242,11 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 		return err
 	}
 	if len(selected) == 0 {
+		if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+			return planErr
+		} else if planning {
+			return writePromotionPublicationPlan(ctx, cmd, svc, source, target, sourceCfg, opts, selected, planPath)
+		}
 		return writePromoteNoChanges(cmd, source, target, opts)
 	}
 
@@ -241,6 +255,11 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 		return err
 	}
 	diffText, hasChanges := rc.RenderRemoteConfigDiff(targetCfg, finalCfg)
+	if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+		return planErr
+	} else if planning {
+		return writePromotionPublicationPlan(ctx, cmd, svc, source, target, sourceCfg, opts, selected, planPath)
+	}
 	if !hasChanges {
 		return writePromoteNoChanges(cmd, source, target, opts)
 	}
@@ -303,6 +322,104 @@ func runProjectsPromote(cmd *cobra.Command, svc *core.Core, sourceQuery, targetQ
 	}
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "validated: %t · validation_source: %s\n", validated, validationSource)
 	return nil
+}
+
+func writePromotionPublicationPlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, source, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool, path string) error {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
+			return err
+		} else if hasDraft {
+			return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before planning a promotion", target.ProjectID)}
+		}
+	}
+	baseRaw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)
+	if err != nil {
+		return err
+	}
+	baseCfg, err := firebase.ParseCloneRemoteConfig(baseRaw)
+	if err != nil {
+		return err
+	}
+	baseVersion := baseCfg.Version.VersionNumber
+	baseCfg.Version = firebase.RemoteConfigVersion{}
+	promotionPlan := rcpromote.BuildPlan(sourceCfg, baseCfg, rcpromote.Options{Prune: opts.Prune})
+	finalCfg, _, err := rcpromote.Apply(promotionPlan, selected, rcpromote.Options{Prune: opts.Prune})
+	if err != nil {
+		return err
+	}
+	finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
+	if err != nil {
+		return err
+	}
+	baseDigest, err := publication.RemoteConfigDigest(baseRaw)
+	if err != nil {
+		return err
+	}
+	candidateDigest, err := publication.RemoteConfigDigest(finalRaw)
+	if err != nil {
+		return err
+	}
+	action := publication.ActionNone
+	validationSource := core.ValidationSourceLocal
+	if baseDigest != candidateDigest {
+		action = publication.ActionPublish
+		validationSource = core.ValidationSourceFirebase
+		if err := svc.ValidatePublicationCandidate(ctx, target.ProjectID, baseRaw, finalRaw, etag, "promote"); err != nil {
+			return err
+		}
+	}
+	environment, err := core.PublicationEnvironmentForContext(ctx)
+	if err != nil {
+		return err
+	}
+	parsedTarget, err := rctarget.Parse(target.ProjectID)
+	if err != nil {
+		return err
+	}
+	sourceRaw, err := firebase.MarshalRemoteConfig(sourceCfg)
+	if err != nil {
+		return err
+	}
+	sourceDigest, err := publication.RemoteConfigDigest(sourceRaw)
+	if err != nil {
+		return err
+	}
+	publicationPlan := publication.New(cmd.Root().Version, "projects.promote", environment.Policy, opts.ChangeNote)
+	publicationPlan.Execution.HooksEnabled = environment.HooksEnabled
+	publicationPlan.Execution.HookDefinitionSHA256 = environment.HookDefinitionSHA256
+	selectedItems := make([]rcpromote.ItemID, 0, len(selected))
+	for item, enabled := range selected {
+		if enabled {
+			selectedItems = append(selectedItems, item)
+		}
+	}
+	sort.Slice(selectedItems, func(i, j int) bool {
+		if selectedItems[i].Kind != selectedItems[j].Kind {
+			return selectedItems[i].Kind < selectedItems[j].Kind
+		}
+		if selectedItems[i].Group != selectedItems[j].Group {
+			return selectedItems[i].Group < selectedItems[j].Group
+		}
+		return selectedItems[i].Name < selectedItems[j].Name
+	})
+	publicationPlan.Operation.Selection, err = json.Marshal(struct {
+		Source string             `json:"source"`
+		Target string             `json:"target"`
+		Prune  bool               `json:"prune"`
+		Items  []rcpromote.ItemID `json:"items"`
+	}{Source: source.ProjectID, Target: target.ProjectID, Prune: opts.Prune, Items: selectedItems})
+	if err != nil {
+		return err
+	}
+	publicationPlan.Targets = append(publicationPlan.Targets, publication.Target{
+		Target: target.ProjectID, ProjectID: parsedTarget.ProjectID, Template: string(parsedTarget.Kind), Action: action, ChangeNote: opts.ChangeNote,
+		Base:       publication.Snapshot{Version: baseVersion, ETag: etag, RemoteConfig: baseRaw},
+		Candidate:  publication.Snapshot{RemoteConfig: finalRaw},
+		Validation: publication.Validation{Source: validationSource, ValidatedAt: publicationPlan.CreatedAt},
+		Source:     publication.Source{Kind: "promotion", Fingerprint: source.ProjectID + ":" + sourceDigest},
+	})
+	_, err = rc.WritePublicationPlan(cmd, publicationPlan, path)
+	return err
 }
 
 func loadCompareConfigs(ctx context.Context, cmd *cobra.Command, svc *core.Core, sourceQuery, targetQuery string, cached bool) (core.Project, core.Project, *firebase.RemoteConfig, *firebase.RemoteConfig, error) {

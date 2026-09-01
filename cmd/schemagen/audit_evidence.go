@@ -116,12 +116,14 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.stdin_restrictions":                "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
 		"app.unknown_option":                    "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
 		"app.warning_runtime":                   "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
+		"apply.no_change_success":               "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
 		"auth.oauth_success":                    "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
 		"auth.google_quota_failure":             "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
 		"contract.artifact_runtime":             "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
 		"contract.batch_runtime":                "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
 		"draft.publish_success":                 "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
 		"profile.root_success":                  "cli/commands/profile/commands_test.go#TestProfileRootJSON",
+		"plan.metadata_success":                 "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
 		"schemagen.determinism":                 "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
 		"theme.mutation_success":                "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
 		"versions.restore_success":              "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
@@ -167,6 +169,8 @@ func generatedAuditBaseEvidence(class string) []string {
 
 func generatedAuditSuccessFallback(commandID string) string {
 	switch commandID {
+	case "apply":
+		return "apply.no_change_success"
 	case "auth.login":
 		return "auth.oauth_success"
 	case "completion.bash", "completion.fish", "completion.powershell", "completion.zsh":
@@ -175,6 +179,8 @@ func generatedAuditSuccessFallback(commandID string) string {
 		return "draft.publish_success"
 	case "profile":
 		return "profile.root_success"
+	case "plan.show", "plan.validate":
+		return "plan.metadata_success"
 	case "theme.delete", "theme.reset", "theme.switch":
 		return "theme.mutation_success"
 	case "versions.restore":
@@ -234,7 +240,7 @@ func generatedSchemaContainsKey(value any, key string) bool {
 
 func generatedAuditMutation(commandID string) bool {
 	return slices.Contains([]string{
-		"add", "auth.add.gcloud", "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.bind", "auth.delete", "auth.login", "auth.quota-project.set", "auth.quota-project.unset",
+		"add", "apply", "auth.add.gcloud", "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.bind", "auth.delete", "auth.login", "auth.quota-project.set", "auth.quota-project.unset",
 		"cache.clear", "conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename", "config.edit", "config.reset", "config.set", "delete", "draft.change-note", "draft.discard", "draft.publish", "duplicate",
 		"experiments.delete", "groups.add", "groups.delete", "groups.edit", "groups.rename", "hooks.trust", "hooks.untrust", "profile", "profile.delete", "profile.rename", "profile.switch", "project.import", "project.quota-project.set", "project.quota-project.unset",
 		"projects.aliases.import", "projects.aliases.remove", "projects.aliases.set", "projects.forget", "projects.promote", "projects.reset", "projects.update", "rollouts.delete", "theme.delete", "theme.import", "theme.rename", "theme.reset", "theme.switch", "update", "versions.restore", "versions.rollback",

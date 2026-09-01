@@ -1,0 +1,34 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:response",
+  "contract_version": "1.0.0",
+  "command": "apply",
+  "requested_command": "apply",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "plan_id": "sha256:d327f74e312ebe75e43ac4685897c90b5f46c397b795f9c07d7daf6948693bc3",
+    "dry_run": false,
+    "published_count": 0,
+    "items": [
+      {
+        "target": "northstar-wallet",
+        "status": "unchanged",
+        "previous_version": "7",
+        "validated": true,
+        "validation_source": "local"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

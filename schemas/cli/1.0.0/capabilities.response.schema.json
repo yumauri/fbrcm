@@ -50,6 +50,9 @@
                       "dry_run": {
                         "type": "boolean"
                       },
+                      "plan": {
+                        "type": "boolean"
+                      },
                       "stateless": {
                         "type": "boolean"
                       },
@@ -60,6 +63,7 @@
                     "required": [
                       "dry_run",
                       "draft",
+                      "plan",
                       "confirmation_bypass",
                       "stdin",
                       "stateless"

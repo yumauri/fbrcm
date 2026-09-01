@@ -224,7 +224,9 @@ themselves. Examples include non-atomic multi-target publication, stale cache
 fallback, and a hook or cache failure after Firebase has accepted a publish.
 Known warning codes constrain `details`: stale-cache fallback carries `source`,
 non-atomic publication carries `target_count`, and post-publication warnings
-carry their stable `stage`. Unknown future codes may carry an object or `null`.
+carry their stable `stage`. `plan.source_draft_changed` carries stage
+`source_draft` when apply preserves a draft edited after planning. Unknown
+future codes may carry an object or `null`.
 Known remediation vectors cover exact-ID project selection, `--yes`, failed
 batch target selectors, cache refresh, and publishing or discarding an
 existing draft.
@@ -391,7 +393,8 @@ Every executable command's detailed capability record contains:
 - destructive markers, typed destructive conditions, and human-readable
   destructive reasons;
 - idempotency classification and typed `idempotency_when` conditions;
-- dry-run, draft, confirmation-bypass, stdin, and stateless support;
+- dry-run, draft, publication-plan, confirmation-bypass, stdin, and stateless
+  support;
 - interaction requirements, typed `interaction_when` conditions, and
   JSON-mode behavior.
 
@@ -502,6 +505,14 @@ hook execution, which can occur during dry-run, from post_publish execution afte
 Firebase acceptance. An explicit draft-publish change note also declares the
 intermediate local draft write performed before publication.
 
+Commands whose `supports.plan` is true publish `--plan-out` as a string path.
+In that mode, their Firebase write and draft write/delete effects require the
+opposite `plan-out == ""` condition, while `local_file_write` is reachable for
+an authorized exclusive plan destination. Remote reads, Firebase validation,
+and trusted pre-publish hooks remain reachable because they establish the
+exact reviewed candidate. Destructive conditions apply only when
+`plan-out == ""`.
+
 `destructive_when` uses the same predicate clauses. `destructive_reasons`
 contains explanatory text for logs and review but is not used for planning.
 `interaction.json_behavior` is a stable enum rather than prose.
@@ -523,6 +534,9 @@ authentication state. Remote writes remain unsafe to retry after an authorized c
 non-dry-run plan unless the caller can establish that no publication was
 accepted. A dry-run is idempotent only when no trusted hook executed; hook
 commands are arbitrary local processes and may themselves be non-idempotent.
+Applying an immutable plan is retry-safe only after preflight establishes each
+target's state: a candidate digest already present is `already-applied`, an
+unchanged planned base may proceed, and any third state is `plan.stale`.
 
 Authentication failures retain their source semantics. Missing or malformed
 stored credentials are auth failures. OAuth `invalid_grant` or a missing
@@ -701,7 +715,11 @@ stdin decoding. `project import` uses a separate
 `stdin:remote_config_import` schema because it also requires the local
 `firebase.NormalizeRemoteConfigForUpdate` validation performed before import
 selection and transformation. Published stdin modes contain only normalized
-JSON documents. Imported OAuth and
+JSON documents. `apply`, `plan show`, and `plan validate` accept a strict
+publication-plan document when their positional path is `-` and reference
+`stdin:publication_plan`; invalid, tampered, and unsupported documents retain
+the typed `plan.invalid`, `plan.integrity_failed`, and
+`plan.unsupported_version` problems. Imported OAuth and
 service-account auth commands reference distinct
 credential-object schemas whose required IDs, secrets, keys, email address,
 and endpoint URIs match runtime validation. A sole OAuth `installed` or `web`
@@ -873,6 +891,15 @@ is accessed or updated. Dry-run performs the reads and validate-only request
 without sending the rollback POST. The documented native rollback race window
 after the final recheck is unchanged.
 
+Stateless plan production records policy `stateless` and literal target IDs;
+it performs the same direct reads and Firebase validation as the corresponding
+mutation while suppressing publication, caches, drafts, snapshots, and hooks.
+`apply --stateless` accepts only a stateless plan, preflights every target using
+the one-shot token, and publishes exact candidates with their planned ETags.
+A stateful plan must be applied statefully and its effective hook-definition
+fingerprint must still match. Policy or hook drift is `plan.stale` before any
+target write.
+
 Stateless remote `get` discovers all token-accessible projects when `project`
 is omitted. A non-exact selector uses the normal fuzzy, starts-with (`^`),
 contains (`/`), or fuzzy (`~`) modes against remote project IDs and display
@@ -958,8 +985,8 @@ Draft 2020-12 JSON Schemas are checked in under `schemas/cli/1.0.0/` and
 embedded in the binary. Each executable command has one input schema and one
 response schema. Shared envelope, error, capability, semantic, general Remote
 Config stdin, project-import Remote Config stdin, combined credential stdin,
-OAuth credential stdin, and service-account
-credential stdin schemas are published beside them.
+OAuth credential stdin, service-account credential stdin, strict publication
+plan stdin, and standalone publication-plan schemas are published beside them.
 
 Every command response schema references the shared published envelope schema
 and defines the command's exact successful `data` DTO. Enforceable correlations
@@ -984,6 +1011,13 @@ explicit `unchanged` status; `published` and `would-publish` therefore always
 mean that the represented operation changed or would change Firebase state.
 Live publication of an unchanged draft remains `already-applied` because that
 operation removes the redundant local draft.
+Plan-creation variants return `plan_id`, private destination `path`,
+`created_at`, `command_id`, and total/publish/unchanged target counts. `plan
+show` returns a non-secret summary, while `plan validate` returns the verified
+ID and count. `apply` returns its plan ID, dry-run marker, accepted publication
+count, and typed per-target statuses. Publication plans themselves remain file
+artifacts rather than response DTOs because they contain complete Remote Config
+values and are written only to the explicitly requested private path.
 Experiment and rollout deletion previews correlate `status: "would-delete"`
 with a failure envelope containing `interaction.required`; `status: "deleted"`
 requires a success envelope. Deterministic machine fields such as

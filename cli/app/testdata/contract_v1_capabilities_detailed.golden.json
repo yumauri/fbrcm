@@ -97,6 +97,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -226,6 +236,9 @@
       "network.timeout",
       "network.unavailable",
       "parameter.exists",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -332,6 +345,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -404,6 +423,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -588,6 +613,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -619,6 +660,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -713,6 +769,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -767,6 +829,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -776,6 +844,553 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
+      "confirmation_bypass": true,
+      "stdin": true,
+      "stateless": true
+    },
+    "stdin_modes": [
+      "json_document"
+    ],
+    "interaction": {
+      "mode": "optional",
+      "json_behavior": "declared_conditions_return_interaction"
+    },
+    "interaction_when": [
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "yes",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "runtime_state",
+            "name": "confirmation",
+            "operator": "required",
+            "value": null
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "authentication",
+            "operator": "requires_human_authorization",
+            "value": null
+          },
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "apply",
+    "path": [
+      "apply"
+    ],
+    "summary": "Apply an immutable publication plan",
+    "arguments": [
+      {
+        "name": "plan",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--dry-run",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Preview the requested mutation without applying it"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      },
+      {
+        "name": "--yes",
+        "aliases": [
+          "-y"
+        ],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Apply the publication plan without confirmation"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan",
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "auth.configuration_invalid",
+      "auth.credentials_invalid",
+      "auth.not_found",
+      "auth.quota_project_required",
+      "auth.setup_required",
+      "batch.failed",
+      "batch.partial_success",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "draft.exists",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "firebase.permission_denied",
+      "firebase.rate_limited",
+      "firebase.request_failed",
+      "firebase.service_unavailable",
+      "firebase.timeout",
+      "hook.failed",
+      "interaction.required",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "network.offline",
+      "network.timeout",
+      "network.unavailable",
+      "plan.integrity_failed",
+      "plan.invalid",
+      "plan.stale",
+      "plan.unsupported_version",
+      "profile.invalid",
+      "publication.cache_failed",
+      "publication.hook_failed",
+      "remote_config.conflict",
+      "remote_config.invalid",
+      "remote_config.validation_failed",
+      "resource.not_found"
+    ],
+    "side_effect_level": 3,
+    "side_effects": [
+      "firebase_remote_read",
+      "local_cache_write",
+      "firebase_remote_write",
+      "firebase_remote_validation",
+      "trusted_hook_execution",
+      "authentication_remote_access",
+      "local_file_write",
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "firebase_remote_read",
+        "when": []
+      },
+      {
+        "effect": "local_cache_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "firebase_remote_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "firebase_remote_validation",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "trusted_hook_execution",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "trusted_hook",
+                "operator": "configured_for_event",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "publication",
+                "operator": "accepted",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "trusted_hook",
+                "operator": "configured_for_event",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "authentication_remote_access",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "requires_network",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_file_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "token_persisted",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "required",
+    "network_when": [],
+    "destructive": true,
+    "destructive_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "mutation_plan",
+            "operator": "is_destructive",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive_reasons": [
+      "publishes the exact Remote Config templates recorded in a plan"
+    ],
+    "idempotency": "conditional",
+    "idempotency_when": [
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "source": "runtime_state",
+                "name": "trusted_hook",
+                "operator": "not_executed",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "no",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "source": "runtime_state",
+                "name": "trusted_hook",
+                "operator": "executed",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_no_changes",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "no",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "dry-run",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "supports": {
+      "dry_run": true,
+      "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": true,
       "stateless": true
@@ -1001,6 +1616,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -1188,6 +1804,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -1406,6 +2023,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": true,
       "stateless": false
@@ -1643,6 +2261,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": true,
       "stateless": false
@@ -1814,6 +2433,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -1994,6 +2614,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -2119,6 +2740,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -2295,6 +2917,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -2422,6 +3045,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -2561,6 +3185,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -2711,6 +3336,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -2877,6 +3503,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3032,6 +3659,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -3156,6 +3784,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3263,6 +3892,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3373,6 +4003,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3485,6 +4116,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3597,6 +4229,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3709,6 +4342,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3821,6 +4455,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -3927,6 +4562,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--priority",
         "aliases": [],
         "type": "int",
@@ -4023,6 +4668,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -4105,6 +4753,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -4165,6 +4819,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -4337,6 +4997,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -4357,6 +5033,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -4436,6 +5127,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -4484,6 +5181,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -4493,6 +5196,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -4612,6 +5316,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -4699,6 +5413,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -4781,6 +5498,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -4841,6 +5564,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -5013,6 +5742,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -5028,6 +5773,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -5046,6 +5797,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -5125,6 +5891,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -5173,6 +5945,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -5182,6 +5960,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -5331,6 +6110,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -5418,6 +6207,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -5500,6 +6292,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -5560,6 +6358,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -5732,6 +6536,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -5752,6 +6572,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -5831,6 +6666,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -5879,6 +6720,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -5888,6 +6735,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -6360,6 +7208,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -6469,6 +7318,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -6556,6 +7415,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -6638,6 +7500,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -6698,6 +7566,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -6870,6 +7744,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -6890,6 +7780,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -6969,6 +7874,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -7017,6 +7928,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -7026,6 +7943,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -7151,6 +8069,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -7238,6 +8166,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -7320,6 +8251,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -7380,6 +8317,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -7552,6 +8495,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -7572,6 +8531,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -7651,6 +8625,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -7699,6 +8679,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -7708,6 +8694,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -8154,6 +9141,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -8413,6 +9401,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -8566,6 +9555,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -8695,6 +9685,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -8862,6 +9853,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -9026,6 +10018,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -9151,6 +10144,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -9270,6 +10264,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -9369,6 +10364,16 @@
         "repeatable": false,
         "effective": true,
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
       },
       {
         "name": "--profile",
@@ -9481,6 +10486,9 @@
       "network.unavailable",
       "parameter.ambiguous",
       "parameter.not_found",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -9587,6 +10595,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -9659,6 +10673,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -9843,6 +10863,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -9869,6 +10905,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -9887,6 +10929,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -9981,6 +11038,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -10035,6 +11098,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -10044,6 +11113,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": true,
       "stateless": true
@@ -10287,6 +11357,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -10499,6 +11570,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -10814,6 +11886,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -11001,6 +12074,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -11137,6 +12211,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -11244,6 +12319,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -11310,6 +12386,16 @@
         "repeatable": false,
         "effective": true,
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
       },
       {
         "name": "--profile",
@@ -11387,6 +12473,9 @@
       "network.timeout",
       "network.unavailable",
       "parameters_cache.not_found",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -11458,6 +12547,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -11573,6 +12668,12 @@
                 "name": "publication",
                 "operator": "accepted",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           },
@@ -11589,6 +12690,12 @@
                 "name": "mutation_plan",
                 "operator": "has_no_changes",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -11610,6 +12717,12 @@
                 "name": "draft_change_note",
                 "operator": "persisted",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -11639,6 +12752,22 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "token_persisted",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
                 "value": null
               }
             ]
@@ -11672,6 +12801,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -11690,6 +12825,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -11748,6 +12898,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -11790,6 +12946,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -11799,6 +12961,7 @@
     "supports": {
       "dry_run": true,
       "draft": false,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -11981,6 +13144,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -12087,6 +13251,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -12188,6 +13362,9 @@
       "parameter.ambiguous",
       "parameter.exists",
       "parameter.not_found",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -12270,6 +13447,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -12330,6 +13513,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -12502,6 +13691,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -12522,6 +13727,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -12601,6 +13821,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -12649,6 +13875,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -12658,6 +13890,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -12998,6 +14231,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -13323,6 +14557,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -13632,6 +14867,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -14172,6 +15408,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": true,
       "stateless": true
@@ -14281,6 +15518,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -14379,6 +15626,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -14461,6 +15711,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -14521,6 +15777,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -14693,6 +15955,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -14713,6 +15991,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -14792,6 +16085,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -14840,6 +16139,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -14849,6 +16154,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -14962,6 +16268,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -15060,6 +16376,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -15142,6 +16461,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -15202,6 +16527,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -15374,6 +16705,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -15389,6 +16736,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -15407,6 +16760,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -15486,6 +16854,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -15534,6 +16908,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -15543,6 +16923,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -15676,6 +17057,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -15774,6 +17165,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -15856,6 +17250,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -15916,6 +17316,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -16088,6 +17494,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -16108,6 +17530,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -16187,6 +17624,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -16235,6 +17678,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -16244,6 +17693,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -16710,6 +18160,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -16813,6 +18264,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -16911,6 +18372,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -16993,6 +18457,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -17053,6 +18523,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -17225,6 +18701,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -17245,6 +18737,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -17324,6 +18831,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -17372,6 +18885,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -17381,6 +18900,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -17522,6 +19042,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -17629,6 +19150,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -17735,6 +19257,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -17872,6 +19395,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -18024,6 +19548,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -18430,6 +19955,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -18860,6 +20386,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -18887,6 +20414,242 @@
         ]
       }
     ]
+  },
+  {
+    "id": "plan.show",
+    "path": [
+      "plan",
+      "show"
+    ],
+    "summary": "Show a publication plan and its diffs",
+    "arguments": [
+      {
+        "name": "plan",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan",
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "plan.integrity_failed",
+      "plan.invalid",
+      "plan.unsupported_version"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": true,
+      "stateless": false
+    },
+    "stdin_modes": [
+      "json_document"
+    ],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "plan.validate",
+    "path": [
+      "plan",
+      "validate"
+    ],
+    "summary": "Validate publication plan structure and integrity",
+    "arguments": [
+      {
+        "name": "plan",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan",
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "plan.integrity_failed",
+      "plan.invalid",
+      "plan.unsupported_version"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": true,
+      "stateless": false
+    },
+    "stdin_modes": [
+      "json_document"
+    ],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
   },
   {
     "id": "profile",
@@ -18983,6 +20746,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -19191,6 +20955,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -19315,6 +21080,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -19430,6 +21196,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -19590,6 +21357,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -19693,6 +21461,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -19962,6 +21731,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -20254,6 +22024,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -20449,6 +22220,16 @@
         "usage": "Replace current project config with imported config"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -20556,6 +22337,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -20639,6 +22423,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -20693,6 +22483,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -20865,6 +22661,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -20880,6 +22692,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -20898,6 +22716,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -20977,6 +22810,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -21025,6 +22864,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -21034,6 +22879,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": true,
       "stateless": true
@@ -21353,6 +23199,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -21509,6 +23356,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -21661,6 +23509,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -21829,6 +23678,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -22151,6 +24001,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -22321,6 +24172,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -22438,6 +24290,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -22627,6 +24480,7 @@
     "supports": {
       "dry_run": true,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -22753,6 +24607,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -22913,6 +24768,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -23096,6 +24952,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -23441,6 +25298,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -23674,6 +25532,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -24037,6 +25896,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -24161,6 +26021,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -24297,6 +26158,16 @@
         "usage": "Include only parameter and group description changes"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -24404,6 +26275,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -24479,6 +26353,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -24654,6 +26534,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -24669,6 +26565,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -24687,6 +26589,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -24745,6 +26662,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -24787,6 +26710,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -24796,6 +26725,7 @@
     "supports": {
       "dry_run": true,
       "draft": false,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -25010,6 +26940,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -25239,6 +27170,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -25557,6 +27489,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -25870,6 +27803,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -26179,6 +28113,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -26337,6 +28272,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -26439,6 +28375,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -26549,6 +28486,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -26655,6 +28593,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -26819,6 +28758,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -27025,6 +28965,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": true,
       "stateless": false
@@ -27150,6 +29091,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -27263,6 +29205,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -27417,6 +29360,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -27562,6 +29506,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -27722,6 +29667,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": false
@@ -27871,6 +29817,16 @@
         "repeatable": false,
         "effective": true,
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
       },
       {
         "name": "--profile",
@@ -28033,6 +29989,9 @@
       "network.unavailable",
       "parameter.ambiguous",
       "parameter.not_found",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -28139,6 +30098,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -28211,6 +30176,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               },
               {
                 "source": "option",
@@ -28395,6 +30366,22 @@
                 "value": false
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -28421,6 +30408,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -28439,6 +30432,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -28533,6 +30541,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -28587,6 +30601,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -28596,6 +30616,7 @@
     "supports": {
       "dry_run": true,
       "draft": true,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": true,
       "stateless": true
@@ -29065,6 +31086,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -29482,6 +31504,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -29824,6 +31847,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true
@@ -29905,6 +31929,16 @@
         "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
       },
       {
+        "name": "--plan-out",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write an immutable validated publication plan instead of applying the mutation"
+      },
+      {
         "name": "--profile",
         "aliases": [],
         "type": "string",
@@ -29978,6 +32012,9 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
+      "plan.exists",
+      "plan.integrity_failed",
+      "plan.invalid",
       "profile.invalid",
       "project.ambiguous",
       "project.not_found",
@@ -30048,6 +32085,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -30187,6 +32230,22 @@
                 "value": null
               }
             ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
           }
         ]
       }
@@ -30202,6 +32261,12 @@
             "name": "mutation_plan",
             "operator": "is_destructive",
             "value": null
+          },
+          {
+            "source": "option",
+            "name": "plan-out",
+            "operator": "equals",
+            "value": ""
           }
         ]
       }
@@ -30220,6 +32285,21 @@
                 "source": "runtime_state",
                 "name": "authentication",
                 "operator": "requires_human_authorization",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "idempotency": "yes",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "present",
                 "value": null
               }
             ]
@@ -30278,6 +32358,12 @@
                 "name": "trusted_hook",
                 "operator": "executed",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -30320,6 +32406,12 @@
                 "name": "confirmation",
                 "operator": "authorized_or_not_required",
                 "value": null
+              },
+              {
+                "source": "option",
+                "name": "plan-out",
+                "operator": "equals",
+                "value": ""
               }
             ]
           }
@@ -30329,6 +32421,7 @@
     "supports": {
       "dry_run": true,
       "draft": false,
+      "plan": true,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": false
@@ -30888,6 +32981,7 @@
     "supports": {
       "dry_run": true,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": true,
       "stdin": false,
       "stateless": true
@@ -31276,6 +33370,7 @@
     "supports": {
       "dry_run": false,
       "draft": false,
+      "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
       "stateless": true

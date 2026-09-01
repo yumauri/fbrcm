@@ -12,6 +12,12 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── list
 │   └── show <schema-id>
 │
+├── plan
+│   ├── show <plan> [--json]
+│   └── validate <plan> [--json]
+│
+├── apply <plan> [--dry-run] [--yes|-y] [--json]
+│
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
 │   ├── --expr <expr>
@@ -19,6 +25,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── --draft
 │   ├── --change-note <text>
 │   ├── --yes, -y
+│   ├── --plan-out <path>
 │   ├── --json
 │   ├── --description <text>
 │   ├── --group <name>
@@ -64,6 +71,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --draft
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   ├── edit <project> <condition>
 │   │   ├── --expression <expr>
@@ -73,24 +81,28 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --draft
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   ├── rename <project> <condition> <new-name>
 │   │   ├── --dry-run
 │   │   ├── --draft
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   ├── move <project> <condition> <priority>
 │   │   ├── --dry-run
 │   │   ├── --draft
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   ├── delete <project> <condition>
 │   │   ├── --dry-run
 │   │   ├── --draft
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   └── validate <project> [--json]
 │
@@ -103,6 +115,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── --draft
 │   ├── --change-note <text>
 │   ├── --yes, -y
+│   ├── --plan-out <path>
 │   └── --json
 │
 ├── doctor [--json] [--timeout <duration>]
@@ -130,6 +143,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --dry-run
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   ├── change-note <project> [text]
 │   │   ├── --clear
@@ -146,6 +160,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── --draft
 │   ├── --change-note <text>
 │   ├── --yes, -y
+│   ├── --plan-out <path>
 │   └── --json
 │
 ├── experiments
@@ -169,10 +184,10 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --search <text>
 │   │   ├── --update
 │   │   └── --json
-│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
-│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
-│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
-│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--json]
+│   ├── add <name> [--project|-p <query>] [--description <text>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--plan-out <path>] [--json]
+│   ├── edit <group> [--project|-p <query>] (--description <text>|--no-description) [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--plan-out <path>] [--json]
+│   ├── rename <group> <new-name> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--plan-out <path>] [--json]
+│   └── delete <group> [--project|-p <query>] [--dry-run] [--draft] [--change-note <text>] [--yes|-y] [--plan-out <path>] [--json]
 │
 ├── hooks
 │   ├── status [--json]
@@ -247,6 +262,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │       ├── --override
 │       ├── --merge-resolve current|import
 │       ├── --yes, -y
+│       ├── --plan-out <path>
 │       └── --json
 │
 ├── versions
@@ -283,6 +299,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │       ├── --dry-run
 │       ├── --change-note <text>
 │       ├── --yes, -y
+│       ├── --plan-out <path>
 │       └── --json
 │
 ├── projects
@@ -324,6 +341,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --dry-run
 │   │   ├── --change-note <text>
 │   │   ├── --yes, -y
+│   │   ├── --plan-out <path>
 │   │   └── --json
 │   ├── aliases
 │   │   ├── list [--json]
@@ -351,6 +369,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
     ├── --draft
     ├── --change-note <text>
     ├── --yes, -y
+    ├── --plan-out <path>
     ├── --json
     ├── --description <text>
     ├── --group <name>
@@ -434,7 +453,7 @@ trimmed, so surrounding whitespace is significant and normally produces no
 match. Fuzzy, prefix, substring, and case-insensitive selection belongs only to
 explicit query options such as `--filter`, `--search`, and `--project`.
 
-Most commands require a selected profile before command execution. `profile`, `config`, `theme`, `hooks`, `projects aliases`, `doctor`, `help`, `completion`, `capabilities`, and `schema` do not. Profile state is stored below `profiles/<name>` in both the configuration and cache roots. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
+Most commands require a selected profile before command execution. `profile`, `config`, `theme`, `hooks`, `projects aliases`, `doctor`, `help`, `completion`, `capabilities`, `schema`, and offline `plan` inspection do not. Profile state is stored below `profiles/<name>` in both the configuration and cache roots. By default, every JSON invocation still resolves `context.profile` while building its final envelope; with no explicit or persisted effective profile, that step bootstraps the `default` profile, creates its config/cache directories, and writes the global `config.toml`. Commands whose capability record reports `supports.stateless: true` skip profile selection and envelope bootstrap under `--stateless` and report `context.profile` as `null`. Capability metadata publishes possible bootstrap as `local_state_write`: commands without an unconditional local-state write use the condition `runtime_state.profile_bootstrap required`. For commands that bypass pre-execution profile initialization, envelope-only bootstrap is best-effort: filesystem failures are logged without changing the machine outcome.
 
 Run `fbrcm profile switch <name>` to switch or create a profile. Use the root `--profile <name>` flag or `FBRCM_PROFILE` to select an existing profile for one process without changing the persisted active profile; the flag takes precedence over the environment variable only when the command applies that option. An effective argv profile is trimmed, then must be one nonempty filesystem-safe path segment: `.`, `..`, path separators, and leading or trailing whitespace after normalization are invalid. Detailed capability flags expose `effective`; `false` means argv accepts the flag but the command does not apply it. Conditional applicability is published as `effective_when` and repeated in input schemas as `x-fbrcm-effective-when`. The input schema marks unconditional ineffectiveness as `x-fbrcm-effective: false`. `help`, `completion`, `capabilities`, `schema`, `config`, `theme`, `hooks`, and `projects aliases` commands currently ignore the argv `--profile` value; root version output accepts but ignores both `--profile` and `--no-local-config`. Machine-mode `auth login` ignores `--noopen`, and machine-mode `config edit` ignores `--editor`, `--full`, and `--scope` because both commands stop before reaching the corresponding human interaction. `FBRCM_PROFILE` may still supply the envelope profile because it is external process context.
 
@@ -446,8 +465,8 @@ values. Built-in defaults apply after both stored layers. For commands whose
 `FBRCM_PROFILE`, local config, global config, then `default`; commands marked
 with `effective: false` skip the argv value.
 Use `--no-local-config` or set `FBRCM_NO_LOCAL_CONFIG` to ignore repository
-configuration. Config commands ignore `--profile`, but honor their own explicit
-configuration scope.
+configuration. Config commands ignore `--profile` but honor their own explicit
+configuration scope; plan-inspection commands ignore `--profile` entirely.
 
 Native repository project aliases live only in `.fbrcm.toml` and are normally
 committed with the repository:
@@ -688,6 +707,51 @@ JSON in human mode and an artifact DTO in JSON mode. `--project`, `--dry-run`,
 `--draft`, and `--change-note` are unavailable because piped input has no
 persistent target project identity and is always transformed in memory.
 
+### Publication plans
+
+Remote Config mutations that can publish through the ordinary ETag-protected
+update flow accept `--plan-out <path>`. This creates an immutable, validated,
+self-contained publication plan instead of publishing or changing drafts. It
+is supported by parameter, group, and condition mutations, `project import`,
+`projects promote`, `draft publish`, and `versions restore`. Firebase's native
+`versions rollback` endpoint is deliberately excluded because it is a force
+operation rather than an exact ETag-protected template publication.
+
+`--plan-out` is mutually exclusive with `--dry-run`, `--draft`, and `--yes`.
+The destination is created exclusively as a private file and is never
+overwritten; `-` is not accepted as an output path because a plan embeds the
+complete base and candidate Remote Config templates. Planning resolves the
+same targets and selection, checks draft conflicts where applicable, fetches
+fresh base templates, validates every changed candidate with Firebase, and
+runs the effective trusted pre-publish hooks. If any target cannot be prepared
+or validated, no plan file is created.
+
+Each plan records its format version, content-derived plan ID, producer and
+operation, execution policy, hook-definition fingerprint, selection
+provenance, exact target/base ETags, normalized template digests, complete base
+and candidate templates, validation timestamps, change notes, and source
+provenance. Unchanged selected targets are retained with action `none`, making
+the reviewed selection explicit. Plans created under `--stateless` must be
+applied under `--stateless`; stateful plans must be applied statefully with the
+same effective hook configuration.
+
+`fbrcm plan show` and `fbrcm plan validate` are offline metadata operations.
+`fbrcm apply` first verifies the strict document and its integrity hash, then
+preflights every target before any publication. A target whose current digest
+already equals the candidate is an idempotent `already-applied` result. Any
+other target must still match both its planned base digest and ETag, otherwise
+the whole preflight fails with `plan.stale`; apply never silently rebases or
+replans. After one aggregate confirmation, all changed candidates and trusted
+pre-publish hooks are validated before the first write. Multi-target apply is
+non-atomic once publication begins, so successful targets are not rolled back
+if a later independent target fails. Matching source drafts are removed only
+after a live apply; drafts changed since planning are preserved with a warning.
+
+The plan commands accept `-` as the input path to read one plan JSON document
+from stdin. Their standalone schema is
+`urn:fbrcm:schema:cli:1.0.0:publication_plan`; the normalized stdin schema is
+`urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan`.
+
 ### Draft lifecycle and write safety
 
 Drafts are profile-scoped, target-specific, self-contained records. Each version-1 record stores the working Remote Config, its immutable base Remote Config, base version and ETag, timestamps, and an optional `change_note`. A project can therefore have independent client and server drafts. Plain Remote Config JSON is not accepted as an on-disk draft format, and no legacy draft migration or fallback is performed.
@@ -812,6 +876,7 @@ tests compare it exactly with the executable Cobra inventory.
 <!-- cli-contract-command-inventory:start -->
 ```text
 add
+apply
 auth.add.gcloud
 auth.add.google
 auth.add.oauth
@@ -872,6 +937,8 @@ hooks.trust
 hooks.untrust
 personalizations.list
 personalizations.show
+plan.show
+plan.validate
 profile
 profile.delete
 profile.list
@@ -1115,6 +1182,42 @@ kind use closed enums or command-specific constants. Auth path objects enforce
 their per-type files and identity/type correlations. Project template results
 require a nonempty unique `client`/`server` set containing the primary template.
 
+### `fbrcm plan show <plan>`
+
+Strictly verifies the publication plan and prints its identity, producer,
+operation, execution policy, target actions, validation provenance, and the
+complete base-to-candidate diff for each target. `--json` returns a typed
+summary without embedding the sensitive templates. Use `<plan>` as `-` to read
+the plan document from stdin. This command is offline and does not require a
+profile.
+
+### `fbrcm plan validate <plan>`
+
+Strictly verifies the document shape, supported format version, canonical
+target order, snapshot digests, action invariants, and content-derived plan ID.
+Success prints the plan ID and target count; `--json` returns `plan_id`,
+`valid`, and `target_count`. Invalid, tampered, and unsupported plans return
+`plan.invalid`, `plan.integrity_failed`, or `plan.unsupported_version`.
+Use `-` to read stdin. This command is offline and does not require a profile.
+
+### `fbrcm apply <plan>`
+
+Applies the exact candidates recorded in an immutable publication plan.
+`--dry-run` performs preflight and Firebase validation, including effective
+trusted pre-publish hooks, without publication or draft cleanup. `--yes|-y`
+skips the aggregate confirmation. `--json` returns `plan_id`, `dry_run`,
+`published_count`, and one typed item per target; statuses are `unchanged`,
+`would-publish`, `published`, `already-applied`, `conflict`, `publish-failed`,
+`published-hook-failed`, and `published-cache-failed`.
+
+Use `<plan>` as `-` to read stdin. Stateful apply uses the active profile and
+requires the plan's effective hook fingerprint to match. A stateless plan must
+be applied with root `--stateless`; it uses the plan's literal client/server
+targets and the one-shot access token, without local caches, drafts, snapshots,
+or hooks. A stale base fails before any publication. When more than one target
+will publish, apply warns that later failures cannot roll back earlier accepted
+writes.
+
 ### `fbrcm add <parameter>`
 
 Adds a new Remote Config parameter to every matched project. Parameter key is required and cannot be empty.
@@ -1138,6 +1241,7 @@ Other flags:
 --draft                    save changes to local drafts instead of publishing
 --change-note <text>       set the change note for publication or draft storage
 -y, --yes                  print diff and add without confirmation
+--plan-out <path>          write a validated publication plan instead
 --json                     print structured mutation results
 --description <text>       parameter description
 --group <name>             add parameter inside group
@@ -1176,6 +1280,7 @@ Flags:
 --draft                 save changes to local drafts instead of publishing
 --change-note <text>    set the change note for publication or draft storage
 -y, --yes               print diff and duplicate without confirmation
+--plan-out <path>       write a validated publication plan instead
 --json                  print structured mutation results
 ```
 
@@ -1227,6 +1332,7 @@ Flags:
 --draft                    save changes to local drafts instead of publishing
 --change-note <text>       set the change note for publication or draft storage
 -y, --yes                  print diff and update without confirmation
+--plan-out <path>          write a validated publication plan instead
 --json                     print structured mutation results
 --description <text>       set parameter description
 --group <name>             move parameter into group
@@ -1282,6 +1388,7 @@ Flags:
 --draft                 save changes to local drafts instead of publishing
 --change-note <text>    set the change note for publication or draft storage
 -y, --yes               print diff and delete without confirmation
+--plan-out <path>       write a validated publication plan instead
 --json                  print structured mutation results
 ```
 
@@ -1361,6 +1468,8 @@ All five commands support:
 --change-note <text>
             set the change note for publication or draft storage
 -y, --yes   print the diff and apply without confirmation
+--plan-out <path>
+            write a validated publication plan instead
 --json      print structured mutation results
 ```
 
@@ -1444,7 +1553,7 @@ fbrcm groups delete <group> [--project|-p <query>]
 
 All group commands support repeatable `--project|-p` target filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured enabled template in stable project-name/target-ID order. The positional `<group>` used by `edit`, `rename`, and `delete` is untrimmed and must match the canonical group key exactly and case-sensitively; targets without that exact key are skipped. `add` and the rename destination create names rather than select existing groups, so those new names are trimmed and validated separately. Differently cased group keys remain distinct.
 
-All group mutations also support `--dry-run`, `--draft`, `--change-note`, `--yes|-y`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, and structured-result behavior as condition mutations. A truthy `--no-description` and `--description` are mutually exclusive. Explicit `--no-description=false` is treated as absent, so it does not clear a description or satisfy `edit`'s required edit selection.
+All group mutations also support `--dry-run`, `--draft`, `--change-note`, `--yes|-y`, `--plan-out <path>`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, planning, and structured-result behavior as condition mutations. A truthy `--no-description` and `--description` are mutually exclusive. Explicit `--no-description=false` is treated as absent, so it does not clear a description or satisfy `edit`'s required edit selection.
 
 With root `--stateless`, project selection matches stateless `groups list` and
 `get`: exact `=project-id` selectors bypass discovery, while fuzzy,
@@ -1557,6 +1666,8 @@ Flags:
 --change-note <text>
                override the stored note for every selected draft
 -y, --yes      skip publish confirmations
+--plan-out <path>
+               write the rebased, validated candidates as a publication plan
 --json         print structured results
 ```
 
@@ -1737,6 +1848,7 @@ Flags:
 --override                               replace current config with import
 --merge-resolve current|import           auto-resolve merge conflicts
 --yes, -y                                skip final import confirmation
+--plan-out <path>                        write a validated publication plan instead
 --json                                   print the import result as JSON
 ```
 
@@ -2117,6 +2229,8 @@ Flags:
 --change-note <text>
             set the new version's change note
 -y, --yes   skip final publish confirmation
+--plan-out <path>
+            write a validated publication plan instead
 --json      print a structured operation result
 ```
 
@@ -2225,6 +2339,7 @@ Flags:
 --dry-run              preview the requested mutation without applying it
 --change-note <text>   set the change note
 -y, --yes              skip final publish confirmation
+--plan-out <path>      write a validated publication plan instead
 --json                 print promotion result JSON
 ```
 

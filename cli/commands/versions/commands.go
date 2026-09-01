@@ -1,6 +1,7 @@
 package versions
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -27,7 +29,7 @@ func New(svc *core.Core) *cobra.Command {
 	contract.MustRegisterResponsePath(cmd, "diff", versionDiffResult{})
 	contract.MustRegisterResponsePath(cmd, "export", contract.ArtifactData{})
 	contract.MustRegisterResponsePath(cmd, "rollback", versionPublishResult{})
-	contract.MustRegisterResponsePath(cmd, "restore", versionPublishResult{})
+	contract.MustRegisterResponsePath(cmd, "restore", versionPublishResult{}, rc.PlanCreatedResult{})
 	return cmd
 }
 
@@ -426,6 +428,9 @@ func newVersionsRollbackCommand(svc *core.Core, restore bool) *cobra.Command {
 		shared.AddChangeNoteFlag(cmd)
 	}
 	shared.AddYesFlag(cmd, "Skip final publish confirmation")
+	if restore {
+		shared.AddPlanOutFlag(cmd)
+	}
 	cmd.Flags().Bool("json", false, "Print result as JSON")
 	return cmd
 }
@@ -475,6 +480,57 @@ func runVersionPublish(cmd *cobra.Command, svc *core.Core, query, selector strin
 	current, err := svc.GetRemoteConfigVersion(ctx, project.ProjectID, "current", false)
 	if err != nil {
 		return err
+	}
+	if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+		return planErr
+	} else if planning {
+		if current.Cache == nil || target.Cache == nil {
+			return fmt.Errorf("version plan requires complete current and source snapshots")
+		}
+		currentDigest, digestErr := publication.RemoteConfigDigest(current.Cache.RemoteConfig)
+		if digestErr != nil {
+			return digestErr
+		}
+		targetDigest, digestErr := publication.RemoteConfigDigest(target.Cache.RemoteConfig)
+		if digestErr != nil {
+			return digestErr
+		}
+		action := publication.ActionNone
+		validationSource := core.ValidationSourceLocal
+		if currentDigest != targetDigest {
+			action = publication.ActionPublish
+			validationSource = core.ValidationSourceFirebase
+			if validationErr := svc.ValidatePublicationCandidate(ctx, project.ProjectID, current.Cache.RemoteConfig, target.Cache.RemoteConfig, current.Cache.ETag, "versions-restore"); validationErr != nil {
+				return validationErr
+			}
+		}
+		environment, environmentErr := core.PublicationEnvironmentForContext(ctx)
+		if environmentErr != nil {
+			return environmentErr
+		}
+		parsedTarget, targetErr := rctarget.Parse(project.ProjectID)
+		if targetErr != nil {
+			return targetErr
+		}
+		publicationPlan := publication.New(cmd.Root().Version, "versions.restore", environment.Policy, changeNote)
+		publicationPlan.Execution.HooksEnabled = environment.HooksEnabled
+		publicationPlan.Execution.HookDefinitionSHA256 = environment.HookDefinitionSHA256
+		publicationPlan.Operation.Selection, targetErr = json.Marshal(struct {
+			RequestedVersion string `json:"requested_version"`
+			SourceVersion    string `json:"source_version"`
+		}{RequestedVersion: selector, SourceVersion: target.Version.VersionNumber})
+		if targetErr != nil {
+			return targetErr
+		}
+		publicationPlan.Targets = append(publicationPlan.Targets, publication.Target{
+			Target: project.ProjectID, ProjectID: parsedTarget.ProjectID, Template: string(parsedTarget.Kind), Action: action, ChangeNote: changeNote,
+			Base:       publication.Snapshot{Version: current.Version.VersionNumber, ETag: current.Cache.ETag, RemoteConfig: current.Cache.RemoteConfig},
+			Candidate:  publication.Snapshot{Version: target.Version.VersionNumber, RemoteConfig: target.Cache.RemoteConfig},
+			Validation: publication.Validation{Source: validationSource, ValidatedAt: publicationPlan.CreatedAt},
+			Source:     publication.Source{Kind: "version_restore", Fingerprint: target.Version.VersionNumber},
+		})
+		_, writeErr := rc.WritePublicationPlan(cmd, publicationPlan, planPath)
+		return writeErr
 	}
 	if current.Version.VersionNumber == target.Version.VersionNumber {
 		if jsonOut {

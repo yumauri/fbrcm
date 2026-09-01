@@ -23,11 +23,13 @@
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
     "app.warning_runtime": "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
+    "apply.no_change_success": "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
     "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
     "contract.artifact_runtime": "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
     "contract.batch_runtime": "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
     "draft.publish_success": "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
+    "plan.metadata_success": "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
     "profile.root_success": "cli/commands/profile/commands_test.go#TestProfileRootJSON",
     "schemagen.determinism": "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
     "theme.mutation_success": "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
@@ -167,6 +169,96 @@
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
             "e2e:parameter_add_stateless_json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "apply",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "evidence": [
+            "app.outcomes",
+            "contract.batch_runtime"
+          ]
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants"
+          ]
+        },
+        "selection": {
+          "evidence": [
+            "app.selection"
+          ]
+        },
+        "stdin": {
+          "evidence": [
+            "app.stdin",
+            "app.stdin_restrictions"
+          ]
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "apply.no_change_success"
+          ]
+        },
+        "warning": {
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime"
           ]
         }
       }
@@ -5867,6 +5959,160 @@
             "app.response_invariants",
             "e2e:personalizations_show_json",
             "e2e:personalizations_show_stateless_json"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "plan.show",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "evidence": [
+            "app.stdin",
+            "app.stdin_restrictions"
+          ]
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "plan.metadata_success"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "plan.validate",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "evidence": [
+            "app.stdin",
+            "app.stdin_restrictions"
+          ]
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "plan.metadata_success"
           ]
         },
         "warning": {

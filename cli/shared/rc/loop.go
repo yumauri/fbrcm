@@ -11,6 +11,7 @@ import (
 
 	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/cli/progress"
+	"github.com/yumauri/fbrcm/cli/shared/planflag"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/display"
@@ -60,6 +61,7 @@ type RemoteMutationTotals struct {
 	Results          []RemoteMutationResult
 	DefaultScope     bool
 	ResolvedTargets  int
+	Plan             *PlanCreatedResult
 }
 
 func (t RemoteMutationTotals) failedProjectIDs() []string {
@@ -181,6 +183,11 @@ func RunRemoteDraftLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core,
 // independently. Project-scoped failures are reported and do not stop later
 // projects. Conflicts are left for a fresh, explicitly reviewed retry.
 func RunRemotePublishLoop(ctx context.Context, cmd *cobra.Command, svc *core.Core, projects []core.Project, defaultScope bool, operation, publishedEmoji string, plan RemoteMutationPlanner) (RemoteMutationTotals, error) {
+	if path, planning, err := planflag.OutputPath(cmd); err != nil {
+		return RemoteMutationTotals{}, err
+	} else if planning {
+		return runRemotePlanLoop(ctx, cmd, svc, projects, defaultScope, operation, path, plan)
+	}
 	totals := RemoteMutationTotals{DefaultScope: defaultScope, ResolvedTargets: len(projects)}
 	if len(projects) > 1 && !firebase.IsDryRun(ctx) {
 		jsonOut, _ := cmd.Flags().GetBool("json")
@@ -330,6 +337,15 @@ type SelectionMetadata struct {
 // has finished, keeping outcomes together at the end of the run.
 func WriteRemoteMutationResults(cmd *cobra.Command, totals RemoteMutationTotals, operation, publishedEmoji string) error {
 	jsonOut, _ := cmd.Flags().GetBool("json")
+	if totals.Plan != nil {
+		if jsonOut {
+			encoder := json.NewEncoder(cmd.OutOrStdout())
+			encoder.SetIndent("", "  ")
+			return encoder.Encode(totals.Plan)
+		}
+		_, err := fmt.Fprintf(cmd.OutOrStdout(), "Publication plan written to %s\nPlan ID: %s\nTargets: %d to publish, %d unchanged\n", totals.Plan.Path, totals.Plan.PlanID, totals.Plan.PublishTargetCount, totals.Plan.UnchangedTargetCount)
+		return err
+	}
 	if jsonOut {
 		draft, _ := cmd.Flags().GetBool("draft")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")

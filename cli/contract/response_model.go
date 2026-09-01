@@ -927,10 +927,11 @@ func CapabilitySupportSchema() map[string]any {
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []string{"dry_run", "draft", "confirmation_bypass", "stdin", "stateless"},
+		"required":             []string{"dry_run", "draft", "plan", "confirmation_bypass", "stdin", "stateless"},
 		"properties": map[string]any{
 			"dry_run":             map[string]any{"type": "boolean"},
 			"draft":               map[string]any{"type": "boolean"},
+			"plan":                map[string]any{"type": "boolean"},
 			"confirmation_bypass": map[string]any{"type": "boolean"},
 			"stdin":               map[string]any{"type": "boolean"},
 			"stateless":           map[string]any{"type": "boolean"},
@@ -1020,6 +1021,10 @@ func semanticStringEnum(typeOf reflect.Type) []string {
 		return []string{"unchanged", "preparation-failed", "published", "validation-failed", "conflict", "publish-failed", "published-cache-failed", "published-hook-failed", "drafted", "would-draft", "would-publish", "draft-failed"}
 	case "github.com/yumauri/fbrcm/cli/shared/rc.NoOpReason":
 		return []string{"no_match", "already_applied"}
+	case "github.com/yumauri/fbrcm/cli/commands/apply.Status":
+		return []string{"unchanged", "would-publish", "published", "already-applied", "conflict", "publish-failed", "published-hook-failed", "published-cache-failed"}
+	case "github.com/yumauri/fbrcm/core/rc/publication.Action":
+		return []string{"none", "publish"}
 	case "github.com/yumauri/fbrcm/core/config.ProjectAliasSource":
 		return []string{
 			string(coreconfig.ProjectAliasSourceFBRCM),

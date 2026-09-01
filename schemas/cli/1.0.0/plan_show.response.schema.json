@@ -1,0 +1,242 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "command_id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "execution_policy": {
+          "enum": [
+            "stateful",
+            "stateless"
+          ],
+          "type": "string"
+        },
+        "hooks_enabled": {
+          "type": "boolean"
+        },
+        "plan_id": {
+          "type": "string"
+        },
+        "producer_version": {
+          "type": "string"
+        },
+        "publish_target_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "target_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "targets": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "none",
+                  "publish"
+                ],
+                "type": "string"
+              },
+              "base_sha256": {
+                "type": "string"
+              },
+              "base_version": {
+                "type": "string"
+              },
+              "candidate_sha256": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "validation_source": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/validation_source",
+                "enum": [
+                  "local",
+                  "firebase"
+                ]
+              }
+            },
+            "required": [
+              "action",
+              "base_sha256",
+              "base_version",
+              "candidate_sha256",
+              "target",
+              "validation_source"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "command_id",
+        "created_at",
+        "execution_policy",
+        "hooks_enabled",
+        "plan_id",
+        "producer_version",
+        "publish_target_count",
+        "target_count",
+        "targets"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "command.canceled",
+                      "command.timeout",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "plan.integrity_failed",
+                      "plan.invalid",
+                      "plan.unsupported_version"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "plan.show"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

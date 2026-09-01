@@ -45,8 +45,8 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 			currentCount++
 		}
 	}
-	if currentCount != index.Count*2+10 {
-		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+10)
+	if currentCount != index.Count*2+12 {
+		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+12)
 	}
 	seen := make(map[string]bool, index.Count)
 	for _, capability := range detailed {
@@ -320,7 +320,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		t.Fatalf("root version flag should publish -v: %#v", rootCapability.Flags)
 	}
 	statelessCacheWriters := map[string]bool{
-		"add": true, "delete": true, "duplicate": true, "get": true, "update": true,
+		"add": true, "apply": true, "delete": true, "duplicate": true, "get": true, "update": true,
 		"conditions.add": true, "conditions.delete": true, "conditions.edit": true, "conditions.list": true,
 		"conditions.move": true, "conditions.rename": true, "conditions.show": true, "conditions.validate": true,
 		"experiments.list": true, "experiments.show": true,
@@ -807,7 +807,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		}
 	}
 	if want := []string{
-		"add",
+		"add", "apply",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"delete", "duplicate", "experiments.delete", "experiments.list", "experiments.show", "get",
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
@@ -2607,7 +2607,7 @@ func TestArtifactSchemaRejectsContradictoryRepresentations(t *testing.T) {
 func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.T) {
 	root := NewRootForContract("test")
 	partialCommands := map[string]bool{
-		"add": true, "conditions.add": true, "conditions.delete": true, "conditions.edit": true,
+		"add": true, "apply": true, "conditions.add": true, "conditions.delete": true, "conditions.edit": true,
 		"conditions.move": true, "conditions.rename": true, "delete": true, "draft.publish": true,
 		"duplicate": true, "groups.add": true, "groups.delete": true, "groups.edit": true,
 		"groups.rename": true, "project.import": true, "projects.promote": true, "update": true,
@@ -2615,6 +2615,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 	}
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	warningsByCommand := map[string][]string{
+		"apply":             {"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
 		"get":               {"cache.stale"},
 		"theme.import":      {"theme.already_exists"},
 		"conditions.add":    postPublication,

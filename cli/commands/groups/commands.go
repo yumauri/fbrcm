@@ -47,7 +47,7 @@ func New(svc *core.Core) *cobra.Command {
 	cmd.AddCommand(newListCommand(svc), newAddCommand(svc), newEditCommand(svc), newRenameCommand(svc), newDeleteCommand(svc))
 	contract.MustRegisterResponsePath(cmd, "list", []groupListJSON{})
 	for _, path := range []string{"add", "edit", "rename", "delete"} {
-		contract.MustRegisterResponsePath(cmd, path, []sharedrc.RemoteMutationJSONResult{})
+		contract.MustRegisterResponsePath(cmd, path, []sharedrc.RemoteMutationJSONResult{}, sharedrc.PlanCreatedResult{})
 	}
 	return cmd
 }

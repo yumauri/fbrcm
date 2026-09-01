@@ -33,6 +33,32 @@
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:input",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "dry-run"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "yes"
+            ]
+          }
+        }
+      }
+    }
+  ],
   "properties": {
     "arguments": {
       "additionalProperties": false,
@@ -78,6 +104,11 @@
         "no-local-config": {
           "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
           "type": "boolean"
+        },
+        "plan-out": {
+          "description": "Write an immutable validated publication plan instead of applying the mutation",
+          "pattern": ".*\\S.*",
+          "type": "string"
         },
         "profile": {
           "allOf": [

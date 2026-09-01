@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
@@ -78,6 +79,8 @@ func stageGeneratedContract(stageRoot string) {
 	writeSchema("stdin.oauth_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:oauth_credentials", "Google OAuth client credential JSON", oauthCredentialSchema()))
 	writeSchema("stdin.service_account_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:service_account_credentials", "Google service-account credential JSON", serviceAccountCredentialSchema()))
 	writeSchema("stdin.theme.schema.json", themeStdinSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:theme"))
+	writeSchema("stdin.publication_plan.schema.json", publicationPlanSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:publication_plan"))
+	writeSchema("publication_plan.schema.json", publicationPlanSchema(publication.SchemaID))
 	for _, capability := range detailed {
 		command := root
 		if capability.ID != "root" {
@@ -348,6 +351,52 @@ func remoteConfigImportStdinSchema(id string) map[string]any {
 	return document
 }
 
+func publicationPlanSchema(id string) map[string]any {
+	schema := contract.SchemaForDTO(publication.Plan{})
+	schema["$schema"] = draft
+	schema["$id"] = id
+	schema["description"] = "Immutable, self-contained fbrcm Remote Config publication plan"
+	properties := schema["properties"].(map[string]any)
+	properties["kind"] = map[string]any{"const": publication.Kind}
+	properties["format_version"] = map[string]any{"const": publication.FormatVersion}
+	properties["plan_id"] = map[string]any{"type": "string", "pattern": `^sha256:[0-9a-f]{64}$`}
+	producer := properties["producer"].(map[string]any)
+	producer["properties"].(map[string]any)["name"] = map[string]any{"type": "string", "minLength": 1}
+	operation := properties["operation"].(map[string]any)
+	operation["properties"].(map[string]any)["command_id"] = map[string]any{"type": "string", "minLength": 1}
+
+	execution := properties["execution"].(map[string]any)
+	executionProperties := execution["properties"].(map[string]any)
+	executionProperties["policy"] = map[string]any{"type": "string", "enum": []string{"stateful", "stateless"}}
+	executionProperties["hook_definition_sha256"] = map[string]any{"type": "string", "pattern": `^(?:|[0-9a-f]{64})$`}
+	execution["allOf"] = []any{map[string]any{
+		"if":   map[string]any{"properties": map[string]any{"hooks_enabled": map[string]any{"const": true}}, "required": []string{"hooks_enabled"}},
+		"then": map[string]any{"properties": map[string]any{"hook_definition_sha256": map[string]any{"pattern": `^[0-9a-f]{64}$`}}, "required": []string{"hook_definition_sha256"}},
+	}}
+
+	target := properties["targets"].(map[string]any)["items"].(map[string]any)
+	targetProperties := target["properties"].(map[string]any)
+	targetProperties["target"] = map[string]any{"type": "string", "minLength": 1}
+	targetProperties["project_id"] = map[string]any{"type": "string", "minLength": 1}
+	targetProperties["template_kind"] = map[string]any{"type": "string", "enum": []string{"client", "server"}}
+	targetProperties["action"] = map[string]any{"type": "string", "enum": []string{string(publication.ActionNone), string(publication.ActionPublish)}}
+	for _, name := range []string{"base", "candidate"} {
+		snapshot := targetProperties[name].(map[string]any)
+		snapshotProperties := snapshot["properties"].(map[string]any)
+		snapshotProperties["sha256"] = map[string]any{"type": "string", "pattern": `^[0-9a-f]{64}$`}
+		snapshotProperties["remote_config"] = contract.SchemaForDTO(firebase.RemoteConfig{})
+	}
+	validation := targetProperties["validation"].(map[string]any)
+	validation["properties"].(map[string]any)["source"] = map[string]any{"type": "string", "enum": []string{"local", "firebase"}}
+	source := targetProperties["source"].(map[string]any)
+	source["properties"].(map[string]any)["kind"] = map[string]any{"type": "string", "minLength": 1}
+	target["allOf"] = []any{map[string]any{
+		"if":   map[string]any{"properties": map[string]any{"action": map[string]any{"const": string(publication.ActionPublish)}}, "required": []string{"action"}},
+		"then": map[string]any{"properties": map[string]any{"base": map[string]any{"properties": map[string]any{"etag": map[string]any{"type": "string", "minLength": 1}}, "required": []string{"etag"}}}},
+	}}
+	return schema
+}
+
 func themeStdinSchema(id string) map[string]any {
 	color := map[string]any{"type": "string", "anyOf": []any{
 		map[string]any{"pattern": `^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$`},
@@ -541,6 +590,7 @@ func warningObjectSchema() map[string]any {
 		"publication.cache_stale":              object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cache"}}),
 		"publication.draft_cleanup_failed":     object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cleanup"}}),
 		"publication.post_publish_hook_failed": object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "post_publish_hook"}}),
+		"plan.source_draft_changed":            object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "source_draft"}}),
 		"theme.already_exists":                 object([]string{"path"}, map[string]any{"path": map[string]any{"type": "string", "minLength": 1}}),
 	}
 	constraints := make([]any, 0, len(detailsByCode))
@@ -1070,6 +1120,12 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		delete(theme, "$id")
 		definitions["theme"] = theme
 		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/theme"}}}
+	case slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID):
+		plan := publicationPlanSchema("")
+		delete(plan, "$schema")
+		delete(plan, "$id")
+		definitions["publication_plan"] = plan
+		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/publication_plan"}}}
 	}
 	result := map[string]any{"$schema": draft, "$id": capability.InvocationSchema, "$defs": definitions, "type": "object", "additionalProperties": false, "required": []string{"arguments", "options", "stdin"}, "properties": map[string]any{"arguments": map[string]any{"type": "object", "additionalProperties": false, "required": required, "properties": arguments}, "options": map[string]any{"type": "object", "additionalProperties": false, "required": requiredOptions, "properties": options}, "stdin": stdin}}
 	if slices.Contains([]string{"auth.add.oauth", "auth.add.service-account", "project.import"}, capability.ID) {
@@ -2764,6 +2820,8 @@ func commandReachableOutcomes(capability contract.Capability, successDataSchema 
 func commandWarningCodes(commandID string) []string {
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	switch commandID {
+	case "apply":
+		return []string{"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"}
 	case "get":
 		return []string{"cache.stale"}
 	case "add", "delete", "duplicate", "update",
