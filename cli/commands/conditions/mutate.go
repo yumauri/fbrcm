@@ -249,6 +249,7 @@ func addMutationFlags(cmd *cobra.Command) {
 	shared.AddDryRunFlag(cmd)
 	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Print diff and apply without confirmation")
+	shared.AddPlanOutFlag(cmd)
 	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
 }
 

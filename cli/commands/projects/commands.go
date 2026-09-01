@@ -8,6 +8,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/cli/shared"
+	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
@@ -23,7 +24,7 @@ func New(svc *core.Core) *cobra.Command {
 	contract.MustRegisterResponsePath(projectsCmd, "update", []shared.ProjectJSON{})
 	contract.MustRegisterResponsePath(projectsCmd, "forget", projectsForgetResult{})
 	contract.MustRegisterResponsePath(projectsCmd, "diff", compareResult{})
-	contract.MustRegisterResponsePath(projectsCmd, "promote", promoteResult{})
+	contract.MustRegisterResponsePath(projectsCmd, "promote", promoteResult{}, sharedrc.PlanCreatedResult{})
 	contract.MustRegisterResponsePath(projectsCmd, "aliases list", []projectAliasRow{})
 	contract.MustRegisterResponsePath(projectsCmd, "aliases set", projectAliasSetResult{})
 	contract.MustRegisterResponsePath(projectsCmd, "aliases remove", projectAliasRemoveResult{})

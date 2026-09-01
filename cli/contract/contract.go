@@ -25,6 +25,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/core/rc/importer"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	"github.com/yumauri/fbrcm/schemas"
 )
 
@@ -868,6 +869,21 @@ func Classify(err error) Problem {
 			Kind   string `json:"kind"`
 			Source string `json:"source"`
 		}{Kind: "validation", Source: remoteValidation.Source}
+		return problem
+	}
+	if planErr, ok := errors.AsType[*publication.Error](err); ok {
+		problem.Category = "validation"
+		problem.Details = struct {
+			Kind string `json:"kind"`
+		}{Kind: "publication_plan"}
+		switch planErr.Kind {
+		case publication.ErrorIntegrity:
+			problem.Code = "plan.integrity_failed"
+		case publication.ErrorUnsupportedVersion:
+			problem.Code = "plan.unsupported_version"
+		default:
+			problem.Code = "plan.invalid"
+		}
 		return problem
 	}
 	if pathErr, ok := errors.AsType[*os.PathError](err); ok {

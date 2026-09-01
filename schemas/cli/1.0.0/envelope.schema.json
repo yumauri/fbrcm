@@ -2170,6 +2170,34 @@
             "if": {
               "properties": {
                 "code": {
+                  "const": "plan.source_draft_changed"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "stage": {
+                      "const": "source_draft"
+                    }
+                  },
+                  "required": [
+                    "stage"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
                   "const": "publication.cache_stale"
                 }
               },
@@ -2313,6 +2341,7 @@
           "code": {
             "enum": [
               "cache.stale",
+              "plan.source_draft_changed",
               "publication.cache_stale",
               "publication.draft_cleanup_failed",
               "publication.non_atomic",

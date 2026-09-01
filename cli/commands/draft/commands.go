@@ -1,11 +1,13 @@
 package draft
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -18,6 +20,7 @@ import (
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -29,7 +32,7 @@ func New(svc *core.Core) *cobra.Command {
 	contract.MustRegisterResponsePath(cmd, "show", contract.ArtifactData{})
 	contract.MustRegisterResponsePath(cmd, "change-note", draftChangeNoteResult{})
 	contract.MustRegisterResponsePath(cmd, "diff", draftDiffResult{})
-	contract.MustRegisterResponsePath(cmd, "publish", []publishResult{})
+	contract.MustRegisterResponsePath(cmd, "publish", []publishResult{}, rc.PlanCreatedResult{})
 	contract.MustRegisterResponsePath(cmd, "discard", []draftDiscardResult{})
 	return cmd
 }
@@ -289,6 +292,7 @@ func newPublishCommand(svc *core.Core) *cobra.Command {
 	shared.AddDryRunFlag(cmd)
 	shared.AddChangeNoteFlag(cmd)
 	shared.AddYesFlag(cmd, "Skip publish confirmations")
+	shared.AddPlanOutFlag(cmd)
 	cmd.Flags().Bool("json", false, "Print results as JSON")
 	return cmd
 }
@@ -328,6 +332,11 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	ctx := shared.CommandContext(cmd)
+	if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+		return planErr
+	} else if planning {
+		return writeDraftPublicationPlan(ctx, cmd, svc, ids, changeNote, planPath)
+	}
 	if dry {
 		ctx = firebase.WithDryRun(ctx)
 	}
@@ -561,6 +570,67 @@ func runPublish(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return &shared.BatchError{Operation: "draft.publish", FailedTargets: failedTargets, Failures: targetFailures, SuccessfulTargetCount: successfulTargets, PublishedTargetCount: publishedTargets, Remediation: remediation, Err: fmt.Errorf("%d drafts failed", len(failedTargets))}
 	}
 	return nil
+}
+
+func writeDraftPublicationPlan(ctx context.Context, cmd *cobra.Command, svc *core.Core, ids []string, overrideNote *string, path string) error {
+	environment, err := core.PublicationEnvironmentForContext(ctx)
+	if err != nil {
+		return err
+	}
+	publicationPlan := publication.New(cmd.Root().Version, "draft.publish", environment.Policy, overrideNote)
+	publicationPlan.Execution.HooksEnabled = environment.HooksEnabled
+	publicationPlan.Execution.HookDefinitionSHA256 = environment.HookDefinitionSHA256
+	publicationPlan.Operation.Selection, err = json.Marshal(struct {
+		Targets []string `json:"targets"`
+	}{Targets: append([]string(nil), ids...)})
+	if err != nil {
+		return err
+	}
+	for _, projectID := range ids {
+		progress.Start("Preparing draft publication plan for " + projectID + "…")
+		draftPlan, err := svc.PrepareDraftPublish(ctx, projectID)
+		if err != nil {
+			return err
+		}
+		note := draftPlan.ChangeNote
+		if overrideNote != nil {
+			note = *overrideNote
+		}
+		notePointer := optionalString(note)
+		targetCtx := ctx
+		if notePointer != nil {
+			targetCtx, err = firebase.WithChangeNote(targetCtx, *notePointer)
+			if err != nil {
+				return err
+			}
+		}
+		action := publication.ActionNone
+		validationSource := core.ValidationSourceLocal
+		if draftPlan.HasChanges {
+			action = publication.ActionPublish
+			validationSource = core.ValidationSourceFirebase
+			if err := svc.ValidatePublicationCandidate(targetCtx, projectID, draftPlan.Latest.RemoteConfig, draftPlan.Candidate, draftPlan.Latest.ETag, "draft-publish"); err != nil {
+				return err
+			}
+		}
+		target, err := rctarget.Parse(projectID)
+		if err != nil {
+			return err
+		}
+		latestCfg, err := firebase.ParseRemoteConfig(draftPlan.Latest.RemoteConfig)
+		if err != nil {
+			return err
+		}
+		publicationPlan.Targets = append(publicationPlan.Targets, publication.Target{
+			Target: projectID, ProjectID: target.ProjectID, Template: string(target.Kind), Action: action, ChangeNote: notePointer,
+			Base:       publication.Snapshot{Version: latestCfg.Version.VersionNumber, ETag: draftPlan.Latest.ETag, RemoteConfig: draftPlan.Latest.RemoteConfig},
+			Candidate:  publication.Snapshot{RemoteConfig: draftPlan.Candidate},
+			Validation: publication.Validation{Source: validationSource, ValidatedAt: publicationPlan.CreatedAt},
+			Source:     publication.Source{Kind: "draft", Fingerprint: draftPlan.Draft.UpdatedAt.UTC().Format(time.RFC3339Nano)},
+		})
+	}
+	_, err = rc.WritePublicationPlan(cmd, publicationPlan, path)
+	return err
 }
 
 func markDraftFirebaseValidated(result *publishResult) {

@@ -43,7 +43,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 	contract.MustRegisterResponsePath(projectCmd, "open", projectOpenResult{})
 	contract.MustRegisterResponsePath(projectCmd, "export", contract.ArtifactData{})
-	contract.MustRegisterResponsePath(projectCmd, "import", importpkg.Result{})
+	contract.MustRegisterResponsePath(projectCmd, "import", importpkg.Result{}, rc.PlanCreatedResult{})
 	contract.MustRegisterResponsePath(projectCmd, "defaults", contract.ArtifactData{})
 	return projectCmd
 }
@@ -182,6 +182,7 @@ func newImportCommand(svc *core.Core) *cobra.Command {
 	cmd.Flags().Bool("override", false, "Replace current project config with imported config")
 	cmd.Flags().String("merge-resolve", "", "Conflict resolution for merge: current or import")
 	shared.AddYesFlag(cmd, "Skip final import confirmation")
+	shared.AddPlanOutFlag(cmd)
 	cmd.Flags().Bool("json", false, "Print import result as JSON")
 	cmd.MarkFlagsMutuallyExclusive("remove-all-conditions", "keep-portable-conditions-only")
 	cmd.MarkFlagsMutuallyExclusive("merge", "override")

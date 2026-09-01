@@ -54,7 +54,7 @@ func New(svc *core.Core) *cobra.Command {
 	}
 
 	addUpdateFlags(cmd)
-	contract.RegisterResponse(cmd, []sharedrc.RemoteMutationJSONResult{}, contract.ArtifactData{})
+	contract.RegisterResponse(cmd, []sharedrc.RemoteMutationJSONResult{}, sharedrc.PlanCreatedResult{}, contract.ArtifactData{})
 	return cmd
 }
 
@@ -66,6 +66,7 @@ func addUpdateFlags(cmd *cobra.Command) {
 	shared.AddChangeNoteFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and update without confirmation")
+	shared.AddPlanOutFlag(cmd)
 	cmd.Flags().String("description", "", "Parameter description")
 	cmd.Flags().String("group", "", "Target parameter group")
 	cmd.Flags().Bool("no-group", false, "Move parameter out of its group")
@@ -89,7 +90,7 @@ func runUpdateCommand(cmd *cobra.Command, svc *core.Core, args []string) error {
 		return err
 	}
 	if shared.StdinAvailable(cmd.InOrStdin()) {
-		if err := shared.RejectChangedFlags(cmd, "stdin mode", "project", "dry-run", "draft", "change-note"); err != nil {
+		if err := shared.RejectChangedFlags(cmd, "stdin mode", "project", "dry-run", "draft", "change-note", "plan-out"); err != nil {
 			return err
 		}
 		corelog.For("update").Info("stdin mode enabled; using remote config from stdin")

@@ -293,57 +293,97 @@
       "x-fbrcm-grammar": "optional mode prefix (= exact, ^ starts-with, / includes, ~ fuzzy) followed by query"
     },
     "input_selection_rule": {
-      "additionalProperties": false,
-      "properties": {
-        "later_sources": {
-          "const": "ignored_without_consumption"
-        },
-        "on_missing": {
-          "const": "interaction.required"
-        },
-        "operator": {
-          "const": "first_available"
-        },
-        "sources": {
-          "oneOf": [
-            {
-              "items": false,
-              "maxItems": 2,
-              "minItems": 2,
-              "prefixItems": [
-                {
-                  "const": "options.from"
-                },
-                {
-                  "const": "stdin.document"
-                }
-              ],
-              "type": "array"
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "later_sources": {
+              "const": "ignored_without_consumption"
             },
-            {
-              "items": false,
-              "maxItems": 2,
-              "minItems": 2,
-              "prefixItems": [
+            "on_missing": {
+              "const": "interaction.required"
+            },
+            "operator": {
+              "const": "first_available"
+            },
+            "sources": {
+              "oneOf": [
                 {
-                  "const": "arguments.source"
+                  "items": false,
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "const": "options.from"
+                    },
+                    {
+                      "const": "stdin.document"
+                    }
+                  ],
+                  "type": "array"
                 },
                 {
-                  "const": "stdin.document"
+                  "items": false,
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "const": "arguments.source"
+                    },
+                    {
+                      "const": "stdin.document"
+                    }
+                  ],
+                  "type": "array"
                 }
-              ],
-              "type": "array"
+              ]
             }
-          ]
+          },
+          "required": [
+            "operator",
+            "sources",
+            "on_missing",
+            "later_sources"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "missing_stdin": {
+              "const": "plan.invalid"
+            },
+            "non_stdin": {
+              "const": "read_file"
+            },
+            "operator": {
+              "const": "path_or_stdin_document"
+            },
+            "path": {
+              "const": "arguments.plan"
+            },
+            "stdin": {
+              "const": "stdin.document"
+            },
+            "stdin_path": {
+              "const": "-"
+            },
+            "unused_stdin": {
+              "const": "ignored_without_consumption"
+            }
+          },
+          "required": [
+            "operator",
+            "path",
+            "stdin",
+            "stdin_path",
+            "non_stdin",
+            "unused_stdin",
+            "missing_stdin"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "operator",
-        "sources",
-        "on_missing",
-        "later_sources"
-      ],
-      "type": "object"
+      ]
     },
     "input_selection_rules": {
       "items": {
@@ -1759,12 +1799,49 @@
               "const": "local_validate"
             },
             "validator": {
-              "const": "firebase.NormalizeRemoteConfigForUpdate"
+              "enum": [
+                "firebase.NormalizeRemoteConfigForUpdate",
+                "firebase.PrepareRemoteConfigUpdate"
+              ]
             }
           },
           "required": [
             "operator",
             "validator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "checks": {
+              "items": {
+                "enum": [
+                  "nonempty_targets",
+                  "canonical_target_order",
+                  "unique_target_ids",
+                  "snapshot_sha256",
+                  "none_snapshot_equality",
+                  "action_validation_provenance",
+                  "content_derived_plan_id"
+                ]
+              },
+              "maxItems": 7,
+              "minItems": 7,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "operator": {
+              "const": "publication_plan_integrity"
+            },
+            "validator": {
+              "const": "publication.Validate"
+            }
+          },
+          "required": [
+            "operator",
+            "validator",
+            "checks"
           ],
           "type": "object"
         },
@@ -1916,6 +1993,18 @@
           ],
           "result": "selected_input_source_or_interaction",
           "semantics": "Select the first declared file, URL, or redirected document source that is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."
+        },
+        "path_or_stdin_document": {
+          "operands": [
+            "path",
+            "stdin",
+            "stdin_path",
+            "non_stdin",
+            "unused_stdin",
+            "missing_stdin"
+          ],
+          "result": "selected_document_or_problem",
+          "semantics": "When the positional path equals stdin_path, consume and decode exactly one JSON document from stdin; otherwise read the named file and leave stdin unconsumed. Missing redirected stdin returns the declared typed problem."
         }
       },
       "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/input_selection_rules",
@@ -2342,7 +2431,7 @@
             "validator"
           ],
           "result": "accept_or_reject",
-          "semantics": "Decode a clone of the Remote Config template and require firebase.NormalizeRemoteConfigForUpdate to succeed before import transformations are applied."
+          "semantics": "Decode the Remote Config template and require the named local Firebase preparation validator to succeed without making a remote request."
         },
         "managed_feature_id": {
           "operands": [
@@ -2414,6 +2503,14 @@
           ],
           "result": "accept_or_reject",
           "semantics": "Apply the named runtime integer parsers to absolute and relative numeric components, require positive results, and reject a relative distance above the declared maximum."
+        },
+        "publication_plan_integrity": {
+          "operands": [
+            "validator",
+            "checks"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Require the named publication-plan validator to accept the complete document, including every declared content digest, ordering, uniqueness, action/provenance correlation, and content-derived plan ID check."
         },
         "reject_raw_whitespace_only": {
           "operands": [

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	addcmd "github.com/yumauri/fbrcm/cli/commands/add"
+	applycmd "github.com/yumauri/fbrcm/cli/commands/apply"
 	authcmd "github.com/yumauri/fbrcm/cli/commands/auth"
 	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
 	conditionscmd "github.com/yumauri/fbrcm/cli/commands/conditions"
@@ -25,6 +26,7 @@ import (
 	hookscmd "github.com/yumauri/fbrcm/cli/commands/hooks"
 	managedfeaturescmd "github.com/yumauri/fbrcm/cli/commands/managedfeatures"
 	metacmd "github.com/yumauri/fbrcm/cli/commands/meta"
+	plancmd "github.com/yumauri/fbrcm/cli/commands/plan"
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
@@ -67,6 +69,10 @@ func isContractMetadataCommand(cmd *cobra.Command) bool {
 	return strings.HasPrefix(cmd.CommandPath(), "fbrcm capabilities") ||
 		strings.HasPrefix(cmd.CommandPath(), "fbrcm schema") ||
 		strings.HasPrefix(cmd.CommandPath(), "fbrcm completion")
+}
+
+func isPlanMetadataCommand(cmd *cobra.Command) bool {
+	return strings.HasPrefix(cmd.CommandPath(), "fbrcm plan")
 }
 
 func newRootCommand(s *core.Core, version, commit, date string) *cobra.Command {
@@ -166,7 +172,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 				return shared.InvalidArgument(err)
 			}
 			config.SetLocalConfigDisabled(noLocalConfig || stateless)
-			if cmd.Name() == "help" || contract.IsCommandGroup(cmd) || isConfigCommand(cmd) || isThemeCommand(cmd) || isHooksCommand(cmd) || isProjectAliasesCommand(cmd) || isContractMetadataCommand(cmd) {
+			if cmd.Name() == "help" || contract.IsCommandGroup(cmd) || isConfigCommand(cmd) || isThemeCommand(cmd) || isHooksCommand(cmd) || isProjectAliasesCommand(cmd) || isContractMetadataCommand(cmd) || isPlanMetadataCommand(cmd) {
 				initOfflineMode(shared.CommandContext(cmd), false)
 				return nil
 			}
@@ -222,6 +228,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.PersistentFlags().Duration("timeout", 0, "Maximum duration for the complete command")
 
 	rootCmd.AddCommand(addcmd.New(s))
+	rootCmd.AddCommand(applycmd.New(s))
 	rootCmd.AddCommand(authcmd.New(s))
 	rootCmd.AddCommand(cachecmd.New())
 	rootCmd.AddCommand(conditionscmd.New(s))
@@ -236,6 +243,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(hookscmd.New())
 	rootCmd.AddCommand(managedfeaturescmd.NewPersonalizations(s))
 	rootCmd.AddCommand(profilecmd.New())
+	rootCmd.AddCommand(plancmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))
 	rootCmd.AddCommand(projectscmd.New(s))
 	rootCmd.AddCommand(themecmd.New())

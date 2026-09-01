@@ -1128,6 +1128,30 @@
         "options": {
           "not": {
             "required": [
+              "plan-out",
+              "draft"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "dry-run"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
               "remove-all-conditions",
               "keep-portable-conditions-only"
             ]
@@ -1142,6 +1166,18 @@
             "required": [
               "merge",
               "override"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "plan-out",
+              "yes"
             ]
           }
         }
@@ -1328,6 +1364,21 @@
         "override": {
           "description": "Replace current project config with imported config",
           "type": "boolean"
+        },
+        "plan-out": {
+          "description": "Write an immutable validated publication plan instead of applying the mutation",
+          "not": {
+            "const": "-"
+          },
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
         },
         "profile": {
           "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",

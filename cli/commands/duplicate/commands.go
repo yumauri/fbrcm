@@ -47,8 +47,9 @@ func New(svc *core.Core) *cobra.Command {
 	shared.AddChangeNoteFlag(cmd)
 	cmd.Flags().Bool("draft", false, "Save changes to a local draft instead of publishing")
 	shared.AddYesFlag(cmd, "Print diff and duplicate without confirmation")
+	shared.AddPlanOutFlag(cmd)
 	cmd.Flags().Bool("json", false, "Print mutation results as JSON")
-	contract.RegisterResponse(cmd, []sharedrc.RemoteMutationJSONResult{})
+	contract.RegisterResponse(cmd, []sharedrc.RemoteMutationJSONResult{}, sharedrc.PlanCreatedResult{})
 	return cmd
 }
 

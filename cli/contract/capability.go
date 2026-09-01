@@ -19,6 +19,7 @@ const commandGroupAnnotation = "fbrcm.contract.command-group"
 type Support struct {
 	DryRun             bool `json:"dry_run"`
 	Draft              bool `json:"draft"`
+	Plan               bool `json:"plan"`
 	ConfirmationBypass bool `json:"confirmation_bypass"`
 	Stdin              bool `json:"stdin"`
 	Stateless          bool `json:"stateless"`
@@ -388,16 +389,34 @@ func describe(cmd *cobra.Command) Capability {
 	}
 	behavior = withMachineAuthenticationEffects(id, behavior)
 	behavior = withJSONEnvelopeProfileBootstrap(behavior)
-	support := Support{DryRun: hasFlag(cmd, "dry-run"), Draft: hasFlag(cmd, "draft"), ConfirmationBypass: hasFlag(cmd, "yes"), Stdin: behavior.stdin, Stateless: SupportsStatelessCommand(id)}
+	if hasFlag(cmd, "plan-out") {
+		behavior = withPlanOutputEffects(behavior)
+	}
+	support := Support{DryRun: hasFlag(cmd, "dry-run"), Draft: hasFlag(cmd, "draft"), Plan: hasFlag(cmd, "plan-out"), ConfirmationBypass: hasFlag(cmd, "yes"), Stdin: behavior.stdin, Stateless: SupportsStatelessCommand(id)}
 	interaction := InteractionCapability{Mode: "none", JSONBehavior: "non_interactive"}
 	interactionWhen := cloneConditions(behavior.interactionWhen)
 	if support.ConfirmationBypass {
 		interaction = InteractionCapability{Mode: "optional", JSONBehavior: "confirmation_required_without_bypass"}
 		if !containsPredicate(interactionWhen, "option", "yes", "equals") {
-			interactionWhen = append(interactionWhen, conditionClause(
+			confirmation := conditionClause(
 				predicate("option", "yes", "equals", false),
 				predicate("runtime_state", "confirmation", "required", nil),
-			))
+			)
+			if support.Plan {
+				confirmation.AllOf = append(confirmation.AllOf, predicate("option", "plan-out", "equals", ""))
+			}
+			interactionWhen = append(interactionWhen, confirmation)
+		}
+	}
+	if support.Plan {
+		for index := range interactionWhen {
+			if slices.ContainsFunc(interactionWhen[index].AllOf, func(item BehaviorPredicate) bool {
+				return item.Source == "option" && item.Name == "yes" && item.Operator == "equals"
+			}) && !slices.ContainsFunc(interactionWhen[index].AllOf, func(item BehaviorPredicate) bool {
+				return item.Source == "option" && item.Name == "plan-out" && item.Operator == "equals"
+			}) {
+				interactionWhen[index].AllOf = append(interactionWhen[index].AllOf, predicate("option", "plan-out", "equals", ""))
+			}
 		}
 	}
 	if behavior.interaction != nil {
@@ -435,6 +454,8 @@ func describe(cmd *cobra.Command) Capability {
 			kind = "service_account_credentials"
 		case "theme.import":
 			kind = "theme"
+		case "apply", "plan.show", "plan.validate":
+			kind = "publication_plan"
 		}
 		value := "urn:fbrcm:schema:cli:" + Version + ":stdin:" + kind
 		stdinSchema = &value
@@ -456,6 +477,7 @@ func describe(cmd *cobra.Command) Capability {
 
 func profileOptionIgnored(id string) bool {
 	return id == "help" || id == "capabilities" || strings.HasPrefix(id, "schema.") ||
+		strings.HasPrefix(id, "plan.") ||
 		strings.HasPrefix(id, "config.") || strings.HasPrefix(id, "hooks.") ||
 		strings.HasPrefix(id, "projects.aliases.") || strings.HasPrefix(id, "theme")
 }

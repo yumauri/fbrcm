@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/core/firebase"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
@@ -78,6 +79,8 @@ func stageGeneratedContract(stageRoot string) {
 	writeSchema("stdin.oauth_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:oauth_credentials", "Google OAuth client credential JSON", oauthCredentialSchema()))
 	writeSchema("stdin.service_account_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:service_account_credentials", "Google service-account credential JSON", serviceAccountCredentialSchema()))
 	writeSchema("stdin.theme.schema.json", themeStdinSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:theme"))
+	writeSchema("stdin.publication_plan.schema.json", publicationPlanSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:publication_plan"))
+	writeSchema("publication_plan.schema.json", publicationPlanSchema(publication.SchemaID))
 	for _, capability := range detailed {
 		command := root
 		if capability.ID != "root" {
@@ -348,6 +351,73 @@ func remoteConfigImportStdinSchema(id string) map[string]any {
 	return document
 }
 
+func publicationPlanSchema(id string) map[string]any {
+	schema := contract.SchemaForDTO(publication.Plan{})
+	schema["$schema"] = draft
+	schema["$id"] = id
+	schema["description"] = "Immutable, self-contained fbrcm Remote Config publication plan"
+	schema["x-fbrcm-validation"] = []any{map[string]any{
+		"operator": "publication_plan_integrity", "validator": "publication.Validate",
+		"checks": []any{"nonempty_targets", "canonical_target_order", "unique_target_ids", "snapshot_sha256", "none_snapshot_equality", "action_validation_provenance", "content_derived_plan_id"},
+	}}
+	properties := schema["properties"].(map[string]any)
+	properties["kind"] = map[string]any{"const": publication.Kind}
+	properties["format_version"] = map[string]any{"const": publication.FormatVersion}
+	properties["plan_id"] = map[string]any{"type": "string", "pattern": `^sha256:[0-9a-f]{64}$`}
+	producer := properties["producer"].(map[string]any)
+	producer["properties"].(map[string]any)["name"] = map[string]any{"type": "string", "pattern": `.*\S.*`}
+	operation := properties["operation"].(map[string]any)
+	operation["properties"].(map[string]any)["command_id"] = map[string]any{"type": "string", "pattern": `.*\S.*`}
+
+	execution := properties["execution"].(map[string]any)
+	executionProperties := execution["properties"].(map[string]any)
+	executionProperties["policy"] = map[string]any{"type": "string", "enum": []string{"stateful", "stateless"}}
+	executionProperties["hook_definition_sha256"] = map[string]any{"type": "string", "pattern": `^(?:|[0-9a-f]{64})$`}
+	execution["allOf"] = []any{map[string]any{
+		"if":   map[string]any{"properties": map[string]any{"hooks_enabled": map[string]any{"const": true}}, "required": []string{"hooks_enabled"}},
+		"then": map[string]any{"properties": map[string]any{"hook_definition_sha256": map[string]any{"pattern": `^[0-9a-f]{64}$`}}, "required": []string{"hook_definition_sha256"}},
+	}}
+
+	targetCollection := properties["targets"].(map[string]any)
+	targetCollection["type"] = "array"
+	targetCollection["minItems"] = 1
+	target := targetCollection["items"].(map[string]any)
+	targetProperties := target["properties"].(map[string]any)
+	targetProperties["target"] = map[string]any{"type": "string", "pattern": `.*\S.*`}
+	targetProperties["project_id"] = map[string]any{"type": "string", "pattern": `.*\S.*`}
+	targetProperties["template_kind"] = map[string]any{"type": "string", "enum": []string{"client", "server"}}
+	targetProperties["action"] = map[string]any{"type": "string", "enum": []string{string(publication.ActionNone), string(publication.ActionPublish)}}
+	for _, name := range []string{"base", "candidate"} {
+		snapshot := targetProperties[name].(map[string]any)
+		snapshotProperties := snapshot["properties"].(map[string]any)
+		snapshotProperties["sha256"] = map[string]any{"type": "string", "pattern": `^[0-9a-f]{64}$`}
+		remoteConfig := contract.SchemaForDTO(firebase.RemoteConfig{})
+		loosenRemoteConfigForStdin(remoteConfig)
+		remoteConfig["x-fbrcm-validation"] = []any{map[string]any{
+			"operator": "local_validate", "validator": "firebase.PrepareRemoteConfigUpdate",
+		}}
+		snapshotProperties["remote_config"] = remoteConfig
+	}
+	validation := targetProperties["validation"].(map[string]any)
+	validation["properties"].(map[string]any)["source"] = map[string]any{"type": "string", "enum": []string{"local", "firebase"}}
+	source := targetProperties["source"].(map[string]any)
+	source["properties"].(map[string]any)["kind"] = map[string]any{"type": "string", "pattern": `.*\S.*`}
+	target["allOf"] = []any{
+		map[string]any{
+			"if": map[string]any{"properties": map[string]any{"action": map[string]any{"const": string(publication.ActionPublish)}}, "required": []string{"action"}},
+			"then": map[string]any{"properties": map[string]any{
+				"base":       map[string]any{"properties": map[string]any{"etag": map[string]any{"type": "string", "pattern": `.*\S.*`}}, "required": []string{"etag"}},
+				"validation": map[string]any{"properties": map[string]any{"source": map[string]any{"const": "firebase"}}, "required": []string{"source"}},
+			}},
+		},
+		map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"action": map[string]any{"const": string(publication.ActionNone)}}, "required": []string{"action"}},
+			"then": map[string]any{"properties": map[string]any{"validation": map[string]any{"properties": map[string]any{"source": map[string]any{"const": "local"}}, "required": []string{"source"}}}},
+		},
+	}
+	return schema
+}
+
 func themeStdinSchema(id string) map[string]any {
 	color := map[string]any{"type": "string", "anyOf": []any{
 		map[string]any{"pattern": `^#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3})?$`},
@@ -541,6 +611,7 @@ func warningObjectSchema() map[string]any {
 		"publication.cache_stale":              object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cache"}}),
 		"publication.draft_cleanup_failed":     object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cleanup"}}),
 		"publication.post_publish_hook_failed": object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "post_publish_hook"}}),
+		"plan.source_draft_changed":            object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "source_draft"}}),
 		"theme.already_exists":                 object([]string{"path"}, map[string]any{"path": map[string]any{"type": "string", "minLength": 1}}),
 	}
 	constraints := make([]any, 0, len(detailsByCode))
@@ -762,7 +833,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		"properties": map[string]any{
 			"source":   map[string]any{"enum": []string{"argument", "option", "stdin", "context", "runtime_state"}},
 			"name":     map[string]any{"type": "string", "minLength": 1},
-			"operator": map[string]any{"enum": []string{"equals", "absent", "present", "not_usable", "configured_for_event", "executed", "not_executed", "conflicts", "write_authorized", "write_succeeded", "delete_succeeded", "available", "has_changes", "has_no_changes", "is_destructive", "accepted", "cache_write_succeeded", "sync_required", "sync_write_succeeded", "succeeded", "requires_network", "requires_human_authorization", "credentials_reused", "token_persisted", "required", "authorized_or_not_required", "persisted", "is_directory", "is_single"}},
+			"operator": map[string]any{"enum": []string{"equals", "absent", "present", "not_usable", "configured_for_event", "executed", "not_executed", "conflicts", "write_authorized", "write_succeeded", "delete_succeeded", "available", "has_changes", "has_no_changes", "has_publish_targets", "has_no_publish_targets", "is_destructive", "accepted", "cache_write_succeeded", "sync_required", "sync_write_succeeded", "succeeded", "requires_network", "requires_human_authorization", "credentials_reused", "token_persisted", "required", "authorized_or_not_required", "persisted", "is_directory", "is_single"}},
 			"value":    map[string]any{"oneOf": []any{scalar, map[string]any{"type": "null"}}},
 		},
 		"allOf": []any{
@@ -773,7 +844,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}}, "required": []string{"source"}},
-				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication", "authentication", "quota_project_credentials", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
+				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication_plan", "source_draft_cleanup", "publication", "authentication", "quota_project_credentials", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "context"}}, "required": []string{"source"}},
@@ -801,6 +872,14 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		})
 	}
 	rules = append(rules,
+		map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}, "name": map[string]any{"const": "publication_plan"}}, "required": []string{"source", "name"}},
+			"then": map[string]any{"properties": map[string]any{"operator": map[string]any{"enum": []string{"has_publish_targets", "has_no_publish_targets"}}, "value": map[string]any{"type": "null"}}},
+		},
+		map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}, "name": map[string]any{"const": "source_draft_cleanup"}}, "required": []string{"source", "name"}},
+			"then": map[string]any{"properties": map[string]any{"operator": map[string]any{"const": "required"}, "value": map[string]any{"type": "null"}}},
+		},
 		map[string]any{
 			"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}, "name": map[string]any{"const": "theme_source"}}, "required": []string{"source", "name"}},
 			"then": map[string]any{"properties": map[string]any{"operator": map[string]any{"enum": []string{"requires_network", "is_directory", "is_single"}}, "value": map[string]any{"type": "null"}}},
@@ -957,6 +1036,9 @@ func runtimeStatePredicateSemantics() []any {
 		definition("output_destination", "write_authorized", "The command reached its destination write and either no conflicting destination existed or overwrite was explicitly authorized."),
 		definition("mutation_plan", "has_changes", "The completed command-specific plan differs from its comparison baseline and would perform the declared mutation when not previewed."),
 		definition("mutation_plan", "has_no_changes", "The completed command-specific plan is equal to its comparison baseline and requires no content mutation."),
+		definition("publication_plan", "has_publish_targets", "The validated publication plan contains at least one target whose recorded action is publish. Apply performs Firebase preflight reads for every such target, including targets that preflight classifies as already applied."),
+		definition("publication_plan", "has_no_publish_targets", "Every target in the validated publication plan has the recorded action none, so apply performs no Firebase preflight or publication request."),
+		definition("source_draft_cleanup", "required", "A non-dry-run stateful apply target records a draft source whose fingerprint still matches, and the target was either already applied or publication completed without a post-publication failure; apply then attempts to delete that source draft."),
 		definition("mutation_plan", "is_destructive", "The completed plan contains at least one removal, replacement, overwrite, or other command-specific destructive operation described by destructive_reasons."),
 		definition("publication", "accepted", "Firebase accepted the publication before any subsequent hook, cache, or local cleanup step."),
 		definition("authentication", "requires_network", "The selected authentication flow cannot reuse sufficient local credentials and must contact its identity provider or metadata service."),
@@ -1070,6 +1152,12 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		delete(theme, "$id")
 		definitions["theme"] = theme
 		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/theme"}}}
+	case slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID):
+		plan := publicationPlanSchema("")
+		delete(plan, "$schema")
+		delete(plan, "$id")
+		definitions["publication_plan"] = plan
+		stdin = map[string]any{"oneOf": []any{map[string]any{"type": "null"}, map[string]any{"$ref": "#/$defs/publication_plan"}}}
 	}
 	result := map[string]any{"$schema": draft, "$id": capability.InvocationSchema, "$defs": definitions, "type": "object", "additionalProperties": false, "required": []string{"arguments", "options", "stdin"}, "properties": map[string]any{"arguments": map[string]any{"type": "object", "additionalProperties": false, "required": required, "properties": arguments}, "options": map[string]any{"type": "object", "additionalProperties": false, "required": requiredOptions, "properties": options}, "stdin": stdin}}
 	if slices.Contains([]string{"auth.add.oauth", "auth.add.service-account", "project.import"}, capability.ID) {
@@ -1082,6 +1170,12 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		result["x-fbrcm-input-selection"] = []any{map[string]any{
 			"operator": "first_available", "sources": []any{"arguments.source", "stdin.document"},
 			"on_missing": "interaction.required", "later_sources": "ignored_without_consumption",
+		}}
+	}
+	if slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID) {
+		result["x-fbrcm-input-selection"] = []any{map[string]any{
+			"operator": "path_or_stdin_document", "path": "arguments.plan", "stdin": "stdin.document",
+			"stdin_path": "-", "non_stdin": "read_file", "unused_stdin": "ignored_without_consumption", "missing_stdin": "plan.invalid",
 		}}
 	}
 	if matching := selectionComposition(capability.ID, arguments, options); matching != nil {
@@ -1257,6 +1351,10 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 }
 
 func applyFlagSemantics(schema map[string]any, commandID, name string) {
+	if name == "plan-out" {
+		addNormalization(schema, "trim_unicode_whitespace")
+		schema["not"] = map[string]any{"const": "-"}
+	}
 	if strings.HasPrefix(commandID, "auth.add.") && name == "quota-project" {
 		delete(schema, "pattern")
 		schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/physical_project_id"}}
@@ -2022,7 +2120,8 @@ func extensionLanguageMetadata() map[string]any {
 			"schema":    contract.SemanticRef("input_selection_rules"),
 			"semantics": "Evaluate sources in their declared order and select the first available source. Do not consume or apply later sources. If none is available, return the declared structured result.",
 			"operators": map[string]any{
-				"first_available": operation([]string{"sources", "on_missing", "later_sources"}, "selected_input_source_or_interaction", "Select the first declared file, URL, or redirected document source that is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."),
+				"first_available":        operation([]string{"sources", "on_missing", "later_sources"}, "selected_input_source_or_interaction", "Select the first declared file, URL, or redirected document source that is present; otherwise return interaction.required. A selected earlier source leaves every later source unconsumed and ineffective."),
+				"path_or_stdin_document": operation([]string{"path", "stdin", "stdin_path", "non_stdin", "unused_stdin", "missing_stdin"}, "selected_document_or_problem", "When the positional path equals stdin_path, consume and decode exactly one JSON document from stdin; otherwise read the named file and leave stdin unconsumed. Missing redirected stdin returns the declared typed problem."),
 			},
 		},
 		"validation": map[string]any{
@@ -2044,7 +2143,8 @@ func extensionLanguageMetadata() map[string]any {
 				"parse_uri":                  operation([]string{"parser", "normalization", "require_absolute"}, "accept_or_reject", "Normalize the string as declared, parse it with the named parser, and require an absolute URI with a nonempty scheme when require_absolute is true."),
 				"parse_version_selector":     operation([]string{"absolute_parser", "relative_parser", "maximum_relative_distance"}, "accept_or_reject", "Apply the named runtime integer parsers to absolute and relative numeric components, require positive results, and reject a relative distance above the declared maximum."),
 				"reject_raw_whitespace_only": operation([]string{"allow_empty"}, "accept_or_reject", "Inspect the original argv string before normalization; accept an exact empty string when allow_empty is true, but reject every nonempty string made only of Unicode whitespace."),
-				"local_validate":             operation([]string{"validator"}, "accept_or_reject", "Decode a clone of the Remote Config template and require firebase.NormalizeRemoteConfigForUpdate to succeed before import transformations are applied."),
+				"local_validate":             operation([]string{"validator"}, "accept_or_reject", "Decode the Remote Config template and require the named local Firebase preparation validator to succeed without making a remote request."),
+				"publication_plan_integrity": operation([]string{"validator", "checks"}, "accept_or_reject", "Require the named publication-plan validator to accept the complete document, including every declared content digest, ordering, uniqueness, action/provenance correlation, and content-derived plan ID check."),
 				"managed_feature_id":         operation([]string{"collection", "project_argument", "accepted_forms"}, "accept_or_reject", "Without trimming argv, accept either a slash-free ID exactly as supplied or the exact case-sensitive Firebase resource name for the resolved project and declared managed-feature collection. Remote lookup succeeds only for a canonical existing ID."),
 				"remote_validate":            operation([]string{"service", "grammar"}, "accept_or_reject", "Require the named remote service to accept the instance under the declared grammar."),
 				"unique_by":                  operation([]string{"field"}, "accept_or_reject", "Require the named field to be present and pairwise unique across all array members."),
@@ -2764,6 +2864,8 @@ func commandReachableOutcomes(capability contract.Capability, successDataSchema 
 func commandWarningCodes(commandID string) []string {
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	switch commandID {
+	case "apply":
+		return []string{"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"}
 	case "get":
 		return []string{"cache.stale"}
 	case "add", "delete", "duplicate", "update",

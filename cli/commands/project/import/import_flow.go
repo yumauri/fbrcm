@@ -16,6 +16,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/core/rc/importer"
+	"github.com/yumauri/fbrcm/core/rc/publication"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
@@ -169,6 +170,64 @@ func Run(cmd *cobra.Command, svc *core.Core, project core.Project) error {
 	result.Validated = true
 
 	diffText, hasChanges := rc.RenderRemoteConfigDiff(currentCfg, finalCfg)
+	if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+		return planErr
+	} else if planning {
+		environment, environmentErr := core.PublicationEnvironmentForContext(ctx)
+		if environmentErr != nil {
+			return environmentErr
+		}
+		action := publication.ActionNone
+		validationSource := core.ValidationSourceLocal
+		if hasChanges {
+			action = publication.ActionPublish
+			validationSource = core.ValidationSourceFirebase
+			if validationErr := svc.ValidatePublicationCandidate(ctx, project.ProjectID, currentRaw, finalRaw, currentETag, "import"); validationErr != nil {
+				return validationErr
+			}
+		}
+		target, targetErr := rctarget.Parse(project.ProjectID)
+		if targetErr != nil {
+			return targetErr
+		}
+		publicationPlan := publication.New(cmd.Root().Version, "project.import", environment.Policy, changeNote)
+		publicationPlan.Execution.HooksEnabled = environment.HooksEnabled
+		publicationPlan.Execution.HookDefinitionSHA256 = environment.HookDefinitionSHA256
+		plannerOptions := opts.plannerOptions()
+		publicationPlan.Operation.Selection, targetErr = json.Marshal(struct {
+			Groups            []string `json:"groups"`
+			Filters           []string `json:"filters"`
+			Search            string   `json:"search"`
+			Expr              string   `json:"expr"`
+			Strategy          string   `json:"strategy"`
+			ConditionPolicy   string   `json:"condition_policy"`
+			DefaultResolution string   `json:"default_resolution"`
+		}{
+			Groups: plannerOptions.Groups, Filters: plannerOptions.Filters, Search: plannerOptions.Search,
+			Expr: plannerOptions.Expr, Strategy: string(plannerOptions.Strategy), ConditionPolicy: string(plannerOptions.ConditionPolicy),
+			DefaultResolution: string(plannerOptions.DefaultResolution),
+		})
+		if targetErr != nil {
+			return targetErr
+		}
+		sourceRaw, targetErr := firebase.MarshalRemoteConfig(importCfg)
+		if targetErr != nil {
+			return targetErr
+		}
+		sourceDigest, targetErr := publication.RemoteConfigDigest(sourceRaw)
+		if targetErr != nil {
+			return targetErr
+		}
+		publicationPlan.Targets = append(publicationPlan.Targets, publication.Target{
+			Target: project.ProjectID, ProjectID: target.ProjectID, Template: string(target.Kind), Action: action, ChangeNote: changeNote,
+			Base:       publication.Snapshot{Version: currentVersion.VersionNumber, ETag: currentETag, RemoteConfig: currentRaw},
+			Candidate:  publication.Snapshot{RemoteConfig: finalRaw},
+			Validation: publication.Validation{Source: validationSource, ValidatedAt: publicationPlan.CreatedAt},
+			Source:     publication.Source{Kind: "import", Fingerprint: sourceDigest},
+		})
+		_, writeErr := rc.WritePublicationPlan(cmd, publicationPlan, planPath)
+		return writeErr
+	}
 	if !hasChanges {
 		result.Status = "unchanged"
 		return writeImportResult(cmd, jsonOut, result)

@@ -147,7 +147,15 @@ func extensionSchemaDefinitions() map[string]any {
 			"project_argument": map[string]any{"const": "arguments.project"},
 			"maximum":          map[string]any{"const": "resolved_condition_count"},
 		}),
-		object([]string{"operator", "validator"}, map[string]any{"operator": map[string]any{"const": "local_validate"}, "validator": map[string]any{"const": "firebase.NormalizeRemoteConfigForUpdate"}}),
+		object([]string{"operator", "validator"}, map[string]any{"operator": map[string]any{"const": "local_validate"}, "validator": map[string]any{"enum": []string{"firebase.NormalizeRemoteConfigForUpdate", "firebase.PrepareRemoteConfigUpdate"}}}),
+		object([]string{"operator", "validator", "checks"}, map[string]any{
+			"operator":  map[string]any{"const": "publication_plan_integrity"},
+			"validator": map[string]any{"const": "publication.Validate"},
+			"checks": map[string]any{
+				"type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true,
+				"items": map[string]any{"enum": []string{"nonempty_targets", "canonical_target_order", "unique_target_ids", "snapshot_sha256", "none_snapshot_equality", "action_validation_provenance", "content_derived_plan_id"}},
+			},
+		}),
 		object([]string{"operator", "service", "grammar"}, map[string]any{"operator": map[string]any{"const": "remote_validate"}, "service": stringValue, "grammar": stringValue}),
 		object([]string{"operator", "collection", "project_argument", "accepted_forms"}, map[string]any{
 			"operator":         map[string]any{"const": "managed_feature_id"},
@@ -188,7 +196,7 @@ func extensionSchemaDefinitions() map[string]any {
 		unary("sha256", "value"),
 		object([]string{"op", "values"}, map[string]any{"op": map[string]any{"const": "sum"}, "values": expressionArray}),
 	}
-	inputSelectionRule := object([]string{"operator", "sources", "on_missing", "later_sources"}, map[string]any{
+	firstAvailableInputSelectionRule := object([]string{"operator", "sources", "on_missing", "later_sources"}, map[string]any{
 		"operator": map[string]any{"const": "first_available"},
 		"sources": map[string]any{
 			"oneOf": []any{
@@ -198,6 +206,15 @@ func extensionSchemaDefinitions() map[string]any {
 		},
 		"on_missing":    map[string]any{"const": "interaction.required"},
 		"later_sources": map[string]any{"const": "ignored_without_consumption"},
+	})
+	pathOrStdinInputSelectionRule := object([]string{"operator", "path", "stdin", "stdin_path", "non_stdin", "unused_stdin", "missing_stdin"}, map[string]any{
+		"operator":      map[string]any{"const": "path_or_stdin_document"},
+		"path":          map[string]any{"const": "arguments.plan"},
+		"stdin":         map[string]any{"const": "stdin.document"},
+		"stdin_path":    map[string]any{"const": "-"},
+		"non_stdin":     map[string]any{"const": "read_file"},
+		"unused_stdin":  map[string]any{"const": "ignored_without_consumption"},
+		"missing_stdin": map[string]any{"const": "plan.invalid"},
 	})
 
 	return map[string]any{
@@ -365,7 +382,7 @@ func extensionSchemaDefinitions() map[string]any {
 		"matching_rules":        map[string]any{"type": "array", "minItems": 1, "items": ref("matching_rule")},
 		"invariant_expression":  map[string]any{"oneOf": invariantRules},
 		"invariant_rules":       map[string]any{"type": "array", "minItems": 1, "items": invariantExpression},
-		"input_selection_rule":  inputSelectionRule,
+		"input_selection_rule":  map[string]any{"oneOf": []any{firstAvailableInputSelectionRule, pathOrStdinInputSelectionRule}},
 		"input_selection_rules": map[string]any{"type": "array", "minItems": 1, "items": ref("input_selection_rule")},
 	}
 }

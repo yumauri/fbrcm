@@ -499,6 +499,70 @@ func applyTypeSemantics(schema map[string]any, typeOf reflect.Type) {
 		schema["x-fbrcm-invariants"] = []any{
 			invariant("eq", "left", invariantField("cached"), "right", invariantField("version.cached")),
 		}
+	case "github.com/yumauri/fbrcm/core/rc/publication.FileArtifact":
+		properties["media_type"] = map[string]any{"const": "application/vnd.fbrcm.publication-plan+json"}
+		properties["encoding"] = map[string]any{"const": "none"}
+		properties["destination"] = map[string]any{"type": "string", "minLength": 1}
+		properties["size_bytes"] = map[string]any{"type": "integer", "minimum": 0}
+		properties["sha256"] = map[string]any{"type": "string", "pattern": `^[0-9a-f]{64}$`}
+		properties["overwritten"] = map[string]any{"const": false}
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("eq", "left", invariantField("size_bytes"), "right", invariant("byte_length", "value", map[string]any{"symbol": "canonical_artifact_bytes"})),
+			invariant("eq", "left", invariantField("sha256"), "right", invariant("lowercase_hex", "value", invariant("sha256", "value", map[string]any{"symbol": "canonical_artifact_bytes"}))),
+		}
+	case "github.com/yumauri/fbrcm/cli/shared/rc.PlanCreatedResult":
+		properties["target_count"] = map[string]any{"type": "integer", "minimum": 1}
+		properties["publish_target_count"] = map[string]any{"type": "integer", "minimum": 0}
+		properties["unchanged_target_count"] = map[string]any{"type": "integer", "minimum": 0}
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("eq", "left", invariantField("target_count"), "right", invariant("sum", "values", []any{invariantField("publish_target_count"), invariantField("unchanged_target_count")})),
+			invariant("eq", "left", invariantField("path"), "right", invariantField("artifact.destination")),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/plan.summary":
+		properties["target_count"] = map[string]any{"type": "integer", "minimum": 1}
+		properties["publish_target_count"] = map[string]any{"type": "integer", "minimum": 0}
+		if targets, ok := properties["targets"].(map[string]any); ok {
+			targets["type"] = "array"
+			targets["minItems"] = 1
+		}
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("eq", "left", invariantField("target_count"), "right", invariant("length", "value", invariantField("targets"))),
+			invariant("eq", "left", invariantField("publish_target_count"), "right", invariant("count_where", "collection", invariantField("targets"), "where", invariant("eq", "left", invariantField("item.action"), "right", invariantConst("publish")))),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/plan.validationResult":
+		properties["valid"] = map[string]any{"const": true}
+		properties["target_count"] = map[string]any{"type": "integer", "minimum": 1}
+	case "github.com/yumauri/fbrcm/cli/commands/apply.targetError":
+		properties["stage"] = map[string]any{"type": "string", "enum": []string{"publication", "post_publish_hook", "cache"}}
+		properties["message"] = map[string]any{"type": "string", "maxLength": 4097, "x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated"}
+	case "github.com/yumauri/fbrcm/cli/commands/apply.targetResult":
+		null := map[string]any{"type": "null"}
+		nonempty := map[string]any{"type": "string", "minLength": 1}
+		schema["allOf"] = []any{
+			fieldValueShapeConstraint("status", "unchanged", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "local"}, "error": null}, nil, []string{"published_version"}),
+			fieldValueShapeConstraint("status", "would-publish", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "firebase"}, "error": null}, nil, []string{"published_version"}),
+			fieldValueShapeConstraint("status", "published", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "firebase"}, "published_version": nonempty, "error": null}, []string{"published_version"}, nil),
+			fieldValueShapeConstraint("status", "already-applied", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "local"}, "error": null}, nil, []string{"published_version"}),
+			fieldValueShapeConstraint("status", "conflict", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "firebase"}, "error": resultErrorSchema("publication")}, []string{"error"}, []string{"published_version"}),
+			fieldValueShapeConstraint("status", "publish-failed", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "firebase"}, "error": resultErrorSchema("publication")}, []string{"error"}, []string{"published_version"}),
+			fieldValueShapeConstraint("status", "published-hook-failed", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "firebase"}, "published_version": nonempty, "error": resultErrorSchema("post_publish_hook")}, []string{"published_version", "error"}, nil),
+			fieldValueShapeConstraint("status", "published-cache-failed", map[string]any{"validated": map[string]any{"const": true}, "validation_source": map[string]any{"const": "firebase"}, "published_version": nonempty, "error": resultErrorSchema("cache")}, []string{"published_version", "error"}, nil),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/apply.result":
+		if items, ok := properties["items"].(map[string]any); ok {
+			items["type"] = "array"
+			items["minItems"] = 1
+		}
+		schema["allOf"] = []any{
+			map[string]any{
+				"if":   map[string]any{"properties": map[string]any{"dry_run": map[string]any{"const": true}}, "required": []string{"dry_run"}},
+				"then": map[string]any{"properties": map[string]any{"items": map[string]any{"items": map[string]any{"properties": map[string]any{"status": map[string]any{"enum": []string{"unchanged", "would-publish", "already-applied"}}}}}}},
+				"else": map[string]any{"properties": map[string]any{"items": map[string]any{"items": map[string]any{"properties": map[string]any{"status": map[string]any{"enum": []string{"unchanged", "published", "already-applied", "conflict", "publish-failed", "published-hook-failed", "published-cache-failed"}}}}}}},
+			},
+		}
+		schema["x-fbrcm-invariants"] = []any{
+			invariant("eq", "left", invariantField("published_count"), "right", invariant("count_where", "collection", invariantField("items"), "where", invariant("in", "value", invariantField("item.status"), "set", []any{"published", "published-hook-failed", "published-cache-failed"}))),
+		}
 	case "github.com/yumauri/fbrcm/cli/shared/rc.RemoteMutationJSONResult":
 		applyRemoteMutationResultSemantics(schema)
 	case "github.com/yumauri/fbrcm/cli/shared/rc.RemoteMutationJSONError",
@@ -927,10 +991,11 @@ func CapabilitySupportSchema() map[string]any {
 	return map[string]any{
 		"type":                 "object",
 		"additionalProperties": false,
-		"required":             []string{"dry_run", "draft", "confirmation_bypass", "stdin", "stateless"},
+		"required":             []string{"dry_run", "draft", "plan", "confirmation_bypass", "stdin", "stateless"},
 		"properties": map[string]any{
 			"dry_run":             map[string]any{"type": "boolean"},
 			"draft":               map[string]any{"type": "boolean"},
+			"plan":                map[string]any{"type": "boolean"},
 			"confirmation_bypass": map[string]any{"type": "boolean"},
 			"stdin":               map[string]any{"type": "boolean"},
 			"stateless":           map[string]any{"type": "boolean"},
@@ -1020,6 +1085,10 @@ func semanticStringEnum(typeOf reflect.Type) []string {
 		return []string{"unchanged", "preparation-failed", "published", "validation-failed", "conflict", "publish-failed", "published-cache-failed", "published-hook-failed", "drafted", "would-draft", "would-publish", "draft-failed"}
 	case "github.com/yumauri/fbrcm/cli/shared/rc.NoOpReason":
 		return []string{"no_match", "already_applied"}
+	case "github.com/yumauri/fbrcm/cli/commands/apply.Status":
+		return []string{"unchanged", "would-publish", "published", "already-applied", "conflict", "publish-failed", "published-hook-failed", "published-cache-failed"}
+	case "github.com/yumauri/fbrcm/core/rc/publication.Action":
+		return []string{"none", "publish"}
 	case "github.com/yumauri/fbrcm/core/config.ProjectAliasSource":
 		return []string{
 			string(coreconfig.ProjectAliasSourceFBRCM),

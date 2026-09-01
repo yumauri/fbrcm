@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,67 @@ const (
 	ValidationSourceLocal    = "local"
 	ValidationSourceFirebase = "firebase"
 )
+
+type publicationPreHooksCompleteKey struct{}
+
+// PublicationEnvironment identifies the execution policy and effective hook
+// definition against which a publication candidate was prepared.
+type PublicationEnvironment struct {
+	Policy               string
+	HooksEnabled         bool
+	HookDefinitionSHA256 string
+}
+
+// PublicationEnvironmentForContext resolves the effective publication policy
+// without executing hooks.
+func PublicationEnvironmentForContext(ctx context.Context) (PublicationEnvironment, error) {
+	policy := ExecutionPolicyFromContext(ctx)
+	if !policy.RunHooks {
+		return PublicationEnvironment{Policy: "stateless"}, nil
+	}
+	resolution, err := corehooks.Resolve()
+	if err != nil {
+		return PublicationEnvironment{}, err
+	}
+	enabled := len(resolution.Commands(corehooks.PrePublish)) > 0 || len(resolution.Commands(corehooks.PostPublish)) > 0
+	environment := PublicationEnvironment{Policy: "stateful", HooksEnabled: enabled}
+	if !enabled {
+		return environment, nil
+	}
+	preSource, preLocal := resolution.Source(corehooks.PrePublish)
+	postSource, postLocal := resolution.Source(corehooks.PostPublish)
+	raw, err := json.Marshal(struct {
+		Hooks      config.HooksConfig `json:"hooks"`
+		PreSource  string             `json:"pre_source"`
+		PreLocal   bool               `json:"pre_local"`
+		PostSource string             `json:"post_source"`
+		PostLocal  bool               `json:"post_local"`
+	}{
+		Hooks:      resolution.Hooks,
+		PreSource:  preSource,
+		PreLocal:   preLocal,
+		PostSource: postSource,
+		PostLocal:  postLocal,
+	})
+	if err != nil {
+		return PublicationEnvironment{}, fmt.Errorf("encode publication hooks: %w", err)
+	}
+	digest := sha256.Sum256(raw)
+	environment.HookDefinitionSHA256 = fmt.Sprintf("%x", digest[:])
+	return environment, nil
+}
+
+// WithPublicationPreHooksComplete marks a context whose exact candidate has
+// already passed its pre-publish hook gate. It is intended only for the commit
+// stage of a plan apply operation.
+func WithPublicationPreHooksComplete(ctx context.Context) context.Context {
+	return context.WithValue(ctx, publicationPreHooksCompleteKey{}, true)
+}
+
+func publicationPreHooksComplete(ctx context.Context) bool {
+	complete, _ := ctx.Value(publicationPreHooksCompleteKey{}).(bool)
+	return complete
+}
 
 // RemoteConfigValidationError identifies whether validation failed before or
 // after the candidate reached Firebase.
@@ -143,6 +205,35 @@ func (s *Core) ValidateRemoteConfigWithETag(ctx context.Context, projectID strin
 	return nil
 }
 
+// ValidatePublicationCandidate performs Firebase validation and the trusted
+// pre-publish hook gate for one exact base/candidate pair without publishing.
+func (s *Core) ValidatePublicationCandidate(ctx context.Context, projectID string, current, candidate json.RawMessage, etag, operation string) error {
+	ctx = corehooks.WithOperation(ctx, operation)
+	if err := s.ValidateRemoteConfigWithETag(ctx, projectID, candidate, etag); err != nil {
+		return err
+	}
+	changeNote, changeNoteSet := firebase.ChangeNoteFromContext(ctx)
+	var updateRaw []byte
+	var err error
+	if changeNoteSet {
+		updateRaw, err = firebase.PrepareRemoteConfigUpdate(candidate, changeNote)
+	} else {
+		updateRaw, err = firebase.PrepareRemoteConfigUpdate(candidate)
+	}
+	if err != nil {
+		return &RemoteConfigValidationError{Source: ValidationSourceLocal, Err: fmt.Errorf("decode remote config: %w", err)}
+	}
+	hookSession, err := s.preparePublicationHooks(ctx, projectID, current, updateRaw)
+	if err != nil {
+		return err
+	}
+	if hookSession == nil {
+		return nil
+	}
+	defer hookSession.Close()
+	return hookSession.Run(ctx, corehooks.PrePublish, nil)
+}
+
 func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string, raw json.RawMessage, etag string) (json.RawMessage, string, error) {
 	logger := corelog.For("core")
 	logger.Info("publish remote config with etag requested", "project_id", projectID, "etag", etag)
@@ -175,9 +266,13 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 	if err != nil {
 		return nil, "", err
 	}
-	defer hookSession.Close()
-	if err := hookSession.Run(ctx, corehooks.PrePublish, nil); err != nil {
-		return nil, "", err
+	if hookSession != nil {
+		defer hookSession.Close()
+		if !publicationPreHooksComplete(ctx) {
+			if err := hookSession.Run(ctx, corehooks.PrePublish, nil); err != nil {
+				return nil, "", err
+			}
+		}
 	}
 
 	updatedRaw, nextETag, err := fb.UpdateRemoteConfig(ctx, projectID, updateRaw, etag)
@@ -204,8 +299,10 @@ func (s *Core) PublishRemoteConfigWithETag(ctx context.Context, projectID string
 	} else {
 		logger.Debug("execution policy skips parameters cache update after publish", "project_id", projectID, "etag", nextETag)
 	}
-	if err := hookSession.Run(ctx, corehooks.PostPublish, updatedRaw); err != nil {
-		return updatedRaw, nextETag, &RemoteConfigPublishedHookError{ProjectID: projectID, RemoteConfig: updatedRaw, ETag: nextETag, HookErr: err, CacheErr: cacheErr}
+	if hookSession != nil {
+		if err := hookSession.Run(ctx, corehooks.PostPublish, updatedRaw); err != nil {
+			return updatedRaw, nextETag, &RemoteConfigPublishedHookError{ProjectID: projectID, RemoteConfig: updatedRaw, ETag: nextETag, HookErr: err, CacheErr: cacheErr}
+		}
 	}
 	if cacheErr != nil {
 		return updatedRaw, nextETag, &RemoteConfigPublishedCacheError{ProjectID: projectID, RemoteConfig: updatedRaw, ETag: nextETag, Err: cacheErr}

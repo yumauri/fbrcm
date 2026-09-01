@@ -1156,6 +1156,139 @@
           ]
         },
         {
+          "additionalProperties": false,
+          "properties": {
+            "artifact": {
+              "additionalProperties": false,
+              "properties": {
+                "destination": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "encoding": {
+                  "const": "none"
+                },
+                "media_type": {
+                  "const": "application/vnd.fbrcm.publication-plan+json"
+                },
+                "overwritten": {
+                  "const": false
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "size_bytes": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "destination",
+                "encoding",
+                "media_type",
+                "overwritten",
+                "sha256",
+                "size_bytes"
+              ],
+              "type": "object",
+              "x-fbrcm-invariants": [
+                {
+                  "left": {
+                    "field": "size_bytes"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "op": "byte_length",
+                    "value": {
+                      "symbol": "canonical_artifact_bytes"
+                    }
+                  }
+                },
+                {
+                  "left": {
+                    "field": "sha256"
+                  },
+                  "op": "eq",
+                  "right": {
+                    "op": "lowercase_hex",
+                    "value": {
+                      "op": "sha256",
+                      "value": {
+                        "symbol": "canonical_artifact_bytes"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "command_id": {
+              "type": "string"
+            },
+            "created_at": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "plan_id": {
+              "type": "string"
+            },
+            "publish_target_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "target_count": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "unchanged_target_count": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "artifact",
+            "command_id",
+            "created_at",
+            "path",
+            "plan_id",
+            "publish_target_count",
+            "target_count",
+            "unchanged_target_count"
+          ],
+          "type": "object",
+          "x-fbrcm-invariants": [
+            {
+              "left": {
+                "field": "target_count"
+              },
+              "op": "eq",
+              "right": {
+                "op": "sum",
+                "values": [
+                  {
+                    "field": "publish_target_count"
+                  },
+                  {
+                    "field": "unchanged_target_count"
+                  }
+                ]
+              }
+            },
+            {
+              "left": {
+                "field": "path"
+              },
+              "op": "eq",
+              "right": {
+                "field": "artifact.destination"
+              }
+            }
+          ]
+        },
+        {
           "$defs": {
             "artifact_json_content": {
               "$anchor": "artifact_json_content",
@@ -2029,6 +2162,7 @@
                       "network.unavailable",
                       "parameter.ambiguous",
                       "parameter.not_found",
+                      "plan.exists",
                       "profile.invalid",
                       "project.ambiguous",
                       "project.not_found",

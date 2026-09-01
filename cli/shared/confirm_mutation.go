@@ -18,6 +18,11 @@ func PrintDiffAndConfirm(cmd *cobra.Command, yes bool, diffOut io.Writer, diffTe
 	if yes {
 		return true, nil
 	}
+	if _, planning, err := PlanOutputPath(cmd); err != nil {
+		return false, err
+	} else if planning {
+		return true, nil
+	}
 	if err := RequireYesInMachineMode(cmd, yes, strings.TrimSuffix(strings.ToLower(prompt), "?"), destructive); err != nil {
 		return false, err
 	}
