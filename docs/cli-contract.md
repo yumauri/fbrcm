@@ -56,6 +56,30 @@ presentation, not the semantic process status.
 
 ## Envelope
 
+### MCP transport boundary
+
+`fbrcm mcp` is a streaming service, not a one-shot JSON command. Combining it
+with `--json` returns `argument.invalid` (exit `2`) without opening a transport
+or bootstrapping a profile; `context.profile` is null. It registers no successful
+JSON DTO. Its machine capabilities describe the rejected JSON invocation's
+absence of side effects; normal launch behavior is documented in [MCP.md](MCP.md).
+
+MCP input reuses the normalized `arguments`, `options`, and `stdin` shape from
+published invocation schemas. Server-controlled options are excluded and schema
+references are bundled for clients. A supplied `stdin` document uses an explicit
+in-memory reader, never the protocol stream. Fresh command instances use the
+same envelope builder and semantic validation as CLI execution.
+
+Completed tools return the entire unchanged envelope in `structuredContent`
+and identical JSON in text `content`. Success maps to `isError: false`; failure
+and partial success map to `isError: true`, retaining usable data and warnings.
+A successful changed diff (exit `1`) is not an MCP error. User interaction uses
+MCP input-required results, not replacement fbrcm DTOs. Ordinary CLI JSON mode
+remains non-interactive; only the hosted path explicitly enables OAuth through
+its host observer.
+
+### Result structure
+
 Every result has this shape:
 
 ```json

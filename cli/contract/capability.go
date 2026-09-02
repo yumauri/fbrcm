@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -388,7 +389,9 @@ func describe(cmd *cobra.Command) Capability {
 		panic(fmt.Sprintf("missing authoritative capability behavior for %q", id))
 	}
 	behavior = withMachineAuthenticationEffects(id, behavior)
-	behavior = withJSONEnvelopeProfileBootstrap(behavior)
+	if id != "mcp" {
+		behavior = withJSONEnvelopeProfileBootstrap(behavior)
+	}
 	if hasFlag(cmd, "plan-out") {
 		behavior = withPlanOutputEffects(behavior)
 	}
@@ -567,6 +570,12 @@ func typedFlagDefault(flag *pflag.Flag) any {
 		var value any
 		if err := json.Unmarshal([]byte(flag.DefValue), &value); err == nil {
 			return value
+		}
+		if flag.Value.Type() != "intSlice" {
+			// pflag renders nonempty string slices as bracketed CSV, not JSON.
+			if values, err := csv.NewReader(strings.NewReader(strings.TrimSuffix(strings.TrimPrefix(flag.DefValue, "["), "]"))).Read(); err == nil {
+				return values
+			}
 		}
 	}
 	return flag.DefValue

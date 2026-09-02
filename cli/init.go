@@ -25,7 +25,7 @@ func Init(s *core.Core, version, commit, date string) {
 }
 
 func configureTheme(args []string) {
-	if env.NoColorEnabled() || contract.JSONRequested(args) || booleanFlagEnabled(args, "stateless") {
+	if env.NoColorEnabled() || contract.JSONRequested(args) || booleanFlagEnabled(args, "stateless") || app.IsMCPInvocation(args) {
 		return
 	}
 	config.SetLocalConfigDisabled(booleanFlagEnabled(args, "no-local-config"))

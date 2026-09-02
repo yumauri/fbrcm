@@ -200,7 +200,7 @@ func BuildEnvelope(cmd *cobra.Command, version string, captured []byte, err erro
 		data = nil
 	}
 	var profilePtr *string
-	if !machine.Profileless(shared.CommandContext(cmd)) {
+	if command != "mcp" && !machine.Profileless(shared.CommandContext(cmd)) {
 		profile := config.GetActiveProfileName()
 		if strings.TrimSpace(profile) != "" {
 			profilePtr = &profile

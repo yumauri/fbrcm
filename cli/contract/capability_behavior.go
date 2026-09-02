@@ -692,7 +692,9 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"draft.show": withInteraction(behavior(1, "none", effect("local_file_write",
 		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "optional", "destination_conflict_returns_interaction",
 		conditionClause(predicate("runtime_state", "output_destination", "conflicts", nil))),
-	"config.edit":  withInteraction(behavior(0, "none"), "required", "external_input_returns_interaction", conditionClause(predicate("runtime_state", "external_editor", "required", nil))),
+	"config.edit": withInteraction(behavior(0, "none"), "required", "external_input_returns_interaction", conditionClause(predicate("runtime_state", "external_editor", "required", nil))),
+	// JSON invocation rejects the streaming mode before starting a server.
+	"mcp":          behavior(0, "none"),
 	"project.open": withInteraction(cachedRegistryRead(), "none", "browser_launch_suppressed"),
 	"auth.login": withInteraction(capabilityBehavior{
 		level: 2,

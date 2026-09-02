@@ -71,6 +71,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 				continue
 			}
 			evidence := append([]string(nil), generatedAuditBaseEvidence(class)...)
+			if capability.ID == "mcp" {
+				evidence = append(evidence, "app.mcp_json_failure", "app.mcp_stdio")
+			}
 			if capability.ID == "auth.add.google" {
 				switch class {
 				case "boundary", "invocation":
@@ -117,6 +120,8 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"app.mcp_json_failure":                  "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
+		"app.mcp_stdio":                         "cli/app/mcp_test.go#TestMCPStdioLifecycleAndContract",
 		"app.arity":                             "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
 		"app.auth_add_quota_schema":             "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
 		"app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",

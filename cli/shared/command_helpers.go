@@ -53,6 +53,9 @@ func ResolveParameterArgument(args []string, rawFilters []string) (*string, erro
 
 // StdinAvailable reports whether the given reader is a non-terminal file.
 func StdinAvailable(in io.Reader) bool {
+	if _, ok := in.(*documentInput); ok {
+		return true
+	}
 	file, ok := in.(*os.File)
 	if !ok {
 		return false
@@ -63,6 +66,12 @@ func StdinAvailable(in io.Reader) bool {
 	}
 	return (info.Mode() & os.ModeCharDevice) == 0
 }
+
+type documentInput struct{ io.Reader }
+
+// DocumentInput supplies an explicit in-memory document to the same paths as
+// redirected CLI stdin, without borrowing the host protocol's input stream.
+func DocumentInput(in io.Reader) io.Reader { return &documentInput{Reader: in} }
 
 var openPromptTTY = tea.OpenTTY
 

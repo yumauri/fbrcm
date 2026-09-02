@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -118,7 +119,18 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			if err := shared.CommandContext(cmd).Err(); err != nil {
 				return err
 			}
+			if cmd.Name() == "mcp" {
+				if stateless, _ := cmd.Flags().GetBool("stateless"); stateless {
+					cmd.SetContext(machine.WithProfileless(shared.CommandContext(cmd)))
+				}
+				timeout, _ := cmd.Flags().GetDuration("timeout")
+				if cmd.Flags().Changed("timeout") && timeout <= 0 {
+					return shared.InvalidArgument(fmt.Errorf("--timeout must be greater than zero"))
+				}
+				return nil
+			}
 			ctx := shared.CommandContext(cmd)
+			hosted, isHosted := ctx.Value(hostedExecutionKey{}).(hostedExecution)
 			stateless, err := cmd.Flags().GetBool("stateless")
 			if err != nil {
 				return shared.InvalidArgument(err)
@@ -151,10 +163,14 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 					"command", commandID,
 				)
 			} else {
-				ctx = core.WithExecutionPolicy(ctx, core.StatefulExecutionPolicy())
+				policy := core.StatefulExecutionPolicy()
+				if isHosted {
+					policy.RunHooks = hosted.hooks
+				}
+				ctx = core.WithExecutionPolicy(ctx, policy)
 			}
 			if contract.Enabled(cmd) {
-				ctx = firebase.WithOAuthInteractionAllowed(ctx, false)
+				ctx = firebase.WithOAuthInteractionAllowed(ctx, isHosted && hosted.oauth)
 			}
 			cmd.SetContext(ctx)
 			timeout, err := cmd.Flags().GetDuration("timeout")
@@ -239,6 +255,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(duplicatecmd.New(s))
 	rootCmd.AddCommand(managedfeaturescmd.NewExperiments(s))
 	rootCmd.AddCommand(getcmd.New(s))
+	rootCmd.AddCommand(newMCPCommand(s, version, commit, date))
 	rootCmd.AddCommand(groupscmd.New(s))
 	rootCmd.AddCommand(hookscmd.New())
 	rootCmd.AddCommand(managedfeaturescmd.NewPersonalizations(s))
@@ -366,7 +383,7 @@ func Execute(s *core.Core, version, commit, date string) {
 		rootCmd.SilenceUsage = true
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if timeout := requestedTimeout(os.Args[1:]); timeout > 0 {
 		var cancel context.CancelFunc

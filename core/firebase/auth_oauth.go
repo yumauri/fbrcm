@@ -223,6 +223,14 @@ func refreshOAuthToken(source oauth2.TokenSource, cached *oauth2.Token) (bool, e
 }
 
 // Authorizes a desktop client using OAuth2 and returns the OAuth token
+type oauthTimeoutKey struct{}
+
+// WithOAuthTimeout sets the complete browser authorization budget, including
+// waiting for host consent. Ordinary CLI and TUI flows retain two minutes.
+func WithOAuthTimeout(ctx context.Context, timeout time.Duration) context.Context {
+	return context.WithValue(ctx, oauthTimeoutKey{}, timeout)
+}
+
 func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceConsent bool, autoOpen bool) (token *oauth2.Token, returnErr error) {
 	logger := corelog.For("firebase")
 	logger.Info("start oauth desktop authorization", "force_consent", forceConsent, "auto_open", autoOpen)
@@ -232,7 +240,11 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	}
 	oauthCfgCopy := *oauthCfg
 	oauthCfg = &oauthCfgCopy
-	authorizationCtx, cancelAuthorization := context.WithCancel(ctx)
+	timeout, _ := ctx.Value(oauthTimeoutKey{}).(time.Duration)
+	if timeout <= 0 {
+		timeout = 2 * time.Minute
+	}
+	authorizationCtx, cancelAuthorization := context.WithTimeout(ctx, timeout)
 	defer cancelAuthorization()
 
 	state, err := randomToken(32)
@@ -296,8 +308,6 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	}
 	logger.Info("waiting for oauth callback")
 
-	timer := time.NewTimer(2 * time.Minute)
-	defer timer.Stop()
 	select {
 	case code := <-codeCh:
 		logger.Info("oauth callback received; exchanging code")
@@ -318,9 +328,6 @@ func authorizeDesktopClient(ctx context.Context, oauthCfg *oauth2.Config, forceC
 	case <-authorizationCtx.Done():
 		logger.Info("oauth authorization canceled", "err", authorizationCtx.Err())
 		return nil, fmt.Errorf("OAuth authorization canceled: %w", authorizationCtx.Err())
-	case <-timer.C:
-		logger.Error("oauth callback timed out")
-		return nil, fmt.Errorf("timed out waiting for OAuth callback")
 	}
 }
 

@@ -364,6 +364,9 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 			t.Fatalf("%s stateless flag = %#v", capability.ID, capability.Flags)
 		}
 		for _, effect := range []string{"local_state_write", "local_file_write", "authentication_remote_access"} {
+			if capability.ID == "mcp" {
+				continue
+			} // --json rejects streaming before any authentication or persistence.
 			if !capabilityEffectHasPredicate(capability, effect, "option", "stateless", "equals") {
 				t.Fatalf("%s %s does not publish its stateful-only condition: %#v", capability.ID, effect, capability.SideEffectWhen)
 			}
@@ -371,7 +374,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		if command.cacheWrite && !capabilityEffectHasPredicate(capability, "local_cache_write", "option", "stateless", "equals") {
 			t.Fatalf("%s cache writes do not publish their stateful-only condition: %#v", capability.ID, capability.SideEffectWhen)
 		}
-		if !capabilityConditionsHavePredicate(capability.InteractionWhen, "option", "stateless", "equals") {
+		if capability.ID != "mcp" && !capabilityConditionsHavePredicate(capability.InteractionWhen, "option", "stateless", "equals") {
 			t.Fatalf("%s authentication interaction does not publish its stateful-only condition: %#v", capability.ID, capability.InteractionWhen)
 		}
 		if capability.ID == "projects.list" {
@@ -748,7 +751,7 @@ func TestDetailedCapabilitiesConformToStandaloneSchema(t *testing.T) {
 		unconditionalLocalWrite := slices.ContainsFunc(capability.SideEffectWhen, func(item contract.SideEffectCondition) bool {
 			return item.Effect == "local_state_write" && len(item.When) == 0
 		})
-		if capability.SideEffectLevel < 1 || !unconditionalLocalWrite && !capabilityHasPredicate(capability, "local_state_write", "profile_bootstrap", "required") {
+		if capability.ID != "mcp" && (capability.SideEffectLevel < 1 || !unconditionalLocalWrite && !capabilityHasPredicate(capability, "local_state_write", "profile_bootstrap", "required")) {
 			t.Fatalf("%s omits JSON envelope profile bootstrap: %#v", capability.ID, capability.SideEffectWhen)
 		}
 		if capability.ProblemCodes == nil || capability.SideEffects == nil || capability.SideEffectWhen == nil || capability.NetworkWhen == nil || capability.DestructiveWhen == nil || capability.IdempotencyWhen == nil || capability.StdinModes == nil || capability.InteractionWhen == nil {
@@ -894,7 +897,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		"add", "apply",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"delete", "duplicate", "experiments.delete", "experiments.list", "experiments.show", "get",
-		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
+		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename", "mcp",
 		"personalizations.list", "personalizations.show", "project.defaults", "project.export", "project.import", "project.open", "project.show",
 		"projects.diff", "projects.list", "projects.promote", "rollouts.delete", "rollouts.list", "rollouts.show", "update",
 		"versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
@@ -2747,7 +2750,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 				}
 			}
 			wantOutcomes := []string{"success", "failure"}
-			if capability.ID == "config.edit" {
+			if capability.ID == "config.edit" || capability.ID == "mcp" {
 				wantOutcomes = []string{"failure"}
 			} else if partialCommands[capability.ID] {
 				wantOutcomes = []string{"success", "partial_success", "failure"}

@@ -15,6 +15,8 @@
     "app.failure_runtime": "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
     "app.interaction": "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
     "app.invocation_semantics": "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
+    "app.mcp_json_failure": "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
+    "app.mcp_stdio": "cli/app/mcp_test.go#TestMCPStdioLifecycleAndContract",
     "app.no_op": "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
     "app.outcomes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
     "app.plan_capability_boundaries": "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
@@ -5945,6 +5947,104 @@
             "app.response_invariants",
             "e2e:hooks_untrust_json"
           ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "mcp",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof"
+          ]
+        },
+        "effects": {
+          "not_applicable": "The command declares no effects or network access."
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "app.unknown_option",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "app.unknown_option",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.mcp_json_failure",
+            "app.mcp_stdio",
+            "app.selection",
+            "e2e:mcp_json",
+            "e2e:mcp_stateless_eof"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "not_applicable": "The JSON operation is interaction-only and has no success outcome."
         },
         "warning": {
           "not_applicable": "The command has no reachable non-fatal warning branch."

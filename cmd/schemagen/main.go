@@ -1444,7 +1444,19 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 			schema["uniqueItems"] = true
 			addNormalization(schema, "deduplicate_preserve_first")
 		}
-	case "timeout":
+	case "confirmation":
+		if commandID == "mcp" {
+			schema["enum"] = []string{"host", "none"}
+		}
+	case "browser-auth":
+		if commandID == "mcp" {
+			schema["enum"] = []string{"auto", "never"}
+		}
+	case "toolsets":
+		if commandID == "mcp" {
+			schema["items"] = map[string]any{"type": "string", "enum": []string{"inspect", "edit", "drafts", "plans", "publish", "diagnostics"}}
+		}
+	case "timeout", "request-timeout", "auth-timeout":
 		// Cobra rejects every zero-valued duration spelling, not only the
 		// literal "0" (for example 0s and 0h0m).
 		schema["pattern"] = `^\+?(?:(?:0+(?:\.0*)?|\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\d*[1-9]\d*(?:\.\d*)?|0*\.\d*[1-9]\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\d+(?:\.\d*)?|\.\d+)(?:ns|us|µs|μs|ms|s|m|h))*$`
@@ -2274,6 +2286,9 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 			"not": map[string]any{"required": []string{"profile"}},
 		}
 		statelessOptionProperties := map[string]any{}
+		if commandID == "mcp" {
+			statelessOptionProperties["allow-hooks"] = map[string]any{"const": false}
+		}
 		if statelessMutationRejectsDraft(commandID) {
 			statelessOptionProperties["draft"] = map[string]any{"const": false}
 		}

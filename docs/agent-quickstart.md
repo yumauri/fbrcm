@@ -8,6 +8,10 @@ catalog, and exit-status table.
 
 ## The golden rule
 
+For MCP hosts, use the built-in [`fbrcm mcp` server](MCP.md) without `--json`.
+The following rules apply to one-shot CLI execution; MCP wraps the same envelopes
+in its own protocol and supplies tool schemas and supported user interactions.
+
 Always pass `--json`. Every command accepts it and returns one versioned
 envelope on stdout. Without it you get human tables, colors, and interactive
 prompts that are not meant to be parsed. Operational logging defaults to

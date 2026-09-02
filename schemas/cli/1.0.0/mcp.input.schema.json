@@ -1,0 +1,244 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "stateless_target_selector": {
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\\s][^@\\s]*$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@]literal physical project ID; an omitted template prefix selects client",
+      "x-fbrcm-matching": [
+        {
+          "comparison": "exact_case_sensitive",
+          "default_template": "client",
+          "lookup": false,
+          "operator": "literal_project_id"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            },
+            "properties": {
+              "allow-hooks": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "else": {
+        "properties": {
+          "options": {
+            "properties": {
+              "profile": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/path_segment"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          }
+        },
+        "required": [
+          "options"
+        ]
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "properties": {
+              "project": {
+                "$ref": "#/$defs/stateless_target_selector"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "allow-hooks": {
+          "description": "Allow already-trusted configured hooks during tool execution",
+          "type": "boolean"
+        },
+        "allow-writes": {
+          "description": "Enable mutation tools and explicit artifact writes (inspection may still refresh caches and credentials)",
+          "type": "boolean"
+        },
+        "auth-timeout": {
+          "description": "Maximum duration of a browser authorization attempt",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "browser-auth": {
+          "description": "Browser authorization: auto (ask supporting hosts) or never",
+          "enum": [
+            "auto",
+            "never"
+          ],
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
+        "confirmation": {
+          "description": "Mutation approval: host (explicit elicitation) or none (operator-authorized unattended execution)",
+          "enum": [
+            "host",
+            "none"
+          ],
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "request-timeout": {
+          "description": "Maximum duration per tool operation, including queueing and user interaction",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "toolsets": {
+          "description": "Enabled toolsets: inspect, edit, drafts, plans, publish, diagnostics",
+          "items": {
+            "enum": [
+              "inspect",
+              "edit",
+              "drafts",
+              "plans",
+              "publish",
+              "diagnostics"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object"
+}

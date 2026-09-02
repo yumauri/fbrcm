@@ -34,6 +34,15 @@ type responseModel struct {
 
 var responseModels sync.Map // map[*cobra.Command]responseModel
 
+// UnregisterResponses releases registrations for a disposable command tree.
+// Hosted frontends build fresh command instances for every invocation.
+func UnregisterResponses(root *cobra.Command) {
+	responseModels.Delete(root)
+	for _, command := range root.Commands() {
+		UnregisterResponses(command)
+	}
+}
+
 func hasResponseModel(cmd *cobra.Command) bool {
 	_, ok := responseModels.Load(cmd)
 	return ok

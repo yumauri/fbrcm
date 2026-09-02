@@ -12,6 +12,14 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── list
 │   └── show <schema-id>
 │
+├── mcp [--toolsets inspect,edit,drafts,plans,publish]
+│   ├── --allow-writes
+│   ├── --allow-hooks
+│   ├── --confirmation host|none
+│   ├── --browser-auth auto|never
+│   ├── --request-timeout <duration>  default 5m
+│   └── --auth-timeout <duration>     default 2m
+│
 ├── plan
 │   ├── show <plan> [--json]
 │   └── validate <plan> [--json]
@@ -881,6 +889,37 @@ Every structured error and warning remediation declares how its non-empty
 complete fbrcm subcommand argument list. Agents should branch on that
 `strategy` instead of interpreting remediation text.
 
+## MCP server
+
+`fbrcm mcp` runs a built-in stdio MCP server. The AI application launches the
+command using the user's configured arguments and environment. See [MCP setup
+and behavior](MCP.md) for the complete catalog, authentication, and examples.
+
+`--toolsets` selects comma-separated groups (default
+`inspect,edit,drafts,plans,publish`; `diagnostics` is opt-in). Mutations and
+explicit artifact writes additionally require `--allow-writes`. Inspection may
+still refresh caches, synchronize projects, and persist credentials. Hooks are
+disabled unless `--allow-hooks` is present; existing trust checks still apply.
+`--confirmation` defaults to `host`, requiring explicit form elicitation before
+mutations; `none` opts into unattended execution. `--browser-auth` defaults to
+`auto`, using URL elicitation on supporting hosts; `never` requires external login.
+
+`--profile` fixes the effective profile for the process. `--stateless` uses
+`FBRCM_GOOGLE_ACCESS_TOKEN`, excludes local-state tools, and never falls back to
+stored credentials. It rejects an explicit `--profile` or `--allow-hooks`.
+Normal local configuration resolution is retained unless `--no-local-config`
+is given; stateless mode always disables it.
+
+Global `--timeout` limits the server lifetime (unlimited when omitted).
+`--request-timeout` limits each operation including queueing and interaction
+(default `5m`); `--auth-timeout` limits each browser attempt (default `2m`). All
+supplied durations must be positive; the earliest applicable deadline wins.
+
+Stdout contains MCP messages only. `mcp --json` returns a typed CLI argument
+failure before starting the transport or reading profiles, with
+`context.profile: null` even without `--stateless`. Once MCP starts, completed
+tools embed their original CLI envelopes inside MCP responses.
+
 The following maintained inventory assigns every executable machine operation
 to this reference, including commands documented by a shared section. Contract
 tests compare it exactly with the executable Cobra inventory.
@@ -947,6 +986,7 @@ hooks.fingerprint
 hooks.status
 hooks.trust
 hooks.untrust
+mcp
 personalizations.list
 personalizations.show
 plan.show

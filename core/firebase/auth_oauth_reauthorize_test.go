@@ -136,6 +136,46 @@ func TestRecoverRejectedOAuthTokenPreservesTransientRefreshFailure(t *testing.T)
 	}
 }
 
+func TestLiveTokenRefreshRecoveryDoesNotReplayAnAPIWrite(t *testing.T) {
+	for _, code := range []string{"invalid_grant", "temporarily_unavailable"} {
+		t.Run(code, func(t *testing.T) {
+			calls, recoveries := 0, 0
+			ctx := context.WithValue(t.Context(), oauth2.HTTPClient, &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				calls++
+				body, err := io.ReadAll(req.Body)
+				if err != nil || string(body) != "publication" {
+					t.Errorf("request body: %q %v", body, err)
+				}
+				return jsonHTTPResponse(http.StatusOK, `{}`, ""), nil
+			})})
+			tokens := newRotatingOAuthTokenSource(failingOAuthTokenSource{err: &oauth2.RetrieveError{ErrorCode: code}}, &oauth2.Token{RefreshToken: "refresh"})
+			client, err := newRecoveringOAuthClient(ctx, tokens, func(*oauth2.Token) (oauth2.TokenSource, *oauth2.Token, error) {
+				recoveries++
+				token := &oauth2.Token{AccessToken: "fresh"}
+				return oauth2.StaticTokenSource(token), token, nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			req, err := http.NewRequestWithContext(ctx, http.MethodPut, "https://firebase.invalid/config", strings.NewReader("publication"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			response, err := client.Do(req)
+			if response != nil {
+				_ = response.Body.Close()
+			}
+			if code == "invalid_grant" {
+				if err != nil || calls != 1 || recoveries != 1 {
+					t.Fatalf("recovery: calls=%d recoveries=%d err=%v", calls, recoveries, err)
+				}
+			} else if err == nil || calls != 0 || recoveries != 0 {
+				t.Fatalf("transient failure triggered recovery: %d %d %v", calls, recoveries, err)
+			}
+		})
+	}
+}
+
 func TestOAuthUnauthorizedTransportRecoversAndRetriesOnce(t *testing.T) {
 	tokens := newRotatingOAuthTokenSource(
 		oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "broken"}),

@@ -5,6 +5,7 @@ type statelessCommandSupport struct {
 }
 
 var statelessCommands = map[string]statelessCommandSupport{
+	"mcp":                   {},
 	"apply":                 {requiresAccessToken: true},
 	"add":                   {requiresAccessToken: true},
 	"conditions.list":       {requiresAccessToken: true},
