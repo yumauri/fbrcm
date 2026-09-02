@@ -12,11 +12,64 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/mcpserver"
-	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core/config"
+	frontend "github.com/yumauri/fbrcm/mcp"
+	"github.com/yumauri/fbrcm/mcp/server"
+	"github.com/yumauri/fbrcm/ops"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/shared"
+	"github.com/yumauri/fbrcm/schemas"
 )
+
+func TestMCPEmbeddedCapabilitiesMatchLiveDefinitions(t *testing.T) {
+	root := NewRootForContract("test")
+	defer contract.UnregisterResponses(root)
+	raw, err := json.MarshalIndent(contract.DetailedCapabilities(root), "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(bytes.TrimSpace(raw), bytes.TrimSpace(schemas.CapabilitiesJSON)) {
+		t.Fatal("MCP metadata is stale; run go run ./cmd/schemagen")
+	}
+}
+
+func TestMCPStandaloneHelpPreservesCLIEnvelope(t *testing.T) {
+	state := t.TempDir()
+	t.Setenv("FBRCM_CONFIG_DIR", filepath.Join(state, "config"))
+	t.Setenv("FBRCM_CACHE_DIR", filepath.Join(state, "cache"))
+	t.Cleanup(func() { config.SetLocalConfigDisabled(false) })
+	args := []string{"mcp", "--help", "--json"}
+	root := NewRootForContract("test")
+	defer contract.UnregisterResponses(root)
+	var captured bytes.Buffer
+	root.SetArgs(args)
+	root.SetOut(&captured)
+	root.SetErr(io.Discard)
+	cmd, err := root.ExecuteC()
+	want := contract.BuildEnvelope(cmd, "test", captured.Bytes(), err)
+	var output bytes.Buffer
+	code := frontend.Run(t.Context(), nil, "test", "", "", args, bytes.NewReader(nil), &output, io.Discard)
+	if code != want.ExitCode {
+		t.Fatalf("standalone exit %d, CLI exit %d", code, want.ExitCode)
+	}
+	var got any
+	if err := json.Unmarshal(output.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	wantRaw, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wantValue any
+	if err := json.Unmarshal(wantRaw, &wantValue); err != nil {
+		t.Fatal(err)
+	}
+	gotRaw, _ := json.Marshal(got)
+	normalizedWant, _ := json.Marshal(wantValue)
+	if !bytes.Equal(gotRaw, normalizedWant) {
+		t.Fatalf("standalone help differs:\n%s\n%s", gotRaw, normalizedWant)
+	}
+}
 
 func TestMCPJSONFailureDoesNotBootstrapProfile(t *testing.T) {
 	state := t.TempDir()
@@ -57,8 +110,11 @@ func TestHostedStatelessStdinUsesExistingContractAndNoLocalState(t *testing.T) {
 		t.Fatal(err)
 	}
 	input := mcpserver.Invocation{Arguments: map[string]json.RawMessage{}, Options: map[string]json.RawMessage{}, Stdin: json.RawMessage(`{"parameters":{"flag":{"defaultValue":{"value":"hello"}}}}`)}
-	options := mcpserver.Options{Stateless: true, RequestTimeout: time.Second, AuthTimeout: time.Second}
-	envelope := runHostedMachine(context.Background(), nil, "test", "", "", capability, input, options, false, false, nil, io.Discard)
+	registry, err := ops.NewRegistry(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	envelope := registry.Execute(context.Background(), capability, input, ops.Execution{Version: "test", Stateless: true, AuthTimeout: time.Second})
 	if envelope.Outcome != "success" {
 		t.Fatalf("hosted result: %#v", envelope)
 	}
@@ -85,12 +141,12 @@ func TestHostedStatelessStdinUsesExistingContractAndNoLocalState(t *testing.T) {
 
 func TestMCPInvocationDetection(t *testing.T) {
 	for _, args := range [][]string{{"mcp"}, {"--profile", "work", "mcp"}, {"mcp", "--stateless"}} {
-		if !IsMCPInvocation(args) {
+		if !frontend.IsInvocation(args) {
 			t.Fatalf("missed %v", args)
 		}
 	}
 	for _, args := range [][]string{{"get", "mcp"}, {"--profile", "mcp", "get"}} {
-		if IsMCPInvocation(args) {
+		if frontend.IsInvocation(args) {
 			t.Fatalf("misidentified %v", args)
 		}
 	}
@@ -103,15 +159,10 @@ func TestMCPStdioLifecycleAndContract(t *testing.T) {
 	toServerR, toServerW := io.Pipe()
 	fromServerR, fromServerW := io.Pipe()
 	defer func() { _ = toServerR.Close(); _ = toServerW.Close(); _ = fromServerR.Close(); _ = fromServerW.Close() }()
-	root := NewRootForContract("test")
-	defer contract.UnregisterResponses(root)
-	root.SetContext(ctx)
-	root.SetArgs([]string{"mcp", "--stateless", "--toolsets", "inspect"})
-	root.SetIn(toServerR)
-	root.SetOut(fromServerW)
-	root.SetErr(io.Discard)
-	done := make(chan error, 1)
-	go func() { _, err := root.ExecuteC(); done <- err }()
+	done := make(chan int, 1)
+	go func() {
+		done <- frontend.Run(ctx, nil, "test", "", "", []string{"mcp", "--stateless", "--toolsets", "inspect"}, toServerR, fromServerW, io.Discard)
+	}()
 	client := mcp.NewClient(&mcp.Implementation{Name: "stdio-test", Version: "1"}, nil)
 	cs, err := client.Connect(ctx, &mcp.IOTransport{Reader: fromServerR, Writer: toServerW}, nil)
 	if err != nil {
@@ -134,9 +185,9 @@ func TestMCPStdioLifecycleAndContract(t *testing.T) {
 	}
 	_ = cs.Close()
 	select {
-	case err := <-done:
-		if err != nil {
-			t.Fatalf("shutdown: %v", err)
+	case code := <-done:
+		if code != 0 {
+			t.Fatalf("shutdown: %v", code)
 		}
 	case <-ctx.Done():
 		t.Fatal("stdio server did not stop on EOF")
@@ -153,8 +204,11 @@ func TestHostedMutationPreservesArtifactContractAndEmptyGroups(t *testing.T) {
 		t.Fatal(err)
 	}
 	input := mcpserver.Invocation{Arguments: map[string]json.RawMessage{"parameter": json.RawMessage(`"feature"`)}, Options: map[string]json.RawMessage{"type": json.RawMessage(`"boolean"`), "value": json.RawMessage(`"true"`)}, Stdin: json.RawMessage(`{"parameters":{},"parameterGroups":{"empty":{"description":"preserve"}}}`)}
-	o := mcpserver.Options{Stateless: true, AllowWrites: true, AuthTimeout: time.Second}
-	envelope := runHostedMachine(t.Context(), nil, "test", "", "", capability, input, o, true, false, nil, io.Discard)
+	registry, err := ops.NewRegistry(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	envelope := registry.Execute(t.Context(), capability, input, ops.Execution{Version: "test", Stateless: true, Confirmed: true, AuthTimeout: time.Second})
 	if envelope.Outcome != "success" {
 		t.Fatalf("mutation result: %#v", envelope)
 	}

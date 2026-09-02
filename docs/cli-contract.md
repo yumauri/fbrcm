@@ -67,8 +67,13 @@ absence of side effects; normal launch behavior is documented in [MCP.md](MCP.md
 MCP input reuses the normalized `arguments`, `options`, and `stdin` shape from
 published invocation schemas. Server-controlled options are excluded and schema
 references are bundled for clients. A supplied `stdin` document uses an explicit
-in-memory reader, never the protocol stream. Fresh command instances use the
-same envelope builder and semantic validation as CLI execution.
+in-memory reader, never the protocol stream. Fresh application invocations use
+the same workflows, envelope builder, and semantic validation as CLI execution.
+MCP is an independent frontend: it binds structured options directly, without
+converting them to argv or executing the CLI's Cobra command pipeline. The
+shared contract implementation lives in `ops/contract`; schema URNs
+remain unchanged. Schema generation also publishes `schemas/capabilities.json`
+for discovery without constructing a CLI tree at MCP startup.
 
 Completed tools return the entire unchanged envelope in `structuredContent`
 and identical JSON in text `content`. Success maps to `isError: false`; failure

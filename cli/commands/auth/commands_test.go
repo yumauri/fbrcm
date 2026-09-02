@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yumauri/fbrcm/cli/contract"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
+	"github.com/yumauri/fbrcm/ops/contract"
 )
 
 func setupAuthCommandTest(t *testing.T) *core.Core {

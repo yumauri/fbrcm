@@ -10,10 +10,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/progress"
-	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	coreeditor "github.com/yumauri/fbrcm/core/editor"
+	"github.com/yumauri/fbrcm/internal/terminal/progress"
+	"github.com/yumauri/fbrcm/ops/shared"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 

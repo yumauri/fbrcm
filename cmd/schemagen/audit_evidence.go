@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
+	"github.com/yumauri/fbrcm/ops/contract"
 )
 
 var generatedAuditClasses = []string{
@@ -145,21 +145,21 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.stdin_restrictions":                "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
 		"app.unknown_option":                    "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
 		"app.warning_runtime":                   "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
-		"apply.no_change_success":               "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
-		"apply.status_runtime":                  "cli/commands/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
-		"apply.draft_cleanup_runtime":           "cli/commands/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
-		"apply.warning_runtime":                 "cli/commands/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
+		"apply.no_change_success":               "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
+		"apply.status_runtime":                  "ops/workflows/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
+		"apply.draft_cleanup_runtime":           "ops/workflows/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
+		"apply.warning_runtime":                 "ops/workflows/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
 		"auth.oauth_success":                    "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
 		"auth.google_quota_failure":             "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
-		"contract.artifact_runtime":             "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
-		"contract.batch_runtime":                "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
+		"contract.artifact_runtime":             "ops/contract/contract_test.go#TestArtifactEncodesBinaryContent",
+		"contract.batch_runtime":                "ops/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
 		"draft.publish_success":                 "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
 		"profile.root_success":                  "cli/commands/profile/commands_test.go#TestProfileRootJSON",
-		"plan.metadata_success":                 "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
-		"plan.artifact_runtime":                 "cli/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
+		"plan.metadata_success":                 "ops/workflows/plan/commands_test.go#TestPlanShowAndValidateJSON",
+		"plan.artifact_runtime":                 "ops/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
 		"schemagen.determinism":                 "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
 		"theme.mutation_success":                "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
-		"versions.restore_success":              "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
+		"versions.restore_success":              "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
 	}
 }
 

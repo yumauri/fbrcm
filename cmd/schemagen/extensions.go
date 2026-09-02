@@ -6,7 +6,7 @@ import (
 
 	jsonschema "github.com/santhosh-tekuri/jsonschema/v6"
 
-	"github.com/yumauri/fbrcm/cli/contract"
+	"github.com/yumauri/fbrcm/ops/contract"
 )
 
 type extensionValidators struct {

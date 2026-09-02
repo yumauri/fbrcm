@@ -6,6 +6,24 @@ the SDK adapts interactions for older supported protocol versions. Browser
 recovery requires URL elicitation (introduced in MCP 2025-11-25); mutation
 confirmation requires form elicitation. Host support and UI vary.
 
+## Architecture
+
+MCP is a separate application mode alongside CLI and TUI. `main` routes
+`fbrcm mcp` directly to the top-level `mcp` package, which owns startup,
+protocol sessions, cancellation, and host interaction. The CLI retains a small
+launch descriptor for help, completion, and capability discovery.
+
+CLI and MCP invoke the same workflows in `ops/workflows`. Their shared
+definitions contain option defaults, argument constraints, response DTOs, and
+handlers. `cli/operation` adapts them to Cobra; MCP binds structured input
+directly through `ops.Registry`. It does not construct command argv,
+execute Cobra commands per tool call, or pass through CLI startup. Each call
+gets fresh option values, context, output, and warning state.
+
+The versioned contract lives in `ops/contract`; its public schema URNs
+and envelopes are unchanged. `go run ./cmd/schemagen` also publishes the embedded
+capability catalog used by MCP, so protocol startup needs no CLI command tree.
+
 ## Setup and permissions
 
 Configure your AI application with the binary path, arguments, and environment.

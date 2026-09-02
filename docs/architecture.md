@@ -8,20 +8,24 @@ boundaries and important data-flow rules.
 ```text
 main.go
 ├── no arguments ──> tui/
-└── any arguments ─> cli/
+├── mcp command ───> mcp/
+└── other arguments > cli/
 
 cli/ ─┐
-      ├──> core/ ──> Firebase and local storage
-tui/ ─┘
+      ├──> ops/ ──> core/ ──> Firebase and local storage
+mcp/ ─┘            ↑
+tui/ ──────────────┘
 ```
 
-`main.go` initializes logging, constructs `core.Core`, and selects CLI or TUI
-mode. `cli` and `tui` depend on `core`; `core` never imports either presentation
-layer.
+`main.go` initializes logging, constructs `core.Core`, and selects CLI, TUI, or
+MCP mode. MCP does not enter CLI startup. `core` never imports a frontend;
+`ops` and `mcp` never import `cli`. Architecture tests enforce these
+dependency boundaries.
 
 ## `core/`
 
-The root `core` package is the facade used by both front ends. Its files expose
+The root `core` package is the domain facade used by the frontends and shared
+application workflows. Its files expose
 authentication, project discovery, Remote Config reads and publication,
 parameter and condition trees, imports, drafts, history, and cross-project
 promotion.
@@ -54,10 +58,9 @@ delegating methods in root `core` files are intentional.
 ## `cli/`
 
 `cli/app` builds the Cobra root, selects the process profile, initializes
-offline mode, and maps command errors to exit codes. `cli/contract` owns the
-versioned JSON envelope, typed problem classification, artifact wrapping, and
-capability discovery. `schemas` embeds the generated per-command Draft 2020-12
-schemas; `cmd/schemagen` regenerates those schemas and the capability golden.
+offline mode, and maps command errors to exit codes. CLI-specific management
+commands remain here; shared workflows are adapted through `cli/operation`.
+The MCP command is a launch/discovery descriptor, not a tool execution bridge.
 
 `cli/commands` contains one package per top-level feature:
 
@@ -66,22 +69,36 @@ add  auth  cache  conditions  config  delete  doctor  draft
 duplicate  get  groups  profile  project  projects  update  versions
 ```
 
-Notable nested packages:
+## `ops/`
 
-- `cli/commands/project/import` owns the interactive/non-interactive import
+`ops/workflows` owns reusable operation definitions, defaults, typed
+results, and workflow handlers. CLI adapters preserve Cobra parsing and human
+output. MCP binds the existing normalized JSON inputs directly to fresh option
+sets and invokes handlers without parsing argv or executing a Cobra tree.
+The `ops/invocation` interface carries context, options, and I/O, not
+frontend lifecycle. Shared publication policy is used by both adapters.
+
+`ops/contract` owns the unchanged versioned JSON envelope, typed problem
+classification, artifact wrapping, and capability/schema metadata.
+`schemas` embeds generated Draft 2020-12 schemas and capability metadata;
+`cmd/schemagen` regenerates both from the same definitions as CLI discovery.
+
+Notable packages:
+
+- `ops/workflows/project/import` owns the interactive/non-interactive import
   flow;
-- `cli/commands/get/table` owns the responsive parameter table;
+- `ops/workflows/get/table` owns the responsive parameter table;
 - `cli/commands/testutil` contains command-test helpers.
 
-`cli/shared` contains behavior used across command packages: target resolution,
+`ops/shared` contains behavior used across workflows: target resolution,
 flags, text and expression filtering, confirmation, terminal sizing, JSON
 output, parameter search, prompt input, and batch-result helpers. Its machine
 mode prevents confirmations and selection prompts from running under the
 global JSON contract.
 
-### Remote Config CLI pipeline
+### Remote Config workflow pipeline
 
-`cli/shared/rc` centralizes the read/transform/diff/validate/publish pipeline:
+`ops/shared/rc` centralizes the read/transform/diff/validate/publish pipeline:
 
 | File | Responsibility |
 | --- | --- |
@@ -95,10 +112,20 @@ global JSON contract.
 
 Other shared subpackages:
 
-- `cli/shared/diffview` renders static side-by-side property diffs;
-- `cli/shared/fileoutput` provides overwrite-safe private file output;
-- `cli/internal/jsonscan` supports order-aware JSON processing without becoming
+- `ops/shared/diffview` renders static side-by-side property diffs;
+- `ops/shared/fileoutput` provides overwrite-safe private file output;
+- `internal/terminal` owns reusable terminal progress and styles;
+- `internal/jsonscan` supports order-aware JSON processing without becoming
   a public package.
+
+## `mcp/`
+
+The independent MCP frontend owns launch validation, stdio lifecycle, and
+signal handling. `mcp/server` owns tool discovery, schema specialization, host
+approval, OAuth interaction, cancellation, and continuation state. Tool calls
+use `ops.Registry`, not CLI handlers or subprocesses. Each invocation
+has fresh options, context, result, and warning state. Operations remain
+serialized while profile/cache configuration is process-scoped.
 
 ## `tui/`
 

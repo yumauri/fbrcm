@@ -19,6 +19,7 @@ type Mode string
 const (
 	ModeCLI Mode = "cli"
 	ModeTUI Mode = "tui"
+	ModeMCP Mode = "mcp"
 )
 
 const SilentLevel charmlog.Level = 42
@@ -182,7 +183,7 @@ func (m *manager) configureCLIOutput(logOutput, terminalOutput io.Writer) {
 	if terminalOutput != nil {
 		m.terminalOutput = terminalOutput
 	}
-	if m.mode == ModeCLI && m.level != SilentLevel {
+	if m.mode != ModeTUI && m.level != SilentLevel {
 		m.logger.SetOutput(m.cliOutput)
 	}
 }
@@ -202,7 +203,7 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 	}
 
 	m.logger.SetLevel(level)
-	if m.mode == ModeCLI {
+	if m.mode != ModeTUI {
 		m.logger.SetOutput(m.cliOutput)
 		return
 	}

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yumauri/fbrcm/cli/contract"
+	"github.com/yumauri/fbrcm/ops/contract"
 	"github.com/yumauri/fbrcm/schemas"
 )
 

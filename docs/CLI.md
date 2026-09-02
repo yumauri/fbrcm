@@ -895,6 +895,10 @@ complete fbrcm subcommand argument list. Agents should branch on that
 command using the user's configured arguments and environment. See [MCP setup
 and behavior](MCP.md) for the complete catalog, authentication, and examples.
 
+This selects the independent MCP application mode, alongside CLI and TUI.
+It remains in CLI help and capability discovery as a launch descriptor;
+MCP tool calls execute shared application workflows directly.
+
 `--toolsets` selects comma-separated groups (default
 `inspect,edit,drafts,plans,publish`; `diagnostics` is opt-in). Mutations and
 explicit artifact writes additionally require `--allow-writes`. Inspection may

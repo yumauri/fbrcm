@@ -10,14 +10,14 @@
 ## CLI tables
 
 - Every human-readable CLI table must use the same Lip Gloss table style as the existing `get`, `projects list`, and `cache list` commands.
-- Use `lipgloss.NormalBorder()`, a header separator, padded cells, the shared colors from `cli/styles`, alternating row backgrounds, and `NoColorEnabled()` support.
-- Size every table and column to the narrowest width that fits its full content. Consult `cli/shared.TerminalWidth()` only when that natural table would overflow. Choose specific flexible columns and an explicit overflow policy for each: either crop with an ellipsis or wrap into multiline cells, while leaving other columns single-line and content-width whenever possible. Do not assume wrapping is preferred; when the requested behavior is unspecified, identify the likely flexible column and ask the user whether it should wrap or use an ellipsis. Never rely on the terminal to soft-wrap a wider table, and add natural-width plus narrow-terminal regression tests for every new table.
+- Use `lipgloss.NormalBorder()`, a header separator, padded cells, the shared colors from `internal/terminal/styles`, alternating row backgrounds, and `NoColorEnabled()` support.
+- Size every table and column to the narrowest width that fits its full content. Consult `ops/shared.TerminalWidth()` only when that natural table would overflow. Choose specific flexible columns and an explicit overflow policy for each: either crop with an ellipsis or wrap into multiline cells, while leaving other columns single-line and content-width whenever possible. Do not assume wrapping is preferred; when the requested behavior is unspecified, identify the likely flexible column and ask the user whether it should wrap or use an ellipsis. Never rely on the terminal to soft-wrap a wider table, and add natural-width plus narrow-terminal regression tests for every new table.
 - Do not implement CLI tables with `text/tabwriter`, manually padded columns, or another ad hoc renderer.
 - Keep machine-readable output behind the command's JSON flag and free of terminal styling.
 
 ## CLI confirmations
 
-- Every interactive CLI yes/no confirmation must use `cli/shared.NewConfirmation`; do not construct prompt-kit confirmations directly.
+- Every interactive CLI yes/no confirmation must use `ops/shared.NewConfirmation`; do not construct prompt-kit confirmations directly.
 - Yes must be selected by default for every CLI confirmation. Keep that default centralized in the shared constructor.
 
 ## CLI documentation
@@ -27,7 +27,7 @@
 
 ## CLI machine contract
 
-- Every new executable CLI command must follow `docs/cli-contract.md`: it must participate in the global versioned `--json` envelope for success and failure, emit typed DTOs and structured problems, remain non-interactive in JSON mode, use the documented semantic exit statuses, register every successful data DTO with `cli/contract` (or explicitly register no successful data), and expose accurate capability metadata for arguments, flags, schemas, side effects, destructive behavior, idempotency, dry-run/draft support, stdin, and interaction requirements.
+- Every new executable CLI command must follow `docs/cli-contract.md`: it must participate in the global versioned `--json` envelope for success and failure, emit typed DTOs and structured problems, remain non-interactive in JSON mode, use the documented semantic exit statuses, register every successful data DTO with `ops/contract` (or explicitly register no successful data), and expose accurate capability metadata for arguments, flags, schemas, side effects, destructive behavior, idempotency, dry-run/draft support, stdin, and interaction requirements.
 - Create machine errors as typed errors at their source and classify them with `errors.As`; never infer a problem code, category, retryability, or exit status from message wording. Collect non-fatal machine warnings in command context with structured details and safe remediation argv. Mutation DTOs must preserve selection breadth, matched-item count, and no-op provenance.
 - Keep generated input and response schemas semantic: model enums, bounds, formats, mutual exclusions, conditional requirements, concrete stdin payloads, selector/filter/expression grammars, and reusable definitions. Runtime conformance tests must validate actual success, empty/no-op, typed failure, interaction, partial-publication, warning, redaction, and boundary envelopes against the published Draft 2020-12 schemas.
 - Do not add command-local JSON formats, `map[string]any` machine payloads, human tables or usage text on JSON stdout, or prompts, editors, file pickers, and browser launches in JSON mode. Raw content must use the contract artifact DTO.

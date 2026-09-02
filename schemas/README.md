@@ -51,7 +51,10 @@ go run ./cmd/schemagen
 ```
 
 Review both the schemas and
-`cli/app/testdata/contract_v1_capabilities.golden.json`. The
+`cli/app/testdata/contract_v1_capabilities.golden.json`. Generation also publishes
+`schemas/capabilities.json`, the embedded detailed operation catalog used by
+the independent MCP frontend. A regression test compares it with live CLI
+discovery; no separate hand-maintained tool schemas are needed. The
 `cli/contract.lock.json` fingerprint makes generation fail when the machine
 interface changes without a contract-version bump. Do not edit generated schema
 files or the lock by hand.

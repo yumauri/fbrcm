@@ -8,12 +8,12 @@ import (
 	"golang.org/x/term"
 
 	"github.com/yumauri/fbrcm/cli/app"
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/progress"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/internal/terminal/progress"
+	"github.com/yumauri/fbrcm/ops/contract"
 )
 
 func Init(s *core.Core, version, commit, date string) {
@@ -25,7 +25,7 @@ func Init(s *core.Core, version, commit, date string) {
 }
 
 func configureTheme(args []string) {
-	if env.NoColorEnabled() || contract.JSONRequested(args) || booleanFlagEnabled(args, "stateless") || app.IsMCPInvocation(args) {
+	if env.NoColorEnabled() || contract.JSONRequested(args) || booleanFlagEnabled(args, "stateless") {
 		return
 	}
 	config.SetLocalConfigDisabled(booleanFlagEnabled(args, "no-local-config"))

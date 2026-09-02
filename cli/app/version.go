@@ -1,8 +1,8 @@
 package app
 
 import (
-	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core/about"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 )
 
 const versionLine = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`

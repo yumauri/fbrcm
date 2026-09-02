@@ -15,11 +15,11 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/yumauri/fbrcm/cli/app"
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/machine"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/publication"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/machine"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -52,6 +52,7 @@ func stageGeneratedContract(stageRoot string) {
 	auditEvidenceGoldenName := "contract_v" + major + "_audit_evidence.golden.json"
 	write(goldenDir, goldenName, index)
 	write(goldenDir, detailedGoldenName, detailed)
+	write(filepath.Join(stageRoot, "schemas"), "capabilities.json", detailed)
 	write(goldenDir, auditEvidenceGoldenName, buildAuditEvidenceMatrix(root, detailed))
 	outDir := filepath.Join(stageRoot, "schemas", "cli", contract.Version)
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
@@ -191,6 +192,7 @@ type publishItem struct {
 func publishGeneratedContract(stageRoot string) error {
 	major, _, _ := strings.Cut(contract.Version, ".")
 	items := []publishItem{
+		{staged: filepath.Join(stageRoot, "schemas", "capabilities.json"), target: filepath.Join("schemas", "capabilities.json")},
 		{staged: filepath.Join(stageRoot, "schemas", "cli", contract.Version), target: filepath.Join("schemas", "cli", contract.Version)},
 		{staged: filepath.Join(stageRoot, "cli", "app", "testdata", "contract_v"+major+"_capabilities.golden.json"), target: filepath.Join("cli", "app", "testdata", "contract_v"+major+"_capabilities.golden.json")},
 		{staged: filepath.Join(stageRoot, "cli", "app", "testdata", "contract_v"+major+"_capabilities_detailed.golden.json"), target: filepath.Join("cli", "app", "testdata", "contract_v"+major+"_capabilities_detailed.golden.json")},

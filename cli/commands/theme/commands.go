@@ -13,11 +13,11 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/shared"
-	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 const (
