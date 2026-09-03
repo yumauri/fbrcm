@@ -1,6 +1,10 @@
 # fbrcm CLI
 
-`fbrcm` is a Firebase Remote Config manager. It runs as an interactive TUI when called with no arguments. Any argument switches to CLI mode. See the [TUI guide](TUI.md) for the interactive workflow. Agents and scripts should start with the [agent quickstart](agent-quickstart.md); the global `--json` flag enables the versioned [machine contract](cli-contract.md).
+`fbrcm` is a Firebase Remote Config manager. This guide covers its CLI commands.
+Running it without arguments opens the [TUI](TUI.md); `fbrcm mcp` starts the
+[MCP server](MCP.md). Agents and scripts using the CLI should start with the
+[agent quickstart](agent-quickstart.md); the global `--json` flag enables the
+versioned [machine contract](cli-contract.md).
 
 ## Command tree
 
@@ -533,7 +537,7 @@ FBRCM_PROFILE
 | `FBRCM_OFFLINE` | Enable CLI offline mode whenever the variable is defined, including as an empty string or `0`. If it is unset, CLI commands perform only their declared network operations. In human mode, `project open` prints its console URL instead of launching a browser. |
 | `FBRCM_LOG_LEVEL` | Set logging to `debug`, `info`, `warn`, `error`, `fatal`, or `silent`, case-insensitively. The default is `info` for human CLI/TUI use and `silent` with `--json`; an explicit value overrides either default. |
 | `FBRCM_LOG_NO_TIMESTAMP` | Omit timestamps from log lines when set to a non-empty value. Useful for deterministic CI and snapshot output. |
-| `FBRCM_LOG_PLAIN` | Emit plain log text without ANSI colors, decorations, or hyperlink escape sequences when set to a non-empty value. Applies to CLI and TUI log entries; MCP always uses this mode. Does not change log level, timestamps, tables, prompts, or other UI styling. |
+| `FBRCM_LOG_PLAIN` | Emit log text without ANSI colors, decorations, or hyperlinks when set to a non-empty value. Does not change verbosity, timestamps, or styling outside log entries. |
 | `FBRCM_EDITOR` | Select the command used by `config edit`, after `--editor` and before `VISUAL` or `EDITOR`. Arguments are supported. |
 | `FBRCM_NO_LOCAL_CONFIG` | Ignore repository `.fbrcm.toml` discovery when set to a non-empty value. The root `--no-local-config` flag provides the same behavior for one invocation. |
 | `FBRCM_HOOK_TRUST` | Trust local hooks for this invocation only when the value exactly matches `fbrcm hooks fingerprint`. Intended for CI. |
@@ -555,9 +559,9 @@ configuration-validation exceptions.
 
 Use `FBRCM_LOG_PLAIN=1` for escape-free logs in CI. Like
 `FBRCM_LOG_NO_TIMESTAMP`, any non-empty value enables it, including `0`, `false`,
-and whitespace; unset it or set it to an empty string to retain normal CLI/TUI
-log styling. MCP logs remain plain regardless. Unlike `NO_COLOR`, this setting
-removes all terminal styling from log entries but leaves other output alone.
+and whitespace; unset it or set it to an empty string to retain normal log
+styling. Unlike `NO_COLOR`, this setting removes all terminal styling from log
+entries but leaves other output alone.
 It does not sanitize output produced by external hooks or subprocesses.
 
 For JSON output with visible plain-text diagnostic logs on stderr:
@@ -739,12 +743,12 @@ update flow accept `--plan-out <path>`. This creates an immutable, validated,
 self-contained publication plan instead of publishing or changing drafts. It
 is supported by parameter, group, and condition mutations, `project import`,
 `projects promote`, `draft publish`, and `versions restore`. Firebase's native
-`versions rollback` endpoint is deliberately excluded because it is a force
+`versions rollback` endpoint is excluded because it is a force
 operation rather than an exact ETag-protected template publication.
 
 `--plan-out` is mutually exclusive with `--dry-run`, `--draft`, and `--yes`.
-The destination is created exclusively as a private file and is never
-overwritten; `-` is not accepted as an output path because a plan embeds the
+fbrcm creates a private file and never overwrites an existing destination.
+It rejects `-` as an output path because a plan embeds the
 complete base and candidate Remote Config templates. Planning resolves the
 same targets and selection, checks draft conflicts where applicable, fetches
 fresh base templates, validates every changed candidate with Firebase, and
@@ -767,21 +771,24 @@ the reviewed selection explicit. Plans created under `--stateless` must be
 applied under `--stateless`; stateful plans must be applied statefully with the
 same effective hook configuration.
 
-`fbrcm plan show` and `fbrcm plan validate` are offline metadata operations.
-`fbrcm apply` first verifies the strict document and its integrity hash, then
+`fbrcm plan show` and `fbrcm plan validate` inspect plans offline.
+`fbrcm apply` first verifies the document structure and its integrity hash, then
 preflights every target before any publication. A target whose current digest
 already equals the candidate is an idempotent `already-applied` result. Any
 other target must still match both its planned base digest and ETag, otherwise
 the whole preflight fails with `plan.stale`; apply never silently rebases or
-replans. After one aggregate confirmation, all changed candidates and trusted
-pre-publish hooks are validated before the first write. Multi-target apply is
+replans.
+
+After one confirmation for the whole plan, fbrcm validates all changed candidates
+and runs trusted pre-publish hooks before the first write. Multi-target apply is
 non-atomic once publication begins, so successful targets are not rolled back
 if a later independent target fails. Matching source drafts are removed only
 after a live apply; drafts changed since planning are preserved with a warning.
-An apply with only `none` actions is fully offline. An apply with publish
-actions performs Firebase preflight reads. Retrying is safe when no trusted
-hook ran (already-applied candidates converge without republishing), but is not
-declared safe after an arbitrary trusted hook executed.
+
+An apply with only `none` actions is offline. An apply with publish actions
+performs Firebase preflight reads. Retrying does not republish targets already
+at the candidate. A retry is safe when no trusted hook ran, but is not declared
+safe after a trusted hook executed.
 
 The plan commands accept `-` as the input path to read one plan JSON document
 from stdin; any stdin supplied with a non-`-` path is ignored without being
@@ -908,28 +915,19 @@ complete fbrcm subcommand argument list. Agents should branch on that
 
 ## MCP server
 
-`fbrcm mcp` runs a built-in stdio MCP server. The AI application launches the
-command using the user's configured arguments and environment. See [MCP setup
-and behavior](MCP.md) for the complete catalog, authentication, and examples.
+`fbrcm mcp` starts the stdio server and takes no positional arguments. See the
+[MCP guide](MCP.md) for host setup, tool discovery, inputs, permissions,
+authentication, and manual testing.
 
-This selects the independent MCP application mode, alongside CLI and TUI.
-It remains in CLI help and capability discovery as a launch descriptor;
-MCP tool calls execute shared application workflows directly.
-
-MCP tool names are namespaced independently of CLI commands: parameter tools use
-`parameters.get`, `parameters.add`, `parameters.update`, `parameters.delete`, and
-`parameters.duplicate`; the other renamed tools are `plan.apply` and
-`diagnostics.doctor`. CLI names, response command IDs, and schema IDs remain
-unchanged. MCP does not expose the old unqualified names as aliases.
-
-`--toolsets` selects comma-separated groups (default
-`inspect,edit,drafts,plans,publish`; `diagnostics` is opt-in). Mutations and
-explicit artifact writes additionally require `--allow-writes`. Inspection may
-still refresh caches, synchronize projects, and persist credentials. Hooks are
-disabled unless `--allow-hooks` is present; existing trust checks still apply.
-`--confirmation` defaults to `host`, requiring explicit form elicitation before
-mutations; `none` opts into unattended execution. `--browser-auth` defaults to
-`auto`, using URL elicitation on supporting hosts; `never` requires external login.
+| Flag | Default | Behavior |
+| --- | --- | --- |
+| `--toolsets <groups>` | `inspect,edit,drafts,plans,publish` | Select a non-empty comma-separated list from these groups and `diagnostics`. |
+| `--allow-writes` | `false` | Enable mutation tools and explicit artifact writes. Inspection may still update caches and credentials. |
+| `--allow-hooks` | `false` | Enable configured hooks that pass trust checks. |
+| `--confirmation host\|none` | `host` | Require host approval for writes, or authorize unattended execution with `none`. |
+| `--browser-auth auto\|never` | `auto` | Offer browser sign-in through supporting hosts, or require external login with `never`. |
+| `--request-timeout <duration>` | `5m` | Limit each operation, including queueing and user interaction. |
+| `--auth-timeout <duration>` | `2m` | Limit each browser sign-in attempt. |
 
 `--profile` fixes the effective profile for the process. `--stateless` uses
 `FBRCM_GOOGLE_ACCESS_TOKEN`, excludes local-state tools, and never falls back to
@@ -937,28 +935,12 @@ stored credentials. It rejects an explicit `--profile` or `--allow-hooks`.
 Normal local configuration resolution is retained unless `--no-local-config`
 is given; stateless mode always disables it.
 
-Global `--timeout` limits the server lifetime (unlimited when omitted).
-`--request-timeout` limits each operation including queueing and interaction
-(default `5m`); `--auth-timeout` limits each browser attempt (default `2m`). All
-supplied durations must be positive; the earliest applicable deadline wins.
+Global `--timeout` limits the server lifetime and is unlimited when omitted.
+All supplied durations must be positive; the earliest applicable deadline wins.
+Stdout contains protocol messages and stderr contains logs. `--json` is
+incompatible with the server and returns `argument.invalid` with exit status `2`.
 
-Stdout contains MCP messages only. `mcp --json` returns a typed CLI argument
-failure before starting the transport or reading profiles, with
-`context.profile: null` even without `--stateless`. Once MCP starts, completed
-tools embed their original CLI envelopes inside MCP responses. Advertised output
-schemas explicitly declare a root object and normalize boolean and multi-type
-subschemas for client portability without changing validation or envelopes.
-MCP logs go to stderr as plain text, with no ANSI color, decoration, or hyperlink
-escape sequences, regardless of `NO_COLOR`. Log-level and timestamp environment
-settings still apply. CLI/TUI logs retain their normal styling unless
-`FBRCM_LOG_PLAIN` enables the same plain-text mode explicitly.
-MCP input schemas also advertise empty-wrapper defaults for forms and allow
-agents to omit `arguments`/`options` where `{}` is valid, and `stdin` where `null`
-is valid. The server fills missing wrappers before validation and execution;
-required inputs and conditional constraints remain enforced. This does not
-change the CLI's normalized invocation schemas or individual option defaults.
-See [Inspector smoke tests](MCP.md#manual-smoke-tests-with-inspector)
-for agent-free testing and an explanation of Inspector's Legacy protocol label.
+## Machine-command inventory
 
 The following maintained inventory assigns every executable machine operation
 to this reference, including commands documented by a shared section. Contract
@@ -1276,7 +1258,7 @@ require a nonempty unique `client`/`server` set containing the primary template.
 
 ### `fbrcm plan show <plan>`
 
-Strictly verifies the publication plan and prints its identity, producer,
+Verifies the publication plan and prints its identity, producer,
 operation, execution policy, target actions, validation provenance, and the
 complete base-to-candidate diff for each target. `--json` returns a typed
 summary without embedding the sensitive templates. Use `<plan>` as `-` to read
@@ -1285,7 +1267,7 @@ profile.
 
 ### `fbrcm plan validate <plan>`
 
-Strictly verifies the document shape, supported format version, canonical
+Verifies the document shape, supported format version, canonical
 target order, snapshot digests, action invariants, and content-derived plan ID.
 Success prints the plan ID and target count; `--json` returns `plan_id`,
 `valid`, and `target_count`. Invalid, tampered, and unsupported plans return
@@ -1297,7 +1279,7 @@ Use `-` to read stdin. This command is offline and does not require a profile.
 Applies the exact candidates recorded in an immutable publication plan.
 `--dry-run` performs preflight and Firebase validation, including effective
 trusted pre-publish hooks, without publication or draft cleanup. `--yes|-y`
-skips the aggregate confirmation. `--json` returns `plan_id`, `dry_run`,
+skips the confirmation for the whole plan. `--json` returns `plan_id`, `dry_run`,
 `published_count`, and one typed item per target; statuses are `unchanged`,
 `would-publish`, `published`, `already-applied`, `conflict`, `publish-failed`,
 `published-hook-failed`, and `published-cache-failed`.
@@ -2354,7 +2336,7 @@ With root `--stateless`, this command uses `FBRCM_GOOGLE_ACCESS_TOKEN` to discov
 The initial project-list request has no target project from which to infer a
 quota project. In stateless mode, `GOOGLE_CLOUD_QUOTA_PROJECT` is therefore
 required. In normal profile mode, configure the environment override, the auth
-identity's quota project, or—for gcloud identities only—an ADC quota project.
+identity's quota project, or an ADC quota project if using a gcloud identity.
 
 ### `fbrcm projects update`
 
@@ -2843,17 +2825,17 @@ Flags:
 
 In JSON mode, `data.items` contains identities and `data.count` contains their count. Every identity includes a `default` boolean; exactly the configured default identity has `default: true`. The optional `quota_project_id` is the persisted auth-level default.
 
-### `fbrcm auth add google <auth-id>` — unavailable pending Google verification
+### `fbrcm auth add google <auth-id>`
+
+The built-in `google` method is unavailable until Google completes
+verification of fbrcm's OAuth application. Use `auth add oauth`,
+`auth add service-account`, or `auth add gcloud` in the meantime.
 
 Adds or replaces an interactive OAuth identity that uses fbrcm's built-in
 Google Desktop client. The command accepts neither a credential file nor stdin.
 It does not copy the built-in client into profile configuration. Official
 release binaries contain the client. A plain source build without the built-in
 client returns `auth.configuration_invalid` and leaves existing state unchanged.
-
-The built-in `google` method will remain unavailable until Google completes
-verification of fbrcm's OAuth application. Use `auth add oauth`,
-`auth add service-account`, or `auth add gcloud` in the meantime.
 
 Flags:
 

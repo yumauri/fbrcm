@@ -1,8 +1,9 @@
 # Automation and agents
 
-Add `--json` to calls made by CI jobs, scripts, and LLM agents. The command then
-returns one versioned JSON envelope instead of terminal tables, colors, diffs,
-or prompts.
+Use the [MCP server](./mcp) to expose Remote Config tools to an MCP-compatible
+AI application. For agents and scripts running one-shot CLI commands, follow
+the workflow below and add `--json` to each call. Commands then return one
+versioned JSON envelope instead of terminal tables, colors, diffs, or prompts.
 
 The stateful examples assume you have already configured a profile through the
 [CLI-only setup path](/guide/#option-2-setup-using-only-the-cli).
@@ -32,7 +33,7 @@ fbrcm get feature_enabled --project '=example-project-id' --json
 Use exact selectors in automation. A fuzzy name that is convenient at a
 terminal can become ambiguous as projects are added.
 
-## Preview, then choose a review boundary
+## Preview and prepare for review
 
 When a capability reports dry-run support, validate the real candidate without
 publishing it:
@@ -61,7 +62,7 @@ fbrcm draft diff example-project-id --against current --json
 
 Use a plan when an agent must hand off one exact, validated candidate for
 approval or later execution. A plan can be created directly by a supported
-mutation or sealed from a draft:
+mutation or from a draft:
 
 ```sh
 fbrcm draft publish example-project-id \
@@ -75,11 +76,11 @@ fbrcm apply release.fbrcm-plan.json --yes --json
 ```
 
 Plan creation fetches fresh bases, validates the exact changed candidates, and
-runs effective trusted pre-publish hooks without publishing. Apply refuses a
-target that no longer matches the recorded base instead of recalculating the
-change. Treat the plan file as sensitive because it contains complete base and
-candidate templates. See [Plans](/cli/plans) for integrity, concurrency,
-stateless, cleanup, and retry behavior.
+runs effective trusted pre-publish hooks without publishing. Apply accepts only
+targets that still match the recorded base or already match the candidate. It
+does not recalculate the change. Treat the plan file as sensitive because it
+contains complete base and candidate templates. See [Plans](/cli/plans) for
+integrity, concurrency, stateless, cleanup, and retry behavior.
 
 `--yes` authorizes a documented confirmation. It does not disable Firebase
 validation, make a retry safe, or turn a destructive action into an authorized

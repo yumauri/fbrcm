@@ -1,11 +1,12 @@
 # fbrcm
 
-> Terminal manager for Firebase Remote Config. Ships both an interactive TUI and a scriptable CLI with a versioned JSON automation contract built for agents and CI, not just humans.
+> Firebase Remote Config manager with an interactive TUI, a scriptable CLI, and a built-in MCP server for AI applications.
 
 fbrcm is not a thin wrapper around Firebase's Remote Config API. It adds cross-project comparison and promotion, local drafts for staging changes before publish, and a stable machine-readable output contract (`--json`) with typed errors, retry selectors, and command self-description — designed so scripts and LLM agents can drive it safely without scraping human-formatted output.
 
 ## Start here for automation
 
+- [MCP server](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/MCP.md): connect an AI application, discover tools, configure permissions, and recover authentication
 - [Agent quickstart](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/agent-quickstart.md): discover commands, validate output, and preview changes before publication
 - [CLI machine contract](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/cli-contract.md): full JSON envelope schema, error categories, exit statuses, retry semantics
 - [CLI reference](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/CLI.md): complete command tree, flags, and per-command behavior

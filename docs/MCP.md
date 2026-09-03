@@ -1,33 +1,18 @@
 # Built-in MCP server
 
-`fbrcm mcp` exposes Remote Config workflows over stdio JSON-RPC using the official
-Go MCP SDK v1.7.0. It supports the 2026-07-28 multi-round-trip interaction flow;
-the SDK adapts interactions for older supported protocol versions. Browser
-recovery requires URL elicitation (introduced in MCP 2025-11-25); mutation
-confirmation requires form elicitation. Host support and UI vary.
+`fbrcm mcp` lets an MCP-compatible AI application work with Firebase Remote
+Config. The application launches fbrcm as a subprocess and communicates over
+stdio JSON-RPC. The server exposes tools; it has no HTTP MCP endpoint,
+resources, prompts, or background-task API.
 
-## Architecture
+For launch flags and defaults, see the [command reference](CLI.md#mcp-server).
+For package boundaries and implementation details, see
+[architecture](architecture.md#mcp).
 
-MCP is a separate application mode alongside CLI and TUI. `main` routes
-`fbrcm mcp` directly to the top-level `mcp` package, which owns startup,
-protocol sessions, cancellation, and host interaction. The CLI retains a small
-launch descriptor for help, completion, and capability discovery.
-
-CLI and MCP invoke the same workflows in `ops/workflows`. Their shared
-definitions contain option defaults, argument constraints, response DTOs, and
-handlers. `cli/operation` adapts them to Cobra; MCP binds structured input
-directly through `ops.Registry`. It does not construct command argv,
-execute Cobra commands per tool call, or pass through CLI startup. Each call
-gets fresh option values, context, output, and warning state.
-
-The versioned contract lives in `ops/contract`; its public schema URNs
-and envelopes are unchanged. `go run ./cmd/schemagen` also publishes the embedded
-capability catalog used by MCP, so protocol startup needs no CLI command tree.
-
-## Setup and permissions
+## Setup
 
 Configure your AI application with the binary path, arguments, and environment.
-For hosts accepting the common `mcpServers` configuration shape:
+For hosts accepting the common `mcpServers` configuration format:
 
 ```json
 {
@@ -40,39 +25,51 @@ For hosts accepting the common `mcpServers` configuration shape:
 }
 ```
 
-The profile must already exist. The host launches the subprocess when connecting;
-users do not normally launch it manually before chatting. Discovery does not
-require valid Google credentials. Authentication happens when a tool needs
-Firebase; existing service-account and gcloud methods remain available.
+The selected profile must already exist. Set up profiles and authentication
+through the CLI or TUI. The host starts the server when connecting; you do not
+need to launch a separate process before chatting. Do not pass `--json`. Stdout
+is reserved for the MCP protocol.
 
-Add `--allow-writes` to enable mutations and explicit artifact writes. Default
-`--confirmation=host` asks for approval of the exact tool name and inputs before
-execution. Models cannot pass `yes` or change startup policy. Hosts without form
-elicitation receive a typed interaction-required error. Operators can explicitly
-choose `--confirmation=none` for unattended execution; this grants authority to
-run enabled mutations without per-call user confirmation.
+Tool discovery does not require Google credentials. Authentication happens when
+an operation needs Firebase, using the selected profile's configured Google
+OAuth, service-account, or gcloud identities.
 
-Normal local configuration and aliases apply unless `--no-local-config` is set.
-Hooks are disabled unless `--allow-hooks` is present; existing trust checks are
-not bypassed. No tools manage hook trust, profiles, credentials, configuration,
-themes, completion, editors, or the TUI. File paths resolve on the fbrcm host
-relative to its working directory. Artifact writes use the host's filesystem
-permissions; MCP roots are not a filesystem sandbox.
+## Permissions and scope
+
+The launch configuration fixes the profile, execution mode, toolsets, and
+permissions for the server process. Tool calls cannot change these settings.
+
+- Writes are disabled by default. `--allow-writes` exposes mutation tools and
+  explicit artifact-output options. Mutation tools require this permission even
+  for dry runs.
+- `--confirmation=host` asks the user to approve the exact tool name and inputs
+  before a mutation or explicit artifact write. The host must support MCP form
+  elicitation so it can present an approval form. Without that support, the call
+  returns an interaction-required error. Tool callers cannot pass `yes`.
+- `--confirmation=none` authorizes enabled mutations without per-call approval;
+  use it only when unattended execution is intended.
+- Hooks are disabled unless `--allow-hooks` is set. Configured hooks must also
+  pass the normal trust checks.
+
+Stateful execution uses the profile's configuration and aliases. Repository
+`.fbrcm.toml` settings apply unless `--no-local-config` is set. Inspection can
+refresh caches, synchronize the project registry, and persist refreshed
+credentials; `diagnostics.doctor` can create and remove probe files.
+
+There are no tools for managing profiles, credentials, application configuration,
+aliases, project registry settings, hook trust, themes, or shell completion.
+External editors, terminal pickers, and the TUI are not available through tool
+calls.
+
+File paths refer to the machine running fbrcm and resolve relative to its working
+directory. File access uses that process's filesystem permissions; the MCP
+connection does not provide a filesystem sandbox.
 
 ## Tool catalog
 
-Default groups: `inspect,edit,drafts,plans,publish`. Select a subset with
-`--toolsets`. Selecting a mutation group does not itself enable writes.
-
-Every MCP tool has a namespaced name. MCP names are separate from CLI/shared
-operation IDs: `parameters.get`, `parameters.add`, `parameters.update`,
-`parameters.delete`, and `parameters.duplicate` invoke `get`, `add`, `update`,
-`delete`, and `duplicate`; `plan.apply` invokes `apply`, and `diagnostics.doctor`
-invokes `doctor`. Other names match their operation IDs. Only the names listed
-below are exposed; there are no unqualified aliases. Toolset membership is
-independent of the name prefix: `plan.apply` belongs to `publish`, not `plans`.
-Response `command`, `requested_command`, and schema IDs retain the original
-operation IDs, so CLI commands and the shared JSON contract are unchanged.
+`--toolsets` selects groups, with `inspect,edit,drafts,plans,publish` enabled by
+default. `diagnostics` is opt-in. Discovery lists only tools permitted by the
+selected groups, write permission, and execution mode.
 
 | Group | MCP tool names |
 | --- | --- |
@@ -81,33 +78,29 @@ operation IDs, so CLI commands and the shared JSON contract are unchanged.
 | `drafts` | `draft.list`, `draft.show`, `draft.diff`, `draft.change-note`, `draft.discard` |
 | `plans` | `plan.show`, `plan.validate` |
 | `publish` | `plan.apply`, `draft.publish`, `project.import`, `project.export`, `projects.promote`, `versions.export`, `versions.rollback`, `versions.restore`, `experiments.delete`, `rollouts.delete` |
-| `diagnostics` | `diagnostics.doctor` (opt-in) |
+| `diagnostics` | `diagnostics.doctor` |
 
-Without `--allow-writes`, mutation tools and explicit `to`/`plan-out` options
-are unavailable. Inspection is not filesystem-pure: it can refresh caches,
-synchronize the registry, and persist credentials. Doctor can create and remove
-diagnostic probe files. Stateless mode disables application-managed local state.
+All `edit` and `publish` tools, plus `draft.change-note` and `draft.discard`,
+require `--allow-writes`. The `to` and `plan-out` options also require it.
+A tool's name prefix does not determine its toolset. For example, `plan.apply`
+belongs to `publish`, not `plans`.
 
-Each tool publishes semantic input and output schemas. Output schemas explicitly
-declare `"type": "object"` at the root for compatibility with legacy MCP clients.
-At the MCP boundary, nullable/multi-type schemas use `anyOf` with scalar types,
-forbidden schemas use `{"not":{}}`, and unrestricted values explicitly allow all
-JSON types. These portability rewrites preserve validation semantics; they do
-not allow forbidden fields or restrict free-form values to objects. Published
-CLI schemas and response envelopes are unchanged.
+Tools support the same selection, filtering, expressions, validation, dry runs,
+drafts, and plans as their corresponding CLI operations, subject to launch
+policy. Multi-target publication is not atomic; inspect each target's result.
 
-MCP additionally allows omission of empty invocation wrappers where valid:
-`arguments` and `options` default to `{}`, and `stdin` defaults to `null`.
-The tool schema advertises these defaults for form-based clients such as
-Inspector; the server also applies them, so agents need not supply boilerplate.
-Required inputs stay required: for example, `conditions.list` still needs
-`arguments.project`, and `parameters.add` still needs its parameter and
-value/type options.
-Conditional requirements and exclusions also apply to omitted fields exactly as
-they do to explicit defaults. Explicit nulls are not replaced with empty objects,
-and no individual flag, selector, file path, or document content is synthesized.
+## Tool input and results
 
-Example `parameters.get` input:
+Use the input schema returned by discovery to construct each call. Inputs have
+three properties:
+
+- `arguments`: named positional arguments, such as `parameter` or `project`.
+- `options`: long CLI flag names without `--`. Repeatable options are JSON
+  arrays, booleans are JSON booleans, and scalar values use their declared types.
+- `stdin`: a JSON document for operations that accept document input, not a
+  JSON-encoded string or a read from the protocol stream.
+
+For example, call `parameters.get` with:
 
 ```json
 {
@@ -115,36 +108,110 @@ Example `parameters.get` input:
 }
 ```
 
-This is equivalent to supplying `"arguments": {}` and `"stdin": null` explicitly.
-Defaults are applied before validation and before matching a suspended operation,
-so switching between omitted wrappers and explicit defaults does not replay a
-confirmed mutation. The CLI's normalized invocation contract is unchanged.
+Where valid for the tool, omitted `arguments` and `options` default to `{}`,
+and omitted `stdin` defaults to `null`. Required arguments and conditional
+requirements still apply: `conditions.list` needs `arguments.project`, and
+`parameters.add` needs its parameter and value/type options. Explicit values,
+including `null`, are validated as supplied. Inputs are limited to 16 MiB.
 
-Argument names come from the schema. Options use long flag names without `--`;
-repeatable values are arrays, booleans are JSON booleans. Supplied `stdin` is a
-JSON document rather than a JSON-encoded string. Inputs are limited to 16 MiB.
-Selection, filtering, expressions, validation, dry runs, plans, drafts, and
-non-atomic batch behavior remain consistent with CLI execution.
+Completed calls return the [machine envelope](cli-contract.md#envelope) in
+`structuredContent`, with the same JSON in text `content`. Inspect `outcome`,
+`errors`, `warnings`, and `data` together:
 
-Completed results contain the unchanged CLI envelope as `structuredContent`
-and identical JSON in text content. Inspect `outcome`, `errors`, `warnings`, and
-`data`, not just `exit_code`: changed diffs succeed with exit `1`. Partial success
-is an error result retaining completed/failed target data.
+- `success` maps to `isError: false`, including a changed diff with exit code
+  `1`.
+- `failure` and `partial_success` map to `isError: true`. Partial results
+  retain completed and failed target information.
+
+The envelope's `command`, `requested_command`, and schema IDs identify the
+shared operation, not the public MCP name. Parameter tools use their unprefixed
+operation IDs (`parameters.get` returns `command: "get"`); `plan.apply` uses
+`apply`, and `diagnostics.doctor` uses `doctor`. Other tool names match their
+operation IDs.
+
+Confirmations and authentication can suspend a call while the host requests
+user input. The host resumes the same operation through MCP; an interaction
+request is not a completed machine envelope. Use the advertised MCP schemas for
+validation; their generation is described in the [schema reference](../schemas/README.md#mcp-schema-adaptation).
+
+## Authentication recovery
+
+OAuth access tokens normally refresh silently. If Google requires browser
+authorization and the host supports URL elicitation:
+
+1. fbrcm starts a temporary callback listener on `127.0.0.1` using an available
+   port, then asks the host to offer the sign-in URL.
+2. The user approves navigation and signs in through the browser. fbrcm does not
+   open the browser automatically.
+3. Google redirects to the callback. fbrcm verifies the authorization response,
+   exchanges the code, persists credentials, and closes the listener.
+4. The suspended operation continues. Signing in does not grant mutation
+   approval.
+
+Tokens and authorization secrets are exchanged directly with Google, not
+through tool arguments or chat. Canceling, timing out, or disconnecting cleans
+up the authorization attempt.
+
+With `--browser-auth=never` or a host without URL elicitation, follow the
+structured remediation. Run `fbrcm auth login <auth-id> --profile <profile>`
+in a terminal, then retry. Operations reload credentials, so reconnecting is
+not normally necessary.
+
+The browser must be able to reach localhost on the fbrcm machine. SSH,
+containers, or remote hosts may require external login instead.
+
+## Stateless mode
+
+Launch with `--stateless` and securely supply `FBRCM_GOOGLE_ACCESS_TOKEN`
+through the host environment for Firebase calls. Do not paste tokens into chat
+or commit them.
+
+Stateless execution uses no profiles, application configuration, caches, drafts,
+or hooks. You can still read and write files whose paths you supply. Remote
+mutations require the same write and confirmation permissions as stateful
+execution.
+
+Discovery excludes all `drafts` and `plans` tools, `draft.publish`,
+`versions.restore`, and `diagnostics.doctor`. `plan.apply` is available for
+stateless plans. The fbrcm execution policy is independent of MCP's
+protocol-level use of the term "stateless."
+
+Environment tokens are not refreshed. Renew them externally and restart the
+subprocess with the updated environment. There is no fallback to profile or
+browser authentication.
+
+## Timeouts, lifecycle, and logs
+
+The host manages the process lifetime. `--timeout` can impose an overall
+deadline; `--request-timeout` bounds each operation, including queueing and
+user interaction; `--auth-timeout` bounds each browser sign-in attempt. The
+earliest applicable deadline wins. See the [launch reference](CLI.md#mcp-server)
+for defaults.
+
+Tool operations execute one at a time while discovery stays responsive.
+Ordinary tool failures leave the server running. Disconnects and interrupts
+cancel work and close callback listeners. Interrupted multi-target mutations
+may have completed some writes; inspect their results before retrying.
+
+Logs go to stderr as plain text without ANSI colors, decorations, or hyperlinks.
+Inspector displays these in its Server Console; they are not MCP logging
+notifications. `FBRCM_LOG_LEVEL` controls verbosity and
+`FBRCM_LOG_NO_TIMESTAMP` controls timestamps. Plain formatting is automatic,
+regardless of `NO_COLOR` or `FBRCM_LOG_PLAIN`. External hook output is not
+sanitized by the logger.
 
 ## Manual smoke tests with Inspector
 
 No agent or Firebase credentials are needed for discovery and an in-memory
-`parameters.get` call. With Node.js 22.19 or newer, run from the repository root:
+`parameters.get` call. With `fbrcm` available on your `PATH` and Node.js 22.19 or
+newer installed, run:
 
 ```sh
-npx @modelcontextprotocol/inspector go run . mcp -- --stateless --toolsets inspect
+npx @modelcontextprotocol/inspector fbrcm mcp -- --stateless --toolsets inspect
 ```
 
-Open the local URL printed by Inspector and connect. Inspector launches fbrcm;
-do not start a separate server. The tools list should contain `parameters.get`
-and other inspection tools, with no malformed-entry warnings or mutation tools.
-Call `parameters.get` with this tool input (the `stdin` property is a JSON
-object, not a string):
+Open the local URL printed by Inspector and connect. Inspector launches fbrcm.
+Select `parameters.get`, switch to "Edit as JSON", and enter:
 
 ```json
 {
@@ -156,102 +223,38 @@ object, not a string):
 }
 ```
 
-Expect `structuredContent.outcome` to be `success`, `exit_code` to be `0`, and
-`data.count` to be `1`. Set `options` to `{"search":"missing"}` to check an empty
-success, then restore `{}` to get one item again. Supplying `{"yes":true}` must
-fail validation; a subsequent valid call must still work without reconnecting.
-These calls do not contact Firebase or use fbrcm profiles and caches.
+Expect `structuredContent.outcome: "success"`, `exit_code: 0`, and
+`data.count: 1`. Set `options` to `{"search":"missing"}` for an empty success.
+Set `options` to `{"yes":true}` to check validation failure, then remove it and
+call again. These checks do not contact Firebase or use profiles and caches.
 
-In Inspector's generated form, empty optional wrappers initialize from the
-advertised defaults. For the offline smoke test, enter the Remote Config object
-above in the `stdin` field; do not paste the enclosing tool input there. In
-"Edit as JSON", paste the complete example. Tools with required arguments still
-need those values filled in before execution. Both editing modes call the same
-server-side validation and operations.
+In the generated form, enter only the Remote Config document in the `stdin`
+field, starting with `{"parameters": ...}`. Other fields follow their declared
+JSON types: a project filter is an array such as `["=acme-staging"]`, while a
+positional project argument is a string. Required fields must be filled before
+execution.
 
-Also run Inspector's strict portability check; successfully listing or calling a
-tool alone does not catch schema-portability errors or warnings:
+Inspector's web launcher consumes the `--` separator in the example above.
+When running fbrcm directly, use `fbrcm mcp --stateless --toolsets inspect`,
+without that separator.
+
+### Schema validation
+
+Run Inspector's strict portability check:
 
 ```sh
-npx @modelcontextprotocol/inspector --cli go run . mcp --stateless --toolsets inspect -- --method tools/list --strict --format json
+npx @modelcontextprotocol/inspector --cli fbrcm mcp --stateless --toolsets inspect -- --method tools/list --strict --format json
 ```
 
-Expect exit `0` and no `schemaFindings` in the result. Strict mode fails on
-portability errors, but warnings must also be checked. In Inspector's CLI mode,
-arguments before `--` belong to fbrcm and options after it belong to Inspector.
+Expect exit `0` and no `schemaFindings`. Check both errors and warnings. In
+Inspector's CLI mode, arguments before `--` belong to fbrcm and options after it
+belong to Inspector.
 
-Inspector defaults to the **Legacy** protocol era, which uses the `initialize`
-handshake (normally MCP `2025-11-25`). This is not an error or a consequence of
-fbrcm's `--stateless` flag. In Inspector's server settings, choose **Auto** or
-**Modern** and reconnect to exercise MCP `2026-07-28` discovery instead. Both
-protocol eras support the smoke test above. See the
-[Inspector configuration reference](https://github.com/modelcontextprotocol/inspector/blob/main/docs/mcp-server-configuration.md)
-for protocol-era settings and launch-argument handling.
+### Protocol selection
 
-## Authentication recovery
-
-Expired access tokens normally refresh silently. When Google requires a new
-browser authorization and the host supports URL elicitation:
-
-1. The existing fbrcm process generates OAuth state/PKCE values and starts a
-   temporary HTTP listener on `127.0.0.1` with an available port.
-2. It builds Google's URL with that callback address and asks the host to offer
-   sign-in. The listener starts **before** the URL is presented. Browser navigation
-   requires user consent through the host; fbrcm does not open it automatically.
-3. After login, the browser redirects to localhost. fbrcm validates state and
-   exchanges the authorization code directly with Google using the PKCE verifier.
-4. Credentials are persisted, client initialization/recovery completes, the
-   listener closes, and the same suspended operation continues.
-
-The callback listener is not an HTTP MCP endpoint or another executable. Tokens,
-codes, and PKCE secrets never pass through MCP. Accepting navigation does not
-prove successful authentication, and signing in does not authorize a mutation.
-
-Pending operations survive input-required round trips. Opaque continuation handles
-are bound to the exact input and connection; they are not authorization codes.
-Completed results remain available for one minute so repeating a continuation
-does not repeat the operation. Expired handles are rejected. At most 64 pending
-or recently completed operations are retained. Domain execution is serialized;
-discovery remains responsive, and queued operations reuse newly persisted tokens
-instead of starting competing sign-ins.
-
-Cancel, timeout, failed login, or disconnect cleans up the attempt. Ordinary
-tool failures leave MCP running. Mutations are not replayed as a whole after
-authentication: existing conflict checks and partial-publication reporting remain.
-
-With `--browser-auth=never` or no host URL support, follow the typed remediation:
-run `fbrcm auth login <auth-id> --profile <profile>` externally, then retry. New
-operations reload credentials, so reconnecting is not normally needed. Browser
-callbacks require access to the fbrcm machine's localhost; SSH, containers, or
-remote machines may require external login instead.
-
-## Stateless mode
-
-Use `["mcp", "--stateless"]` and securely provision `FBRCM_GOOGLE_ACCESS_TOKEN`
-through the host environment. Do not paste tokens into chat or commit them.
-
-Stateless execution accesses no profiles, application config, caches, drafts,
-or hooks. Only compatible tools are listed; explicit artifact I/O follows normal
-command rules. Remote mutations remain possible when launch and confirmation
-policies permit them. Plan inspection currently remains stateful according to
-its CLI capability metadata. This policy is independent of MCP's protocol-level
-meaning of stateless.
-
-Expired environment tokens must be renewed externally. Restart the subprocess
-with the new environment; no fallback to profile or browser authentication occurs.
-
-## Timeouts and lifecycle
-
-`--timeout` limits the entire server lifetime; omit it for normal host management.
-`--request-timeout` defaults to `5m` per operation, including queueing and user
-interaction. `--auth-timeout` defaults to `2m` per browser attempt. Explicit
-durations must be positive; the earliest deadline wins. Disconnect/interrupt
-cancels work and closes temporary listeners. Stdout is reserved for MCP messages;
-logs use stderr as plain text, without ANSI colors, decorations, or hyperlink
-escape sequences. This is automatic in MCP mode; no `NO_COLOR` setting is needed.
-`FBRCM_LOG_LEVEL` and `FBRCM_LOG_NO_TIMESTAMP` still control verbosity and
-timestamps. Set `FBRCM_LOG_PLAIN=1` to enable the same escape-free mode for CLI
-or TUI log entries, for example in CI. Any non-empty value enables it; an empty
-or unset value preserves normal CLI/TUI log styling but does not disable plain
-MCP logs. External hook output is not sanitized by this logger setting.
-`--json` is incompatible with the streaming command.
+Inspector's **Legacy** mode uses the `initialize` handshake with MCP
+`2025-11-25`; **Modern** uses MCP `2026-07-28` discovery. Both support the
+smoke test. Select a protocol era in the server settings and reconnect.
+The protocol selection does not change fbrcm's `--stateless` execution policy.
+See the [Inspector configuration reference](https://github.com/modelcontextprotocol/inspector/blob/main/docs/mcp-server-configuration.md)
+for host configuration details.

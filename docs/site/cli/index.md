@@ -1,12 +1,15 @@
 # Command-line interface
 
-Any argument switches fbrcm from its interactive TUI into CLI mode:
+Run a command to use fbrcm from the CLI:
 
 ```sh
 fbrcm projects list
 fbrcm get feature_enabled
 fbrcm draft list
 ```
+
+With no arguments, fbrcm opens the [TUI](/tui/). `fbrcm mcp` starts the
+[MCP server](/automation/mcp) for an AI application.
 
 If you have not configured credentials and discovered projects yet, complete
 the [CLI-only setup path](/guide/#option-2-setup-using-only-the-cli) first.

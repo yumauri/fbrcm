@@ -7,9 +7,9 @@ boundaries and important data-flow rules.
 
 ```text
 main.go
-├── no arguments ──> tui/
-├── mcp command ───> mcp/
-└── other arguments > cli/
+├── no arguments ────> tui/
+├── mcp command ─────> mcp/
+└── other arguments ─> cli/
 
 cli/ ─┐
       ├──> ops/ ──> core/ ──> Firebase and local storage
@@ -18,17 +18,16 @@ tui/ ──────────────┘
 ```
 
 `main.go` initializes logging, constructs `core.Core`, and selects CLI, TUI, or
-MCP mode. MCP does not enter CLI startup. `core` never imports a frontend;
-`ops` and `mcp` never import `cli`. Architecture tests enforce these
+MCP mode. Each frontend owns its startup and lifecycle. `core` never imports a
+frontend; `ops` and `mcp` never import `cli`. Architecture tests enforce these
 dependency boundaries.
 
 ## `core/`
 
 The root `core` package is the domain facade used by the frontends and shared
-application workflows. Its files expose
-authentication, project discovery, Remote Config reads and publication,
-parameter and condition trees, imports, drafts, history, and cross-project
-promotion.
+workflows. Its files expose authentication, project discovery, Remote Config
+reads and publication, parameter and condition trees, imports, drafts, history,
+and cross-project promotion.
 
 | Package | Responsibility |
 | --- | --- |
@@ -52,33 +51,29 @@ promotion.
 | `core/strfold` | Case-insensitive comparison, stable keys, and project sorting |
 | `core/browser`, `core/env`, `core/log`, `core/styles` | Cross-cutting browser, environment, logging, and style helpers |
 
-The facade keeps CLI/TUI callers out of storage and wire packages. Thin
-delegating methods in root `core` files are intentional.
+The facade keeps presentation and workflow callers out of storage and wire
+packages. Thin delegating methods in root `core` files are intentional.
 
 ## `cli/`
 
 `cli/app` builds the Cobra root, selects the process profile, initializes
-offline mode, and maps command errors to exit codes. CLI-specific management
-commands remain here; shared workflows are adapted through `cli/operation`.
-The MCP command is a launch/discovery descriptor, not a tool execution bridge.
+offline mode, and maps command errors to exit codes. `cli/commands` contains
+CLI-specific management commands and adapters for shared workflows.
+`cli/operation` adapts operation definitions to Cobra parsing and human output;
+`cli/commands/testutil` supplies command-test helpers.
 
-`cli/commands` contains one package per top-level feature:
-
-```text
-add  auth  cache  conditions  config  delete  doctor  draft
-duplicate  get  groups  profile  project  projects  update  versions
-```
+The `mcp` descriptor in the CLI tree provides help, completion, and capability
+metadata. `main.go` routes server execution to the `mcp` frontend.
 
 ## `ops/`
 
-`ops/workflows` owns reusable operation definitions, defaults, typed
-results, and workflow handlers. CLI adapters preserve Cobra parsing and human
-output. MCP binds the existing normalized JSON inputs directly to fresh option
-sets and invokes handlers without parsing argv or executing a Cobra tree.
-The `ops/invocation` interface carries context, options, and I/O, not
-frontend lifecycle. Shared publication policy is used by both adapters.
+`ops/workflows` owns reusable operation definitions, defaults, typed results,
+and workflow handlers. `ops/invocation` carries context, options, and I/O
+between a frontend adapter and a workflow. `ops.Registry` binds structured
+input to a fresh operation and builds its machine envelope. CLI and MCP share
+publication policy; TUI workflows call `core` directly.
 
-`ops/contract` owns the unchanged versioned JSON envelope, typed problem
+`ops/contract` owns the versioned JSON envelope, typed problem
 classification, artifact wrapping, and capability/schema metadata.
 `schemas` embeds generated Draft 2020-12 schemas and capability metadata;
 `cmd/schemagen` regenerates both from the same definitions as CLI discovery.
@@ -87,8 +82,7 @@ Notable packages:
 
 - `ops/workflows/project/import` owns the interactive/non-interactive import
   flow;
-- `ops/workflows/get/table` owns the responsive parameter table;
-- `cli/commands/testutil` contains command-test helpers.
+- `ops/workflows/get/table` owns the responsive parameter table.
 
 `ops/shared` contains behavior used across workflows: target resolution,
 flags, text and expression filtering, confirmation, terminal sizing, JSON
@@ -120,12 +114,27 @@ Other shared subpackages:
 
 ## `mcp/`
 
-The independent MCP frontend owns launch validation, stdio lifecycle, and
-signal handling. `mcp/server` owns tool discovery, schema specialization, host
-approval, OAuth interaction, cancellation, and continuation state. Tool calls
-use `ops.Registry`, not CLI handlers or subprocesses. Each invocation
-has fresh options, context, result, and warning state. Operations remain
-serialized while profile/cache configuration is process-scoped.
+The MCP frontend uses the Go MCP SDK for protocol sessions and host interactions.
+`mcp/command.go` parses launch options; `mcp/init.go` owns stdio lifecycle and
+signal handling. Tool calls use `ops.Registry` directly, with fresh options,
+context, results, and warning state for each invocation.
+
+`mcp/server/catalog.go` maps shared operation IDs to public tool names, toolsets,
+and mutation policy. The launch configuration determines which tools and options
+are exposed. `schema.go` and `defaults.go` specialize operation schemas and
+normalize input; see [MCP schema adaptation](../schemas/README.md#mcp-schema-adaptation).
+
+`mcp/server/server.go` owns approval, OAuth interaction, cancellation, and
+continuations. Continuation handles are bound to the operation, normalized
+input, and connection. Completed interactive results are retained for one minute
+to avoid replaying a mutation. The server retains at most 64 pending or recently
+completed operations and serializes workflow execution because profile/cache
+configuration is process-scoped.
+
+OAuth recovery uses a temporary localhost callback listener, state validation,
+and PKCE. The host offers the authorization URL after the listener is ready;
+fbrcm exchanges the code directly with Google. Cancellation closes the listener.
+For user-facing setup and recovery, see the [MCP guide](MCP.md).
 
 ## `tui/`
 

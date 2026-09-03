@@ -50,11 +50,33 @@ DTO, error, or exit behavior, regenerate from the repository root:
 go run ./cmd/schemagen
 ```
 
-Review both the schemas and
-`cli/app/testdata/contract_v1_capabilities.golden.json`. Generation also publishes
-`schemas/capabilities.json`, the embedded detailed operation catalog used by
-the independent MCP frontend. A regression test compares it with live CLI
-discovery; no separate hand-maintained tool schemas are needed. The
-`cli/contract.lock.json` fingerprint makes generation fail when the machine
-interface changes without a contract-version bump. Do not edit generated schema
-files or the lock by hand.
+Generation writes the schema files, `schemas/capabilities.json`, and
+`cli/app/testdata/contract_v1_capabilities.golden.json`; review all three.
+The embedded capability catalog describes shared operations and is checked
+against live CLI discovery by regression tests.
+
+`schemas/cli/contract.lock.json` records the generated contract's fingerprint.
+A contract marked as released requires a version bump before its fingerprint
+can change; an unreleased contract can be regenerated in place. Do not edit
+generated schema files or the lock by hand.
+
+## MCP schema adaptation
+
+`mcp/server` derives tool schemas from the generated operation schemas at startup.
+It specializes input constraints for the server's execution mode, excludes
+server-controlled options, and advertises defaults for optional invocation
+wrappers. Runtime validation applies these defaults before invoking an operation.
+Required inputs and conditional constraints are enforced.
+
+Schema references are bundled into self-contained documents. Tool input and
+output roots explicitly declare `"type": "object"`. `schemas.MakePortable`
+represents nullable and multi-type schemas with `anyOf`, forbidden schemas with
+`{"not":{}}`, and unrestricted values with an explicit union of JSON types.
+These equivalent representations apply only in schema positions, not in data
+such as constants, defaults, examples, or extension metadata.
+
+The catalog maps public MCP names to shared operation IDs. Generated schema IDs
+and result envelopes identify those operations; they are not derived from MCP
+names. CLI schema files contain the canonical schemas, while discovery publishes
+the adapted MCP schemas. See the [MCP input reference](../docs/MCP.md#tool-input-and-results)
+for caller-facing behavior.

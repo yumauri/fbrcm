@@ -1,8 +1,11 @@
 # JSON contract
 
-With `--json`, every invocation writes one JSON document and one trailing
-newline to stdout. This includes argument and startup failures. Parse stdout
-only. Explicitly enabled logs and trusted hooks may write to stderr.
+With `--json`, each one-shot CLI invocation writes one JSON document and one
+trailing newline to stdout. This includes argument and startup failures. Parse
+stdout only. Explicitly enabled logs and trusted hooks may write to stderr.
+
+For protocol-based tool calls, use the [MCP server](./mcp#read-tool-results)
+without `--json`.
 
 ## Envelope
 

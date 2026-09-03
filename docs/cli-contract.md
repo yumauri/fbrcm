@@ -2,7 +2,7 @@
 
 This document defines the stable machine interface used by agents, CI, and
 scripts. Contract version `1.0.0` applies whenever the global `--json` flag is
-present. Human output is unchanged when `--json` is absent.
+present. Without `--json`, commands use human-readable output.
 
 For a concise integration workflow and safe usage examples, start with the
 [agent quickstart](agent-quickstart.md).
@@ -48,7 +48,6 @@ the non-atomic batch warning as human stderr text.
 decorations and hyperlinks, without changing verbosity or the JSON envelope.
 It is useful alongside an explicit `FBRCM_LOG_LEVEL` in CI; plain logging alone
 does not override JSON mode's silent default. External hook output is unaffected.
-MCP logs always use plain text, even when this variable is empty or unset.
 
 `--timeout` must be a strictly positive Go duration and limits the complete
 command, including project resolution, authentication, Firebase calls,
@@ -60,58 +59,17 @@ An interrupt uses exit status `130`; an expired deadline uses exit status `9`.
 Failure statuses are output-format independent: removing `--json` changes the
 presentation, not the semantic process status.
 
+### MCP launch exception
+
+`fbrcm mcp --json` returns `argument.invalid` (exit `2`) before opening a
+transport or loading a profile; `context.profile` is null. The command has no
+successful CLI JSON result, so its capability metadata describes only this
+rejected invocation.
+
+Run `fbrcm mcp` without `--json` for the streaming server. Its tool input and
+envelope mapping are documented in the [MCP guide](MCP.md#tool-input-and-results).
+
 ## Envelope
-
-### MCP transport boundary
-
-`fbrcm mcp` is a streaming service, not a one-shot JSON command. Combining it
-with `--json` returns `argument.invalid` (exit `2`) without opening a transport
-or bootstrapping a profile; `context.profile` is null. It registers no successful
-JSON DTO. Its machine capabilities describe the rejected JSON invocation's
-absence of side effects; normal launch behavior is documented in [MCP.md](MCP.md).
-
-MCP input reuses the normalized `arguments`, `options`, and `stdin` shape from
-published invocation schemas. Server-controlled options are excluded and schema
-references are bundled for clients. MCP output schemas explicitly declare a root
-`"type": "object"` for legacy-client compatibility; the published CLI schemas
-and envelope constraints remain unchanged. MCP schema normalization uses
-equivalent object-valued schemas for booleans and `anyOf` for type unions,
-preserving all JSON types in unrestricted slots and retaining forbidden fields.
-Only schema positions are transformed; constants, defaults, examples, enums,
-and extension metadata are left intact by the portability rewrite.
-
-Separately, MCP adds form defaults and permits omission of empty invocation
-wrappers where valid: `arguments` and `options` normalize to `{}`, and `stdin`
-normalizes to `null`. Required inputs remain required, including requirements
-expressed outside root properties. Conditional rules are adapted so advertised
-schema validation of a compact input agrees with validation of its normalized
-form. Only missing wrappers are filled; explicit values and individual flags
-are not defaulted. The server normalizes before validation, execution, and
-continuation matching, without changing the published CLI invocation schemas.
-A supplied `stdin` document uses an
-explicit in-memory reader, never the protocol stream. Fresh application invocations use
-the same workflows, envelope builder, and semantic validation as CLI execution.
-MCP is an independent frontend: it binds structured options directly, without
-converting them to argv or executing the CLI's Cobra command pipeline. The
-shared contract implementation lives in `ops/contract`; schema URNs
-remain unchanged. Schema generation also publishes `schemas/capabilities.json`
-for discovery without constructing a CLI tree at MCP startup.
-
-MCP public tool names are independent of operation IDs. For example,
-`parameters.get` invokes `get`, `plan.apply` invokes `apply`, and
-`diagnostics.doctor` invokes `doctor`. The envelope's `command` and
-`requested_command` and all schema IDs retain the original operation IDs;
-they do not identify the MCP public name. Renaming an MCP tool does not rename
-a CLI command or alter its published contract. Confirmation prompts identify
-the public MCP tool name.
-
-Completed tools return the entire unchanged envelope in `structuredContent`
-and identical JSON in text `content`. Success maps to `isError: false`; failure
-and partial success map to `isError: true`, retaining usable data and warnings.
-A successful changed diff (exit `1`) is not an MCP error. User interaction uses
-MCP input-required results, not replacement fbrcm DTOs. Ordinary CLI JSON mode
-remains non-interactive; only the hosted path explicitly enables OAuth through
-its host observer.
 
 ### Result structure
 
@@ -593,16 +551,16 @@ authentication state. Remote writes remain unsafe to retry after an authorized c
 non-dry-run plan unless the caller can establish that no publication was
 accepted. A dry-run is idempotent only when no trusted hook executed; hook
 commands are arbitrary local processes and may themselves be non-idempotent.
-Applying an immutable plan is retry-safe only after preflight establishes each
-target's state: a candidate digest already present is `already-applied`, an
-unchanged planned base may proceed, and any third state is `plan.stale`.
+Before retrying an immutable plan, preflight checks each target. A target that
+already matches the candidate is `already-applied`; one that still matches the
+planned base may proceed; any other state is `plan.stale`.
 For a plan containing publish actions, an authorized retry is declared safe
-only when no trusted hook executed; if an arbitrary trusted hook executed, the
-invocation is not declared idempotent even when Firebase publication later
-converges. A plan containing only `none` actions performs no Firebase request
-and is retry-safe. Plan creation follows the same hook boundary: exclusive file
-creation is retry-safe when no trusted hook ran, and is not declared safe after
-a trusted pre-publish hook ran.
+only when no trusted hook executed. Once a hook runs, the invocation is not
+declared idempotent even if Firebase already matches the candidate. A plan
+containing only `none` actions performs no Firebase request and is retry-safe.
+The same hook restriction applies to plan creation. Exclusive file creation is
+retry-safe when no trusted hook ran, but is not declared safe after a trusted
+pre-publish hook ran.
 
 Authentication failures retain their source semantics. Missing or malformed
 stored credentials are auth failures. OAuth `invalid_grant` or a missing
