@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	charmlog "charm.land/log/v2"
 	"github.com/charmbracelet/colorprofile"
 
 	"github.com/yumauri/fbrcm/core/env"
@@ -61,6 +62,16 @@ func TestLogTimestampCanBeDisabled(t *testing.T) {
 	}
 	if !strings.Contains(logs.String(), "deterministic log") {
 		t.Fatalf("log output = %q", logs.String())
+	}
+}
+
+func TestLogLevelLabelsKeepStableCompactWidth(t *testing.T) {
+	styles := loggerStyles()
+	for _, level := range []charmlog.Level{charmlog.DebugLevel, charmlog.InfoLevel, charmlog.WarnLevel, charmlog.ErrorLevel, charmlog.FatalLevel} {
+		style := styles.Levels[level]
+		if width, maximum := style.GetWidth(), style.GetMaxWidth(); width != 0 || maximum != 4 {
+			t.Errorf("%s level dimensions = width %d, maximum %d; want width 0, maximum 4", level, width, maximum)
+		}
 	}
 }
 

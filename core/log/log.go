@@ -219,7 +219,12 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 func loggerStyles() *charmlog.Styles {
 	styles := charmlog.DefaultStyles()
 	for _, level := range []charmlog.Level{charmlog.DebugLevel, charmlog.InfoLevel, charmlog.WarnLevel, charmlog.ErrorLevel, charmlog.FatalLevel} {
-		styles.Levels[level] = styles.Levels[level].Foreground(corestyles.LogLevelLipglossColor(level))
+		// Keep the established compact labels independent of upstream default
+		// width changes (for example DEBUG -> DEBU and ERROR -> ERRO).
+		styles.Levels[level] = styles.Levels[level].
+			UnsetWidth().
+			MaxWidth(4).
+			Foreground(corestyles.LogLevelLipglossColor(level))
 	}
 	styles.Values["url"] = lipgloss.NewStyle().Foreground(corestyles.ColorURL)
 	return styles
