@@ -1,19 +1,17 @@
-# Agent quickstart
+# CLI agent quickstart
 
-This page is for LLM agents and scripts driving `fbrcm` non-interactively. It
-is a fast path, not a replacement for the full references: see
-[CLI reference](CLI.md) for every command and flag, and the
-[machine contract](cli-contract.md) for the complete envelope schema, error
-catalog, and exit-status table.
+This page covers non-interactive, one-shot CLI commands for agents and scripts.
+For an AI application using MCP tools, start with the [MCP guide](MCP.md).
+The [CLI reference](CLI.md) lists commands and flags; the
+[machine contract](cli-contract.md) defines envelopes, errors, and exit statuses.
 
-## The golden rule
+## Use JSON output
 
-Always pass `--json`. Every command accepts it and returns one versioned
-envelope on stdout. Without it you get human tables, colors, and interactive
-prompts that are not meant to be parsed. Operational logging defaults to
-`silent` once `--json` is set; an explicit `FBRCM_LOG_LEVEL` overrides that
-default. Parse stdout only, because explicitly enabled logs and trusted hooks
-may write to stderr.
+Pass `--json` for CLI automation to receive one versioned envelope on stdout.
+Human tables, colors, and interactive prompts are not meant to be parsed.
+Operational logging defaults to `silent` once `--json` is set; an explicit
+`FBRCM_LOG_LEVEL` overrides that default. Parse stdout only, because explicitly
+enabled logs and trusted hooks may write to stderr.
 
 Inspect the envelope's `outcome`, `exit_code`, `errors`, and `warnings`
 together. Do not treat exit status alone as the result: for example, a
@@ -125,16 +123,16 @@ fbrcm update feature_enabled \
   --json
 ```
 
-Or compose several changes in a draft first, then seal the effective publish
-candidate:
+Or compose several changes in a draft first, then save its effective publication
+candidate in a plan:
 
 ```
 fbrcm draft publish my-app --plan-out release.fbrcm-plan.json --json
 ```
 
-Plan creation fetches fresh bases, Firebase-validates every changed candidate,
-and runs effective trusted pre-publish hooks. It does not publish or change
-draft state. If any target cannot be prepared, no plan file is created.
+Plan creation fetches fresh bases, validates every changed candidate with
+Firebase, and runs effective trusted pre-publish hooks. It does not publish or
+change draft state. If any target cannot be prepared, no plan file is created.
 
 Verify the file and inspect its non-secret machine summary before requesting
 authorization:
@@ -145,9 +143,9 @@ fbrcm plan show release.fbrcm-plan.json --json
 ```
 
 `plan validate` is an offline integrity check, not a freshness check. Apply
-preflights all targets and refuses `plan.stale` if Firebase no longer matches
-the recorded base; it never silently rebases or replans. For an authorized
-non-interactive preview and publication:
+preflights all targets and returns `plan.stale` if Firebase matches neither
+the recorded base nor the candidate. It never silently rebases or replans.
+For an authorized non-interactive preview and publication:
 
 ```
 fbrcm apply release.fbrcm-plan.json --dry-run --yes --json
@@ -161,8 +159,8 @@ after publication starts, so inspect every item status.
 
 A stateful plan must be applied statefully with the same effective hook
 configuration. A plan created with `--stateless` must be applied with
-`--stateless`. Retrying converges for targets already at the candidate, but is
-not declared safe after an arbitrary trusted hook executes. Create a new plan
+`--stateless`. Retrying does not republish targets already at the candidate,
+but is not declared safe after a trusted hook executes. Create a new plan
 after any stale-base failure.
 
 Plan files contain complete Remote Config templates and metadata. Keep them out

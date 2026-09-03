@@ -8,6 +8,7 @@ import (
 const (
 	LogLevel                = "FBRCM_LOG_LEVEL"
 	LogNoTimestamp          = "FBRCM_LOG_NO_TIMESTAMP"
+	LogPlain                = "FBRCM_LOG_PLAIN"
 	Offline                 = "FBRCM_OFFLINE"
 	Profile                 = "FBRCM_PROFILE"
 	GoogleAccessToken       = "FBRCM_GOOGLE_ACCESS_TOKEN"
@@ -51,4 +52,9 @@ func NoColorEnabled() bool {
 func LogTimestampDisabled() bool {
 	value, ok := os.LookupEnv(LogNoTimestamp)
 	return ok && value != ""
+}
+
+func LogPlainEnabled() bool {
+	_, enabled := LookupNonEmpty(LogPlain)
+	return enabled
 }

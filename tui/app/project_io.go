@@ -9,12 +9,12 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/yumauri/fbrcm/cli/shared/fileoutput"
-	"github.com/yumauri/fbrcm/cli/shared/rc"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	"github.com/yumauri/fbrcm/ops/shared/fileoutput"
+	"github.com/yumauri/fbrcm/ops/shared/rc"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	"github.com/yumauri/fbrcm/tui/components/projectio"
 	"github.com/yumauri/fbrcm/tui/messages"

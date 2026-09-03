@@ -14,12 +14,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/progress"
-	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/core/strfold"
+	"github.com/yumauri/fbrcm/internal/terminal/progress"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 const maximumThemeImportBytes = 1024 * 1024

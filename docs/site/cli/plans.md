@@ -19,9 +19,9 @@ Examples use `example-project-id` as a physical Firebase project ID and
 | Portability | Tied to local profile state | Can be handed off securely |
 | Stateless mode | Unavailable | Supported when the producing command supports it |
 
-Use a draft while the desired change is still evolving. Use a plan once the
-candidate and target selection are ready for an approval or execution
-boundary. A draft can become a plan instead of being published immediately.
+Use a draft while you are still editing. Create a plan when the candidate and
+target selection are ready for approval or later execution. You can create a
+plan from a draft without publishing it.
 
 ## Create a plan
 
@@ -55,7 +55,7 @@ fbrcm capabilities --json |
   jq -r '.data.commands[] | select(.supports.plan) | .path | join(" ")'
 ```
 
-## Seal a draft for approval
+## Prepare a draft for approval
 
 Compose a multi-step change as a draft, then capture its effective publication
 candidate in a plan:
@@ -102,10 +102,10 @@ and preflights the entire plan before the first publication. A target must
 still equal the recorded base, or already equal the candidate. Any other state
 fails with `plan.stale`; fbrcm never silently rebases or replans.
 
-After aggregate confirmation, fbrcm validates every changed candidate and
-trusted pre-publish hook before writing. `--dry-run` performs those checks
-without publication or draft cleanup. Use `--yes` for an explicitly authorized
-non-interactive invocation.
+After one confirmation for the whole plan, fbrcm validates every changed
+candidate and runs trusted pre-publish hooks before writing. `--dry-run`
+performs those checks without publication or draft cleanup. Use `--yes` for an
+explicitly authorized non-interactive invocation.
 
 Plans with several targets are non-atomic once publication starts. Successful
 targets are not rolled back if a later target fails. Inspect every result item;
@@ -119,10 +119,10 @@ configuration. A plan created with `--stateless` must be applied with
 `--stateless` and a suitable access token. A plan containing only unchanged
 targets can be applied entirely offline.
 
-An already-applied candidate converges without another publication. Retrying a
-plan is otherwise declared safe only when no trusted hook ran, because hook
-commands may have non-idempotent effects. A stale plan must be replaced by a
-newly created plan after the current state is reviewed.
+If a target already matches the candidate, apply does not publish it again.
+Retrying a plan is declared safe only when no trusted hook ran, because
+repeating a hook command may have additional effects. If a plan is stale,
+review the current state and create a new plan.
 
 ## Protect plan files
 

@@ -1,0 +1,68 @@
+package updatecmd
+
+import (
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
+	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/invocation"
+	"github.com/yumauri/fbrcm/ops/shared"
+	"github.com/yumauri/fbrcm/ops/shared/rc"
+)
+
+func runUpdateRemote(cmd invocation.Call, svc *core.Core, opts updateOptions) error {
+	totals, err := shared.RunParameterMutationRemote(cmd, svc, opts.ParameterMutationOpts, "update", "✏️", func(cmd invocation.Call, project core.Project, current *firebase.RemoteConfig, matched []shared.ParamTarget, yes bool) (int, *firebase.RemoteConfig, error) {
+		updated, finalCfg, err := confirmAndUpdateProject(cmd, project.ProjectID, current, matched, opts.spec, yes, cmd.ErrOrStderr())
+		if err != nil {
+			return 0, nil, err
+		}
+		return len(updated), finalCfg, nil
+	})
+	logUpdateTotals("remote", updateTotals{modifiedProjects: totals.ModifiedProjects, updatedParams: totals.ChangedParams})
+	if writeErr := rc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], "✏️"); writeErr != nil {
+		return writeErr
+	}
+	return err
+}
+
+func runUpdateStdin(cmd invocation.Call, paramFilters []string, paramArgument *string, paramExpr string, search shared.ParameterSearch, spec updateSpec) error {
+	cfg, raw, err := rc.ReadRemoteConfigInput(cmd.InOrStdin())
+	if err != nil {
+		return err
+	}
+	compiledExpr, err := shared.CompileExpr(paramExpr, "<stdin>")
+	if err != nil {
+		return err
+	}
+	project := core.Project{Name: "<stdin>", ProjectID: "<stdin>"}
+	matched, err := shared.CollectMatchingParamTargetsWithArgument(project, cfg, paramFilters, paramArgument, search, compiledExpr, shared.DefaultRootGroupLabel)
+	if err != nil {
+		return err
+	}
+	updated, finalCfg, err := confirmAndUpdateProject(cmd, "<stdin>", cfg, matched, spec, true, cmd.ErrOrStderr())
+	if err != nil {
+		return err
+	}
+	out, err := rc.MarshalOrderPreservingRemoteConfig(finalCfg, raw, nil)
+	if err != nil {
+		return err
+	}
+	if contract.Enabled(cmd) {
+		target := "<stdin>"
+		if err := shared.WriteJSON(cmd, contract.NewArtifact(&target, "application/json", out, nil, false)); err != nil {
+			return err
+		}
+	} else if err := rc.WriteOrderPreservingRemoteConfigStdout(cmd, finalCfg, raw); err != nil {
+		return err
+	}
+	totals := updateTotals{updatedParams: len(updated)}
+	if len(updated) > 0 {
+		totals.modifiedProjects = 1
+	}
+	logUpdateTotals("stdin", totals)
+	return nil
+}
+
+func logUpdateTotals(mode string, totals updateTotals) {
+	corelog.For("update").Info("total", "mode", mode, "projects", totals.modifiedProjects, "parameters", totals.updatedParams)
+}

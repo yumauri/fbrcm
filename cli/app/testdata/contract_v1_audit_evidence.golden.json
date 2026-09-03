@@ -15,6 +15,8 @@
     "app.failure_runtime": "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
     "app.interaction": "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
     "app.invocation_semantics": "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
+    "app.mcp_json_boundary": "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",
+    "app.mcp_json_failure": "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
     "app.no_op": "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
     "app.outcomes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
     "app.plan_capability_boundaries": "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
@@ -25,21 +27,21 @@
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
     "app.warning_runtime": "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
-    "apply.draft_cleanup_runtime": "cli/commands/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
-    "apply.no_change_success": "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
-    "apply.status_runtime": "cli/commands/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
-    "apply.warning_runtime": "cli/commands/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
+    "apply.draft_cleanup_runtime": "ops/workflows/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
+    "apply.no_change_success": "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
+    "apply.status_runtime": "ops/workflows/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
+    "apply.warning_runtime": "ops/workflows/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
     "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
-    "contract.artifact_runtime": "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
-    "contract.batch_runtime": "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
+    "contract.artifact_runtime": "ops/contract/contract_test.go#TestArtifactEncodesBinaryContent",
+    "contract.batch_runtime": "ops/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
     "draft.publish_success": "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
-    "plan.artifact_runtime": "cli/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
-    "plan.metadata_success": "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
+    "plan.artifact_runtime": "ops/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
+    "plan.metadata_success": "ops/workflows/plan/commands_test.go#TestPlanShowAndValidateJSON",
     "profile.root_success": "cli/commands/profile/commands_test.go#TestProfileRootJSON",
     "schemagen.determinism": "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
     "theme.mutation_success": "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
-    "versions.restore_success": "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp"
+    "versions.restore_success": "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp"
   },
   "commands": [
     {
@@ -3032,7 +3034,7 @@
           "not_applicable": "The command does not accept a normalized stdin document."
         },
         "success": {
-          "not_applicable": "The JSON operation is interaction-only and has no success outcome."
+          "not_applicable": "The JSON operation has no reachable success outcome."
         },
         "warning": {
           "not_applicable": "The command has no reachable non-fatal warning branch."
@@ -5945,6 +5947,92 @@
             "app.response_invariants",
             "e2e:hooks_untrust_json"
           ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "mcp",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "app.mcp_json_boundary",
+            "app.mcp_json_failure",
+            "e2e:mcp_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "app.mcp_json_boundary",
+            "app.mcp_json_failure",
+            "e2e:mcp_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "app.mcp_json_boundary",
+            "app.mcp_json_failure",
+            "e2e:mcp_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "app.mcp_json_boundary",
+            "app.mcp_json_failure",
+            "e2e:mcp_json"
+          ]
+        },
+        "effects": {
+          "not_applicable": "The command declares no effects or network access."
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.mcp_json_boundary",
+            "app.mcp_json_failure",
+            "app.unknown_option",
+            "e2e:mcp_json"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.mcp_json_boundary",
+            "app.mcp_json_failure",
+            "app.unknown_option",
+            "e2e:mcp_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "not_applicable": "The JSON operation has no reachable success outcome."
         },
         "warning": {
           "not_applicable": "The command has no reachable non-fatal warning branch."

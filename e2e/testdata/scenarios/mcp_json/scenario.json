@@ -1,0 +1,14 @@
+{
+  "name": "mcp_json",
+  "command_id": "mcp",
+  "args": ["mcp", "--json"],
+  "expected_exit_code": 2,
+  "expected_http": [],
+  "log_level": "warn",
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "cache", "path": "profiles/default/drafts"}
+  ],
+  "json_output": true
+}

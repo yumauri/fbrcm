@@ -20303,6 +20303,165 @@
     },
     {
       "const": {
+        "id": "mcp",
+        "path": [
+          "mcp"
+        ],
+        "summary": "Serve Firebase Remote Config tools over MCP stdio",
+        "arguments": [],
+        "flags": [
+          {
+            "name": "--allow-hooks",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Allow already-trusted configured hooks during tool execution; accepted but not applied by this command"
+          },
+          {
+            "name": "--allow-writes",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Enable mutation tools and explicit artifact writes (inspection may still refresh caches and credentials); accepted but not applied by this command"
+          },
+          {
+            "name": "--auth-timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "2m0s",
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Maximum duration of a browser authorization attempt; accepted but not applied by this command"
+          },
+          {
+            "name": "--browser-auth",
+            "aliases": [],
+            "type": "string",
+            "default": "auto",
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Browser authorization: auto (ask supporting hosts) or never; accepted but not applied by this command"
+          },
+          {
+            "name": "--confirmation",
+            "aliases": [],
+            "type": "string",
+            "default": "host",
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Mutation approval: host (explicit elicitation) or none (operator-authorized unattended execution); accepted but not applied by this command"
+          },
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG); accepted but not applied by this command"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
+          },
+          {
+            "name": "--request-timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "5m0s",
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Maximum duration per tool operation, including queueing and user interaction; accepted but not applied by this command"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); accepted but not applied by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Maximum duration for the complete command; accepted but not applied by this command"
+          },
+          {
+            "name": "--toolsets",
+            "aliases": [],
+            "type": "stringSlice",
+            "default": [
+              "inspect",
+              "edit",
+              "drafts",
+              "plans",
+              "publish"
+            ],
+            "required": false,
+            "repeatable": true,
+            "effective": false,
+            "usage": "Enabled toolsets: inspect, edit, drafts, plans, publish, diagnostics; accepted but not applied by this command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid"
+        ],
+        "side_effect_level": 0,
+        "side_effects": [],
+        "side_effect_when": [],
+        "network_access": "none",
+        "network_when": [],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "none",
+          "json_behavior": "non_interactive"
+        },
+        "interaction_when": []
+      }
+    },
+    {
+      "const": {
         "id": "personalizations.list",
         "path": [
           "personalizations",

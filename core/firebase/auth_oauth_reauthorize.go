@@ -2,6 +2,7 @@ package firebase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -29,9 +30,21 @@ func (s *rotatingOAuthTokenSource) Token() (*oauth2.Token, error) {
 	token, err := s.source.Token()
 	if err == nil {
 		s.current = cloneOAuthToken(token)
+	} else {
+		return nil, &oauthTokenSourceFailure{err: err, hasRefresh: s.current != nil && s.current.RefreshToken != ""}
 	}
 	return token, err
 }
+
+// This error proves that token acquisition failed before the API request was
+// sent. Unlike an ambiguous network failure, recovery here cannot replay a write.
+type oauthTokenSourceFailure struct {
+	err        error
+	hasRefresh bool
+}
+
+func (e *oauthTokenSourceFailure) Error() string { return e.err.Error() }
+func (e *oauthTokenSourceFailure) Unwrap() error { return e.err }
 
 func (s *rotatingOAuthTokenSource) snapshot() (uint64, *oauth2.Token) {
 	s.mu.Lock()
@@ -96,6 +109,21 @@ func newOAuthUnauthorizedTransport(
 func (t *oauthUnauthorizedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	generation, _ := t.tokens.snapshot()
 	response, err := t.base.RoundTrip(req)
+	var sourceFailure *oauthTokenSourceFailure
+	if errors.As(err, &sourceFailure) && oauthRefreshRequiresAuthorization(sourceFailure.err, sourceFailure.hasRefresh) {
+		// oauth2.Transport closes the body even when token acquisition fails.
+		if req.Body != nil && req.GetBody == nil {
+			return response, err
+		}
+		if err := t.recoverAfterUnauthorized(generation); err != nil {
+			return nil, err
+		}
+		retry, err := cloneRequest(req, 2)
+		if err != nil {
+			return nil, err
+		}
+		return t.base.RoundTrip(retry)
+	}
 	if err != nil || response == nil || response.StatusCode != http.StatusUnauthorized || !requestCanRetry(req) {
 		return response, err
 	}

@@ -103,6 +103,7 @@ project or Remote Config commands for the first time.
 
 | Command | Purpose |
 | --- | --- |
+| `mcp` | Start the [MCP server](/automation/mcp) for an AI application |
 | `capabilities` | Describe commands, inputs, schemas, and side effects |
 | `schema list` | List published JSON schemas |
 | `schema show` | Return one JSON Schema document |

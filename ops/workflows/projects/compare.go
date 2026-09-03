@@ -1,0 +1,831 @@
+package projects
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"sort"
+	"strings"
+
+	"github.com/erikgeiser/promptkit/selection"
+	"golang.org/x/term"
+
+	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/firebase"
+	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
+	rcpromote "github.com/yumauri/fbrcm/core/rc/promote"
+	"github.com/yumauri/fbrcm/core/rc/publication"
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
+	"github.com/yumauri/fbrcm/internal/terminal/progress"
+	"github.com/yumauri/fbrcm/ops/invocation"
+	"github.com/yumauri/fbrcm/ops/shared"
+	"github.com/yumauri/fbrcm/ops/shared/rc"
+)
+
+type compareOptions struct {
+	Groups         []string
+	ParamFilters   []string
+	Expr           string
+	Search         shared.ParameterSearch
+	JSON           bool
+	Cached         bool
+	ParametersOnly bool
+	ConditionsOnly bool
+	Prune          bool
+	All            bool
+	Interactive    bool
+	DryRun         bool
+	Yes            bool
+	ChangeNote     *string
+}
+
+func newDiffCommandDefinition(svc *core.Core) *invocation.Definition {
+	cmd := &invocation.Definition{
+		Use:   "diff <source-project> <target-project>",
+		Short: "Compare Remote Config between two projects",
+		Args:  invocation.ExactArgs(2),
+		RunE: func(cmd invocation.Call, args []string) error {
+			opts, err := readCompareOptions(cmd)
+			if err != nil {
+				return err
+			}
+			return runProjectsDiff(cmd, svc, args[0], args[1], opts)
+		},
+	}
+	addCompareSelectionFlags(cmd)
+	cmd.Flags().Bool("cached", false, "Use cached Remote Config instead of live Firebase fetch")
+	cmd.Flags().Bool("json", false, "Print diff as JSON")
+	return cmd
+}
+
+func newPromoteCommandDefinition(svc *core.Core) *invocation.Definition {
+	cmd := &invocation.Definition{
+		Use:   "promote <source-project> <target-project>",
+		Short: "Promote selected Remote Config changes between projects",
+		Args:  invocation.ExactArgs(2),
+		RunE: func(cmd invocation.Call, args []string) error {
+			opts, err := readCompareOptions(cmd)
+			if err != nil {
+				return err
+			}
+			return runProjectsPromote(cmd, svc, args[0], args[1], opts)
+		},
+	}
+	addCompareSelectionFlags(cmd)
+	cmd.Flags().Bool("interactive", false, "Review each promotion item interactively")
+	cmd.Flags().Bool("all", false, "Select all eligible promotion items")
+	cmd.Flags().Bool("prune", false, "Include target-only removals")
+	shared.AddDryRunFlag(cmd)
+	shared.AddChangeNoteFlag(cmd)
+	shared.AddYesFlag(cmd, "Skip final publish confirmation")
+	shared.AddPlanOutFlag(cmd)
+	cmd.Flags().Bool("json", false, "Print promotion result as JSON")
+	return cmd
+}
+
+func addCompareSelectionFlags(cmd invocation.FlagGroups) {
+	shared.AddParameterFilterFlags(cmd)
+	cmd.Flags().StringArray("group", nil, "Select parameters in group; may be repeated")
+	cmd.Flags().String("expr", "", "Filter parameter changes by expr-lang expression")
+	cmd.Flags().Bool("parameters", false, "Include only parameter and group description changes")
+	cmd.Flags().Bool("conditions", false, "Include only condition changes")
+}
+
+func readCompareOptions(cmd invocation.Call) (compareOptions, error) {
+	var opts compareOptions
+	var err error
+	opts.Groups, err = cmd.Flags().GetStringArray("group")
+	if err != nil {
+		return opts, err
+	}
+	opts.ParamFilters, err = cmd.Flags().GetStringArray("filter")
+	if err != nil {
+		return opts, err
+	}
+	opts.Expr, err = cmd.Flags().GetString("expr")
+	if err != nil {
+		return opts, err
+	}
+	searchValue, err := cmd.Flags().GetString("search")
+	if err != nil {
+		return opts, err
+	}
+	opts.Search = shared.NewParameterSearch(searchValue)
+	opts.JSON, err = cmd.Flags().GetBool("json")
+	if err != nil {
+		return opts, err
+	}
+	opts.ParametersOnly, err = cmd.Flags().GetBool("parameters")
+	if err != nil {
+		return opts, err
+	}
+	opts.ConditionsOnly, err = cmd.Flags().GetBool("conditions")
+	if err != nil {
+		return opts, err
+	}
+	if cmd.Flags().Lookup("cached") != nil {
+		opts.Cached, err = cmd.Flags().GetBool("cached")
+		if err != nil {
+			return opts, err
+		}
+	}
+	if cmd.Flags().Lookup("prune") != nil {
+		opts.Prune, err = cmd.Flags().GetBool("prune")
+		if err != nil {
+			return opts, err
+		}
+	}
+	if cmd.Flags().Lookup("all") != nil {
+		opts.All, err = cmd.Flags().GetBool("all")
+		if err != nil {
+			return opts, err
+		}
+	}
+	if cmd.Flags().Lookup("interactive") != nil {
+		opts.Interactive, err = cmd.Flags().GetBool("interactive")
+		if err != nil {
+			return opts, err
+		}
+	}
+	if cmd.Flags().Lookup("dry-run") != nil {
+		opts.DryRun, err = cmd.Flags().GetBool("dry-run")
+		if err != nil {
+			return opts, err
+		}
+	}
+	if cmd.Flags().Lookup("yes") != nil {
+		opts.Yes, err = cmd.Flags().GetBool("yes")
+		if err != nil {
+			return opts, err
+		}
+	}
+	if cmd.Flags().Lookup("change-note") != nil {
+		opts.ChangeNote, err = shared.ReadChangeNoteFlag(cmd)
+		if err != nil {
+			return opts, err
+		}
+	}
+	opts.Expr = strings.TrimSpace(opts.Expr)
+	opts.Groups = normalizeGroups(opts.Groups)
+	return opts, nil
+}
+
+func runProjectsDiff(cmd invocation.Call, svc *core.Core, sourceQuery, targetQuery string, opts compareOptions) error {
+	ctx := shared.CommandContext(cmd)
+	source, target, sourceCfg, targetCfg, err := loadCompareConfigs(ctx, cmd, svc, sourceQuery, targetQuery, opts.Cached)
+	if err != nil {
+		return err
+	}
+	result, err := filterDiffResult(source, sourceCfg, target, targetCfg, rcdiff.CompareRemoteConfigs(targetCfg, sourceCfg), opts)
+	if err != nil {
+		return err
+	}
+	if opts.JSON {
+		if err := shared.WriteJSON(cmd, compareJSON(source, target, result)); err != nil {
+			return err
+		}
+		if result.HasChanges() {
+			return shared.DiffFoundError(cmd)
+		}
+		return nil
+	}
+	if !result.HasChanges() {
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "🤷 No differences")
+		return err
+	}
+	text, _ := rcdiff.RenderResult(result)
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), text); err != nil {
+		return err
+	}
+	return shared.DiffFoundError(cmd)
+}
+
+func runProjectsPromote(cmd invocation.Call, svc *core.Core, sourceQuery, targetQuery string, opts compareOptions) error {
+	ctx := shared.CommandContext(cmd)
+	if opts.DryRun {
+		ctx = firebase.WithDryRun(ctx)
+	}
+	var err error
+	ctx, err = shared.WithChangeNote(ctx, opts.ChangeNote)
+	if err != nil {
+		return err
+	}
+	source, target, sourceCfg, targetCfg, err := loadCompareConfigs(ctx, cmd, svc, sourceQuery, targetQuery, false)
+	if err != nil {
+		return err
+	}
+	ctx, err = shared.FirebaseServicesContextForExecution(ctx, []string{source.ProjectID, target.ProjectID})
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
+
+	plan := rcpromote.BuildPlan(sourceCfg, targetCfg, rcpromote.Options{Prune: opts.Prune})
+	plan.Diff, err = filterDiffResult(source, sourceCfg, target, targetCfg, plan.Diff, opts)
+	if err != nil {
+		return err
+	}
+	plan.Items = filterPromotionItems(plan.Items, plan.Diff, opts)
+	if len(plan.Items) == 0 {
+		if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+			return planErr
+		} else if planning {
+			return writePromotionPublicationPlan(ctx, cmd, svc, source, target, sourceCfg, opts, map[rcpromote.ItemID]bool{}, planPath)
+		}
+		return writePromoteNoChanges(cmd, source, target, opts)
+	}
+
+	selected, err := selectPromotionItems(cmd, plan, opts)
+	if err != nil {
+		return err
+	}
+	if len(selected) == 0 {
+		if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+			return planErr
+		} else if planning {
+			return writePromotionPublicationPlan(ctx, cmd, svc, source, target, sourceCfg, opts, selected, planPath)
+		}
+		return writePromoteNoChanges(cmd, source, target, opts)
+	}
+
+	finalCfg, applied, err := rcpromote.Apply(plan, selected, rcpromote.Options{Prune: opts.Prune})
+	if err != nil {
+		return err
+	}
+	diffText, hasChanges := rc.RenderRemoteConfigDiff(targetCfg, finalCfg)
+	if planPath, planning, planErr := shared.PlanOutputPath(cmd); planErr != nil {
+		return planErr
+	} else if planning {
+		return writePromotionPublicationPlan(ctx, cmd, svc, source, target, sourceCfg, opts, selected, planPath)
+	}
+	if !hasChanges {
+		return writePromoteNoChanges(cmd, source, target, opts)
+	}
+	if !opts.JSON {
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\nPromote %s -> %s\n", source.ProjectID, target.ProjectID)
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+	}
+	if !opts.Yes {
+		if err := shared.RequireYesInMachineMode(cmd, opts.Yes, "publishing selected Remote Config changes to "+target.ProjectID, true); err != nil {
+			return err
+		}
+		confirm := shared.NewConfirmation(
+			fmt.Sprintf("Publish selected Remote Config changes to %s?", target.ProjectID),
+			shared.ConfirmationOptions{Destructive: true},
+		)
+		confirm.Input = cmd.InOrStdin()
+		confirm.Output = cmd.ErrOrStderr()
+		ok, err := confirm.RunPrompt()
+		if err != nil || !ok {
+			return err
+		}
+	}
+
+	published, validated, validationSource, err := publishPromotePlan(ctx, cmd, svc, target, sourceCfg, opts, selected)
+	if err != nil {
+		status, stage := "failed", "publication"
+		if published {
+			if _, ok := errors.AsType[*core.RemoteConfigPublishedCacheError](err); ok {
+				status, stage = "published-cache-failed", "cache"
+				filter, _ := rctarget.ExactFilter(target.ProjectID)
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.cache_stale", Message: "Firebase accepted the promotion, but the local cache update failed.", Target: target.ProjectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "cache"}, Remediation: []shared.Remediation{{Description: "refresh the published target instead of republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"get", "--update", "--project", filter}}}})
+			} else {
+				status, stage = "published-hook-failed", "post_publish_hook"
+				shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "publication.post_publish_hook_failed", Message: "Firebase accepted the promotion, but a post_publish hook failed.", Target: target.ProjectID, Details: struct {
+					Stage string `json:"stage"`
+				}{Stage: "post_publish_hook"}, Remediation: []shared.Remediation{{Description: "inspect hook trust and status without republishing", Strategy: shared.RemediationRunCommand, Argv: []string{"hooks", "status"}}}})
+			}
+		} else if rc.IsValidationError(err) {
+			status, stage = "validation-failed", "validation"
+		}
+		if opts.JSON {
+			payload := promoteJSON(source, target, opts, published, validated, validationSource, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg))
+			payload.Status = status
+			payload.Error = &promoteError{Stage: stage, Message: shared.SafeErrorText(err)}
+			if writeErr := shared.WriteJSON(cmd, payload); writeErr != nil {
+				return writeErr
+			}
+		} else {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "❌ %s: %s -> %s: %v\nvalidated: %t · validation_source: %s\n", strings.ReplaceAll(status, "-", " "), source.ProjectID, target.ProjectID, err, validated, validationSource)
+		}
+		return err
+	}
+	if opts.JSON {
+		return shared.WriteJSON(cmd, promoteJSON(source, target, opts, published, validated, validationSource, applied, rcdiff.CompareRemoteConfigs(targetCfg, finalCfg)))
+	}
+	if published {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "🚀 promoted: %s -> %s\n", source.ProjectID, target.ProjectID)
+	}
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "validated: %t · validation_source: %s\n", validated, validationSource)
+	return nil
+}
+
+func writePromotionPublicationPlan(ctx context.Context, cmd invocation.Call, svc *core.Core, source, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool, path string) error {
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
+			return err
+		} else if hasDraft {
+			return &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before planning a promotion", target.ProjectID)}
+		}
+	}
+	baseRaw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)
+	if err != nil {
+		return err
+	}
+	baseCfg, err := firebase.ParseCloneRemoteConfig(baseRaw)
+	if err != nil {
+		return err
+	}
+	baseVersion := baseCfg.Version.VersionNumber
+	baseCfg.Version = firebase.RemoteConfigVersion{}
+	promotionPlan := rcpromote.BuildPlan(sourceCfg, baseCfg, rcpromote.Options{Prune: opts.Prune})
+	finalCfg, _, err := rcpromote.Apply(promotionPlan, selected, rcpromote.Options{Prune: opts.Prune})
+	if err != nil {
+		return err
+	}
+	finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
+	if err != nil {
+		return err
+	}
+	baseDigest, err := publication.RemoteConfigDigest(baseRaw)
+	if err != nil {
+		return err
+	}
+	candidateDigest, err := publication.RemoteConfigDigest(finalRaw)
+	if err != nil {
+		return err
+	}
+	action := publication.ActionNone
+	validationSource := core.ValidationSourceLocal
+	if baseDigest != candidateDigest {
+		action = publication.ActionPublish
+		validationSource = core.ValidationSourceFirebase
+		if err := svc.ValidatePublicationCandidate(ctx, target.ProjectID, baseRaw, finalRaw, etag, "promote"); err != nil {
+			return err
+		}
+	}
+	environment, err := core.PublicationEnvironmentForContext(ctx)
+	if err != nil {
+		return err
+	}
+	parsedTarget, err := rctarget.Parse(target.ProjectID)
+	if err != nil {
+		return err
+	}
+	sourceRaw, err := firebase.MarshalRemoteConfig(sourceCfg)
+	if err != nil {
+		return err
+	}
+	sourceDigest, err := publication.RemoteConfigDigest(sourceRaw)
+	if err != nil {
+		return err
+	}
+	publicationPlan := publication.New(invocation.Version(cmd), "projects.promote", environment.Policy, opts.ChangeNote)
+	publicationPlan.Execution.HooksEnabled = environment.HooksEnabled
+	publicationPlan.Execution.HookDefinitionSHA256 = environment.HookDefinitionSHA256
+	selectedItems := make([]rcpromote.ItemID, 0, len(selected))
+	for item, enabled := range selected {
+		if enabled {
+			selectedItems = append(selectedItems, item)
+		}
+	}
+	sort.Slice(selectedItems, func(i, j int) bool {
+		if selectedItems[i].Kind != selectedItems[j].Kind {
+			return selectedItems[i].Kind < selectedItems[j].Kind
+		}
+		if selectedItems[i].Group != selectedItems[j].Group {
+			return selectedItems[i].Group < selectedItems[j].Group
+		}
+		return selectedItems[i].Name < selectedItems[j].Name
+	})
+	publicationPlan.Operation.Selection, err = json.Marshal(struct {
+		Source string             `json:"source"`
+		Target string             `json:"target"`
+		Prune  bool               `json:"prune"`
+		Items  []rcpromote.ItemID `json:"items"`
+	}{Source: source.ProjectID, Target: target.ProjectID, Prune: opts.Prune, Items: selectedItems})
+	if err != nil {
+		return err
+	}
+	publicationPlan.Targets = append(publicationPlan.Targets, publication.Target{
+		Target: target.ProjectID, ProjectID: parsedTarget.ProjectID, Template: string(parsedTarget.Kind), Action: action, ChangeNote: opts.ChangeNote,
+		Base:       publication.Snapshot{Version: baseVersion, ETag: etag, RemoteConfig: baseRaw},
+		Candidate:  publication.Snapshot{RemoteConfig: finalRaw},
+		Validation: publication.Validation{Source: validationSource, ValidatedAt: publicationPlan.CreatedAt},
+		Source:     publication.Source{Kind: "promotion", Fingerprint: source.ProjectID + ":" + sourceDigest},
+	})
+	_, err = rc.WritePublicationPlan(cmd, publicationPlan, path)
+	return err
+}
+
+func loadCompareConfigs(ctx context.Context, cmd invocation.Call, svc *core.Core, sourceQuery, targetQuery string, cached bool) (core.Project, core.Project, *firebase.RemoteConfig, *firebase.RemoteConfig, error) {
+	if cached && !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return core.Project{}, core.Project{}, nil, nil, shared.InvalidArgument(fmt.Errorf("--cached cannot be used with --stateless; Remote Config reads are already live"))
+	}
+	resolveProject := func(query string) (core.Project, error) {
+		if cached {
+			return shared.ResolveCachedProjectTargetArg(cmd, query)
+		}
+		return shared.ResolveProjectTargetForExecution(ctx, cmd, svc, query)
+	}
+	source, err := resolveProject(sourceQuery)
+	if err != nil {
+		return core.Project{}, core.Project{}, nil, nil, err
+	}
+	target, err := resolveProject(targetQuery)
+	if err != nil {
+		return core.Project{}, core.Project{}, nil, nil, err
+	}
+	sourceCfg, err := loadProjectConfig(ctx, svc, source.ProjectID, cached)
+	if err != nil {
+		return core.Project{}, core.Project{}, nil, nil, err
+	}
+	targetCfg, err := loadProjectConfig(ctx, svc, target.ProjectID, cached)
+	if err != nil {
+		return core.Project{}, core.Project{}, nil, nil, err
+	}
+	sourceCfg.Version = firebase.RemoteConfigVersion{}
+	targetCfg.Version = firebase.RemoteConfigVersion{}
+	return source, target, sourceCfg, targetCfg, nil
+}
+
+func loadProjectConfig(ctx context.Context, svc *core.Core, projectID string, cached bool) (*firebase.RemoteConfig, error) {
+	if cached {
+		cache, _, err := svc.InspectParametersCache(projectID)
+		if err != nil {
+			return nil, err
+		}
+		if cache == nil {
+			return nil, &shared.SelectionError{
+				Resource: "parameters_cache", Kind: "not_found", Query: projectID,
+				Err: fmt.Errorf("parameters cache not found for project %s", projectID),
+			}
+		}
+		return firebase.ParseCloneRemoteConfig(cache.RemoteConfig)
+	}
+	ctx, err := shared.FirebaseServiceContextForExecution(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	raw, _, err := svc.ExportRemoteConfig(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return firebase.ParseCloneRemoteConfig(raw)
+}
+
+func publishPromotePlan(ctx context.Context, cmd invocation.Call, svc *core.Core, target core.Project, sourceCfg *firebase.RemoteConfig, opts compareOptions, selected map[rcpromote.ItemID]bool) (bool, bool, string, error) {
+	progress.Start("Preparing promotion to " + target.ProjectID + "…")
+	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		if hasDraft, err := svc.HasDraft(target.ProjectID); err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		} else if hasDraft {
+			return false, false, core.ValidationSourceLocal, &shared.ConflictError{Code: "draft.exists", Resource: "draft", Target: target.ProjectID, Remediation: []shared.Remediation{
+				{Description: "publish the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "publish", target.ProjectID}},
+				{Description: "discard the existing draft", Strategy: shared.RemediationRunCommand, Argv: []string{"draft", "discard", target.ProjectID}},
+			}, Err: fmt.Errorf("project %s has an unpublished draft; publish or discard it before promoting", target.ProjectID)}
+		}
+	}
+	for {
+		raw, etag, err := svc.ExportRemoteConfig(ctx, target.ProjectID)
+		if err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		}
+		latestTarget, err := firebase.ParseCloneRemoteConfig(raw)
+		if err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		}
+		latestTarget.Version = firebase.RemoteConfigVersion{}
+		plan := rcpromote.BuildPlan(sourceCfg, latestTarget, rcpromote.Options{Prune: opts.Prune})
+		finalCfg, _, err := rcpromote.Apply(plan, selected, rcpromote.Options{Prune: opts.Prune})
+		if err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		}
+		diffText, hasChanges := rc.RenderRemoteConfigDiff(latestTarget, finalCfg)
+		if !hasChanges {
+			if !opts.JSON {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes")
+			}
+			return false, true, core.ValidationSourceLocal, nil
+		}
+		finalRaw, err := firebase.MarshalRemoteConfig(finalCfg)
+		if err != nil {
+			return false, false, core.ValidationSourceLocal, err
+		}
+		publishResult, err := rc.ValidateAndPublishRemoteConfigResult(ctx, svc, target.ProjectID, finalRaw, etag, "promote", cmd.ErrOrStderr())
+		if err != nil {
+			var hookErr *core.RemoteConfigPublishedHookError
+			var cacheErr *core.RemoteConfigPublishedCacheError
+			if errors.As(err, &hookErr) || errors.As(err, &cacheErr) {
+				return true, publishResult.Validated, publishResult.ValidationSource, err
+			}
+			return false, publishResult.Validated, publishResult.ValidationSource, err
+		}
+		if publishResult.Retry {
+			if !opts.JSON {
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), diffText)
+			}
+			continue
+		}
+		return !firebase.IsDryRun(ctx), publishResult.Validated, publishResult.ValidationSource, nil
+	}
+}
+
+func selectPromotionItems(cmd invocation.Call, plan rcpromote.Plan, opts compareOptions) (map[rcpromote.ItemID]bool, error) {
+	if opts.All {
+		return rcpromote.SelectAll(plan.Items), nil
+	}
+	if shared.MachineMode(cmd) {
+		if opts.Interactive {
+			return nil, shared.InteractionRequiredWithArguments("interactive promotion review is unavailable in JSON mode; use selection flags or --all", "selection_required", false, "--all", "--all")
+		}
+		if !hasSelectionIntent(opts) {
+			return nil, shared.InteractionRequiredWithArguments("promotion selection is required; pass --all or a selection filter", "selection_required", false, "--all", "--all")
+		}
+		return rcpromote.SelectAll(plan.Items), nil
+	}
+	if !opts.Interactive && !hasSelectionIntent(opts) && !isTerminal() {
+		return nil, shared.InteractionRequiredWithArguments("non-interactive promotion requires --all, --filter, --group, --expr, or --search", "selection_required", false, "--all", "--all")
+	}
+	if opts.Interactive || isTerminal() {
+		return promptPromotionItems(cmd, plan)
+	}
+	return rcpromote.SelectAll(plan.Items), nil
+}
+
+func promptPromotionItems(cmd invocation.Call, plan rcpromote.Plan) (map[rcpromote.ItemID]bool, error) {
+	selected := make(map[rcpromote.ItemID]bool)
+	promoteRest := map[rcdiff.ItemKind]bool{}
+	skipRest := map[rcdiff.ItemKind]bool{}
+	for _, item := range plan.Items {
+		if promoteRest[item.Kind] {
+			selected[item.ID] = true
+			continue
+		}
+		if skipRest[item.Kind] {
+			continue
+		}
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\n%s: %s (%s)\n", itemKindTitle(item.Kind), item.Label, item.Change)
+		preview, _ := renderPromotionItemDiff(plan, item)
+		if preview != "" {
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), preview)
+		}
+		choice, err := promptPromotionChoice(cmd, "Promote this item?")
+		if err != nil {
+			return nil, err
+		}
+		switch choice {
+		case "promote":
+			selected[item.ID] = true
+		case "skip":
+		case "promote-section":
+			promoteRest[item.Kind] = true
+			selected[item.ID] = true
+		case "skip-section":
+			skipRest[item.Kind] = true
+		case "quit":
+			return nil, fmt.Errorf("promotion cancelled")
+		}
+	}
+	return selected, nil
+}
+
+func promptPromotionChoice(cmd invocation.Call, prompt string) (string, error) {
+	p := selection.New(prompt, []promotionChoice{
+		{label: "Promote", value: "promote"},
+		{label: "Skip", value: "skip"},
+		{label: "Promote remaining in this section", value: "promote-section"},
+		{label: "Skip remaining in this section", value: "skip-section"},
+		{label: "Quit without publishing", value: "quit"},
+	})
+	promptInput, closePromptInput, err := shared.OpenPromptInput(cmd.InOrStdin())
+	if err != nil {
+		return "", err
+	}
+	defer closePromptInput()
+	p.Input = promptInput
+	p.Output = cmd.ErrOrStderr()
+	choice, err := p.RunPrompt()
+	if err != nil {
+		return "", err
+	}
+	return choice.value, nil
+}
+
+type promotionChoice struct {
+	label string
+	value string
+}
+
+func (c promotionChoice) String() string {
+	return c.label
+}
+
+func filterPromotionItems(items []rcpromote.Item, result rcdiff.Result, opts compareOptions) []rcpromote.Item {
+	allowed := make(map[rcpromote.ItemID]struct{})
+	for _, change := range result.Parameters {
+		allowed[rcpromote.ItemID{Kind: rcdiff.ItemParameter, Name: change.Key, Group: change.Group}] = struct{}{}
+	}
+	for _, change := range result.GroupDescriptions {
+		allowed[rcpromote.ItemID{Kind: rcdiff.ItemGroupDescription, Name: change.Group}] = struct{}{}
+	}
+	for _, change := range result.Conditions {
+		allowed[rcpromote.ItemID{Kind: rcdiff.ItemCondition, Name: change.Name}] = struct{}{}
+	}
+
+	out := make([]rcpromote.Item, 0, len(items))
+	for _, item := range items {
+		if _, ok := allowed[item.ID]; ok {
+			out = append(out, item)
+		}
+	}
+	return out
+}
+
+func filterDiffResult(source core.Project, sourceCfg *firebase.RemoteConfig, target core.Project, targetCfg *firebase.RemoteConfig, result rcdiff.Result, opts compareOptions) (rcdiff.Result, error) {
+	if opts.ParametersOnly && !opts.ConditionsOnly {
+		result.Conditions = nil
+	}
+	if opts.ConditionsOnly && !opts.ParametersOnly {
+		result.Parameters = nil
+		result.GroupDescriptions = nil
+		return result, nil
+	}
+
+	filters := shared.ParseFilters(opts.ParamFilters)
+	groups := groupsSet(opts.Groups)
+	compiledExpr, err := shared.CompileExpr(opts.Expr, source.ProjectID)
+	if err != nil {
+		return rcdiff.Result{}, err
+	}
+
+	params := make([]rcdiff.ParameterChange, 0, len(result.Parameters))
+	for _, change := range result.Parameters {
+		cfg := sourceCfg
+		project := source
+		param := change.Final
+		group := change.Group
+		if change.Kind == rcdiff.ChangeRemoved {
+			cfg = targetCfg
+			project = target
+			param = change.Current
+		}
+		if param == nil {
+			continue
+		}
+		if len(groups) > 0 && !groups[group] {
+			continue
+		}
+		if !shared.MatchAnyFilter(change.Key, filters) {
+			continue
+		}
+		if !shared.MatchParameterSearch(change.Key, *param, cfg, opts.Search) {
+			continue
+		}
+		match, err := shared.MatchParameterByCompiledExpr(compiledExpr, project, cfg, change.Key, groupOrDefault(group))
+		if err != nil {
+			return rcdiff.Result{}, err
+		}
+		if !match {
+			continue
+		}
+		params = append(params, change)
+	}
+	result.Parameters = params
+
+	if len(groups) > 0 {
+		groupsChanged := make([]rcdiff.GroupDescriptionChange, 0, len(result.GroupDescriptions))
+		for _, change := range result.GroupDescriptions {
+			if groups[change.Group] {
+				groupsChanged = append(groupsChanged, change)
+			}
+		}
+		result.GroupDescriptions = groupsChanged
+	}
+	if len(filters) > 0 || !opts.Search.Empty() || opts.Expr != "" {
+		result.GroupDescriptions = nil
+	}
+	return result, nil
+}
+
+func groupsSet(groups []string) map[string]bool {
+	out := make(map[string]bool, len(groups))
+	for _, group := range groups {
+		out[group] = true
+	}
+	return out
+}
+
+func groupOrDefault(group string) string {
+	if group == "" {
+		return shared.DefaultRootGroupLabel
+	}
+	return group
+}
+
+func renderPromotionItemDiff(plan rcpromote.Plan, item rcpromote.Item) (string, bool) {
+	selected := map[rcpromote.ItemID]bool{item.ID: true}
+	finalCfg, _, err := rcpromote.Apply(plan, selected, rcpromote.Options{Prune: item.Change == rcdiff.ChangeRemoved})
+	if err != nil {
+		return "", false
+	}
+	return rc.RenderRemoteConfigDiff(plan.Target, finalCfg)
+}
+
+func isTerminal() bool {
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+func hasSelectionIntent(opts compareOptions) bool {
+	return opts.All || len(opts.ParamFilters) > 0 || len(opts.Groups) > 0 || opts.Expr != "" || !opts.Search.Empty()
+}
+
+func writePromoteNoChanges(cmd invocation.Call, source, target core.Project, opts compareOptions) error {
+	if opts.JSON {
+		return shared.WriteJSON(cmd, promoteJSON(source, target, opts, false, true, core.ValidationSourceLocal, nil, rcdiff.Result{}))
+	}
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "🤷 No changes\nvalidated: true · validation_source: local")
+	return nil
+}
+
+func itemKindTitle(kind rcdiff.ItemKind) string {
+	switch kind {
+	case rcdiff.ItemCondition:
+		return "Condition"
+	case rcdiff.ItemGroupDescription:
+		return "Group"
+	default:
+		return "Parameter"
+	}
+}
+
+func normalizeGroups(groups []string) []string {
+	seen := make(map[string]struct{}, len(groups))
+	out := make([]string, 0, len(groups))
+	for _, group := range groups {
+		group = strings.TrimSpace(group)
+		if group == "" {
+			continue
+		}
+		if _, ok := seen[group]; ok {
+			continue
+		}
+		seen[group] = struct{}{}
+		out = append(out, group)
+	}
+	return out
+}
+
+func compareJSON(source, target core.Project, result rcdiff.Result) compareResult {
+	return compareResult{SourceProject: source.ProjectID, TargetProject: target.ProjectID, Changed: result.HasChanges(), Summary: newCompareSummary(result), Changes: result}
+}
+
+func promoteJSON(source, target core.Project, opts compareOptions, published, validated bool, validationSource string, applied []rcpromote.Item, result rcdiff.Result) promoteResult {
+	status := "unchanged"
+	if result.HasChanges() {
+		status = map[bool]string{true: "would-publish", false: "published"}[opts.DryRun]
+	}
+	return promoteResult{SourceProject: source.ProjectID, TargetProject: target.ProjectID, Status: status, Changed: result.HasChanges(), DryRun: opts.DryRun, Published: published, Validated: validated, ValidationSource: validationSource, Selected: len(applied), ChangeNote: opts.ChangeNote, Summary: newCompareSummary(result)}
+}
+
+type compareSummary struct {
+	Conditions        rcdiff.Summary `json:"conditions"`
+	Parameters        rcdiff.Summary `json:"parameters"`
+	GroupDescriptions rcdiff.Summary `json:"group_descriptions"`
+}
+
+func newCompareSummary(result rcdiff.Result) compareSummary {
+	return compareSummary{Conditions: result.ConditionSummary(), Parameters: result.ParameterSummary(), GroupDescriptions: result.GroupDescriptionSummary()}
+}
+
+type compareResult struct {
+	SourceProject string         `json:"source_project"`
+	TargetProject string         `json:"target_project"`
+	Changed       bool           `json:"changed"`
+	Summary       compareSummary `json:"summary"`
+	Changes       rcdiff.Result  `json:"changes"`
+}
+
+type promoteError struct {
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
+}
+
+type promoteResult struct {
+	SourceProject    string         `json:"source_project"`
+	TargetProject    string         `json:"target_project"`
+	Status           string         `json:"status" contract:"enum=unchanged|would-publish|published|failed|validation-failed|published-hook-failed|published-cache-failed"`
+	Changed          bool           `json:"changed"`
+	DryRun           bool           `json:"dry_run"`
+	Published        bool           `json:"published"`
+	Validated        bool           `json:"validated"`
+	ValidationSource string         `json:"validation_source"`
+	Selected         int            `json:"selected"`
+	ChangeNote       *string        `json:"change_note"`
+	Summary          compareSummary `json:"summary"`
+	Error            *promoteError  `json:"error"`
+}

@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
+	"github.com/yumauri/fbrcm/ops/contract"
 )
 
 var generatedAuditClasses = []string{
@@ -71,6 +71,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 				continue
 			}
 			evidence := append([]string(nil), generatedAuditBaseEvidence(class)...)
+			if capability.ID == "mcp" {
+				evidence = append(evidence, "app.mcp_json_boundary", "app.mcp_json_failure")
+			}
 			if capability.ID == "auth.add.google" {
 				switch class {
 				case "boundary", "invocation":
@@ -117,6 +120,8 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"app.mcp_json_boundary":                 "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",
+		"app.mcp_json_failure":                  "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
 		"app.arity":                             "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
 		"app.auth_add_quota_schema":             "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
 		"app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",
@@ -140,21 +145,21 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.stdin_restrictions":                "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
 		"app.unknown_option":                    "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
 		"app.warning_runtime":                   "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
-		"apply.no_change_success":               "cli/commands/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
-		"apply.status_runtime":                  "cli/commands/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
-		"apply.draft_cleanup_runtime":           "cli/commands/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
-		"apply.warning_runtime":                 "cli/commands/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
+		"apply.no_change_success":               "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
+		"apply.status_runtime":                  "ops/workflows/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
+		"apply.draft_cleanup_runtime":           "ops/workflows/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
+		"apply.warning_runtime":                 "ops/workflows/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
 		"auth.oauth_success":                    "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
 		"auth.google_quota_failure":             "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
-		"contract.artifact_runtime":             "cli/contract/contract_test.go#TestArtifactEncodesBinaryContent",
-		"contract.batch_runtime":                "cli/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
+		"contract.artifact_runtime":             "ops/contract/contract_test.go#TestArtifactEncodesBinaryContent",
+		"contract.batch_runtime":                "ops/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
 		"draft.publish_success":                 "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
 		"profile.root_success":                  "cli/commands/profile/commands_test.go#TestProfileRootJSON",
-		"plan.metadata_success":                 "cli/commands/plan/commands_test.go#TestPlanShowAndValidateJSON",
-		"plan.artifact_runtime":                 "cli/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
+		"plan.metadata_success":                 "ops/workflows/plan/commands_test.go#TestPlanShowAndValidateJSON",
+		"plan.artifact_runtime":                 "ops/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
 		"schemagen.determinism":                 "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
 		"theme.mutation_success":                "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
-		"versions.restore_success":              "cli/commands/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
+		"versions.restore_success":              "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
 	}
 }
 
@@ -292,7 +297,7 @@ func generatedAuditNAReason(class string) string {
 	case "stdin":
 		return "The command does not accept a normalized stdin document."
 	case "success":
-		return "The JSON operation is interaction-only and has no success outcome."
+		return "The JSON operation has no reachable success outcome."
 	case "warning":
 		return "The command has no reachable non-fatal warning branch."
 	default:
@@ -316,8 +321,9 @@ func loadAuditScenarios() map[string][]string {
 			panic(err)
 		}
 		var scenario struct {
-			Name      string `json:"name"`
-			CommandID string `json:"command_id"`
+			Name      string   `json:"name"`
+			CommandID string   `json:"command_id"`
+			Args      []string `json:"args"`
 		}
 		if err := json.Unmarshal(raw, &scenario); err != nil {
 			panic(err)
@@ -327,6 +333,10 @@ func loadAuditScenarios() map[string][]string {
 		}
 		if scenario.Name != entry.Name() || strings.TrimSpace(scenario.CommandID) == "" {
 			panic(fmt.Sprintf("invalid audit scenario %s", entry.Name()))
+		}
+		if scenario.CommandID == "mcp" && !slices.Contains(scenario.Args, "--json") {
+			// Streaming MCP execution is outside the one-shot CLI JSON audit.
+			continue
 		}
 		result[scenario.CommandID] = append(result[scenario.CommandID], scenario.Name)
 	}

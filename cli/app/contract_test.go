@@ -16,14 +16,15 @@ import (
 
 	jsonschema "github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/spf13/cobra"
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/shared"
-	sharedrc "github.com/yumauri/fbrcm/cli/shared/rc"
+
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/shared"
+	sharedrc "github.com/yumauri/fbrcm/ops/shared/rc"
 	"github.com/yumauri/fbrcm/schemas"
 )
 
@@ -85,7 +86,8 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 		if capability.Supports.Draft != hasContractFlag(root, capability.Path, "draft") {
 			t.Fatalf("%s draft metadata does not match its flags", capability.ID)
 		}
-		if capability.Supports.Stateless != contract.SupportsStatelessCommand(capability.ID) {
+		wantStateless := contract.SupportsStatelessCommand(capability.ID) && capability.ID != "mcp"
+		if capability.Supports.Stateless != wantStateless {
 			t.Fatalf("%s stateless metadata does not match the supported-command registry", capability.ID)
 		}
 	}
@@ -338,6 +340,9 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		if !contract.SupportsStatelessCommand(capability.ID) {
 			continue
 		}
+		if capability.ID == "mcp" {
+			continue // The CLI JSON branch rejects before entering stateless server mode.
+		}
 		cacheWrite := statelessCacheWriters[capability.ID]
 		if slices.Contains(capability.SideEffects, "local_cache_write") != cacheWrite {
 			t.Fatalf("%s local cache side effect presence does not match its stateful path: %#v", capability.ID, capability.SideEffects)
@@ -364,6 +369,9 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 			t.Fatalf("%s stateless flag = %#v", capability.ID, capability.Flags)
 		}
 		for _, effect := range []string{"local_state_write", "local_file_write", "authentication_remote_access"} {
+			if capability.ID == "mcp" {
+				continue
+			} // --json rejects streaming before any authentication or persistence.
 			if !capabilityEffectHasPredicate(capability, effect, "option", "stateless", "equals") {
 				t.Fatalf("%s %s does not publish its stateful-only condition: %#v", capability.ID, effect, capability.SideEffectWhen)
 			}
@@ -371,7 +379,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		if command.cacheWrite && !capabilityEffectHasPredicate(capability, "local_cache_write", "option", "stateless", "equals") {
 			t.Fatalf("%s cache writes do not publish their stateful-only condition: %#v", capability.ID, capability.SideEffectWhen)
 		}
-		if !capabilityConditionsHavePredicate(capability.InteractionWhen, "option", "stateless", "equals") {
+		if capability.ID != "mcp" && !capabilityConditionsHavePredicate(capability.InteractionWhen, "option", "stateless", "equals") {
 			t.Fatalf("%s authentication interaction does not publish its stateful-only condition: %#v", capability.ID, capability.InteractionWhen)
 		}
 		if capability.ID == "projects.list" {
@@ -748,7 +756,7 @@ func TestDetailedCapabilitiesConformToStandaloneSchema(t *testing.T) {
 		unconditionalLocalWrite := slices.ContainsFunc(capability.SideEffectWhen, func(item contract.SideEffectCondition) bool {
 			return item.Effect == "local_state_write" && len(item.When) == 0
 		})
-		if capability.SideEffectLevel < 1 || !unconditionalLocalWrite && !capabilityHasPredicate(capability, "local_state_write", "profile_bootstrap", "required") {
+		if capability.ID != "mcp" && (capability.SideEffectLevel < 1 || !unconditionalLocalWrite && !capabilityHasPredicate(capability, "local_state_write", "profile_bootstrap", "required")) {
 			t.Fatalf("%s omits JSON envelope profile bootstrap: %#v", capability.ID, capability.SideEffectWhen)
 		}
 		if capability.ProblemCodes == nil || capability.SideEffects == nil || capability.SideEffectWhen == nil || capability.NetworkWhen == nil || capability.DestructiveWhen == nil || capability.IdempotencyWhen == nil || capability.StdinModes == nil || capability.InteractionWhen == nil {
@@ -2329,6 +2337,12 @@ func TestRepeatableInvocationOptionsRejectUnrepresentableEmptyArrays(t *testing.
 				t.Errorf("%s repeatable option %s has no input schema", capability.ID, flag.Name)
 				continue
 			}
+			if capability.ID == "mcp" && name == "toolsets" {
+				if _, constrained := option["minItems"]; constrained {
+					t.Errorf("mcp --toolsets rejects the empty list before its early JSON failure: %#v", option)
+				}
+				continue
+			}
 			if got := option["minItems"]; got != float64(1) {
 				t.Errorf("%s %s minItems = %v, want 1", capability.ID, flag.Name, got)
 			}
@@ -2747,7 +2761,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 				}
 			}
 			wantOutcomes := []string{"success", "failure"}
-			if capability.ID == "config.edit" {
+			if capability.ID == "config.edit" || capability.ID == "mcp" {
 				wantOutcomes = []string{"failure"}
 			} else if partialCommands[capability.ID] {
 				wantOutcomes = []string{"success", "partial_success", "failure"}

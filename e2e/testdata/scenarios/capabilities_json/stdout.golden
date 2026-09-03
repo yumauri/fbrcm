@@ -17,7 +17,7 @@
   },
   "data": {
     "contract_version": "1.0.0",
-    "count": 112,
+    "count": 113,
     "commands": [
       {
         "id": "add",
@@ -1209,6 +1209,25 @@
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:response",
         "side_effect_level": 1,
         "destructive": true,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "mcp",
+        "path": [
+          "mcp"
+        ],
+        "summary": "Serve Firebase Remote Config tools over MCP stdio",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:response",
+        "side_effect_level": 0,
+        "destructive": false,
         "supports": {
           "dry_run": false,
           "draft": false,

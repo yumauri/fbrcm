@@ -180,6 +180,11 @@ func TestStatelessCommandCoverage(t *testing.T) {
 		if !slices.Contains(scenario.Args, "--stateless") {
 			continue
 		}
+		if scenario.CommandID == "mcp" && !slices.Contains(scenario.Args, "--json") {
+			// Streaming MCP launch coverage is outside the one-shot CLI JSON
+			// supports.stateless inventory.
+			continue
+		}
 		if !supported[scenario.CommandID] {
 			t.Errorf("scenario %s uses --stateless for unsupported command %q", scenario.Name, scenario.CommandID)
 			continue

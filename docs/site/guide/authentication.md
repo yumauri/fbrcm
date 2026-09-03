@@ -57,7 +57,7 @@ missing `cloudconfig.configs.update` permission.
 <Badge type="warning" text="Unavailable — Google verification pending" />
 
 Official fbrcm release binaries include fbrcm's OAuth Desktop client. You do
-not need to create a Google Cloud OAuth client or download a client JSON:
+not need to create a Google Cloud OAuth client or download a client JSON.
 
 This method will remain unavailable until Google completes verification of
 fbrcm's OAuth application. Use Google Cloud CLI ADC, your own OAuth Desktop app,

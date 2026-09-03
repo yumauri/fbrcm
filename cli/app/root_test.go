@@ -20,14 +20,14 @@ import (
 	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/machine"
-	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/machine"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
@@ -52,7 +52,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "apply", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "apply", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -83,7 +83,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{27, 27, 27}) {
+	if !reflect.DeepEqual(counts, []int{28, 28, 28}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }

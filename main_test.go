@@ -22,6 +22,28 @@ func TestCLIInitializationUsesSemanticExitStatus(t *testing.T) {
 	if got := applicationInitializationExitCode(corelog.ModeTUI, err); got != 1 {
 		t.Fatalf("TUI initialization exit code = %d, want 1", got)
 	}
+	if got := applicationInitializationExitCode(corelog.ModeMCP, err); got != 3 {
+		t.Fatalf("MCP initialization exit code = %d, want 3", got)
+	}
+}
+
+func TestApplicationModeSelection(t *testing.T) {
+	for _, test := range []struct {
+		args []string
+		want corelog.Mode
+	}{
+		{nil, corelog.ModeTUI},
+		{[]string{"mcp"}, corelog.ModeMCP},
+		{[]string{"--profile", "work", "mcp", "--allow-writes"}, corelog.ModeMCP},
+		{[]string{"mcp", "--stateless"}, corelog.ModeMCP},
+		{[]string{"get", "mcp"}, corelog.ModeCLI},
+		{[]string{"--profile", "mcp", "get"}, corelog.ModeCLI},
+		{[]string{"--help"}, corelog.ModeCLI},
+	} {
+		if got := applicationMode(test.args); got != test.want {
+			t.Errorf("%v: mode=%s want %s", test.args, got, test.want)
+		}
+	}
 }
 
 func TestJSONDefaultLogLevelIsSilentUnlessEnvironmentOverridesIt(t *testing.T) {

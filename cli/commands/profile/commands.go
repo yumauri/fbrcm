@@ -7,10 +7,10 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/shared"
-	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	"github.com/yumauri/fbrcm/core/config"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func New() *cobra.Command {

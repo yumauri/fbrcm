@@ -19,6 +19,7 @@ type Mode string
 const (
 	ModeCLI Mode = "cli"
 	ModeTUI Mode = "tui"
+	ModeMCP Mode = "mcp"
 )
 
 const SilentLevel charmlog.Level = 42
@@ -136,7 +137,13 @@ func (m *manager) init(mode Mode, defaults ...charmlog.Level) {
 	m.logger.SetReportTimestamp(!env.LogTimestampDisabled())
 	m.logger.SetTimeFormat("15:04:05")
 	m.setLevelLocked(defaultLevel)
-	if env.NoColorEnabled() {
+	plain := mode == ModeMCP || env.LogPlainEnabled()
+	m.sink.setPlain(plain)
+	if plain {
+		// Hosts and CI consume plain text. Unlike NO_COLOR, NoTTY also
+		// removes decorations and hyperlinks, not just foreground colors.
+		m.logger.SetColorProfile(colorprofile.NoTTY)
+	} else if env.NoColorEnabled() {
 		m.logger.SetColorProfile(colorprofile.Ascii)
 	} else {
 		m.logger.SetColorProfile(colorprofile.ANSI256)
@@ -182,7 +189,7 @@ func (m *manager) configureCLIOutput(logOutput, terminalOutput io.Writer) {
 	if terminalOutput != nil {
 		m.terminalOutput = terminalOutput
 	}
-	if m.mode == ModeCLI && m.level != SilentLevel {
+	if m.mode != ModeTUI && m.level != SilentLevel {
 		m.logger.SetOutput(m.cliOutput)
 	}
 }
@@ -202,7 +209,7 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 	}
 
 	m.logger.SetLevel(level)
-	if m.mode == ModeCLI {
+	if m.mode != ModeTUI {
 		m.logger.SetOutput(m.cliOutput)
 		return
 	}
@@ -212,7 +219,12 @@ func (m *manager) setLevelLocked(level charmlog.Level) {
 func loggerStyles() *charmlog.Styles {
 	styles := charmlog.DefaultStyles()
 	for _, level := range []charmlog.Level{charmlog.DebugLevel, charmlog.InfoLevel, charmlog.WarnLevel, charmlog.ErrorLevel, charmlog.FatalLevel} {
-		styles.Levels[level] = styles.Levels[level].Foreground(corestyles.LogLevelLipglossColor(level))
+		// Keep the established compact labels independent of upstream default
+		// width changes (for example DEBUG -> DEBU and ERROR -> ERRO).
+		styles.Levels[level] = styles.Levels[level].
+			UnsetWidth().
+			MaxWidth(4).
+			Foreground(corestyles.LogLevelLipglossColor(level))
 	}
 	styles.Values["url"] = lipgloss.NewStyle().Foreground(corestyles.ColorURL)
 	return styles

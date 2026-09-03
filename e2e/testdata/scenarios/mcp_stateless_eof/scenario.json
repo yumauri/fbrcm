@@ -1,0 +1,16 @@
+{
+  "name": "mcp_stateless_eof",
+  "command_id": "mcp",
+  "args": ["mcp", "--stateless", "--toolsets", "inspect"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "log_level": "warn",
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "cache", "path": "profiles/default/drafts"}
+  ],
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": ""
+  }
+}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -33,16 +34,17 @@ import (
 	themecmd "github.com/yumauri/fbrcm/cli/commands/theme"
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
 	versionscmd "github.com/yumauri/fbrcm/cli/commands/versions"
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/machine"
-	"github.com/yumauri/fbrcm/cli/progress"
-	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/about"
 	"github.com/yumauri/fbrcm/core/config"
-	"github.com/yumauri/fbrcm/core/env"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	"github.com/yumauri/fbrcm/internal/terminal/progress"
+	"github.com/yumauri/fbrcm/ops"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/launchflags"
+	"github.com/yumauri/fbrcm/ops/machine"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func isProfileCommand(cmd *cobra.Command) bool {
@@ -118,45 +120,13 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			if err := shared.CommandContext(cmd).Err(); err != nil {
 				return err
 			}
-			ctx := shared.CommandContext(cmd)
 			stateless, err := cmd.Flags().GetBool("stateless")
 			if err != nil {
 				return shared.InvalidArgument(err)
 			}
-			if stateless {
-				ctx = core.WithExecutionPolicy(ctx, core.StatelessExecutionPolicy())
-				ctx = machine.WithProfileless(ctx)
-				cmd.SetContext(ctx)
-				commandID := contract.CommandID(cmd)
-				if !contract.SupportsStatelessCommand(commandID) {
-					return shared.InvalidArgument(fmt.Errorf("--stateless is not supported by %s", strings.TrimPrefix(cmd.CommandPath(), "fbrcm ")))
-				}
-				if cmd.Flags().Changed("profile") {
-					return shared.InvalidArgument(fmt.Errorf("--profile cannot be used with --stateless"))
-				}
-				requiresAccessToken := contract.StatelessCommandRequiresAccessToken(commandID)
-				if commandID == "get" && shared.StdinAvailable(cmd.InOrStdin()) {
-					requiresAccessToken = false
-				}
-				if requiresAccessToken {
-					if _, ok := env.LookupNonEmpty(env.GoogleAccessToken); !ok {
-						return &core.AuthError{
-							Kind: "configuration",
-							Err:  fmt.Errorf("%s is required with --stateless", env.GoogleAccessToken),
-						}
-					}
-				}
-				corelog.For("cli.stateless").Info(
-					"stateless mode enabled",
-					"command", commandID,
-				)
-			} else {
-				ctx = core.WithExecutionPolicy(ctx, core.StatefulExecutionPolicy())
+			if err := ops.PreparePolicy(cmd, true, false); err != nil {
+				return err
 			}
-			if contract.Enabled(cmd) {
-				ctx = firebase.WithOAuthInteractionAllowed(ctx, false)
-			}
-			cmd.SetContext(ctx)
 			timeout, err := cmd.Flags().GetDuration("timeout")
 			if err != nil {
 				return shared.InvalidArgument(err)
@@ -176,17 +146,8 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 				initOfflineMode(shared.CommandContext(cmd), false)
 				return nil
 			}
-			if s != nil {
-				if stateless {
-					s.ResetFirebaseRequestPolicy()
-				} else if err := s.ConfigureFirebaseRequests(); err != nil {
-					if cmd.Name() != "doctor" {
-						return err
-					}
-					s.ResetFirebaseRequestPolicy()
-				}
-				ctx = s.WithFirebaseRequestController(shared.CommandContext(cmd))
-				cmd.SetContext(ctx)
+			if err := ops.ConfigureRequests(cmd, s, stateless); err != nil {
+				return err
 			}
 			progress.Start(commandProgressMessage(cmd))
 			if machine.Profileless(shared.CommandContext(cmd)) {
@@ -220,12 +181,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.SetErr(progress.StopWriter(os.Stderr))
 	rootCmd.Version = (about.BuildInfo{Version: version, Commit: commit, Date: date}).Metadata()
 	rootCmd.SetVersionTemplate(buildVersionTemplate())
-	profileDefault, _ := env.LookupTrimmed(env.Profile)
-	rootCmd.PersistentFlags().String("profile", profileDefault, "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)")
-	rootCmd.PersistentFlags().Bool("stateless", false, "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)")
-	rootCmd.PersistentFlags().Bool("no-local-config", false, "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)")
-	rootCmd.PersistentFlags().Bool("json", false, "Emit one versioned machine-readable JSON envelope")
-	rootCmd.PersistentFlags().Duration("timeout", 0, "Maximum duration for the complete command")
+	launchflags.Add(rootCmd.PersistentFlags())
 
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(applycmd.New(s))
@@ -239,6 +195,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(duplicatecmd.New(s))
 	rootCmd.AddCommand(managedfeaturescmd.NewExperiments(s))
 	rootCmd.AddCommand(getcmd.New(s))
+	rootCmd.AddCommand(newMCPCommand(s, version, commit, date))
 	rootCmd.AddCommand(groupscmd.New(s))
 	rootCmd.AddCommand(hookscmd.New())
 	rootCmd.AddCommand(managedfeaturescmd.NewPersonalizations(s))
@@ -366,7 +323,7 @@ func Execute(s *core.Core, version, commit, date string) {
 		rootCmd.SilenceUsage = true
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	if timeout := requestedTimeout(os.Args[1:]); timeout > 0 {
 		var cancel context.CancelFunc

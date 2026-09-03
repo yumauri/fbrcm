@@ -1,0 +1,97 @@
+{
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "allow-hooks": {
+          "description": "Allow already-trusted configured hooks during tool execution; accepted but not applied by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
+        "allow-writes": {
+          "description": "Enable mutation tools and explicit artifact writes (inspection may still refresh caches and credentials); accepted but not applied by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
+        "auth-timeout": {
+          "description": "Maximum duration of a browser authorization attempt; accepted but not applied by this command",
+          "pattern": "^[+-]?(?:0|(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))+)$",
+          "type": "string",
+          "x-fbrcm-effective": false,
+          "x-fbrcm-grammar": "go-duration"
+        },
+        "browser-auth": {
+          "description": "Browser authorization: auto (ask supporting hosts) or never; accepted but not applied by this command",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective": false
+        },
+        "confirmation": {
+          "description": "Mutation approval: host (explicit elicitation) or none (operator-authorized unattended execution); accepted but not applied by this command",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective": false
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG); accepted but not applied by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
+        "profile": {
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective": false
+        },
+        "request-timeout": {
+          "description": "Maximum duration per tool operation, including queueing and user interaction; accepted but not applied by this command",
+          "pattern": "^[+-]?(?:0|(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))+)$",
+          "type": "string",
+          "x-fbrcm-effective": false,
+          "x-fbrcm-grammar": "go-duration"
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); accepted but not applied by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command; accepted but not applied by this command",
+          "pattern": "^[+-]?(?:0|(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))+)$",
+          "type": "string",
+          "x-fbrcm-effective": false,
+          "x-fbrcm-grammar": "go-duration"
+        },
+        "toolsets": {
+          "description": "Enabled toolsets: inspect, edit, drafts, plans, publish, diagnostics; accepted but not applied by this command",
+          "items": {
+            "pattern": ".*\\S.*",
+            "type": "string"
+          },
+          "type": "array",
+          "x-fbrcm-effective": false
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object"
+}

@@ -100,6 +100,7 @@ export default defineConfig({
         text: 'Automation',
         items: [
           { text: 'Agent workflows', link: '/automation/' },
+          { text: 'MCP server', link: '/automation/mcp' },
           { text: 'JSON contract', link: '/automation/json-contract' }
         ]
       }
@@ -136,6 +137,7 @@ export default defineConfig({
         text: 'Automation',
         items: [
           { text: 'Agent workflows', link: '/automation/' },
+          { text: 'MCP server', link: '/automation/mcp' },
           { text: 'JSON contract', link: '/automation/json-contract' }
         ]
       },

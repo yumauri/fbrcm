@@ -6,10 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yumauri/fbrcm/cli/contract"
-	"github.com/yumauri/fbrcm/cli/shared"
 	"github.com/yumauri/fbrcm/core/config"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func New() *cobra.Command {

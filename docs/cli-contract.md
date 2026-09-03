@@ -2,7 +2,7 @@
 
 This document defines the stable machine interface used by agents, CI, and
 scripts. Contract version `1.0.0` applies whenever the global `--json` flag is
-present. Human output is unchanged when `--json` is absent.
+present. Without `--json`, commands use human-readable output.
 
 For a concise integration workflow and safe usage examples, start with the
 [agent quickstart](agent-quickstart.md).
@@ -44,6 +44,11 @@ parse stdout only. Non-fatal conditions that affect the meaning or recovery of
 a machine result are also collected in `warnings`. JSON mode does not duplicate
 the non-atomic batch warning as human stderr text.
 
+`FBRCM_LOG_PLAIN=1` removes ANSI styling from fbrcm log entries, including
+decorations and hyperlinks, without changing verbosity or the JSON envelope.
+It is useful alongside an explicit `FBRCM_LOG_LEVEL` in CI; plain logging alone
+does not override JSON mode's silent default. External hook output is unaffected.
+
 `--timeout` must be a strictly positive Go duration and limits the complete
 command, including project resolution, authentication, Firebase calls,
 rate pacing, shared 429 cooldowns, retries, validation, hooks, and local
@@ -54,7 +59,22 @@ An interrupt uses exit status `130`; an expired deadline uses exit status `9`.
 Failure statuses are output-format independent: removing `--json` changes the
 presentation, not the semantic process status.
 
+### MCP launch exception
+
+`fbrcm mcp --json` returns `argument.invalid` (exit `2`) before opening a
+transport or loading a profile; `context.profile` is null. The command has no
+successful CLI JSON result, so its capability metadata describes only this
+rejected invocation. Server-launch flags remain listed because Cobra accepts
+them, but every one is marked ineffective for the JSON operation, server-only
+validation is not applied, `supports.stateless` is false, and
+`argument.invalid` is the only reachable problem code.
+
+Run `fbrcm mcp` without `--json` for the streaming server. Its tool input and
+envelope mapping are documented in the [MCP guide](MCP.md#tool-input-and-results).
+
 ## Envelope
+
+### Result structure
 
 Every result has this shape:
 
@@ -534,16 +554,16 @@ authentication state. Remote writes remain unsafe to retry after an authorized c
 non-dry-run plan unless the caller can establish that no publication was
 accepted. A dry-run is idempotent only when no trusted hook executed; hook
 commands are arbitrary local processes and may themselves be non-idempotent.
-Applying an immutable plan is retry-safe only after preflight establishes each
-target's state: a candidate digest already present is `already-applied`, an
-unchanged planned base may proceed, and any third state is `plan.stale`.
+Before retrying an immutable plan, preflight checks each target. A target that
+already matches the candidate is `already-applied`; one that still matches the
+planned base may proceed; any other state is `plan.stale`.
 For a plan containing publish actions, an authorized retry is declared safe
-only when no trusted hook executed; if an arbitrary trusted hook executed, the
-invocation is not declared idempotent even when Firebase publication later
-converges. A plan containing only `none` actions performs no Firebase request
-and is retry-safe. Plan creation follows the same hook boundary: exclusive file
-creation is retry-safe when no trusted hook ran, and is not declared safe after
-a trusted pre-publish hook ran.
+only when no trusted hook executed. Once a hook runs, the invocation is not
+declared idempotent even if Firebase already matches the candidate. A plan
+containing only `none` actions performs no Firebase request and is retry-safe.
+The same hook restriction applies to plan creation. Exclusive file creation is
+retry-safe when no trusted hook ran, but is not declared safe after a trusted
+pre-publish hook ran.
 
 Authentication failures retain their source semantics. Missing or malformed
 stored credentials are auth failures. OAuth `invalid_grant` or a missing

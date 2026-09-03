@@ -1,0 +1,32 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:response",
+  "contract_version": "1.0.0",
+  "command": "mcp",
+  "requested_command": "mcp",
+  "outcome": "failure",
+  "exit_code": 2,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": null,
+  "errors": [
+    {
+      "code": "argument.invalid",
+      "category": "argument",
+      "message": "mcp uses JSON-RPC framing; --json cannot be combined with mcp",
+      "retryable": false,
+      "target": null,
+      "stage": null,
+      "details": null,
+      "remediation": []
+    }
+  ],
+  "warnings": []
+}

@@ -125,6 +125,15 @@ func (s *Core) dropFirebaseService(authID string) {
 	s.firebaseMu.Unlock()
 }
 
+// ResetFirebaseClients drops request-bound clients before a new hosted
+// operation. This also observes tokens refreshed by a separate login process.
+// Call only when no domain operation is using the service.
+func (s *Core) ResetFirebaseClients() {
+	s.firebaseMu.Lock()
+	clear(s.firebase)
+	s.firebaseMu.Unlock()
+}
+
 // InjectFirebaseService replaces the cached firebase client for authID.
 // It is intended for tests that stub Firebase HTTP responses.
 func (s *Core) InjectFirebaseService(authID string, fb *firebase.Service) {

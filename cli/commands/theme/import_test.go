@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/yumauri/fbrcm/cli/shared"
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func setupThemeCommandTest(t *testing.T) string {

@@ -7,8 +7,8 @@ import (
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
 
-	clistyles "github.com/yumauri/fbrcm/cli/styles"
 	corelog "github.com/yumauri/fbrcm/core/log"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 )
 
 func renderCacheTable(entries []cacheEntry) string {
