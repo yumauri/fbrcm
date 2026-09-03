@@ -140,6 +140,7 @@ func PrepareEnvironment(root, fixturesRoot string, suite Suite, proxyURL, certif
 		"ALL_PROXY", "all_proxy", "HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy",
 		"NO_PROXY", "no_proxy", "FBRCM_OFFLINE", "FBRCM_PROFILE", "FBRCM_EDITOR",
 		"FBRCM_E2E_ACCESS_TOKEN", "FBRCM_GOOGLE_ACCESS_TOKEN", "FBRCM_HOOK_TRUST",
+		"FBRCM_LOG_PLAIN",
 		"GOOGLE_CLOUD_QUOTA_PROJECT", "XDG_CONFIG_HOME",
 	} {
 		delete(values, key)

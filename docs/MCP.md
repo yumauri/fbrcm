@@ -64,29 +64,61 @@ permissions; MCP roots are not a filesystem sandbox.
 Default groups: `inspect,edit,drafts,plans,publish`. Select a subset with
 `--toolsets`. Selecting a mutation group does not itself enable writes.
 
-| Group | Tool IDs |
+Every MCP tool has a namespaced name. MCP names are separate from CLI/shared
+operation IDs: `parameters.get`, `parameters.add`, `parameters.update`,
+`parameters.delete`, and `parameters.duplicate` invoke `get`, `add`, `update`,
+`delete`, and `duplicate`; `plan.apply` invokes `apply`, and `diagnostics.doctor`
+invokes `doctor`. Other names match their operation IDs. Only the names listed
+below are exposed; there are no unqualified aliases. Toolset membership is
+independent of the name prefix: `plan.apply` belongs to `publish`, not `plans`.
+Response `command`, `requested_command`, and schema IDs retain the original
+operation IDs, so CLI commands and the shared JSON contract are unchanged.
+
+| Group | MCP tool names |
 | --- | --- |
-| `inspect` | `get`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
-| `edit` | `add`, `update`, `delete`, `duplicate`; `groups.add`, `groups.edit`, `groups.rename`, `groups.delete`; `conditions.add`, `conditions.edit`, `conditions.rename`, `conditions.move`, `conditions.delete` |
+| `inspect` | `parameters.get`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
+| `edit` | `parameters.add`, `parameters.update`, `parameters.delete`, `parameters.duplicate`; `groups.add`, `groups.edit`, `groups.rename`, `groups.delete`; `conditions.add`, `conditions.edit`, `conditions.rename`, `conditions.move`, `conditions.delete` |
 | `drafts` | `draft.list`, `draft.show`, `draft.diff`, `draft.change-note`, `draft.discard` |
 | `plans` | `plan.show`, `plan.validate` |
-| `publish` | `apply`, `draft.publish`, `project.import`, `project.export`, `projects.promote`, `versions.export`, `versions.rollback`, `versions.restore`, `experiments.delete`, `rollouts.delete` |
-| `diagnostics` | `doctor` (opt-in) |
+| `publish` | `plan.apply`, `draft.publish`, `project.import`, `project.export`, `projects.promote`, `versions.export`, `versions.rollback`, `versions.restore`, `experiments.delete`, `rollouts.delete` |
+| `diagnostics` | `diagnostics.doctor` (opt-in) |
 
 Without `--allow-writes`, mutation tools and explicit `to`/`plan-out` options
 are unavailable. Inspection is not filesystem-pure: it can refresh caches,
 synchronize the registry, and persist credentials. Doctor can create and remove
 diagnostic probe files. Stateless mode disables application-managed local state.
 
-Each tool publishes semantic input and output schemas. Example `get` arguments:
+Each tool publishes semantic input and output schemas. Output schemas explicitly
+declare `"type": "object"` at the root for compatibility with legacy MCP clients.
+At the MCP boundary, nullable/multi-type schemas use `anyOf` with scalar types,
+forbidden schemas use `{"not":{}}`, and unrestricted values explicitly allow all
+JSON types. These portability rewrites preserve validation semantics; they do
+not allow forbidden fields or restrict free-form values to objects. Published
+CLI schemas and response envelopes are unchanged.
+
+MCP additionally allows omission of empty invocation wrappers where valid:
+`arguments` and `options` default to `{}`, and `stdin` defaults to `null`.
+The tool schema advertises these defaults for form-based clients such as
+Inspector; the server also applies them, so agents need not supply boilerplate.
+Required inputs stay required: for example, `conditions.list` still needs
+`arguments.project`, and `parameters.add` still needs its parameter and
+value/type options.
+Conditional requirements and exclusions also apply to omitted fields exactly as
+they do to explicit defaults. Explicit nulls are not replaced with empty objects,
+and no individual flag, selector, file path, or document content is synthesized.
+
+Example `parameters.get` input:
 
 ```json
 {
-  "arguments": {},
-  "options": {"project": ["=acme-staging"]},
-  "stdin": null
+  "options": {"project": ["=acme-staging"]}
 }
 ```
+
+This is equivalent to supplying `"arguments": {}` and `"stdin": null` explicitly.
+Defaults are applied before validation and before matching a suspended operation,
+so switching between omitted wrappers and explicit defaults does not replay a
+confirmed mutation. The CLI's normalized invocation contract is unchanged.
 
 Argument names come from the schema. Options use long flag names without `--`;
 repeatable values are arrays, booleans are JSON booleans. Supplied `stdin` is a
@@ -98,6 +130,63 @@ Completed results contain the unchanged CLI envelope as `structuredContent`
 and identical JSON in text content. Inspect `outcome`, `errors`, `warnings`, and
 `data`, not just `exit_code`: changed diffs succeed with exit `1`. Partial success
 is an error result retaining completed/failed target data.
+
+## Manual smoke tests with Inspector
+
+No agent or Firebase credentials are needed for discovery and an in-memory
+`parameters.get` call. With Node.js 22.19 or newer, run from the repository root:
+
+```sh
+npx @modelcontextprotocol/inspector go run . mcp -- --stateless --toolsets inspect
+```
+
+Open the local URL printed by Inspector and connect. Inspector launches fbrcm;
+do not start a separate server. The tools list should contain `parameters.get`
+and other inspection tools, with no malformed-entry warnings or mutation tools.
+Call `parameters.get` with this tool input (the `stdin` property is a JSON
+object, not a string):
+
+```json
+{
+  "stdin": {
+    "parameters": {
+      "smoke_test": {"defaultValue": {"value": "hello"}}
+    }
+  }
+}
+```
+
+Expect `structuredContent.outcome` to be `success`, `exit_code` to be `0`, and
+`data.count` to be `1`. Set `options` to `{"search":"missing"}` to check an empty
+success, then restore `{}` to get one item again. Supplying `{"yes":true}` must
+fail validation; a subsequent valid call must still work without reconnecting.
+These calls do not contact Firebase or use fbrcm profiles and caches.
+
+In Inspector's generated form, empty optional wrappers initialize from the
+advertised defaults. For the offline smoke test, enter the Remote Config object
+above in the `stdin` field; do not paste the enclosing tool input there. In
+"Edit as JSON", paste the complete example. Tools with required arguments still
+need those values filled in before execution. Both editing modes call the same
+server-side validation and operations.
+
+Also run Inspector's strict portability check; successfully listing or calling a
+tool alone does not catch schema-portability errors or warnings:
+
+```sh
+npx @modelcontextprotocol/inspector --cli go run . mcp --stateless --toolsets inspect -- --method tools/list --strict --format json
+```
+
+Expect exit `0` and no `schemaFindings` in the result. Strict mode fails on
+portability errors, but warnings must also be checked. In Inspector's CLI mode,
+arguments before `--` belong to fbrcm and options after it belong to Inspector.
+
+Inspector defaults to the **Legacy** protocol era, which uses the `initialize`
+handshake (normally MCP `2025-11-25`). This is not an error or a consequence of
+fbrcm's `--stateless` flag. In Inspector's server settings, choose **Auto** or
+**Modern** and reconnect to exercise MCP `2026-07-28` discovery instead. Both
+protocol eras support the smoke test above. See the
+[Inspector configuration reference](https://github.com/modelcontextprotocol/inspector/blob/main/docs/mcp-server-configuration.md)
+for protocol-era settings and launch-argument handling.
 
 ## Authentication recovery
 
@@ -158,4 +247,11 @@ with the new environment; no fallback to profile or browser authentication occur
 interaction. `--auth-timeout` defaults to `2m` per browser attempt. Explicit
 durations must be positive; the earliest deadline wins. Disconnect/interrupt
 cancels work and closes temporary listeners. Stdout is reserved for MCP messages;
-logs use stderr. `--json` is incompatible with the streaming command.
+logs use stderr as plain text, without ANSI colors, decorations, or hyperlink
+escape sequences. This is automatic in MCP mode; no `NO_COLOR` setting is needed.
+`FBRCM_LOG_LEVEL` and `FBRCM_LOG_NO_TIMESTAMP` still control verbosity and
+timestamps. Set `FBRCM_LOG_PLAIN=1` to enable the same escape-free mode for CLI
+or TUI log entries, for example in CI. Any non-empty value enables it; an empty
+or unset value preserves normal CLI/TUI log styling but does not disable plain
+MCP logs. External hook output is not sanitized by this logger setting.
+`--json` is incompatible with the streaming command.

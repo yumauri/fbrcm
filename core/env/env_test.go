@@ -6,6 +6,15 @@ import (
 )
 
 func TestNoColorEnabled(t *testing.T) {
+	testNonEmptySwitch(t, NoColor, NoColorEnabled)
+}
+
+func TestLogPlainEnabled(t *testing.T) {
+	testNonEmptySwitch(t, LogPlain, LogPlainEnabled)
+}
+
+func testNonEmptySwitch(t *testing.T, name string, enabled func() bool) {
+	t.Helper()
 	tests := []struct {
 		name  string
 		value *string
@@ -23,21 +32,21 @@ func TestNoColorEnabled(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.value == nil {
-				previous, existed := os.LookupEnv(NoColor)
-				if err := os.Unsetenv(NoColor); err != nil {
+				previous, existed := os.LookupEnv(name)
+				if err := os.Unsetenv(name); err != nil {
 					t.Fatal(err)
 				}
 				t.Cleanup(func() {
 					if existed {
-						_ = os.Setenv(NoColor, previous)
+						_ = os.Setenv(name, previous)
 					}
 				})
 			} else {
-				t.Setenv(NoColor, *test.value)
+				t.Setenv(name, *test.value)
 			}
 
-			if got := NoColorEnabled(); got != test.want {
-				t.Fatalf("NoColorEnabled() = %t, want %t", got, test.want)
+			if got := enabled(); got != test.want {
+				t.Fatalf("%s enabled = %t, want %t", name, got, test.want)
 			}
 		})
 	}

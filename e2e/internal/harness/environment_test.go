@@ -9,6 +9,7 @@ import (
 )
 
 func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
+	t.Setenv("FBRCM_LOG_PLAIN", "parent-plain-logs")
 	t.Setenv("GOOGLE_CLOUD_QUOTA_PROJECT", "parent-quota-project")
 	t.Setenv("FBRCM_E2E_ACCESS_TOKEN", "parent-e2e-token")
 	t.Setenv("FBRCM_GOOGLE_ACCESS_TOKEN", "parent-stateless-token")
@@ -33,12 +34,15 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 		240,
 		"warn",
 		false,
-		map[string]string{"FBRCM_GOOGLE_ACCESS_TOKEN": e2eAccessTokenVariable},
+		map[string]string{"FBRCM_GOOGLE_ACCESS_TOKEN": e2eAccessTokenVariable, "FBRCM_LOG_PLAIN": "1"},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	values := environmentMap(environment.Variables)
+	if values["FBRCM_LOG_PLAIN"] != "1" {
+		t.Fatal("scenario plain-log setting was not applied")
+	}
 	if values["FBRCM_CONFIG_DIR"] == "" || values["FBRCM_CACHE_DIR"] == "" || values["HOME"] == "" {
 		t.Fatalf("isolated roots are missing: %#v", values)
 	}
@@ -94,6 +98,9 @@ func TestPrepareEnvironmentIsolatesCLIState(t *testing.T) {
 	}
 	if _, exists := environmentMap(withoutQuota.Variables)["GOOGLE_CLOUD_QUOTA_PROJECT"]; exists {
 		t.Fatal("parent GOOGLE_CLOUD_QUOTA_PROJECT leaked into isolated environment")
+	}
+	if _, exists := environmentMap(withoutQuota.Variables)["FBRCM_LOG_PLAIN"]; exists {
+		t.Fatal("parent plain-log setting leaked into isolated environment")
 	}
 	if _, exists := environmentMap(withoutQuota.Variables)["FBRCM_GOOGLE_ACCESS_TOKEN"]; exists {
 		t.Fatal("parent stateless access token leaked into ordinary scenario environment")

@@ -52,34 +52,68 @@ func (o Options) Validate() error {
 }
 
 type catalogEntry struct {
+	name     string
 	set      string
 	mutation bool
 }
 
 // Deliberately explicit: new CLI commands do not automatically become tools.
+// Keys are shared operation IDs; names belong only to the MCP frontend.
 var catalog = map[string]catalogEntry{
-	"projects.list": {"inspect", false}, "projects.diff": {"inspect", false},
-	"project.show": {"inspect", false}, "get": {"inspect", false},
-	"groups.list": {"inspect", false}, "conditions.list": {"inspect", false},
-	"conditions.show": {"inspect", false}, "conditions.validate": {"inspect", false},
-	"versions.list": {"inspect", false}, "versions.show": {"inspect", false}, "versions.diff": {"inspect", false},
-	"experiments.list": {"inspect", false}, "experiments.show": {"inspect", false},
-	"rollouts.list": {"inspect", false}, "rollouts.show": {"inspect", false},
-	"personalizations.list": {"inspect", false}, "personalizations.show": {"inspect", false},
-	"project.defaults": {"inspect", false},
-	"add":              {"edit", true}, "update": {"edit", true}, "delete": {"edit", true}, "duplicate": {"edit", true},
-	"groups.add": {"edit", true}, "groups.edit": {"edit", true}, "groups.rename": {"edit", true}, "groups.delete": {"edit", true},
-	"conditions.add": {"edit", true}, "conditions.edit": {"edit", true}, "conditions.rename": {"edit", true},
-	"conditions.move": {"edit", true}, "conditions.delete": {"edit", true},
-	"draft.list": {"drafts", false}, "draft.show": {"drafts", false}, "draft.diff": {"drafts", false},
-	"draft.change-note": {"drafts", true}, "draft.discard": {"drafts", true},
-	"plan.show": {"plans", false}, "plan.validate": {"plans", false},
-	"apply": {"publish", true}, "draft.publish": {"publish", true},
-	"project.import": {"publish", true}, "project.export": {"publish", true}, "versions.export": {"publish", true},
-	"projects.promote": {"publish", true}, "versions.rollback": {"publish", true},
-	"versions.restore":   {"publish", true},
-	"experiments.delete": {"publish", true}, "rollouts.delete": {"publish", true},
-	"doctor": {"diagnostics", false},
+	"projects.list":         {"projects.list", "inspect", false},
+	"projects.diff":         {"projects.diff", "inspect", false},
+	"project.show":          {"project.show", "inspect", false},
+	"get":                   {"parameters.get", "inspect", false},
+	"groups.list":           {"groups.list", "inspect", false},
+	"conditions.list":       {"conditions.list", "inspect", false},
+	"conditions.show":       {"conditions.show", "inspect", false},
+	"conditions.validate":   {"conditions.validate", "inspect", false},
+	"versions.list":         {"versions.list", "inspect", false},
+	"versions.show":         {"versions.show", "inspect", false},
+	"versions.diff":         {"versions.diff", "inspect", false},
+	"experiments.list":      {"experiments.list", "inspect", false},
+	"experiments.show":      {"experiments.show", "inspect", false},
+	"rollouts.list":         {"rollouts.list", "inspect", false},
+	"rollouts.show":         {"rollouts.show", "inspect", false},
+	"personalizations.list": {"personalizations.list", "inspect", false},
+	"personalizations.show": {"personalizations.show", "inspect", false},
+	"project.defaults":      {"project.defaults", "inspect", false},
+
+	"add":               {"parameters.add", "edit", true},
+	"update":            {"parameters.update", "edit", true},
+	"delete":            {"parameters.delete", "edit", true},
+	"duplicate":         {"parameters.duplicate", "edit", true},
+	"groups.add":        {"groups.add", "edit", true},
+	"groups.edit":       {"groups.edit", "edit", true},
+	"groups.rename":     {"groups.rename", "edit", true},
+	"groups.delete":     {"groups.delete", "edit", true},
+	"conditions.add":    {"conditions.add", "edit", true},
+	"conditions.edit":   {"conditions.edit", "edit", true},
+	"conditions.rename": {"conditions.rename", "edit", true},
+	"conditions.move":   {"conditions.move", "edit", true},
+	"conditions.delete": {"conditions.delete", "edit", true},
+
+	"draft.list":        {"draft.list", "drafts", false},
+	"draft.show":        {"draft.show", "drafts", false},
+	"draft.diff":        {"draft.diff", "drafts", false},
+	"draft.change-note": {"draft.change-note", "drafts", true},
+	"draft.discard":     {"draft.discard", "drafts", true},
+
+	"plan.show":     {"plan.show", "plans", false},
+	"plan.validate": {"plan.validate", "plans", false},
+
+	"apply":              {"plan.apply", "publish", true},
+	"draft.publish":      {"draft.publish", "publish", true},
+	"project.import":     {"project.import", "publish", true},
+	"project.export":     {"project.export", "publish", true},
+	"versions.export":    {"versions.export", "publish", true},
+	"projects.promote":   {"projects.promote", "publish", true},
+	"versions.rollback":  {"versions.rollback", "publish", true},
+	"versions.restore":   {"versions.restore", "publish", true},
+	"experiments.delete": {"experiments.delete", "publish", true},
+	"rollouts.delete":    {"rollouts.delete", "publish", true},
+
+	"doctor": {"diagnostics.doctor", "diagnostics", false},
 }
 
 func (o Options) allows(c contract.Capability) bool {

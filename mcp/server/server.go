@@ -40,6 +40,7 @@ type Server struct {
 type tool struct {
 	capability contract.Capability
 	schema     *jsonschema.Schema
+	defaults   inputDefaults
 }
 
 type operation struct {
@@ -75,7 +76,7 @@ func New(ctx context.Context, capabilities []contract.Capability, version string
 	s := &Server{options: options, execute: execute, version: version, ctx: ctx, cancel: cancel, gate: make(chan struct{}, 1), jobs: make(map[string]*operation)}
 	s.Protocol = mcp.NewServer(&mcp.Implementation{Name: "fbrcm", Version: version}, &mcp.ServerOptions{
 		Capabilities: &mcp.ServerCapabilities{Tools: &mcp.ToolCapabilities{}},
-		Instructions: "Firebase Remote Config tools use the existing fbrcm machine contract. Supply arguments, options, and stdin (null when absent). Launch configuration fixes credentials and permissions. Inspect and validate before publishing; authentication is not mutation approval. Never ask users to paste tokens into chat.",
+		Instructions: "Firebase Remote Config tools use the existing fbrcm machine contract. Supply required arguments and options. Optional arguments/options wrappers default to empty objects; optional stdin defaults to null. Required fields and conditional constraints still apply. Launch configuration fixes credentials and permissions. Inspect and validate before publishing; authentication is not mutation approval. Never ask users to paste tokens into chat.",
 	})
 	known := make(map[string]bool, len(capabilities))
 	for _, capability := range capabilities {
@@ -91,38 +92,25 @@ func New(ctx context.Context, capabilities []contract.Capability, version string
 		if !options.allows(capability) {
 			continue
 		}
-		input, err := schemas.Bundle(capability.InvocationSchema)
+		input, t, err := toolInputSchema(capability, options)
 		if err != nil {
 			cancel()
 			return nil, err
 		}
-		specializeStateless(input, "", options.Stateless)
 		properties := input["properties"].(map[string]any)
 		optionProperties := properties["options"].(map[string]any)["properties"].(map[string]any)
-		for name := range optionProperties {
-			if boundOption(name) || (!options.AllowWrites && (name == "to" || name == "plan-out")) {
-				delete(optionProperties, name)
-			}
-		}
-		compiler := jsonschema.NewCompiler()
-		id := "https://fbrcm.invalid/mcp/" + capability.ID
-		if err := compiler.AddResource(id, input); err != nil {
-			cancel()
-			return nil, err
-		}
-		compiled, err := compiler.Compile(id)
-		if err != nil {
-			cancel()
-			return nil, err
-		}
 		output, err := schemas.Bundle(capability.ResponseSchema)
 		if err != nil {
 			cancel()
 			return nil, err
 		}
-		t := &tool{capability: capability, schema: compiled}
+		// Every result is a CLI envelope object. The bundled schema implies
+		// this through allOf, but legacy MCP tool definitions require an
+		// explicit root type. Preserve all existing envelope constraints.
+		output["type"] = "object"
+		schemas.MakePortable(output)
 		destructive, open := capability.Destructive, capability.NetworkAccess != "none" || options.AllowHooks
-		s.Protocol.AddTool(&mcp.Tool{Name: capability.ID, Description: capability.Summary,
+		s.Protocol.AddTool(&mcp.Tool{Name: catalog[capability.ID].name, Description: capability.Summary,
 			InputSchema: input, OutputSchema: output, Annotations: &mcp.ToolAnnotations{
 				DestructiveHint: &destructive, OpenWorldHint: &open, IdempotentHint: capability.Idempotency == "yes",
 				// Stateful inspection can update caches and credentials. Do not label
@@ -168,11 +156,16 @@ func (s *Server) call(ctx context.Context, req *mcp.CallToolRequest, t *tool) (*
 		return completed(s.failure(t, shared.InvalidArgument(fmt.Errorf("tool input exceeds 16 MiB"))))
 	}
 	var value any
-	decoder := json.NewDecoder(bytes.NewReader(req.Params.Arguments))
+	arguments := req.Params.Arguments
+	if len(arguments) == 0 {
+		arguments = json.RawMessage(`{}`)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(arguments))
 	decoder.UseNumber()
 	if err := decoder.Decode(&value); err != nil {
 		return completed(s.failure(t, shared.InvalidArgument(err)))
 	}
+	t.defaults.normalize(value)
 	if err := t.schema.Validate(value); err != nil {
 		return completed(s.failure(t, shared.InvalidArgument(fmt.Errorf("invalid tool arguments: %w", err))))
 	}
@@ -181,7 +174,7 @@ func (s *Server) call(ctx context.Context, req *mcp.CallToolRequest, t *tool) (*
 		return nil, err
 	}
 	var invocation Invocation
-	if err := json.Unmarshal(req.Params.Arguments, &invocation); err != nil {
+	if err := json.Unmarshal(canonical, &invocation); err != nil {
 		return completed(s.failure(t, shared.InvalidArgument(err)))
 	}
 	if err := invocation.Validate(t.capability); err != nil {
@@ -312,7 +305,7 @@ func (s *Server) run(op *operation) {
 			op.result = s.failure(op.tool, shared.InteractionRequired("this mutation requires host form confirmation; enable elicitation or explicitly configure --confirmation=none", true, ""))
 			return
 		}
-		message := "Allow fbrcm " + op.tool.capability.ID + " with these exact inputs? " + string(op.canonical)
+		message := "Allow fbrcm " + catalog[op.tool.capability.ID].name + " with these exact inputs? " + string(op.canonical)
 		if !op.ask(op.ctx, &mcp.ElicitParams{Mode: "form", Message: message, RequestedSchema: confirmationSchema()}) {
 			if op.ctx.Err() != nil {
 				op.result = s.failure(op.tool, op.ctx.Err())

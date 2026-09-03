@@ -44,6 +44,12 @@ parse stdout only. Non-fatal conditions that affect the meaning or recovery of
 a machine result are also collected in `warnings`. JSON mode does not duplicate
 the non-atomic batch warning as human stderr text.
 
+`FBRCM_LOG_PLAIN=1` removes ANSI styling from fbrcm log entries, including
+decorations and hyperlinks, without changing verbosity or the JSON envelope.
+It is useful alongside an explicit `FBRCM_LOG_LEVEL` in CI; plain logging alone
+does not override JSON mode's silent default. External hook output is unaffected.
+MCP logs always use plain text, even when this variable is empty or unset.
+
 `--timeout` must be a strictly positive Go duration and limits the complete
 command, including project resolution, authentication, Firebase calls,
 rate pacing, shared 429 cooldowns, retries, validation, hooks, and local
@@ -66,14 +72,38 @@ absence of side effects; normal launch behavior is documented in [MCP.md](MCP.md
 
 MCP input reuses the normalized `arguments`, `options`, and `stdin` shape from
 published invocation schemas. Server-controlled options are excluded and schema
-references are bundled for clients. A supplied `stdin` document uses an explicit
-in-memory reader, never the protocol stream. Fresh application invocations use
+references are bundled for clients. MCP output schemas explicitly declare a root
+`"type": "object"` for legacy-client compatibility; the published CLI schemas
+and envelope constraints remain unchanged. MCP schema normalization uses
+equivalent object-valued schemas for booleans and `anyOf` for type unions,
+preserving all JSON types in unrestricted slots and retaining forbidden fields.
+Only schema positions are transformed; constants, defaults, examples, enums,
+and extension metadata are left intact by the portability rewrite.
+
+Separately, MCP adds form defaults and permits omission of empty invocation
+wrappers where valid: `arguments` and `options` normalize to `{}`, and `stdin`
+normalizes to `null`. Required inputs remain required, including requirements
+expressed outside root properties. Conditional rules are adapted so advertised
+schema validation of a compact input agrees with validation of its normalized
+form. Only missing wrappers are filled; explicit values and individual flags
+are not defaulted. The server normalizes before validation, execution, and
+continuation matching, without changing the published CLI invocation schemas.
+A supplied `stdin` document uses an
+explicit in-memory reader, never the protocol stream. Fresh application invocations use
 the same workflows, envelope builder, and semantic validation as CLI execution.
 MCP is an independent frontend: it binds structured options directly, without
 converting them to argv or executing the CLI's Cobra command pipeline. The
 shared contract implementation lives in `ops/contract`; schema URNs
 remain unchanged. Schema generation also publishes `schemas/capabilities.json`
 for discovery without constructing a CLI tree at MCP startup.
+
+MCP public tool names are independent of operation IDs. For example,
+`parameters.get` invokes `get`, `plan.apply` invokes `apply`, and
+`diagnostics.doctor` invokes `doctor`. The envelope's `command` and
+`requested_command` and all schema IDs retain the original operation IDs;
+they do not identify the MCP public name. Renaming an MCP tool does not rename
+a CLI command or alter its published contract. Confirmation prompts identify
+the public MCP tool name.
 
 Completed tools return the entire unchanged envelope in `structuredContent`
 and identical JSON in text `content`. Success maps to `isError: false`; failure

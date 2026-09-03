@@ -137,7 +137,13 @@ func (m *manager) init(mode Mode, defaults ...charmlog.Level) {
 	m.logger.SetReportTimestamp(!env.LogTimestampDisabled())
 	m.logger.SetTimeFormat("15:04:05")
 	m.setLevelLocked(defaultLevel)
-	if env.NoColorEnabled() {
+	plain := mode == ModeMCP || env.LogPlainEnabled()
+	m.sink.setPlain(plain)
+	if plain {
+		// Hosts and CI consume plain text. Unlike NO_COLOR, NoTTY also
+		// removes decorations and hyperlinks, not just foreground colors.
+		m.logger.SetColorProfile(colorprofile.NoTTY)
+	} else if env.NoColorEnabled() {
 		m.logger.SetColorProfile(colorprofile.Ascii)
 	} else {
 		m.logger.SetColorProfile(colorprofile.ANSI256)

@@ -533,6 +533,7 @@ FBRCM_PROFILE
 | `FBRCM_OFFLINE` | Enable CLI offline mode whenever the variable is defined, including as an empty string or `0`. If it is unset, CLI commands perform only their declared network operations. In human mode, `project open` prints its console URL instead of launching a browser. |
 | `FBRCM_LOG_LEVEL` | Set logging to `debug`, `info`, `warn`, `error`, `fatal`, or `silent`, case-insensitively. The default is `info` for human CLI/TUI use and `silent` with `--json`; an explicit value overrides either default. |
 | `FBRCM_LOG_NO_TIMESTAMP` | Omit timestamps from log lines when set to a non-empty value. Useful for deterministic CI and snapshot output. |
+| `FBRCM_LOG_PLAIN` | Emit plain log text without ANSI colors, decorations, or hyperlink escape sequences when set to a non-empty value. Applies to CLI and TUI log entries; MCP always uses this mode. Does not change log level, timestamps, tables, prompts, or other UI styling. |
 | `FBRCM_EDITOR` | Select the command used by `config edit`, after `--editor` and before `VISUAL` or `EDITOR`. Arguments are supported. |
 | `FBRCM_NO_LOCAL_CONFIG` | Ignore repository `.fbrcm.toml` discovery when set to a non-empty value. The root `--no-local-config` flag provides the same behavior for one invocation. |
 | `FBRCM_HOOK_TRUST` | Trust local hooks for this invocation only when the value exactly matches `fbrcm hooks fingerprint`. Intended for CI. |
@@ -551,6 +552,22 @@ whitespace. It does not disable non-color terminal decoration such as bold,
 faint, italic, underline, or reverse video. It also skips startup theme
 application. See [Theming](theming.md) for shared CLI/TUI theme behavior and
 configuration-validation exceptions.
+
+Use `FBRCM_LOG_PLAIN=1` for escape-free logs in CI. Like
+`FBRCM_LOG_NO_TIMESTAMP`, any non-empty value enables it, including `0`, `false`,
+and whitespace; unset it or set it to an empty string to retain normal CLI/TUI
+log styling. MCP logs remain plain regardless. Unlike `NO_COLOR`, this setting
+removes all terminal styling from log entries but leaves other output alone.
+It does not sanitize output produced by external hooks or subprocesses.
+
+For JSON output with visible plain-text diagnostic logs on stderr:
+
+```sh
+FBRCM_LOG_PLAIN=1 FBRCM_LOG_LEVEL=info fbrcm get --json
+```
+
+Add `FBRCM_LOG_NO_TIMESTAMP=1` if CI already timestamps each line. JSON mode
+still defaults to silent logging unless `FBRCM_LOG_LEVEL` explicitly enables it.
 
 `config edit` also consults `VISUAL`, `EDITOR`, and on Unix-like systems
 `SHELL`. Directory discovery follows the operating system and may use `HOME`,
@@ -899,6 +916,12 @@ This selects the independent MCP application mode, alongside CLI and TUI.
 It remains in CLI help and capability discovery as a launch descriptor;
 MCP tool calls execute shared application workflows directly.
 
+MCP tool names are namespaced independently of CLI commands: parameter tools use
+`parameters.get`, `parameters.add`, `parameters.update`, `parameters.delete`, and
+`parameters.duplicate`; the other renamed tools are `plan.apply` and
+`diagnostics.doctor`. CLI names, response command IDs, and schema IDs remain
+unchanged. MCP does not expose the old unqualified names as aliases.
+
 `--toolsets` selects comma-separated groups (default
 `inspect,edit,drafts,plans,publish`; `diagnostics` is opt-in). Mutations and
 explicit artifact writes additionally require `--allow-writes`. Inspection may
@@ -922,7 +945,20 @@ supplied durations must be positive; the earliest applicable deadline wins.
 Stdout contains MCP messages only. `mcp --json` returns a typed CLI argument
 failure before starting the transport or reading profiles, with
 `context.profile: null` even without `--stateless`. Once MCP starts, completed
-tools embed their original CLI envelopes inside MCP responses.
+tools embed their original CLI envelopes inside MCP responses. Advertised output
+schemas explicitly declare a root object and normalize boolean and multi-type
+subschemas for client portability without changing validation or envelopes.
+MCP logs go to stderr as plain text, with no ANSI color, decoration, or hyperlink
+escape sequences, regardless of `NO_COLOR`. Log-level and timestamp environment
+settings still apply. CLI/TUI logs retain their normal styling unless
+`FBRCM_LOG_PLAIN` enables the same plain-text mode explicitly.
+MCP input schemas also advertise empty-wrapper defaults for forms and allow
+agents to omit `arguments`/`options` where `{}` is valid, and `stdin` where `null`
+is valid. The server fills missing wrappers before validation and execution;
+required inputs and conditional constraints remain enforced. This does not
+change the CLI's normalized invocation schemas or individual option defaults.
+See [Inspector smoke tests](MCP.md#manual-smoke-tests-with-inspector)
+for agent-free testing and an explanation of Inspector's Legacy protocol label.
 
 The following maintained inventory assigns every executable machine operation
 to this reference, including commands documented by a shared section. Contract

@@ -30,12 +30,19 @@ type lineSink struct {
 	lines   []string
 	subs    map[int]chan string
 	nextSub int
+	plain   bool
 }
 
 func newLineSink() *lineSink {
 	return &lineSink{
 		subs: make(map[int]chan string),
 	}
+}
+
+func (s *lineSink) setPlain(plain bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.plain = plain
 }
 
 func (s *lineSink) Write(p []byte) (int, error) {
@@ -88,7 +95,9 @@ func (s *lineSink) publishLocked(line string) {
 		return
 	}
 
-	line = linkify(line)
+	if !s.plain {
+		line = linkify(line)
+	}
 	s.lines = append(s.lines, line)
 	for _, ch := range s.subs {
 		select {

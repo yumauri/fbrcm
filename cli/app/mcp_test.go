@@ -170,7 +170,7 @@ func TestMCPStdioLifecycleAndContract(t *testing.T) {
 	}
 	defer func() { _ = cs.Close() }()
 	for range 2 {
-		res, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: "get", Arguments: json.RawMessage(`{"arguments":{},"options":{},"stdin":{"parameters":{"feature":{"defaultValue":{"value":"hello"}}}}}`)})
+		res, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: "parameters.get", Arguments: json.RawMessage(`{"arguments":{},"options":{},"stdin":{"parameters":{"feature":{"defaultValue":{"value":"hello"}}}}}`)})
 		if err != nil || res.IsError {
 			t.Fatalf("stdio call: %v %v", res, err)
 		}
