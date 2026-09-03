@@ -64,7 +64,10 @@ presentation, not the semantic process status.
 `fbrcm mcp --json` returns `argument.invalid` (exit `2`) before opening a
 transport or loading a profile; `context.profile` is null. The command has no
 successful CLI JSON result, so its capability metadata describes only this
-rejected invocation.
+rejected invocation. Server-launch flags remain listed because Cobra accepts
+them, but every one is marked ineffective for the JSON operation, server-only
+validation is not applied, `supports.stateless` is false, and
+`argument.invalid` is the only reachable problem code.
 
 Run `fbrcm mcp` without `--json` for the streaming server. Its tool input and
 envelope mapping are documented in the [MCP guide](MCP.md#tool-input-and-results).

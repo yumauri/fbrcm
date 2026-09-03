@@ -327,6 +327,13 @@ func describe(cmd *cobra.Command) Capability {
 				defaultValue = ""
 			}
 			effective := !optionIgnored(id, flag.Name)
+			if id == "mcp" {
+				// The CLI JSON branch rejects the streaming frontend before it
+				// applies any server-launch option. Keep the accepted argv surface
+				// discoverable, but do not describe those options as effective for
+				// the one-shot machine operation.
+				effective = false
+			}
 			usage := flag.Usage
 			if !effective {
 				usage += "; accepted but not applied by this command"
@@ -336,33 +343,33 @@ func describe(cmd *cobra.Command) Capability {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "version", "equals", false))}
 				usage += "; accepted but not applied with --version"
 			}
-			if SupportsStatelessCommand(id) && flag.Name == "profile" {
+			if effective && SupportsStatelessCommand(id) && flag.Name == "profile" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
-			if SupportsStatelessCommand(id) && flag.Name == "cached" {
+			if effective && SupportsStatelessCommand(id) && flag.Name == "cached" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
-			if SupportsStatelessCommand(id) && flag.Name == "draft" {
+			if effective && SupportsStatelessCommand(id) && flag.Name == "draft" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
-			if id == "projects.list" && flag.Name == "update" {
+			if effective && id == "projects.list" && flag.Name == "update" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
 			if id == "projects.list" && flag.Name == "expr" {
 				usage += "; with --stateless, evaluates against directly fetched client Remote Config after project filtering"
 			}
-			if slices.Contains([]string{
+			if effective && slices.Contains([]string{
 				"conditions.list", "conditions.show", "experiments.list", "experiments.show", "groups.list",
 				"personalizations.list", "personalizations.show", "project.show", "rollouts.list", "rollouts.show",
 			}, id) && flag.Name == "update" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
-			if id == "get" && flag.Name == "update" {
+			if effective && id == "get" && flag.Name == "update" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(
 					predicate("option", "stateless", "equals", false),
 					predicate("stdin", "document", "absent", nil),
@@ -374,6 +381,9 @@ func describe(cmd *cobra.Command) Capability {
 			}
 			if flag.Name == "stateless" && !SupportsStatelessCommand(id) {
 				usage += "; true is currently rejected by this command"
+			}
+			if !effective {
+				effectiveWhen = nil
 			}
 			flags = append(flags, FlagCapability{Name: "--" + flag.Name, Aliases: aliases, Type: flag.Value.Type(), Default: defaultValue, Required: flag.Annotations != nil && len(flag.Annotations[cobra.BashCompOneRequiredFlag]) > 0, Repeatable: strings.Contains(flag.Value.Type(), "Slice") || strings.Contains(flag.Value.Type(), "Array"), Effective: effective, EffectiveWhen: effectiveWhen, Usage: usage})
 		})
@@ -397,7 +407,7 @@ func describe(cmd *cobra.Command) Capability {
 	if hasFlag(cmd, "plan-out") {
 		behavior = withPlanOutputEffects(behavior)
 	}
-	support := Support{DryRun: hasFlag(cmd, "dry-run"), Draft: hasFlag(cmd, "draft"), Plan: hasFlag(cmd, "plan-out"), ConfirmationBypass: hasFlag(cmd, "yes"), Stdin: behavior.stdin, Stateless: SupportsStatelessCommand(id)}
+	support := Support{DryRun: hasFlag(cmd, "dry-run"), Draft: hasFlag(cmd, "draft"), Plan: hasFlag(cmd, "plan-out"), ConfirmationBypass: hasFlag(cmd, "yes"), Stdin: behavior.stdin, Stateless: SupportsStatelessCommand(id) && id != "mcp"}
 	interaction := InteractionCapability{Mode: "none", JSONBehavior: "non_interactive"}
 	interactionWhen := cloneConditions(behavior.interactionWhen)
 	if support.ConfirmationBypass {

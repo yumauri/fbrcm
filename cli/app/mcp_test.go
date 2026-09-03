@@ -97,6 +97,63 @@ func TestMCPJSONFailureDoesNotBootstrapProfile(t *testing.T) {
 	}
 }
 
+func TestMCPJSONContractDescribesOnlyEarlyTransportRejection(t *testing.T) {
+	root := NewRootForContract("test")
+	defer contract.UnregisterResponses(root)
+	capability, err := contract.FindCapability(root, []string{"mcp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if capability.Supports.Stateless || capability.SideEffectLevel != 0 || capability.NetworkAccess != "none" || capability.Interaction.Mode != "none" {
+		t.Fatalf("mcp JSON behavior = %#v", capability)
+	}
+	if len(capability.ProblemCodes) != 1 || capability.ProblemCodes[0] != "argument.invalid" {
+		t.Fatalf("mcp JSON problem codes = %v", capability.ProblemCodes)
+	}
+	for _, flag := range capability.Flags {
+		if flag.Effective || len(flag.EffectiveWhen) != 0 {
+			t.Errorf("mcp JSON flag %s is marked effective: %#v", flag.Name, flag)
+		}
+	}
+
+	validButServerInvalid := map[string]any{
+		"arguments": map[string]any{},
+		"options": map[string]any{
+			"allow-hooks": true, "allow-writes": true,
+			"auth-timeout": "-1s", "browser-auth": "unsupported", "confirmation": "unsupported",
+			"no-local-config": true, "profile": "work", "request-timeout": "0s",
+			"stateless": true, "timeout": "-1s", "toolsets": []any{},
+		},
+		"stdin": nil,
+	}
+	validateContractValue(t, capability.InvocationSchema, validButServerInvalid, true)
+	for _, invalid := range []map[string]any{
+		{"arguments": map[string]any{}, "options": map[string]any{"profile": " "}, "stdin": nil},
+		{"arguments": map[string]any{}, "options": map[string]any{"toolsets": []any{""}}, "stdin": nil},
+		{"arguments": map[string]any{}, "options": map[string]any{"timeout": "not-a-duration"}, "stdin": nil},
+	} {
+		validateContractValue(t, capability.InvocationSchema, invalid, false)
+	}
+
+	var output bytes.Buffer
+	code := frontend.Run(t.Context(), nil, "test", "", "", []string{
+		"mcp", "--json", "--profile", "work", "--stateless", "--allow-hooks",
+		"--confirmation", "unsupported", "--browser-auth", "unsupported",
+		"--request-timeout", "0s", "--auth-timeout", "-1s", "--toolsets=",
+	}, bytes.NewReader(nil), &output, io.Discard)
+	if code != 2 {
+		t.Fatalf("mcp JSON exit = %d, output = %s", code, output.Bytes())
+	}
+	var envelope contract.Envelope
+	if err := json.Unmarshal(output.Bytes(), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	if envelope.Outcome != "failure" || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "argument.invalid" || envelope.Context.Profile != nil {
+		t.Fatalf("unexpected envelope: %#v", envelope)
+	}
+	validateContractValue(t, capability.ResponseSchema, structToContractValue(t, envelope), true)
+}
+
 func TestHostedStatelessStdinUsesExistingContractAndNoLocalState(t *testing.T) {
 	state := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(state, "config"))

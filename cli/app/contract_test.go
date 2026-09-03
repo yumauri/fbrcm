@@ -86,7 +86,8 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 		if capability.Supports.Draft != hasContractFlag(root, capability.Path, "draft") {
 			t.Fatalf("%s draft metadata does not match its flags", capability.ID)
 		}
-		if capability.Supports.Stateless != contract.SupportsStatelessCommand(capability.ID) {
+		wantStateless := contract.SupportsStatelessCommand(capability.ID) && capability.ID != "mcp"
+		if capability.Supports.Stateless != wantStateless {
 			t.Fatalf("%s stateless metadata does not match the supported-command registry", capability.ID)
 		}
 	}
@@ -338,6 +339,9 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 	for _, capability := range contract.DetailedCapabilities(root) {
 		if !contract.SupportsStatelessCommand(capability.ID) {
 			continue
+		}
+		if capability.ID == "mcp" {
+			continue // The CLI JSON branch rejects before entering stateless server mode.
 		}
 		cacheWrite := statelessCacheWriters[capability.ID]
 		if slices.Contains(capability.SideEffects, "local_cache_write") != cacheWrite {
@@ -898,7 +902,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		"add", "apply",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"delete", "duplicate", "experiments.delete", "experiments.list", "experiments.show", "get",
-		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename", "mcp",
+		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
 		"personalizations.list", "personalizations.show", "project.defaults", "project.export", "project.import", "project.open", "project.show",
 		"projects.diff", "projects.list", "projects.promote", "rollouts.delete", "rollouts.list", "rollouts.show", "update",
 		"versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
@@ -2331,6 +2335,12 @@ func TestRepeatableInvocationOptionsRejectUnrepresentableEmptyArrays(t *testing.
 			option, ok := options[name].(map[string]any)
 			if !ok {
 				t.Errorf("%s repeatable option %s has no input schema", capability.ID, flag.Name)
+				continue
+			}
+			if capability.ID == "mcp" && name == "toolsets" {
+				if _, constrained := option["minItems"]; constrained {
+					t.Errorf("mcp --toolsets rejects the empty list before its early JSON failure: %#v", option)
+				}
 				continue
 			}
 			if got := option["minItems"]; got != float64(1) {

@@ -1234,7 +1234,7 @@
           "plan": false,
           "confirmation_bypass": false,
           "stdin": false,
-          "stateless": true
+          "stateless": false
         }
       },
       {

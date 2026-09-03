@@ -58,15 +58,7 @@
                 "properties": {
                   "code": {
                     "enum": [
-                      "argument.invalid",
-                      "command.canceled",
-                      "command.timeout",
-                      "configuration.invalid",
-                      "file.io_failed",
-                      "filesystem.permission_denied",
-                      "internal.contract_violation",
-                      "internal.unclassified",
-                      "profile.invalid"
+                      "argument.invalid"
                     ]
                   }
                 },

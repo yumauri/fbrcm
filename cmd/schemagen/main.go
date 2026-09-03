@@ -1336,6 +1336,12 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 			result["pattern"] = `.*\S.*`
 		}
 	}
+	if commandID == "mcp" && name == "toolsets" {
+		// An explicitly empty list reaches the same early --json rejection as
+		// every other launch value; the non-JSON server validates non-emptiness
+		// only after that boundary.
+		delete(result, "minItems")
+	}
 	if name == "stateless" && !contract.SupportsStatelessCommand(commandID) {
 		result["const"] = false
 	}
@@ -1445,18 +1451,6 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 			addNormalization(schema["items"].(map[string]any), "trim_unicode_whitespace")
 			schema["uniqueItems"] = true
 			addNormalization(schema, "deduplicate_preserve_first")
-		}
-	case "confirmation":
-		if commandID == "mcp" {
-			schema["enum"] = []string{"host", "none"}
-		}
-	case "browser-auth":
-		if commandID == "mcp" {
-			schema["enum"] = []string{"auto", "never"}
-		}
-	case "toolsets":
-		if commandID == "mcp" {
-			schema["items"] = map[string]any{"type": "string", "enum": []string{"inspect", "edit", "drafts", "plans", "publish", "diagnostics"}}
 		}
 	case "timeout", "request-timeout", "auth-timeout":
 		// Cobra rejects every zero-valued duration spelling, not only the
@@ -2275,6 +2269,12 @@ func expressionLanguageMetadata() map[string]any {
 }
 
 func optionConstraints(commandID string, command *cobra.Command, publishedOptions map[string]any) []any {
+	if commandID == "mcp" {
+		// CLI JSON execution stops at the transport incompatibility. Constraints
+		// used to configure a live MCP server are therefore outside this
+		// normalized one-shot invocation contract.
+		return nil
+	}
 	constraints := make([]any, 0)
 	if contract.SupportsStatelessCommand(commandID) {
 		statelessProjectSchema := "stateless_target_selector"
@@ -2288,9 +2288,6 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 			"not": map[string]any{"required": []string{"profile"}},
 		}
 		statelessOptionProperties := map[string]any{}
-		if commandID == "mcp" {
-			statelessOptionProperties["allow-hooks"] = map[string]any{"const": false}
-		}
 		if statelessMutationRejectsDraft(commandID) {
 			statelessOptionProperties["draft"] = map[string]any{"const": false}
 		}

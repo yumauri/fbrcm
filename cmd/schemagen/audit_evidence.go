@@ -72,7 +72,7 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 			}
 			evidence := append([]string(nil), generatedAuditBaseEvidence(class)...)
 			if capability.ID == "mcp" {
-				evidence = append(evidence, "app.mcp_json_failure", "app.mcp_stdio")
+				evidence = append(evidence, "app.mcp_json_boundary", "app.mcp_json_failure")
 			}
 			if capability.ID == "auth.add.google" {
 				switch class {
@@ -120,8 +120,8 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"app.mcp_json_boundary":                 "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",
 		"app.mcp_json_failure":                  "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
-		"app.mcp_stdio":                         "cli/app/mcp_test.go#TestMCPStdioLifecycleAndContract",
 		"app.arity":                             "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
 		"app.auth_add_quota_schema":             "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
 		"app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",
@@ -297,7 +297,7 @@ func generatedAuditNAReason(class string) string {
 	case "stdin":
 		return "The command does not accept a normalized stdin document."
 	case "success":
-		return "The JSON operation is interaction-only and has no success outcome."
+		return "The JSON operation has no reachable success outcome."
 	case "warning":
 		return "The command has no reachable non-fatal warning branch."
 	default:
@@ -321,8 +321,9 @@ func loadAuditScenarios() map[string][]string {
 			panic(err)
 		}
 		var scenario struct {
-			Name      string `json:"name"`
-			CommandID string `json:"command_id"`
+			Name      string   `json:"name"`
+			CommandID string   `json:"command_id"`
+			Args      []string `json:"args"`
 		}
 		if err := json.Unmarshal(raw, &scenario); err != nil {
 			panic(err)
@@ -332,6 +333,10 @@ func loadAuditScenarios() map[string][]string {
 		}
 		if scenario.Name != entry.Name() || strings.TrimSpace(scenario.CommandID) == "" {
 			panic(fmt.Sprintf("invalid audit scenario %s", entry.Name()))
+		}
+		if scenario.CommandID == "mcp" && !slices.Contains(scenario.Args, "--json") {
+			// Streaming MCP execution is outside the one-shot CLI JSON audit.
+			continue
 		}
 		result[scenario.CommandID] = append(result[scenario.CommandID], scenario.Name)
 	}

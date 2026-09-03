@@ -15,8 +15,8 @@
     "app.failure_runtime": "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
     "app.interaction": "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
     "app.invocation_semantics": "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
+    "app.mcp_json_boundary": "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",
     "app.mcp_json_failure": "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
-    "app.mcp_stdio": "cli/app/mcp_test.go#TestMCPStdioLifecycleAndContract",
     "app.no_op": "cli/app/contract_test.go#TestEmptyCollectionAndNoOpRuntimeEnvelopesConform",
     "app.outcomes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
     "app.plan_capability_boundaries": "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
@@ -3034,7 +3034,7 @@
           "not_applicable": "The command does not accept a normalized stdin document."
         },
         "success": {
-          "not_applicable": "The JSON operation is interaction-only and has no success outcome."
+          "not_applicable": "The JSON operation has no reachable success outcome."
         },
         "warning": {
           "not_applicable": "The command has no reachable non-fatal warning branch."
@@ -5966,38 +5966,34 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.mcp_json_boundary",
             "app.mcp_json_failure",
-            "app.mcp_stdio",
-            "e2e:mcp_json",
-            "e2e:mcp_stateless_eof"
+            "e2e:mcp_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "app.mcp_json_boundary",
             "app.mcp_json_failure",
-            "app.mcp_stdio",
             "e2e:mcp_json",
-            "e2e:mcp_stateless_eof",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
             "app.discovery",
+            "app.mcp_json_boundary",
             "app.mcp_json_failure",
-            "app.mcp_stdio",
-            "e2e:mcp_json",
-            "e2e:mcp_stateless_eof"
+            "e2e:mcp_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.mcp_json_boundary",
             "app.mcp_json_failure",
-            "app.mcp_stdio",
-            "e2e:mcp_json",
-            "e2e:mcp_stateless_eof"
+            "e2e:mcp_json"
           ]
         },
         "effects": {
@@ -6007,11 +6003,10 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.mcp_json_boundary",
             "app.mcp_json_failure",
-            "app.mcp_stdio",
             "app.unknown_option",
-            "e2e:mcp_json",
-            "e2e:mcp_stateless_eof"
+            "e2e:mcp_json"
           ]
         },
         "interaction": {
@@ -6021,30 +6016,23 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.mcp_json_boundary",
             "app.mcp_json_failure",
-            "app.mcp_stdio",
             "app.unknown_option",
-            "e2e:mcp_json",
-            "e2e:mcp_stateless_eof"
+            "e2e:mcp_json"
           ]
         },
         "no_op": {
           "not_applicable": "The command is not a mutation operation."
         },
         "selection": {
-          "evidence": [
-            "app.mcp_json_failure",
-            "app.mcp_stdio",
-            "app.selection",
-            "e2e:mcp_json",
-            "e2e:mcp_stateless_eof"
-          ]
+          "not_applicable": "The command has no selector with matching or lookup semantics."
         },
         "stdin": {
           "not_applicable": "The command does not accept a normalized stdin document."
         },
         "success": {
-          "not_applicable": "The JSON operation is interaction-only and has no success outcome."
+          "not_applicable": "The JSON operation has no reachable success outcome."
         },
         "warning": {
           "not_applicable": "The command has no reachable non-fatal warning branch."

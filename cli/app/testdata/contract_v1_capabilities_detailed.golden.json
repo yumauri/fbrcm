@@ -20034,8 +20034,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Allow already-trusted configured hooks during tool execution"
+        "effective": false,
+        "usage": "Allow already-trusted configured hooks during tool execution; accepted but not applied by this command"
       },
       {
         "name": "--allow-writes",
@@ -20044,8 +20044,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Enable mutation tools and explicit artifact writes (inspection may still refresh caches and credentials)"
+        "effective": false,
+        "usage": "Enable mutation tools and explicit artifact writes (inspection may still refresh caches and credentials); accepted but not applied by this command"
       },
       {
         "name": "--auth-timeout",
@@ -20054,8 +20054,8 @@
         "default": "2m0s",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Maximum duration of a browser authorization attempt"
+        "effective": false,
+        "usage": "Maximum duration of a browser authorization attempt; accepted but not applied by this command"
       },
       {
         "name": "--browser-auth",
@@ -20064,8 +20064,8 @@
         "default": "auto",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Browser authorization: auto (ask supporting hosts) or never"
+        "effective": false,
+        "usage": "Browser authorization: auto (ask supporting hosts) or never; accepted but not applied by this command"
       },
       {
         "name": "--confirmation",
@@ -20074,8 +20074,8 @@
         "default": "host",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Mutation approval: host (explicit elicitation) or none (operator-authorized unattended execution)"
+        "effective": false,
+        "usage": "Mutation approval: host (explicit elicitation) or none (operator-authorized unattended execution); accepted but not applied by this command"
       },
       {
         "name": "--no-local-config",
@@ -20084,8 +20084,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+        "effective": false,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG); accepted but not applied by this command"
       },
       {
         "name": "--profile",
@@ -20094,20 +20094,8 @@
         "default": "",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "effective_when": [
-          {
-            "all_of": [
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          }
-        ],
-        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
       },
       {
         "name": "--request-timeout",
@@ -20116,8 +20104,8 @@
         "default": "5m0s",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Maximum duration per tool operation, including queueing and user interaction"
+        "effective": false,
+        "usage": "Maximum duration per tool operation, including queueing and user interaction; accepted but not applied by this command"
       },
       {
         "name": "--stateless",
@@ -20126,8 +20114,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); accepted but not applied by this command"
       },
       {
         "name": "--timeout",
@@ -20136,8 +20124,8 @@
         "default": "0s",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Maximum duration for the complete command"
+        "effective": false,
+        "usage": "Maximum duration for the complete command; accepted but not applied by this command"
       },
       {
         "name": "--toolsets",
@@ -20152,8 +20140,8 @@
         ],
         "required": false,
         "repeatable": true,
-        "effective": true,
-        "usage": "Enabled toolsets: inspect, edit, drafts, plans, publish, diagnostics"
+        "effective": false,
+        "usage": "Enabled toolsets: inspect, edit, drafts, plans, publish, diagnostics; accepted but not applied by this command"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
@@ -20161,15 +20149,7 @@
     "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:response",
     "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
     "problem_codes": [
-      "argument.invalid",
-      "command.canceled",
-      "command.timeout",
-      "configuration.invalid",
-      "file.io_failed",
-      "filesystem.permission_denied",
-      "internal.contract_violation",
-      "internal.unclassified",
-      "profile.invalid"
+      "argument.invalid"
     ],
     "side_effect_level": 0,
     "side_effects": [],
@@ -20187,7 +20167,7 @@
       "plan": false,
       "confirmation_bypass": false,
       "stdin": false,
-      "stateless": true
+      "stateless": false
     },
     "stdin_modes": [],
     "interaction": {

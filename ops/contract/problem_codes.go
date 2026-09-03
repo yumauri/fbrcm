@@ -50,6 +50,13 @@ func KnownWarningCodes() []string {
 // target failures in batch details remain an explicitly open extension point
 // because their command is the target operation, not the aggregating command.
 func CommandProblemCodes(capability Capability) []string {
+	// The streaming MCP frontend is intentionally unavailable in CLI JSON
+	// mode. Cobra parsing and the early transport rejection can only produce
+	// the typed argument failure; profile, configuration, filesystem, timeout,
+	// and server-startup paths are never entered.
+	if capability.ID == "mcp" {
+		return []string{"argument.invalid"}
+	}
 	set := make(map[string]bool)
 	add := func(values ...string) {
 		for _, value := range values {

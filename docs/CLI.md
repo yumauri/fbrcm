@@ -939,6 +939,9 @@ Global `--timeout` limits the server lifetime and is unlimited when omitted.
 All supplied durations must be positive; the earliest applicable deadline wins.
 Stdout contains protocol messages and stderr contains logs. `--json` is
 incompatible with the server and returns `argument.invalid` with exit status `2`.
+That rejection occurs before server-launch validation or profile loading. In the
+CLI machine descriptor, all launch flags are therefore accepted but ineffective,
+stateless execution is unsupported, and no server effect or failure is advertised.
 
 ## Machine-command inventory
 
