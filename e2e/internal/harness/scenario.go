@@ -330,7 +330,7 @@ func LoadScenarios(root string, suite Suite) ([]Scenario, error) {
 
 func requiresQuotaProjectHeader(host string) bool {
 	host = strings.TrimSuffix(strings.ToLower(strings.TrimSpace(host)), ":443")
-	return host == "cloudresourcemanager.googleapis.com" || host == "firebaseremoteconfig.googleapis.com"
+	return host == "cloudresourcemanager.googleapis.com" || host == "firebase.googleapis.com" || host == "firebaseremoteconfig.googleapis.com"
 }
 
 // OrderScenariosForMode makes every declared recording sequence a mandatory,

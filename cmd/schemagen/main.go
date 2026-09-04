@@ -1631,6 +1631,8 @@ func filterMatchingFields(commandID string) []string {
 		return []string{"condition_name"}
 	case "experiments.list":
 		return []string{"display_name"}
+	case "apps.list":
+		return []string{"display_name", "namespace", "app_id"}
 	case "groups.list":
 		return []string{"group_name"}
 	case "projects.forget", "projects.list", "projects.update":
@@ -1677,6 +1679,10 @@ func flagEnum(commandID, name string) []string {
 		return []string{"client", "server"}
 	case "templates":
 		return []string{"client", "server"}
+	case "platform":
+		if commandID == "apps.list" {
+			return []string{"android", "ios", "web"}
+		}
 	case "format":
 		return []string{"json", "xml", "plist"}
 	case "conflict":
@@ -1695,7 +1701,7 @@ func flagEnum(commandID, name string) []string {
 }
 
 func caseInsensitiveFlag(name string) bool {
-	return slices.Contains([]string{"type", "merge-resolve", "primary", "templates", "format", "scope", "color"}, name)
+	return slices.Contains([]string{"type", "merge-resolve", "primary", "templates", "format", "scope", "color", "platform"}, name)
 }
 
 func caseInsensitiveEnumPattern(values []string) string {
@@ -1743,6 +1749,13 @@ func argumentSchema(commandID, name string) map[string]any {
 	}
 	if commandID == "personalizations.show" && name == "personalization_id" {
 		addMatchingRule(schema, map[string]any{"operator": "personalization_id_resolution"})
+	}
+	if strings.HasPrefix(commandID, "apps.") && name == "app" {
+		addMatchingRule(schema, map[string]any{
+			"operator": "firebase_app_resolution", "comparison": "exact_case_sensitive",
+			"precedence":  []any{"app_id", "resource_name", "namespace", "display_name"},
+			"zero_result": "app.not_found", "multiple_result": "app.ambiguous",
+		})
 	}
 	if slices.Contains([]string{"groups.delete", "groups.edit", "groups.rename"}, commandID) && name == "group" {
 		addMatchingRule(schema, map[string]any{"operator": "group_name_resolution"})
@@ -1885,6 +1898,7 @@ func prefixRejectingProjectPositional(commandID, name string) bool {
 	}
 	return slices.Contains([]string{
 		"project.templates.show", "project.templates.set",
+		"apps.config", "apps.list", "apps.show",
 		"experiments.list", "experiments.show", "experiments.delete",
 		"rollouts.list", "rollouts.show", "rollouts.delete",
 		"personalizations.list", "personalizations.show",
@@ -2179,6 +2193,7 @@ func extensionLanguageMetadata() map[string]any {
 			"schema":    contract.SemanticRef("matching_rules"),
 			"semantics": "Apply the declared query preparation and matching algorithm when predicting local selection. Matching metadata does not mutate the normalized invocation value unless a separate normalization rule says so.",
 			"operators": map[string]any{
+				"firebase_app_resolution":         operation([]string{"comparison", "precedence", "zero_result", "multiple_result"}, "selection", "Resolve a Firebase application exactly and case-sensitively in precedence order: Firebase App ID, full resource name, platform namespace, then display name. Zero and multiple matches return the declared typed application problems."),
 				"auth_id_resolution":              operation(nil, "selection", "Compare the positional auth ID exactly and case-sensitively against configured canonical auth IDs. No match returns auth.not_found; IDs are unique."),
 				"literal_project_id":              operation([]string{"comparison", "default_template", "lookup"}, "selection", "Use the supplied physical Firebase project ID exactly without project-registry, display-name, or repository-alias lookup. An omitted template prefix selects the client template; client@ and server@ select one named template."),
 				"mode_prefixed_query":             operation([]string{"fields", "query_normalization", "default_mode", "mode_prefixes", "comparison", "target_prefixes?", "unqualified_target_selection?", "explicit_target_selection?", "client_target_canonicalization?"}, "boolean_or_target_selection", "Match the declared resource fields after optional target-prefix parsing, using the first query rune as a declared mode prefix or the default mode. Fuzzy matches query runes as an ordered subsequence; starts-with, includes, and exact have their literal meanings. Target-aware rules additionally declare unqualified expansion, explicit single-template selection, and client target canonicalization."),
@@ -2279,6 +2294,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 	if contract.SupportsStatelessCommand(commandID) {
 		statelessProjectSchema := "stateless_target_selector"
 		if slices.Contains([]string{
+			"apps.config", "apps.list", "apps.show",
 			"experiments.delete", "experiments.list", "experiments.show", "personalizations.list", "personalizations.show",
 			"project.open", "project.show", "rollouts.delete", "rollouts.list", "rollouts.show",
 		}, commandID) {
@@ -2763,6 +2779,12 @@ func responseSchema(capability contract.Capability, dataSchema, successDataSchem
 			"then": map[string]any{"properties": map[string]any{"data": map[string]any{"$ref": "#/$defs/success_data"}}},
 		},
 	}
+	if capability.ID == "apps.show" {
+		constraints = append(constraints, firebaseAppDetailsResponseConstraints()...)
+	}
+	if capability.ID == "apps.config" {
+		constraints = append(constraints, firebaseAppConfigResponseConstraints()...)
+	}
 	reachableOutcomes := commandReachableOutcomes(capability, successDataSchema)
 	constraints = append(constraints, map[string]any{
 		"properties": map[string]any{"outcome": map[string]any{"enum": reachableOutcomes}},
@@ -2862,6 +2884,64 @@ func responseSchema(capability contract.Capability, dataSchema, successDataSchem
 			},
 		},
 	}
+}
+
+func firebaseAppDetailsResponseConstraints() []any {
+	constraints := []any{}
+	platformConstraints := []struct {
+		platform string
+		required map[string]any
+	}{
+		{platform: "android", required: map[string]any{
+			"package_name": map[string]any{"type": "string", "minLength": 1},
+			"bundle_id":    map[string]any{"type": "null"}, "app_store_id": map[string]any{"type": "null"},
+			"team_id": map[string]any{"type": "null"}, "web_id": map[string]any{"type": "null"},
+			"app_urls": map[string]any{"type": "array", "maxItems": 0},
+		}},
+		{platform: "ios", required: map[string]any{
+			"bundle_id":    map[string]any{"type": "string", "minLength": 1},
+			"package_name": map[string]any{"type": "null"}, "web_id": map[string]any{"type": "null"},
+			"app_urls":    map[string]any{"type": "array", "maxItems": 0},
+			"sha1_hashes": map[string]any{"type": "array", "maxItems": 0}, "sha256_hashes": map[string]any{"type": "array", "maxItems": 0},
+		}},
+		{platform: "web", required: map[string]any{
+			"package_name": map[string]any{"type": "null"}, "bundle_id": map[string]any{"type": "null"},
+			"app_store_id": map[string]any{"type": "null"}, "team_id": map[string]any{"type": "null"},
+			"sha1_hashes": map[string]any{"type": "array", "maxItems": 0}, "sha256_hashes": map[string]any{"type": "array", "maxItems": 0},
+		}},
+	}
+	for _, item := range platformConstraints {
+		constraints = append(constraints, map[string]any{
+			"if": map[string]any{"properties": map[string]any{"data": map[string]any{
+				"properties": map[string]any{"platform": map[string]any{"const": item.platform}}, "required": []string{"platform"},
+			}}, "required": []string{"data"}},
+			"then": map[string]any{"properties": map[string]any{"data": map[string]any{"properties": item.required}}},
+		})
+	}
+	return constraints
+}
+
+func firebaseAppConfigResponseConstraints() []any {
+	constraints := []any{}
+	for _, item := range []struct{ platform, mediaType string }{
+		{platform: "android", mediaType: "application/json"},
+		{platform: "ios", mediaType: "application/x-plist"},
+		{platform: "web", mediaType: "application/json"},
+	} {
+		constraints = append(constraints, map[string]any{
+			"if": map[string]any{"properties": map[string]any{"data": map[string]any{
+				"properties": map[string]any{"app": map[string]any{
+					"properties": map[string]any{"platform": map[string]any{"const": item.platform}}, "required": []string{"platform"},
+				}}, "required": []string{"app"},
+			}}, "required": []string{"data"}},
+			"then": map[string]any{"properties": map[string]any{"data": map[string]any{
+				"properties": map[string]any{"artifact": map[string]any{
+					"properties": map[string]any{"media_type": map[string]any{"const": item.mediaType}}, "required": []string{"media_type"},
+				}},
+			}}},
+		})
+	}
+	return constraints
 }
 
 func commandReachableOutcomes(capability contract.Capability, successDataSchema map[string]any) []string {

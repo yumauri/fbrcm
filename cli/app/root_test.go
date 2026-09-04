@@ -52,7 +52,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "apply", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "apply", "apps", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -83,7 +83,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{28, 28, 28}) {
+	if !reflect.DeepEqual(counts, []int{29, 29, 29}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }
@@ -1701,6 +1701,27 @@ func TestIsProfileCommand(t *testing.T) {
 	}
 	if isProfileCommand(projects) {
 		t.Fatalf("projects command recognized as profile")
+	}
+}
+
+func TestIsConfigCommandDoesNotMatchNestedCommandWithSameName(t *testing.T) {
+	root := &cobra.Command{Use: "fbrcm"}
+	configCommand := &cobra.Command{Use: "config"}
+	configGet := &cobra.Command{Use: "get"}
+	apps := &cobra.Command{Use: "apps"}
+	appsConfig := &cobra.Command{Use: "config"}
+	root.AddCommand(configCommand, apps)
+	configCommand.AddCommand(configGet)
+	apps.AddCommand(appsConfig)
+
+	if !isConfigCommand(configCommand) {
+		t.Fatal("top-level config command not recognized")
+	}
+	if !isConfigCommand(configGet) {
+		t.Fatal("top-level config subcommand not recognized")
+	}
+	if isConfigCommand(appsConfig) {
+		t.Fatal("apps config incorrectly recognized as top-level config command")
 	}
 }
 

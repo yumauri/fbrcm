@@ -55,6 +55,20 @@ func ResolvePhysicalProjectForExecution(ctx context.Context, cmd invocation.Call
 	return core.Project{Name: query, ProjectID: query}, nil
 }
 
+// ResolveProjectScopedResourceForExecution resolves a physical project for a
+// Firebase resource that is not attached to a Remote Config client/server
+// template. Explicit target prefixes are rejected with resource-specific text.
+func ResolveProjectScopedResourceForExecution(ctx context.Context, cmd invocation.Call, svc *core.Core, query, resource string) (core.Project, error) {
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
+	if err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	if explicit {
+		return core.Project{}, InvalidArgument(fmt.Errorf("%s commands are project-scoped; omit the %s@ prefix", resource, target.Kind))
+	}
+	return ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
+}
+
 // FirebaseServiceContextForExecution binds an in-memory static-token Firebase
 // service when configured service resolution is disabled by the execution
 // policy. Stateful execution returns the original context unchanged.

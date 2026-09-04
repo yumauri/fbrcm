@@ -899,7 +899,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		}
 	}
 	if want := []string{
-		"add", "apply",
+		"add", "apply", "apps.config", "apps.list", "apps.show",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"delete", "duplicate", "experiments.delete", "experiments.list", "experiments.show", "get",
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",

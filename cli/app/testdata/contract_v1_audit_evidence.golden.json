@@ -31,6 +31,9 @@
     "apply.no_change_success": "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
     "apply.status_runtime": "ops/workflows/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
     "apply.warning_runtime": "ops/workflows/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
+    "apps.config_success": "ops/workflows/apps/commands_test.go#TestAppsConfigCommandSuccess",
+    "apps.list_success": "ops/workflows/apps/commands_test.go#TestAppsListCommandSuccess",
+    "apps.show_success": "ops/workflows/apps/commands_test.go#TestAppsShowCommandSuccess",
     "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
     "contract.artifact_runtime": "ops/contract/contract_test.go#TestArtifactEncodesBinaryContent",
@@ -298,6 +301,243 @@
             "apply.warning_runtime",
             "e2e:apply_stateless_json"
           ]
+        }
+      }
+    },
+    {
+      "id": "apps.config",
+      "classes": {
+        "artifact": {
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime"
+          ]
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "apps.config_success"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "apps.list",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "apps.list_success"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "apps.show",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "apps.show_success"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
         }
       }
     },

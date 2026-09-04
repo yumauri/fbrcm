@@ -33,6 +33,8 @@ fbrcm accesses:
 - the result of other permission checks for the project operations fbrcm needs;
 - Firebase Remote Config client and server templates, including parameters,
   values, descriptions, groups, conditions, ETags, and version metadata;
+- Firebase application metadata and downloaded Android, iOS, or Web SDK
+  configuration, including application identifiers and Firebase API keys;
 - Remote Config defaults and version history; and
 - Remote Config managed-feature information exposed by the API, including
   experiments, rollouts, and personalization bindings.
@@ -130,14 +132,14 @@ by the user may retain that output independently of fbrcm.
 ## Network transfers and sharing
 
 For its Google integration, fbrcm sends OAuth credentials and Google data only
-to Google's OAuth services, the Google Cloud Resource Manager API, and the
-Firebase Remote Config API as needed for the requested operation. Google
+to Google's OAuth services, the Google Cloud Resource Manager API, the
+Firebase Management API, and the Firebase Remote Config API as needed for the requested operation. Google
 handles these transfers under its own terms and privacy policies. fbrcm does
 not sell Google user data, share it with advertisers or data brokers, or
 transfer it to the fbrcm developer or a developer-operated service.
 
-Authenticated requests to the Google Cloud Resource Manager and Firebase Remote
-Config APIs include the effective quota project ID in the
+Authenticated requests to the Google Cloud Resource Manager, Firebase
+Management, and Firebase Remote Config APIs include the effective quota project ID in the
 `X-Goog-User-Project` request header. Google uses this project as the consumer
 for request quota and billing. fbrcm may also ask Google Cloud Resource Manager
 whether the authenticated identity has the `serviceusage.services.use`

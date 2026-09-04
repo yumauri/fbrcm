@@ -1028,6 +1028,8 @@
     },
     "code": {
       "enum": [
+        "app.ambiguous",
+        "app.not_found",
         "argument.invalid",
         "argument.unknown_command",
         "auth.configuration_invalid",

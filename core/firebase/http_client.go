@@ -110,7 +110,7 @@ func requiresQuotaProjectHeader(req *http.Request) bool {
 		return false
 	}
 	switch strings.ToLower(req.URL.Hostname()) {
-	case "cloudresourcemanager.googleapis.com", "firebaseremoteconfig.googleapis.com":
+	case "cloudresourcemanager.googleapis.com", "firebase.googleapis.com", "firebaseremoteconfig.googleapis.com":
 		return true
 	default:
 		return false

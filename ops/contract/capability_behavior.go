@@ -709,7 +709,11 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		"optional", "oauth_authorization_returns_interaction",
 		conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))),
 
-	"conditions.list":     statelessUpdatingRemoteRead(),
+	"conditions.list": statelessUpdatingRemoteRead(),
+	"apps.list":       requiredRemoteRead(),
+	"apps.show":       requiredRemoteRead(),
+	"apps.config": destructive(requiredRemoteRead(effect("local_file_write",
+		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "an existing destination file may be overwritten"),
 	"conditions.show":     statelessUpdatingRemoteRead(),
 	"conditions.validate": requiredCacheableRemoteRead(effect("firebase_remote_validation")),
 	"doctor": {
@@ -794,6 +798,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 func init() {
 	for _, id := range []string{
 		"add", "delete", "duplicate", "update",
+		"apps.config", "apps.list", "apps.show",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"experiments.delete", "experiments.list", "experiments.show",
 		"get",

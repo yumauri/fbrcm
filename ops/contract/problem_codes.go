@@ -8,7 +8,7 @@ import (
 
 var knownProblemCodeValues = []string{
 	"argument.invalid", "argument.unknown_command", "auth.configuration_invalid", "auth.credentials_invalid", "auth.id_invalid", "auth.not_found", "auth.quota_project_required", "auth.setup_required",
-	"batch.failed", "batch.partial_success", "command.canceled", "command.not_executable", "command.not_found", "command.timeout",
+	"app.ambiguous", "app.not_found", "batch.failed", "batch.partial_success", "command.canceled", "command.not_executable", "command.not_found", "command.timeout",
 	"condition.invalid", "condition.not_found", "configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid",
 	"diagnostic.failed", "draft.ambiguous", "draft.exists", "draft.not_found", "expression.invalid", "file.io_failed", "firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout", "filesystem.permission_denied",
 	"group.not_found", "hook.failed", "hooks.changed", "hooks.not_configured", "interaction.required", "internal.contract_violation", "internal.unclassified",
@@ -200,6 +200,10 @@ func CommandProblemCodes(capability Capability) []string {
 		}
 	case strings.HasPrefix(id, "versions."):
 		add("version.not_found")
+	case strings.HasPrefix(id, "apps."):
+		if id == "apps.show" || id == "apps.config" {
+			add("app.ambiguous", "app.not_found")
+		}
 	case strings.HasPrefix(id, "personalizations."):
 		if id == "personalizations.show" {
 			add("personalization.not_found")

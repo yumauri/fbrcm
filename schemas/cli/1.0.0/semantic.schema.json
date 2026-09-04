@@ -689,6 +689,51 @@
             "comparison": {
               "const": "exact_case_sensitive"
             },
+            "multiple_result": {
+              "const": "app.ambiguous"
+            },
+            "operator": {
+              "const": "firebase_app_resolution"
+            },
+            "precedence": {
+              "items": false,
+              "maxItems": 4,
+              "minItems": 4,
+              "prefixItems": [
+                {
+                  "const": "app_id"
+                },
+                {
+                  "const": "resource_name"
+                },
+                {
+                  "const": "namespace"
+                },
+                {
+                  "const": "display_name"
+                }
+              ],
+              "type": "array"
+            },
+            "zero_result": {
+              "const": "app.not_found"
+            }
+          },
+          "required": [
+            "operator",
+            "comparison",
+            "precedence",
+            "zero_result",
+            "multiple_result"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "comparison": {
+              "const": "exact_case_sensitive"
+            },
             "default_template": {
               "const": "client"
             },
@@ -2194,6 +2239,16 @@
           "operands": null,
           "result": "selection",
           "semantics": "Compare the untrimmed positional source name exactly and case-sensitively against parameter keys across root and all groups, skip a target on zero matches, and return parameter.ambiguous with candidates on multiple exact matches."
+        },
+        "firebase_app_resolution": {
+          "operands": [
+            "comparison",
+            "precedence",
+            "zero_result",
+            "multiple_result"
+          ],
+          "result": "selection",
+          "semantics": "Resolve a Firebase application exactly and case-sensitively in precedence order: Firebase App ID, full resource name, platform namespace, then display name. Zero and multiple matches return the declared typed application problems."
         },
         "group_name_resolution": {
           "operands": null,

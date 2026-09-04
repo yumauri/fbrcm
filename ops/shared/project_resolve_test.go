@@ -56,6 +56,17 @@ func TestResolvePhysicalProjectForExecutionRequiresLiteralIDWithoutLocalReads(t 
 	}
 }
 
+func TestResolveProjectScopedResourceForExecutionRejectsTemplatePrefixes(t *testing.T) {
+	cmd := &cobra.Command{}
+	for _, query := range []string{"client@demo-project", "server@demo-project"} {
+		_, err := ResolveProjectScopedResourceForExecution(context.Background(), cmd, nil, query, "app")
+		var argumentErr *ArgumentError
+		if err == nil || !errors.As(err, &argumentErr) || !strings.Contains(err.Error(), "app commands are project-scoped") {
+			t.Errorf("query %q error = %v", query, err)
+		}
+	}
+}
+
 func TestFirebaseServiceContextForExecutionRequiresStatelessToken(t *testing.T) {
 	t.Setenv(env.GoogleAccessToken, "")
 	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())

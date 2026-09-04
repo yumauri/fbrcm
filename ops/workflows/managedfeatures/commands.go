@@ -361,12 +361,9 @@ func resolveProjectForExecution(cmd invocation.Call, svc *core.Core, query strin
 				"managed features support only the client Remote Config namespace; omit the server@ prefix",
 			))
 		}
-		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf(
-			"managed-feature commands are project-scoped; omit the client@ prefix",
-		))
 	}
 	ctx := shared.CommandContext(cmd)
-	project, err := shared.ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
+	project, err := shared.ResolveProjectScopedResourceForExecution(ctx, cmd, svc, query, "managed-feature")
 	if err != nil {
 		return core.Project{}, nil, err
 	}

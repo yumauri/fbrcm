@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
@@ -405,37 +404,13 @@ func emptyDash(value string) string {
 }
 
 func fitFlexibleColumns(widths []int, terminalWidth int, flexible ...int) {
-	if terminalWidth <= 0 {
-		return
-	}
-	for shared.TableWidth(widths) > terminalWidth {
-		selected := -1
-		for _, index := range flexible {
-			minimum := 1
-			if widths[index] <= minimum {
-				continue
-			}
-			if selected < 0 || widths[index]-minimum > widths[selected]-1 {
-				selected = index
-			}
-		}
-		if selected < 0 {
-			return
-		}
-		widths[selected]--
-	}
+	shared.FitTableColumns(widths, terminalWidth, flexible...)
 }
 
 func truncateHeaders(headers []string, widths []int) {
-	for index := range headers {
-		headers[index] = ansi.Truncate(headers[index], widths[index], "…")
-	}
+	shared.TruncateTableHeaders(headers, widths)
 }
 
 func truncateColumns(rows [][]string, widths []int, columns ...int) {
-	for row := range rows {
-		for _, column := range columns {
-			rows[row][column] = ansi.Truncate(rows[row][column], widths[column], "…")
-		}
-	}
+	shared.TruncateTableColumns(rows, widths, columns...)
 }

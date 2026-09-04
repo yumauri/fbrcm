@@ -145,6 +145,9 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.stdin_restrictions":                "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
 		"app.unknown_option":                    "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
 		"app.warning_runtime":                   "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
+		"apps.config_success":                   "ops/workflows/apps/commands_test.go#TestAppsConfigCommandSuccess",
+		"apps.list_success":                     "ops/workflows/apps/commands_test.go#TestAppsListCommandSuccess",
+		"apps.show_success":                     "ops/workflows/apps/commands_test.go#TestAppsShowCommandSuccess",
 		"apply.no_change_success":               "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
 		"apply.status_runtime":                  "ops/workflows/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
 		"apply.draft_cleanup_runtime":           "ops/workflows/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
@@ -204,6 +207,12 @@ func generatedAuditSuccessFallback(commandID string) string {
 	switch commandID {
 	case "apply":
 		return "apply.no_change_success"
+	case "apps.config":
+		return "apps.config_success"
+	case "apps.list":
+		return "apps.list_success"
+	case "apps.show":
+		return "apps.show_success"
 	case "auth.login":
 		return "auth.oauth_success"
 	case "completion.bash", "completion.fish", "completion.powershell", "completion.zsh":

@@ -241,6 +241,20 @@ func extensionSchemaDefinitions() map[string]any {
 		}},
 		"normalization_rules": map[string]any{"type": "array", "minItems": 1, "items": ref("normalization_rule")},
 		"matching_rule": map[string]any{"oneOf": []any{
+			object([]string{"operator", "comparison", "precedence", "zero_result", "multiple_result"}, map[string]any{
+				"operator":   map[string]any{"const": "firebase_app_resolution"},
+				"comparison": map[string]any{"const": "exact_case_sensitive"},
+				"precedence": map[string]any{
+					"type": "array", "minItems": 4, "maxItems": 4,
+					"prefixItems": []any{
+						map[string]any{"const": "app_id"}, map[string]any{"const": "resource_name"},
+						map[string]any{"const": "namespace"}, map[string]any{"const": "display_name"},
+					},
+					"items": false,
+				},
+				"zero_result":     map[string]any{"const": "app.not_found"},
+				"multiple_result": map[string]any{"const": "app.ambiguous"},
+			}),
 			object([]string{"operator", "comparison", "default_template", "lookup"}, map[string]any{
 				"operator":         map[string]any{"const": "literal_project_id"},
 				"comparison":       map[string]any{"const": "exact_case_sensitive"},

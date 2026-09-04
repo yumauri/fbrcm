@@ -171,6 +171,12 @@ func TestLoadScenariosRequiresQuotaProjectForGoogleAPIRequests(t *testing.T) {
 	}
 }
 
+func TestFirebaseManagementRequestsRequireQuotaProjectHeader(t *testing.T) {
+	if !requiresQuotaProjectHeader("firebase.googleapis.com") || !requiresQuotaProjectHeader("FIREBASE.GOOGLEAPIS.COM:443") {
+		t.Fatal("Firebase Management API host must require a quota project header")
+	}
+}
+
 func TestLoadScenariosRejectsReplayOnlyWithoutHTTP(t *testing.T) {
 	root := t.TempDir()
 	directory := filepath.Join(root, "invalid")

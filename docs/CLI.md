@@ -30,6 +30,15 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │
 ├── apply <plan> [--dry-run] [--yes|-y] [--json]
 │
+├── apps
+│   ├── list <project>
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --platform android|ios|web
+│   │   ├── --show-deleted
+│   │   └── --json
+│   ├── show <project> <app> [--json]
+│   └── config <project> <app> [--to <path>] [--yes|-y] [--json]
+│
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
 │   ├── --expr <expr>
@@ -631,7 +640,7 @@ Each cached project stores its enabled template selections and one primary templ
 
 The target syntax applies to `add`, `get`, `update`, `delete`, `duplicate`, and `groups`; all `conditions` and `versions` commands; `draft` commands; `project export`, `project import`, and `project defaults`; and the source and destination of `projects diff` and `projects promote`.
 
-Project metadata and managed-feature commands remain project-scoped rather than template-scoped. In particular, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `experiments`, `rollouts`, `personalizations`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix. Stateful `project show` and `project open` do not parse target prefixes: characters such as `client@` or `server@` are part of their literal project query. Their stateless forms instead require a literal physical project ID and reject `@` target syntax. Template-preference and managed-feature commands explicitly reject recognized `client@` and `server@` target syntax. A managed-feature `server@` target reports that managed features support only the client namespace, while a `client@` target asks you to omit the unnecessary prefix.
+Project metadata, app, and managed-feature commands remain project-scoped rather than template-scoped. In particular, `apps`, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `experiments`, `rollouts`, `personalizations`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix. Stateful `project show` and `project open` do not parse target prefixes: characters such as `client@` or `server@` are part of their literal project query. Their stateless forms instead require a literal physical project ID and reject `@` target syntax. App, template-preference, and managed-feature commands explicitly reject recognized `client@` and `server@` target syntax. A managed-feature `server@` target reports that managed features support only the client namespace, while other project-scoped commands ask you to omit the unnecessary prefix.
 
 Client targets are canonicalized to the unqualified project ID, so `project-id` and `client@project-id` share exactly the same cache, version snapshots, and draft. Server targets retain their prefix and use separate local files:
 
@@ -953,6 +962,9 @@ tests compare it exactly with the executable Cobra inventory.
 ```text
 add
 apply
+apps.config
+apps.list
+apps.show
 auth.add.gcloud
 auth.add.google
 auth.add.oauth
@@ -1960,6 +1972,37 @@ validated and published with its ETag, and dry-run still performs Firebase
 validation. `--draft` is rejected because stateless execution cannot persist a
 draft.
 
+### Firebase applications
+
+The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. Reads are always live and do not use or update the Remote Config cache. `<project>` resolves through the configured project registry in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
+
+`<app>` is exact and case-sensitive. Resolution tries Firebase App ID, full resource name, namespace (Android package name, iOS bundle ID, or Web namespace), then display name. A missing value returns `app.not_found`; a non-unique value at the first matching tier returns `app.ambiguous` with candidate App IDs.
+
+### `fbrcm apps list <project>`
+
+Lists all active registered applications. Human output contains name, platform, namespace, App ID, and state. The table uses natural content width and ellipsizes name, namespace, and App ID only when needed to fit the terminal.
+
+Flags:
+
+```text
+-f, --filter <query>              filter display name, namespace, or App ID; may be repeated
+--platform android|ios|web        include only one platform
+--show-deleted                    include applications pending permanent deletion
+--json                            put typed application summaries in envelope data
+```
+
+Filtering uses the shared mode prefixes and is applied locally after every Firebase page is loaded. Repeated filters are ORed.
+
+### `fbrcm apps show <project> <app>`
+
+Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. `--json` returns the stable typed details DTO rather than Firebase's open-ended beta response.
+
+### `fbrcm apps config <project> <app>`
+
+Downloads the SDK configuration for the selected application. Without `--to`, human mode writes the configuration bytes directly to stdout. JSON mode returns the selected app, Firebase's suggested filename, and a contract artifact. Android and Web use `application/json`; iOS uses `application/x-plist`. Web configuration is deterministic indented JSON, while Android and iOS preserve Firebase's decoded file bytes exactly.
+
+`--to <path>` writes a private destination file. If the path exists, normal mode asks for confirmation with Yes selected by default; `--yes` bypasses that prompt. JSON mode never prompts and reports `interaction.required` unless overwrite was authorized.
+
 ### Remote Config managed features
 
 Experiments and rollouts provide read-only `list` and `show` commands plus an explicit destructive `delete` command. Personalizations remain read-only. The CLI cannot create, start, stop, or edit managed features, and none of these commands publish Remote Config. All three command groups use ordinary positional project resolution and the client Remote Config namespace.
@@ -2536,7 +2579,7 @@ Flags:
 
 ### `fbrcm doctor`
 
-Runs a complete, non-interactive application health check. It verifies the selected profile and profile directories, auth registry, credential files, OAuth token presence and expiry, network/offline state, Cloud Resource Manager API access, Remote Config API reads, required Firebase read/update IAM permissions for cached projects, and profile cache writability. The writability check creates and removes a temporary probe file; capability metadata publishes those transient local file effects separately.
+Runs a complete, non-interactive application health check. It verifies the selected profile and profile directories, auth registry, credential files, OAuth token presence and expiry, network/offline state, Cloud Resource Manager API access, Remote Config API reads, required Remote Config read/update and Firebase application read IAM permissions for cached projects, and profile cache writability. The writability check creates and removes a temporary probe file; capability metadata publishes those transient local file effects separately.
 
 Doctor never opens OAuth login and never persists a refreshed token. In offline mode it reports the state and skips live API and permission checks. Online mode accesses Firebase only when at least one locally usable authentication identity is available. It prints every check even when some fail, and exits with status 1 when any check has `fail` status; warnings alone do not fail the command. The diagnostic run has no overall time limit by default. A deadline or `Ctrl+C` still prints the partial table or JSON report, then exits with the semantic timeout status 9 or canceled status 130 respectively; a failed check does not mask that context error.
 

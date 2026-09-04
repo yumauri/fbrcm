@@ -182,7 +182,7 @@ fbrcm knows a complete, directly reusable argv fragment.
 
 Problems are classified from typed source errors (`ArgumentError`,
 `ExpressionError`, `ValidationError`, `ConflictError`, `SelectionError`,
-`BatchError`, `ProfileError`, `ProjectLookupError`,
+`BatchError`, `ProfileError`, `ProjectLookupError`, `AppLookupError`,
 `RemoteConfigVersionLookupError`, import-group
 selection errors, and managed-feature lookup/resource errors) and typed
 Firebase, hook, context, network, and filesystem errors. Invalid configuration
@@ -191,8 +191,10 @@ argument failures. Unavailable requested versions use `version.not_found` with
 selection details. Missing cached Remote Config used by `projects diff
 --cached`, missing requested import groups, and missing published-template
 personalizations use `parameters_cache.not_found`, `group.not_found`, and
-`personalization.not_found`, respectively, with selection details. Invalid profile names use
-`profile.invalid`; unavailable profiles use `profile.not_found` with selection
+`personalization.not_found`, respectively, with selection details.
+`app.not_found` and `app.ambiguous` describe exact Firebase application
+selection misses and collisions and include candidate App IDs. Invalid profile
+names use `profile.invalid`; unavailable profiles use `profile.not_found` with selection
 details; active, locally selected, or already-existing profile conflicts use
 `profile.conflict`. Local validation failures and Firebase HTTP 400 candidate
 rejections use `remote_config.validation_failed`; `details.source`
@@ -973,8 +975,8 @@ version caches, draft entry points, publication cache updates, and hook
 preparation consult that policy instead of a command-specific stateless
 marker. The permissive policy is also the default for internal callers that do
 not attach one, preserving existing stateful behavior. Explicit caller-chosen
-artifact output such as `project export --to`, `project defaults --to`, or
-`versions export --to` is not application-managed local state and remains
+artifact output such as `apps config --to`, `project export --to`,
+`project defaults --to`, or `versions export --to` is not application-managed local state and remains
 permitted.
 
 `--to` and `--yes` retain the normal artifact destination and overwrite
