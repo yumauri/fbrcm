@@ -71,7 +71,8 @@ func (s *Core) ResetFirebaseRequestPolicy() {
 	s.SetFirebaseRequestPolicy(firebase.DefaultRequestPolicy())
 }
 
-// WithFirebaseRequestController binds the Core controller to a request context.
+// WithFirebaseRequestController binds the Core controller and application
+// identity to a request context used to create Firebase clients.
 func (s *Core) WithFirebaseRequestController(ctx context.Context) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
@@ -82,5 +83,6 @@ func (s *Core) WithFirebaseRequestController(ctx context.Context) context.Contex
 	s.firebaseRequestsMu.RLock()
 	controller := s.firebaseRequests
 	s.firebaseRequestsMu.RUnlock()
-	return firebase.WithRequestController(ctx, controller)
+	ctx = firebase.WithRequestController(ctx, controller)
+	return firebase.WithApplicationVersion(ctx, s.applicationVersion)
 }

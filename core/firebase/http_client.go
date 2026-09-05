@@ -21,6 +21,7 @@ func MaxConcurrentRequests(ctx context.Context) int {
 type resilientTransport struct {
 	base       http.RoundTripper
 	controller *RequestController
+	userAgent  string
 }
 
 func newResilientTransport(base http.RoundTripper) http.RoundTripper {
@@ -28,13 +29,17 @@ func newResilientTransport(base http.RoundTripper) http.RoundTripper {
 }
 
 func newResilientTransportWithController(base http.RoundTripper, controller *RequestController) http.RoundTripper {
+	return newResilientTransportWithUserAgent(base, controller, applicationUserAgent(context.Background()))
+}
+
+func newResilientTransportWithUserAgent(base http.RoundTripper, controller *RequestController, userAgent string) http.RoundTripper {
 	if base == nil {
 		base = http.DefaultTransport
 	}
 	if controller == nil {
 		controller = defaultRequestController
 	}
-	return &resilientTransport{base: base, controller: controller}
+	return &resilientTransport{base: base, controller: controller, userAgent: userAgent}
 }
 
 func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -66,6 +71,10 @@ func (t *resilientTransport) RoundTrip(req *http.Request) (*http.Response, error
 		if err != nil {
 			return nil, err
 		}
+		if attemptReq.Header == nil {
+			attemptReq.Header = make(http.Header)
+		}
+		attemptReq.Header.Set("User-Agent", t.userAgent)
 
 		if err := t.controller.acquire(req.Context()); err != nil {
 			return nil, err

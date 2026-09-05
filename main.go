@@ -31,6 +31,7 @@ func main() {
 	googleOAuthClientID, googleOAuthClientSecret := builtinoauth.Credentials()
 	svc, err := core.NewService(
 		context.Background(),
+		core.WithApplicationVersion(version),
 		core.WithGoogleOAuthClientCredentials(googleOAuthClientID, googleOAuthClientSecret),
 	)
 	if err != nil {
