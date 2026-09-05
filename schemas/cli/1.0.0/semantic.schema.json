@@ -47,17 +47,30 @@
     "draft_selector": {
       "minLength": 1,
       "not": {
-        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?\\s*$"
+        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[=^/~]?\\s*$"
       },
-      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?.+$",
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?(?:[=^/~].+|.+)$",
       "type": "string",
-      "x-fbrcm-grammar": "[client@|server@](exact draft project ID, exact repository alias, or exact display name); resource matching is case-sensitive and =, ^, /, and ~ are literal characters",
+      "x-fbrcm-grammar": "[client@|server@][mode-prefix]draft-project-query; exact project ID, repository alias, and display name take precedence, then the query filters draft project IDs and display names with fuzzy matching by default",
       "x-fbrcm-matching": [
         {
           "candidate_source": "local_draft_target_ids",
           "client_target_canonicalization": "unqualified_project_id",
           "comparison": "exact_case_sensitive",
           "explicit_target_selection": "single_named_template",
+          "fallback_comparison": "unicode_case_insensitive",
+          "fallback_default_mode": "fuzzy",
+          "fallback_fields": [
+            "project_id",
+            "display_name"
+          ],
+          "fallback_mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "fallback_query_normalization": "trim_unicode_whitespace",
           "fields": [
             "project_id",
             "display_name",
@@ -715,6 +728,9 @@
               ],
               "type": "array"
             },
+            "project_source": {
+              "const": "options.project_or_app_id_project_number"
+            },
             "zero_result": {
               "const": "app.not_found"
             }
@@ -723,6 +739,97 @@
             "operator",
             "comparison",
             "precedence",
+            "project_source",
+            "zero_result",
+            "multiple_result"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "default_mode": {
+              "const": "fuzzy"
+            },
+            "exact_comparison": {
+              "const": "exact_case_sensitive"
+            },
+            "exact_precedence": {
+              "items": false,
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "const": "project_id"
+                },
+                {
+                  "const": "repository_alias"
+                },
+                {
+                  "const": "display_name"
+                }
+              ],
+              "type": "array"
+            },
+            "filter_comparison": {
+              "const": "unicode_case_insensitive"
+            },
+            "filter_fields": {
+              "items": false,
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "project_id"
+                },
+                {
+                  "const": "display_name"
+                }
+              ],
+              "type": "array"
+            },
+            "mode_prefixes": {
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "const": "includes"
+                },
+                "=": {
+                  "const": "exact"
+                },
+                "^": {
+                  "const": "starts-with"
+                },
+                "~": {
+                  "const": "fuzzy"
+                }
+              },
+              "required": [
+                "~",
+                "^",
+                "/",
+                "="
+              ],
+              "type": "object"
+            },
+            "multiple_result": {
+              "const": "project.ambiguous"
+            },
+            "operator": {
+              "const": "app_project_resolution"
+            },
+            "zero_result": {
+              "const": "project.not_found"
+            }
+          },
+          "required": [
+            "operator",
+            "exact_precedence",
+            "filter_fields",
+            "default_mode",
+            "mode_prefixes",
+            "exact_comparison",
+            "filter_comparison",
             "zero_result",
             "multiple_result"
           ],
@@ -848,6 +955,54 @@
             "explicit_target_selection": {
               "const": "single_named_template"
             },
+            "fallback_comparison": {
+              "const": "unicode_case_insensitive"
+            },
+            "fallback_default_mode": {
+              "const": "fuzzy"
+            },
+            "fallback_fields": {
+              "items": false,
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "project_id"
+                },
+                {
+                  "const": "display_name"
+                }
+              ],
+              "type": "array",
+              "uniqueItems": true
+            },
+            "fallback_mode_prefixes": {
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "const": "includes"
+                },
+                "=": {
+                  "const": "exact"
+                },
+                "^": {
+                  "const": "starts-with"
+                },
+                "~": {
+                  "const": "fuzzy"
+                }
+              },
+              "required": [
+                "~",
+                "^",
+                "/",
+                "="
+              ],
+              "type": "object"
+            },
+            "fallback_query_normalization": {
+              "const": "trim_unicode_whitespace"
+            },
             "fields": {
               "items": {
                 "minLength": 1,
@@ -856,6 +1011,9 @@
               "minItems": 1,
               "type": "array",
               "uniqueItems": true
+            },
+            "multiple_result": {
+              "const": "project.ambiguous"
             },
             "operator": {
               "const": "project_positional_resolution"
@@ -894,6 +1052,9 @@
             },
             "unqualified_target_selection": {
               "const": "configured_primary_template"
+            },
+            "zero_result": {
+              "const": "project.not_found"
             }
           },
           "required": [
@@ -901,7 +1062,14 @@
             "fields",
             "query_normalization",
             "comparison",
-            "precedence"
+            "precedence",
+            "fallback_fields",
+            "fallback_query_normalization",
+            "fallback_default_mode",
+            "fallback_mode_prefixes",
+            "fallback_comparison",
+            "zero_result",
+            "multiple_result"
           ],
           "type": "object"
         },
@@ -919,6 +1087,54 @@
             },
             "explicit_target_selection": {
               "const": "single_named_template"
+            },
+            "fallback_comparison": {
+              "const": "unicode_case_insensitive"
+            },
+            "fallback_default_mode": {
+              "const": "fuzzy"
+            },
+            "fallback_fields": {
+              "items": false,
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "const": "project_id"
+                },
+                {
+                  "const": "display_name"
+                }
+              ],
+              "type": "array",
+              "uniqueItems": true
+            },
+            "fallback_mode_prefixes": {
+              "additionalProperties": false,
+              "properties": {
+                "/": {
+                  "const": "includes"
+                },
+                "=": {
+                  "const": "exact"
+                },
+                "^": {
+                  "const": "starts-with"
+                },
+                "~": {
+                  "const": "fuzzy"
+                }
+              },
+              "required": [
+                "~",
+                "^",
+                "/",
+                "="
+              ],
+              "type": "object"
+            },
+            "fallback_query_normalization": {
+              "const": "trim_unicode_whitespace"
             },
             "fields": {
               "items": {
@@ -982,6 +1198,11 @@
             "query_normalization",
             "comparison",
             "precedence",
+            "fallback_fields",
+            "fallback_query_normalization",
+            "fallback_default_mode",
+            "fallback_mode_prefixes",
+            "fallback_comparison",
             "target_prefixes",
             "unqualified_target_selection",
             "explicit_target_selection",
@@ -1358,26 +1579,48 @@
     "physical_project_selector": {
       "minLength": 1,
       "not": {
-        "pattern": "^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@"
+        "anyOf": [
+          {
+            "pattern": "^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@"
+          },
+          {
+            "pattern": "^[=^/~]?\\s*$"
+          }
+        ]
       },
-      "pattern": ".*\\S.*",
+      "pattern": "(?:[=^/~].+|.*\\S.*)",
       "type": "string",
-      "x-fbrcm-grammar": "exact case-sensitive physical project ID, repository alias, or display name without a client@ or server@ template-target prefix; argv whitespace is preserved",
+      "x-fbrcm-grammar": "[mode-prefix]physical-project-query without a client@ or server@ template-target prefix; exact project ID, repository alias, and display name take precedence, then the query filters project IDs and display names with fuzzy matching by default",
       "x-fbrcm-matching": [
         {
           "comparison": "exact_case_sensitive",
+          "fallback_comparison": "unicode_case_insensitive",
+          "fallback_default_mode": "fuzzy",
+          "fallback_fields": [
+            "project_id",
+            "display_name"
+          ],
+          "fallback_mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "fallback_query_normalization": "trim_unicode_whitespace",
           "fields": [
             "project_id",
             "display_name",
             "repository_aliases"
           ],
+          "multiple_result": "project.ambiguous",
           "operator": "project_positional_resolution",
           "precedence": [
             "exact_project_id",
             "exact_repository_alias",
             "exact_display_name"
           ],
-          "query_normalization": "preserve_argv"
+          "query_normalization": "preserve_argv",
+          "zero_result": "project.not_found"
         }
       ]
     },
@@ -1387,24 +1630,42 @@
     },
     "project_positional_selector": {
       "minLength": 1,
-      "pattern": ".*\\S.*",
+      "not": {
+        "pattern": "^[=^/~]?\\s*$"
+      },
+      "pattern": "(?:[=^/~].+|.*\\S.*)",
       "type": "string",
-      "x-fbrcm-grammar": "exact case-sensitive project ID, repository alias, or display name without template-target parsing; argv whitespace is preserved and all characters are literal",
+      "x-fbrcm-grammar": "[mode-prefix]project-query without template-target parsing; exact project ID, repository alias, and display name take precedence, then the query filters project IDs and display names with fuzzy matching by default",
       "x-fbrcm-matching": [
         {
           "comparison": "exact_case_sensitive",
+          "fallback_comparison": "unicode_case_insensitive",
+          "fallback_default_mode": "fuzzy",
+          "fallback_fields": [
+            "project_id",
+            "display_name"
+          ],
+          "fallback_mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "fallback_query_normalization": "trim_unicode_whitespace",
           "fields": [
             "project_id",
             "display_name",
             "repository_aliases"
           ],
+          "multiple_result": "project.ambiguous",
           "operator": "project_positional_resolution",
           "precedence": [
             "exact_project_id",
             "exact_repository_alias",
             "exact_display_name"
           ],
-          "query_normalization": "preserve_argv"
+          "query_normalization": "preserve_argv",
+          "zero_result": "project.not_found"
         }
       ]
     },
@@ -1428,21 +1689,35 @@
     "target_positional_selector": {
       "minLength": 1,
       "not": {
-        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?\\s*$"
+        "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[=^/~]?\\s*$"
       },
-      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?.+$",
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?(?:[=^/~].+|.+)$",
       "type": "string",
-      "x-fbrcm-grammar": "[client@|server@](exact project ID, exact repository alias, or exact display name); resource matching is case-sensitive and =, ^, /, and ~ are literal characters",
+      "x-fbrcm-grammar": "[client@|server@][mode-prefix]project-query; exact project ID, repository alias, and display name take precedence, then the query filters project IDs and display names with fuzzy matching by default",
       "x-fbrcm-matching": [
         {
           "client_target_canonicalization": "unqualified_project_id",
           "comparison": "exact_case_sensitive",
           "explicit_target_selection": "single_named_template",
+          "fallback_comparison": "unicode_case_insensitive",
+          "fallback_default_mode": "fuzzy",
+          "fallback_fields": [
+            "project_id",
+            "display_name"
+          ],
+          "fallback_mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "fallback_query_normalization": "trim_unicode_whitespace",
           "fields": [
             "project_id",
             "display_name",
             "repository_aliases"
           ],
+          "multiple_result": "project.ambiguous",
           "operator": "project_positional_resolution",
           "precedence": [
             "exact_project_id",
@@ -1454,7 +1729,8 @@
             "client",
             "server"
           ],
-          "unqualified_target_selection": "configured_primary_template"
+          "unqualified_target_selection": "configured_primary_template",
+          "zero_result": "project.not_found"
         }
       ]
     },
@@ -2171,6 +2447,20 @@
     "matching": {
       "keyword": "x-fbrcm-matching",
       "operators": {
+        "app_project_resolution": {
+          "operands": [
+            "exact_precedence",
+            "filter_fields",
+            "default_mode",
+            "mode_prefixes",
+            "exact_comparison",
+            "filter_comparison",
+            "zero_result",
+            "multiple_result"
+          ],
+          "result": "selection",
+          "semantics": "Resolve an exact project ID, repository alias, or display name in precedence order, then apply the declared mode-prefixed filter to project IDs and display names only. One result is selected; zero and multiple results return the declared typed project problems."
+        },
         "auth_id_resolution": {
           "operands": null,
           "result": "selection",
@@ -2225,6 +2515,11 @@
             "query_normalization",
             "comparison",
             "precedence",
+            "fallback_fields",
+            "fallback_query_normalization",
+            "fallback_default_mode",
+            "fallback_mode_prefixes",
+            "fallback_comparison",
             "target_prefixes",
             "unqualified_target_selection",
             "explicit_target_selection",
@@ -2233,7 +2528,7 @@
             "multiple_result"
           ],
           "result": "selection",
-          "semantics": "Resolve only existing local draft target IDs. Parse an optional template target without trimming its project selector, then compare exactly and case-sensitively in precedence order: draft physical project ID, repository alias, then display name. Unqualified queries select the configured primary template. Substrings and mode prefixes have no search meaning. Zero and multiple matches return the declared typed draft problems."
+          "semantics": "Resolve only existing local draft target IDs. Parse an optional template target, then try exact case-sensitive draft project ID, repository alias, and display name precedence. If exact resolution fails, apply the declared mode-prefixed filter to draft project IDs and display names only, using fuzzy matching by default. Unqualified queries select the configured primary template. Zero and multiple matches return the declared typed draft problems."
         },
         "duplicate_source_resolution": {
           "operands": null,
@@ -2244,11 +2539,12 @@
           "operands": [
             "comparison",
             "precedence",
+            "project_source",
             "zero_result",
             "multiple_result"
           ],
           "result": "selection",
-          "semantics": "Resolve a Firebase application exactly and case-sensitively in precedence order: Firebase App ID, full resource name, platform namespace, then display name. Zero and multiple matches return the declared typed application problems."
+          "semantics": "Resolve a Firebase application exactly and case-sensitively in precedence order: Firebase App ID, full resource name, platform namespace, then display name. The project comes from the explicit project option or, for a complete Firebase App ID, its embedded project number. Zero and multiple matches return the declared typed application problems."
         },
         "group_name_resolution": {
           "operands": null,
@@ -2322,13 +2618,20 @@
             "query_normalization",
             "comparison",
             "precedence",
+            "fallback_fields",
+            "fallback_query_normalization",
+            "fallback_default_mode",
+            "fallback_mode_prefixes",
+            "fallback_comparison",
+            "zero_result",
+            "multiple_result",
             "target_prefixes?",
             "unqualified_target_selection?",
             "explicit_target_selection?",
             "client_target_canonicalization?"
           ],
           "result": "selection",
-          "semantics": "Resolve the untrimmed literal project selector exactly and case-sensitively in precedence order: project ID, repository alias, then display name. Substrings and mode prefixes have no search meaning. Target-aware rules additionally declare primary-template resolution, explicit single-template selection, and client target canonicalization."
+          "semantics": "Resolve the project selector exactly and case-sensitively in precedence order: project ID, repository alias, then display name. If exact resolution fails, apply the declared mode-prefixed filter to project IDs and display names only, using fuzzy matching by default. Target-aware rules additionally declare primary-template resolution, explicit single-template selection, and client target canonicalization."
         },
         "schema_id_resolution": {
           "operands": null,

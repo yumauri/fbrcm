@@ -5,7 +5,6 @@
     "--stateless",
     "apps",
     "config",
-    "${PROJECT_ID}",
     "1:123456789012:web:c3",
     "--json"
   ],
@@ -14,7 +13,7 @@
     {
       "method": "GET",
       "host": "firebase.googleapis.com",
-      "path": "/v1beta1/projects/${PROJECT_ID}:searchApps",
+      "path": "/v1beta1/projects/123456789012:searchApps",
       "query": "pageSize=100&showDeleted=true",
       "status": 200
     },

@@ -67,6 +67,49 @@ func TestResolveProjectScopedResourceForExecutionRejectsTemplatePrefixes(t *test
 	}
 }
 
+func TestResolveProjectScopedResourceRequiresLiteralIDStateless(t *testing.T) {
+	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())
+	cmd := &cobra.Command{Use: "show"}
+	project, err := ResolveProjectScopedResourceForExecution(ctx, cmd, nil, "demo-project", "app")
+	if err != nil || project.ProjectID != "demo-project" {
+		t.Fatalf("literal project = %#v, %v", project, err)
+	}
+	for _, query := range []string{"~demo", "/demo", "^demo", "=demo"} {
+		if _, err := ResolveProjectScopedResourceForExecution(ctx, cmd, nil, query, "app"); err == nil {
+			t.Errorf("stateless selector %q was accepted", query)
+		}
+	}
+}
+
+func TestResolveProjectNumberUsesConfiguredProject(t *testing.T) {
+	cmd := &cobra.Command{Use: "show"}
+	project, err := resolveProjectNumber(cmd, []core.Project{
+		{Name: "Other", ProjectID: "other", ProjectNumber: "456"},
+		{Name: "Demo", ProjectID: "demo", ProjectNumber: "123", AuthID: "main"},
+	}, "123")
+	if err != nil || project.ProjectID != "demo" || project.AuthID != "main" {
+		t.Fatalf("resolveProjectNumber() = %#v, %v", project, err)
+	}
+}
+
+func TestResolveProjectNumberReportsMissingProfileMapping(t *testing.T) {
+	cmd := &cobra.Command{Use: "show"}
+	cmd.SetOut(&bytes.Buffer{})
+	_, err := resolveProjectNumber(cmd, []core.Project{{Name: "Demo", ProjectID: "demo", ProjectNumber: "123"}}, "456")
+	var selection *ProjectResolutionError
+	if !errors.As(err, &selection) || selection.Kind != "not_found" || selection.Query != "456" || !strings.Contains(err.Error(), "--project") {
+		t.Fatalf("resolveProjectNumber() error = %#v", err)
+	}
+}
+
+func TestResolveProjectNumberForStatelessExecutionUsesNumberDirectly(t *testing.T) {
+	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())
+	project, err := ResolveProjectNumberForExecution(ctx, &cobra.Command{Use: "show"}, nil, "123")
+	if err != nil || project.ProjectID != "123" || project.ProjectNumber != "123" {
+		t.Fatalf("ResolveProjectNumberForExecution() = %#v, %v", project, err)
+	}
+}
+
 func TestFirebaseServiceContextForExecutionRequiresStatelessToken(t *testing.T) {
 	t.Setenv(env.GoogleAccessToken, "")
 	ctx := core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy())
@@ -118,6 +161,65 @@ func TestMatchProjectsForArgResolutionOrder(t *testing.T) {
 	}
 }
 
+func TestResolveProjectArgWithFilterUsesExactThenFilterPrecedence(t *testing.T) {
+	projects := []core.Project{
+		{Name: "Production", ProjectID: "production-a"},
+		{Name: "Production EU", ProjectID: "production-eu"},
+		{Name: "Staging", ProjectID: "staging-a"},
+	}
+	aliases := map[string]string{"prod": "production-a"}
+	tests := []struct {
+		query string
+		want  string
+	}{
+		{query: "production-a", want: "production-a"},
+		{query: "prod", want: "production-a"},
+		{query: "Staging", want: "staging-a"},
+		{query: "stg", want: "staging-a"},
+		{query: "^stag", want: "staging-a"},
+		{query: "/tion-e", want: "production-eu"},
+		{query: "=production-a", want: "production-a"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.query, func(t *testing.T) {
+			cmd := &cobra.Command{Use: "show"}
+			project, err := resolveProjectArgWithAliases(cmd, projects, tt.query, aliases)
+			if err != nil || project.ProjectID != tt.want {
+				t.Fatalf("resolveProjectArgWithAliases(%q) = %#v, %v; want %q", tt.query, project, err, tt.want)
+			}
+		})
+	}
+}
+
+func TestResolveProjectArgWithFilterReportsOnlyMatchingVariants(t *testing.T) {
+	projects := []core.Project{
+		{Name: "Production", ProjectID: "production-a"},
+		{Name: "Preview", ProjectID: "preview-a"},
+		{Name: "Staging", ProjectID: "staging-a"},
+	}
+	var output bytes.Buffer
+	cmd := &cobra.Command{Use: "show"}
+	cmd.SetOut(&output)
+	_, err := resolveProjectArgWithAliases(cmd, projects, "pr", nil)
+	var selection *ProjectResolutionError
+	if !errors.As(err, &selection) || selection.Kind != "ambiguous" || len(selection.Candidates) != 2 {
+		t.Fatalf("resolution error = %#v", err)
+	}
+	if !strings.Contains(output.String(), "production-a") || !strings.Contains(output.String(), "preview-a") || strings.Contains(output.String(), "staging-a") {
+		t.Fatalf("matching variants output =\n%s", output.String())
+	}
+}
+
+func TestResolveProjectArgWithFilterDoesNotFilterAliases(t *testing.T) {
+	cmd := &cobra.Command{Use: "show"}
+	cmd.SetOut(&bytes.Buffer{})
+	_, err := resolveProjectArgWithAliases(cmd, []core.Project{{Name: "Production", ProjectID: "production-a"}}, "/shortcut", map[string]string{"shortcut": "production-a"})
+	var selection *ProjectResolutionError
+	if !errors.As(err, &selection) || selection.Kind != "not_found" {
+		t.Fatalf("alias filter error = %#v", err)
+	}
+}
+
 func TestResolveCachedProjectArgUsesRepositoryAliasPrecedence(t *testing.T) {
 	root := setupProjectAliasResolutionTest(t, `[projects.aliases]
 prod = "acme-production-42"
@@ -145,8 +247,9 @@ release = "acme-production-42"
 	if err != nil || project.ProjectID != "acme-production-42" {
 		t.Fatalf("alias precedence = %#v, %v", project, err)
 	}
-	if _, err = ResolveCachedProjectArg(cmd, "RELEASE"); err == nil {
-		t.Fatal("case-mismatched repository alias unexpectedly resolved")
+	project, err = ResolveCachedProjectArg(cmd, "RELEASE")
+	if err != nil || project.ProjectID != "display-name-collision" {
+		t.Fatalf("filter fallback after exact alias miss = %#v, %v", project, err)
 	}
 
 	if _, err := os.Stat(filepath.Join(root, config.LocalConfigFileName)); err != nil {
@@ -169,7 +272,13 @@ func TestResolveCachedProjectTargetArgUsesAliasAndConfiguredPrimary(t *testing.T
 	cmd := &cobra.Command{Use: "export"}
 	cmd.SetOut(&bytes.Buffer{})
 	for query, want := range map[string]string{
-		"prod": "server@acme-production-42", "client@prod": "acme-production-42", "server@prod": "server@acme-production-42",
+		"prod":                       "server@acme-production-42",
+		"client@prod":                "acme-production-42",
+		"server@prod":                "server@acme-production-42",
+		"client@/production":         "acme-production-42",
+		"server@^acme":               "server@acme-production-42",
+		"server@=ACME-PRODUCTION-42": "server@acme-production-42",
+		"server@production":          "server@acme-production-42",
 	} {
 		got, err := ResolveCachedProjectTargetArg(cmd, query)
 		if err != nil || got.ProjectID != want {

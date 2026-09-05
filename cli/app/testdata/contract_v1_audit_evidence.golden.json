@@ -310,7 +310,8 @@
         "artifact": {
           "evidence": [
             "app.artifact_schema",
-            "contract.artifact_runtime"
+            "contract.artifact_runtime",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "batch": {
@@ -319,47 +320,55 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:apps_config_stateless_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "no_op": {
@@ -367,7 +376,8 @@
         },
         "selection": {
           "evidence": [
-            "app.selection"
+            "app.selection",
+            "e2e:apps_config_stateless_json"
           ]
         },
         "stdin": {
@@ -377,7 +387,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "apps.config_success"
+            "e2e:apps_config_stateless_json"
           ]
         },
         "warning": {
@@ -397,47 +407,55 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:apps_list_stateless_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "no_op": {
@@ -445,7 +463,8 @@
         },
         "selection": {
           "evidence": [
-            "app.selection"
+            "app.selection",
+            "e2e:apps_list_stateless_json"
           ]
         },
         "stdin": {
@@ -455,7 +474,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "apps.list_success"
+            "e2e:apps_list_stateless_json"
           ]
         },
         "warning": {
@@ -475,47 +494,55 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
-            "app.invocation_semantics"
+            "app.invocation_semantics",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:apps_show_stateless_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
-            "app.discovery"
+            "app.discovery",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
-            "app.effectiveness"
+            "app.effectiveness",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "effects": {
           "evidence": [
-            "app.capability_behavior"
+            "app.capability_behavior",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "failure": {
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "interaction": {
           "evidence": [
-            "app.interaction"
+            "app.interaction",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "no_op": {
@@ -523,7 +550,8 @@
         },
         "selection": {
           "evidence": [
-            "app.selection"
+            "app.selection",
+            "e2e:apps_show_stateless_json"
           ]
         },
         "stdin": {
@@ -533,7 +561,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "apps.show_success"
+            "e2e:apps_show_stateless_json"
           ]
         },
         "warning": {

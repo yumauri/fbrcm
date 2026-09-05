@@ -7,7 +7,7 @@
           "body": [{"matcher": "exact", "value": ""}],
           "destination": [{"matcher": "exact", "value": "firebase.googleapis.com"}],
           "method": [{"matcher": "exact", "value": "GET"}],
-          "path": [{"matcher": "exact", "value": "/v1beta1/projects/northstar-wallet:searchApps"}],
+          "path": [{"matcher": "exact", "value": "/v1beta1/projects/123456789012:searchApps"}],
           "query": {
             "pageSize": [{"matcher": "exact", "value": "100"}],
             "showDeleted": [{"matcher": "exact", "value": "true"}]

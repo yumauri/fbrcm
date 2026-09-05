@@ -1388,6 +1388,12 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 		}
 	}
 	if name == "project" {
+		if appLookupCommand(commandID) {
+			delete(schema, "type")
+			delete(schema, "pattern")
+			schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/app_project_selector"}}
+			return
+		}
 		ref := "#/$defs/target_selector"
 		if commandID == "auth.bind" {
 			ref = "#/$defs/project_filter"
@@ -1602,6 +1608,9 @@ func draftResolutionMatching() map[string]any {
 		"query_normalization": "preserve_argv",
 		"comparison":          "exact_case_sensitive",
 		"precedence":          []any{"exact_draft_project_id", "exact_repository_alias", "exact_display_name"},
+		"fallback_fields":     []any{"project_id", "display_name"}, "fallback_query_normalization": "trim_unicode_whitespace",
+		"fallback_default_mode": "fuzzy", "fallback_mode_prefixes": map[string]any{"~": "fuzzy", "^": "starts-with", "/": "includes", "=": "exact"},
+		"fallback_comparison": "unicode_case_insensitive",
 		"target_prefixes":     []any{"client", "server"}, "unqualified_target_selection": "configured_primary_template_or_client_fallback",
 		"explicit_target_selection": "single_named_template", "client_target_canonicalization": "unqualified_project_id",
 		"zero_result": "draft.not_found", "multiple_result": "draft.ambiguous",
@@ -1610,11 +1619,18 @@ func draftResolutionMatching() map[string]any {
 
 func projectPositionalMatching(targetAware bool) map[string]any {
 	rule := map[string]any{
-		"operator":            "project_positional_resolution",
-		"fields":              stringValues("project_id", "display_name", "repository_aliases"),
-		"query_normalization": "preserve_argv",
-		"comparison":          "exact_case_sensitive",
-		"precedence":          []any{"exact_project_id", "exact_repository_alias", "exact_display_name"},
+		"operator":                     "project_positional_resolution",
+		"fields":                       stringValues("project_id", "display_name", "repository_aliases"),
+		"query_normalization":          "preserve_argv",
+		"comparison":                   "exact_case_sensitive",
+		"precedence":                   []any{"exact_project_id", "exact_repository_alias", "exact_display_name"},
+		"fallback_fields":              stringValues("project_id", "display_name"),
+		"fallback_query_normalization": "trim_unicode_whitespace",
+		"fallback_default_mode":        "fuzzy",
+		"fallback_mode_prefixes":       map[string]any{"~": "fuzzy", "^": "starts-with", "/": "includes", "=": "exact"},
+		"fallback_comparison":          "unicode_case_insensitive",
+		"zero_result":                  "project.not_found",
+		"multiple_result":              "project.ambiguous",
 	}
 	if targetAware {
 		rule["target_prefixes"] = []any{"client", "server"}
@@ -1753,8 +1769,9 @@ func argumentSchema(commandID, name string) map[string]any {
 	if strings.HasPrefix(commandID, "apps.") && name == "app" {
 		addMatchingRule(schema, map[string]any{
 			"operator": "firebase_app_resolution", "comparison": "exact_case_sensitive",
-			"precedence":  []any{"app_id", "resource_name", "namespace", "display_name"},
-			"zero_result": "app.not_found", "multiple_result": "app.ambiguous",
+			"precedence":     []any{"app_id", "resource_name", "namespace", "display_name"},
+			"project_source": "options.project_or_app_id_project_number",
+			"zero_result":    "app.not_found", "multiple_result": "app.ambiguous",
 		})
 	}
 	if slices.Contains([]string{"groups.delete", "groups.edit", "groups.rename"}, commandID) && name == "group" {
@@ -1993,6 +2010,24 @@ func semanticDefinitions(commandID string) map[string]any {
 		"physical_project_id": map[string]any{
 			"$ref": contract.SemanticRef("physical_project_id"),
 		},
+		"firebase_app_id": map[string]any{
+			"type": "string", "pattern": `^[0-9]+:[0-9]+:(?:android|ios|web):[A-Za-z0-9]+$`,
+			"x-fbrcm-grammar": "complete Firebase App ID containing version, project number, platform, and application hash",
+		},
+		"app_project_selector": map[string]any{
+			"allOf": []any{
+				map[string]any{"$ref": "#/$defs/filter_query"},
+				map[string]any{"not": map[string]any{"pattern": `^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@`}},
+			},
+			"x-fbrcm-grammar": "exact project ID, exact repository alias, exact display name, or mode-prefixed project ID/display-name query; unprefixed fallback queries use fuzzy matching",
+			"x-fbrcm-matching": []any{map[string]any{
+				"operator": "app_project_resolution", "exact_precedence": []any{"project_id", "repository_alias", "display_name"},
+				"filter_fields": []any{"project_id", "display_name"}, "default_mode": "fuzzy",
+				"mode_prefixes":    map[string]any{"~": "fuzzy", "^": "starts-with", "/": "includes", "=": "exact"},
+				"exact_comparison": "exact_case_sensitive", "filter_comparison": "unicode_case_insensitive",
+				"zero_result": "project.not_found", "multiple_result": "project.ambiguous",
+			}},
+		},
 		"stateless_target_selector": map[string]any{
 			"type":            "string",
 			"pattern":         `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\s][^@\s]*$`,
@@ -2067,27 +2102,31 @@ func semanticSchema() map[string]any {
 	}
 	definitions["draft_selector"] = map[string]any{
 		"type": "string", "minLength": 1,
-		"pattern":          `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?.+$`,
-		"not":              map[string]any{"pattern": `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?\s*$`},
-		"x-fbrcm-grammar":  "[client@|server@](exact draft project ID, exact repository alias, or exact display name); resource matching is case-sensitive and =, ^, /, and ~ are literal characters",
+		"pattern":          `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?(?:[=^/~].+|.+)$`,
+		"not":              map[string]any{"pattern": `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[=^/~]?\s*$`},
+		"x-fbrcm-grammar":  "[client@|server@][mode-prefix]draft-project-query; exact project ID, repository alias, and display name take precedence, then the query filters draft project IDs and display names with fuzzy matching by default",
 		"x-fbrcm-matching": []any{draftResolutionMatching()},
 	}
 	definitions["target_positional_selector"] = map[string]any{
 		"type": "string", "minLength": 1,
-		"pattern":          `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?.+$`,
-		"not":              map[string]any{"pattern": `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?\s*$`},
-		"x-fbrcm-grammar":  "[client@|server@](exact project ID, exact repository alias, or exact display name); resource matching is case-sensitive and =, ^, /, and ~ are literal characters",
+		"pattern":          `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?(?:[=^/~].+|.+)$`,
+		"not":              map[string]any{"pattern": `^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[=^/~]?\s*$`},
+		"x-fbrcm-grammar":  "[client@|server@][mode-prefix]project-query; exact project ID, repository alias, and display name take precedence, then the query filters project IDs and display names with fuzzy matching by default",
 		"x-fbrcm-matching": []any{projectPositionalMatching(true)},
 	}
 	definitions["project_positional_selector"] = map[string]any{
-		"type": "string", "minLength": 1, "pattern": `.*\S.*`,
-		"x-fbrcm-grammar":  "exact case-sensitive project ID, repository alias, or display name without template-target parsing; argv whitespace is preserved and all characters are literal",
+		"type": "string", "minLength": 1, "pattern": `(?:[=^/~].+|.*\S.*)`,
+		"not":              map[string]any{"pattern": `^[=^/~]?\s*$`},
+		"x-fbrcm-grammar":  "[mode-prefix]project-query without template-target parsing; exact project ID, repository alias, and display name take precedence, then the query filters project IDs and display names with fuzzy matching by default",
 		"x-fbrcm-matching": []any{projectPositionalMatching(false)},
 	}
 	definitions["physical_project_selector"] = map[string]any{
-		"type": "string", "minLength": 1, "pattern": `.*\S.*`,
-		"not":              map[string]any{"pattern": `^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@`},
-		"x-fbrcm-grammar":  "exact case-sensitive physical project ID, repository alias, or display name without a client@ or server@ template-target prefix; argv whitespace is preserved",
+		"type": "string", "minLength": 1, "pattern": `(?:[=^/~].+|.*\S.*)`,
+		"not": map[string]any{"anyOf": []any{
+			map[string]any{"pattern": `^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@`},
+			map[string]any{"pattern": `^[=^/~]?\s*$`},
+		}},
+		"x-fbrcm-grammar":  "[mode-prefix]physical-project-query without a client@ or server@ template-target prefix; exact project ID, repository alias, and display name take precedence, then the query filters project IDs and display names with fuzzy matching by default",
 		"x-fbrcm-matching": []any{projectPositionalMatching(false)},
 	}
 	definitions["physical_project_id"] = map[string]any{"type": "string", "pattern": `^[^=^/~@\s][^@\s]*$`, "x-fbrcm-grammar": "literal physical project ID without target-selector syntax"}
@@ -2193,12 +2232,13 @@ func extensionLanguageMetadata() map[string]any {
 			"schema":    contract.SemanticRef("matching_rules"),
 			"semantics": "Apply the declared query preparation and matching algorithm when predicting local selection. Matching metadata does not mutate the normalized invocation value unless a separate normalization rule says so.",
 			"operators": map[string]any{
-				"firebase_app_resolution":         operation([]string{"comparison", "precedence", "zero_result", "multiple_result"}, "selection", "Resolve a Firebase application exactly and case-sensitively in precedence order: Firebase App ID, full resource name, platform namespace, then display name. Zero and multiple matches return the declared typed application problems."),
+				"firebase_app_resolution":         operation([]string{"comparison", "precedence", "project_source", "zero_result", "multiple_result"}, "selection", "Resolve a Firebase application exactly and case-sensitively in precedence order: Firebase App ID, full resource name, platform namespace, then display name. The project comes from the explicit project option or, for a complete Firebase App ID, its embedded project number. Zero and multiple matches return the declared typed application problems."),
+				"app_project_resolution":          operation([]string{"exact_precedence", "filter_fields", "default_mode", "mode_prefixes", "exact_comparison", "filter_comparison", "zero_result", "multiple_result"}, "selection", "Resolve an exact project ID, repository alias, or display name in precedence order, then apply the declared mode-prefixed filter to project IDs and display names only. One result is selected; zero and multiple results return the declared typed project problems."),
 				"auth_id_resolution":              operation(nil, "selection", "Compare the positional auth ID exactly and case-sensitively against configured canonical auth IDs. No match returns auth.not_found; IDs are unique."),
 				"literal_project_id":              operation([]string{"comparison", "default_template", "lookup"}, "selection", "Use the supplied physical Firebase project ID exactly without project-registry, display-name, or repository-alias lookup. An omitted template prefix selects the client template; client@ and server@ select one named template."),
 				"mode_prefixed_query":             operation([]string{"fields", "query_normalization", "default_mode", "mode_prefixes", "comparison", "target_prefixes?", "unqualified_target_selection?", "explicit_target_selection?", "client_target_canonicalization?"}, "boolean_or_target_selection", "Match the declared resource fields after optional target-prefix parsing, using the first query rune as a declared mode prefix or the default mode. Fuzzy matches query runes as an ordered subsequence; starts-with, includes, and exact have their literal meanings. Target-aware rules additionally declare unqualified expansion, explicit single-template selection, and client target canonicalization."),
-				"project_positional_resolution":   operation([]string{"fields", "query_normalization", "comparison", "precedence", "target_prefixes?", "unqualified_target_selection?", "explicit_target_selection?", "client_target_canonicalization?"}, "selection", "Resolve the untrimmed literal project selector exactly and case-sensitively in precedence order: project ID, repository alias, then display name. Substrings and mode prefixes have no search meaning. Target-aware rules additionally declare primary-template resolution, explicit single-template selection, and client target canonicalization."),
-				"draft_resolution":                operation([]string{"candidate_source", "fields", "query_normalization", "comparison", "precedence", "target_prefixes", "unqualified_target_selection", "explicit_target_selection", "client_target_canonicalization", "zero_result", "multiple_result"}, "selection", "Resolve only existing local draft target IDs. Parse an optional template target without trimming its project selector, then compare exactly and case-sensitively in precedence order: draft physical project ID, repository alias, then display name. Unqualified queries select the configured primary template. Substrings and mode prefixes have no search meaning. Zero and multiple matches return the declared typed draft problems."),
+				"project_positional_resolution":   operation([]string{"fields", "query_normalization", "comparison", "precedence", "fallback_fields", "fallback_query_normalization", "fallback_default_mode", "fallback_mode_prefixes", "fallback_comparison", "zero_result", "multiple_result", "target_prefixes?", "unqualified_target_selection?", "explicit_target_selection?", "client_target_canonicalization?"}, "selection", "Resolve the project selector exactly and case-sensitively in precedence order: project ID, repository alias, then display name. If exact resolution fails, apply the declared mode-prefixed filter to project IDs and display names only, using fuzzy matching by default. Target-aware rules additionally declare primary-template resolution, explicit single-template selection, and client target canonicalization."),
+				"draft_resolution":                operation([]string{"candidate_source", "fields", "query_normalization", "comparison", "precedence", "fallback_fields", "fallback_query_normalization", "fallback_default_mode", "fallback_mode_prefixes", "fallback_comparison", "target_prefixes", "unqualified_target_selection", "explicit_target_selection", "client_target_canonicalization", "zero_result", "multiple_result"}, "selection", "Resolve only existing local draft target IDs. Parse an optional template target, then try exact case-sensitive draft project ID, repository alias, and display name precedence. If exact resolution fails, apply the declared mode-prefixed filter to draft project IDs and display names only, using fuzzy matching by default. Unqualified queries select the configured primary template. Zero and multiple matches return the declared typed draft problems."),
 				"draft_batch_selection":           operation([]string{"project_source", "all_source", "composition", "canonical_order"}, "selection", "Require exactly one of explicit project selectors or the truthy all option. Resolve each project selector with draft_resolution, deduplicate canonical target IDs, and sort them lexicographically; all selects every existing local draft target ID."),
 				"condition_name_resolution":       operation(nil, "selection", "Resolve a condition by exact name first, then by Unicode case-insensitive equality in stored condition order. This operator is used by the non-positional update condition option; no match returns condition.not_found."),
 				"condition_positional_resolution": operation(nil, "selection", "Compare the untrimmed positional condition selector exactly and case-sensitively against canonical condition names. No match returns condition.not_found; duplicate exact names resolve to the first stored condition."),
@@ -2340,7 +2380,23 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 			}
 		}
 		constraints = append(constraints, optionsConstraint(statelessConstraint))
-		if commandID != "projects.list" && !usesStatelessProjectOption(commandID) && !usesStatelessDualTargetArguments(commandID) {
+		if appLookupCommand(commandID) {
+			constraints = append(constraints, map[string]any{
+				"if": map[string]any{
+					"properties": map[string]any{"options": map[string]any{
+						"properties": map[string]any{"stateless": map[string]any{"const": true}},
+						"required":   []string{"stateless"},
+					}},
+					"required": []string{"options"},
+				},
+				"then": map[string]any{"properties": map[string]any{"options": map[string]any{
+					"properties": map[string]any{"project": map[string]any{"$ref": "#/$defs/physical_project_id"}},
+				}}},
+				"else": map[string]any{"properties": map[string]any{"options": map[string]any{
+					"properties": map[string]any{"profile": map[string]any{"allOf": []any{map[string]any{"$ref": "#/$defs/path_segment"}}}},
+				}}},
+			})
+		} else if commandID != "projects.list" && !usesStatelessProjectOption(commandID) && !usesStatelessDualTargetArguments(commandID) {
 			constraints = append(constraints, map[string]any{
 				"if": map[string]any{
 					"properties": map[string]any{
@@ -2418,6 +2474,17 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 			})
 		}
+	}
+	if appLookupCommand(commandID) {
+		constraints = append(constraints, map[string]any{
+			"anyOf": []any{
+				map[string]any{"properties": map[string]any{"arguments": map[string]any{
+					"properties": map[string]any{"app": map[string]any{"$ref": "#/$defs/firebase_app_id"}},
+					"required":   []string{"app"},
+				}}},
+				map[string]any{"properties": map[string]any{"options": map[string]any{"required": []string{"project"}}}},
+			},
+		})
 	}
 	for _, group := range annotationGroups(command.Flags(), "cobra_annotation_mutually_exclusive") {
 		if slices.Contains(group, "json") {
@@ -2599,6 +2666,10 @@ func usesStatelessProjectOption(commandID string) bool {
 		"add", "delete", "duplicate", "get", "update",
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
 	}, commandID)
+}
+
+func appLookupCommand(commandID string) bool {
+	return commandID == "apps.show" || commandID == "apps.config"
 }
 
 func usesStatelessDualTargetArguments(commandID string) bool {

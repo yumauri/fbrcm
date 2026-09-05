@@ -42,9 +42,9 @@ func ResolveProjectTargetForExecution(ctx context.Context, cmd invocation.Call, 
 	}, nil
 }
 
-// ResolvePhysicalProjectForExecution uses configured project resolution when
-// local reads are allowed and otherwise requires one literal physical project
-// ID without client/server target syntax.
+// ResolvePhysicalProjectForExecution uses exact-then-filtered configured
+// project resolution when local reads are allowed and otherwise requires one
+// literal physical project ID without client/server target syntax.
 func ResolvePhysicalProjectForExecution(ctx context.Context, cmd invocation.Call, svc *core.Core, query string) (core.Project, error) {
 	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
 		return ResolveProjectArg(ctx, cmd, svc, query)
@@ -67,6 +67,60 @@ func ResolveProjectScopedResourceForExecution(ctx context.Context, cmd invocatio
 		return core.Project{}, InvalidArgument(fmt.Errorf("%s commands are project-scoped; omit the %s@ prefix", resource, target.Kind))
 	}
 	return ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
+}
+
+// ResolveProjectNumberForExecution resolves the numeric project embedded in a
+// Firebase App ID. Stateful execution maps it back to the configured project
+// so the project's bound identity and quota project remain authoritative.
+// Stateless execution can address the Firebase Management API by project
+// number directly.
+func ResolveProjectNumberForExecution(ctx context.Context, cmd invocation.Call, svc *core.Core, projectNumber string) (core.Project, error) {
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return core.Project{Name: projectNumber, ProjectID: projectNumber, ProjectNumber: projectNumber}, nil
+	}
+	progress.Start("Resolving project…")
+	projects, _, err := svc.ListProjects(ctx)
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectNumber(cmd, projects, projectNumber)
+}
+
+func resolveProjectNumber(cmd invocation.Call, projects []core.Project, projectNumber string) (core.Project, error) {
+	matches := make([]core.Project, 0, 1)
+	for _, project := range projects {
+		if project.ProjectNumber == projectNumber {
+			matches = append(matches, project)
+		}
+	}
+	switch len(matches) {
+	case 1:
+		return matches[0], nil
+	case 0:
+		if len(projects) > 0 && !MachineMode(cmd) {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(projects)); err != nil {
+				return core.Project{}, err
+			}
+		}
+		return core.Project{}, &ProjectResolutionError{
+			Resource:   "project",
+			Kind:       "not_found",
+			Query:      projectNumber,
+			Candidates: selectionCandidates(projects),
+			Err: fmt.Errorf(
+				"project number %q from the Firebase App ID is not available in profile %q; pass --project or run projects update",
+				projectNumber,
+				config.GetActiveProfileName(),
+			),
+		}
+	default:
+		if !MachineMode(cmd) {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches)); err != nil {
+				return core.Project{}, err
+			}
+		}
+		return core.Project{}, &ProjectResolutionError{Resource: "project", Kind: "ambiguous", Query: projectNumber, Candidates: selectionCandidates(matches)}
+	}
 }
 
 // FirebaseServiceContextForExecution binds an in-memory static-token Firebase
@@ -310,6 +364,13 @@ func resolveProjectArgWithAliases(cmd invocation.Call, projects []core.Project, 
 		}
 	}
 	matches := matchProjectsForArg(projects, query)
+	if len(matches) == 0 {
+		mode, filterQuery := filter.ParseModePrefixedQuery(query)
+		if strings.TrimSpace(filterQuery) == "" {
+			return core.Project{}, InvalidArgument(fmt.Errorf("project selector requires a non-empty query"))
+		}
+		matches = filterProjectsWithAliases(projects, []QueryFilter{{Mode: mode, Query: filterQuery}}, nil)
+	}
 
 	switch len(matches) {
 	case 1:

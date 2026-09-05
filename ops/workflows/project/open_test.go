@@ -29,6 +29,11 @@ func TestOpenCommandResolvesProjectAndOpensRemoteConfigConsole(t *testing.T) {
 	}{
 		{name: "exact project id wins", query: "production-project", projectID: "production-project"},
 		{name: "exact project name wins", query: "Production", projectID: "production-us"},
+		{name: "default fuzzy fallback", query: "stag", projectID: "staging-project"},
+		{name: "starts-with fallback", query: "^staging", projectID: "staging-project"},
+		{name: "includes fallback", query: "/aging-pro", projectID: "staging-project"},
+		{name: "exact filter fallback", query: "=STAGING-PROJECT", projectID: "staging-project"},
+		{name: "fallback trims whitespace", query: " staging-project", projectID: "staging-project"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -48,7 +53,7 @@ func TestOpenCommandResolvesProjectAndOpensRemoteConfigConsole(t *testing.T) {
 			}
 		})
 	}
-	for _, query := range []string{"PRODUCTION-PROJECT", "production", "stag", " staging-project"} {
+	for _, query := range []string{"PRODUCTION-PROJECT", "production", "^production"} {
 		cmd := newOpenCommand(svc, func(string) error { return nil })
 		cmd.SetOut(&bytes.Buffer{})
 		cmd.SetArgs([]string{query})

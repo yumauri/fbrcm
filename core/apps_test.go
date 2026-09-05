@@ -48,7 +48,7 @@ func TestGetFirebaseAppResolvesPrecedenceAndAmbiguity(t *testing.T) {
 		return appJSONResponse(req, `{"name":"projects/demo/androidApps/a","displayName":"Shared","appId":"android","projectId":"demo","packageName":"com.example","state":"ACTIVE"}`), nil
 	}))
 	details, err := svc.GetFirebaseApp(context.Background(), "demo", "android")
-	if err != nil || details.PackageName == nil || *details.PackageName != "com.example" {
+	if err != nil || details.ProjectID != "demo" || details.PackageName == nil || *details.PackageName != "com.example" {
 		t.Fatalf("details = %#v, %v", details, err)
 	}
 	_, err = svc.GetFirebaseApp(context.Background(), "demo", "Shared")

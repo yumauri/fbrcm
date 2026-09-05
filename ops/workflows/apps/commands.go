@@ -26,6 +26,8 @@ type appConfigResult struct {
 	Artifact          contract.ArtifactData `json:"artifact"`
 }
 
+const appProjectFlagHelp = "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless <app> is a complete Firebase App ID"
+
 func NewDefinition(svc *core.Core) *invocation.Definition {
 	cmd := &invocation.Definition{
 		Use:   "apps",
@@ -89,15 +91,15 @@ func newListDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 
 func newShowDefinition(svc *core.Core, reader appReader) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "show <project> <app>",
+		Use:   "show <app>",
 		Short: "Show Firebase application details",
-		Args:  invocation.ExactArgs(2),
+		Args:  invocation.ExactArgs(1),
 		RunE: func(cmd invocation.Call, args []string) error {
-			project, ctx, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveAppProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
-			app, err := reader.GetFirebaseApp(ctx, project.ProjectID, args[1])
+			app, err := reader.GetFirebaseApp(ctx, project.ProjectID, args[0])
 			if err != nil {
 				return classifyAppError(err)
 			}
@@ -113,17 +115,18 @@ func newShowDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 			return err
 		},
 	}
+	cmd.Flags().StringP("project", "p", "", appProjectFlagHelp)
 	cmd.Flags().Bool("json", false, "Print application details as JSON")
 	return cmd
 }
 
 func newConfigDefinition(svc *core.Core, reader appReader) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "config <project> <app>",
+		Use:   "config <app>",
 		Short: "Download Firebase application SDK configuration",
-		Args:  invocation.ExactArgs(2),
+		Args:  invocation.ExactArgs(1),
 		RunE: func(cmd invocation.Call, args []string) error {
-			project, ctx, err := resolveProject(cmd, svc, args[0])
+			project, ctx, err := resolveAppProject(cmd, svc, args[0])
 			if err != nil {
 				return err
 			}
@@ -137,7 +140,7 @@ func newConfigDefinition(svc *core.Core, reader appReader) *invocation.Definitio
 					return err
 				}
 			}
-			cfg, err := reader.GetFirebaseAppConfig(ctx, project.ProjectID, args[1])
+			cfg, err := reader.GetFirebaseAppConfig(ctx, project.ProjectID, args[0])
 			if err != nil {
 				return classifyAppError(err)
 			}
@@ -164,10 +167,36 @@ func newConfigDefinition(svc *core.Core, reader appReader) *invocation.Definitio
 			return err
 		},
 	}
+	cmd.Flags().StringP("project", "p", "", appProjectFlagHelp)
 	cmd.Flags().String("to", "", "Write application configuration to file path")
 	cmd.Flags().Bool("json", false, "Print application configuration as a JSON artifact")
 	shared.AddYesFlag(cmd, "Overwrite an existing destination without confirmation")
 	return cmd
+}
+
+func resolveAppProject(cmd invocation.Call, svc *core.Core, appSelector string) (core.Project, context.Context, error) {
+	ctx := shared.CommandContext(cmd)
+	projectQuery, _ := cmd.Flags().GetString("project")
+	var (
+		project core.Project
+		err     error
+	)
+	if projectQuery != "" {
+		project, err = shared.ResolveProjectScopedResourceForExecution(ctx, cmd, svc, projectQuery, "app")
+	} else if appID, ok := core.ParseFirebaseAppID(appSelector); ok {
+		project, err = shared.ResolveProjectNumberForExecution(ctx, cmd, svc, appID.ProjectNumber)
+	} else {
+		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("--project is required unless <app> is a complete Firebase App ID"))
+	}
+	if err != nil {
+		return core.Project{}, nil, err
+	}
+	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+	if err != nil {
+		return core.Project{}, nil, err
+	}
+	cmd.SetContext(ctx)
+	return project, ctx, nil
 }
 
 func resolveProject(cmd invocation.Call, svc *core.Core, query string) (core.Project, context.Context, error) {

@@ -36,8 +36,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --platform android|ios|web
 │   │   ├── --show-deleted
 │   │   └── --json
-│   ├── show <project> <app> [--json]
-│   └── config <project> <app> [--to <path>] [--yes|-y] [--json]
+│   ├── show <app> [--project <project>] [--json]
+│   └── config <app> [--project <project>] [--to <path>] [--yes|-y] [--json]
 │
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
@@ -602,7 +602,7 @@ and `project quota-project` to manage persisted values without editing files.
 
 ### Filter queries
 
-Flags named `--project` or `--filter` use mode-prefixed query strings:
+Project selectors and flags named `--project` or `--filter` use mode-prefixed query strings:
 
 ```text
 ~query   fuzzy match; default if no prefix is given
@@ -611,11 +611,12 @@ Flags named `--project` or `--filter` use mode-prefixed query strings:
 =query   exact case-insensitive match
 ```
 
-Project filters match project display name, project ID, or any repository alias.
-Alias matching follows the requested filter mode, so `=prod` is the recommended
-exact selector for scripts. Parameter filters match parameter key. `--project`
-and `--filter` may be repeated; repeated values are ORed and must be passed as
-separate flags.
+Repeatable project-filter flags match project display name, project ID, or any
+repository alias. Alias matching follows the requested filter mode, so `=prod`
+is the recommended exact selector for scripts. A scalar project selector first
+checks an exact repository alias, but its fallback filter matches only display
+name and project ID. Parameter filters match parameter key. Repeatable
+`--project` and `--filter` values are ORed and must be passed as separate flags.
 Outer Unicode whitespace is trimmed before the optional mode prefix is parsed.
 The semantic schema publishes the matched resource fields, complete mode map,
 and case-insensitive fuzzy, starts-with, includes, and exact matching algorithm
@@ -634,7 +635,7 @@ client@project-id   client template; explicit alias
 server@project-id   server template in the firebase-server namespace
 ```
 
-The prefix comes before a filter mode. For example, `-p 'server@=api-prod'` selects the server template of exactly `api-prod`, while `-p 'client@^mobile-'` selects client templates whose project name or ID starts with `mobile-`. Repeated flags can mix client and server targets in one invocation. Target prefixes are recognized case-insensitively and canonicalized to lowercase. Query flags trim outer whitespace and whitespace around the project query after an explicit prefix. Positional target selectors preserve the project name or ID exactly without trimming. Explicit `client@` remains distinct from an unqualified target during selection, though both canonicalize to the same client target identity.
+The prefix comes before a filter mode. For example, `server@=api-prod` selects the server template of exactly `api-prod`, while `client@^mobile-` selects a client template whose project name or ID starts with `mobile-`. Repeated flags can mix client and server targets in one invocation. Target prefixes are recognized case-insensitively and canonicalized to lowercase. Exact positional resolution preserves the supplied project query; filter fallback trims outer whitespace. Explicit `client@` remains distinct from an unqualified target during selection, though both canonicalize to the same client target identity.
 
 Each cached project stores its enabled template selections and one primary template. New and existing projects default to client-only. An unqualified bulk filter, or no `--project` filter, expands every matched project to its configured enabled templates. An unqualified positional `<project>` selects that project's primary template. Explicit `client@` and `server@` prefixes always select exactly that template, independently of the saved selections. Target-aware matching annotations publish all three rules and client-target canonicalization to the unqualified project ID. Invocation schemas for bulk `--project` commands also publish their no-filter default over all configured projects and enabled templates.
 
@@ -661,13 +662,14 @@ Template-aware commands first parse the optional `client@` or `server@` prefix, 
 2. Exact case-sensitive repository alias.
 3. Exact case-sensitive project display name.
 
-Filter mode prefixes do not apply to positional project arguments. Leading
-`=`, `^`, `/`, and `~` characters are part of the literal project query. The
-query is not trimmed; a case mismatch, substring, or surrounding whitespace
-does not select the resource.
+If none of those exact, case-sensitive tiers matches, the selector becomes a
+case-insensitive filter over project IDs and display names. An unprefixed query
+uses fuzzy matching; `~`, `^`, `/`, and `=` explicitly request fuzzy,
+starts-with, includes, and exact filtering. Repository aliases participate only
+in the exact tier, not filter fallback. Filter fallback trims outer whitespace.
 
-A single match is selected. Multiple exact display-name matches print only the
-ambiguous projects and return an error. No match prints the known-project
+A single match is selected. Multiple exact-name or filtered matches print only
+the matching projects and return an error. No match prints the known-project
 table and returns an error. Exact ID always wins over a colliding alias, and an
 alias wins over a colliding display name. Once a configured alias is recognized,
 an unavailable target reports the alias, canonical ID, and selected profile
@@ -680,8 +682,10 @@ output, caches, drafts, retry filters, and API requests continue using canonical
 target IDs.
 
 Draft commands resolve only locally stored drafts and never synchronize projects
-as a side effect. An explicit prefix selects that template kind. An unqualified
-query or alias selects the configured primary template when the project is still
+as a side effect. They use the same exact tier and mode-prefixed/default-fuzzy
+fallback, but filter only project IDs and display names represented by existing
+drafts. An explicit prefix selects that template kind. An unqualified query or
+alias selects the configured primary template when the project is still
 registered, and falls back to the client template for an unregistered project.
 Aliases therefore remain usable for drafts that outlive the project registry.
 This also permits `show --raw` and `discard` for drafts whose project is no
@@ -1675,16 +1679,16 @@ Human output includes canonical target ID, project name, base version, update ti
 JSON entries include `project_id`, `project`, `base_version`, `created_at`, `updated_at`, byte size, status, validity, base availability, path, change counts, and `change_note`.
 
 All draft selectors operate only on existing local drafts. Positional draft
-selectors are untrimmed and resolve exactly and case-sensitively by physical
-project ID, then repository alias, then display name. For positional selectors,
-`~`, `^`, `/`, and `=` are literal characters rather than mode prefixes. An
-optional `client@` or `server@` prefix selects that template; an unqualified
-selector uses the configured primary template, or client when the project is no
-longer registered. Zero and multiple exact display-name matches return typed
-`draft.not_found` and `draft.ambiguous` problems. `draft list --filter` remains
-an explicit case-insensitive mode-prefixed query over the existing draft set
-and only includes configured enabled templates for an unqualified match, with
-the same unregistered client fallback.
+selectors first resolve exactly and case-sensitively by physical project ID,
+repository alias, then display name. If no exact tier matches, the selector uses
+the shared case-insensitive mode prefixes over draft project IDs and display
+names, with fuzzy matching by default. An optional `client@` or `server@`
+prefix selects that template; an unqualified selector uses the configured
+primary template, or client when the project is no longer registered. Zero and
+multiple filtered matches return typed `draft.not_found` and `draft.ambiguous`
+problems. `draft list --filter` remains a repeatable query over the existing
+draft set and includes configured enabled templates for an unqualified match,
+with the same unregistered client fallback.
 
 ### `fbrcm draft path`
 
@@ -1815,7 +1819,7 @@ The status is `disabled` when the latest project synchronization could not find 
 
 ### `fbrcm project templates show <project>`
 
-Shows the enabled templates and primary template stored for one physical project. It reads only the local projects registry and does not synchronize projects or contact Firebase. `<project>` uses normal cached project name or ID resolution; explicit `client@` and `server@` prefixes are rejected because the preferences belong to the physical project.
+Shows the enabled templates and primary template stored for one physical project. It reads only the local projects registry and does not synchronize projects or contact Firebase. `<project>` uses the shared cached exact-then-filtered project resolution; explicit `client@` and `server@` prefixes are rejected because the preferences belong to the physical project.
 
 Flags:
 
@@ -1974,7 +1978,7 @@ draft.
 
 ### Firebase applications
 
-The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. Reads are always live and do not use or update the Remote Config cache. `<project>` resolves through the configured project registry in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
+The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. Reads are always live and do not use or update the Remote Config cache. For `apps list`, `<project>` uses the shared exact-then-filtered project resolution in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
 
 `<app>` is exact and case-sensitive. Resolution tries Firebase App ID, full resource name, namespace (Android package name, iOS bundle ID, or Web namespace), then display name. A missing value returns `app.not_found`; a non-unique value at the first matching tier returns `app.ambiguous` with candidate App IDs.
 
@@ -1993,13 +1997,17 @@ Flags:
 
 Filtering uses the shared mode prefixes and is applied locally after every Firebase page is loaded. Repeated filters are ORed.
 
-### `fbrcm apps show <project> <app>`
+### `fbrcm apps show <app>`
 
 Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. The Platform row and the colon-delimited platform token in the App ID row use the same Firebase-derived platform colors as `apps list`, unless `NO_COLOR` is non-empty. When `nerd_font_glyphs` is enabled, the Platform row prefixes the text platform name with its Nerd Font icon. `--json` returns the stable typed details DTO rather than Firebase's open-ended beta response.
 
-### `fbrcm apps config <project> <app>`
+Use `--project <project>` when `<app>` is a name, namespace, or resource name. In normal mode, the value first resolves as an exact case-sensitive project ID, repository alias, or display name, in that order. If none matches exactly, it is treated as a project ID/display-name filter using fuzzy matching by default and the shared `^` starts-with, `/` includes, `~` fuzzy, and `=` exact prefixes. One filtered result is selected; multiple results return `project.ambiguous` and display the matching projects. In stateless mode, `--project` remains a literal physical project ID and does not accept filter prefixes. A complete Firebase App ID (`version:project-number:platform:hash`) supplies the project number and does not require `--project`.
+
+### `fbrcm apps config <app>`
 
 Downloads the SDK configuration for the selected application. Without `--to`, human mode writes the configuration bytes directly to stdout. JSON mode returns the selected app, Firebase's suggested filename, and a contract artifact. Android and Web use `application/json`; iOS uses `application/x-plist`. Web configuration is deterministic indented JSON, while Android and iOS preserve Firebase's decoded file bytes exactly.
+
+`--project` follows the same exact-then-filtered resolution as `apps show`. A complete Firebase App ID (`version:project-number:platform:hash`) supplies the project number and does not require the flag.
 
 `--to <path>` writes a private destination file. If the path exists, normal mode asks for confirmation with Yes selected by default; `--yes` bypasses that prompt. JSON mode never prompts and reports `interaction.required` unless overwrite was authorized.
 
@@ -2158,7 +2166,7 @@ Stateless behavior is the same as for `personalizations list`; exact personaliza
 
 ### Remote Config version history
 
-Version commands are scoped to one template target and use the same positional target resolution as `project export`: exact case-sensitive project ID, repository alias, then display name. Client and server histories and local snapshots are independent.
+Version commands are scoped to one template target and use the same exact-then-filtered positional target resolution as `project export`. Client and server histories and local snapshots are independent.
 
 Every version command with `--cached` resolves the target and repository aliases
 from the local projects registry only. It neither synchronizes projects from

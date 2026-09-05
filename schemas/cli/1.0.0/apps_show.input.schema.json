@@ -1,13 +1,67 @@
 {
   "$defs": {
+    "app_project_selector": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/filter_query"
+        },
+        {
+          "not": {
+            "pattern": "^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@"
+          }
+        }
+      ],
+      "x-fbrcm-grammar": "exact project ID, exact repository alias, exact display name, or mode-prefixed project ID/display-name query; unprefixed fallback queries use fuzzy matching",
+      "x-fbrcm-matching": [
+        {
+          "default_mode": "fuzzy",
+          "exact_comparison": "exact_case_sensitive",
+          "exact_precedence": [
+            "project_id",
+            "repository_alias",
+            "display_name"
+          ],
+          "filter_comparison": "unicode_case_insensitive",
+          "filter_fields": [
+            "project_id",
+            "display_name"
+          ],
+          "mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "multiple_result": "project.ambiguous",
+          "operator": "app_project_resolution",
+          "zero_result": "project.not_found"
+        }
+      ]
+    },
+    "filter_query": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "trim_unicode_whitespace",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
+    "firebase_app_id": {
+      "pattern": "^[0-9]+:[0-9]+:(?:android|ios|web):[A-Za-z0-9]+$",
+      "type": "string",
+      "x-fbrcm-grammar": "complete Firebase App ID containing version, project number, platform, and application hash"
+    },
     "path_segment": {
       "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
     },
     "physical_project_id": {
       "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_id"
-    },
-    "physical_project_selector": {
-      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_selector"
     }
   },
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:input",
@@ -72,7 +126,7 @@
       },
       "then": {
         "properties": {
-          "arguments": {
+          "options": {
             "properties": {
               "project": {
                 "$ref": "#/$defs/physical_project_id"
@@ -81,6 +135,33 @@
           }
         }
       }
+    },
+    {
+      "anyOf": [
+        {
+          "properties": {
+            "arguments": {
+              "properties": {
+                "app": {
+                  "$ref": "#/$defs/firebase_app_id"
+                }
+              },
+              "required": [
+                "app"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "options": {
+              "required": [
+                "project"
+              ]
+            }
+          }
+        }
+      ]
     }
   ],
   "properties": {
@@ -102,16 +183,13 @@
                 "namespace",
                 "display_name"
               ],
+              "project_source": "options.project_or_app_id_project_number",
               "zero_result": "app.not_found"
             }
           ]
-        },
-        "project": {
-          "$ref": "#/$defs/physical_project_selector"
         }
       },
       "required": [
-        "project",
         "app"
       ],
       "type": "object"
@@ -147,6 +225,14 @@
             }
           ]
         },
+        "project": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/app_project_selector"
+            }
+          ],
+          "description": "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless \u003capp\u003e is a complete Firebase App ID"
+        },
         "stateless": {
           "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
           "type": "boolean"
@@ -180,5 +266,22 @@
     "options",
     "stdin"
   ],
-  "type": "object"
+  "type": "object",
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.project"
+      ],
+      "target_defaults": [
+        {
+          "selection": "all_configured_projects_enabled_templates",
+          "source": "options.project"
+        }
+      ]
+    }
+  ]
 }

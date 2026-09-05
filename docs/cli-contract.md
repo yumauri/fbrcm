@@ -605,14 +605,16 @@ Every present repeatable option is a nonempty array: omission represents no
 flag occurrence, while an empty array has no argv representation and is
 rejected.
 Positional project selectors use a separate matching rule: after optional
-template-target parsing they preserve argv, treat `=`, `^`, `/`, and `~`
-literally, and compare exactly and case-sensitively by project ID, repository
-alias, then display name. Target-aware positional rules declare that the
-unqualified form resolves the configured primary template.
-Draft positional selectors use a command-local rule instead: they resolve only
-existing local draft target IDs and compare the untrimmed selector exactly and
-case-sensitively by physical project ID, repository alias, then display name.
-Mode-prefix characters remain literal. An unqualified selector uses the
+template-target parsing they first compare exactly and case-sensitively by
+project ID, repository alias, then display name. If those tiers miss, they
+parse the optional `=`, `^`, `/`, or `~` mode prefix and filter project IDs and
+display names case-insensitively, using fuzzy matching by default. Repository
+aliases do not participate in fallback filtering. Target-aware positional rules
+declare that the unqualified form resolves the configured primary template.
+Draft positional selectors use a command-local form of the same rule: they
+resolve only existing local draft target IDs, with exact project ID, repository
+alias, and display-name precedence followed by mode-prefixed/default-fuzzy
+filtering over project IDs and display names. An unqualified selector uses the
 configured primary template, or the client template when the project is no
 longer registered. Draft-list filters likewise operate only on existing drafts
 and apply configured enabled-template selection, with the same unregistered
@@ -987,6 +989,14 @@ conditionally narrow positional arguments to literal physical IDs with
 optional template prefixes where supported. Project-scoped metadata and
 managed-feature commands require a physical ID without a prefix; template-aware
 commands publish client as the default when `options.stateless` is true.
+The `apps.show` and `apps.config` schemas take one app selector and an optional
+`options.project`: a complete Firebase App ID supplies its embedded project
+number, while names, namespaces, and resource names require the explicit
+project option. Stateful project-option resolution first tries exact project
+ID, repository alias, and display name, then applies an optional mode-prefixed
+filter to project IDs and display names with fuzzy matching as the default.
+Exactly one result is required. In stateless mode that option is a literal
+physical project ID.
 Capability side-effect and
 interaction conditions mark profile bootstrap, project-registry persistence,
 configured-auth token persistence, identity-provider access, and browser

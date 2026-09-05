@@ -1700,12 +1700,6 @@
         "summary": "Download Firebase application SDK configuration",
         "arguments": [
           {
-            "name": "project",
-            "required": true,
-            "repeated": false,
-            "schema": "string"
-          },
-          {
             "name": "app",
             "required": true,
             "repeated": false,
@@ -1744,6 +1738,18 @@
               }
             ],
             "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+          },
+          {
+            "name": "--project",
+            "aliases": [
+              "-p"
+            ],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless \u003capp\u003e is a complete Firebase App ID"
           },
           {
             "name": "--stateless",
@@ -2269,12 +2275,6 @@
         "summary": "Show Firebase application details",
         "arguments": [
           {
-            "name": "project",
-            "required": true,
-            "repeated": false,
-            "schema": "string"
-          },
-          {
             "name": "app",
             "required": true,
             "repeated": false,
@@ -2313,6 +2313,18 @@
               }
             ],
             "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+          },
+          {
+            "name": "--project",
+            "aliases": [
+              "-p"
+            ],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless \u003capp\u003e is a complete Firebase App ID"
           },
           {
             "name": "--stateless",

@@ -116,7 +116,7 @@ func (s *Core) GetFirebaseApp(ctx context.Context, projectID, selector string) (
 		if err != nil {
 			return FirebaseAppDetails{}, fmt.Errorf("firebase error: %w", err)
 		}
-		details.DisplayName, details.AppID, details.APIKeyID, details.State, details.ExpireTime, details.ETag = value.DisplayName, value.AppID, value.APIKeyID, value.State, value.ExpireTime, value.ETag
+		details.ProjectID, details.DisplayName, details.AppID, details.APIKeyID, details.State, details.ExpireTime, details.ETag = value.ProjectID, value.DisplayName, value.AppID, value.APIKeyID, value.State, value.ExpireTime, value.ETag
 		details.PackageName = stringPointer(value.PackageName)
 		details.Namespace = value.PackageName
 		details.SHA1Hashes, details.SHA256Hashes = nonNilStrings(value.SHA1Hashes), nonNilStrings(value.SHA256Hashes)
@@ -125,7 +125,7 @@ func (s *Core) GetFirebaseApp(ctx context.Context, projectID, selector string) (
 		if err != nil {
 			return FirebaseAppDetails{}, fmt.Errorf("firebase error: %w", err)
 		}
-		details.DisplayName, details.AppID, details.APIKeyID, details.State, details.ExpireTime, details.ETag = value.DisplayName, value.AppID, value.APIKeyID, value.State, value.ExpireTime, value.ETag
+		details.ProjectID, details.DisplayName, details.AppID, details.APIKeyID, details.State, details.ExpireTime, details.ETag = value.ProjectID, value.DisplayName, value.AppID, value.APIKeyID, value.State, value.ExpireTime, value.ETag
 		details.BundleID, details.AppStoreID, details.TeamID = stringPointer(value.BundleID), stringPointer(value.AppStoreID), stringPointer(value.TeamID)
 		details.Namespace = value.BundleID
 	case AppPlatformWeb:
@@ -133,7 +133,7 @@ func (s *Core) GetFirebaseApp(ctx context.Context, projectID, selector string) (
 		if err != nil {
 			return FirebaseAppDetails{}, fmt.Errorf("firebase error: %w", err)
 		}
-		details.DisplayName, details.AppID, details.APIKeyID, details.State, details.ExpireTime, details.ETag = value.DisplayName, value.AppID, value.APIKeyID, value.State, value.ExpireTime, value.ETag
+		details.ProjectID, details.DisplayName, details.AppID, details.APIKeyID, details.State, details.ExpireTime, details.ETag = value.ProjectID, value.DisplayName, value.AppID, value.APIKeyID, value.State, value.ExpireTime, value.ETag
 		details.WebID, details.AppURLs = stringPointer(value.WebID), nonNilStrings(value.AppURLs)
 	}
 	return details, nil

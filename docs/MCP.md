@@ -90,6 +90,11 @@ belongs to `publish`, not `plans`.
 Tools support the same selection, filtering, expressions, validation, dry runs,
 drafts, and plans as their corresponding CLI operations, subject to launch
 policy. Multi-target publication is not atomic; inspect each target's result.
+In stateful mode, a scalar project argument first resolves an exact
+case-sensitive project ID, repository alias, or display name. If those tiers
+miss, it accepts the shared `~`, `^`, `/`, and `=` filter prefixes over project
+IDs and display names, with fuzzy matching by default, and requires exactly one
+result. Stateless project arguments remain literal IDs.
 
 ## Tool input and results
 

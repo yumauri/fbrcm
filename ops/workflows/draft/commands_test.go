@@ -285,9 +285,10 @@ prod = "acme-production-42"
 			t.Fatalf("resolveDraft(%q) = %q, %v; want %q", query, got, err, want)
 		}
 	}
-	for _, query := range []string{"PROD", "production", " prod"} {
-		if _, _, err := resolveDraft(query); err == nil {
-			t.Fatalf("case-mismatched or padded draft selector %q unexpectedly resolved", query)
+	for _, query := range []string{"PROD", "production", " prod", "^acme", "/production", "=PRODUCTION"} {
+		got, _, err := resolveDraft(query)
+		if err != nil || got != "server@acme-production-42" {
+			t.Fatalf("filter fallback resolveDraft(%q) = %q, %v", query, got, err)
 		}
 	}
 
@@ -312,6 +313,30 @@ prod = "acme-production-42"
 	got, _, err := resolveDraft("prod")
 	if err != nil || got != "prod" {
 		t.Fatalf("exact draft precedence = %q, %v", got, err)
+	}
+}
+
+func TestResolveDraftFilterFallbackReportsOnlyMatchingVariants(t *testing.T) {
+	setupCommandTest(t)
+	projects := []config.Project{
+		{Name: "Production US", ProjectID: "production-us", AuthID: "main"},
+		{Name: "Production EU", ProjectID: "production-eu", AuthID: "main"},
+		{Name: "Staging", ProjectID: "staging", AuthID: "main"},
+	}
+	if err := config.SaveProjects(projects, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	for _, project := range projects {
+		saveResolutionDraft(t, project.ProjectID)
+	}
+
+	_, _, err := resolveDraft("^production")
+	var selection *shared.SelectionError
+	if !errors.As(err, &selection) || selection.Kind != "ambiguous" || len(selection.Candidates) != 2 {
+		t.Fatalf("draft resolution error = %#v", err)
+	}
+	if !strings.Contains(err.Error(), "production-us") || !strings.Contains(err.Error(), "production-eu") || strings.Contains(err.Error(), "staging") {
+		t.Fatalf("draft matching variants error = %q", err)
 	}
 }
 

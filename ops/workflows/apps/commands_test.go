@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,23 +15,38 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 type fakeAppReader struct {
-	apps    []core.FirebaseApp
-	details core.FirebaseAppDetails
-	config  core.FirebaseAppConfig
+	apps             []core.FirebaseApp
+	details          core.FirebaseAppDetails
+	config           core.FirebaseAppConfig
+	selectedProject  *string
+	selectedAppQuery *string
 }
 
 func (f fakeAppReader) ListFirebaseApps(context.Context, string, core.ListFirebaseAppsOptions) ([]core.FirebaseApp, error) {
 	return f.apps, nil
 }
 
-func (f fakeAppReader) GetFirebaseApp(context.Context, string, string) (core.FirebaseAppDetails, error) {
+func (f fakeAppReader) GetFirebaseApp(_ context.Context, projectID, appQuery string) (core.FirebaseAppDetails, error) {
+	if f.selectedProject != nil {
+		*f.selectedProject = projectID
+	}
+	if f.selectedAppQuery != nil {
+		*f.selectedAppQuery = appQuery
+	}
 	return f.details, nil
 }
 
-func (f fakeAppReader) GetFirebaseAppConfig(context.Context, string, string) (core.FirebaseAppConfig, error) {
+func (f fakeAppReader) GetFirebaseAppConfig(_ context.Context, projectID, appQuery string) (core.FirebaseAppConfig, error) {
+	if f.selectedProject != nil {
+		*f.selectedProject = projectID
+	}
+	if f.selectedAppQuery != nil {
+		*f.selectedAppQuery = appQuery
+	}
 	return f.config, nil
 }
 
@@ -51,11 +67,11 @@ func TestAppsListCommandSuccess(t *testing.T) {
 
 func TestAppsShowCommandSuccess(t *testing.T) {
 	svc := appsCommandTestCore(t)
-	reader := fakeAppReader{details: core.FirebaseAppDetails{FirebaseApp: core.FirebaseApp{DisplayName: "Demo Web", Platform: core.AppPlatformWeb, AppID: "web-id", ResourceName: "projects/demo/webApps/w", State: "ACTIVE"}, ProjectID: "demo"}}
+	reader := fakeAppReader{details: core.FirebaseAppDetails{FirebaseApp: core.FirebaseApp{DisplayName: "Demo Web", Platform: core.AppPlatformWeb, Namespace: "web.example", AppID: "web-id", ResourceName: "projects/demo/webApps/w", State: "ACTIVE"}, ProjectID: "demo"}}
 	cmd := cliadapter.Command(newShowDefinition(svc, reader))
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"demo", "web-id"})
+	cmd.SetArgs([]string{"web.example", "--project", "dmo"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +101,7 @@ func TestAppsHumanCommandsUseConfiguredNerdFontGlyphs(t *testing.T) {
 	show := cliadapter.Command(newShowDefinition(svc, fakeAppReader{details: core.FirebaseAppDetails{FirebaseApp: core.FirebaseApp{DisplayName: "Demo Web", Platform: core.AppPlatformWeb, AppID: "web-id", ResourceName: "projects/demo/webApps/w", State: "ACTIVE"}, ProjectID: "demo"}}))
 	var showOutput bytes.Buffer
 	show.SetOut(&showOutput)
-	show.SetArgs([]string{"demo", "web-id"})
+	show.SetArgs([]string{"web-id", "--project", "demo"})
 	if err := show.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +116,7 @@ func TestAppsConfigCommandSuccess(t *testing.T) {
 	cmd := cliadapter.Command(newConfigDefinition(svc, reader))
 	var out bytes.Buffer
 	cmd.SetOut(&out)
-	cmd.SetArgs([]string{"demo", "android-id"})
+	cmd.SetArgs([]string{"android-id", "--project", "demo"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +132,7 @@ func TestAppsConfigCommandJSONArtifactAndPrivateFile(t *testing.T) {
 	jsonCommand := cliadapter.Command(newConfigDefinition(svc, reader))
 	var output bytes.Buffer
 	jsonCommand.SetOut(&output)
-	jsonCommand.SetArgs([]string{"demo", "ios-id", "--json"})
+	jsonCommand.SetArgs([]string{"ios-id", "--project", "demo", "--json"})
 	if err := jsonCommand.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +147,7 @@ func TestAppsConfigCommandJSONArtifactAndPrivateFile(t *testing.T) {
 	destination := filepath.Join(t.TempDir(), "nested", "GoogleService-Info.plist")
 	fileCommand := cliadapter.Command(newConfigDefinition(svc, reader))
 	fileCommand.SetOut(&bytes.Buffer{})
-	fileCommand.SetArgs([]string{"demo", "ios-id", "--to", destination})
+	fileCommand.SetArgs([]string{"ios-id", "--project", "demo", "--to", destination})
 	if err := fileCommand.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -144,6 +160,56 @@ func TestAppsConfigCommandJSONArtifactAndPrivateFile(t *testing.T) {
 	}
 }
 
+func TestAppsShowInfersConfiguredProjectFromAppID(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	var selectedProject, selectedAppQuery string
+	reader := fakeAppReader{
+		details:          core.FirebaseAppDetails{FirebaseApp: core.FirebaseApp{AppID: "1:123:web:c3", Platform: core.AppPlatformWeb}},
+		selectedProject:  &selectedProject,
+		selectedAppQuery: &selectedAppQuery,
+	}
+	cmd := cliadapter.Command(newShowDefinition(svc, reader))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetArgs([]string{"1:123:web:c3"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if selectedProject != "demo" || selectedAppQuery != "1:123:web:c3" {
+		t.Fatalf("reader selection = project %q, app %q", selectedProject, selectedAppQuery)
+	}
+}
+
+func TestAppsConfigInfersConfiguredProjectFromAppID(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	var selectedProject string
+	reader := fakeAppReader{
+		config:          core.FirebaseAppConfig{App: core.FirebaseApp{AppID: "1:123:android:a1"}, Contents: []byte("{}\n")},
+		selectedProject: &selectedProject,
+	}
+	cmd := cliadapter.Command(newConfigDefinition(svc, reader))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetArgs([]string{"1:123:android:a1"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if selectedProject != "demo" {
+		t.Fatalf("reader project = %q, want demo", selectedProject)
+	}
+}
+
+func TestAppsShowRequiresProjectForNonAppID(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	cmd := cliadapter.Command(newShowDefinition(svc, fakeAppReader{}))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"com.example.demo"})
+	err := cmd.Execute()
+	var argumentErr *shared.ArgumentError
+	if !errors.As(err, &argumentErr) || !strings.Contains(err.Error(), "--project is required") {
+		t.Fatalf("error = %#v", err)
+	}
+}
+
 func appsCommandTestCore(t *testing.T) *core.Core {
 	t.Helper()
 	root := t.TempDir()
@@ -153,7 +219,7 @@ func appsCommandTestCore(t *testing.T) *core.Core {
 	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
 		t.Fatal(err)
 	}
-	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", AuthID: "main"}}, time.Now()); err != nil {
+	if err := config.SaveProjects([]config.Project{{Name: "Demo", ProjectID: "demo", ProjectNumber: "123", AuthID: "main"}}, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	svc, err := core.NewService(context.Background())
