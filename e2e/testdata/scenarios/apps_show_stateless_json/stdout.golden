@@ -1,0 +1,41 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:response",
+  "contract_version": "1.0.0",
+  "command": "apps.show",
+  "requested_command": "apps.show",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "resource_name": "projects/northstar-wallet/webApps/web-app",
+    "display_name": "Northstar Web",
+    "platform": "web",
+    "app_id": "1:123456789012:web:c3",
+    "namespace": "northstar-web",
+    "api_key_id": "web-key",
+    "state": "ACTIVE",
+    "project_id": "northstar-wallet",
+    "package_name": null,
+    "bundle_id": null,
+    "app_store_id": null,
+    "team_id": null,
+    "web_id": "northstar-web",
+    "app_urls": [
+      "https://northstar.example"
+    ],
+    "sha1_hashes": [],
+    "sha256_hashes": [],
+    "etag": "web-etag"
+  },
+  "errors": [],
+  "warnings": []
+}

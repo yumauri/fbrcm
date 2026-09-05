@@ -60,6 +60,12 @@
                     "null"
                   ]
                 },
+                "nerd_font_glyphs": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
                 "network": {
                   "additionalProperties": false,
                   "properties": {
@@ -147,6 +153,7 @@
               },
               "required": [
                 "keys",
+                "nerd_font_glyphs",
                 "powerline_glyphs",
                 "profile"
               ],

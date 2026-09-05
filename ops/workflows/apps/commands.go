@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/yumauri/fbrcm/core"
+	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/ops/contract"
 	"github.com/yumauri/fbrcm/ops/invocation"
 	"github.com/yumauri/fbrcm/ops/shared"
@@ -70,8 +71,12 @@ func newListDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 			if jsonOut {
 				return shared.WriteJSON(cmd, items)
 			}
+			nerdFontGlyphs, err := configuredNerdFontGlyphs()
+			if err != nil {
+				return err
+			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\n\n", project.Name, project.ProjectID)
-			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderAppsTable(items))
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderAppsTable(items, nerdFontGlyphs))
 			return err
 		},
 	}
@@ -100,7 +105,11 @@ func newShowDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 			if jsonOut {
 				return shared.WriteJSON(cmd, app)
 			}
-			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderAppDetails(app))
+			nerdFontGlyphs, err := configuredNerdFontGlyphs()
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderAppDetails(app, nerdFontGlyphs))
 			return err
 		},
 	}
@@ -173,6 +182,14 @@ func resolveProject(cmd invocation.Call, svc *core.Core, query string) (core.Pro
 	}
 	cmd.SetContext(ctx)
 	return project, ctx, nil
+}
+
+func configuredNerdFontGlyphs() (bool, error) {
+	resolved, err := coreconfig.ResolveAppConfig()
+	if err != nil {
+		return false, err
+	}
+	return resolved.Effective.NerdFontGlyphs != nil && *resolved.Effective.NerdFontGlyphs, nil
 }
 
 func parsePlatform(raw string) (core.AppPlatform, error) {

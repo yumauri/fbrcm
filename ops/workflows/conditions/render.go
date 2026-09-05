@@ -33,11 +33,13 @@ func renderConditionsTableAtWidth(entries []core.ConditionEntry, terminalWidth i
 		widths[3] = min(widths[3], max(lipgloss.Width(headers[3]), availableExpressionWidth))
 	}
 	for _, entry := range entries {
+		rowIndex := len(rows)
+		expression := clistyles.RenderFirebaseAppPlatforms(entry.Expression, conditionTableCellStyle(rowIndex, clistyles.PanelMuted))
 		row := []string{
 			fmt.Sprintf("%d", entry.Priority),
 			entry.Name,
 			fmt.Sprintf("%d", len(entry.Usages)),
-			ansi.Truncate(entry.Expression, widths[3], "…"),
+			ansi.Truncate(expression, widths[3], "…"),
 		}
 		rows = append(rows, row)
 	}
@@ -54,11 +56,18 @@ func renderConditionDetails(entry core.ConditionEntry) string {
 	fmt.Fprintf(&b, "Priority: %d\n", entry.Priority)
 	fmt.Fprintf(&b, "Name: %s\n", renderConditionDetailValue(entry.Name, entry.TagColor, false))
 	fmt.Fprintf(&b, "Color: %s\n", renderConditionDetailValue(emptyDash(entry.TagColor), entry.TagColor, true))
-	fmt.Fprintf(&b, "Expression: %s\n", entry.Expression)
+	fmt.Fprintf(&b, "Expression: %s\n", clistyles.RenderFirebaseAppPlatforms(entry.Expression, lipgloss.NewStyle()))
 	fmt.Fprintf(&b, "Used by: %s\n", rcdisplay.FormatCount(len(entry.Usages), "parameter", "parameters"))
 	b.WriteString("\n")
 	b.WriteString(renderUsagesTable(entry.Usages))
 	return b.String()
+}
+
+func conditionTableCellStyle(row int, style lipgloss.Style) lipgloss.Style {
+	if !clistyles.NoColorEnabled() && row%2 == 1 {
+		return style.Background(clistyles.ColorRowStripe)
+	}
+	return style
 }
 
 func renderConditionDetailValue(value, tagColor string, circle bool) string {

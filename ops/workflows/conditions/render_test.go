@@ -14,10 +14,10 @@ import (
 func TestRenderConditionsTableNoColor(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	got := renderConditionsTableAtWidth([]core.ConditionEntry{
-		{Priority: 1, Name: "beta", TagColor: "BLUE", Expression: "app.version > '2'", Usages: []core.ConditionUsage{{}, {}}},
+		{Priority: 1, Name: "beta", TagColor: "BLUE", Expression: "app.id == '1:123:web:abc'", Usages: []core.ConditionUsage{{}, {}}},
 		{Priority: 2, Name: "staff", Expression: "user in staff"},
 	}, 100)
-	for _, want := range []string{"┌", "Priority", "Name", "beta", "app.version > '2'", "staff", "user in staff"} {
+	for _, want := range []string{"┌", "Priority", "Name", "beta", "app.id == '1:123:web:abc'", "staff", "user in staff"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("table missing %q:\n%s", want, got)
 		}
@@ -48,13 +48,48 @@ func TestRenderConditionsTableCropsExpressionToTerminalWidth(t *testing.T) {
 	}
 }
 
+func TestRenderConditionsTableColorsEveryAppIDPlatform(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	expression := "app.id in ['1:123:android:a1', '1:123:ios:b2', '1:123:web:c3']"
+	got := renderConditionsTableAtWidth([]core.ConditionEntry{{
+		Priority: 1, Name: "apps", Expression: expression,
+	}}, 200)
+
+	if plain := ansi.Strip(got); !strings.Contains(plain, expression) {
+		t.Fatalf("colored table changed expression:\n%s", got)
+	}
+	for _, platform := range []core.AppPlatform{core.AppPlatformAndroid, core.AppPlatformIOS, core.AppPlatformWeb} {
+		want := clistyles.PanelMuted.Foreground(clistyles.FirebaseAppPlatformColor(platform)).Render(string(platform))
+		if !strings.Contains(got, want) {
+			t.Errorf("table missing colored %q platform:\n%s", platform, got)
+		}
+	}
+}
+
+func TestRenderConditionsTableKeepsVisiblePlatformColoredWhenAppIDIsCropped(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	expression := "app.id == '1:123:web:abcdefghijklmnopqrstuvwxyz'"
+	got := renderConditionsTableAtWidth([]core.ConditionEntry{{
+		Priority: 1, Name: "apps", Expression: expression,
+	}}, 58)
+
+	plain := ansi.Strip(got)
+	if !strings.Contains(plain, "1:123:web:") || !strings.Contains(plain, "…") {
+		t.Fatalf("narrow table does not expose a cropped App ID platform:\n%s", got)
+	}
+	want := clistyles.PanelMuted.Foreground(clistyles.FirebaseWeb).Render("web")
+	if !strings.Contains(got, want) {
+		t.Fatalf("cropped App ID platform is not colored:\n%s", got)
+	}
+}
+
 func TestRenderConditionDetailsShowsUsageTable(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	got := renderConditionDetails(core.ConditionEntry{
-		Priority: 2, Name: "staff", Expression: "user in staff",
+		Priority: 2, Name: "staff", Expression: "app.id == '1:123:web:abc'",
 		Usages: []core.ConditionUsage{{GroupLabel: "(root)", ParameterKey: "welcome", ValueType: "STRING", Value: "Hello"}},
 	})
-	for _, want := range []string{"Priority: 2", "Name: staff", "Color: —", "Expression: user in staff", "Used by: 1 parameter", "(root)", "welcome", "STRING", "Hello"} {
+	for _, want := range []string{"Priority: 2", "Name: staff", "Color: —", "Expression: app.id == '1:123:web:abc'", "Used by: 1 parameter", "(root)", "welcome", "STRING", "Hello"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("details missing %q:\n%s", want, got)
 		}
@@ -72,6 +107,22 @@ func TestRenderConditionDetailsShowsEmptyUsageTable(t *testing.T) {
 	}
 	if strings.Contains(got, "No parameters use this condition") {
 		t.Fatalf("condition details uses special empty-state message:\n%s", got)
+	}
+}
+
+func TestRenderConditionDetailsColorsEveryAppIDPlatform(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	expression := "app.id == '1:123:android:a1' || app.id == '1:123:web:c3'"
+	got := renderConditionDetails(core.ConditionEntry{Name: "apps", Expression: expression})
+
+	if plain := ansi.Strip(got); !strings.Contains(plain, "Expression: "+expression) {
+		t.Fatalf("colored details changed expression:\n%s", got)
+	}
+	for _, platform := range []core.AppPlatform{core.AppPlatformAndroid, core.AppPlatformWeb} {
+		want := lipgloss.NewStyle().Foreground(clistyles.FirebaseAppPlatformColor(platform)).Render(string(platform))
+		if !strings.Contains(got, want) {
+			t.Errorf("details missing colored %q platform:\n%s", platform, got)
+		}
 	}
 }
 

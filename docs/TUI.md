@@ -319,9 +319,11 @@ empty groups and group descriptions.
 
 ## Conditions
 
-Conditions are shown in Firebase evaluation order. Details include the raw
-expression, display color, priority, and every parameter value that refers to
-the condition.
+Conditions are shown in Firebase evaluation order. In both the list and
+Details, the platform segment of every complete Firebase App ID in an
+expression uses Firebase's Android, iOS, or Web color. Details also include the
+raw expression, display color, priority, and every parameter value that refers
+to the condition.
 
 | Default key | Action |
 | --- | --- |

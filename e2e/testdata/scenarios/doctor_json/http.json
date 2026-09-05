@@ -65,14 +65,14 @@
       },
       {
         "request": {
-          "body": [{"matcher": "exact", "value": "{\"permissions\":[\"cloudconfig.configs.get\",\"cloudconfig.configs.update\"]}"}],
+          "body": [{"matcher": "exact", "value": "{\"permissions\":[\"cloudconfig.configs.get\",\"cloudconfig.configs.update\",\"firebase.clients.get\",\"firebase.clients.list\"]}"}],
           "destination": [{"matcher": "exact", "value": "cloudresourcemanager.googleapis.com"}],
           "method": [{"matcher": "exact", "value": "POST"}],
           "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet:testIamPermissions"}],
           "scheme": [{"matcher": "exact", "value": "https"}]
         },
         "response": {
-          "body": "{\"permissions\":[\"cloudconfig.configs.get\",\"cloudconfig.configs.update\"]}",
+          "body": "{\"permissions\":[\"cloudconfig.configs.get\",\"cloudconfig.configs.update\",\"firebase.clients.get\",\"firebase.clients.list\"]}",
           "headers": {"Content-Type": ["application/json"]},
           "status": 200,
           "templated": false

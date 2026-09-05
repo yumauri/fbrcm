@@ -4,35 +4,54 @@ import (
 	"fmt"
 	"strings"
 
+	"charm.land/lipgloss/v2"
+
 	"github.com/yumauri/fbrcm/core"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/ops/shared"
 )
 
-func renderAppsTable(apps []core.FirebaseApp) string {
-	return renderAppsTableAtWidth(apps, shared.TerminalWidth())
+const (
+	nerdFontAndroidGlyph = "\uf17b" // nf-fa-android
+	nerdFontIOSGlyph     = "\uf179" // nf-fa-apple
+	nerdFontWebGlyph     = "\uf0ac" // nf-fa-globe
+)
+
+func renderAppsTable(apps []core.FirebaseApp, nerdFontGlyphs bool) string {
+	return renderAppsTableAtWidth(apps, shared.TerminalWidth(), nerdFontGlyphs)
 }
 
-func renderAppsTableAtWidth(apps []core.FirebaseApp, terminalWidth int) string {
+func renderAppsTableAtWidth(apps []core.FirebaseApp, terminalWidth int, nerdFontGlyphs bool) string {
 	headers := []string{"Name", "Platform", "Namespace", "App ID", "State"}
 	rows := make([][]string, 0, len(apps))
+	platforms := make([]core.AppPlatform, 0, len(apps))
 	widths := shared.HeaderWidths(headers)
 	for _, app := range apps {
-		row := []string{emptyDash(app.DisplayName), string(app.Platform), emptyDash(app.Namespace), app.AppID, emptyDash(app.State)}
+		row := []string{emptyDash(app.DisplayName), platformLabel(app.Platform, nerdFontGlyphs), emptyDash(app.Namespace), app.AppID, emptyDash(app.State)}
 		shared.UpdateTableWidths(widths, row)
 		rows = append(rows, row)
+		platforms = append(platforms, app.Platform)
 	}
 	shared.FitTableColumns(widths, terminalWidth, 0, 2, 3)
 	shared.TruncateTableHeaders(headers, widths)
+	for row := range rows {
+		rows[row][3] = renderAppID(rows[row][3], appTableCellStyle(row, clistyles.PanelMuted))
+	}
 	shared.TruncateTableColumns(rows, widths, 0, 2, 3)
-	return shared.StyledTable(headers, rows, widths, nil, nil)
+	return shared.StyledTable(headers, rows, widths, nil, func(row, col int, style lipgloss.Style) lipgloss.Style {
+		if row >= 0 && row < len(platforms) && col == 1 {
+			return style.Foreground(clistyles.FirebaseAppPlatformColor(platforms[row]))
+		}
+		return style
+	})
 }
 
-func renderAppDetails(app core.FirebaseAppDetails) string {
+func renderAppDetails(app core.FirebaseAppDetails, nerdFontGlyphs bool) string {
 	var b strings.Builder
 	line := func(label, value string) { fmt.Fprintf(&b, "%s: %s\n", label, emptyDash(value)) }
 	line("Name", app.DisplayName)
-	line("Platform", string(app.Platform))
-	line("App ID", app.AppID)
+	line("Platform", renderPlatformLabel(platformLabel(app.Platform, nerdFontGlyphs), app.Platform))
+	line("App ID", renderAppID(app.AppID, lipgloss.NewStyle()))
 	line("Namespace", app.Namespace)
 	line("Resource", app.ResourceName)
 	line("Project ID", app.ProjectID)
@@ -65,6 +84,43 @@ func renderAppDetails(app core.FirebaseAppDetails) string {
 		line("SHA-256 hashes", strings.Join(app.SHA256Hashes, ", "))
 	}
 	return strings.TrimSuffix(b.String(), "\n")
+}
+
+func renderPlatformLabel(label string, platform core.AppPlatform) string {
+	if clistyles.NoColorEnabled() {
+		return label
+	}
+	return lipgloss.NewStyle().Foreground(clistyles.FirebaseAppPlatformColor(platform)).Render(label)
+}
+
+func renderAppID(appID string, base lipgloss.Style) string {
+	return clistyles.RenderFirebaseAppPlatforms(appID, base)
+}
+
+func appTableCellStyle(row int, style lipgloss.Style) lipgloss.Style {
+	if !clistyles.NoColorEnabled() && row%2 == 1 {
+		return style.Background(clistyles.ColorRowStripe)
+	}
+	return style
+}
+
+func platformLabel(platform core.AppPlatform, nerdFontGlyphs bool) string {
+	name := string(platform)
+	if !nerdFontGlyphs {
+		return name
+	}
+	var glyph string
+	switch platform {
+	case core.AppPlatformAndroid:
+		glyph = nerdFontAndroidGlyph
+	case core.AppPlatformIOS:
+		glyph = nerdFontIOSGlyph
+	case core.AppPlatformWeb:
+		glyph = nerdFontWebGlyph
+	default:
+		return name
+	}
+	return glyph + " " + name
 }
 
 func emptyDash(value string) string {

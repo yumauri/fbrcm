@@ -1920,7 +1920,7 @@ func parameterOrGroupName(commandID, name string) bool {
 
 func configKeySchema(show bool) map[string]any {
 	values := []string{
-		"theme", "powerline_glyphs", "keys", "network", "network.max_concurrent_requests",
+		"theme", "powerline_glyphs", "nerd_font_glyphs", "keys", "network", "network.max_concurrent_requests",
 		"network.requests_per_minute", "network.rate_limit_cooldown", "network.retry",
 		"network.retry.max_attempts", "network.retry.base_delay", "network.retry.max_delay",
 		"network.retry.jitter_percent",
@@ -2634,7 +2634,10 @@ func configSetConstraint() map[string]any {
 		}
 	}
 	oneBoolean := map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{"enum": []string{"true", "false"}}}
-	variants := []any{argumentVariant(map[string]any{"const": "powerline_glyphs"}, oneBoolean, false)}
+	var variants []any
+	for _, key := range []string{"powerline_glyphs", "nerd_font_glyphs"} {
+		variants = append(variants, argumentVariant(map[string]any{"const": key}, oneBoolean, false))
+	}
 	variants = append(variants, argumentVariant(
 		map[string]any{"const": "theme"},
 		map[string]any{"type": "array", "minItems": 1, "maxItems": 1, "items": map[string]any{

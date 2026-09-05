@@ -1,0 +1,24 @@
+{
+  "data": {
+    "globalActions": {"delays": [], "delaysLogNormal": []},
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebase.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1beta1/projects/northstar-wallet:searchApps"}],
+          "query": {"pageSize": [{"matcher": "exact", "value": "100"}]},
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"apps\":[{\"name\":\"projects/northstar-wallet/androidApps/android-app\",\"displayName\":\"Northstar Android\",\"platform\":\"ANDROID\",\"appId\":\"1:123456789012:android:a1\",\"namespace\":\"com.example.northstar\",\"apiKeyId\":\"android-key\",\"state\":\"ACTIVE\"},{\"name\":\"projects/northstar-wallet/iosApps/ios-app\",\"displayName\":\"Northstar iOS\",\"platform\":\"IOS\",\"appId\":\"1:123456789012:ios:b2\",\"namespace\":\"com.example.northstar\",\"apiKeyId\":\"ios-key\",\"state\":\"ACTIVE\"},{\"name\":\"projects/northstar-wallet/webApps/web-app\",\"displayName\":\"Northstar Web\",\"platform\":\"WEB\",\"appId\":\"1:123456789012:web:c3\",\"namespace\":\"northstar-web\",\"apiKeyId\":\"web-key\",\"state\":\"ACTIVE\"}]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {"hoverflyVersion": "v1.12.10", "schemaVersion": "v5.3", "timeExported": "2024-01-01T00:00:00Z"}
+}

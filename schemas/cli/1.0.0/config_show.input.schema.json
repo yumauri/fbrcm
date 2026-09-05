@@ -294,6 +294,7 @@
                 "keys.workspace_menu.home",
                 "keys.workspace_menu.submit",
                 "keys.workspace_menu.up",
+                "nerd_font_glyphs",
                 "network",
                 "network.max_concurrent_requests",
                 "network.rate_limit_cooldown",

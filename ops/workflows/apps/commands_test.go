@@ -64,6 +64,36 @@ func TestAppsShowCommandSuccess(t *testing.T) {
 	}
 }
 
+func TestAppsHumanCommandsUseConfiguredNerdFontGlyphs(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	enabled := true
+	if err := config.SaveAppConfig(&config.AppConfig{NerdFontGlyphs: &enabled}); err != nil {
+		t.Fatal(err)
+	}
+
+	list := cliadapter.Command(newListDefinition(svc, fakeAppReader{apps: []core.FirebaseApp{{DisplayName: "Demo Android", Platform: core.AppPlatformAndroid, AppID: "android-id", State: "ACTIVE"}}}))
+	var listOutput bytes.Buffer
+	list.SetOut(&listOutput)
+	list.SetArgs([]string{"demo"})
+	if err := list.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(listOutput.String(), nerdFontAndroidGlyph+" android") {
+		t.Fatalf("list output omits configured Nerd Font glyph:\n%s", listOutput.String())
+	}
+
+	show := cliadapter.Command(newShowDefinition(svc, fakeAppReader{details: core.FirebaseAppDetails{FirebaseApp: core.FirebaseApp{DisplayName: "Demo Web", Platform: core.AppPlatformWeb, AppID: "web-id", ResourceName: "projects/demo/webApps/w", State: "ACTIVE"}, ProjectID: "demo"}}))
+	var showOutput bytes.Buffer
+	show.SetOut(&showOutput)
+	show.SetArgs([]string{"demo", "web-id"})
+	if err := show.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(showOutput.String(), "Platform: "+nerdFontWebGlyph+" web") {
+		t.Fatalf("show output omits configured Nerd Font glyph:\n%s", showOutput.String())
+	}
+}
+
 func TestAppsConfigCommandSuccess(t *testing.T) {
 	svc := appsCommandTestCore(t)
 	reader := fakeAppReader{config: core.FirebaseAppConfig{App: core.FirebaseApp{ResourceName: "projects/demo/androidApps/a", AppID: "android-id", Platform: core.AppPlatformAndroid}, SuggestedFilename: "google-services.json", MediaType: "application/json", Contents: []byte("{\"project\":\"demo\"}\n")}}
@@ -119,6 +149,7 @@ func appsCommandTestCore(t *testing.T) *core.Core {
 	root := t.TempDir()
 	t.Setenv(env.ConfigDir, filepath.Join(root, "config"))
 	t.Setenv(env.CacheDir, filepath.Join(root, "cache"))
+	t.Setenv(env.NoColor, "1")
 	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
 		t.Fatal(err)
 	}

@@ -42,16 +42,18 @@ func executeConfigCommand(t *testing.T, cmd *cobra.Command, args ...string) (str
 
 func TestConfigShowMissingUsesDefaultsWithoutCreatingFile(t *testing.T) {
 	setupConfigCommandTest(t)
-	stdout, _, err := executeConfigCommand(t, New(), "show", "powerline_glyphs", "--json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var result configValueResult
-	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
-		t.Fatal(err)
-	}
-	if string(result.Value) != "true" || result.Source != "default" {
-		t.Fatalf("result = %+v", result)
+	for key, want := range map[string]string{"powerline_glyphs": "true", "nerd_font_glyphs": "false"} {
+		stdout, _, err := executeConfigCommand(t, New(), "show", key, "--json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var result configValueResult
+		if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+			t.Fatal(err)
+		}
+		if string(result.Value) != want || result.Source != "default" {
+			t.Fatalf("%s result = %+v", key, result)
+		}
 	}
 	if _, err := os.Stat(coreconfig.GetGlobalConfigFilePath()); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("show created config file: %v", err)
@@ -83,6 +85,9 @@ func TestConfigSetTypedValuesAndRejectsConflict(t *testing.T) {
 	if _, _, err := executeConfigCommand(t, New(), "set", "powerline_glyphs", "false"); err != nil {
 		t.Fatal(err)
 	}
+	if _, _, err := executeConfigCommand(t, New(), "set", "nerd_font_glyphs", "true"); err != nil {
+		t.Fatal(err)
+	}
 	if _, _, err := executeConfigCommand(t, New(), "set", "keys.projects.refresh", "u", "ctrl+r"); err != nil {
 		t.Fatal(err)
 	}
@@ -92,6 +97,9 @@ func TestConfigSetTypedValuesAndRejectsConflict(t *testing.T) {
 	}
 	if cfg.PowerlineGlyphs == nil || *cfg.PowerlineGlyphs {
 		t.Fatalf("powerline_glyphs = %v", cfg.PowerlineGlyphs)
+	}
+	if cfg.NerdFontGlyphs == nil || !*cfg.NerdFontGlyphs {
+		t.Fatalf("nerd_font_glyphs = %v", cfg.NerdFontGlyphs)
 	}
 	if got := cfg.Keys["projects"]["refresh"]; !reflect.DeepEqual(got, []string{"u", "ctrl+r"}) {
 		t.Fatalf("refresh = %v", got)
@@ -107,6 +115,38 @@ func TestConfigSetTypedValuesAndRejectsConflict(t *testing.T) {
 	}
 	if got := cfg.Keys["projects"]["refresh"]; !reflect.DeepEqual(got, []string{"u", "ctrl+r"}) {
 		t.Fatalf("failed set changed refresh = %v", got)
+	}
+}
+
+func TestConfigSetShowAndResetNerdFontGlyphs(t *testing.T) {
+	setupConfigCommandTest(t)
+	if _, _, err := executeConfigCommand(t, New(), "set", "nerd_font_glyphs", "true"); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _, err := executeConfigCommand(t, New(), "show", "nerd_font_glyphs", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var result configValueResult
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Value) != "true" || result.Source != "global" {
+		t.Fatalf("configured result = %+v", result)
+	}
+
+	if _, _, err := executeConfigCommand(t, New(), "reset", "nerd_font_glyphs", "--yes"); err != nil {
+		t.Fatal(err)
+	}
+	stdout, _, err = executeConfigCommand(t, New(), "show", "nerd_font_glyphs", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Value) != "false" || result.Source != "default" {
+		t.Fatalf("reset result = %+v", result)
 	}
 }
 
@@ -242,7 +282,7 @@ func TestConfigResetPreservesProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Profile != "work" || cfg.PowerlineGlyphs != nil || cfg.Network != nil {
+	if cfg.Profile != "work" || cfg.PowerlineGlyphs != nil || cfg.NerdFontGlyphs != nil || cfg.Network != nil {
 		t.Fatalf("config after reset = %+v", cfg)
 	}
 	if len(cfg.Keys) != 0 {
@@ -558,6 +598,7 @@ func TestConfigEditFullProvidesGeneratedKeyReference(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(staged, "Complete generated template") || !strings.Contains(staged, "[keys.projects]") || !strings.Contains(staged, "refresh") ||
+		!strings.Contains(staged, "nerd_font_glyphs = false") ||
 		!strings.Contains(staged, "[network]") || !strings.Contains(staged, "rate_limit_cooldown = \"30s\"") ||
 		!strings.Contains(staged, "[network.retry]") || !strings.Contains(staged, "base_delay = \"1s\"") {
 		t.Fatalf("full staged config lacks generated key reference:\n%s", staged)

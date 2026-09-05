@@ -1521,7 +1521,7 @@ Condition filters use the shared mode prefixes described under Filter Queries. R
 
 With root `--stateless`, `<project>` must be a literal client or server target and the command fetches the latest Remote Config directly using `FBRCM_GOOGLE_ACCESS_TOKEN`. It does not read or write the project registry, parameter cache, drafts, or hooks; consequently the source is Firebase and no unpublished draft is applied. `--filter`, `--search`, and `--expr` retain their normal local filtering behavior after the fetch. `--update` cannot be combined with `--stateless` because stateless reads are already live.
 
-Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Long expressions are cropped with an ellipsis. In JSON mode, `data.items` contains the condition objects without repeated project/version/source context and `data.count` contains their count.
+Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Within expressions, the platform segment of every complete Firebase App ID is colored with Firebase's Android, iOS, or Web color. Long expressions are cropped with an ellipsis. In JSON mode, `data.items` contains the condition objects without repeated project/version/source context and `data.count` contains their count.
 
 ### `fbrcm conditions show <project> <condition>`
 
@@ -1534,7 +1534,7 @@ Flags:
 --json     print structured JSON
 ```
 
-Human output includes priority, color-styled name and color, expression, a pluralized usage count, and a typed-value table. JSON output includes project/version/source context and the complete condition usage model.
+Human output includes priority, color-styled name and color, expression, a pluralized usage count, and a typed-value table. In the expression, the platform segment of every complete Firebase App ID uses Firebase's Android, iOS, or Web color. JSON output includes project/version/source context and the complete condition usage model.
 
 With root `--stateless`, `<project>` is a literal client or server target. The command fetches the published template directly, does not apply drafts or use caches, retains exact condition-name lookup, and rejects `--update` because the read is already live.
 
@@ -1980,7 +1980,7 @@ The `apps` command group reads registered Android, iOS, and Web applications thr
 
 ### `fbrcm apps list <project>`
 
-Lists all active registered applications. Human output contains name, platform, namespace, App ID, and state. The table uses natural content width and ellipsizes name, namespace, and App ID only when needed to fit the terminal.
+Lists all active registered applications. Human output contains name, platform, namespace, App ID, and state. Platform labels use the Firebase-derived Android `#56bca6`, iOS `#4ca7ee`, and Web `#c73462` colors. The matching colon-delimited platform token in each App ID uses the same color. When `nerd_font_glyphs` is enabled, the platform column prefixes Android, iOS, and Web with their Nerd Font icons. The table uses natural content width and ellipsizes name, namespace, and App ID only when needed to fit the terminal. A non-empty `NO_COLOR` disables all of these colors without removing enabled glyphs.
 
 Flags:
 
@@ -1995,7 +1995,7 @@ Filtering uses the shared mode prefixes and is applied locally after every Fireb
 
 ### `fbrcm apps show <project> <app>`
 
-Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. `--json` returns the stable typed details DTO rather than Firebase's open-ended beta response.
+Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. The Platform row and the colon-delimited platform token in the App ID row use the same Firebase-derived platform colors as `apps list`, unless `NO_COLOR` is non-empty. When `nerd_font_glyphs` is enabled, the Platform row prefixes the text platform name with its Nerd Font icon. `--json` returns the stable typed details DTO rather than Firebase's open-ended beta response.
 
 ### `fbrcm apps config <project> <app>`
 
@@ -2654,7 +2654,7 @@ Shows the effective layered configuration after applying keybinding migration
 and built-in defaults. With no key, human output is TOML and includes the
 complete effective key map. `--scope global` or `--scope local` instead shows
 only values physically stored in that layer. Supported keys are `profile`,
-`theme`, `powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
+`theme`, `powerline_glyphs`, `nerd_font_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
 `hooks.timeout`, `hooks.pre_publish`, `hooks.post_publish`, `projects`,
 `projects.aliases`, `projects.aliases.<alias>`, `network`,
 `network.max_concurrent_requests`, `network.requests_per_minute`,
@@ -2695,6 +2695,7 @@ is found. Supported forms are:
 ```text
 theme <name>
 powerline_glyphs true|false
+nerd_font_glyphs true|false
 network.max_concurrent_requests 1..64
 network.requests_per_minute 0..60000
 network.rate_limit_cooldown <positive-duration>
@@ -2712,6 +2713,8 @@ projects.aliases.<alias> <project-id>   requires --scope local
 The selected theme must resolve from the user-wide `themes` directory. See
 [Theming](theming.md) for its file format, inheritance, and fallback behavior.
 
+`nerd_font_glyphs` is disabled by default and should be enabled only when the terminal uses a Nerd Font. It adds Android, Apple, and globe icons to human `apps list` and `apps show` platform labels; machine-readable output is unchanged.
+
 The active `profile` is read-only here; use `fbrcm profile switch <name>` or edit
 the local TOML. Only explicit overrides are stored: inherited values and
 built-in defaults are never copied into the target layer. The complete effective
@@ -2722,7 +2725,7 @@ unchanged.
 
 Leading and trailing Unicode whitespace around nested
 `keys.<block>.<action>`, `network.*`, and `projects.aliases.<alias>` keys is removed before
-lookup. The top-level `theme` and `powerline_glyphs` keys are compared exactly.
+lookup. The top-level `theme`, `powerline_glyphs`, and `nerd_font_glyphs` keys are compared exactly.
 The normalized machine invocation schema publishes this conditional trimming.
 Keybinding values accept a printable single character, `f1` through `f63`, the
 documented terminal key names, or a unique sequence of supported modifiers
@@ -2741,7 +2744,7 @@ Flags:
 
 Removes a stored override from the selected layer. Removing a local override
 reveals the global value; removing a global override reveals the built-in
-default. The optional key may be `theme`, `powerline_glyphs`, `network`,
+default. The optional key may be `theme`, `powerline_glyphs`, `nerd_font_glyphs`, `network`,
 `network.max_concurrent_requests`, `network.requests_per_minute`,
 `network.rate_limit_cooldown`, `network.retry`, any `network.retry.*` scalar, `keys`,
 `keys.<block>`, or `keys.<block>.<action>`. With no key, it removes all stored preferences while

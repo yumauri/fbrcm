@@ -71,6 +71,10 @@ func stateFromConfig(path string, exists bool, stored *coreconfig.AppConfig) con
 		enabled := true
 		effective.PowerlineGlyphs = &enabled
 	}
+	if effective.NerdFontGlyphs == nil {
+		enabled := false
+		effective.NerdFontGlyphs = &enabled
+	}
 	if effective.Network == nil {
 		effective.Network = &coreconfig.NetworkConfig{}
 	}
@@ -184,6 +188,9 @@ func configValue(state configState, key string) (any, string, error) {
 	case key == "powerline_glyphs":
 		source := scalarSource(state.Local.PowerlineGlyphs != nil, state.Global.PowerlineGlyphs != nil)
 		return *state.Effective.PowerlineGlyphs, source, nil
+	case key == "nerd_font_glyphs":
+		source := scalarSource(state.Local.NerdFontGlyphs != nil, state.Global.NerdFontGlyphs != nil)
+		return *state.Effective.NerdFontGlyphs, source, nil
 	case key == "keys":
 		return state.Effective.Keys, keySource(state, parts), nil
 	case key == "network":

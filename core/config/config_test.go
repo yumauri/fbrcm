@@ -125,7 +125,8 @@ func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 
 	disabled := false
-	cfg := &AppConfig{Profile: "work", PowerlineGlyphs: &disabled, Keys: map[string]map[string][]string{"global": {"quit": {"q"}}}}
+	enabled := true
+	cfg := &AppConfig{Profile: "work", PowerlineGlyphs: &disabled, NerdFontGlyphs: &enabled, Keys: map[string]map[string][]string{"global": {"quit": {"q"}}}}
 	if err := SaveAppConfig(cfg); err != nil {
 		t.Fatalf("SaveAppConfig returned error: %v", err)
 	}
@@ -140,6 +141,9 @@ func TestLoadAppConfigMissingCorruptAndRoundTrip(t *testing.T) {
 	}
 	if loaded.PowerlineGlyphs == nil || *loaded.PowerlineGlyphs {
 		t.Fatalf("powerline_glyphs = %v, want false", loaded.PowerlineGlyphs)
+	}
+	if loaded.NerdFontGlyphs == nil || !*loaded.NerdFontGlyphs {
+		t.Fatalf("nerd_font_glyphs = %v, want true", loaded.NerdFontGlyphs)
 	}
 }
 

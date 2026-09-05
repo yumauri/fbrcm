@@ -10,6 +10,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -147,6 +148,39 @@ func TestConditionWithoutTagColorUsesPanelTextColor(t *testing.T) {
 	for _, value := range []string{"●", "plain"} {
 		if want := styles.PanelText.Render(value); !strings.Contains(row, want) {
 			t.Fatalf("colorless condition %q is not rendered with the panel text color: %q", value, row)
+		}
+	}
+}
+
+func TestConditionRowsColorEveryAppIDPlatform(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := New(nil)
+	expression := "app.id in ['1:123:android:a1', '1:123:ios:b2', '1:123:web:c3']"
+	m.projects = []projectState{{
+		project: core.Project{ProjectID: "demo"},
+		tree: &core.ConditionsTree{Conditions: []core.ConditionEntry{{
+			Priority: 1, Name: "apps", Expression: expression,
+		}}},
+	}}
+	m.projectIndex = map[string]int{"demo": 0}
+	node := visibleNode{kind: nodeCondition, projectID: "demo", conditionIndex: 0}
+
+	for name, row := range map[string]string{
+		"unselected": m.renderNode(node, false, 120),
+		"selected":   m.renderNode(node, true, 120),
+	} {
+		if plain := ansi.Strip(row); !strings.Contains(plain, expression) {
+			t.Fatalf("%s row changed expression: %q", name, row)
+		}
+		base := styles.PanelMuted
+		if name == "selected" {
+			base = styles.TreeItemSelectionStyle()
+		}
+		for _, platform := range []core.AppPlatform{core.AppPlatformAndroid, core.AppPlatformIOS, core.AppPlatformWeb} {
+			want := base.Foreground(clistyles.FirebaseAppPlatformColor(platform)).Render(string(platform))
+			if !strings.Contains(row, want) {
+				t.Errorf("%s row missing colored %q platform: %q", name, platform, row)
+			}
 		}
 	}
 }

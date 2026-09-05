@@ -258,6 +258,7 @@ For example:
 
 ```sh
 fbrcm config set powerline_glyphs false
+fbrcm config set nerd_font_glyphs true
 fbrcm config set theme nord
 fbrcm config set keys.projects.refresh u ctrl+r
 fbrcm config set network.max_concurrent_requests 3
@@ -267,6 +268,9 @@ fbrcm config set network.retry.max_attempts 5
 fbrcm config validate
 fbrcm config edit --scope local
 ```
+
+`nerd_font_glyphs` is disabled by default. Enable it when the terminal uses a
+Nerd Font to add platform icons to human `apps list` and `apps show` output.
 
 Native repository project aliases use a local-only table and can also be edited
 directly:

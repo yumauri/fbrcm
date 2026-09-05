@@ -9,6 +9,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -111,7 +112,8 @@ func (m Model) renderConditionContentLines(width int) []string {
 	lines = appendEditableField(lines, width, "Priority", priority, m.conditionFieldChanged(fieldConditionPriority), m.invalidConditionPriority())
 	lines = appendEditableField(lines, width, "Name", m.renderConditionNameField(), m.conditionFieldChanged(fieldName), m.invalidConditionName())
 	lines = appendEditableField(lines, width, "Color", m.renderConditionColorField(), m.conditionFieldChanged(fieldConditionColor), false)
-	lines = appendEditableField(lines, width, "Expression", styles.PanelText.Render(m.conditionExpression), m.conditionExpression != condition.Expression, false)
+	expression := clistyles.RenderFirebaseAppPlatforms(m.conditionExpression, styles.PanelText)
+	lines = appendEditableField(lines, width, "Expression", expression, m.conditionExpression != condition.Expression, false)
 	usedBy := "Used by " + rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")
 	lines = append(lines, fieldTitle(usedBy, len(m.conditionValueEdits()) > 0, m.invalidConditionValues()), "")
 	if len(condition.Usages) == 0 {

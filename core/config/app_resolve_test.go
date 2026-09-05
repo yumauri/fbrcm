@@ -46,9 +46,11 @@ func TestResolveAppConfigDeeplyOverlaysLocalValues(t *testing.T) {
 	root := t.TempDir()
 	withWorkingDirectory(t, root)
 	enabled := true
+	disabled := false
 	if err := SaveAppConfig(&AppConfig{
 		Profile:         "global",
 		PowerlineGlyphs: &enabled,
+		NerdFontGlyphs:  &disabled,
 		Keys: map[string]map[string][]string{
 			"projects": {"refresh": {"r"}, "delete": {"d"}},
 		},
@@ -57,6 +59,7 @@ func TestResolveAppConfigDeeplyOverlaysLocalValues(t *testing.T) {
 	}
 	writeFile(t, filepath.Join(root, LocalConfigFileName), `profile = "local"
 powerline_glyphs = false
+nerd_font_glyphs = true
 
 [keys.projects]
 delete = ["D"]
@@ -66,7 +69,7 @@ delete = ["D"]
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resolved.Effective.Profile != "local" || resolved.Effective.PowerlineGlyphs == nil || *resolved.Effective.PowerlineGlyphs {
+	if resolved.Effective.Profile != "local" || resolved.Effective.PowerlineGlyphs == nil || *resolved.Effective.PowerlineGlyphs || resolved.Effective.NerdFontGlyphs == nil || !*resolved.Effective.NerdFontGlyphs {
 		t.Fatalf("effective scalar config = %+v", resolved.Effective)
 	}
 	if got := resolved.Effective.Keys["projects"]["refresh"]; !reflect.DeepEqual(got, []string{"r"}) {
@@ -82,7 +85,8 @@ delete = ["D"]
 
 func TestSessionAppConfigResolutionReusedAndInvalidatedByWrite(t *testing.T) {
 	setupTestDirs(t)
-	if err := SaveAppConfig(&AppConfig{Profile: "first"}); err != nil {
+	enabled := true
+	if err := SaveAppConfig(&AppConfig{Profile: "first", NerdFontGlyphs: &enabled}); err != nil {
 		t.Fatal(err)
 	}
 	resolved, err := ResolveAppConfig()
@@ -96,16 +100,17 @@ func TestSessionAppConfigResolutionReusedAndInvalidatedByWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cached.Effective.Profile != "first" {
-		t.Fatalf("cached profile = %q, want first", cached.Effective.Profile)
+	if cached.Effective.Profile != "first" || cached.Effective.NerdFontGlyphs == nil || !*cached.Effective.NerdFontGlyphs {
+		t.Fatalf("cached config = %+v, want first profile with Nerd Font glyphs", cached.Effective)
 	}
 	cached.Effective.Profile = "mutated-clone"
+	*cached.Effective.NerdFontGlyphs = false
 	again, err := ResolveAppConfig()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again.Effective.Profile != "first" {
-		t.Fatalf("session resolution was mutated through returned clone: %q", again.Effective.Profile)
+	if again.Effective.Profile != "first" || again.Effective.NerdFontGlyphs == nil || !*again.Effective.NerdFontGlyphs {
+		t.Fatalf("session resolution was mutated through returned clone: %+v", again.Effective)
 	}
 
 	if err := SaveAppConfig(&AppConfig{Profile: "saved"}); err != nil {

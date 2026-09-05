@@ -630,8 +630,9 @@ content that is subsequently trimmed. `config set`, `config show`, and
 `config reset` trim nested
 `keys.<block>.<action>` and
 `network.*` and `projects.aliases.<alias>` keys before their closed grammar is evaluated;
-`config show` also trims nested `hooks.*` keys. Top-level configuration keys
-are compared without trimming. The optional `get [parameter]`,
+`config show` also trims nested `hooks.*` keys. Top-level configuration keys,
+including `theme`, `powerline_glyphs`, and `nerd_font_glyphs`, are compared
+without trimming. The optional `get [parameter]`,
 `update [parameter]`, and `delete [parameter]` arguments likewise have no argv
 normalization. Each compares exactly and case-sensitively against canonical
 parameter keys, participates in the command's selector composition, and is

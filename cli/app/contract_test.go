@@ -1980,6 +1980,8 @@ func TestConfigSetInvocationSchemaPublishesClosedKeyGrammar(t *testing.T) {
 	}
 	validateContractValue(t, id, input("powerline_glyphs", []any{"true"}, map[string]any{}), true)
 	validateContractValue(t, id, input("powerline_glyphs", []any{"yes"}, map[string]any{}), false)
+	validateContractValue(t, id, input("nerd_font_glyphs", []any{"true"}, map[string]any{}), true)
+	validateContractValue(t, id, input("nerd_font_glyphs", []any{"yes"}, map[string]any{}), false)
 	validateContractValue(t, id, input("network.requests_per_minute", []any{"0"}, map[string]any{}), true)
 	validateContractValue(t, id, input("network.requests_per_minute", []any{"60001"}, map[string]any{}), false)
 	validateContractValue(t, id, input("network.rate_limit_cooldown", []any{"90s"}, map[string]any{}), true)

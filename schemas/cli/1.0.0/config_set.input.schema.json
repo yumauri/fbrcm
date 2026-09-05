@@ -40,6 +40,36 @@
             "arguments": {
               "properties": {
                 "key": {
+                  "const": "nerd_font_glyphs"
+                },
+                "value": {
+                  "items": {
+                    "enum": [
+                      "true",
+                      "false"
+                    ]
+                  },
+                  "maxItems": 1,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ]
+            }
+          },
+          "required": [
+            "arguments"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "arguments": {
+              "properties": {
+                "key": {
                   "const": "theme"
                 },
                 "value": {

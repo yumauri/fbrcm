@@ -1,0 +1,52 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:response",
+  "contract_version": "1.0.0",
+  "command": "apps.list",
+  "requested_command": "apps.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "count": 3,
+    "items": [
+      {
+        "resource_name": "projects/northstar-wallet/androidApps/android-app",
+        "display_name": "Northstar Android",
+        "platform": "android",
+        "app_id": "1:123456789012:android:a1",
+        "namespace": "com.example.northstar",
+        "api_key_id": "android-key",
+        "state": "ACTIVE"
+      },
+      {
+        "resource_name": "projects/northstar-wallet/iosApps/ios-app",
+        "display_name": "Northstar iOS",
+        "platform": "ios",
+        "app_id": "1:123456789012:ios:b2",
+        "namespace": "com.example.northstar",
+        "api_key_id": "ios-key",
+        "state": "ACTIVE"
+      },
+      {
+        "resource_name": "projects/northstar-wallet/webApps/web-app",
+        "display_name": "Northstar Web",
+        "platform": "web",
+        "app_id": "1:123456789012:web:c3",
+        "namespace": "northstar-web",
+        "api_key_id": "web-key",
+        "state": "ACTIVE"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}
