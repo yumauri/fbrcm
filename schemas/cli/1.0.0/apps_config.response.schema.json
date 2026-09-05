@@ -252,6 +252,21 @@
             }
           ]
         },
+        "cached_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "firebase",
+            "cache",
+            "cache-stale"
+          ],
+          "type": "string"
+        },
         "suggested_filename": {
           "type": "string"
         }
@@ -259,6 +274,7 @@
       "required": [
         "app",
         "artifact",
+        "source",
         "suggested_filename"
       ],
       "type": "object"
@@ -439,7 +455,19 @@
         {
           "properties": {
             "warnings": {
-              "maxItems": 0,
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "cache.stale",
+                      "cache.write_failed"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
               "type": "array"
             }
           }

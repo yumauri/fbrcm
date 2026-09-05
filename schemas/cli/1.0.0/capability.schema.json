@@ -1708,6 +1708,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
+          },
+          {
             "name": "--no-local-config",
             "aliases": [],
             "type": "bool",
@@ -1782,6 +1804,28 @@
             "usage": "Write application configuration to file path"
           },
           {
+            "name": "--update",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
+          },
+          {
             "name": "--yes",
             "aliases": [
               "-y"
@@ -1831,6 +1875,7 @@
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
+          "local_cache_write",
           "local_file_write",
           "local_state_write",
           "authentication_remote_access"
@@ -1838,7 +1883,135 @@
         "side_effect_when": [
           {
             "effect": "firebase_remote_read",
-            "when": []
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "update",
+                    "operator": "equals",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "required_cache",
+                    "operator": "not_usable",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "local_cache_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "update",
+                    "operator": "equals",
+                    "value": true
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "remote_read",
+                    "operator": "cache_write_succeeded",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "required_cache",
+                    "operator": "not_usable",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "remote_read",
+                    "operator": "cache_write_succeeded",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ]
           },
           {
             "effect": "local_file_write",
@@ -1930,8 +2103,63 @@
             ]
           }
         ],
-        "network_access": "required",
-        "network_when": [],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              }
+            ]
+          }
+        ],
         "destructive": true,
         "destructive_when": [
           {
@@ -2017,6 +2245,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
+          },
+          {
             "name": "--filter",
             "aliases": [
               "-f"
@@ -2099,6 +2349,28 @@
             "repeatable": false,
             "effective": true,
             "usage": "Maximum duration for the complete command"
+          },
+          {
+            "name": "--update",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
           }
         ],
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:input",
@@ -2136,6 +2408,7 @@
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
+          "local_cache_write",
           "local_state_write",
           "authentication_remote_access",
           "local_file_write"
@@ -2143,7 +2416,135 @@
         "side_effect_when": [
           {
             "effect": "firebase_remote_read",
-            "when": []
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "update",
+                    "operator": "equals",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "required_cache",
+                    "operator": "not_usable",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "local_cache_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "update",
+                    "operator": "equals",
+                    "value": true
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "remote_read",
+                    "operator": "cache_write_succeeded",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "required_cache",
+                    "operator": "not_usable",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "remote_read",
+                    "operator": "cache_write_succeeded",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ]
           },
           {
             "effect": "local_state_write",
@@ -2225,8 +2626,63 @@
             ]
           }
         ],
-        "network_access": "required",
-        "network_when": [],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              }
+            ]
+          }
+        ],
         "destructive": false,
         "destructive_when": [],
         "destructive_reasons": [],
@@ -2282,6 +2738,28 @@
           }
         ],
         "flags": [
+          {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -2345,6 +2823,28 @@
             "repeatable": false,
             "effective": true,
             "usage": "Maximum duration for the complete command"
+          },
+          {
+            "name": "--update",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
           }
         ],
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:input",
@@ -2384,6 +2884,7 @@
         "side_effect_level": 2,
         "side_effects": [
           "firebase_remote_read",
+          "local_cache_write",
           "local_state_write",
           "authentication_remote_access",
           "local_file_write"
@@ -2391,7 +2892,135 @@
         "side_effect_when": [
           {
             "effect": "firebase_remote_read",
-            "when": []
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "update",
+                    "operator": "equals",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "required_cache",
+                    "operator": "not_usable",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "effect": "local_cache_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "update",
+                    "operator": "equals",
+                    "value": true
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "remote_read",
+                    "operator": "cache_write_succeeded",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "option",
+                    "name": "cached",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "required_cache",
+                    "operator": "not_usable",
+                    "value": null
+                  },
+                  {
+                    "source": "runtime_state",
+                    "name": "remote_read",
+                    "operator": "cache_write_succeeded",
+                    "value": null
+                  },
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ]
           },
           {
             "effect": "local_state_write",
@@ -2473,8 +3102,63 @@
             ]
           }
         ],
-        "network_access": "required",
-        "network_when": [],
+        "network_access": "conditional",
+        "network_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              }
+            ]
+          }
+        ],
         "destructive": false,
         "destructive_when": [],
         "destructive_reasons": [],
@@ -4622,9 +5306,19 @@
           "cache",
           "clear"
         ],
-        "summary": "Clear cached Remote Config snapshots",
+        "summary": "Clear local cache entries",
         "arguments": [],
         "flags": [
+          {
+            "name": "--kind",
+            "aliases": [],
+            "type": "string",
+            "default": "all",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Cache kind: all, remote-config, or apps"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -4753,7 +5447,7 @@
           }
         ],
         "destructive_reasons": [
-          "removes cached Remote Config data"
+          "removes cached Remote Config or Firebase application data"
         ],
         "idempotency": "yes",
         "idempotency_when": [],
@@ -4797,9 +5491,19 @@
           "cache",
           "list"
         ],
-        "summary": "List cached Remote Config snapshots",
+        "summary": "List local cache entries",
         "arguments": [],
         "flags": [
+          {
+            "name": "--kind",
+            "aliases": [],
+            "type": "string",
+            "default": "all",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Cache kind: all, remote-config, or apps"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -4907,9 +5611,19 @@
           "cache",
           "path"
         ],
-        "summary": "Print cached Remote Config snapshots directory path",
+        "summary": "Print a cache directory path",
         "arguments": [],
         "flags": [
+          {
+            "name": "--kind",
+            "aliases": [],
+            "type": "string",
+            "default": "remote-config",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Cache kind: all, remote-config, or apps"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -27330,7 +28044,7 @@
           }
         ],
         "destructive_reasons": [
-          "removes projects from the local registry and deletes their cached templates, version snapshots, and drafts"
+          "removes projects from the local registry and deletes their cached applications, templates, version snapshots, and drafts"
         ],
         "idempotency": "yes",
         "idempotency_when": [],
@@ -41494,7 +42208,7 @@
     "firebase_remote_write": "Publishes or rolls back Firebase Remote Config.",
     "local_cache_delete": "Deletes command-specific cached Remote Config data or version snapshots.",
     "local_cache_move": "Moves an existing local cache tree to a different application-managed path without changing its cached content.",
-    "local_cache_write": "Creates or updates command-specific cached Remote Config data or version snapshots.",
+    "local_cache_write": "Creates or updates command-specific cached Firebase data, artifacts, or version snapshots.",
     "local_draft_delete": "Deletes a local Remote Config draft.",
     "local_draft_write": "Creates or updates a local Remote Config draft.",
     "local_file_delete": "Deletes a local configuration, credential, registry, or user-visible file.",

@@ -391,7 +391,11 @@
           ]
         },
         "warning": {
-          "not_applicable": "The command has no reachable non-fatal warning branch."
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:apps_config_stateless_json"
+          ]
         }
       }
     },
@@ -478,7 +482,11 @@
           ]
         },
         "warning": {
-          "not_applicable": "The command has no reachable non-fatal warning branch."
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:apps_list_stateless_json"
+          ]
         }
       }
     },
@@ -565,7 +573,11 @@
           ]
         },
         "warning": {
-          "not_applicable": "The command has no reachable non-fatal warning branch."
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:apps_show_stateless_json"
+          ]
         }
       }
     },

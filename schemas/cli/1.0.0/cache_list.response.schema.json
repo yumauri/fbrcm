@@ -18,6 +18,15 @@
                   "null"
                 ]
               },
+              "kind": {
+                "enum": [
+                  "remote-config",
+                  "apps-index",
+                  "app-details",
+                  "app-config"
+                ],
+                "type": "string"
+              },
               "path": {
                 "type": "string"
               },
@@ -25,6 +34,9 @@
                 "type": "string"
               },
               "project_id": {
+                "type": "string"
+              },
+              "resource": {
                 "type": "string"
               },
               "size": {
@@ -37,11 +49,11 @@
             },
             "required": [
               "cached_at",
+              "kind",
               "path",
               "project",
               "project_id",
-              "size",
-              "version"
+              "size"
             ],
             "type": "object"
           },

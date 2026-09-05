@@ -35,9 +35,10 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --platform android|ios|web
 │   │   ├── --show-deleted
+│   │   ├── --update | --cached
 │   │   └── --json
-│   ├── show <app> [--project <project>] [--json]
-│   └── config <app> [--project <project>] [--to <path>] [--yes|-y] [--json]
+│   ├── show <app> [--project <project>] [--update|--cached] [--json]
+│   └── config <app> [--project <project>] [--update|--cached] [--to <path>] [--yes|-y] [--json]
 │
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
@@ -56,9 +57,9 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │       └── --use-in-app-default
 │
 ├── cache
-│   ├── list [--json]
-│   ├── path [--json]
-│   └── clear [--yes|-y]
+│   ├── list [--kind all|remote-config|apps] [--json]
+│   ├── path [--kind all|remote-config|apps] [--json]
+│   └── clear [--kind all|remote-config|apps] [--yes|-y]
 │
 ├── config
 │   ├── path [--scope global|local] [--json]
@@ -1978,7 +1979,9 @@ draft.
 
 ### Firebase applications
 
-The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. Reads are always live and do not use or update the Remote Config cache. For `apps list`, `<project>` uses the shared exact-then-filtered project resolution in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
+The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. In normal mode it uses a separate, profile-scoped application cache with a one-hour TTL. The inventory, platform-specific details, and exact SDK configuration artifacts are cached independently under the active profile's `apps` cache directory. This does not change or reuse Remote Config snapshots. For `apps list`, `<project>` uses the shared exact-then-filtered project resolution in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
+
+All three subcommands are cache-first. `--update` forces a Firebase read and refreshes the relevant cache entries. `--cached` performs no Firebase request and accepts stale entries; the flags are mutually exclusive. Stateless mode always reads Firebase directly and rejects both cache flags. A failed inventory or details refresh may fall back to a stale entry and reports `source: "cache-stale"` plus a structured `cache.stale` warning. SDK configuration never falls back implicitly because it may contain security-sensitive, operational configuration: stale configuration is returned only when `--cached` was explicit. Machine results expose `source` (`firebase`, `cache`, or `cache-stale`) and `cached_at` when available.
 
 `<app>` is exact and case-sensitive. Resolution tries Firebase App ID, full resource name, namespace (Android package name, iOS bundle ID, or Web namespace), then display name. A missing value returns `app.not_found`; a non-unique value at the first matching tier returns `app.ambiguous` with candidate App IDs.
 
@@ -1992,6 +1995,8 @@ Flags:
 -f, --filter <query>              filter display name, namespace, or App ID; may be repeated
 --platform android|ios|web        include only one platform
 --show-deleted                    include applications pending permanent deletion
+--update                          refresh from Firebase and update the application cache
+--cached                          use the application cache only, even when stale
 --json                            put typed application summaries in envelope data
 ```
 
@@ -1999,15 +2004,19 @@ Filtering uses the shared mode prefixes and is applied locally after every Fireb
 
 ### `fbrcm apps show <app>`
 
-Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. The Platform row and the colon-delimited platform token in the App ID row use the same Firebase-derived platform colors as `apps list`, unless `NO_COLOR` is non-empty. When `nerd_font_glyphs` is enabled, the Platform row prefixes the text platform name with its Nerd Font icon. `--json` returns the stable typed details DTO rather than Firebase's open-ended beta response.
+Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. The Platform row and the colon-delimited platform token in the App ID row use the same Firebase-derived platform colors as `apps list`, unless `NO_COLOR` is non-empty. When `nerd_font_glyphs` is enabled, the Platform row prefixes the text platform name with its Nerd Font icon. Human output also reports the source and cache timestamp. `--json` returns the stable typed details DTO plus cache provenance rather than Firebase's open-ended beta response.
 
 Use `--project <project>` when `<app>` is a name, namespace, or resource name. In normal mode, the value first resolves as an exact case-sensitive project ID, repository alias, or display name, in that order. If none matches exactly, it is treated as a project ID/display-name filter using fuzzy matching by default and the shared `^` starts-with, `/` includes, `~` fuzzy, and `=` exact prefixes. One filtered result is selected; multiple results return `project.ambiguous` and display the matching projects. In stateless mode, `--project` remains a literal physical project ID and does not accept filter prefixes. A complete Firebase App ID (`version:project-number:platform:hash`) supplies the project number and does not require `--project`.
+
+`--update` and `--cached` follow the application-cache behavior described above.
 
 ### `fbrcm apps config <app>`
 
 Downloads the SDK configuration for the selected application. Without `--to`, human mode writes the configuration bytes directly to stdout. JSON mode returns the selected app, Firebase's suggested filename, and a contract artifact. Android and Web use `application/json`; iOS uses `application/x-plist`. Web configuration is deterministic indented JSON, while Android and iOS preserve Firebase's decoded file bytes exactly.
 
 `--project` follows the same exact-then-filtered resolution as `apps show`. A complete Firebase App ID (`version:project-number:platform:hash`) supplies the project number and does not require the flag.
+
+`--update` and `--cached` follow the application-cache behavior described above. Without `--to`, raw human stdout remains exactly the SDK configuration artifact; source information and warnings do not contaminate it.
 
 `--to <path>` writes a private destination file. If the path exists, normal mode asks for confirmation with Yes selected by default; `--yes` bypasses that prompt. JSON mode never prompts and reports `interaction.required` unless overwrite was authorized.
 
@@ -2606,34 +2615,37 @@ In JSON mode, `data.items` contains checks and `data.count` contains their count
 
 ### `fbrcm cache list`
 
-Lists immutable cached Remote Config versions for client and server template targets. Client entries use the unqualified project ID; server entries use `server@project-id`. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
+Lists immutable cached Remote Config versions and Firebase application inventory, details, and SDK configuration entries. The Kind column distinguishes `remote-config`, `apps-index`, `app-details`, and `app-config`. Client Remote Config entries use the unqualified project ID; server entries use `server@project-id`. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
 
 Flags:
 
 ```text
---json   print cache entries as JSON
+--kind all|remote-config|apps   select cache entries (default all)
+--json                          print cache entries as JSON
 ```
 
-JSON entries include canonical target ID in `project_id`, underlying project name, version, file size, cached time, and path.
+JSON entries include kind, canonical project or target ID in `project_id`, underlying project name, optional App ID resource, optional Remote Config version, file size, cached time, and path.
 
 ### `fbrcm cache path`
 
-Prints the directory containing immutable cached Remote Config snapshots for the active profile. It does not return the profile-wide cache root used by drafts and OAuth token caches.
+Prints the directory containing immutable cached Remote Config snapshots for the active profile by default. `--kind apps` prints the application cache directory and `--kind all` prints the profile cache root. The profile root may also contain separately managed drafts or credential caches; `cache clear --kind all` still deletes only Remote Config and application entries.
 
 Flags:
 
 ```text
---json   print {"path": "..."}
+--kind all|remote-config|apps   select the cache directory (default remote-config)
+--json                          print {"path": "..."}
 ```
 
 ### `fbrcm cache clear`
 
-Deletes all locally cached immutable Remote Config versions for both template kinds. The confirmation reports snapshot count, total size, and template-target count, and warns that versions no longer retained by Firebase may be permanently lost. Drafts are never deleted by this command.
+Deletes local Remote Config and application cache entries. `--kind` can limit deletion to one cache family. The confirmation reports entry count, total size, and project count. Drafts are never deleted by this command.
 
 Flags:
 
 ```text
--y, --yes   skip cache confirmation
+--kind all|remote-config|apps   select cache entries (default all)
+-y, --yes                      skip cache confirmation
 ```
 
 Use `fbrcm draft discard` or `fbrcm draft discard --all` for explicit draft deletion.

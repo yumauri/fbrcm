@@ -14,14 +14,15 @@
       "method": "GET",
       "host": "firebase.googleapis.com",
       "path": "/v1beta1/projects/${PROJECT_ID}:searchApps",
-      "query": "pageSize=100",
+      "query": "pageSize=100&showDeleted=true",
       "status": 200
     }
   ],
   "http_replay_only": true,
   "expected_absent_state_paths": [
     {"root": "config", "path": "config.toml"},
-    {"root": "cache", "path": "profiles/default/remote-config"}
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "cache", "path": "profiles/default/apps"}
   ],
   "json_output": true,
   "envs": {

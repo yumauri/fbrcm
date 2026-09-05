@@ -4,78 +4,64 @@ import (
 	"fmt"
 	"strings"
 
-	"charm.land/lipgloss/v2"
-	"charm.land/lipgloss/v2/table"
-
 	corelog "github.com/yumauri/fbrcm/core/log"
-	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func renderCacheTable(entries []cacheEntry) string {
-	noColor := clistyles.NoColorEnabled()
-	rows := make([][]string, 0, len(entries))
-	projectIDWidth := lipgloss.Width("Project ID")
-	projectWidth := lipgloss.Width("Project")
-	versionWidth := lipgloss.Width("Version")
-	cachedAtWidth := lipgloss.Width("Cached At")
-	sizeWidth := lipgloss.Width("Size")
+	return renderCacheTableAtWidth(entries, shared.TerminalWidth())
+}
 
+func renderCacheTableAtWidth(entries []cacheEntry, terminalWidth int) string {
+	hasResource := false
+	for _, entry := range entries {
+		if entry.Resource != "" {
+			hasResource = true
+			break
+		}
+	}
+	headers := []string{"Kind", "Project ID", "Project"}
+	if hasResource {
+		headers = append(headers, "Resource")
+	}
+	headers = append(headers, "Version", "Size", "Cached At")
+	rows := make([][]string, 0, len(entries))
+	widths := shared.HeaderWidths(headers)
 	for _, entry := range entries {
 		cachedAt := ""
 		if entry.CachedAt != nil && !entry.CachedAt.IsZero() {
 			cachedAt = entry.CachedAt.Local().Format("2006-01-02 15:04:05")
 		}
-		size := humanSize(entry.Size)
-
-		rows = append(rows, []string{
-			entry.ProjectID,
-			entry.Project,
-			entry.Version,
-			size,
-			cachedAt,
-		})
-		projectIDWidth = max(projectIDWidth, lipgloss.Width(entry.ProjectID))
-		projectWidth = max(projectWidth, lipgloss.Width(entry.Project))
-		versionWidth = max(versionWidth, lipgloss.Width(entry.Version))
-		cachedAtWidth = max(cachedAtWidth, lipgloss.Width(cachedAt))
-		sizeWidth = max(sizeWidth, lipgloss.Width(size))
+		row := []string{entry.Kind, entry.ProjectID, entry.Project}
+		if hasResource {
+			resource := entry.Resource
+			if resource == "" {
+				resource = "—"
+			}
+			row = append(row, resource)
+		}
+		version := entry.Version
+		if version == "" {
+			version = "—"
+		}
+		row = append(row, version, humanSize(entry.Size), cachedAt)
+		shared.UpdateTableWidths(widths, row)
+		rows = append(rows, row)
 	}
-
-	styleFunc := func(row, col int) lipgloss.Style {
-		style := lipgloss.NewStyle().Padding(0, 1)
-		if col == 2 {
-			style = style.AlignHorizontal(lipgloss.Right)
-		}
-		if col == 3 {
-			style = style.AlignHorizontal(lipgloss.Right)
-		}
-		if noColor {
-			return style
-		}
-		if row == table.HeaderRow {
-			return style.Bold(true).Foreground(clistyles.PaletteSlateBright)
-		}
-		if row >= 0 && row%2 == 1 {
-			style = style.Background(clistyles.ColorRowStripe)
-		}
-		if col == 1 {
-			return style.Foreground(clistyles.PaletteSlateBright)
-		}
-		return style.Foreground(clistyles.PaletteSlateDim)
+	flexible := []int{2, 1}
+	if hasResource {
+		flexible = append(flexible, 3)
 	}
-
-	tbl := table.New().
-		Headers("Project ID", "Project", "Version", "Size", "Cached At").
-		Rows(rows...).
-		Width(projectIDWidth + projectWidth + versionWidth + cachedAtWidth + sizeWidth + 16).
-		Border(lipgloss.NormalBorder()).
-		BorderHeader(true).
-		BorderRow(false).
-		StyleFunc(styleFunc)
-	if !noColor {
-		tbl = tbl.BorderStyle(clistyles.BorderStyle(false))
+	flexible = append(flexible, len(headers)-1, 0)
+	shared.FitTableColumns(widths, terminalWidth, flexible...)
+	shared.TruncateTableHeaders(headers, widths)
+	shared.TruncateTableColumns(rows, widths, flexible...)
+	versionColumn := 3
+	if hasResource {
+		versionColumn++
 	}
-	return tbl.String()
+	alignments := map[int]bool{versionColumn: true, versionColumn + 1: true}
+	return shared.StyledTable(headers, rows, widths, alignments, nil)
 }
 
 func humanSize(size int64) string {
@@ -102,7 +88,7 @@ func humanSize(size int64) string {
 
 func logCacheTotal(entries []cacheEntry) {
 	size := totalCacheSize(entries)
-	corelog.For("cache").Info("total", "projects", len(entries), "size", size, "hsize", strings.TrimSpace(humanSize(size)))
+	corelog.For("cache").Info("total", "entries", len(entries), "size", size, "hsize", strings.TrimSpace(humanSize(size)))
 }
 
 func totalCacheSize(entries []cacheEntry) int64 {

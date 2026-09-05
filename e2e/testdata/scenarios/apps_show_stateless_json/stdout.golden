@@ -34,7 +34,8 @@
     ],
     "sha1_hashes": [],
     "sha256_hashes": [],
-    "etag": "web-etag"
+    "etag": "web-etag",
+    "source": "firebase"
   },
   "errors": [],
   "warnings": []

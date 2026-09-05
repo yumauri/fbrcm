@@ -245,6 +245,7 @@ Warnings use the same stable `code`, `message`, `target`, `details`, and
 themselves. Examples include non-atomic multi-target publication, stale cache
 fallback, and a hook or cache failure after Firebase has accepted a publish.
 Known warning codes constrain `details`: stale-cache fallback carries `source`,
+cache-write failure carries the non-empty `error`,
 non-atomic publication carries `target_count`, and post-publication warnings
 carry their stable `stage`. `plan.source_draft_changed` carries stage
 `source_draft` when apply preserves a draft edited after planning. Unknown
@@ -974,7 +975,7 @@ enabled.
 Every command execution carries an explicit persistence policy. Normal mode
 enables application-managed local reads, local writes, and configured hooks.
 Stateless mode disables all three controls; service resolution, parameter and
-version caches, draft entry points, publication cache updates, and hook
+version caches, the profile-scoped one-hour Firebase application cache, draft entry points, publication cache updates, and hook
 preparation consult that policy instead of a command-specific stateless
 marker. The permissive policy is also the default for internal callers that do
 not attach one, preserving existing stateful behavior. Explicit caller-chosen
@@ -997,6 +998,14 @@ ID, repository alias, and display name, then applies an optional mode-prefixed
 filter to project IDs and display names with fuzzy matching as the default.
 Exactly one result is required. In stateless mode that option is a literal
 physical project ID.
+All `apps` read commands expose mutually exclusive `cached` and `update`
+options in stateful mode. Their response DTOs report `source` as `firebase`,
+`cache`, or `cache-stale`, and include `cached_at` when a persisted cache record
+was read or written. Inventory and details refresh failures may return stale
+data with a structured `cache.stale` warning. `apps.config` does not implicitly
+fall back to stale SDK configuration; `cached: true` is required. Stateless
+schemas constrain both options to false. A successful Firebase response whose
+local cache write fails remains successful and reports `cache.write_failed`.
 Capability side-effect and
 interaction conditions mark profile bootstrap, project-registry persistence,
 configured-auth token persistence, identity-provider access, and browser

@@ -16,6 +16,9 @@
     "draft": false
   },
   "data": {
+    "project_id": "northstar-wallet",
+    "project": "northstar-wallet",
+    "source": "firebase",
     "count": 3,
     "items": [
       {

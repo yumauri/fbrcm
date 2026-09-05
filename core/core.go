@@ -418,8 +418,8 @@ func (s *Core) ResetProjects() (bool, error) {
 	return changed, nil
 }
 
-// DeleteProjectIDs removes projects and all of their local Remote Config
-// caches, version snapshots, and drafts. It never creates or calls a Firebase
+// DeleteProjectIDs removes projects and all of their local Remote Config and
+// application caches, version snapshots, and drafts. It never creates or calls a Firebase
 // client.
 func (s *Core) DeleteProjectIDs(projectIDs []string) ([]Project, error) {
 	ids := make(map[string]struct{}, len(projectIDs))
@@ -455,6 +455,9 @@ func (s *Core) DeleteProjectIDs(projectIDs []string) ([]Project, error) {
 	logger := corelog.For("core")
 	logger.Info("delete local projects requested", "count", len(deleted))
 	for _, project := range deleted {
+		if err := config.DeleteAppsCacheForProject(project.ProjectID); err != nil {
+			return nil, fmt.Errorf("delete application cache for project %s: %w", project.ProjectID, err)
+		}
 		targetIDs := []string{
 			project.ProjectID,
 			(rctarget.Target{Kind: rctarget.Server, ProjectID: project.ProjectID}).String(),

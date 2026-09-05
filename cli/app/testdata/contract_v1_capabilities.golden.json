@@ -353,7 +353,7 @@
         "cache",
         "clear"
       ],
-      "summary": "Clear cached Remote Config snapshots",
+      "summary": "Clear local cache entries",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:response",
       "side_effect_level": 1,
@@ -373,7 +373,7 @@
         "cache",
         "list"
       ],
-      "summary": "List cached Remote Config snapshots",
+      "summary": "List local cache entries",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:response",
       "side_effect_level": 1,
@@ -393,7 +393,7 @@
         "cache",
         "path"
       ],
-      "summary": "Print cached Remote Config snapshots directory path",
+      "summary": "Print a cache directory path",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:response",
       "side_effect_level": 1,

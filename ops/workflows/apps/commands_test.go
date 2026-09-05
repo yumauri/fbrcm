@@ -24,30 +24,51 @@ type fakeAppReader struct {
 	config           core.FirebaseAppConfig
 	selectedProject  *string
 	selectedAppQuery *string
+	selectedOptions  *core.ListFirebaseAppsOptions
+	source           core.AppCacheSource
+	cachedAt         time.Time
+	refreshError     error
+	cacheError       error
 }
 
-func (f fakeAppReader) ListFirebaseApps(context.Context, string, core.ListFirebaseAppsOptions) ([]core.FirebaseApp, error) {
-	return f.apps, nil
+func (f fakeAppReader) ReadFirebaseApps(_ context.Context, _ string, opts core.ListFirebaseAppsOptions) (core.FirebaseAppsResult, error) {
+	if f.selectedOptions != nil {
+		*f.selectedOptions = opts
+	}
+	return core.FirebaseAppsResult{Apps: f.apps, Source: fakeAppSource(f.source), CachedAt: f.cachedAt, RefreshError: f.refreshError, CacheError: f.cacheError}, nil
 }
 
-func (f fakeAppReader) GetFirebaseApp(_ context.Context, projectID, appQuery string) (core.FirebaseAppDetails, error) {
+func (f fakeAppReader) ReadFirebaseApp(_ context.Context, projectID, appQuery string, opts core.ListFirebaseAppsOptions) (core.FirebaseAppDetailsResult, error) {
 	if f.selectedProject != nil {
 		*f.selectedProject = projectID
 	}
 	if f.selectedAppQuery != nil {
 		*f.selectedAppQuery = appQuery
 	}
-	return f.details, nil
+	if f.selectedOptions != nil {
+		*f.selectedOptions = opts
+	}
+	return core.FirebaseAppDetailsResult{App: f.details, Source: fakeAppSource(f.source), CachedAt: f.cachedAt, RefreshError: f.refreshError, CacheError: f.cacheError}, nil
 }
 
-func (f fakeAppReader) GetFirebaseAppConfig(_ context.Context, projectID, appQuery string) (core.FirebaseAppConfig, error) {
+func (f fakeAppReader) ReadFirebaseAppConfig(_ context.Context, projectID, appQuery string, opts core.ListFirebaseAppsOptions) (core.FirebaseAppConfigResult, error) {
 	if f.selectedProject != nil {
 		*f.selectedProject = projectID
 	}
 	if f.selectedAppQuery != nil {
 		*f.selectedAppQuery = appQuery
 	}
-	return f.config, nil
+	if f.selectedOptions != nil {
+		*f.selectedOptions = opts
+	}
+	return core.FirebaseAppConfigResult{Config: f.config, Source: fakeAppSource(f.source), CachedAt: f.cachedAt, RefreshError: f.refreshError, CacheError: f.cacheError}, nil
+}
+
+func fakeAppSource(source core.AppCacheSource) core.AppCacheSource {
+	if source == "" {
+		return core.AppCacheSourceFirebase
+	}
+	return source
 }
 
 func TestAppsListCommandSuccess(t *testing.T) {
@@ -207,6 +228,70 @@ func TestAppsShowRequiresProjectForNonAppID(t *testing.T) {
 	var argumentErr *shared.ArgumentError
 	if !errors.As(err, &argumentErr) || !strings.Contains(err.Error(), "--project is required") {
 		t.Fatalf("error = %#v", err)
+	}
+}
+
+func TestAppsCacheFlagsReachReader(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	var options core.ListFirebaseAppsOptions
+	cmd := cliadapter.Command(newListDefinition(svc, fakeAppReader{selectedOptions: &options}))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetArgs([]string{"demo", "--cached", "--show-deleted"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !options.CachedOnly || !options.ShowDeleted || options.Update {
+		t.Fatalf("options = %#v", options)
+	}
+}
+
+func TestAppsCacheFlagsAreMutuallyExclusive(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	cmd := cliadapter.Command(newShowDefinition(svc, fakeAppReader{}))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"app", "--project", "demo", "--cached", "--update"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("expected mutually exclusive cache flag error")
+	}
+}
+
+func TestAppsCacheFlagsRejectStatelessExecution(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	cmd := cliadapter.Command(newListDefinition(svc, fakeAppReader{}))
+	cmd.SetContext(core.WithExecutionPolicy(context.Background(), core.StatelessExecutionPolicy()))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"demo", "--cached"})
+	err := cmd.Execute()
+	var argumentErr *shared.ArgumentError
+	if !errors.As(err, &argumentErr) || !strings.Contains(err.Error(), "--stateless") {
+		t.Fatalf("error = %#v", err)
+	}
+}
+
+func TestAppsListPublishesCacheProvenanceAndWarnings(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	cachedAt := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
+	cmd := cliadapter.Command(newListDefinition(svc, fakeAppReader{source: core.AppCacheSourceCacheStale, cachedAt: cachedAt, refreshError: errors.New("offline")}))
+	cmd.SetContext(shared.WithMachineState(context.Background()))
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"demo", "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	var result appListResult
+	if err := json.Unmarshal(output.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.Source != core.AppCacheSourceCacheStale || result.CachedAt == nil || !result.CachedAt.Equal(cachedAt) {
+		t.Fatalf("result = %#v", result)
+	}
+	warnings := shared.MachineWarnings(cmd)
+	if len(warnings) != 1 || warnings[0].Code != "cache.stale" {
+		t.Fatalf("warnings = %#v", warnings)
 	}
 }
 

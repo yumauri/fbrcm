@@ -609,6 +609,7 @@ func warningObjectSchema() map[string]any {
 	}
 	detailsByCode := map[string]map[string]any{
 		"cache.stale":                          object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
+		"cache.write_failed":                   object([]string{"error"}, map[string]any{"error": map[string]any{"type": "string", "minLength": 1}}),
 		"publication.non_atomic":               object([]string{"target_count"}, map[string]any{"target_count": map[string]any{"type": "integer", "minimum": 2}}),
 		"publication.cache_stale":              object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cache"}}),
 		"publication.draft_cleanup_failed":     object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cleanup"}}),
@@ -1076,7 +1077,7 @@ func sideEffectSemantics() map[string]any {
 		"local_file_write":                "Creates or replaces a user-visible local file outside the command-specific cache and draft stores.",
 		"local_file_move":                 "Moves a user-visible local file to a different path without changing its logical content.",
 		"local_file_delete":               "Deletes a local configuration, credential, registry, or user-visible file.",
-		"local_cache_write":               "Creates or updates command-specific cached Remote Config data or version snapshots.",
+		"local_cache_write":               "Creates or updates command-specific cached Firebase data, artifacts, or version snapshots.",
 		"local_cache_move":                "Moves an existing local cache tree to a different application-managed path without changing its cached content.",
 		"local_cache_delete":              "Deletes command-specific cached Remote Config data or version snapshots.",
 		"local_draft_write":               "Creates or updates a local Remote Config draft.",
@@ -1698,6 +1699,10 @@ func flagEnum(commandID, name string) []string {
 	case "platform":
 		if commandID == "apps.list" {
 			return []string{"android", "ios", "web"}
+		}
+	case "kind":
+		if strings.HasPrefix(commandID, "cache.") {
+			return []string{"all", "remote-config", "apps"}
 		}
 	case "format":
 		return []string{"json", "xml", "plist"}
@@ -2347,11 +2352,11 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		if statelessMutationRejectsDraft(commandID) {
 			statelessOptionProperties["draft"] = map[string]any{"const": false}
 		}
-		if slices.Contains([]string{"projects.diff", "versions.diff", "versions.export", "versions.list", "versions.show"}, commandID) {
+		if slices.Contains([]string{"apps.config", "apps.list", "apps.show", "projects.diff", "versions.diff", "versions.export", "versions.list", "versions.show"}, commandID) {
 			statelessOptionProperties["cached"] = map[string]any{"const": false}
 		}
 		if slices.Contains([]string{
-			"conditions.list", "conditions.show", "experiments.list", "experiments.show", "groups.list",
+			"apps.config", "apps.list", "apps.show", "conditions.list", "conditions.show", "experiments.list", "experiments.show", "groups.list",
 			"personalizations.list", "personalizations.show", "project.show", "rollouts.list", "rollouts.show",
 		}, commandID) {
 			statelessOptionProperties["update"] = map[string]any{"const": false}
@@ -3036,6 +3041,8 @@ func commandWarningCodes(commandID string) []string {
 		return []string{"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"}
 	case "get":
 		return []string{"cache.stale"}
+	case "apps.config", "apps.list", "apps.show":
+		return []string{"cache.stale", "cache.write_failed"}
 	case "add", "delete", "duplicate", "update",
 		"groups.add", "groups.delete", "groups.edit", "groups.rename":
 		return append([]string{"publication.non_atomic"}, postPublication...)

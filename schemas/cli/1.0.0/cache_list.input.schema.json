@@ -17,6 +17,16 @@
     "options": {
       "additionalProperties": false,
       "properties": {
+        "kind": {
+          "description": "Cache kind: all, remote-config, or apps",
+          "enum": [
+            "all",
+            "remote-config",
+            "apps"
+          ],
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
         "no-local-config": {
           "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
           "type": "boolean"

@@ -98,6 +98,24 @@ func statelessUpdatingRemoteRead(extra ...effectBehavior) capabilityBehavior {
 	}, extra...)
 }
 
+func appCacheRead(extra ...effectBehavior) capabilityBehavior {
+	remoteWhen := []BehaviorConditionClause{
+		conditionClause(predicate("option", "stateless", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
+	}
+	cacheWriteWhen := []BehaviorConditionClause{
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
+	}
+	effects := []effectBehavior{
+		effect("firebase_remote_read", remoteWhen...),
+		effect("local_cache_write", cacheWriteWhen...),
+	}
+	effects = append(effects, extra...)
+	return capabilityBehavior{level: 2, effects: effects, network: "conditional", networkWhen: cloneConditions(remoteWhen), idempotency: "yes"}
+}
+
 func managedFeatureRead() capabilityBehavior {
 	refreshWhen := []BehaviorConditionClause{
 		conditionClause(predicate("option", "update", "equals", true)),
@@ -634,7 +652,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"auth.quota-project.set":   localWrite(),
 	"auth.quota-project.unset": quotaProjectResolutionBehavior(localWrite()),
 	"auth.delete":              destructive(localMutationEffects("local_state_write", "local_file_delete"), "removes stored authentication material"),
-	"cache.clear":              destructive(localMutationEffects("local_cache_delete"), "removes cached Remote Config data"),
+	"cache.clear":              destructive(localMutationEffects("local_cache_delete"), "removes cached Remote Config or Firebase application data"),
 	"config.reset":             destructive(localWrite(), "removes persisted configuration values"),
 	"config.set":               localWrite(),
 	"draft.change-note": {
@@ -688,7 +706,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"projects.aliases.import":     destructive(previewableLocalWrite(), "--conflict overwrite may replace persisted project aliases"),
 	"projects.aliases.remove":     destructive(localWrite(), "removes persisted project aliases"),
 	"projects.aliases.set":        destructive(localWrite(), "replaces an existing project alias when the mapping changes"),
-	"projects.forget":             destructive(localMutationEffects("local_state_write", "local_cache_delete", "local_draft_delete"), "removes projects from the local registry and deletes their cached templates, version snapshots, and drafts"),
+	"projects.forget":             destructive(localMutationEffects("local_state_write", "local_cache_delete", "local_draft_delete"), "removes projects from the local registry and deletes their cached applications, templates, version snapshots, and drafts"),
 	"projects.reset":              destructive(localMutationEffects("local_state_write", "local_file_delete"), "replaces the local project registry"),
 
 	"draft.show": withInteraction(behavior(1, "none", effect("local_file_write",
@@ -710,9 +728,9 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))),
 
 	"conditions.list": statelessUpdatingRemoteRead(),
-	"apps.list":       requiredRemoteRead(),
-	"apps.show":       requiredRemoteRead(),
-	"apps.config": destructive(requiredRemoteRead(effect("local_file_write",
+	"apps.list":       appCacheRead(),
+	"apps.show":       appCacheRead(),
+	"apps.config": destructive(appCacheRead(effect("local_file_write",
 		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "an existing destination file may be overwritten"),
 	"conditions.show":     statelessUpdatingRemoteRead(),
 	"conditions.validate": requiredCacheableRemoteRead(effect("firebase_remote_validation")),

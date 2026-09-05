@@ -46,6 +46,14 @@
               "required": [
                 "profile"
               ]
+            },
+            "properties": {
+              "cached": {
+                "const": false
+              },
+              "update": {
+                "const": false
+              }
             }
           }
         }
@@ -95,6 +103,18 @@
           }
         }
       }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "update",
+              "cached"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -113,6 +133,22 @@
     "options": {
       "additionalProperties": false,
       "properties": {
+        "cached": {
+          "description": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
         "filter": {
           "description": "Filter applications by mode-prefixed name, namespace, or app ID query (^, /, ~, =); may be repeated",
           "items": {
@@ -215,6 +251,22 @@
               "operator": "parse_duration",
               "parser": "time.ParseDuration",
               "require_positive": true
+            }
+          ]
+        },
+        "update": {
+          "description": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
             }
           ]
         }

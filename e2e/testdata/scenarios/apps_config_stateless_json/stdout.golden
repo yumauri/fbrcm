@@ -26,6 +26,7 @@
       "state": "ACTIVE"
     },
     "suggested_filename": "firebase-config.json",
+    "source": "firebase",
     "artifact": {
       "target": "projects/northstar-wallet/webApps/web-app",
       "media_type": "application/json",

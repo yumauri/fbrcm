@@ -21,6 +21,7 @@ var knownProblemCodeValues = []string{
 
 var knownWarningCodeValues = []string{
 	"cache.stale",
+	"cache.write_failed",
 	"publication.cache_stale",
 	"publication.draft_cleanup_failed",
 	"publication.non_atomic",

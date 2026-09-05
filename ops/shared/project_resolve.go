@@ -69,6 +69,20 @@ func ResolveProjectScopedResourceForExecution(ctx context.Context, cmd invocatio
 	return ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
 }
 
+// ResolveCachedProjectScopedResource resolves a physical project exclusively
+// from the local registry. It is used by commands whose explicit cache-only
+// mode must not trigger project discovery.
+func ResolveCachedProjectScopedResource(cmd invocation.Call, query, resource string) (core.Project, error) {
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
+	if err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	if explicit {
+		return core.Project{}, InvalidArgument(fmt.Errorf("%s commands are project-scoped; omit the %s@ prefix", resource, target.Kind))
+	}
+	return ResolveCachedProjectArg(cmd, target.ProjectID)
+}
+
 // ResolveProjectNumberForExecution resolves the numeric project embedded in a
 // Firebase App ID. Stateful execution maps it back to the configured project
 // so the project's bound identity and quota project remain authoritative.
@@ -80,6 +94,17 @@ func ResolveProjectNumberForExecution(ctx context.Context, cmd invocation.Call, 
 	}
 	progress.Start("Resolving project…")
 	projects, _, err := svc.ListProjects(ctx)
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectNumber(cmd, projects, projectNumber)
+}
+
+// ResolveCachedProjectNumber maps an App ID's embedded project number using
+// only the local project registry.
+func ResolveCachedProjectNumber(cmd invocation.Call, projectNumber string) (core.Project, error) {
+	progress.Start("Resolving project…")
+	projects, err := config.LoadProjects()
 	if err != nil {
 		return core.Project{}, err
 	}

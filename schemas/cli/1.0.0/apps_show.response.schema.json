@@ -30,6 +30,13 @@
             "null"
           ]
         },
+        "cached_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "display_name": {
           "type": "string"
         },
@@ -81,6 +88,14 @@
             "null"
           ]
         },
+        "source": {
+          "enum": [
+            "firebase",
+            "cache",
+            "cache-stale"
+          ],
+          "type": "string"
+        },
         "state": {
           "enum": [
             "ACTIVE",
@@ -117,6 +132,7 @@
         "resource_name",
         "sha1_hashes",
         "sha256_hashes",
+        "source",
         "state",
         "team_id",
         "web_id"
@@ -310,7 +326,19 @@
         {
           "properties": {
             "warnings": {
-              "maxItems": 0,
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "cache.stale",
+                      "cache.write_failed"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
               "type": "array"
             }
           }
