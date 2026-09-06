@@ -58,7 +58,6 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 		return strings.Repeat(" ", width)
 	}
 
-	namePad := strings.Repeat(" ", max(layout.nameWidth-lipgloss.Width(param.Key), 0))
 	style := parameterStyle
 	if selected {
 		if styles.NoColorEnabled() {
@@ -131,8 +130,9 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 			separatorLineStyle = separatorLineStyle.Background(styles.PaletteBlueDeep).Foreground(styles.PaletteSlateBright)
 		}
 	}
-	left := prefixStyle.Render("  ") + m.renderHighlightedParameterKey(param.Key, style, selected) + prefixStyle.Render(namePad)
-	left += prefixStyle.Render(strings.Repeat(" ", 2)) + iconLineStyle.Render(icon)
+	left := prefixStyle.Render("  ") + m.renderHighlightedParameterKey(param.Key, style, selected)
+	iconPadding := max(layout.valueStart-lipgloss.Width(left)-2, 0)
+	left += prefixStyle.Render(strings.Repeat(" ", iconPadding)) + iconLineStyle.Render(icon)
 	left += prefixStyle.Render(" ")
 	valueWidth := max(width-lipgloss.Width(left), 0)
 	line := left + m.renderCollapsedParameterValues(param.Values, separatorLineStyle, selected, valueWidth)
@@ -287,7 +287,6 @@ func (m Model) renderValueNode(node visibleNode, selected bool) string {
 		return m.renderHistoryValueNode(node, selected)
 	}
 	width := max(m.width-2, 0)
-	layout := m.parameterRenderLayout()
 	param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
 	if param == nil || node.valueIdx < 0 || node.valueIdx >= len(param.Values) {
 		if node.label != "" {
@@ -303,26 +302,11 @@ func (m Model) renderValueNode(node visibleNode, selected bool) string {
 	}
 
 	conditionLabel := rcdisplay.FormatConditionLabel(value.Label)
-	conditionWidth := parameterConditionWidth(param)
 	connector := m.valueConnector(node, param)
 	label := conditionLabel
-	var tree string
-	var fillerWidth int
-	if layout.mode == parameterRenderModeNarrow {
-		tree = leafLineStyle.Render(compactBranchGlyph(layout.paramStart, connector))
-		fillerWidth = max(conditionWidth-lipgloss.Width(label)+1, 1)
-	} else {
-		leafOffset := 1
-		if len(param.Values) == 1 {
-			leafOffset = 2
-		}
-		leafOffset++
-		leafValueStart := layout.valueStart + leafOffset
-		labelStart := max(leafValueStart-conditionWidth-4, layout.paramStart+2)
-		tree = leafLineStyle.Render(branchGlyph(layout.paramStart, labelStart, connector))
-		fillerWidth = max(leafValueStart-labelStart-lipgloss.Width(label)-3, 1)
-	}
-	filler := strings.Repeat("╌", fillerWidth)
+	prefixLayout := m.parameterValuePrefixLayout(param, label, connector)
+	tree := leafLineStyle.Render(prefixLayout.tree)
+	filler := strings.Repeat("╌", prefixLayout.fillerWidth)
 	prefix := tree + " " + labelStyle.Render(label) + leafLineStyle.Render(" "+filler+" ")
 	valueRendered := m.renderParameterValue(value, selected, max(width-lipgloss.Width(prefix), 0))
 	line := prefix + valueRendered
@@ -336,23 +320,14 @@ func (m Model) renderHistoryValueNode(node visibleNode, selected bool) string {
 	kind := m.historyValueKind(node.projectID, node.groupKey, node.paramKey, node.label)
 	merged := m.historyMergedParameter(node.projectID, node.groupKey, node.paramKey)
 	conditionLabel := rcdisplay.FormatConditionLabel(node.label)
-	conditionWidth := parameterConditionWidth(merged)
 	connector := m.valueConnector(node, merged)
-	layout := m.parameterRenderLayout()
-	leafOffset := 1
-	if merged == nil || len(merged.Values) == 1 {
-		leafOffset = 2
-	}
-	leafOffset++
-	leafValueStart := layout.valueStart + leafOffset
-	labelStart := max(leafValueStart-conditionWidth-4, layout.paramStart+2)
-	tree := branchGlyph(layout.paramStart, labelStart, connector)
-	fillerWidth := max(leafValueStart-labelStart-lipgloss.Width(conditionLabel)-3, 1)
+	prefixLayout := m.parameterValuePrefixLayout(merged, conditionLabel, connector)
+	tree := prefixLayout.tree
 	labelStyle := conditionDefaultStyle
 	if value := m.historyMergedValue(node.projectID, node.groupKey, node.paramKey, node.label); value != nil && value.Label != "default" {
 		labelStyle = m.conditionStyle(value.Color)
 	}
-	prefix := leafLineStyle.Render(tree) + " " + labelStyle.Render(conditionLabel) + leafLineStyle.Render(" "+strings.Repeat("╌", fillerWidth)+" ")
+	prefix := leafLineStyle.Render(tree) + " " + labelStyle.Render(conditionLabel) + leafLineStyle.Render(" "+strings.Repeat("╌", prefixLayout.fillerWidth)+" ")
 	prefixWidth := lipgloss.Width(prefix)
 	leftPadding := max(prefixWidth-columns.leftStart, 0)
 	rightPrefix := ansi.Cut(prefix, columns.leftStart, prefixWidth)
@@ -502,7 +477,7 @@ func branchGlyph(paramStart, labelStart int, connector string) string {
 		return strings.Repeat(" ", paramStart) + "╰" + strings.Repeat("╌", max(totalWidth-paramStart-3, 0)) + "┬╌"
 	}
 	if connector == "single" {
-		return strings.Repeat(" ", paramStart) + "╰" + strings.Repeat("╌", max(totalWidth-paramStart-2, 0))
+		return strings.Repeat(" ", paramStart) + "╰" + strings.Repeat("╌", max(totalWidth-paramStart-1, 0))
 	}
 
 	prefixWidth := max(totalWidth-2, 0)

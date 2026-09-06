@@ -93,6 +93,11 @@ type parameterRenderLayout struct {
 	valueWidth int
 }
 
+type parameterValuePrefixLayout struct {
+	tree        string
+	fillerWidth int
+}
+
 type visibleNodeKind int
 
 const (
@@ -129,6 +134,7 @@ type Model struct {
 
 	projects           []projectState
 	parameterNameWidth int
+	expandedValueStart int
 	histories          map[string]historyState
 	projectIndex       map[string]int
 	groupExpanded      map[string]bool

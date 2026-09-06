@@ -16,6 +16,7 @@ func (m *Model) syncVisible() {
 		return
 	}
 	m.parameterNameWidth = m.computeMaxParameterNameWidth()
+	m.expandedValueStart = m.computeExpandedValueStart()
 	m.visible = visible
 	m.visibleParamCount = 0
 	for _, node := range m.visible {
@@ -73,12 +74,37 @@ func (m Model) anyLoading() bool {
 
 func (m Model) parameterRenderLayout() parameterRenderLayout {
 	layout := parameterRenderLayout{mode: parameterRenderModeRegular, paramStart: 2, nameWidth: m.maxParameterNameWidth()}
-	layout.valueStart = layout.paramStart + layout.nameWidth + 3
+	layout.valueStart = max(layout.paramStart+layout.nameWidth+4, m.expandedValueStart)
 	layout.valueWidth = max(m.viewportWidth()-layout.valueStart, 0)
 	if layout.valueWidth < 10 {
 		layout.mode = parameterRenderModeNarrow
 	}
 	return layout
+}
+
+func (m Model) parameterValuePrefixLayout(param *core.ParametersEntry, label, connector string) parameterValuePrefixLayout {
+	layout := m.parameterRenderLayout()
+	conditionWidth := parameterConditionWidth(param)
+	if layout.mode == parameterRenderModeNarrow {
+		return parameterValuePrefixLayout{
+			tree:        compactBranchGlyph(layout.paramStart, connector),
+			fillerWidth: max(conditionWidth-lipgloss.Width(label)+1, 1),
+		}
+	}
+
+	minimumLabelStart := layout.paramStart + 2
+	if param != nil && len(param.Values) > 1 {
+		// The first branch needs room for both the corner and the junction. If a
+		// short parameter name puts the label any closer, that branch becomes
+		// wider than the later branches and shifts the first condition right.
+		minimumLabelStart = layout.paramStart + 4
+	}
+	labelStart := max(layout.valueStart-conditionWidth-3, minimumLabelStart)
+
+	return parameterValuePrefixLayout{
+		tree:        branchGlyph(layout.paramStart, labelStart, connector),
+		fillerWidth: max(layout.valueStart-labelStart-lipgloss.Width(label)-2, 1),
+	}
 }
 
 func (m Model) maxParameterNameWidth() int {
@@ -99,6 +125,32 @@ func (m Model) computeMaxParameterNameWidth() int {
 		}
 	}
 	return width
+}
+
+func (m Model) computeExpandedValueStart() int {
+	const paramStart = 2
+
+	valueStart := 0
+	for _, project := range m.projects {
+		tree := project.tree
+		if m.history {
+			tree = m.historyTree(project.project.ProjectID, tree)
+		}
+		if tree == nil {
+			continue
+		}
+		for groupIndex := range tree.Groups {
+			for paramIndex := range tree.Groups[groupIndex].Parameters {
+				param := &tree.Groups[groupIndex].Parameters[paramIndex]
+				labelStart := paramStart + 2
+				if len(param.Values) > 1 {
+					labelStart = paramStart + 4
+				}
+				valueStart = max(valueStart, labelStart+parameterConditionWidth(param)+3)
+			}
+		}
+	}
+	return valueStart
 }
 
 func (m Model) LongestParameterNameWidth() int { return m.maxParameterNameWidth() }
