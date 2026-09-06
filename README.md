@@ -349,8 +349,10 @@ Use `npm run build` to create a production build locally.
 The development and production commands generate the human-readable
 `/privacy-policy` page from the repository-root `PRIVACY.md` and copy the
 repository-root `llms.txt` and `LICENSE` byte-for-byte to `/llms.txt` and
-`/LICENSE.txt`. Edit only the root source files; their generated website copies
-are ignored by Git.
+`/LICENSE.txt`. Production builds also generate `/THIRD_PARTY_NOTICES.txt` from
+the packages bundled into the site. Edit only the root source files,
+`docs/licenses/`, and the notice generator; their generated website copies are
+ignored by Git.
 
 ## Security notes
 
@@ -378,4 +380,5 @@ fbrcm is an independent implementation and does not reuse any of its code.
 
 ## License
 
-[MIT](https://github.com/yumauri/fbrcm/blob/main/LICENSE)
+fbrcm is licensed under the [MIT License](LICENSE). Third-party components keep
+their own licenses, reproduced in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).

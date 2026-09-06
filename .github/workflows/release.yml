@@ -46,6 +46,7 @@ jobs:
           FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_SECRET }}
         run: |
           go run ./cmd/genoauthclient
+          go run ./cmd/gennotices -tags fbrcm_google_auth -check
           go build -tags=fbrcm_google_auth -o "${RUNNER_TEMP}/fbrcm-oauth-check" .
           go run ./cmd/genoauthclient -verify "${RUNNER_TEMP}/fbrcm-oauth-check"
 

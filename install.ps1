@@ -91,11 +91,20 @@
         if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
             throw "The release archive does not contain $app.exe."
         }
+        $licenseSource = Join-Path $tempDir 'LICENSE'
+        $noticesSource = Join-Path $tempDir 'THIRD_PARTY_NOTICES'
+        if (-not (Test-Path -LiteralPath $licenseSource -PathType Leaf)) {
+            throw 'The release archive does not contain LICENSE.'
+        }
 
         New-Item -ItemType Directory -Path $installDir -Force | Out-Null
         $destination = Join-Path $installDir "$app.exe"
         Write-Host "Installing to $destination..."
         Copy-Item -LiteralPath $source -Destination $destination -Force
+        Copy-Item -LiteralPath $licenseSource -Destination (Join-Path $installDir "$app-LICENSE.txt") -Force
+        if (Test-Path -LiteralPath $noticesSource -PathType Leaf) {
+            Copy-Item -LiteralPath $noticesSource -Destination (Join-Path $installDir "$app-THIRD_PARTY_NOTICES.txt") -Force
+        }
 
         $normalizedInstallDir = $installDir.TrimEnd('\', '/')
         $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
