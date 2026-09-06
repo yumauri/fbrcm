@@ -3,6 +3,7 @@ package shared
 import (
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/ansi"
 
 	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 )
@@ -36,6 +37,45 @@ func StyledTable(headers []string, rows [][]string, widths []int, rightAligned m
 		tbl = tbl.BorderStyle(clistyles.BorderStyle(false))
 	}
 	return tbl.String()
+}
+
+// FitTableColumns shrinks flexible columns in priority order until a table
+// fits the terminal width or every flexible column reaches one cell.
+func FitTableColumns(widths []int, terminalWidth int, flexible ...int) {
+	if terminalWidth <= 0 {
+		return
+	}
+	for TableWidth(widths) > terminalWidth {
+		selected := -1
+		for _, index := range flexible {
+			if widths[index] <= 1 {
+				continue
+			}
+			if selected < 0 || widths[index]-1 > widths[selected]-1 {
+				selected = index
+			}
+		}
+		if selected < 0 {
+			return
+		}
+		widths[selected]--
+	}
+}
+
+// TruncateTableHeaders crops headers to their selected column widths.
+func TruncateTableHeaders(headers []string, widths []int) {
+	for index := range headers {
+		headers[index] = ansi.Truncate(headers[index], widths[index], "…")
+	}
+}
+
+// TruncateTableColumns crops selected cells with an ellipsis.
+func TruncateTableColumns(rows [][]string, widths []int, columns ...int) {
+	for row := range rows {
+		for _, column := range columns {
+			rows[row][column] = ansi.Truncate(rows[row][column], widths[column], "…")
+		}
+	}
 }
 
 func TableWidth(widths []int) int {

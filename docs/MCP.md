@@ -56,8 +56,16 @@ Stateful execution uses the profile's configuration and aliases. Repository
 refresh caches, synchronize the project registry, and persist refreshed
 credentials; `diagnostics.doctor` can create and remove probe files.
 
-There are no tools for managing profiles, credentials, application configuration,
-aliases, project registry settings, hook trust, themes, or shell completion.
+There are no tools for managing profiles, credentials, aliases, project registry
+settings, hook trust, themes, or shell completion. Firebase application SDK
+configuration can be read with `apps.config`; Firebase applications cannot be
+created, renamed, or deleted through MCP.
+The `apps.list`, `apps.show`, and `apps.config` tools use the same profile-scoped
+one-hour application cache as the CLI. Their optional `update` input forces a
+refresh. For `apps.show` and `apps.config`, `cached` requires a cache entry and
+forbids network access. For `apps.list`, `cached` accepts stale inventory but
+fetches it when absent. The two inputs are mutually exclusive. Results include
+cache provenance.
 External editors, terminal pickers, and the TUI are not available through tool
 calls.
 
@@ -73,7 +81,7 @@ selected groups, write permission, and execution mode.
 
 | Group | MCP tool names |
 | --- | --- |
-| `inspect` | `parameters.get`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
+| `inspect` | `parameters.get`; `apps.list`, `apps.show`, `apps.config`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
 | `edit` | `parameters.add`, `parameters.update`, `parameters.delete`, `parameters.duplicate`; `groups.add`, `groups.edit`, `groups.rename`, `groups.delete`; `conditions.add`, `conditions.edit`, `conditions.rename`, `conditions.move`, `conditions.delete` |
 | `drafts` | `draft.list`, `draft.show`, `draft.diff`, `draft.change-note`, `draft.discard` |
 | `plans` | `plan.show`, `plan.validate` |
@@ -88,6 +96,11 @@ belongs to `publish`, not `plans`.
 Tools support the same selection, filtering, expressions, validation, dry runs,
 drafts, and plans as their corresponding CLI operations, subject to launch
 policy. Multi-target publication is not atomic; inspect each target's result.
+In stateful mode, a scalar project argument first resolves an exact
+case-sensitive project ID, repository alias, or display name. If those tiers
+miss, it accepts the shared `~`, `^`, `/`, and `=` filter prefixes over project
+IDs and display names, with fuzzy matching by default, and requires exactly one
+result. Stateless project arguments remain literal IDs.
 
 ## Tool input and results
 

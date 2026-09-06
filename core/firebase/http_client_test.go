@@ -63,6 +63,16 @@ func TestShouldDryRun(t *testing.T) {
 	}
 }
 
+func TestFirebaseManagementRequiresQuotaProjectHeader(t *testing.T) {
+	req, err := http.NewRequest(http.MethodGet, "https://firebase.googleapis.com/v1beta1/projects/demo:searchApps", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !requiresQuotaProjectHeader(req) {
+		t.Fatal("Firebase Management request must require a quota project header")
+	}
+}
+
 func TestResilientTransportDryRunSendsValidationButSuppressesPublication(t *testing.T) {
 	requests := make([]string, 0, 1)
 	base := roundTripFunc(func(req *http.Request) (*http.Response, error) {

@@ -9,22 +9,9 @@ import (
 )
 
 func (m Model) valueNodeValueX(node visibleNode, param *core.ParametersEntry) int {
-	layout := m.parameterRenderLayout()
 	label := rcdisplay.FormatConditionLabel(param.Values[node.valueIdx].Label)
-	conditionWidth := parameterConditionWidth(param)
-	if layout.mode == parameterRenderModeNarrow {
-		fillerWidth := max(conditionWidth-lipgloss.Width(label)+1, 1)
-		return lipgloss.Width(compactBranchGlyph(layout.paramStart, m.valueConnector(node, param))) + 1 + lipgloss.Width(label) + 1 + fillerWidth + 1
-	}
-	leafOffset := 1
-	if len(param.Values) == 1 {
-		leafOffset = 2
-	}
-	leafOffset++
-	leafValueStart := layout.valueStart + leafOffset
-	labelStart := max(leafValueStart-conditionWidth-4, layout.paramStart+2)
-	fillerWidth := max(leafValueStart-labelStart-lipgloss.Width(label)-3, 1)
-	return lipgloss.Width(branchGlyph(layout.paramStart, labelStart, m.valueConnector(node, param))) + 1 + lipgloss.Width(label) + 1 + fillerWidth + 1
+	prefix := m.parameterValuePrefixLayout(param, label, m.valueConnector(node, param))
+	return lipgloss.Width(prefix.tree) + 1 + lipgloss.Width(label) + 1 + prefix.fillerWidth + 1
 }
 
 func (m Model) CurrentConditionalValueAnchor() (ConditionalValueAnchor, bool) {

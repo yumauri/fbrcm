@@ -1,0 +1,16 @@
+[1mDEBU[m logger initialized [2mmode[m[2m=[mcli [2mlog_level[m[2m=[mDEBUG
+[1mDEBU[m core service initialized [2mcomponent[m[2m=[mcore
+[1mDEBU[m application start [2mcomponent[m[2m=[mmain [2mmode[m[2m=[mcli [2marg_count[m[2m=[m5
+[1mDEBU[m start cli [2mcomponent[m[2m=[mcli
+[1mDEBU[m register cli commands [2mcomponent[m[2m=[mcli
+[1mINFO[m stateless mode enabled [2mcomponent[m[2m=[mcli.stateless [2mcommand[m[2m=[mapps.show
+[1mDEBU[m read firebase application details requested [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[m123456789012 [2mselector[m[2m=[m1:123456789012:web:c3 [2mupdate[m[2m=[mfalse [2mcached_only[m[2m=[mfalse
+[1mDEBU[m read firebase applications requested [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[m123456789012 [2mupdate[m[2m=[mfalse [2mcached_only[m[2m=[mfalse [2mprefer_cached[m[2m=[mfalse [2mshow_deleted[m[2m=[mtrue
+[1mINFO[m fetch applications from firebase [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[m123456789012
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[m123456789012 [2moperation[m[2m=[mlist_apps [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebase.googleapis.com/v1beta1/projects/123456789012:searchApps?pageSize=100&showDeleted=true"[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[m123456789012 [2moperation[m[2m=[mlist_apps [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebase.googleapis.com/v1beta1/projects/123456789012:searchApps?pageSize=100&showDeleted=true"[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[m123456789012 [2moperation[m[2m=[mlist_apps [2mmethod[m[2m=[mGET [2murl[m[2m=[m[m"https://firebase.googleapis.com/v1beta1/projects/123456789012:searchApps?pageSize=100&showDeleted=true"[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json"
+[1mINFO[m fetch application details from firebase [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[m123456789012 [2mapp_id[m[2m=[m1:123456789012:web:c3
+[1mINFO[m http request [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[m123456789012 [2moperation[m[2m=[mget_web_app [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebase.googleapis.com/v1beta1/projects/northstar-wallet/webApps/web-app[m [2mheaders[m[2m=[m"X-Goog-User-Project=northstar-wallet"
+[1mINFO[m http response [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[m123456789012 [2moperation[m[2m=[mget_web_app [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebase.googleapis.com/v1beta1/projects/northstar-wallet/webApps/web-app[m [2mstatus[m[2m=[m"200 OK"
+[1mDEBU[m http response headers [2mcomponent[m[2m=[mfirebase [2mproject_id[m[2m=[m123456789012 [2moperation[m[2m=[mget_web_app [2mmethod[m[2m=[mGET [2murl[m[2m=[m[mhttps://firebase.googleapis.com/v1beta1/projects/northstar-wallet/webApps/web-app[m [2mstatus[m[2m=[m"200 OK" [2mheaders[m[2m=[m"Content-Type=application/json"

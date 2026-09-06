@@ -133,3 +133,50 @@ func TestCacheListKeepsClientAndServerTargetsSeparate(t *testing.T) {
 		t.Fatalf("project names = %#v", byTarget)
 	}
 }
+
+func TestCacheListAndClearAppsKind(t *testing.T) {
+	setupCacheTest(t)
+	if err := config.SaveAppsIndexCache("demo", time.Now().UTC(), []byte(`[]`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveParametersCache("demo", &config.ParametersCache{CachedAt: time.Now().UTC(), RemoteConfig: []byte(`{"version":{"versionNumber":"1"}}`)}); err != nil {
+		t.Fatal(err)
+	}
+
+	listCmd, _, err := New().Find([]string{"list"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := listCmd.Flags().Set("kind", "apps"); err != nil {
+		t.Fatal(err)
+	}
+	var listOutput bytes.Buffer
+	listCmd.SetOut(&listOutput)
+	if err := listCmd.RunE(listCmd, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(listOutput.String(), "apps-index") || strings.Contains(listOutput.String(), "remote-config") {
+		t.Fatalf("apps cache list = %q", listOutput.String())
+	}
+
+	clearCmd, _, err := New().Find([]string{"clear"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := clearCmd.Flags().Set("kind", "apps"); err != nil {
+		t.Fatal(err)
+	}
+	if err := clearCmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatal(err)
+	}
+	clearCmd.SetOut(&bytes.Buffer{})
+	if err := clearCmd.RunE(clearCmd, nil); err != nil {
+		t.Fatal(err)
+	}
+	if entries, err := config.ListAppsCacheEntries(); err != nil || len(entries) != 0 {
+		t.Fatalf("apps entries = %#v, err = %v", entries, err)
+	}
+	if _, err := config.LoadParametersCache("demo"); err != nil {
+		t.Fatalf("apps clear removed Remote Config cache: %v", err)
+	}
+}

@@ -44,6 +44,12 @@ func TestDeleteProjectIDsRemovesOnlySelectedLocalData(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if err := config.SaveAppsIndexCache("alpha", now, []byte(`[]`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SaveAppsIndexCache("beta", now, []byte(`[]`)); err != nil {
+		t.Fatal(err)
+	}
 	if err := config.SaveDraft(&config.Draft{
 		FormatVersion:    config.DraftFormatVersion,
 		ProjectID:        "alpha",
@@ -95,6 +101,7 @@ func TestDeleteProjectIDsRemovesOnlySelectedLocalData(t *testing.T) {
 		config.GetParametersCachePath("server@alpha"),
 		config.GetParametersCacheVersionPath("server@alpha", "3"),
 		config.GetDraftPath("server@alpha"),
+		config.GetAppsIndexCachePath("alpha"),
 	} {
 		if _, err := os.Lstat(path); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("deleted path %s still exists or returned err=%v", path, err)
@@ -102,6 +109,9 @@ func TestDeleteProjectIDsRemovesOnlySelectedLocalData(t *testing.T) {
 	}
 	if _, err := os.Lstat(config.GetParametersCachePath("beta")); err != nil {
 		t.Fatalf("beta cache was removed: %v", err)
+	}
+	if _, err := os.Lstat(config.GetAppsIndexCachePath("beta")); err != nil {
+		t.Fatalf("beta apps cache was removed: %v", err)
 	}
 }
 

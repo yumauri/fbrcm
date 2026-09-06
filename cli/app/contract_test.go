@@ -323,6 +323,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 	}
 	statelessCacheWriters := map[string]bool{
 		"add": true, "apply": true, "delete": true, "duplicate": true, "get": true, "update": true,
+		"apps.config": true, "apps.list": true, "apps.show": true,
 		"conditions.add": true, "conditions.delete": true, "conditions.edit": true, "conditions.list": true,
 		"conditions.move": true, "conditions.rename": true, "conditions.show": true, "conditions.validate": true,
 		"experiments.list": true, "experiments.show": true,
@@ -899,7 +900,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		}
 	}
 	if want := []string{
-		"add", "apply",
+		"add", "apply", "apps.config", "apps.list", "apps.show",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"delete", "duplicate", "experiments.delete", "experiments.list", "experiments.show", "get",
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
@@ -1980,6 +1981,8 @@ func TestConfigSetInvocationSchemaPublishesClosedKeyGrammar(t *testing.T) {
 	}
 	validateContractValue(t, id, input("powerline_glyphs", []any{"true"}, map[string]any{}), true)
 	validateContractValue(t, id, input("powerline_glyphs", []any{"yes"}, map[string]any{}), false)
+	validateContractValue(t, id, input("nerd_font_glyphs", []any{"true"}, map[string]any{}), true)
+	validateContractValue(t, id, input("nerd_font_glyphs", []any{"yes"}, map[string]any{}), false)
 	validateContractValue(t, id, input("network.requests_per_minute", []any{"0"}, map[string]any{}), true)
 	validateContractValue(t, id, input("network.requests_per_minute", []any{"60001"}, map[string]any{}), false)
 	validateContractValue(t, id, input("network.rate_limit_cooldown", []any{"90s"}, map[string]any{}), true)
@@ -2714,6 +2717,9 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	warningsByCommand := map[string][]string{
 		"apply":             {"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
+		"apps.config":       {"cache.stale", "cache.write_failed"},
+		"apps.list":         {"cache.stale", "cache.write_failed"},
+		"apps.show":         {"cache.stale", "cache.write_failed"},
 		"get":               {"cache.stale"},
 		"theme.import":      {"theme.already_exists"},
 		"conditions.add":    postPublication,

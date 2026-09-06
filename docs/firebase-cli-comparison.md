@@ -13,7 +13,7 @@ publish Firebase Remote Config. They are optimized for different workflows:
   enforce policy across every fbrcm publication path.
 
 This comparison covers the documented Firebase CLI command set and
-`firebase-tools` 15.25.1 as of August 1, 2026. Consult the
+`firebase-tools` 15.29.0 as of September 6, 2026. Consult the
 [current Firebase CLI reference](https://firebase.google.com/docs/cli) when
 using a later release.
 
@@ -63,6 +63,10 @@ approaches the same concern differently.
 | Roll back to a retained Firebase version | ✅ | ✅ | fbrcm adds a reviewed diff and dry-run support. |
 | Restore a locally cached expired version | ❌ | ✅ | fbrcm can republish an immutable local snapshot after Firebase no longer returns it. |
 | Download application defaults | ❌ | ✅ | fbrcm downloads JSON, Android XML, or Apple plist defaults. |
+| List registered Firebase apps | ✅ | ✅ | Firebase CLI lists one active project; fbrcm can combine selected projects and cache the inventory. |
+| Inspect platform-specific app details | ⚠️ | ✅ | Firebase CLI lists app summaries and has separate Android SHA commands. fbrcm has one read-only details command for Android, iOS, and Web apps. |
+| Download Firebase app SDK configuration | ✅ | ✅ | Firebase CLI prints the configuration; fbrcm can print it, write a private file, or return a typed JSON artifact. |
+| Create or change Firebase apps | ✅ | ❌ | Firebase CLI can create apps and manage Android SHA hashes. fbrcm keeps all app operations read-only. |
 | List, inspect, and delete A/B tests | ✅ | ✅ | fbrcm also correlates experiments with their published parameter bindings and variant values. |
 | List, inspect, and delete rollouts | ✅ | ✅ | fbrcm also correlates rollout metadata with published parameter bindings. |
 | Inspect personalizations | ❌ | ✅ | fbrcm lists personalization IDs and bindings visible in the published template. |
@@ -116,6 +120,10 @@ template; use `client@project-id` or `server@project-id` when needed.
 | Trust repository hooks | Repository configuration executes as part of deployment | `fbrcm hooks trust`, or pin `FBRCM_HOOK_TRUST` to the expected fingerprint in CI |
 | Roll back to version | `firebase --project PROJECT remoteconfig:rollback -v VERSION` | `fbrcm versions rollback PROJECT VERSION` |
 | Restore cached version | No equivalent | `fbrcm versions restore PROJECT VERSION` |
+| List registered apps | `firebase --project PROJECT apps:list [PLATFORM]` | `fbrcm apps list PROJECT [--platform PLATFORM]` |
+| Inspect app details | No single cross-platform equivalent | `fbrcm apps show APP --project PROJECT` |
+| Print SDK configuration | `firebase --project PROJECT apps:sdkconfig PLATFORM APP_ID` | `fbrcm apps config APP --project PROJECT` |
+| Save SDK configuration | Redirect `apps:sdkconfig` output | `fbrcm apps config APP --project PROJECT --to FILE` |
 | List experiments | `firebase --project PROJECT remoteconfig:experiments:list` | `fbrcm experiments list PROJECT` |
 | Show experiment | `firebase --project PROJECT remoteconfig:experiments:get ID` | `fbrcm experiments show PROJECT ID` |
 | Delete experiment | `firebase --project PROJECT remoteconfig:experiments:delete ID` | `fbrcm experiments delete PROJECT ID` |

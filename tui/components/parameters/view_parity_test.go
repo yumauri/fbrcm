@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/yumauri/fbrcm/core"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
@@ -134,6 +136,144 @@ func TestParametersViewShowsEmptyGroups(t *testing.T) {
 		if !strings.Contains(view, group) {
 			t.Fatalf("view does not show empty group %q:\n%s", group, view)
 		}
+	}
+}
+
+func TestExpandedShortParameterAlignsConditionalValues(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+
+	for _, otherKey := range []string{"other", "long_parameter_name"} {
+		t.Run(otherKey, func(t *testing.T) {
+			project := core.Project{Name: "Demo", ProjectID: "demo"}
+			tree := &core.ParametersTree{Groups: []core.ParametersGroup{{
+				Key:   "__default__",
+				Label: "(root)",
+				Parameters: []core.ParametersEntry{{
+					Key: "test",
+					Values: []core.ParametersValue{
+						{Label: "test condition", Value: "conditional-result", RawValue: "conditional-result", ValueType: "STRING", Plain: true},
+						{Label: "default", Value: "default-result", RawValue: "default-result", ValueType: "STRING", Plain: true},
+					},
+				}, {
+					Key: otherKey,
+					Values: []core.ParametersValue{
+						{Label: "default", Value: "collapsed-result", RawValue: "collapsed-result", ValueType: "STRING", Plain: true},
+					},
+				}, {
+					Key: "solo",
+					Values: []core.ParametersValue{
+						{Label: "default", Value: "single-expanded-result", RawValue: "single-expanded-result", ValueType: "STRING", Plain: true},
+					},
+				}},
+			}}}
+			m := New(nil).SetBounds(0, 0, 60, 12).SetActive(true)
+			m, _ = m.Update(messages.ProjectsSelectionChangedMsg{Projects: []core.Project{project}})
+			m, _ = m.Update(messages.ParametersLoadedMsg{Project: project, Tree: tree, Source: "cache"})
+			m.setAllGroupsExpanded(true)
+			m.paramExpanded[m.paramKey(project.ProjectID, "__default__", "test")] = true
+			m.paramExpanded[m.paramKey(project.ProjectID, "__default__", "solo")] = true
+			m.syncVisible()
+
+			labelColumns := make([]int, 0, 2)
+			valueColumns := make([]int, 0, 3)
+			collapsedValueColumn := -1
+			for _, node := range m.visible {
+				if node.kind == nodeParameter && node.paramKey == otherKey {
+					line := ansi.Strip(m.renderParameterNode(node, false))
+					collapsedValueColumn = renderedTextColumn(t, line, "collapsed-result")
+				}
+				if node.kind != nodeValue || (node.paramKey != "test" && node.paramKey != "solo") {
+					continue
+				}
+				line := ansi.Strip(m.renderValueNode(node, false))
+				param := m.parameterByKey(node.projectID, node.groupKey, node.paramKey)
+				value := param.Values[node.valueIdx]
+				label := rcdisplay.FormatConditionLabel(value.Label)
+				if node.paramKey == "test" {
+					labelColumns = append(labelColumns, renderedTextColumn(t, line, label))
+				}
+				valueColumn := renderedTextColumn(t, line, value.Value)
+				valueColumns = append(valueColumns, valueColumn)
+				if got, want := m.valueNodeValueX(node, param), valueColumn; got != want {
+					t.Fatalf("value anchor column = %d, rendered value column = %d\n%s", got, want, line)
+				}
+			}
+
+			if len(labelColumns) != 2 || labelColumns[0] != labelColumns[1] {
+				t.Fatalf("condition label columns = %v, want two aligned labels", labelColumns)
+			}
+			if len(valueColumns) != 3 || valueColumns[0] != valueColumns[1] || valueColumns[0] != valueColumns[2] {
+				t.Fatalf("expanded parameter value columns = %v, want three aligned values", valueColumns)
+			}
+			if collapsedValueColumn < 0 || collapsedValueColumn != valueColumns[0] {
+				t.Fatalf("collapsed value column = %d, expanded value columns = %v, want all values aligned", collapsedValueColumn, valueColumns)
+			}
+		})
+	}
+}
+
+func renderedTextColumn(t *testing.T, line, text string) int {
+	t.Helper()
+	before, _, found := strings.Cut(line, text)
+	if !found {
+		t.Fatalf("rendered line does not contain %q:\n%s", text, line)
+	}
+	return lipgloss.Width(before)
+}
+
+func TestCollapsedParameterIconsAlignNextToValues(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	tree := &core.ParametersTree{Groups: []core.ParametersGroup{{
+		Key:   "__default__",
+		Label: "(root)",
+		Parameters: []core.ParametersEntry{
+			{Key: "a", Values: []core.ParametersValue{{Label: "default", Value: "single-value", ValueType: "STRING", Plain: true}}},
+			{Key: "b", Values: []core.ParametersValue{
+				{Label: "condition", Value: "conditional-value", ValueType: "STRING", Plain: true},
+				{Label: "default", Value: "default-value", ValueType: "STRING", Plain: true},
+			}},
+			{Key: "long_parameter_name", Values: []core.ParametersValue{{Label: "default", Value: "driver-value", ValueType: "STRING", Plain: true}}},
+		},
+	}}}
+	m := New(nil).SetBounds(0, 0, 80, 12).SetActive(true)
+	m, _ = m.Update(messages.ProjectsSelectionChangedMsg{Projects: []core.Project{project}})
+	m, _ = m.Update(messages.ParametersLoadedMsg{Project: project, Tree: tree, Source: "cache"})
+	m.setAllGroupsExpanded(true)
+
+	type expectedRow struct {
+		icon  string
+		value string
+	}
+	want := map[string]expectedRow{
+		"a": {icon: "╌", value: "single-value"},
+		"b": {icon: "⌥", value: "conditional-value"},
+	}
+	valueColumn := -1
+	iconColumn := -1
+	for _, node := range m.visible {
+		expected, ok := want[node.paramKey]
+		if node.kind != nodeParameter || !ok {
+			continue
+		}
+		line := ansi.Strip(m.renderParameterNode(node, false))
+		gotValueColumn := renderedTextColumn(t, line, expected.value)
+		gotIconColumn := renderedTextColumn(t, line, expected.icon)
+		if gotIconColumn != gotValueColumn-2 {
+			t.Fatalf("%s icon column = %d, value column = %d, want icon immediately before value\n%s", node.paramKey, gotIconColumn, gotValueColumn, line)
+		}
+		if valueColumn >= 0 && gotValueColumn != valueColumn {
+			t.Fatalf("%s value column = %d, want shared column %d", node.paramKey, gotValueColumn, valueColumn)
+		}
+		if iconColumn >= 0 && gotIconColumn != iconColumn {
+			t.Fatalf("%s icon column = %d, want shared column %d", node.paramKey, gotIconColumn, iconColumn)
+		}
+		valueColumn = gotValueColumn
+		iconColumn = gotIconColumn
+	}
+	if valueColumn < 0 || iconColumn < 0 {
+		t.Fatal("collapsed parameter rows were not rendered")
 	}
 }
 

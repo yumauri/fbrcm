@@ -60,6 +60,9 @@ type catalogEntry struct {
 // Deliberately explicit: new CLI commands do not automatically become tools.
 // Keys are shared operation IDs; names belong only to the MCP frontend.
 var catalog = map[string]catalogEntry{
+	"apps.list":             {"apps.list", "inspect", false},
+	"apps.show":             {"apps.show", "inspect", false},
+	"apps.config":           {"apps.config", "inspect", false},
 	"projects.list":         {"projects.list", "inspect", false},
 	"projects.diff":         {"projects.diff", "inspect", false},
 	"project.show":          {"project.show", "inspect", false},

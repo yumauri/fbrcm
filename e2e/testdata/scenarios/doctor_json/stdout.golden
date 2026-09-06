@@ -146,7 +146,7 @@
         "id": "permissions:northstar-wallet",
         "status": "pass",
         "check": "Firebase permissions (northstar-wallet)",
-        "detail": "cloudconfig.configs.get, cloudconfig.configs.update"
+        "detail": "cloudconfig.configs.get, cloudconfig.configs.update, firebase.clients.get, firebase.clients.list"
       }
     ]
   },

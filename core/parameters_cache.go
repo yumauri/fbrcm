@@ -55,6 +55,29 @@ func (s *Core) LoadCachedRemoteConfig(projectID string) (*firebase.RemoteConfig,
 	return firebase.ParseRemoteConfig(cache.RemoteConfig)
 }
 
+// ParametersReadOptions controls freshness of a Remote Config template read.
+type ParametersReadOptions struct {
+	Update bool
+	Cached bool
+}
+
+// ReadParameters optionally accepts stale cache, fetching normally on a cache miss.
+func (s *Core) ReadParameters(ctx context.Context, projectID string, opts ParametersReadOptions) (*ParametersCache, string, error) {
+	if opts.Update {
+		return s.RevalidateParameters(ctx, projectID)
+	}
+	if opts.Cached && ExecutionPolicyFromContext(ctx).ReadLocalState {
+		cache, state, err := s.InspectParametersCache(projectID)
+		if err != nil {
+			return nil, "", fmt.Errorf("inspect parameters cache: %w", err)
+		}
+		if state != ParametersCacheMissing && cache != nil {
+			return cache, "cache", nil
+		}
+	}
+	return s.GetParameters(ctx, projectID, false)
+}
+
 func (s *Core) GetParameters(ctx context.Context, projectID string, force bool) (*ParametersCache, string, error) {
 	logger := corelog.For("core")
 	logger.Debug("get parameters requested", "project_id", projectID, "force", force)

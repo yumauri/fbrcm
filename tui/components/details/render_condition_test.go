@@ -11,7 +11,9 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/tui/messages"
+	tuistyles "github.com/yumauri/fbrcm/tui/styles"
 	"github.com/yumauri/fbrcm/tui/testutil"
 )
 
@@ -69,6 +71,44 @@ func TestConditionDetailsUsesGroupAndTypedValueStyles(t *testing.T) {
 			t.Fatalf("condition Details does not use %s style:\n%s", name, got)
 		}
 	}
+}
+
+func TestConditionDetailsColorsEveryAppIDPlatform(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	m := conditionDetailsTestModel()
+	m.conditionExpression = "app.id == '1:123:ios:b2' || app.id == '1:123:web:c3'"
+	got := strings.Join(m.renderContentLines(), "\n")
+
+	if plain := ansi.Strip(got); !strings.Contains(plain, m.conditionExpression) {
+		t.Fatalf("condition Details changed expression:\n%s", got)
+	}
+	for _, platform := range []core.AppPlatform{core.AppPlatformIOS, core.AppPlatformWeb} {
+		want := tuistyles.PanelText.Foreground(clistyles.FirebaseAppPlatformColor(platform)).Render(string(platform))
+		if !strings.Contains(got, want) {
+			t.Errorf("condition Details missing colored %q platform:\n%s", platform, got)
+		}
+	}
+}
+
+func TestConditionDetailsAppIDColorsRespectNoColor(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	m := conditionDetailsTestModel()
+	m.conditionExpression = "app.id == '1:123:web:abc'"
+	lines := m.renderContentLines()
+	for index, line := range lines {
+		if strings.TrimSpace(ansi.Strip(line)) != "Expression" || index+1 >= len(lines) {
+			continue
+		}
+		expressionLine := strings.TrimSpace(lines[index+1])
+		if expressionLine != m.conditionExpression {
+			t.Fatalf("NO_COLOR expression line = %q, want %q", expressionLine, m.conditionExpression)
+		}
+		if strings.Contains(expressionLine, "\x1b[") {
+			t.Fatalf("NO_COLOR expression contains ANSI styling: %q", expressionLine)
+		}
+		return
+	}
+	t.Fatalf("condition Details did not render Expression field: %q", lines)
 }
 
 func TestConditionUsageInAppDefaultUsesEmptyValueStyle(t *testing.T) {

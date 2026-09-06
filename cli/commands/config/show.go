@@ -121,6 +121,11 @@ func scopedConfigValue(state configState, scope, key string) (any, string, error
 			return nil, "absent", nil
 		}
 		return *cfg.PowerlineGlyphs, source, nil
+	case key == "nerd_font_glyphs":
+		if cfg.NerdFontGlyphs == nil {
+			return nil, "absent", nil
+		}
+		return *cfg.NerdFontGlyphs, source, nil
 	case key == "keys":
 		return cfg.Keys, source, nil
 	case key == "network":

@@ -126,6 +126,9 @@ fbrcm conditions validate example-project-id
 The list follows Firebase evaluation order. `show` includes the parameters and
 conditional values that reference the selected condition.
 
+When a condition uses `app.id`, use [`apps list`](/cli/apps) to match its
+Firebase App ID to a registered Android, iOS, or Web app.
+
 ## Change conditions
 
 ```sh

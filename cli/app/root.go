@@ -14,6 +14,7 @@ import (
 
 	addcmd "github.com/yumauri/fbrcm/cli/commands/add"
 	applycmd "github.com/yumauri/fbrcm/cli/commands/apply"
+	appscmd "github.com/yumauri/fbrcm/cli/commands/apps"
 	authcmd "github.com/yumauri/fbrcm/cli/commands/auth"
 	cachecmd "github.com/yumauri/fbrcm/cli/commands/cache"
 	conditionscmd "github.com/yumauri/fbrcm/cli/commands/conditions"
@@ -52,7 +53,8 @@ func isProfileCommand(cmd *cobra.Command) bool {
 }
 
 func isConfigCommand(cmd *cobra.Command) bool {
-	return cmd.Name() == "config" || strings.HasPrefix(cmd.CommandPath(), "fbrcm config")
+	path := cmd.CommandPath()
+	return path == "fbrcm config" || strings.HasPrefix(path, "fbrcm config ")
 }
 
 func isThemeCommand(cmd *cobra.Command) bool {
@@ -185,6 +187,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 
 	rootCmd.AddCommand(addcmd.New(s))
 	rootCmd.AddCommand(applycmd.New(s))
+	rootCmd.AddCommand(appscmd.New(s))
 	rootCmd.AddCommand(authcmd.New(s))
 	rootCmd.AddCommand(cachecmd.New())
 	rootCmd.AddCommand(conditionscmd.New(s))
@@ -394,6 +397,8 @@ func commandProgressMessage(cmd *cobra.Command) string {
 		return "Loading projects…"
 	case path == "projects update":
 		return "Syncing projects…"
+	case strings.HasPrefix(path, "apps "):
+		return "Loading Firebase applications…"
 	case path == "doctor":
 		return "Running diagnostics…"
 	case path == "auth login":

@@ -122,6 +122,10 @@ func CloneAppConfig(cfg *AppConfig) *AppConfig {
 		value := *cfg.PowerlineGlyphs
 		out.PowerlineGlyphs = &value
 	}
+	if cfg.NerdFontGlyphs != nil {
+		value := *cfg.NerdFontGlyphs
+		out.NerdFontGlyphs = &value
+	}
 	for block, actions := range cfg.Keys {
 		out.Keys[block] = make(map[string][]string, len(actions))
 		for action, keys := range actions {

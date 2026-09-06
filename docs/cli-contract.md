@@ -182,7 +182,7 @@ fbrcm knows a complete, directly reusable argv fragment.
 
 Problems are classified from typed source errors (`ArgumentError`,
 `ExpressionError`, `ValidationError`, `ConflictError`, `SelectionError`,
-`BatchError`, `ProfileError`, `ProjectLookupError`,
+`BatchError`, `ProfileError`, `ProjectLookupError`, `AppLookupError`,
 `RemoteConfigVersionLookupError`, import-group
 selection errors, and managed-feature lookup/resource errors) and typed
 Firebase, hook, context, network, and filesystem errors. Invalid configuration
@@ -191,8 +191,10 @@ argument failures. Unavailable requested versions use `version.not_found` with
 selection details. Missing cached Remote Config used by `projects diff
 --cached`, missing requested import groups, and missing published-template
 personalizations use `parameters_cache.not_found`, `group.not_found`, and
-`personalization.not_found`, respectively, with selection details. Invalid profile names use
-`profile.invalid`; unavailable profiles use `profile.not_found` with selection
+`personalization.not_found`, respectively, with selection details.
+`app.not_found` and `app.ambiguous` describe exact Firebase application
+selection misses and collisions and include candidate App IDs. Invalid profile
+names use `profile.invalid`; unavailable profiles use `profile.not_found` with selection
 details; active, locally selected, or already-existing profile conflicts use
 `profile.conflict`. Local validation failures and Firebase HTTP 400 candidate
 rejections use `remote_config.validation_failed`; `details.source`
@@ -243,6 +245,7 @@ Warnings use the same stable `code`, `message`, `target`, `details`, and
 themselves. Examples include non-atomic multi-target publication, stale cache
 fallback, and a hook or cache failure after Firebase has accepted a publish.
 Known warning codes constrain `details`: stale-cache fallback carries `source`,
+cache-write failure carries the non-empty `error`,
 non-atomic publication carries `target_count`, and post-publication warnings
 carry their stable `stage`. `plan.source_draft_changed` carries stage
 `source_draft` when apply preserves a draft edited after planning. Unknown
@@ -603,14 +606,16 @@ Every present repeatable option is a nonempty array: omission represents no
 flag occurrence, while an empty array has no argv representation and is
 rejected.
 Positional project selectors use a separate matching rule: after optional
-template-target parsing they preserve argv, treat `=`, `^`, `/`, and `~`
-literally, and compare exactly and case-sensitively by project ID, repository
-alias, then display name. Target-aware positional rules declare that the
-unqualified form resolves the configured primary template.
-Draft positional selectors use a command-local rule instead: they resolve only
-existing local draft target IDs and compare the untrimmed selector exactly and
-case-sensitively by physical project ID, repository alias, then display name.
-Mode-prefix characters remain literal. An unqualified selector uses the
+template-target parsing they first compare exactly and case-sensitively by
+project ID, repository alias, then display name. If those tiers miss, they
+parse the optional `=`, `^`, `/`, or `~` mode prefix and filter project IDs and
+display names case-insensitively, using fuzzy matching by default. Repository
+aliases do not participate in fallback filtering. Target-aware positional rules
+declare that the unqualified form resolves the configured primary template.
+Draft positional selectors use a command-local form of the same rule: they
+resolve only existing local draft target IDs, with exact project ID, repository
+alias, and display-name precedence followed by mode-prefixed/default-fuzzy
+filtering over project IDs and display names. An unqualified selector uses the
 configured primary template, or the client template when the project is no
 longer registered. Draft-list filters likewise operate only on existing drafts
 and apply configured enabled-template selection, with the same unregistered
@@ -628,8 +633,9 @@ content that is subsequently trimmed. `config set`, `config show`, and
 `config reset` trim nested
 `keys.<block>.<action>` and
 `network.*` and `projects.aliases.<alias>` keys before their closed grammar is evaluated;
-`config show` also trims nested `hooks.*` keys. Top-level configuration keys
-are compared without trimming. The optional `get [parameter]`,
+`config show` also trims nested `hooks.*` keys. Top-level configuration keys,
+including `theme`, `powerline_glyphs`, and `nerd_font_glyphs`, are compared
+without trimming. The optional `get [parameter]`,
 `update [parameter]`, and `delete [parameter]` arguments likewise have no argv
 normalization. Each compares exactly and case-sensitively against canonical
 parameter keys, participates in the command's selector composition, and is
@@ -969,12 +975,12 @@ enabled.
 Every command execution carries an explicit persistence policy. Normal mode
 enables application-managed local reads, local writes, and configured hooks.
 Stateless mode disables all three controls; service resolution, parameter and
-version caches, draft entry points, publication cache updates, and hook
+version caches, the profile-scoped one-hour Firebase application cache, draft entry points, publication cache updates, and hook
 preparation consult that policy instead of a command-specific stateless
 marker. The permissive policy is also the default for internal callers that do
 not attach one, preserving existing stateful behavior. Explicit caller-chosen
-artifact output such as `project export --to`, `project defaults --to`, or
-`versions export --to` is not application-managed local state and remains
+artifact output such as `apps config --to`, `project export --to`,
+`project defaults --to`, or `versions export --to` is not application-managed local state and remains
 permitted.
 
 `--to` and `--yes` retain the normal artifact destination and overwrite
@@ -984,6 +990,22 @@ conditionally narrow positional arguments to literal physical IDs with
 optional template prefixes where supported. Project-scoped metadata and
 managed-feature commands require a physical ID without a prefix; template-aware
 commands publish client as the default when `options.stateless` is true.
+The `apps.show` and `apps.config` schemas take one app selector and an optional
+`options.project`: a complete Firebase App ID supplies its embedded project
+number, while names, namespaces, and resource names require the explicit
+project option. Stateful project-option resolution first tries exact project
+ID, repository alias, and display name, then applies an optional mode-prefixed
+filter to project IDs and display names with fuzzy matching as the default.
+Exactly one result is required. In stateless mode that option is a literal
+physical project ID.
+All `apps` read commands expose mutually exclusive `cached` and `update`
+options in stateful mode. Their response DTOs report `source` as `firebase`,
+`cache`, or `cache-stale`, and include `cached_at` when a persisted cache record
+was read or written. Inventory and details refresh failures may return stale
+data with a structured `cache.stale` warning. `apps.config` does not implicitly
+fall back to stale SDK configuration; `cached: true` is required. Stateless
+schemas constrain both options to false. A successful Firebase response whose
+local cache write fails remains successful and reports `cache.write_failed`.
 Capability side-effect and
 interaction conditions mark profile bootstrap, project-registry persistence,
 configured-auth token persistence, identity-provider access, and browser
@@ -1168,3 +1190,54 @@ different fingerprint at the same version. Generation happens in a staging
 directory and validates the lock before replacing checked-in files, so a lock
 rejection leaves the working tree untouched. Previous version directories are
 not removed by generation.
+
+### Optional project selection for application and condition lists
+
+`apps list [project]` and `conditions list [project]` accept either a scalar
+`arguments.project` or repeatable `options.project`, never both. The positional
+selector retains exact-then-filtered single-project resolution (a literal ID or
+template target in stateless mode). Without it, bulk filters are ORed, sorted by
+project name then canonical ID, and deduplicated. Omitted filters select all
+configured physical projects for apps or enabled template targets for conditions.
+Stateless bulk selection uses direct exact IDs or live discovery, as with `get`;
+apps reject template prefixes. Cache-only app listing never discovers projects.
+
+Both commands return `data.items` and `data.count`. Every item includes `project`
+(display name) and `project_id` in both selection modes. Condition project IDs
+are canonical template target IDs. App cache provenance (`source` and optional
+`cached_at`) is per item, replacing the former list-level provenance and project
+fields. Empty selections return an empty items array and zero count. Read failures
+fail the command without returning partial successful data. Version numbers stay
+unchanged under the pre-1.0 contract policy.
+
+
+### Remote Config freshness flags
+
+`get`, `conditions list/show`, `groups list`, and the list/show commands under
+`experiments`, `rollouts`, and `personalizations` accept `--cached` alongside
+`--update`. These flags are mutually exclusive; both are rejected with
+`--stateless` and with stdin for `get`, using an invalid-argument problem and
+the existing usage exit status. Schemas publish these constraints.
+
+For these commands, `--cached` accepts an existing Remote Config template
+regardless of age and fetches normally when it is absent. It is not an offline
+guarantee: project discovery can still occur, and experiments/rollouts always
+fetch feature metadata. Existing `apps show/config`, version, and comparison `--cached` flags retain their cache-only
+semantics. The `required_cache/not_usable` capability predicate evaluates
+freshness under the selected policy: a stale template is usable with this flag.
+An intentionally accepted stale template reports source `cache` (parameter
+status `stale` when expired) without a refresh-failure warning. Response DTOs and contract
+version remain unchanged.
+
+
+### Application inventory cache preference
+
+`apps list --cached` accepts an existing application inventory regardless of
+age and fetches/persists it when absent, including a successful empty inventory.
+Normal project resolution may discover projects if the registry is absent.
+An explicitly accepted stale inventory retains source `cache-stale` and its
+timestamp without a refresh-failure warning. The `required_cache/not_usable`
+predicate uses this selected freshness policy; `cached=true` does not prohibit
+network or cache-write effects. `apps show --cached` and `apps config --cached`
+still require local data. Mutual exclusion with `--update`, rejection with
+`--stateless`, DTOs, and contract version are unchanged.

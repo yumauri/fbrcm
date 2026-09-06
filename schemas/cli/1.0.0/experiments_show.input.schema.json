@@ -34,6 +34,9 @@
               ]
             },
             "properties": {
+              "cached": {
+                "const": false
+              },
               "update": {
                 "const": false
               }
@@ -86,6 +89,18 @@
           }
         }
       }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "update",
+              "cached"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -129,6 +144,22 @@
     "options": {
       "additionalProperties": false,
       "properties": {
+        "cached": {
+          "description": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
         "no-local-config": {
           "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
           "type": "boolean"

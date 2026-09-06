@@ -33,7 +33,9 @@
             "value_type": "STRING",
             "plain": true
           }
-        ]
+        ],
+        "project": "northstar-wallet",
+        "project_id": "northstar-wallet"
       }
     ]
   },

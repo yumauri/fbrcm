@@ -507,6 +507,12 @@ template plus scenario-local Firebase response simulations. It covers filtered
 experiment list/show, personalization list/show, and rollout list/show without
 depending on an active production experiment, personalization, or rollout.
 
+Firebase App Management coverage uses replay-only synthetic responses for
+stateless `apps list`, `apps show`, and Web `apps config`. These scenarios cover
+application discovery, platform-specific details, the `/config` endpoint, JSON
+artifact output, and the guarantee that stateless reads do not create profile or
+Remote Config state.
+
 `doctor --json` uses one strict multi-host simulation containing Cloud Resource
 Manager project list/details, a Firebase Remote Config read, and the IAM
 permissions check. All eleven local and live diagnostics pass in the snapshot.

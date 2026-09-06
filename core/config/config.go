@@ -15,6 +15,7 @@ type AppConfig struct {
 	Profile         string                         `toml:"profile,omitempty" json:"profile"`
 	Theme           string                         `toml:"theme,omitempty" json:"theme,omitempty"`
 	PowerlineGlyphs *bool                          `toml:"powerline_glyphs,omitempty" json:"powerline_glyphs"`
+	NerdFontGlyphs  *bool                          `toml:"nerd_font_glyphs,omitempty" json:"nerd_font_glyphs"`
 	Keys            map[string]map[string][]string `toml:"keys,omitempty" json:"keys"`
 	Network         *NetworkConfig                 `toml:"network,omitempty" json:"network,omitempty"`
 	Hooks           *HooksConfig                   `toml:"hooks,omitempty" json:"hooks,omitempty"`

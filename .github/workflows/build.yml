@@ -30,6 +30,12 @@ jobs:
       - name: Verify generated files are current
         run: git diff --exit-code
 
+      - name: Verify release third-party notices
+        run: |
+          go run ./cmd/genoauthclient
+          trap 'go run ./cmd/genoauthclient -clean' EXIT
+          go run ./cmd/gennotices -tags fbrcm_google_auth -check
+
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
@@ -56,6 +62,15 @@ jobs:
           FBRCM_GOOGLE_OAUTH_CLIENT_ID: ci-test-client-id.apps.googleusercontent.com
           FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ci-test-client-secret
         run: go run ./cmd/genoauthclient -verify dist
+
+      - name: Verify snapshot contains third-party notices
+        run: |
+          find dist -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print0 | while IFS= read -r -d '' archive; do
+            case "$archive" in
+              *.zip) unzip -l "$archive" | grep 'THIRD_PARTY_NOTICES' > /dev/null ;;
+              *) tar -tzf "$archive" | grep 'THIRD_PARTY_NOTICES' > /dev/null ;;
+            esac
+          done
 
       - name: Remove generated OAuth client source
         if: always()

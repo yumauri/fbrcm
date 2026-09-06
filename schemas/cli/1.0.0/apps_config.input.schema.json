@@ -1,0 +1,348 @@
+{
+  "$defs": {
+    "app_project_selector": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/filter_query"
+        },
+        {
+          "not": {
+            "pattern": "^(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@"
+          }
+        }
+      ],
+      "x-fbrcm-grammar": "exact project ID, exact repository alias, exact display name, or mode-prefixed project ID/display-name query; unprefixed fallback queries use fuzzy matching",
+      "x-fbrcm-matching": [
+        {
+          "default_mode": "fuzzy",
+          "exact_comparison": "exact_case_sensitive",
+          "exact_precedence": [
+            "project_id",
+            "repository_alias",
+            "display_name"
+          ],
+          "filter_comparison": "unicode_case_insensitive",
+          "filter_fields": [
+            "project_id",
+            "display_name"
+          ],
+          "mode_prefixes": {
+            "/": "includes",
+            "=": "exact",
+            "^": "starts-with",
+            "~": "fuzzy"
+          },
+          "multiple_result": "project.ambiguous",
+          "operator": "app_project_resolution",
+          "zero_result": "project.not_found"
+        }
+      ]
+    },
+    "filter_query": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "trim_unicode_whitespace",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
+    "firebase_app_id": {
+      "pattern": "^[0-9]+:[0-9]+:(?:android|ios|web):[A-Za-z0-9]+$",
+      "type": "string",
+      "x-fbrcm-grammar": "complete Firebase App ID containing version, project number, platform, and application hash"
+    },
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "physical_project_id": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_id"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            },
+            "properties": {
+              "cached": {
+                "const": false
+              },
+              "update": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "else": {
+        "properties": {
+          "options": {
+            "properties": {
+              "profile": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/path_segment"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          }
+        },
+        "required": [
+          "options"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "project": {
+                "$ref": "#/$defs/physical_project_id"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "anyOf": [
+        {
+          "properties": {
+            "arguments": {
+              "properties": {
+                "app": {
+                  "$ref": "#/$defs/firebase_app_id"
+                }
+              },
+              "required": [
+                "app"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "options": {
+              "required": [
+                "project"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "update",
+              "cached"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "app": {
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "comparison": "exact_case_sensitive",
+              "multiple_result": "app.ambiguous",
+              "operator": "firebase_app_resolution",
+              "precedence": [
+                "app_id",
+                "resource_name",
+                "namespace",
+                "display_name"
+              ],
+              "project_source": "options.project_or_app_id_project_number",
+              "zero_result": "app.not_found"
+            }
+          ]
+        }
+      },
+      "required": [
+        "app"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "cached": {
+          "description": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "project": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/app_project_selector"
+            }
+          ],
+          "description": "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless \u003capp\u003e is a complete Firebase App ID"
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "to": {
+          "description": "Write application configuration to file path",
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
+        "update": {
+          "description": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
+        "yes": {
+          "description": "Overwrite an existing destination without confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.project"
+      ],
+      "target_defaults": [
+        {
+          "selection": "all_configured_projects_enabled_templates",
+          "source": "options.project"
+        }
+      ]
+    }
+  ]
+}

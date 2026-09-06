@@ -34,8 +34,8 @@ func ParseSelector(value string) (Target, bool, error) {
 }
 
 // ParsePositionalSelector parses template-target syntax without normalizing
-// the selected project identifier. Positional resource selectors must match
-// canonical names and IDs exactly.
+// the selected project query. Callers can apply exact resolution or a filter
+// fallback while retaining the original argv for the exact-precedence tier.
 func ParsePositionalSelector(value string) (Target, bool, error) {
 	return parseSelector(value, false)
 }

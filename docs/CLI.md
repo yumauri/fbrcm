@@ -30,6 +30,17 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │
 ├── apply <plan> [--dry-run] [--yes|-y] [--json]
 │
+├── apps
+│   ├── list [project]
+│   │   ├── --project, -p <query>  repeated
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --platform android|ios|web
+│   │   ├── --show-deleted
+│   │   ├── --update | --cached
+│   │   └── --json
+│   ├── show <app> [--project|-p <project>] [--update|--cached] [--json]
+│   └── config <app> [--project|-p <project>] [--update|--cached] [--to <path>] [--yes|-y] [--json]
+│
 ├── add <parameter>
 │   ├── --project, -p <query>  repeated
 │   ├── --expr <expr>
@@ -47,9 +58,9 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │       └── --use-in-app-default
 │
 ├── cache
-│   ├── list [--json]
-│   ├── path [--json]
-│   └── clear [--yes|-y]
+│   ├── list [--kind all|remote-config|apps] [--json]
+│   ├── path [--kind all|remote-config|apps] [--json]
+│   └── clear [--kind all|remote-config|apps] [--yes|-y]
 │
 ├── config
 │   ├── path [--scope global|local] [--json]
@@ -66,7 +77,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   └── zsh [--no-descriptions]
 │
 ├── conditions
-│   ├── list <project>
+│   ├── list [project]
+│   │   ├── --project, -p <query>  repeated
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --search <text>
 │   │   ├── --expr <expr>
@@ -593,7 +605,7 @@ and `project quota-project` to manage persisted values without editing files.
 
 ### Filter queries
 
-Flags named `--project` or `--filter` use mode-prefixed query strings:
+Project selectors and flags named `--project` or `--filter` use mode-prefixed query strings:
 
 ```text
 ~query   fuzzy match; default if no prefix is given
@@ -602,11 +614,12 @@ Flags named `--project` or `--filter` use mode-prefixed query strings:
 =query   exact case-insensitive match
 ```
 
-Project filters match project display name, project ID, or any repository alias.
-Alias matching follows the requested filter mode, so `=prod` is the recommended
-exact selector for scripts. Parameter filters match parameter key. `--project`
-and `--filter` may be repeated; repeated values are ORed and must be passed as
-separate flags.
+Repeatable project-filter flags match project display name, project ID, or any
+repository alias. Alias matching follows the requested filter mode, so `=prod`
+is the recommended exact selector for scripts. A scalar project selector first
+checks an exact repository alias, but its fallback filter matches only display
+name and project ID. Parameter filters match parameter key. Repeatable
+`--project` and `--filter` values are ORed and must be passed as separate flags.
 Outer Unicode whitespace is trimmed before the optional mode prefix is parsed.
 The semantic schema publishes the matched resource fields, complete mode map,
 and case-insensitive fuzzy, starts-with, includes, and exact matching algorithm
@@ -625,13 +638,13 @@ client@project-id   client template; explicit alias
 server@project-id   server template in the firebase-server namespace
 ```
 
-The prefix comes before a filter mode. For example, `-p 'server@=api-prod'` selects the server template of exactly `api-prod`, while `-p 'client@^mobile-'` selects client templates whose project name or ID starts with `mobile-`. Repeated flags can mix client and server targets in one invocation. Target prefixes are recognized case-insensitively and canonicalized to lowercase. Query flags trim outer whitespace and whitespace around the project query after an explicit prefix. Positional target selectors preserve the project name or ID exactly without trimming. Explicit `client@` remains distinct from an unqualified target during selection, though both canonicalize to the same client target identity.
+The prefix comes before a filter mode. For example, `server@=api-prod` selects the server template of exactly `api-prod`, while `client@^mobile-` selects a client template whose project name or ID starts with `mobile-`. Repeated flags can mix client and server targets in one invocation. Target prefixes are recognized case-insensitively and canonicalized to lowercase. Exact positional resolution preserves the supplied project query; filter fallback trims outer whitespace. Explicit `client@` remains distinct from an unqualified target during selection, though both canonicalize to the same client target identity.
 
 Each cached project stores its enabled template selections and one primary template. New and existing projects default to client-only. An unqualified bulk filter, or no `--project` filter, expands every matched project to its configured enabled templates. An unqualified positional `<project>` selects that project's primary template. Explicit `client@` and `server@` prefixes always select exactly that template, independently of the saved selections. Target-aware matching annotations publish all three rules and client-target canonicalization to the unqualified project ID. Invocation schemas for bulk `--project` commands also publish their no-filter default over all configured projects and enabled templates.
 
 The target syntax applies to `add`, `get`, `update`, `delete`, `duplicate`, and `groups`; all `conditions` and `versions` commands; `draft` commands; `project export`, `project import`, and `project defaults`; and the source and destination of `projects diff` and `projects promote`.
 
-Project metadata and managed-feature commands remain project-scoped rather than template-scoped. In particular, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `experiments`, `rollouts`, `personalizations`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix. Stateful `project show` and `project open` do not parse target prefixes: characters such as `client@` or `server@` are part of their literal project query. Their stateless forms instead require a literal physical project ID and reject `@` target syntax. Template-preference and managed-feature commands explicitly reject recognized `client@` and `server@` target syntax. A managed-feature `server@` target reports that managed features support only the client namespace, while a `client@` target asks you to omit the unnecessary prefix.
+Project metadata, app, and managed-feature commands remain project-scoped rather than template-scoped. In particular, `apps`, `projects list`, `projects update`, `projects forget`, `project show`, `project templates`, `project open`, `experiments`, `rollouts`, `personalizations`, `auth bind`, and `doctor` continue to accept ordinary project IDs or names without a template prefix. Stateful `project show` and `project open` do not parse target prefixes: characters such as `client@` or `server@` are part of their literal project query. Their stateless forms instead require a literal physical project ID and reject `@` target syntax. App, template-preference, and managed-feature commands explicitly reject recognized `client@` and `server@` target syntax. A managed-feature `server@` target reports that managed features support only the client namespace, while other project-scoped commands ask you to omit the unnecessary prefix.
 
 Client targets are canonicalized to the unqualified project ID, so `project-id` and `client@project-id` share exactly the same cache, version snapshots, and draft. Server targets retain their prefix and use separate local files:
 
@@ -652,13 +665,14 @@ Template-aware commands first parse the optional `client@` or `server@` prefix, 
 2. Exact case-sensitive repository alias.
 3. Exact case-sensitive project display name.
 
-Filter mode prefixes do not apply to positional project arguments. Leading
-`=`, `^`, `/`, and `~` characters are part of the literal project query. The
-query is not trimmed; a case mismatch, substring, or surrounding whitespace
-does not select the resource.
+If none of those exact, case-sensitive tiers matches, the selector becomes a
+case-insensitive filter over project IDs and display names. An unprefixed query
+uses fuzzy matching; `~`, `^`, `/`, and `=` explicitly request fuzzy,
+starts-with, includes, and exact filtering. Repository aliases participate only
+in the exact tier, not filter fallback. Filter fallback trims outer whitespace.
 
-A single match is selected. Multiple exact display-name matches print only the
-ambiguous projects and return an error. No match prints the known-project
+A single match is selected. Multiple exact-name or filtered matches print only
+the matching projects and return an error. No match prints the known-project
 table and returns an error. Exact ID always wins over a colliding alias, and an
 alias wins over a colliding display name. Once a configured alias is recognized,
 an unavailable target reports the alias, canonical ID, and selected profile
@@ -671,8 +685,10 @@ output, caches, drafts, retry filters, and API requests continue using canonical
 target IDs.
 
 Draft commands resolve only locally stored drafts and never synchronize projects
-as a side effect. An explicit prefix selects that template kind. An unqualified
-query or alias selects the configured primary template when the project is still
+as a side effect. They use the same exact tier and mode-prefixed/default-fuzzy
+fallback, but filter only project IDs and display names represented by existing
+drafts. An explicit prefix selects that template kind. An unqualified query or
+alias selects the configured primary template when the project is still
 registered, and falls back to the client template for an unregistered project.
 Aliases therefore remain usable for drafts that outlive the project registry.
 This also permits `show --raw` and `discard` for drafts whose project is no
@@ -953,6 +969,9 @@ tests compare it exactly with the executable Cobra inventory.
 ```text
 add
 apply
+apps.config
+apps.list
+apps.show
 auth.add.gcloud
 auth.add.google
 auth.add.oauth
@@ -1375,6 +1394,20 @@ same direct/discovered behavior as stateless `add` and `get`. Every selected
 template is fetched and published independently without local state or hooks.
 `--draft` is rejected; the other mutation controls retain their normal behavior.
 
+### Remote Config cache freshness
+
+Remote Config read commands (`get`, `conditions list/show`, `groups list`,
+and the list/show commands under `experiments`, `rollouts`, and
+`personalizations`) accept
+`--cached`: use an existing template regardless of age, or fetch and cache it
+when absent. This differs from the cache-only flags on `apps show/config`, versions, and
+comparisons, which require local data. `--cached` is mutually exclusive with
+`--update`, unavailable with `--stateless`, and unavailable with stdin for
+`get`. Experiments and rollouts still fetch their feature metadata live;
+the flag controls only their Remote Config template. Intentionally accepted
+stale templates report source `cache`; parameter status still reflects age
+(`stale`), without a refresh-failure warning. Project registry reads have no expiry.
+
 ### `fbrcm get [parameter]`
 
 Prints Remote Config parameters across template targets.
@@ -1391,9 +1424,10 @@ Flags:
 --json                  print JSON rows
 --all                   include projects with no matching parameters in table output
 --update                revalidate cached parameters before printing
+--cached                use cached Remote Config even when stale; fetch if absent
 ```
 
-Default output is a terminal table. Firebase-managed values use compact human summaries. Personalizations render as `◈ (personalization)`, and unknown future value options render as `(optionName)`. Experiments with published template variants render as `⚗ 15% : true | false | true`, or as `⚗ true | false` when the template has no exposure percentage; unavailable or incomplete variant data falls back to `⚗ (a/b test)`. Rollouts render their published value without another API request as `◐ 10% → 20 | (no change)`. The vertical bar groups variants within one managed value and remains distinct from the slash that separates collapsed conditional values. Percentages use the shared gold count color, concrete managed values use the parameter type's value color, and placeholders such as `(no change)` and `(empty string)` use the same muted gray as the surrounding chrome. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status. Status is `fetch` for freshly fetched or just-verified data, `cached` for a usable cache, `stale` for an expired fallback, `missing` when no data is available, and `error` when cached data is shown alongside a load error.
+Default output is a terminal table. Firebase-managed values use compact human summaries. Personalizations render as `◈ (personalization)`, and unknown future value options render as `(optionName)`. Experiments with published template variants render as `⚗ 15% : true | false | true`, or as `⚗ true | false` when the template has no exposure percentage; unavailable or incomplete variant data falls back to `⚗ (a/b test)`. Rollouts render their published value without another API request as `◐ 10% → 20 | (no change)`. The vertical bar groups variants within one managed value and remains distinct from the slash that separates collapsed conditional values. Percentages use the shared gold count color, concrete managed values use the parameter type's value color, and placeholders such as `(no change)` and `(empty string)` use the same muted gray as the surrounding chrome. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status. Status is `fetch` for freshly fetched or just-verified data, `cached` for a usable cache, `stale` for expired cache accepted with `--cached` or used after a failed refresh, `missing` when no data is available, and `error` when cached data is shown alongside a load error.
 
 Stdin mode reads Remote Config JSON from stdin and queries only that config. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. As an experimental human-only convenience on supported systems, a directory on stdin makes `get` read top-level `.json` files as multiple projects; this transport is not published in machine schemas or capability metadata.
 
@@ -1491,17 +1525,21 @@ and `--change-note` are unavailable in this mode.
 
 Parameters containing Firebase-managed or unknown future values cannot be deleted. The same protection applies in remote, draft, and stdin modes.
 
-### `fbrcm conditions list <project>`
+### `fbrcm conditions list [project]`
 
 Lists condition definitions in Firebase evaluation-priority order. The command uses an unpublished draft when one exists; otherwise it reads the parameter cache. If a normal cache read fails but a stale cache exists, it prints that stale snapshot rather than discarding usable condition data.
+
+An optional positional `<project>` retains single-project resolution. It cannot be combined with repeatable `--project|-p` filters. Without a positional argument, filters are ORed; omitting filters selects all configured projects and enabled templates. Results are ordered by project name and project/target ID, preserving the existing order within each project.
 
 Flags:
 
 ```text
+-p, --project <query>  filter projects; may be repeated; mutually exclusive with <project>
 -f, --filter <query>   filter condition names; may be repeated
 --search <text>        case-insensitive substring search across name and expression
 --expr <expr>          filter using condition expression context
 --update               revalidate cached Remote Config before printing
+--cached               use cached Remote Config even when stale; fetch if absent
 --json                 print structured JSON
 ```
 
@@ -1509,7 +1547,9 @@ Condition filters use the shared mode prefixes described under Filter Queries. R
 
 With root `--stateless`, `<project>` must be a literal client or server target and the command fetches the latest Remote Config directly using `FBRCM_GOOGLE_ACCESS_TOKEN`. It does not read or write the project registry, parameter cache, drafts, or hooks; consequently the source is Firebase and no unpublished draft is applied. `--filter`, `--search`, and `--expr` retain their normal local filtering behavior after the fetch. `--update` cannot be combined with `--stateless` because stateless reads are already live.
 
-Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Long expressions are cropped with an ellipsis. In JSON mode, `data.items` contains the condition objects without repeated project/version/source context and `data.count` contains their count.
+With a positional project, human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Within expressions, the platform segment of every complete Firebase App ID is colored with Firebase's Android, iOS, or Web color. Long expressions and names are cropped with an ellipsis when needed. Without a positional project, the table has a first `Project` column, even if filters select only one target; long project names are cropped with an ellipsis. In both modes, each condition in `data.items` includes `project` (display name) and `project_id` (canonical template target ID), and `data.count` is the total condition count.
+
+Stateless bulk selection follows `get`: exact `=project-id` filters bypass discovery, other filters match live project IDs/names, and no filters discover all accessible projects. Template prefixes are supported. Stateless positional selection still requires one literal target.
 
 ### `fbrcm conditions show <project> <condition>`
 
@@ -1519,10 +1559,11 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before printing
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print structured JSON
 ```
 
-Human output includes priority, color-styled name and color, expression, a pluralized usage count, and a typed-value table. JSON output includes project/version/source context and the complete condition usage model.
+Human output includes priority, color-styled name and color, expression, a pluralized usage count, and a typed-value table. In the expression, the platform segment of every complete Firebase App ID uses Firebase's Android, iOS, or Web color. JSON output includes project/version/source context and the complete condition usage model.
 
 With root `--stateless`, `<project>` is a literal client or server target. The command fetches the published template directly, does not apply drafts or use caches, retains exact condition-name lookup, and rejects `--update` because the read is already live.
 
@@ -1617,6 +1658,7 @@ List flags:
 -f, --filter <query>   filter group names; may be repeated
 --search <text>        search group names and descriptions
 --update               revalidate cached Remote Config before printing
+--cached               use cached Remote Config even when stale; fetch if absent
 --json                 print structured JSON
 ```
 
@@ -1663,16 +1705,16 @@ Human output includes canonical target ID, project name, base version, update ti
 JSON entries include `project_id`, `project`, `base_version`, `created_at`, `updated_at`, byte size, status, validity, base availability, path, change counts, and `change_note`.
 
 All draft selectors operate only on existing local drafts. Positional draft
-selectors are untrimmed and resolve exactly and case-sensitively by physical
-project ID, then repository alias, then display name. For positional selectors,
-`~`, `^`, `/`, and `=` are literal characters rather than mode prefixes. An
-optional `client@` or `server@` prefix selects that template; an unqualified
-selector uses the configured primary template, or client when the project is no
-longer registered. Zero and multiple exact display-name matches return typed
-`draft.not_found` and `draft.ambiguous` problems. `draft list --filter` remains
-an explicit case-insensitive mode-prefixed query over the existing draft set
-and only includes configured enabled templates for an unqualified match, with
-the same unregistered client fallback.
+selectors first resolve exactly and case-sensitively by physical project ID,
+repository alias, then display name. If no exact tier matches, the selector uses
+the shared case-insensitive mode prefixes over draft project IDs and display
+names, with fuzzy matching by default. An optional `client@` or `server@`
+prefix selects that template; an unqualified selector uses the configured
+primary template, or client when the project is no longer registered. Zero and
+multiple filtered matches return typed `draft.not_found` and `draft.ambiguous`
+problems. `draft list --filter` remains a repeatable query over the existing
+draft set and includes configured enabled templates for an unqualified match,
+with the same unregistered client fallback.
 
 ### `fbrcm draft path`
 
@@ -1803,7 +1845,7 @@ The status is `disabled` when the latest project synchronization could not find 
 
 ### `fbrcm project templates show <project>`
 
-Shows the enabled templates and primary template stored for one physical project. It reads only the local projects registry and does not synchronize projects or contact Firebase. `<project>` uses normal cached project name or ID resolution; explicit `client@` and `server@` prefixes are rejected because the preferences belong to the physical project.
+Shows the enabled templates and primary template stored for one physical project. It reads only the local projects registry and does not synchronize projects or contact Firebase. `<project>` uses the shared cached exact-then-filtered project resolution; explicit `client@` and `server@` prefixes are rejected because the preferences belong to the physical project.
 
 Flags:
 
@@ -1960,6 +2002,76 @@ validated and published with its ETag, and dry-run still performs Firebase
 validation. `--draft` is rejected because stateless execution cannot persist a
 draft.
 
+### Firebase applications
+
+The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. Firebase applications are separate resources from Remote Config, but condition expressions can refer to Firebase App IDs. The commands make those identifiers and the corresponding SDK configuration available without adding app mutations. In normal mode the commands use a separate, profile-scoped application cache with a one-hour TTL. The inventory, platform-specific details, and exact SDK configuration artifacts are cached independently under the active profile's `apps` cache directory. This does not change or reuse Remote Config snapshots. For `apps list`, `<project>` uses the shared exact-then-filtered project resolution in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
+
+All three subcommands are cache-first. `--update` forces a Firebase read and refreshes the relevant cache entries. For `apps list`, `--cached` accepts stale inventory and fetches from Firebase and saves the inventory when it is absent. For `apps show` and `apps config`, it performs no Firebase request and requires cached entries. The flags are mutually exclusive. Stateless mode always reads Firebase directly and rejects both cache flags. A failed inventory or details refresh may fall back to a stale entry and reports `source: "cache-stale"` plus a structured `cache.stale` warning. SDK configuration never falls back implicitly because it may contain security-sensitive, operational configuration: stale configuration is returned only when `--cached` was explicit. Machine results expose `source` (`firebase`, `cache`, or `cache-stale`) and `cached_at` when available.
+
+`<app>` is exact and case-sensitive. Resolution tries Firebase App ID, full resource name, namespace (Android package name, iOS bundle ID, or Web namespace), then display name. A missing value returns `app.not_found`; a non-unique value at the first matching tier returns `app.ambiguous` with candidate App IDs.
+
+### `fbrcm apps list [project]`
+
+Lists all active registered applications. Human output contains name, platform, namespace, App ID, and state. Platform labels use the Firebase-derived Android `#56bca6`, iOS `#4ca7ee`, and Web `#c73462` colors. The matching colon-delimited platform token in each App ID uses the same color. When `nerd_font_glyphs` is enabled, the platform column prefixes Android, iOS, and Web with their Nerd Font icons. The table uses natural content width and ellipsizes name, namespace, and App ID only when needed to fit the terminal. A non-empty `NO_COLOR` disables all of these colors without removing enabled glyphs.
+
+An optional positional `<project>` retains single-project resolution. It cannot be combined with repeatable `--project|-p` filters. Without a positional argument, filters are ORed; omitting filters selects all configured physical projects. Results are ordered by project name and project/target ID, preserving the existing order within each project.
+
+Flags:
+
+```text
+-p, --project <query>  filter projects; may be repeated; mutually exclusive with <project>
+-f, --filter <query>              filter display name, namespace, or App ID; may be repeated
+--platform android|ios|web        include only one platform
+--show-deleted                    include applications pending permanent deletion
+--update                          refresh from Firebase and update the application cache
+--cached                          use stale application cache; fetch if absent
+--json                            put typed application summaries in envelope data
+```
+
+Filtering uses the shared mode prefixes and is applied locally after every Firebase page is loaded. Repeated filters are ORed.
+
+Without a positional project, the table has a first `Project` column, even if filters select one project. Long project names are cropped with an ellipsis. With a positional project, the existing project/source heading is retained. In both modes, `data.items` contains application summaries with `project` (display name), `project_id`, `source`, and optional `cached_at` on each item; `data.count` is the total application count.
+
+`--cached` uses normal project resolution (which can discover projects when the registry is absent), accepts existing inventory regardless of age, and fetches missing inventory. Explicit stale-cache reads retain `source: "cache-stale"` and their original timestamp without a refresh-failure warning. Stateless bulk selection uses exact `=project-id` filters directly or discovers projects for other filters or omitted filters; it never consults aliases or local state. Template prefixes remain invalid for apps.
+
+### `fbrcm apps show <app>`
+
+Shows common application metadata and the platform-specific fields returned by Firebase: Android package name and certificate hashes, iOS bundle/App Store/team IDs, or Web URLs and Web ID. The Platform row and the colon-delimited platform token in the App ID row use the same Firebase-derived platform colors as `apps list`, unless `NO_COLOR` is non-empty. When `nerd_font_glyphs` is enabled, the Platform row prefixes the text platform name with its Nerd Font icon. Human output also reports the source and cache timestamp. `--json` returns the stable typed details DTO plus cache provenance rather than Firebase's open-ended beta response.
+
+Use `--project` or `-p` when `<app>` is a name, namespace, or resource name. In normal mode, the value first resolves as an exact case-sensitive project ID, repository alias, or display name, in that order. If none matches exactly, it is treated as a project ID/display-name filter using fuzzy matching by default and the shared `^` starts-with, `/` includes, `~` fuzzy, and `=` exact prefixes. One filtered result is selected; multiple results return `project.ambiguous` and display the matching projects. In stateless mode, `--project` remains a literal physical project ID and does not accept filter prefixes. A complete Firebase App ID (`version:project-number:platform:hash`) supplies the project number and does not require `--project`.
+
+Flags:
+
+```text
+-p, --project <project>   select the physical Firebase project
+--update                  refresh from Firebase and update the application cache
+--cached                  require cached app inventory and details, even when stale
+--json                    put typed application details in envelope data
+```
+
+`--update` and `--cached` follow the application-cache behavior described above.
+
+### `fbrcm apps config <app>`
+
+Downloads the SDK configuration for the selected application. Without `--to`, human mode writes the configuration bytes directly to stdout. JSON mode returns the selected app, Firebase's suggested filename, and a contract artifact. Android and Web use `application/json`; iOS uses `application/x-plist`. Web configuration is deterministic indented JSON, while Android and iOS preserve Firebase's decoded file bytes exactly.
+
+`--project` and `-p` follow the same exact-then-filtered resolution as `apps show`. A complete Firebase App ID (`version:project-number:platform:hash`) supplies the project number and does not require the flag.
+
+Flags:
+
+```text
+-p, --project <project>   select the physical Firebase project
+--update                  refresh from Firebase and update the application cache
+--cached                  require cached app inventory and SDK configuration, even when stale
+--to <path>               write configuration to a private file
+-y, --yes                 overwrite an existing destination without confirmation
+--json                    put application metadata and a typed artifact in envelope data
+```
+
+`--update` and `--cached` follow the application-cache behavior described above. Without `--to`, raw human stdout remains exactly the SDK configuration artifact; source information and warnings do not contaminate it.
+
+`--to <path>` writes a private destination file. If the path exists, normal mode asks for confirmation with Yes selected by default; `--yes` bypasses that prompt. JSON mode never prompts and reports `interaction.required` unless overwrite was authorized.
+
 ### Remote Config managed features
 
 Experiments and rollouts provide read-only `list` and `show` commands plus an explicit destructive `delete` command. Personalizations remain read-only. The CLI cannot create, start, stop, or edit managed features, and none of these commands publish Remote Config. All three command groups use ordinary positional project resolution and the client Remote Config namespace.
@@ -1994,6 +2106,7 @@ Flags:
 ```text
 -f, --filter <query>   filter display names locally; may be repeated
 --update                revalidate cached Remote Config before reading bindings
+--cached                use cached Remote Config even when stale; fetch if absent
 --json                  put filtered experiment objects and references in envelope data
 ```
 
@@ -2012,6 +2125,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before reading bindings
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print project/template context and the complete Firebase experiment object with references
 ```
 
@@ -2048,6 +2162,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before reading bindings
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     put rollout objects and references in envelope data
 ```
 
@@ -2064,6 +2179,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before reading bindings
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print project/template context and the rollout with references
 ```
 
@@ -2093,6 +2209,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before scanning it
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     put personalization IDs and references in envelope data
 ```
 
@@ -2106,6 +2223,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before scanning it
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print project/template context and the personalization references
 ```
 
@@ -2115,7 +2233,7 @@ Stateless behavior is the same as for `personalizations list`; exact personaliza
 
 ### Remote Config version history
 
-Version commands are scoped to one template target and use the same positional target resolution as `project export`: exact case-sensitive project ID, repository alias, then display name. Client and server histories and local snapshots are independent.
+Version commands are scoped to one template target and use the same exact-then-filtered positional target resolution as `project export`. Client and server histories and local snapshots are independent.
 
 Every version command with `--cached` resolves the target and repository aliases
 from the local projects registry only. It neither synchronizes projects from
@@ -2359,7 +2477,7 @@ Project synchronization retains projects that are no longer accessible instead o
 
 ### `fbrcm projects forget`
 
-Forgets matching locally tracked projects and deletes both their client and server cached Remote Config snapshots, cached versions, and drafts. It never deletes Firebase projects or otherwise reads from or writes to Firebase. With no filter or expression, every configured project is selected. The expression uses the same project context as `projects list`, but evaluates against local client Remote Config cache only; project-only expressions work even when that cache is missing.
+Forgets matching locally tracked projects and deletes both their client and server cached Remote Config snapshots, cached versions, drafts, and Firebase app caches. It never deletes Firebase projects or registered Firebase apps, and it does not otherwise read from or write to Firebase. With no filter or expression, every configured project is selected. The expression uses the same project context as `projects list`, but evaluates against local client Remote Config cache only; project-only expressions work even when that cache is missing.
 
 Flags:
 
@@ -2536,7 +2654,7 @@ Flags:
 
 ### `fbrcm doctor`
 
-Runs a complete, non-interactive application health check. It verifies the selected profile and profile directories, auth registry, credential files, OAuth token presence and expiry, network/offline state, Cloud Resource Manager API access, Remote Config API reads, required Firebase read/update IAM permissions for cached projects, and profile cache writability. The writability check creates and removes a temporary probe file; capability metadata publishes those transient local file effects separately.
+Runs a complete, non-interactive application health check. It verifies the selected profile and profile directories, auth registry, credential files, OAuth token presence and expiry, network/offline state, Cloud Resource Manager API access, Remote Config API reads, required Remote Config read/update and Firebase application read IAM permissions for cached projects, and profile cache writability. The writability check creates and removes a temporary probe file; capability metadata publishes those transient local file effects separately.
 
 Doctor never opens OAuth login and never persists a refreshed token. In offline mode it reports the state and skips live API and permission checks. Online mode accesses Firebase only when at least one locally usable authentication identity is available. It prints every check even when some fail, and exits with status 1 when any check has `fail` status; warnings alone do not fail the command. The diagnostic run has no overall time limit by default. A deadline or `Ctrl+C` still prints the partial table or JSON report, then exits with the semantic timeout status 9 or canceled status 130 respectively; a failed check does not mask that context error.
 
@@ -2555,34 +2673,37 @@ In JSON mode, `data.items` contains checks and `data.count` contains their count
 
 ### `fbrcm cache list`
 
-Lists immutable cached Remote Config versions for client and server template targets. Client entries use the unqualified project ID; server entries use `server@project-id`. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
+Lists immutable cached Remote Config versions and Firebase application inventory, details, and SDK configuration entries. The Kind column distinguishes `remote-config`, `apps-index`, `app-details`, and `app-config`. Client Remote Config entries use the unqualified project ID; server entries use `server@project-id`. Drafts have a separate lifecycle under `fbrcm draft` and are not included.
 
 Flags:
 
 ```text
---json   print cache entries as JSON
+--kind all|remote-config|apps   select cache entries (default all)
+--json                          print cache entries as JSON
 ```
 
-JSON entries include canonical target ID in `project_id`, underlying project name, version, file size, cached time, and path.
+JSON entries include kind, canonical project or target ID in `project_id`, underlying project name, optional App ID resource, optional Remote Config version, file size, cached time, and path.
 
 ### `fbrcm cache path`
 
-Prints the directory containing immutable cached Remote Config snapshots for the active profile. It does not return the profile-wide cache root used by drafts and OAuth token caches.
+Prints the directory containing immutable cached Remote Config snapshots for the active profile by default. `--kind apps` prints the application cache directory and `--kind all` prints the profile cache root. The profile root may also contain separately managed drafts or credential caches; `cache clear --kind all` still deletes only Remote Config and application entries.
 
 Flags:
 
 ```text
---json   print {"path": "..."}
+--kind all|remote-config|apps   select the cache directory (default remote-config)
+--json                          print {"path": "..."}
 ```
 
 ### `fbrcm cache clear`
 
-Deletes all locally cached immutable Remote Config versions for both template kinds. The confirmation reports snapshot count, total size, and template-target count, and warns that versions no longer retained by Firebase may be permanently lost. Drafts are never deleted by this command.
+Deletes local Remote Config and application cache entries. `--kind` can limit deletion to one cache family. The confirmation reports entry count, total size, and project count. Drafts are never deleted by this command.
 
 Flags:
 
 ```text
--y, --yes   skip cache confirmation
+--kind all|remote-config|apps   select cache entries (default all)
+-y, --yes                      skip cache confirmation
 ```
 
 Use `fbrcm draft discard` or `fbrcm draft discard --all` for explicit draft deletion.
@@ -2611,7 +2732,7 @@ Shows the effective layered configuration after applying keybinding migration
 and built-in defaults. With no key, human output is TOML and includes the
 complete effective key map. `--scope global` or `--scope local` instead shows
 only values physically stored in that layer. Supported keys are `profile`,
-`theme`, `powerline_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
+`theme`, `powerline_glyphs`, `nerd_font_glyphs`, `keys`, `keys.<block>`, `keys.<block>.<action>`, `hooks`,
 `hooks.timeout`, `hooks.pre_publish`, `hooks.post_publish`, `projects`,
 `projects.aliases`, `projects.aliases.<alias>`, `network`,
 `network.max_concurrent_requests`, `network.requests_per_minute`,
@@ -2652,6 +2773,7 @@ is found. Supported forms are:
 ```text
 theme <name>
 powerline_glyphs true|false
+nerd_font_glyphs true|false
 network.max_concurrent_requests 1..64
 network.requests_per_minute 0..60000
 network.rate_limit_cooldown <positive-duration>
@@ -2669,6 +2791,8 @@ projects.aliases.<alias> <project-id>   requires --scope local
 The selected theme must resolve from the user-wide `themes` directory. See
 [Theming](theming.md) for its file format, inheritance, and fallback behavior.
 
+`nerd_font_glyphs` is disabled by default and should be enabled only when the terminal uses a Nerd Font. It adds Android, Apple, and globe icons to human `apps list` and `apps show` platform labels; machine-readable output is unchanged.
+
 The active `profile` is read-only here; use `fbrcm profile switch <name>` or edit
 the local TOML. Only explicit overrides are stored: inherited values and
 built-in defaults are never copied into the target layer. The complete effective
@@ -2679,7 +2803,7 @@ unchanged.
 
 Leading and trailing Unicode whitespace around nested
 `keys.<block>.<action>`, `network.*`, and `projects.aliases.<alias>` keys is removed before
-lookup. The top-level `theme` and `powerline_glyphs` keys are compared exactly.
+lookup. The top-level `theme`, `powerline_glyphs`, and `nerd_font_glyphs` keys are compared exactly.
 The normalized machine invocation schema publishes this conditional trimming.
 Keybinding values accept a printable single character, `f1` through `f63`, the
 documented terminal key names, or a unique sequence of supported modifiers
@@ -2698,7 +2822,7 @@ Flags:
 
 Removes a stored override from the selected layer. Removing a local override
 reveals the global value; removing a global override reveals the built-in
-default. The optional key may be `theme`, `powerline_glyphs`, `network`,
+default. The optional key may be `theme`, `powerline_glyphs`, `nerd_font_glyphs`, `network`,
 `network.max_concurrent_requests`, `network.requests_per_minute`,
 `network.rate_limit_cooldown`, `network.retry`, any `network.retry.*` scalar, `keys`,
 `keys.<block>`, or `keys.<block>.<action>`. With no key, it removes all stored preferences while

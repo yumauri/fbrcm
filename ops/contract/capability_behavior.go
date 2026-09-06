@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"slices"
 	"strings"
 )
 
@@ -96,6 +97,34 @@ func statelessUpdatingRemoteRead(extra ...effectBehavior) capabilityBehavior {
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "update", "equals", true)),
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
 	}, extra...)
+}
+
+func appCacheRead(fetchMissing bool, extra ...effectBehavior) capabilityBehavior {
+	remoteWhen := []BehaviorConditionClause{
+		conditionClause(predicate("option", "stateless", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
+	}
+	cacheWriteWhen := []BehaviorConditionClause{
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
+		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
+	}
+	if fetchMissing {
+		// Inventory reads accept stale cache but still fetch when it is absent.
+		for _, clauses := range [][]BehaviorConditionClause{remoteWhen, cacheWriteWhen} {
+			for i := range clauses {
+				clauses[i].AllOf = slices.DeleteFunc(clauses[i].AllOf, func(p BehaviorPredicate) bool {
+					return p.Source == "option" && p.Name == "cached"
+				})
+			}
+		}
+	}
+	effects := []effectBehavior{
+		effect("firebase_remote_read", remoteWhen...),
+		effect("local_cache_write", cacheWriteWhen...),
+	}
+	effects = append(effects, extra...)
+	return capabilityBehavior{level: 2, effects: effects, network: "conditional", networkWhen: cloneConditions(remoteWhen), idempotency: "yes"}
 }
 
 func managedFeatureRead() capabilityBehavior {
@@ -634,7 +663,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"auth.quota-project.set":   localWrite(),
 	"auth.quota-project.unset": quotaProjectResolutionBehavior(localWrite()),
 	"auth.delete":              destructive(localMutationEffects("local_state_write", "local_file_delete"), "removes stored authentication material"),
-	"cache.clear":              destructive(localMutationEffects("local_cache_delete"), "removes cached Remote Config data"),
+	"cache.clear":              destructive(localMutationEffects("local_cache_delete"), "removes cached Remote Config or Firebase application data"),
 	"config.reset":             destructive(localWrite(), "removes persisted configuration values"),
 	"config.set":               localWrite(),
 	"draft.change-note": {
@@ -688,7 +717,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"projects.aliases.import":     destructive(previewableLocalWrite(), "--conflict overwrite may replace persisted project aliases"),
 	"projects.aliases.remove":     destructive(localWrite(), "removes persisted project aliases"),
 	"projects.aliases.set":        destructive(localWrite(), "replaces an existing project alias when the mapping changes"),
-	"projects.forget":             destructive(localMutationEffects("local_state_write", "local_cache_delete", "local_draft_delete"), "removes projects from the local registry and deletes their cached templates, version snapshots, and drafts"),
+	"projects.forget":             destructive(localMutationEffects("local_state_write", "local_cache_delete", "local_draft_delete"), "removes projects from the local registry and deletes their cached applications, templates, version snapshots, and drafts"),
 	"projects.reset":              destructive(localMutationEffects("local_state_write", "local_file_delete"), "replaces the local project registry"),
 
 	"draft.show": withInteraction(behavior(1, "none", effect("local_file_write",
@@ -709,7 +738,11 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		"optional", "oauth_authorization_returns_interaction",
 		conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))),
 
-	"conditions.list":     statelessUpdatingRemoteRead(),
+	"conditions.list": statelessUpdatingRemoteRead(),
+	"apps.list":       appCacheRead(true),
+	"apps.show":       appCacheRead(false),
+	"apps.config": destructive(appCacheRead(false, effect("local_file_write",
+		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "an existing destination file may be overwritten"),
 	"conditions.show":     statelessUpdatingRemoteRead(),
 	"conditions.validate": requiredCacheableRemoteRead(effect("firebase_remote_validation")),
 	"doctor": {
@@ -794,6 +827,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 func init() {
 	for _, id := range []string{
 		"add", "delete", "duplicate", "update",
+		"apps.config", "apps.list", "apps.show",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"experiments.delete", "experiments.list", "experiments.show",
 		"get",

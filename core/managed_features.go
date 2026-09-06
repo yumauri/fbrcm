@@ -105,12 +105,12 @@ func marshalManagedFeatureEntry(metadata any, references []ManagedValueReference
 	return json.Marshal(fields)
 }
 
-func (s *Core) ListRemoteConfigExperiments(ctx context.Context, project Project, update bool) (ExperimentList, error) {
+func (s *Core) ListRemoteConfigExperiments(ctx context.Context, project Project, opts ParametersReadOptions) (ExperimentList, error) {
 	fb, projectIdentifier, err := s.managedFeatureService(ctx, project)
 	if err != nil {
 		return ExperimentList{}, err
 	}
-	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, update)
+	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, opts)
 	if err != nil {
 		return ExperimentList{}, err
 	}
@@ -139,12 +139,12 @@ func (s *Core) ListRemoteConfigExperiments(ctx context.Context, project Project,
 	return result, nil
 }
 
-func (s *Core) GetRemoteConfigExperiment(ctx context.Context, project Project, experimentID string, update bool) (ExperimentEntry, ManagedFeatureTemplate, error) {
+func (s *Core) GetRemoteConfigExperiment(ctx context.Context, project Project, experimentID string, opts ParametersReadOptions) (ExperimentEntry, ManagedFeatureTemplate, error) {
 	experiment, err := s.GetRemoteConfigExperimentMetadata(ctx, project, experimentID)
 	if err != nil {
 		return ExperimentEntry{}, ManagedFeatureTemplate{}, err
 	}
-	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, update)
+	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, opts)
 	if err != nil {
 		return ExperimentEntry{}, ManagedFeatureTemplate{}, err
 	}
@@ -179,12 +179,12 @@ func (s *Core) DeleteRemoteConfigExperiment(ctx context.Context, project Project
 	return nil
 }
 
-func (s *Core) ListRemoteConfigRollouts(ctx context.Context, project Project, update bool) (RolloutList, error) {
+func (s *Core) ListRemoteConfigRollouts(ctx context.Context, project Project, opts ParametersReadOptions) (RolloutList, error) {
 	fb, projectIdentifier, err := s.managedFeatureService(ctx, project)
 	if err != nil {
 		return RolloutList{}, err
 	}
-	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, update)
+	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, opts)
 	if err != nil {
 		return RolloutList{}, err
 	}
@@ -211,12 +211,12 @@ func (s *Core) ListRemoteConfigRollouts(ctx context.Context, project Project, up
 	return result, nil
 }
 
-func (s *Core) GetRemoteConfigRollout(ctx context.Context, project Project, rolloutID string, update bool) (RolloutEntry, ManagedFeatureTemplate, error) {
+func (s *Core) GetRemoteConfigRollout(ctx context.Context, project Project, rolloutID string, opts ParametersReadOptions) (RolloutEntry, ManagedFeatureTemplate, error) {
 	rollout, err := s.GetRemoteConfigRolloutMetadata(ctx, project, rolloutID)
 	if err != nil {
 		return RolloutEntry{}, ManagedFeatureTemplate{}, err
 	}
-	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, update)
+	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, opts)
 	if err != nil {
 		return RolloutEntry{}, ManagedFeatureTemplate{}, err
 	}
@@ -251,8 +251,8 @@ func (s *Core) DeleteRemoteConfigRollout(ctx context.Context, project Project, r
 	return nil
 }
 
-func (s *Core) ListRemoteConfigPersonalizations(ctx context.Context, project Project, update bool) (PersonalizationList, error) {
-	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, update)
+func (s *Core) ListRemoteConfigPersonalizations(ctx context.Context, project Project, opts ParametersReadOptions) (PersonalizationList, error) {
+	cfg, template, err := s.loadManagedFeatureTemplate(ctx, project.ProjectID, opts)
 	if err != nil {
 		return PersonalizationList{}, err
 	}
@@ -271,8 +271,8 @@ func (s *Core) ListRemoteConfigPersonalizations(ctx context.Context, project Pro
 	return result, nil
 }
 
-func (s *Core) GetRemoteConfigPersonalization(ctx context.Context, project Project, personalizationID string, update bool) (PersonalizationEntry, ManagedFeatureTemplate, error) {
-	result, err := s.ListRemoteConfigPersonalizations(ctx, project, update)
+func (s *Core) GetRemoteConfigPersonalization(ctx context.Context, project Project, personalizationID string, opts ParametersReadOptions) (PersonalizationEntry, ManagedFeatureTemplate, error) {
+	result, err := s.ListRemoteConfigPersonalizations(ctx, project, opts)
 	if err != nil {
 		return PersonalizationEntry{}, ManagedFeatureTemplate{}, err
 	}
@@ -302,15 +302,8 @@ func (s *Core) managedFeatureService(ctx context.Context, project Project) (*fir
 	return fb, projectIdentifier, nil
 }
 
-func (s *Core) loadManagedFeatureTemplate(ctx context.Context, projectID string, update bool) (*firebase.RemoteConfig, ManagedFeatureTemplate, error) {
-	var cache *ParametersCache
-	var source string
-	var err error
-	if update {
-		cache, source, err = s.RevalidateParameters(ctx, projectID)
-	} else {
-		cache, source, err = s.GetParameters(ctx, projectID, false)
-	}
+func (s *Core) loadManagedFeatureTemplate(ctx context.Context, projectID string, opts ParametersReadOptions) (*firebase.RemoteConfig, ManagedFeatureTemplate, error) {
+	cache, source, err := s.ReadParameters(ctx, projectID, opts)
 	if err != nil {
 		return nil, ManagedFeatureTemplate{}, err
 	}

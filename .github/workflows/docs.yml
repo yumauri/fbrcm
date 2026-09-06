@@ -33,11 +33,18 @@ jobs:
         working-directory: docs
         run: npm ci
 
+      - name: Test documentation tooling
+        working-directory: docs
+        run: npm test
+
       - name: Build documentation
         working-directory: docs
         run: npm run build
         env:
           DOCS_SITE_URL: ${{ vars.DOCS_SITE_URL }}
+
+      - name: Verify documentation notices
+        run: test -s docs/.vitepress/dist/THIRD_PARTY_NOTICES.txt
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6

@@ -1,11 +1,22 @@
 package core
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/yumauri/fbrcm/core/config"
 )
+
+func TestWithApplicationVersionConfiguresCore(t *testing.T) {
+	svc, err := NewService(context.Background(), WithApplicationVersion("0.22.0"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if svc.applicationVersion != "0.22.0" {
+		t.Fatalf("application version = %q", svc.applicationVersion)
+	}
+}
 
 func TestConfigureFirebaseRequestsUsesEffectiveNetworkConfig(t *testing.T) {
 	svc := setupCoreTestEnv(t)

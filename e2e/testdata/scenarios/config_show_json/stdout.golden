@@ -23,6 +23,7 @@
     "config": {
       "profile": "default",
       "powerline_glyphs": true,
+      "nerd_font_glyphs": false,
       "keys": {
         "accounts": {
           "cancel": [

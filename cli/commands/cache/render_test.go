@@ -57,14 +57,27 @@ func TestRenderCacheTablePlainText(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	cachedAt := time.Date(2026, 6, 14, 9, 10, 11, 0, time.UTC)
 
-	table := renderCacheTable([]cacheEntry{
+	table := renderCacheTableAtWidth([]cacheEntry{
 		{ProjectID: "project-a", Project: "Project A", Version: "42", Size: 1536, CachedAt: &cachedAt},
 		{ProjectID: "project-b", Project: "Project B", Version: "43", Size: 10},
-	})
+	}, 200)
 
 	for _, want := range []string{"Project ID", "project-a", "Project A", "42", "1.5 KB", "project-b", "43"} {
 		if !strings.Contains(table, want) {
 			t.Fatalf("renderCacheTable = %q, want substring %q", table, want)
 		}
+	}
+}
+
+func TestRenderCacheTableEllipsizesFlexibleColumnsAtNarrowWidth(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	table := renderCacheTableAtWidth([]cacheEntry{{Kind: "app-config", ProjectID: "project-a", Project: "A very long project display name", Resource: "1:123:web:0123456789abcdef", Version: "—", Size: 10}}, 80)
+	for line := range strings.SplitSeq(table, "\n") {
+		if len([]rune(line)) > 80 {
+			t.Fatalf("line exceeds terminal width: %q", line)
+		}
+	}
+	if !strings.Contains(table, "…") {
+		t.Fatalf("narrow table does not ellipsize flexible content: %q", table)
 	}
 }

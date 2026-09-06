@@ -22,7 +22,7 @@ type getOptions struct {
 	paramArgument  *string
 	search         shared.ParameterSearch
 	jsonOut        bool
-	update         bool
+	readOptions    core.ParametersReadOptions
 	all            bool
 }
 
@@ -47,7 +47,7 @@ func addGetFlags(cmd invocation.FlagGroups) {
 	shared.AddParameterFilterFlags(cmd)
 	cmd.Flags().String("expr", "", "Filter parameters by expr-lang expression")
 	cmd.Flags().Bool("all", false, "Include projects with no matching parameters")
-	cmd.Flags().Bool("update", false, "Revalidate cached parameters before printing")
+	shared.AddParametersReadFlags(cmd, "Revalidate cached parameters before printing")
 }
 
 func runGetCommand(cmd invocation.Call, svc *core.Core, args []string) error {
@@ -56,11 +56,12 @@ func runGetCommand(cmd invocation.Call, svc *core.Core, args []string) error {
 		return err
 	}
 	stdinAvailable := shared.StdinAvailable(cmd.InOrStdin())
-	if opts.update && !core.ExecutionPolicyFromContext(shared.CommandContext(cmd)).ReadLocalState {
-		return shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
-	}
-	if opts.update && stdinAvailable {
-		return shared.InvalidArgument(fmt.Errorf("--update cannot be used with stdin; stdin Remote Config is already the complete input"))
+	if (opts.readOptions.Update || opts.readOptions.Cached) && stdinAvailable {
+		flag := "--update"
+		if opts.readOptions.Cached {
+			flag = "--cached"
+		}
+		return shared.InvalidArgument(fmt.Errorf("%s cannot be used with stdin; stdin Remote Config is already the complete input", flag))
 	}
 	if stdinAvailable {
 		return runGetStdin(cmd, opts)
@@ -89,7 +90,7 @@ func readGetOptions(cmd invocation.Call, args []string) (getOptions, error) {
 	if err != nil {
 		return getOptions{}, err
 	}
-	update, err := cmd.Flags().GetBool("update")
+	readOptions, err := shared.ReadParametersReadOptions(cmd)
 	if err != nil {
 		return getOptions{}, err
 	}
@@ -108,7 +109,7 @@ func readGetOptions(cmd invocation.Call, args []string) (getOptions, error) {
 		paramArgument:  paramArgument,
 		search:         shared.NewParameterSearch(searchValue),
 		jsonOut:        jsonOut,
-		update:         update,
+		readOptions:    readOptions,
 		all:            all,
 	}, nil
 }
@@ -142,7 +143,7 @@ func runGetRemote(cmd invocation.Call, svc *core.Core, opts getOptions) error {
 	cmd.SetContext(ctx)
 	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
 
-	if opts.update {
+	if opts.readOptions.Update {
 		progress.Start("Revalidating Remote Config…")
 	} else {
 		progress.Start("Loading Remote Config…")
@@ -151,14 +152,14 @@ func runGetRemote(cmd invocation.Call, svc *core.Core, opts getOptions) error {
 	if err != nil {
 		return err
 	}
-	loaded, err := loadProjectsParameters(ctx, svc, projects, opts.update)
+	loaded, err := loadProjectsParameters(ctx, svc, projects, opts.readOptions)
 	if err != nil {
 		return err
 	}
 
 	rows := make([]parameterRow, 0)
 	for _, item := range loaded {
-		if item.status == "stale" {
+		if item.source == "cache-stale" {
 			selector, _ := rctarget.ExactFilter(item.project.ProjectID)
 			shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "cache.stale", Message: "The command used a stale local Remote Config cache after refresh failed.", Target: item.project.ProjectID, Details: struct {
 				Source string `json:"source"`

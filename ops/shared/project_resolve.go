@@ -15,6 +15,7 @@ import (
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
+	"github.com/yumauri/fbrcm/core/strfold"
 	"github.com/yumauri/fbrcm/internal/terminal/progress"
 	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/ops/invocation"
@@ -42,9 +43,9 @@ func ResolveProjectTargetForExecution(ctx context.Context, cmd invocation.Call, 
 	}, nil
 }
 
-// ResolvePhysicalProjectForExecution uses configured project resolution when
-// local reads are allowed and otherwise requires one literal physical project
-// ID without client/server target syntax.
+// ResolvePhysicalProjectForExecution uses exact-then-filtered configured
+// project resolution when local reads are allowed and otherwise requires one
+// literal physical project ID without client/server target syntax.
 func ResolvePhysicalProjectForExecution(ctx context.Context, cmd invocation.Call, svc *core.Core, query string) (core.Project, error) {
 	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
 		return ResolveProjectArg(ctx, cmd, svc, query)
@@ -53,6 +54,99 @@ func ResolvePhysicalProjectForExecution(ctx context.Context, cmd invocation.Call
 		return core.Project{}, InvalidArgument(err)
 	}
 	return core.Project{Name: query, ProjectID: query}, nil
+}
+
+// ResolveProjectScopedResourceForExecution resolves a physical project for a
+// Firebase resource that is not attached to a Remote Config client/server
+// template. Explicit target prefixes are rejected with resource-specific text.
+func ResolveProjectScopedResourceForExecution(ctx context.Context, cmd invocation.Call, svc *core.Core, query, resource string) (core.Project, error) {
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
+	if err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	if explicit {
+		return core.Project{}, InvalidArgument(fmt.Errorf("%s commands are project-scoped; omit the %s@ prefix", resource, target.Kind))
+	}
+	return ResolvePhysicalProjectForExecution(ctx, cmd, svc, target.ProjectID)
+}
+
+// ResolveCachedProjectScopedResource resolves a physical project exclusively
+// from the local registry. It is used by commands whose explicit cache-only
+// mode must not trigger project discovery.
+func ResolveCachedProjectScopedResource(cmd invocation.Call, query, resource string) (core.Project, error) {
+	target, explicit, err := rctarget.ParsePositionalSelector(query)
+	if err != nil {
+		return core.Project{}, InvalidArgument(err)
+	}
+	if explicit {
+		return core.Project{}, InvalidArgument(fmt.Errorf("%s commands are project-scoped; omit the %s@ prefix", resource, target.Kind))
+	}
+	return ResolveCachedProjectArg(cmd, target.ProjectID)
+}
+
+// ResolveProjectNumberForExecution resolves the numeric project embedded in a
+// Firebase App ID. Stateful execution maps it back to the configured project
+// so the project's bound identity and quota project remain authoritative.
+// Stateless execution can address the Firebase Management API by project
+// number directly.
+func ResolveProjectNumberForExecution(ctx context.Context, cmd invocation.Call, svc *core.Core, projectNumber string) (core.Project, error) {
+	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return core.Project{Name: projectNumber, ProjectID: projectNumber, ProjectNumber: projectNumber}, nil
+	}
+	progress.Start("Resolving project…")
+	projects, _, err := svc.ListProjects(ctx)
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectNumber(cmd, projects, projectNumber)
+}
+
+// ResolveCachedProjectNumber maps an App ID's embedded project number using
+// only the local project registry.
+func ResolveCachedProjectNumber(cmd invocation.Call, projectNumber string) (core.Project, error) {
+	progress.Start("Resolving project…")
+	projects, err := config.LoadProjects()
+	if err != nil {
+		return core.Project{}, err
+	}
+	return resolveProjectNumber(cmd, projects, projectNumber)
+}
+
+func resolveProjectNumber(cmd invocation.Call, projects []core.Project, projectNumber string) (core.Project, error) {
+	matches := make([]core.Project, 0, 1)
+	for _, project := range projects {
+		if project.ProjectNumber == projectNumber {
+			matches = append(matches, project)
+		}
+	}
+	switch len(matches) {
+	case 1:
+		return matches[0], nil
+	case 0:
+		if len(projects) > 0 && !MachineMode(cmd) {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(projects)); err != nil {
+				return core.Project{}, err
+			}
+		}
+		return core.Project{}, &ProjectResolutionError{
+			Resource:   "project",
+			Kind:       "not_found",
+			Query:      projectNumber,
+			Candidates: selectionCandidates(projects),
+			Err: fmt.Errorf(
+				"project number %q from the Firebase App ID is not available in profile %q; pass --project or run projects update",
+				projectNumber,
+				config.GetActiveProfileName(),
+			),
+		}
+	default:
+		if !MachineMode(cmd) {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), RenderProjectsChoiceTable(matches)); err != nil {
+				return core.Project{}, err
+			}
+		}
+		return core.Project{}, &ProjectResolutionError{Resource: "project", Kind: "ambiguous", Query: projectNumber, Candidates: selectionCandidates(matches)}
+	}
 }
 
 // FirebaseServiceContextForExecution binds an in-memory static-token Firebase
@@ -168,6 +262,57 @@ func ResolveProjectTargetsForExecution(ctx context.Context, cmd invocation.Call,
 	}
 
 	return selected, ctx, nil
+}
+
+// ResolveListProjects preserves scalar positional resolution and otherwise uses
+// bulk filters. Resource-scoped lists select physical projects; an empty
+// resource selects Remote Config template targets. Cached mode never discovers.
+func ResolveListProjects(cmd invocation.Call, svc *core.Core, args []string, resource string, cached bool) ([]core.Project, context.Context, error) {
+	ctx := CommandContext(cmd)
+	filters, err := cmd.Flags().GetStringArray("project")
+	if err != nil {
+		return nil, ctx, err
+	}
+	if len(args) > 0 && cmd.Flags().Changed("project") {
+		return nil, ctx, InvalidArgument(fmt.Errorf("<project> and --project cannot be used together"))
+	}
+	var projects []core.Project
+	if len(args) > 0 {
+		var project core.Project
+		if resource == "" {
+			project, err = ResolveProjectTargetForExecution(ctx, cmd, svc, args[0])
+		} else if cached {
+			project, err = ResolveCachedProjectScopedResource(cmd, args[0], resource)
+		} else {
+			project, err = ResolveProjectScopedResourceForExecution(ctx, cmd, svc, args[0], resource)
+		}
+		if err == nil {
+			projects = []core.Project{project}
+		}
+	} else if resource == "" {
+		projects, ctx, err = ResolveProjectTargetsForExecution(ctx, cmd, svc, filters)
+	} else {
+		if err = RejectTemplateProjectFilters(filters); err != nil {
+			return nil, ctx, err
+		}
+		if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+			projects, ctx, err = ResolveProjectTargetsForExecution(ctx, cmd, svc, filters)
+		} else {
+			if cached {
+				projects, err = config.LoadProjects()
+			} else {
+				projects, _, err = svc.ListProjects(ctx)
+			}
+			if err == nil {
+				projects, err = FilterProjects(projects, filters)
+			}
+		}
+	}
+	if err != nil {
+		return nil, ctx, err
+	}
+	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
+	return projects, ctx, nil
 }
 
 // ResolveProjectMutationTargetsForExecution resolves target filters using the
@@ -296,6 +441,13 @@ func resolveProjectArgWithAliases(cmd invocation.Call, projects []core.Project, 
 		}
 	}
 	matches := matchProjectsForArg(projects, query)
+	if len(matches) == 0 {
+		mode, filterQuery := filter.ParseModePrefixedQuery(query)
+		if strings.TrimSpace(filterQuery) == "" {
+			return core.Project{}, InvalidArgument(fmt.Errorf("project selector requires a non-empty query"))
+		}
+		matches = filterProjectsWithAliases(projects, []QueryFilter{{Mode: mode, Query: filterQuery}}, nil)
+	}
 
 	switch len(matches) {
 	case 1:

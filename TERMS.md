@@ -1,11 +1,12 @@
 # Terms of Service for fbrcm
 
-Last updated: August 30, 2026
+Last updated: September 6, 2026
 
 These terms apply to the official fbrcm application, its built-in Google OAuth
 client, and the fbrcm documentation website. fbrcm is a local command-line and
-terminal application for managing Firebase Remote Config. It does not provide
-user accounts or a developer-operated backend.
+terminal application for managing Firebase Remote Config. It can also read
+registered Firebase apps and download their SDK configuration. It does not
+provide user accounts or a developer-operated backend.
 
 The built-in Google sign-in method is unavailable until Google completes
 verification of fbrcm's OAuth application.
@@ -42,8 +43,8 @@ You are responsible for:
 - complying with applicable laws, Google policies, and your organization's
   security and change-management requirements;
 - protecting OAuth tokens, OAuth client files, service-account keys, local
-  caches, drafts, exported data, and other credentials or data stored on your
-  machine;
+  caches, drafts, exported data, downloaded Firebase app configuration, and
+  other credentials or data stored on your machine;
 - checking the selected profile, authentication identity, quota project,
   Firebase project, proposed diff, and command arguments before confirming or
   automating a change; and
@@ -65,6 +66,18 @@ systems, or agents.
 fbrcm cannot guarantee that a change can be undone. Firebase version history,
 retention, rollback behavior, and other recovery mechanisms are controlled by
 Google and may change.
+
+## Firebase app information
+
+At your request, fbrcm can list registered Android, iOS, and Web apps, show app
+details, and download SDK configuration through the Firebase Management API.
+These commands are read-only at Firebase. fbrcm does not create, rename, or
+delete Firebase apps.
+
+Downloaded SDK configuration and local app caches can contain project
+identifiers, app identifiers, API keys, service endpoints, and related settings.
+You are responsible for choosing safe output locations and for removing copies
+you no longer need.
 
 ## Hooks and other programs
 

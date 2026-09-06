@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { writeMarkdownPages } from '../scripts/markdown-pages.mjs'
 import { pageHeadDevPlugin, pageRoute } from '../scripts/page-head.mjs'
 import { renderRobotsTxt, robotsDevPlugin } from '../scripts/robots.mjs'
+import { thirdPartyNoticesPlugin } from '../scripts/third-party-notices.mjs'
 
 const repository = 'https://github.com/yumauri/fbrcm'
 const siteUrl = process.env.DOCS_SITE_URL?.replace(/\/+$/, '')
@@ -21,7 +22,7 @@ export default defineConfig({
   srcDir: 'site',
   base: '/',
   vite: {
-    plugins: [robotsDevPlugin(siteUrl), pageHeadDevPlugin(siteUrl)]
+    plugins: [robotsDevPlugin(siteUrl), pageHeadDevPlugin(siteUrl), thirdPartyNoticesPlugin()]
   },
   cleanUrls: true,
   lastUpdated: true,
@@ -128,6 +129,7 @@ export default defineConfig({
           { text: 'CLI overview', link: '/cli/' },
           { text: 'Parameters and conditions', link: '/cli/parameters' },
           { text: 'Projects and templates', link: '/cli/projects' },
+          { text: 'Firebase applications', link: '/cli/apps' },
           { text: 'Drafts', link: '/cli/drafts' },
           { text: 'Plans', link: '/cli/plans' },
           { text: 'History and managed features', link: '/cli/history' }
@@ -174,7 +176,7 @@ export default defineConfig({
     },
     footer: {
       message:
-        '<a href="/privacy-policy">Privacy policy</a> · <a href="/terms">Terms of Service</a> · <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a> · <a href="/LICENSE.txt">MIT License</a> · 2026'
+        '<a href="/privacy-policy">Privacy policy</a> · <a href="/terms">Terms of Service</a> · <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a> · <a href="/LICENSE.txt">MIT License</a> · <a href="/THIRD_PARTY_NOTICES.txt">Third-party notices</a> · 2026'
     }
   }
 })

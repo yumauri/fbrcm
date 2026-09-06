@@ -1,0 +1,42 @@
+{
+  "data": {
+    "globalActions": {"delays": [], "delaysLogNormal": []},
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebase.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1beta1/projects/123456789012:searchApps"}],
+          "query": {
+            "pageSize": [{"matcher": "exact", "value": "100"}],
+            "showDeleted": [{"matcher": "exact", "value": "true"}]
+          },
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"apps\":[{\"name\":\"projects/northstar-wallet/webApps/web-app\",\"displayName\":\"Northstar Web\",\"platform\":\"WEB\",\"appId\":\"1:123456789012:web:c3\",\"namespace\":\"northstar-web\",\"apiKeyId\":\"web-key\",\"state\":\"ACTIVE\"}]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebase.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1beta1/projects/northstar-wallet/webApps/web-app"}],
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"name\":\"projects/northstar-wallet/webApps/web-app\",\"appId\":\"1:123456789012:web:c3\",\"displayName\":\"Northstar Web\",\"projectId\":\"northstar-wallet\",\"appUrls\":[\"https://northstar.example\"],\"webId\":\"northstar-web\",\"apiKeyId\":\"web-key\",\"state\":\"ACTIVE\",\"etag\":\"web-etag\"}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {"hoverflyVersion": "v1.12.10", "schemaVersion": "v5.3", "timeExported": "2024-01-01T00:00:00Z"}
+}

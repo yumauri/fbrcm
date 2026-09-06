@@ -347,7 +347,11 @@ func describe(cmd *cobra.Command) Capability {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
-			if effective && SupportsStatelessCommand(id) && flag.Name == "cached" {
+			if effective && SupportsStatelessCommand(id) && id != "get" && flag.Name == "cached" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+				usage += "; cannot be combined with --stateless"
+			}
+			if effective && slices.Contains([]string{"apps.config", "apps.list", "apps.show"}, id) && flag.Name == "update" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
@@ -369,7 +373,7 @@ func describe(cmd *cobra.Command) Capability {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
 			}
-			if effective && id == "get" && flag.Name == "update" {
+			if effective && id == "get" && (flag.Name == "update" || flag.Name == "cached") {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(
 					predicate("option", "stateless", "equals", false),
 					predicate("stdin", "document", "absent", nil),

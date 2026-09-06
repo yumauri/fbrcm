@@ -13,6 +13,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
@@ -247,6 +248,34 @@ func resolveDraft(query string) (string, core.Project, error) {
 		}
 		if project.Name == value {
 			matches = append(matches, id)
+		}
+	}
+	if len(matches) == 1 {
+		return matches[0], projectForID(matches[0]), nil
+	}
+	if len(matches) == 0 {
+		mode, filterQuery := filter.ParseModePrefixedQuery(value)
+		if strings.TrimSpace(filterQuery) == "" {
+			return "", core.Project{}, shared.InvalidArgument(fmt.Errorf("draft project selector requires a non-empty query"))
+		}
+		for _, id := range ids {
+			candidate, targetErr := rctarget.Parse(id)
+			if targetErr != nil {
+				continue
+			}
+			project := projectForID(id)
+			requiredKind := requested.Kind
+			if !explicit {
+				requiredKind = project.TemplateKinds()[0]
+			}
+			if candidate.Kind != requiredKind {
+				continue
+			}
+			nameMatch, _ := filter.Match(project.Name, filterQuery, mode)
+			idMatch, _ := filter.Match(candidate.ProjectID, filterQuery, mode)
+			if nameMatch || idMatch {
+				matches = append(matches, id)
+			}
 		}
 	}
 	if len(matches) == 1 {

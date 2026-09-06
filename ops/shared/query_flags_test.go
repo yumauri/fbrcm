@@ -81,6 +81,17 @@ func TestValidateQueryFlagsAcceptsCanonicalQueries(t *testing.T) {
 	}
 }
 
+func TestValidateQueryFlagsAcceptsScalarProjectSelector(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.Flags().String("project", "", "")
+	if err := cmd.Flags().Set("project", "demo"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateQueryFlags(cmd); err != nil {
+		t.Fatalf("ValidateQueryFlags = %v", err)
+	}
+}
+
 func TestRejectTemplateProjectFilters(t *testing.T) {
 	if err := RejectTemplateProjectFilters([]string{"=demo", "/prod"}); err != nil {
 		t.Fatalf("ordinary filters rejected: %v", err)

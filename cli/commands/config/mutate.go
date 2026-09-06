@@ -111,15 +111,19 @@ func setConfigValue(cfg *coreconfig.AppConfig, key string, values []string) (any
 		}
 		cfg.Theme = values[0]
 		return values[0], nil
-	case key == "powerline_glyphs":
+	case key == "powerline_glyphs" || key == "nerd_font_glyphs":
 		if len(values) != 1 {
-			return nil, fmt.Errorf("powerline_glyphs requires exactly one boolean value")
+			return nil, fmt.Errorf("%s requires exactly one boolean value", key)
 		}
 		value, err := strconv.ParseBool(values[0])
 		if err != nil || values[0] != "true" && values[0] != "false" {
-			return nil, fmt.Errorf("powerline_glyphs must be true or false")
+			return nil, fmt.Errorf("%s must be true or false", key)
 		}
-		cfg.PowerlineGlyphs = &value
+		if key == "nerd_font_glyphs" {
+			cfg.NerdFontGlyphs = &value
+		} else {
+			cfg.PowerlineGlyphs = &value
+		}
 		return value, nil
 	case len(parts) == 2 && parts[0] == "network" && parts[1] == "max_concurrent_requests":
 		value, err := parseBoundedNetworkInteger(values, key, 1, coreconfig.MaxConcurrentRequests)
@@ -331,9 +335,10 @@ func requireLocalProjectAliasScope(key, scope string) error {
 
 func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreferences bool) (bool, error) {
 	if allPreferences {
-		changed := candidate.Theme != "" || candidate.PowerlineGlyphs != nil || len(candidate.Keys) > 0 || candidate.Network != nil
+		changed := candidate.Theme != "" || candidate.PowerlineGlyphs != nil || candidate.NerdFontGlyphs != nil || len(candidate.Keys) > 0 || candidate.Network != nil
 		candidate.Theme = ""
 		candidate.PowerlineGlyphs = nil
+		candidate.NerdFontGlyphs = nil
 		candidate.Keys = map[string]map[string][]string{}
 		candidate.Network = nil
 		return changed, nil
@@ -349,6 +354,10 @@ func resetConfigValue(candidate *coreconfig.AppConfig, key string, allPreference
 	case key == "powerline_glyphs":
 		changed := candidate.PowerlineGlyphs != nil
 		candidate.PowerlineGlyphs = nil
+		return changed, nil
+	case key == "nerd_font_glyphs":
+		changed := candidate.NerdFontGlyphs != nil
+		candidate.NerdFontGlyphs = nil
 		return changed, nil
 	case key == "keys":
 		changed := len(candidate.Keys) > 0

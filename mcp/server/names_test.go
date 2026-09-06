@@ -45,8 +45,8 @@ func TestAllToolNamesAreNamespacedAndUnique(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(listed.Tools) != 49 {
-		t.Fatalf("full catalog contains %d tools, want 49", len(listed.Tools))
+	if len(listed.Tools) != 52 {
+		t.Fatalf("full catalog contains %d tools, want 52", len(listed.Tools))
 	}
 	qualified := regexp.MustCompile(`^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$`)
 	names := make(map[string]bool)

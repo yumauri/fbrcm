@@ -56,12 +56,19 @@
           "minimum": 0,
           "type": "integer"
         },
-        "path": {
+        "entries_deleted": {
+          "type": "integer"
+        },
+        "kind": {
+          "enum": [
+            "all",
+            "remote-config",
+            "apps"
+          ],
           "type": "string"
         },
-        "snapshots_deleted": {
-          "minimum": 0,
-          "type": "integer"
+        "path": {
+          "type": "string"
         },
         "status": {
           "enum": [
@@ -77,8 +84,9 @@
       },
       "required": [
         "bytes_deleted",
+        "entries_deleted",
+        "kind",
         "path",
-        "snapshots_deleted",
         "status",
         "targets_affected"
       ],

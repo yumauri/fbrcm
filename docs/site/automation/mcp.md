@@ -73,7 +73,7 @@ tools allowed by the selected groups, execution mode, and write permission.
 
 | Toolset | Workflows |
 | --- | --- |
-| `inspect` | Read parameters, projects, groups, conditions, versions, experiments, rollouts, and personalizations; compare configurations and read defaults |
+| `inspect` | Read parameters, projects, Firebase apps, groups, conditions, versions, experiments, rollouts, and personalizations; compare configurations and read defaults |
 | `edit` | Add, update, duplicate, and delete parameters; manage groups and conditions |
 | `drafts` | List, inspect, compare, annotate, and discard local drafts |
 | `plans` | Inspect and validate publication plans |
@@ -114,10 +114,15 @@ Hooks are disabled unless `--allow-hooks` is set, and must pass the normal
 project registry, and persist refreshed credentials. `diagnostics.doctor` can
 create and remove local probe files.
 
-There are no tools for managing profiles, credentials, application configuration,
-aliases, hook trust, themes, or shell completion. File paths refer to the machine
-running fbrcm and use its filesystem permissions. The server has no HTTP MCP
-endpoint, resources, prompts, or background-task API.
+There are no tools for managing profiles, credentials, fbrcm configuration,
+aliases, hook trust, themes, or shell completion. The `apps.list`, `apps.show`,
+and `apps.config` tools can read Firebase app records and SDK configuration, but
+cannot create, change, or delete an app. They use the same one-hour app cache as
+the CLI. For `apps.show` and `apps.config`, `cached` requires a cache entry and
+forbids network access. For `apps.list`, `cached` accepts stale inventory but
+fetches it when absent. File paths refer to the machine running fbrcm and use its
+filesystem permissions. The server has no HTTP MCP endpoint, resources, prompts,
+or background-task API.
 
 ## Read tool results
 

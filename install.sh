@@ -63,11 +63,24 @@ echo "Downloading $APP $LATEST for $OS/$ARCH..."
 TMP=$(mktemp -d)
 curl -sSfL "$URL" | tar -xz -C "$TMP"
 
+if [ ! -f "$TMP/LICENSE" ]; then
+  echo "The release archive does not contain LICENSE."
+  exit 1
+fi
+
 echo "Installing to $INSTALL_DIR/$APP ..."
 if [ -w "$INSTALL_DIR" ]; then
   install -m 755 "$TMP/$APP" "$INSTALL_DIR/$APP"
+  install -m 644 "$TMP/LICENSE" "$INSTALL_DIR/$APP-LICENSE.txt"
+  if [ -f "$TMP/THIRD_PARTY_NOTICES" ]; then
+    install -m 644 "$TMP/THIRD_PARTY_NOTICES" "$INSTALL_DIR/$APP-THIRD_PARTY_NOTICES.txt"
+  fi
 elif command -v sudo >/dev/null 2>&1; then
   sudo install -m 755 "$TMP/$APP" "$INSTALL_DIR/$APP"
+  sudo install -m 644 "$TMP/LICENSE" "$INSTALL_DIR/$APP-LICENSE.txt"
+  if [ -f "$TMP/THIRD_PARTY_NOTICES" ]; then
+    sudo install -m 644 "$TMP/THIRD_PARTY_NOTICES" "$INSTALL_DIR/$APP-THIRD_PARTY_NOTICES.txt"
+  fi
 else
   echo "Install dir is not writable: $INSTALL_DIR"
   echo "Set INSTALL_DIR to a writable directory or run as a user with permission."

@@ -1,8 +1,9 @@
 # How fbrcm works
 
-fbrcm calls the Firebase Remote Config API from your machine. Published
-templates stay in Firebase. fbrcm stores credentials, project registrations,
-caches, and drafts locally. It has no intermediary backend.
+fbrcm calls the Firebase Remote Config and Firebase Management APIs from your
+machine. Published templates and registered apps stay in Firebase. fbrcm stores
+credentials, project registrations, caches, and drafts locally. It has no
+intermediary backend.
 
 ## Projects and template targets
 
@@ -28,7 +29,7 @@ A profile is an isolated fbrcm workspace. It contains:
 
 - registered authentication identities;
 - discovered and selected projects;
-- cached templates and version snapshots;
+- cached templates, version snapshots, and Firebase app data;
 - active drafts.
 
 fbrcm stores the active-profile preference in global configuration. The

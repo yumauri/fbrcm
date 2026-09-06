@@ -19,6 +19,7 @@
     "count": 2,
     "items": [
       {
+        "kind": "remote-config",
         "project_id": "northstar-wallet",
         "project": "Northstar Wallet",
         "version": "12",
@@ -27,6 +28,7 @@
         "path": "<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/northstar-wallet.12.json"
       },
       {
+        "kind": "remote-config",
         "project_id": "server@northstar-wallet",
         "project": "Northstar Wallet",
         "version": "3",

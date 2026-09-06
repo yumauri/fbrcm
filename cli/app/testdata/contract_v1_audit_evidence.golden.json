@@ -31,6 +31,9 @@
     "apply.no_change_success": "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
     "apply.status_runtime": "ops/workflows/apply/commands_test.go#TestClassifyPublishResultCoversEveryStatusAndWarning",
     "apply.warning_runtime": "ops/workflows/apply/commands_test.go#TestNonAtomicWarningHasTypedDetailsAndSkipsDryRun",
+    "apps.config_success": "ops/workflows/apps/commands_test.go#TestAppsConfigCommandSuccess",
+    "apps.list_success": "ops/workflows/apps/commands_test.go#TestAppsListCommandSuccess",
+    "apps.show_success": "ops/workflows/apps/commands_test.go#TestAppsShowCommandSuccess",
     "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
     "contract.artifact_runtime": "ops/contract/contract_test.go#TestArtifactEncodesBinaryContent",
@@ -297,6 +300,283 @@
             "apply.draft_cleanup_runtime",
             "apply.warning_runtime",
             "e2e:apply_stateless_json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "apps.config",
+      "classes": {
+        "artifact": {
+          "evidence": [
+            "app.artifact_schema",
+            "contract.artifact_runtime",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:apps_config_stateless_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:apps_config_stateless_json"
+          ]
+        },
+        "warning": {
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:apps_config_stateless_json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "apps.list",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:apps_list_stateless_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:apps_list_stateless_json"
+          ]
+        },
+        "warning": {
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:apps_list_stateless_json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "apps.show",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:apps_show_stateless_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:apps_show_stateless_json"
+          ]
+        },
+        "warning": {
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:apps_show_stateless_json"
           ]
         }
       }

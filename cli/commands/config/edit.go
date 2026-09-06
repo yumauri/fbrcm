@@ -161,6 +161,10 @@ func loadConfigStateForEdit(state configState, scope string, full bool) ([]byte,
 			enabled := true
 			template.PowerlineGlyphs = &enabled
 		}
+		if template.NerdFontGlyphs == nil {
+			enabled := false
+			template.NerdFontGlyphs = &enabled
+		}
 		template.Keys = tuiconfig.ToConfigMap(tuiconfig.Merge(tuiconfig.DefaultKeyMap(), template.Keys))
 		raw, err := coreconfig.MarshalAppConfig(template)
 		if err != nil {

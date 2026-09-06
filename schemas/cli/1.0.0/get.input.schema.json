@@ -1096,6 +1096,9 @@
               ]
             },
             "properties": {
+              "cached": {
+                "const": false
+              },
               "update": {
                 "const": false
               }
@@ -1142,6 +1145,18 @@
       }
     },
     {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "update",
+              "cached"
+            ]
+          }
+        }
+      }
+    },
+    {
       "not": {
         "properties": {
           "arguments": {
@@ -1178,6 +1193,9 @@
         "properties": {
           "options": {
             "properties": {
+              "cached": {
+                "const": false
+              },
               "update": {
                 "const": false
               }
@@ -1211,6 +1229,28 @@
         "all": {
           "description": "Include projects with no matching parameters",
           "type": "boolean"
+        },
+        "cached": {
+          "description": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless or stdin",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                },
+                {
+                  "source": "stdin",
+                  "name": "document",
+                  "operator": "absent",
+                  "value": null
+                }
+              ]
+            }
+          ]
         },
         "expr": {
           "$ref": "#/$defs/expression",

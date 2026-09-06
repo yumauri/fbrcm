@@ -6,6 +6,7 @@ before:
   hooks:
     - go mod tidy
     - go run ./cmd/genoauthclient
+    - go run ./cmd/gennotices -tags fbrcm_google_auth
     - mkdir -p completions
     - sh -c 'go run . completion bash > completions/fbrcm.bash'
     - sh -c 'go run . completion zsh > completions/fbrcm.zsh'
@@ -39,6 +40,7 @@ archives:
           - zip
     files:
       - LICENSE*
+      - THIRD_PARTY_NOTICES*
       - README*
       - CHANGELOG*
       - completions/*

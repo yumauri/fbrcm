@@ -1525,6 +1525,1483 @@
     ]
   },
   {
+    "id": "apps.config",
+    "path": [
+      "apps",
+      "config"
+    ],
+    "summary": "Download Firebase application SDK configuration",
+    "arguments": [
+      {
+        "name": "app",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless \u003capp\u003e is a complete Firebase App ID"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      },
+      {
+        "name": "--to",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Write application configuration to file path"
+      },
+      {
+        "name": "--update",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
+      },
+      {
+        "name": "--yes",
+        "aliases": [
+          "-y"
+        ],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Overwrite an existing destination without confirmation"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "app.ambiguous",
+      "app.not_found",
+      "argument.invalid",
+      "auth.configuration_invalid",
+      "auth.credentials_invalid",
+      "auth.not_found",
+      "auth.quota_project_required",
+      "auth.setup_required",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "firebase.permission_denied",
+      "firebase.rate_limited",
+      "firebase.request_failed",
+      "firebase.service_unavailable",
+      "firebase.timeout",
+      "interaction.required",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "network.offline",
+      "network.timeout",
+      "network.unavailable",
+      "profile.invalid",
+      "project.ambiguous",
+      "project.not_found",
+      "resource.not_found"
+    ],
+    "side_effect_level": 2,
+    "side_effects": [
+      "firebase_remote_read",
+      "local_cache_write",
+      "local_file_write",
+      "local_state_write",
+      "authentication_remote_access"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "firebase_remote_read",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_cache_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_file_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "output_destination",
+                "operator": "write_authorized",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "token_persisted",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "project_registry",
+                "operator": "sync_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "authentication_remote_access",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "requires_network",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "conditional",
+    "network_when": [
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "cached",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "update",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "cached",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "runtime_state",
+            "name": "required_cache",
+            "operator": "not_usable",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive": true,
+    "destructive_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "mutation_plan",
+            "operator": "is_destructive",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive_reasons": [
+      "an existing destination file may be overwritten"
+    ],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": true,
+      "stdin": false,
+      "stateless": true
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "optional",
+      "json_behavior": "declared_conditions_return_interaction"
+    },
+    "interaction_when": [
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "yes",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "runtime_state",
+            "name": "confirmation",
+            "operator": "required",
+            "value": null
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "authentication",
+            "operator": "requires_human_authorization",
+            "value": null
+          },
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "apps.list",
+    "path": [
+      "apps",
+      "list"
+    ],
+    "summary": "List applications across Firebase projects",
+    "arguments": [
+      {
+        "name": "project",
+        "required": false,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached applications even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
+      {
+        "name": "--filter",
+        "aliases": [
+          "-f"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter applications by mode-prefixed name, namespace, or app ID query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--platform",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Only list one platform: android, ios, or web"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--show-deleted",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Include applications pending permanent deletion"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      },
+      {
+        "name": "--update",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "auth.configuration_invalid",
+      "auth.credentials_invalid",
+      "auth.not_found",
+      "auth.quota_project_required",
+      "auth.setup_required",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "firebase.permission_denied",
+      "firebase.rate_limited",
+      "firebase.request_failed",
+      "firebase.service_unavailable",
+      "firebase.timeout",
+      "interaction.required",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "network.offline",
+      "network.timeout",
+      "network.unavailable",
+      "profile.invalid",
+      "project.ambiguous",
+      "project.not_found",
+      "resource.not_found"
+    ],
+    "side_effect_level": 2,
+    "side_effects": [
+      "firebase_remote_read",
+      "local_cache_write",
+      "local_state_write",
+      "authentication_remote_access",
+      "local_file_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "firebase_remote_read",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_cache_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "project_registry",
+                "operator": "sync_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "authentication_remote_access",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "requires_network",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_file_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "token_persisted",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "conditional",
+    "network_when": [
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "update",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "runtime_state",
+            "name": "required_cache",
+            "operator": "not_usable",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": true
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "optional",
+      "json_behavior": "oauth_authorization_returns_interaction"
+    },
+    "interaction_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "authentication",
+            "operator": "requires_human_authorization",
+            "value": null
+          },
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "apps.show",
+    "path": [
+      "apps",
+      "show"
+    ],
+    "summary": "Show Firebase application details",
+    "arguments": [
+      {
+        "name": "app",
+        "required": true,
+        "repeated": false,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Project ID, repository alias, exact display name, or mode-prefixed name/ID query (^, /, ~, =); required unless \u003capp\u003e is a complete Firebase App ID"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      },
+      {
+        "name": "--update",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "app.ambiguous",
+      "app.not_found",
+      "argument.invalid",
+      "auth.configuration_invalid",
+      "auth.credentials_invalid",
+      "auth.not_found",
+      "auth.quota_project_required",
+      "auth.setup_required",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "firebase.permission_denied",
+      "firebase.rate_limited",
+      "firebase.request_failed",
+      "firebase.service_unavailable",
+      "firebase.timeout",
+      "interaction.required",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "network.offline",
+      "network.timeout",
+      "network.unavailable",
+      "profile.invalid",
+      "project.ambiguous",
+      "project.not_found",
+      "resource.not_found"
+    ],
+    "side_effect_level": 2,
+    "side_effects": [
+      "firebase_remote_read",
+      "local_cache_write",
+      "local_state_write",
+      "authentication_remote_access",
+      "local_file_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "firebase_remote_read",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_cache_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "update",
+                "operator": "equals",
+                "value": true
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "option",
+                "name": "cached",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "runtime_state",
+                "name": "required_cache",
+                "operator": "not_usable",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "remote_read",
+                "operator": "cache_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "project_registry",
+                "operator": "sync_write_succeeded",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "authentication_remote_access",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "requires_network",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "effect": "local_file_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "authentication",
+                "operator": "token_persisted",
+                "value": null
+              },
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "conditional",
+    "network_when": [
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "cached",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "update",
+            "operator": "equals",
+            "value": true
+          }
+        ]
+      },
+      {
+        "all_of": [
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "option",
+            "name": "cached",
+            "operator": "equals",
+            "value": false
+          },
+          {
+            "source": "runtime_state",
+            "name": "required_cache",
+            "operator": "not_usable",
+            "value": null
+          }
+        ]
+      }
+    ],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": true
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "optional",
+      "json_behavior": "oauth_authorization_returns_interaction"
+    },
+    "interaction_when": [
+      {
+        "all_of": [
+          {
+            "source": "runtime_state",
+            "name": "authentication",
+            "operator": "requires_human_authorization",
+            "value": null
+          },
+          {
+            "source": "option",
+            "name": "stateless",
+            "operator": "equals",
+            "value": false
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "auth.add.gcloud",
     "path": [
       "auth",
@@ -3608,9 +5085,19 @@
       "cache",
       "clear"
     ],
-    "summary": "Clear cached Remote Config snapshots",
+    "summary": "Clear local cache entries",
     "arguments": [],
     "flags": [
+      {
+        "name": "--kind",
+        "aliases": [],
+        "type": "string",
+        "default": "all",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Cache kind: all, remote-config, or apps"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -3739,7 +5226,7 @@
       }
     ],
     "destructive_reasons": [
-      "removes cached Remote Config data"
+      "removes cached Remote Config or Firebase application data"
     ],
     "idempotency": "yes",
     "idempotency_when": [],
@@ -3781,9 +5268,19 @@
       "cache",
       "list"
     ],
-    "summary": "List cached Remote Config snapshots",
+    "summary": "List local cache entries",
     "arguments": [],
     "flags": [
+      {
+        "name": "--kind",
+        "aliases": [],
+        "type": "string",
+        "default": "all",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Cache kind: all, remote-config, or apps"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -3889,9 +5386,19 @@
       "cache",
       "path"
     ],
-    "summary": "Print cached Remote Config snapshots directory path",
+    "summary": "Print a cache directory path",
     "arguments": [],
     "flags": [
+      {
+        "name": "--kind",
+        "aliases": [],
+        "type": "string",
+        "default": "remote-config",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Cache kind: all, remote-config, or apps"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -6970,12 +8477,34 @@
     "arguments": [
       {
         "name": "project",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       }
     ],
     "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
       {
         "name": "--expr",
         "aliases": [],
@@ -7029,6 +8558,18 @@
           }
         ],
         "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter template targets by optional client@ or server@ project query; may be repeated"
       },
       {
         "name": "--search",
@@ -9003,6 +10544,28 @@
       }
     ],
     "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -14622,6 +16185,28 @@
     ],
     "flags": [
       {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
+      {
         "name": "--filter",
         "aliases": [
           "-f"
@@ -14944,6 +16529,28 @@
     ],
     "flags": [
       {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -15255,6 +16862,34 @@
         "repeatable": false,
         "effective": true,
         "usage": "Include projects with no matching parameters"
+      },
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "stdin",
+                "name": "document",
+                "operator": "absent",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless or stdin"
       },
       {
         "name": "--expr",
@@ -18176,6 +19811,28 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
+      {
         "name": "--filter",
         "aliases": [
           "-f"
@@ -20193,6 +21850,28 @@
     ],
     "flags": [
       {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -20622,6 +22301,28 @@
       }
     ],
     "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -26172,7 +27873,7 @@
       }
     ],
     "destructive_reasons": [
-      "removes projects from the local registry and deletes their cached templates, version snapshots, and drafts"
+      "removes projects from the local registry and deletes their cached applications, templates, version snapshots, and drafts"
     ],
     "idempotency": "yes",
     "idempotency_when": [],
@@ -28223,6 +29924,28 @@
     ],
     "flags": [
       {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -28532,6 +30255,28 @@
       }
     ],
     "flags": [
+      {
+        "name": "--cached",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],

@@ -22,6 +22,7 @@ import (
 	"github.com/yumauri/fbrcm/ops/shared"
 	add "github.com/yumauri/fbrcm/ops/workflows/add"
 	apply "github.com/yumauri/fbrcm/ops/workflows/apply"
+	"github.com/yumauri/fbrcm/ops/workflows/apps"
 	"github.com/yumauri/fbrcm/ops/workflows/conditions"
 	deletecmd "github.com/yumauri/fbrcm/ops/workflows/delete"
 	"github.com/yumauri/fbrcm/ops/workflows/doctor"
@@ -47,7 +48,7 @@ type Registry struct {
 func NewRegistry(service *core.Core) (*Registry, error) {
 	r := &Registry{service: service, factories: map[string]func() *invocation.Definition{}}
 	for name, factory := range map[string]func(*core.Core) *invocation.Definition{
-		"add": add.NewDefinition, "apply": apply.NewDefinition, "conditions": conditions.NewDefinition,
+		"add": add.NewDefinition, "apply": apply.NewDefinition, "apps": apps.NewDefinition, "conditions": conditions.NewDefinition,
 		"delete": deletecmd.NewDefinition, "doctor": doctor.NewDefinition, "draft": draft.NewDefinition,
 		"duplicate": duplicatecmd.NewDefinition, "get": get.NewDefinition, "groups": groups.NewDefinition,
 		"experiments": managedfeatures.NewExperimentsDefinition, "rollouts": managedfeatures.NewRolloutsDefinition,

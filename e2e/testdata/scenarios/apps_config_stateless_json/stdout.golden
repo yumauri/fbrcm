@@ -1,0 +1,56 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:response",
+  "contract_version": "1.0.0",
+  "command": "apps.config",
+  "requested_command": "apps.config",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "app": {
+      "resource_name": "projects/northstar-wallet/webApps/web-app",
+      "display_name": "Northstar Web",
+      "platform": "web",
+      "app_id": "1:123456789012:web:c3",
+      "namespace": "northstar-web",
+      "api_key_id": "web-key",
+      "state": "ACTIVE"
+    },
+    "suggested_filename": "firebase-config.json",
+    "source": "firebase",
+    "artifact": {
+      "target": "projects/northstar-wallet/webApps/web-app",
+      "media_type": "application/json",
+      "encoding": "json",
+      "json_content": {
+        "projectId": "northstar-wallet",
+        "appId": "1:123456789012:web:c3",
+        "databaseURL": "https://northstar.example/database",
+        "storageBucket": "northstar-wallet.appspot.com",
+        "locationId": "us-central",
+        "apiKey": "synthetic-web-api-key",
+        "authDomain": "northstar-wallet.firebaseapp.com",
+        "messagingSenderId": "123456789012",
+        "measurementId": "G-NORTHSTAR",
+        "projectNumber": "123456789012"
+      },
+      "text_content": null,
+      "base64_content": null,
+      "destination": null,
+      "size_bytes": 365,
+      "sha256": "3f78a0342cf6fd8cefc1611bc77197c5247651b198365b8902a23fb38d4bfc01",
+      "overwritten": false
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

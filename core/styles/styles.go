@@ -26,6 +26,9 @@ const (
 	PaletteSlateDim    = "#959CA8"
 	PaletteSlateDark   = "#5A6270"
 	PaletteError       = "#C58A8A"
+	FirebaseAndroid    = "#56BCA6"
+	FirebaseIOS        = "#4CA7EE"
+	FirebaseWeb        = "#C73462"
 
 	PaletteRowStripe = "#121417"
 

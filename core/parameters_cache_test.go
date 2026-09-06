@@ -309,3 +309,62 @@ func jsonResponse(status int, body, etag string) *http.Response {
 	}
 	return resp
 }
+
+func TestReadParametersCachePreference(t *testing.T) {
+	for _, target := range []string{"demo", "server@demo"} {
+		for _, state := range []string{"stale", "missing", "corrupt"} {
+			t.Run(target+"/"+state, func(t *testing.T) {
+				svc := setupCoreTestEnv(t)
+				seedAuthAndProject(t, svc, "main", "demo")
+				switch state {
+				case "stale":
+					saveStaleParametersCache(t, target, "1")
+				case "corrupt":
+					writeCorruptParametersCache(t, target)
+				}
+				requests := 0
+				injectFirebaseService(t, svc, "main", firebase.NewServiceWithHTTPClient(&http.Client{
+					Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+						requests++
+						if state != "missing" {
+							t.Fatalf("unexpected Firebase request with %s cache: %s", state, req.URL)
+						}
+						if strings.Contains(req.URL.Path, "listVersions") {
+							return jsonResponse(http.StatusOK, `{"versions":[{"versionNumber":"9"}]}`, ""), nil
+						}
+						return jsonResponse(http.StatusOK, `{"version":{"versionNumber":"9"},"parameters":{}}`, "etag-9"), nil
+					}),
+				}))
+				before, _, _ := svc.InspectParametersCache(target)
+				cache, source, err := svc.ReadParameters(context.Background(), target, ParametersReadOptions{Cached: true})
+				if state == "corrupt" {
+					if err == nil || requests != 0 {
+						t.Fatalf("corrupt cache: err=%v requests=%d", err, requests)
+					}
+					return
+				}
+				if err != nil {
+					t.Fatal(err)
+				}
+				if state == "stale" {
+					if source != "cache" || requests != 0 || !cache.CachedAt.Equal(before.CachedAt) {
+						t.Fatalf("stale read: source=%s requests=%d cache=%+v", source, requests, cache)
+					}
+					persisted, _, err := svc.InspectParametersCache(target)
+					if err != nil || !persisted.CachedAt.Equal(before.CachedAt) {
+						t.Fatalf("stale cache timestamp changed: %v", err)
+					}
+				} else {
+					if source != "firebase" || requests != 2 {
+						t.Fatalf("missing read: source=%s requests=%d", source, requests)
+					}
+					persisted, _, err := svc.InspectParametersCache(target)
+					if err != nil || persisted == nil {
+						t.Fatalf("fetched cache not persisted: %v", err)
+					}
+					assertRemoteConfigVersion(t, persisted.RemoteConfig, "9")
+				}
+			})
+		}
+	}
+}

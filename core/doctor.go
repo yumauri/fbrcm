@@ -21,6 +21,8 @@ const (
 var requiredFirebasePermissions = []string{
 	"cloudconfig.configs.get",
 	"cloudconfig.configs.update",
+	"firebase.clients.get",
+	"firebase.clients.list",
 }
 
 // DoctorCheck is one independently actionable application health check.

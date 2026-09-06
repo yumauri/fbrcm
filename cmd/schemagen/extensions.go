@@ -241,6 +241,45 @@ func extensionSchemaDefinitions() map[string]any {
 		}},
 		"normalization_rules": map[string]any{"type": "array", "minItems": 1, "items": ref("normalization_rule")},
 		"matching_rule": map[string]any{"oneOf": []any{
+			object([]string{"operator", "comparison", "precedence", "project_source", "zero_result", "multiple_result"}, map[string]any{
+				"operator":   map[string]any{"const": "firebase_app_resolution"},
+				"comparison": map[string]any{"const": "exact_case_sensitive"},
+				"precedence": map[string]any{
+					"type": "array", "minItems": 4, "maxItems": 4,
+					"prefixItems": []any{
+						map[string]any{"const": "app_id"}, map[string]any{"const": "resource_name"},
+						map[string]any{"const": "namespace"}, map[string]any{"const": "display_name"},
+					},
+					"items": false,
+				},
+				"project_source":  map[string]any{"const": "options.project_or_app_id_project_number"},
+				"zero_result":     map[string]any{"const": "app.not_found"},
+				"multiple_result": map[string]any{"const": "app.ambiguous"},
+			}),
+			object([]string{"operator", "exact_precedence", "filter_fields", "default_mode", "mode_prefixes", "exact_comparison", "filter_comparison", "zero_result", "multiple_result"}, map[string]any{
+				"operator": map[string]any{"const": "app_project_resolution"},
+				"exact_precedence": map[string]any{
+					"type": "array", "minItems": 3, "maxItems": 3,
+					"prefixItems": []any{
+						map[string]any{"const": "project_id"}, map[string]any{"const": "repository_alias"}, map[string]any{"const": "display_name"},
+					},
+					"items": false,
+				},
+				"filter_fields": map[string]any{
+					"type": "array", "minItems": 2, "maxItems": 2,
+					"prefixItems": []any{map[string]any{"const": "project_id"}, map[string]any{"const": "display_name"}},
+					"items":       false,
+				},
+				"default_mode": map[string]any{"const": "fuzzy"},
+				"mode_prefixes": object([]string{"~", "^", "/", "="}, map[string]any{
+					"~": map[string]any{"const": "fuzzy"}, "^": map[string]any{"const": "starts-with"},
+					"/": map[string]any{"const": "includes"}, "=": map[string]any{"const": "exact"},
+				}),
+				"exact_comparison":  map[string]any{"const": "exact_case_sensitive"},
+				"filter_comparison": map[string]any{"const": "unicode_case_insensitive"},
+				"zero_result":       map[string]any{"const": "project.not_found"},
+				"multiple_result":   map[string]any{"const": "project.ambiguous"},
+			}),
 			object([]string{"operator", "comparison", "default_template", "lookup"}, map[string]any{
 				"operator":         map[string]any{"const": "literal_project_id"},
 				"comparison":       map[string]any{"const": "exact_case_sensitive"},
@@ -271,7 +310,7 @@ func extensionSchemaDefinitions() map[string]any {
 				"explicit_target_selection":      map[string]any{"const": "single_named_template"},
 				"client_target_canonicalization": map[string]any{"const": "unqualified_project_id"},
 			}),
-			object([]string{"operator", "fields", "query_normalization", "comparison", "precedence"}, map[string]any{
+			object([]string{"operator", "fields", "query_normalization", "comparison", "precedence", "fallback_fields", "fallback_query_normalization", "fallback_default_mode", "fallback_mode_prefixes", "fallback_comparison", "zero_result", "multiple_result"}, map[string]any{
 				"operator":            map[string]any{"const": "project_positional_resolution"},
 				"fields":              map[string]any{"type": "array", "minItems": 1, "uniqueItems": true, "items": stringValue},
 				"query_normalization": map[string]any{"const": "preserve_argv"},
@@ -287,6 +326,19 @@ func extensionSchemaDefinitions() map[string]any {
 					},
 					"items": false,
 				},
+				"fallback_fields": map[string]any{
+					"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
+					"prefixItems": []any{map[string]any{"const": "project_id"}, map[string]any{"const": "display_name"}}, "items": false,
+				},
+				"fallback_query_normalization": map[string]any{"const": "trim_unicode_whitespace"},
+				"fallback_default_mode":        map[string]any{"const": "fuzzy"},
+				"fallback_mode_prefixes": object([]string{"~", "^", "/", "="}, map[string]any{
+					"~": map[string]any{"const": "fuzzy"}, "^": map[string]any{"const": "starts-with"},
+					"/": map[string]any{"const": "includes"}, "=": map[string]any{"const": "exact"},
+				}),
+				"fallback_comparison": map[string]any{"const": "unicode_case_insensitive"},
+				"zero_result":         map[string]any{"const": "project.not_found"},
+				"multiple_result":     map[string]any{"const": "project.ambiguous"},
 				"target_prefixes": map[string]any{
 					"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
 					"items": map[string]any{"enum": []string{"client", "server"}},
@@ -295,7 +347,7 @@ func extensionSchemaDefinitions() map[string]any {
 				"explicit_target_selection":      map[string]any{"const": "single_named_template"},
 				"client_target_canonicalization": map[string]any{"const": "unqualified_project_id"},
 			}),
-			object([]string{"operator", "candidate_source", "fields", "query_normalization", "comparison", "precedence", "target_prefixes", "unqualified_target_selection", "explicit_target_selection", "client_target_canonicalization", "zero_result", "multiple_result"}, map[string]any{
+			object([]string{"operator", "candidate_source", "fields", "query_normalization", "comparison", "precedence", "fallback_fields", "fallback_query_normalization", "fallback_default_mode", "fallback_mode_prefixes", "fallback_comparison", "target_prefixes", "unqualified_target_selection", "explicit_target_selection", "client_target_canonicalization", "zero_result", "multiple_result"}, map[string]any{
 				"operator":            map[string]any{"const": "draft_resolution"},
 				"candidate_source":    map[string]any{"const": "local_draft_target_ids"},
 				"fields":              map[string]any{"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": stringValue},
@@ -310,6 +362,17 @@ func extensionSchemaDefinitions() map[string]any {
 					},
 					"items": false,
 				},
+				"fallback_fields": map[string]any{
+					"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
+					"prefixItems": []any{map[string]any{"const": "project_id"}, map[string]any{"const": "display_name"}}, "items": false,
+				},
+				"fallback_query_normalization": map[string]any{"const": "trim_unicode_whitespace"},
+				"fallback_default_mode":        map[string]any{"const": "fuzzy"},
+				"fallback_mode_prefixes": object([]string{"~", "^", "/", "="}, map[string]any{
+					"~": map[string]any{"const": "fuzzy"}, "^": map[string]any{"const": "starts-with"},
+					"/": map[string]any{"const": "includes"}, "=": map[string]any{"const": "exact"},
+				}),
+				"fallback_comparison": map[string]any{"const": "unicode_case_insensitive"},
 				"target_prefixes": map[string]any{
 					"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
 					"items": map[string]any{"enum": []string{"client", "server"}},
@@ -358,8 +421,9 @@ func extensionSchemaDefinitions() map[string]any {
 				"across_source_combination":   map[string]any{"const": "and"},
 				"absent_source_behavior":      map[string]any{"const": "match_all"},
 				"target_defaults": map[string]any{"type": "array", "uniqueItems": true, "items": object([]string{"source", "selection"}, map[string]any{
-					"source":    map[string]any{"type": "string", "pattern": `^options\.[a-z][a-z0-9_-]*$`},
-					"selection": map[string]any{"const": "all_configured_projects_enabled_templates"},
+					"source":          map[string]any{"type": "string", "pattern": `^options\.[a-z][a-z0-9_-]*$`},
+					"selection":       map[string]any{"enum": []string{"all_configured_projects_enabled_templates", "all_configured_projects"}},
+					"absent_argument": map[string]any{"const": "project"},
 				})},
 			}),
 			object([]string{"operator", "fields", "query_normalization", "haystack_normalization", "separator"}, map[string]any{

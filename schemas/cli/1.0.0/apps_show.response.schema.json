@@ -1,0 +1,461 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "properties": {
+        "api_key_id": {
+          "type": "string"
+        },
+        "app_id": {
+          "type": "string"
+        },
+        "app_store_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "app_urls": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "bundle_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cached_at": {
+          "format": "date-time",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "expire_time": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "package_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "platform": {
+          "enum": [
+            "android",
+            "ios",
+            "web"
+          ],
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "resource_name": {
+          "type": "string"
+        },
+        "sha1_hashes": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "sha256_hashes": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "firebase",
+            "cache",
+            "cache-stale"
+          ],
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "ACTIVE",
+            "DELETED",
+            "STATE_UNSPECIFIED"
+          ],
+          "type": "string"
+        },
+        "team_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "web_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "api_key_id",
+        "app_id",
+        "app_store_id",
+        "app_urls",
+        "bundle_id",
+        "display_name",
+        "etag",
+        "namespace",
+        "package_name",
+        "platform",
+        "project_id",
+        "resource_name",
+        "sha1_hashes",
+        "sha256_hashes",
+        "source",
+        "state",
+        "team_id",
+        "web_id"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "platform": {
+                    "const": "android"
+                  }
+                },
+                "required": [
+                  "platform"
+                ]
+              }
+            },
+            "required": [
+              "data"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "app_store_id": {
+                    "type": "null"
+                  },
+                  "app_urls": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "bundle_id": {
+                    "type": "null"
+                  },
+                  "package_name": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "team_id": {
+                    "type": "null"
+                  },
+                  "web_id": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "platform": {
+                    "const": "ios"
+                  }
+                },
+                "required": [
+                  "platform"
+                ]
+              }
+            },
+            "required": [
+              "data"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "app_urls": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "bundle_id": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "package_name": {
+                    "type": "null"
+                  },
+                  "sha1_hashes": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "sha256_hashes": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "web_id": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "platform": {
+                    "const": "web"
+                  }
+                },
+                "required": [
+                  "platform"
+                ]
+              }
+            },
+            "required": [
+              "data"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "properties": {
+                  "app_store_id": {
+                    "type": "null"
+                  },
+                  "bundle_id": {
+                    "type": "null"
+                  },
+                  "package_name": {
+                    "type": "null"
+                  },
+                  "sha1_hashes": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "sha256_hashes": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "team_id": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "cache.stale",
+                      "cache.write_failed"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "app.ambiguous",
+                      "app.not_found",
+                      "argument.invalid",
+                      "auth.configuration_invalid",
+                      "auth.credentials_invalid",
+                      "auth.not_found",
+                      "auth.quota_project_required",
+                      "auth.setup_required",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "firebase.permission_denied",
+                      "firebase.rate_limited",
+                      "firebase.request_failed",
+                      "firebase.service_unavailable",
+                      "firebase.timeout",
+                      "interaction.required",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "network.offline",
+                      "network.timeout",
+                      "network.unavailable",
+                      "profile.invalid",
+                      "project.ambiguous",
+                      "project.not_found",
+                      "resource.not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "apps.show"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

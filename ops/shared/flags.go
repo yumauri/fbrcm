@@ -160,9 +160,12 @@ func ValidateQueryFlags(cmd invocation.Call) error {
 		if flag == nil || !cmd.Flags().Changed(name) {
 			continue
 		}
-		values, err := cmd.Flags().GetStringArray(name)
+		values, ok, err := stringFlagValues(cmd, flag)
 		if err != nil {
 			return InvalidArgument(err)
+		}
+		if !ok {
+			continue
 		}
 		for _, raw := range values {
 			querySource := raw

@@ -22,6 +22,9 @@ import (
 
 type Core struct {
 	ctx context.Context
+	// applicationVersion identifies the running fbrcm build in outbound
+	// Firebase and Google REST API requests.
+	applicationVersion string
 	// googleOAuthCredentials are injected by official builds and are never
 	// persisted in profile configuration.
 	googleOAuthCredentials firebase.OAuthClientCredentials
@@ -50,6 +53,14 @@ type Core struct {
 // ServiceOption configures process-scoped Core dependencies.
 type ServiceOption func(*Core)
 
+// WithApplicationVersion identifies the running fbrcm build in outbound
+// Firebase and Google REST API requests. Empty values use "dev".
+func WithApplicationVersion(version string) ServiceOption {
+	return func(s *Core) {
+		s.applicationVersion = version
+	}
+}
+
 // WithGoogleOAuthClientCredentials supplies fbrcm's built-in Desktop OAuth
 // client. Empty values leave the google auth method unavailable while keeping
 // the other authentication methods usable.
@@ -76,10 +87,11 @@ func NewService(ctx context.Context, options ...ServiceOption) (*Core, error) {
 	corelog.For("core").Debug("core service initialized")
 
 	service := &Core{
-		ctx:              ctx,
-		firebase:         make(map[string]*firebase.Service),
-		firebaseRequests: firebase.NewRequestController(firebase.DefaultRequestPolicy()),
-		oauthAutoOpen:    true,
+		ctx:                ctx,
+		applicationVersion: "dev",
+		firebase:           make(map[string]*firebase.Service),
+		firebaseRequests:   firebase.NewRequestController(firebase.DefaultRequestPolicy()),
+		oauthAutoOpen:      true,
 	}
 	for _, option := range options {
 		if option != nil {
@@ -406,8 +418,8 @@ func (s *Core) ResetProjects() (bool, error) {
 	return changed, nil
 }
 
-// DeleteProjectIDs removes projects and all of their local Remote Config
-// caches, version snapshots, and drafts. It never creates or calls a Firebase
+// DeleteProjectIDs removes projects and all of their local Remote Config and
+// application caches, version snapshots, and drafts. It never creates or calls a Firebase
 // client.
 func (s *Core) DeleteProjectIDs(projectIDs []string) ([]Project, error) {
 	ids := make(map[string]struct{}, len(projectIDs))
@@ -443,6 +455,9 @@ func (s *Core) DeleteProjectIDs(projectIDs []string) ([]Project, error) {
 	logger := corelog.For("core")
 	logger.Info("delete local projects requested", "count", len(deleted))
 	for _, project := range deleted {
+		if err := config.DeleteAppsCacheForProject(project.ProjectID); err != nil {
+			return nil, fmt.Errorf("delete application cache for project %s: %w", project.ProjectID, err)
+		}
 		targetIDs := []string{
 			project.ProjectID,
 			(rctarget.Target{Kind: rctarget.Server, ProjectID: project.ProjectID}).String(),
