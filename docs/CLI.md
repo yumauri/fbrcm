@@ -1394,6 +1394,20 @@ same direct/discovered behavior as stateless `add` and `get`. Every selected
 template is fetched and published independently without local state or hooks.
 `--draft` is rejected; the other mutation controls retain their normal behavior.
 
+### Remote Config cache freshness
+
+Remote Config read commands (`get`, `conditions list/show`, `groups list`,
+and the list/show commands under `experiments`, `rollouts`, and
+`personalizations`) accept
+`--cached`: use an existing template regardless of age, or fetch and cache it
+when absent. This differs from the cache-only flags on `apps show/config`, versions, and
+comparisons, which require local data. `--cached` is mutually exclusive with
+`--update`, unavailable with `--stateless`, and unavailable with stdin for
+`get`. Experiments and rollouts still fetch their feature metadata live;
+the flag controls only their Remote Config template. Intentionally accepted
+stale templates report source `cache`; parameter status still reflects age
+(`stale`), without a refresh-failure warning. Project registry reads have no expiry.
+
 ### `fbrcm get [parameter]`
 
 Prints Remote Config parameters across template targets.
@@ -1410,9 +1424,10 @@ Flags:
 --json                  print JSON rows
 --all                   include projects with no matching parameters in table output
 --update                revalidate cached parameters before printing
+--cached                use cached Remote Config even when stale; fetch if absent
 ```
 
-Default output is a terminal table. Firebase-managed values use compact human summaries. Personalizations render as `◈ (personalization)`, and unknown future value options render as `(optionName)`. Experiments with published template variants render as `⚗ 15% : true | false | true`, or as `⚗ true | false` when the template has no exposure percentage; unavailable or incomplete variant data falls back to `⚗ (a/b test)`. Rollouts render their published value without another API request as `◐ 10% → 20 | (no change)`. The vertical bar groups variants within one managed value and remains distinct from the slash that separates collapsed conditional values. Percentages use the shared gold count color, concrete managed values use the parameter type's value color, and placeholders such as `(no change)` and `(empty string)` use the same muted gray as the surrounding chrome. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status. Status is `fetch` for freshly fetched or just-verified data, `cached` for a usable cache, `stale` for an expired fallback, `missing` when no data is available, and `error` when cached data is shown alongside a load error.
+Default output is a terminal table. Firebase-managed values use compact human summaries. Personalizations render as `◈ (personalization)`, and unknown future value options render as `(optionName)`. Experiments with published template variants render as `⚗ 15% : true | false | true`, or as `⚗ true | false` when the template has no exposure percentage; unavailable or incomplete variant data falls back to `⚗ (a/b test)`. Rollouts render their published value without another API request as `◐ 10% → 20 | (no change)`. The vertical bar groups variants within one managed value and remains distinct from the slash that separates collapsed conditional values. Percentages use the shared gold count color, concrete managed values use the parameter type's value color, and placeholders such as `(no change)` and `(empty string)` use the same muted gray as the surrounding chrome. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status. Status is `fetch` for freshly fetched or just-verified data, `cached` for a usable cache, `stale` for expired cache accepted with `--cached` or used after a failed refresh, `missing` when no data is available, and `error` when cached data is shown alongside a load error.
 
 Stdin mode reads Remote Config JSON from stdin and queries only that config. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. As an experimental human-only convenience on supported systems, a directory on stdin makes `get` read top-level `.json` files as multiple projects; this transport is not published in machine schemas or capability metadata.
 
@@ -1524,6 +1539,7 @@ Flags:
 --search <text>        case-insensitive substring search across name and expression
 --expr <expr>          filter using condition expression context
 --update               revalidate cached Remote Config before printing
+--cached               use cached Remote Config even when stale; fetch if absent
 --json                 print structured JSON
 ```
 
@@ -1543,6 +1559,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before printing
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print structured JSON
 ```
 
@@ -1641,6 +1658,7 @@ List flags:
 -f, --filter <query>   filter group names; may be repeated
 --search <text>        search group names and descriptions
 --update               revalidate cached Remote Config before printing
+--cached               use cached Remote Config even when stale; fetch if absent
 --json                 print structured JSON
 ```
 
@@ -1988,7 +2006,7 @@ draft.
 
 The `apps` command group reads registered Android, iOS, and Web applications through the Firebase Management API. In normal mode it uses a separate, profile-scoped application cache with a one-hour TTL. The inventory, platform-specific details, and exact SDK configuration artifacts are cached independently under the active profile's `apps` cache directory. This does not change or reuse Remote Config snapshots. For `apps list`, `<project>` uses the shared exact-then-filtered project resolution in normal mode and must be a literal physical Firebase project ID in stateless mode. `client@` and `server@` prefixes are rejected because applications belong to the physical project rather than a Remote Config template.
 
-All three subcommands are cache-first. `--update` forces a Firebase read and refreshes the relevant cache entries. `--cached` performs no Firebase request and accepts stale entries; the flags are mutually exclusive. Stateless mode always reads Firebase directly and rejects both cache flags. A failed inventory or details refresh may fall back to a stale entry and reports `source: "cache-stale"` plus a structured `cache.stale` warning. SDK configuration never falls back implicitly because it may contain security-sensitive, operational configuration: stale configuration is returned only when `--cached` was explicit. Machine results expose `source` (`firebase`, `cache`, or `cache-stale`) and `cached_at` when available.
+All three subcommands are cache-first. `--update` forces a Firebase read and refreshes the relevant cache entries. For `apps list`, `--cached` accepts stale inventory and fetches from Firebase and saves the inventory when it is absent. For `apps show` and `apps config`, it performs no Firebase request and requires cached entries. The flags are mutually exclusive. Stateless mode always reads Firebase directly and rejects both cache flags. A failed inventory or details refresh may fall back to a stale entry and reports `source: "cache-stale"` plus a structured `cache.stale` warning. SDK configuration never falls back implicitly because it may contain security-sensitive, operational configuration: stale configuration is returned only when `--cached` was explicit. Machine results expose `source` (`firebase`, `cache`, or `cache-stale`) and `cached_at` when available.
 
 `<app>` is exact and case-sensitive. Resolution tries Firebase App ID, full resource name, namespace (Android package name, iOS bundle ID, or Web namespace), then display name. A missing value returns `app.not_found`; a non-unique value at the first matching tier returns `app.ambiguous` with candidate App IDs.
 
@@ -2006,7 +2024,7 @@ Flags:
 --platform android|ios|web        include only one platform
 --show-deleted                    include applications pending permanent deletion
 --update                          refresh from Firebase and update the application cache
---cached                          use the application cache only, even when stale
+--cached                          use stale application cache; fetch if absent
 --json                            put typed application summaries in envelope data
 ```
 
@@ -2014,7 +2032,7 @@ Filtering uses the shared mode prefixes and is applied locally after every Fireb
 
 Without a positional project, the table has a first `Project` column, even if filters select one project. Long project names are cropped with an ellipsis. With a positional project, the existing project/source heading is retained. In both modes, `data.items` contains application summaries with `project` (display name), `project_id`, `source`, and optional `cached_at` on each item; `data.count` is the total application count.
 
-`--cached` resolves bulk selection using only the local registry and reads only application caches. Stateless bulk selection uses exact `=project-id` filters directly or discovers projects for other filters or omitted filters; it never consults aliases or local state. Template prefixes remain invalid for apps.
+`--cached` uses normal project resolution (which can discover projects when the registry is absent), accepts existing inventory regardless of age, and fetches missing inventory. Explicit stale-cache reads retain `source: "cache-stale"` and their original timestamp without a refresh-failure warning. Stateless bulk selection uses exact `=project-id` filters directly or discovers projects for other filters or omitted filters; it never consults aliases or local state. Template prefixes remain invalid for apps.
 
 ### `fbrcm apps show <app>`
 
@@ -2068,6 +2086,7 @@ Flags:
 ```text
 -f, --filter <query>   filter display names locally; may be repeated
 --update                revalidate cached Remote Config before reading bindings
+--cached                use cached Remote Config even when stale; fetch if absent
 --json                  put filtered experiment objects and references in envelope data
 ```
 
@@ -2086,6 +2105,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before reading bindings
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print project/template context and the complete Firebase experiment object with references
 ```
 
@@ -2122,6 +2142,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before reading bindings
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     put rollout objects and references in envelope data
 ```
 
@@ -2138,6 +2159,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before reading bindings
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print project/template context and the rollout with references
 ```
 
@@ -2167,6 +2189,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before scanning it
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     put personalization IDs and references in envelope data
 ```
 
@@ -2180,6 +2203,7 @@ Flags:
 
 ```text
 --update   revalidate cached Remote Config before scanning it
+--cached   use cached Remote Config even when stale; fetch if absent
 --json     print project/template context and the personalization references
 ```
 

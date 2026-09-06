@@ -295,7 +295,7 @@
       "additionalProperties": false,
       "properties": {
         "cached": {
-          "description": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless",
+          "description": "Use cached applications even when stale; fetch from Firebase if absent; cannot be combined with --stateless",
           "type": "boolean",
           "x-fbrcm-effective-when": [
             {

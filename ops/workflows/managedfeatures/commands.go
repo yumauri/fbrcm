@@ -79,8 +79,11 @@ func newExperimentsListCommandDefinition(svc *core.Core) *invocation.Definition 
 			if err != nil {
 				return err
 			}
-			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigExperiments(ctx, project, update)
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
+			}
+			result, err := svc.ListRemoteConfigExperiments(ctx, project, opts)
 			if err != nil {
 				return err
 			}
@@ -124,8 +127,11 @@ func newExperimentsShowCommandDefinition(svc *core.Core) *invocation.Definition 
 			if err != nil {
 				return err
 			}
-			update, _ := cmd.Flags().GetBool("update")
-			experiment, template, err := svc.GetRemoteConfigExperiment(ctx, project, args[1], update)
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
+			}
+			experiment, template, err := svc.GetRemoteConfigExperiment(ctx, project, args[1], opts)
 			if err != nil {
 				return err
 			}
@@ -197,8 +203,11 @@ func newRolloutsListCommandDefinition(svc *core.Core) *invocation.Definition {
 			if err != nil {
 				return err
 			}
-			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigRollouts(ctx, project, update)
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
+			}
+			result, err := svc.ListRemoteConfigRollouts(ctx, project, opts)
 			if err != nil {
 				return err
 			}
@@ -225,8 +234,11 @@ func newRolloutsShowCommandDefinition(svc *core.Core) *invocation.Definition {
 			if err != nil {
 				return err
 			}
-			update, _ := cmd.Flags().GetBool("update")
-			rollout, template, err := svc.GetRemoteConfigRollout(ctx, project, args[1], update)
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
+			}
+			rollout, template, err := svc.GetRemoteConfigRollout(ctx, project, args[1], opts)
 			if err != nil {
 				return err
 			}
@@ -298,8 +310,11 @@ func newPersonalizationsListCommandDefinition(svc *core.Core) *invocation.Defini
 			if err != nil {
 				return err
 			}
-			update, _ := cmd.Flags().GetBool("update")
-			result, err := svc.ListRemoteConfigPersonalizations(ctx, project, update)
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
+			}
+			result, err := svc.ListRemoteConfigPersonalizations(ctx, project, opts)
 			if err != nil {
 				return err
 			}
@@ -327,8 +342,11 @@ func newPersonalizationsShowCommandDefinition(svc *core.Core) *invocation.Defini
 			if err != nil {
 				return err
 			}
-			update, _ := cmd.Flags().GetBool("update")
-			personalization, template, err := svc.GetRemoteConfigPersonalization(ctx, project, args[1], update)
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
+			}
+			personalization, template, err := svc.GetRemoteConfigPersonalization(ctx, project, args[1], opts)
 			if err != nil {
 				return err
 			}
@@ -392,16 +410,14 @@ func resolveReadProject(cmd invocation.Call, svc *core.Core, query string) (core
 		}
 		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("managed-feature commands are project-scoped; omit the client@ prefix"))
 	}
-	ctx := shared.CommandContext(cmd)
-	update, _ := cmd.Flags().GetBool("update")
-	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
-		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+	if _, err := shared.ReadParametersReadOptions(cmd); err != nil {
+		return core.Project{}, nil, err
 	}
 	return resolveProjectForExecution(cmd, svc, target.ProjectID)
 }
 
 func addTemplateReadFlags(cmd invocation.FlagGroups, noun string) {
-	cmd.Flags().Bool("update", false, "Revalidate cached Remote Config before reading parameter bindings")
+	shared.AddParametersReadFlags(cmd, "Revalidate cached Remote Config before reading parameter bindings")
 	cmd.Flags().Bool("json", false, "Print "+noun+" as JSON")
 }
 

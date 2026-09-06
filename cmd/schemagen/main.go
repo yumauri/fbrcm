@@ -1029,7 +1029,7 @@ func runtimeStatePredicateSemantics() []any {
 		return map[string]any{"source": "runtime_state", "name": name, "operator": operator, "semantics": semantics}
 	}
 	return []any{
-		definition("required_cache", "not_usable", "At the read decision point, the cache or registry required by the command is absent, unreadable, invalid, empty when an empty registry cannot satisfy selection, or expired under the active cache policy. A stale value used only after a failed refresh still satisfies this predicate."),
+		definition("required_cache", "not_usable", "At the read decision point, the cache or registry required by the command is absent, unreadable, invalid, empty when an empty registry cannot satisfy selection, or expired under the active cache policy. For Remote Config freshness flags and apps list, --cached accepts existing stale data, so expiry alone does not satisfy this predicate; absent data still requires a fetch. A stale value used only after a failed refresh still satisfies this predicate."),
 		definition("remote_read", "cache_write_succeeded", "The command completed a Firebase read and successfully persisted the returned Remote Config data or immutable version snapshot in its command-specific local cache."),
 		definition("remote_read", "succeeded", "The command completed the Firebase read successfully, independently of any subsequent local persistence."),
 		definition("trusted_hook", "configured_for_event", "At least one locally trusted hook command is configured for the publication event reached by this invocation."),
@@ -2368,7 +2368,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		if statelessMutationRejectsDraft(commandID) {
 			statelessOptionProperties["draft"] = map[string]any{"const": false}
 		}
-		if slices.Contains([]string{"apps.config", "apps.list", "apps.show", "projects.diff", "versions.diff", "versions.export", "versions.list", "versions.show"}, commandID) {
+		if slices.Contains([]string{"apps.config", "apps.list", "apps.show", "projects.diff", "versions.diff", "versions.export", "versions.list", "versions.show", "get", "conditions.list", "conditions.show", "groups.list", "experiments.list", "experiments.show", "rollouts.list", "rollouts.show", "personalizations.list", "personalizations.show"}, commandID) {
 			statelessOptionProperties["cached"] = map[string]any{"const": false}
 		}
 		if slices.Contains([]string{
@@ -2600,7 +2600,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 				"then": map[string]any{
 					"properties": map[string]any{
-						"options": map[string]any{"properties": map[string]any{"update": map[string]any{"const": false}}},
+						"options": map[string]any{"properties": map[string]any{"update": map[string]any{"const": false}, "cached": map[string]any{"const": false}}},
 					},
 				},
 			})

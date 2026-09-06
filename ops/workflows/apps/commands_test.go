@@ -240,7 +240,7 @@ func TestAppsCacheFlagsReachReader(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if !options.CachedOnly || !options.ShowDeleted || options.Update {
+	if !options.PreferCached || options.CachedOnly || !options.ShowDeleted || options.Update {
 		t.Fatalf("options = %#v", options)
 	}
 }

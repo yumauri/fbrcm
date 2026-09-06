@@ -64,10 +64,9 @@ func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 		Short: "List conditions in evaluation priority order",
 		Args:  invocation.MaximumNArgs(1),
 		RunE: func(cmd invocation.Call, args []string) error {
-			ctx := shared.CommandContext(cmd)
-			update, _ := cmd.Flags().GetBool("update")
-			if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
-				return shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+			opts, err := shared.ReadParametersReadOptions(cmd)
+			if err != nil {
+				return err
 			}
 			projects, ctx, err := shared.ResolveListProjects(cmd, svc, args, "", false)
 			if err != nil {
@@ -86,7 +85,7 @@ func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 				if err != nil {
 					return err
 				}
-				loaded, err := loadProject(projectCtx, svc, project, update)
+				loaded, err := loadProject(projectCtx, svc, project, opts)
 				if err != nil {
 					return err
 				}
@@ -147,15 +146,15 @@ func newShowCommandDefinition(svc *core.Core) *invocation.Definition {
 }
 
 func addReadFlags(cmd invocation.FlagGroups) {
-	cmd.Flags().Bool("update", false, "Revalidate cached Remote Config before printing")
+	shared.AddParametersReadFlags(cmd, "Revalidate cached Remote Config before printing")
 	cmd.Flags().Bool("json", false, "Print conditions as JSON")
 }
 
 func load(cmd invocation.Call, svc *core.Core, query string) (loadedConditions, error) {
 	ctx := shared.CommandContext(cmd)
-	update, _ := cmd.Flags().GetBool("update")
-	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
-		return loadedConditions{}, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+	opts, err := shared.ReadParametersReadOptions(cmd)
+	if err != nil {
+		return loadedConditions{}, err
 	}
 	project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, query)
 	if err != nil {
@@ -166,11 +165,11 @@ func load(cmd invocation.Call, svc *core.Core, query string) (loadedConditions, 
 		return loadedConditions{}, err
 	}
 	cmd.SetContext(ctx)
-	return loadProject(ctx, svc, project, update)
+	return loadProject(ctx, svc, project, opts)
 }
 
-func loadProject(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedConditions, error) {
-	cache, source, err := loadCache(ctx, svc, project.ProjectID, update)
+func loadProject(ctx context.Context, svc *core.Core, project core.Project, opts core.ParametersReadOptions) (loadedConditions, error) {
+	cache, source, err := loadCache(ctx, svc, project.ProjectID, opts)
 	if err != nil {
 		return loadedConditions{}, err
 	}
@@ -190,15 +189,8 @@ func loadProject(ctx context.Context, svc *core.Core, project core.Project, upda
 	return loadedConditions{Project: project, Version: tree.Version, Source: source, HasDraft: hasDraft, Tree: tree}, nil
 }
 
-func loadCache(ctx context.Context, svc *core.Core, projectID string, update bool) (*core.ParametersCache, string, error) {
-	var cache *core.ParametersCache
-	var source string
-	var err error
-	if update {
-		cache, source, err = svc.RevalidateParameters(ctx, projectID)
-	} else {
-		cache, source, err = svc.GetParameters(ctx, projectID, false)
-	}
+func loadCache(ctx context.Context, svc *core.Core, projectID string, opts core.ParametersReadOptions) (*core.ParametersCache, string, error) {
+	cache, source, err := svc.ReadParameters(ctx, projectID, opts)
 	if err == nil {
 		return cache, source, nil
 	}

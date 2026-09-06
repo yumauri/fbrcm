@@ -2264,7 +2264,7 @@
                 ]
               }
             ],
-            "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
+            "usage": "Use cached applications even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
           },
           {
             "name": "--filter",
@@ -2449,12 +2449,6 @@
                   },
                   {
                     "source": "option",
-                    "name": "cached",
-                    "operator": "equals",
-                    "value": false
-                  },
-                  {
-                    "source": "option",
                     "name": "update",
                     "operator": "equals",
                     "value": true
@@ -2466,12 +2460,6 @@
                   {
                     "source": "option",
                     "name": "stateless",
-                    "operator": "equals",
-                    "value": false
-                  },
-                  {
-                    "source": "option",
-                    "name": "cached",
                     "operator": "equals",
                     "value": false
                   },
@@ -2493,12 +2481,6 @@
                   {
                     "source": "option",
                     "name": "stateless",
-                    "operator": "equals",
-                    "value": false
-                  },
-                  {
-                    "source": "option",
-                    "name": "cached",
                     "operator": "equals",
                     "value": false
                   },
@@ -2527,12 +2509,6 @@
                   {
                     "source": "option",
                     "name": "stateless",
-                    "operator": "equals",
-                    "value": false
-                  },
-                  {
-                    "source": "option",
-                    "name": "cached",
                     "operator": "equals",
                     "value": false
                   },
@@ -2660,12 +2636,6 @@
               },
               {
                 "source": "option",
-                "name": "cached",
-                "operator": "equals",
-                "value": false
-              },
-              {
-                "source": "option",
                 "name": "update",
                 "operator": "equals",
                 "value": true
@@ -2677,12 +2647,6 @@
               {
                 "source": "option",
                 "name": "stateless",
-                "operator": "equals",
-                "value": false
-              },
-              {
-                "source": "option",
-                "name": "cached",
                 "operator": "equals",
                 "value": false
               },
@@ -8739,6 +8703,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
+          {
             "name": "--expr",
             "aliases": [],
             "type": "string",
@@ -10783,6 +10769,28 @@
           }
         ],
         "flags": [
+          {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -16440,6 +16448,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
+          {
             "name": "--filter",
             "aliases": [
               "-f"
@@ -16764,6 +16794,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
+          {
             "name": "--no-local-config",
             "aliases": [],
             "type": "bool",
@@ -17077,6 +17129,34 @@
             "repeatable": false,
             "effective": true,
             "usage": "Include projects with no matching parameters"
+          },
+          {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  },
+                  {
+                    "source": "stdin",
+                    "name": "document",
+                    "operator": "absent",
+                    "value": null
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless or stdin"
           },
           {
             "name": "--expr",
@@ -20006,6 +20086,28 @@
         "arguments": [],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
+          {
             "name": "--filter",
             "aliases": [
               "-f"
@@ -22039,6 +22141,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
+          {
             "name": "--no-local-config",
             "aliases": [],
             "type": "bool",
@@ -22470,6 +22594,28 @@
           }
         ],
         "flags": [
+          {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -30133,6 +30279,28 @@
         ],
         "flags": [
           {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
+          {
             "name": "--no-local-config",
             "aliases": [],
             "type": "bool",
@@ -30444,6 +30612,28 @@
           }
         ],
         "flags": [
+          {
+            "name": "--cached",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "effective_when": [
+              {
+                "all_of": [
+                  {
+                    "source": "option",
+                    "name": "stateless",
+                    "operator": "equals",
+                    "value": false
+                  }
+                ]
+              }
+            ],
+            "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
+          },
           {
             "name": "--no-local-config",
             "aliases": [],
@@ -41992,7 +42182,7 @@
     {
       "name": "required_cache",
       "operator": "not_usable",
-      "semantics": "At the read decision point, the cache or registry required by the command is absent, unreadable, invalid, empty when an empty registry cannot satisfy selection, or expired under the active cache policy. A stale value used only after a failed refresh still satisfies this predicate.",
+      "semantics": "At the read decision point, the cache or registry required by the command is absent, unreadable, invalid, empty when an empty registry cannot satisfy selection, or expired under the active cache policy. For Remote Config freshness flags and apps list, --cached accepts existing stale data, so expiry alone does not satisfy this predicate; absent data still requires a fetch. A stale value used only after a failed refresh still satisfies this predicate.",
       "source": "runtime_state"
     },
     {

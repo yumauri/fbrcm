@@ -1209,3 +1209,35 @@ are canonical template target IDs. App cache provenance (`source` and optional
 fields. Empty selections return an empty items array and zero count. Read failures
 fail the command without returning partial successful data. Version numbers stay
 unchanged under the pre-1.0 contract policy.
+
+
+### Remote Config freshness flags
+
+`get`, `conditions list/show`, `groups list`, and the list/show commands under
+`experiments`, `rollouts`, and `personalizations` accept `--cached` alongside
+`--update`. These flags are mutually exclusive; both are rejected with
+`--stateless` and with stdin for `get`, using an invalid-argument problem and
+the existing usage exit status. Schemas publish these constraints.
+
+For these commands, `--cached` accepts an existing Remote Config template
+regardless of age and fetches normally when it is absent. It is not an offline
+guarantee: project discovery can still occur, and experiments/rollouts always
+fetch feature metadata. Existing `apps show/config`, version, and comparison `--cached` flags retain their cache-only
+semantics. The `required_cache/not_usable` capability predicate evaluates
+freshness under the selected policy: a stale template is usable with this flag.
+An intentionally accepted stale template reports source `cache` (parameter
+status `stale` when expired) without a refresh-failure warning. Response DTOs and contract
+version remain unchanged.
+
+
+### Application inventory cache preference
+
+`apps list --cached` accepts an existing application inventory regardless of
+age and fetches/persists it when absent, including a successful empty inventory.
+Normal project resolution may discover projects if the registry is absent.
+An explicitly accepted stale inventory retains source `cache-stale` and its
+timestamp without a refresh-failure warning. The `required_cache/not_usable`
+predicate uses this selected freshness policy; `cached=true` does not prohibit
+network or cache-write effects. `apps show --cached` and `apps config --cached`
+still require local data. Mutual exclusion with `--update`, rejection with
+`--stateless`, DTOs, and contract version are unchanged.

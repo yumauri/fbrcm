@@ -165,6 +165,9 @@
               ]
             },
             "properties": {
+              "cached": {
+                "const": false
+              },
               "update": {
                 "const": false
               }
@@ -254,6 +257,18 @@
           }
         }
       }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "update",
+              "cached"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -270,6 +285,22 @@
     "options": {
       "additionalProperties": false,
       "properties": {
+        "cached": {
+          "description": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
         "expr": {
           "$ref": "#/$defs/expression",
           "description": "Filter conditions by expr-lang expression",

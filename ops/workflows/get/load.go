@@ -10,11 +10,8 @@ import (
 	sharedrc "github.com/yumauri/fbrcm/ops/shared/rc"
 )
 
-func loadProjectParameters(ctx context.Context, svc *core.Core, projectID string, update bool) (*core.ParametersCache, string, error) {
-	if update {
-		return svc.RevalidateParameters(ctx, projectID)
-	}
-	return svc.GetParameters(ctx, projectID, false)
+func loadProjectParameters(ctx context.Context, svc *core.Core, projectID string, opts core.ParametersReadOptions) (*core.ParametersCache, string, error) {
+	return svc.ReadParameters(ctx, projectID, opts)
 }
 
 type loadedProjectParameters struct {
@@ -25,7 +22,7 @@ type loadedProjectParameters struct {
 	status  string
 }
 
-func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core.Project, update bool) ([]loadedProjectParameters, error) {
+func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core.Project, opts core.ParametersReadOptions) ([]loadedProjectParameters, error) {
 	if len(projects) == 0 {
 		return nil, nil
 	}
@@ -51,7 +48,7 @@ func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core
 		go func() {
 			defer workers.Done()
 			for work := range jobs {
-				loaded, err := loadProjectParametersWithFallback(ctx, svc, work.project, update)
+				loaded, err := loadProjectParametersWithFallback(ctx, svc, work.project, opts)
 				select {
 				case results <- result{index: work.index, loaded: loaded, err: err}:
 				case <-ctx.Done():
@@ -88,12 +85,12 @@ func loadProjectsParameters(ctx context.Context, svc *core.Core, projects []core
 	return loaded, nil
 }
 
-func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedProjectParameters, error) {
+func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, project core.Project, opts core.ParametersReadOptions) (loadedProjectParameters, error) {
 	executionCtx, err := shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
 	if err != nil {
 		return loadedProjectParameters{}, err
 	}
-	cache, source, err := loadProjectParameters(executionCtx, svc, project.ProjectID, update)
+	cache, source, err := loadProjectParameters(executionCtx, svc, project.ProjectID, opts)
 	if err == nil {
 		cfg, parseErr := sharedrc.ParseProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
 		if parseErr != nil {

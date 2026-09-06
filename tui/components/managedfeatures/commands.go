@@ -15,17 +15,17 @@ func (m Model) loadProjectCmd(project core.Project, update bool) tea.Cmd {
 		switch m.kind {
 		case messages.ManagedFeatureExperiment:
 			var result core.ExperimentList
-			result, msg.Err = m.svc.ListRemoteConfigExperiments(context.Background(), project, update)
+			result, msg.Err = m.svc.ListRemoteConfigExperiments(context.Background(), project, core.ParametersReadOptions{Update: update})
 			msg.Template = result.Template
 			msg.Experiments = result.Experiments
 		case messages.ManagedFeaturePersonalization:
 			var result core.PersonalizationList
-			result, msg.Err = m.svc.ListRemoteConfigPersonalizations(context.Background(), project, update)
+			result, msg.Err = m.svc.ListRemoteConfigPersonalizations(context.Background(), project, core.ParametersReadOptions{Update: update})
 			msg.Template = result.Template
 			msg.Personalizations = result.Personalizations
 		case messages.ManagedFeatureRollout:
 			var result core.RolloutList
-			result, msg.Err = m.svc.ListRemoteConfigRollouts(context.Background(), project, update)
+			result, msg.Err = m.svc.ListRemoteConfigRollouts(context.Background(), project, core.ParametersReadOptions{Update: update})
 			msg.Template = result.Template
 			msg.Rollouts = result.Rollouts
 		}

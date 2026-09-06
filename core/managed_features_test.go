@@ -61,7 +61,7 @@ func TestListRemoteConfigExperimentsUsesPagedListResourcesWithoutHydration(t *te
 	result, err := svc.ListRemoteConfigExperiments(
 		context.Background(),
 		Project{Name: "Demo", ProjectID: "demo", ProjectNumber: "123"},
-		false,
+		ParametersReadOptions{},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -122,7 +122,7 @@ func TestListRemoteConfigRolloutsUsesListResourcesWithoutHydration(t *testing.T)
 	result, err := svc.ListRemoteConfigRollouts(
 		context.Background(),
 		Project{Name: "Demo", ProjectID: "demo", ProjectNumber: "123"},
-		false,
+		ParametersReadOptions{},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -208,10 +208,10 @@ func TestGetRemoteConfigPersonalizationRequiresExactCase(t *testing.T) {
 		"parameters":{"flag":{"defaultValue":{"personalizationValue":{"personalizationId":"Personal_1"}}}}
 	}`))
 	project := Project{Name: "Demo", ProjectID: "demo"}
-	if got, _, err := svc.GetRemoteConfigPersonalization(context.Background(), project, "Personal_1", false); err != nil || got.ID != "Personal_1" {
+	if got, _, err := svc.GetRemoteConfigPersonalization(context.Background(), project, "Personal_1", ParametersReadOptions{}); err != nil || got.ID != "Personal_1" {
 		t.Fatalf("exact personalization = %#v, %v", got, err)
 	}
-	_, _, err := svc.GetRemoteConfigPersonalization(context.Background(), project, "personal_1", false)
+	_, _, err := svc.GetRemoteConfigPersonalization(context.Background(), project, "personal_1", ParametersReadOptions{})
 	var lookup *ManagedFeatureLookupError
 	if !errors.As(err, &lookup) || lookup.ID != "personal_1" {
 		t.Fatalf("case-mismatched personalization error = %#v", err)
@@ -225,5 +225,45 @@ func TestCollectManagedFeatureReferencesRejectsUnexpectedWireShape(t *testing.T)
 	_, err := collectRolloutReferences(cfg)
 	if err == nil || !strings.Contains(err.Error(), "flag default value") {
 		t.Fatalf("collectRolloutReferences error = %v", err)
+	}
+}
+
+func TestCachedManagedFeatureReadsStillFetchMetadata(t *testing.T) {
+	for _, command := range []string{"experiments.list", "experiments.show", "rollouts.list", "rollouts.show"} {
+		t.Run(command, func(t *testing.T) {
+			svc := setupCoreTestEnv(t)
+			seedAuthAndProject(t, svc, "main", "demo")
+			saveStaleParametersCache(t, "demo", "1")
+			requests := 0
+			injectFirebaseService(t, svc, "main", firebase.NewServiceWithHTTPClient(&http.Client{
+				Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+					requests++
+					if strings.Contains(req.URL.Path, "remoteConfig") {
+						t.Fatalf("cached read fetched template: %s", req.URL)
+					}
+					resource, _, _ := strings.Cut(command, ".")
+					if !strings.Contains(req.URL.Path, "/"+resource) {
+						t.Fatalf("unexpected metadata request: %s", req.URL)
+					}
+					return jsonResponse(http.StatusOK, `{}`, ""), nil
+				}),
+			}))
+			project := Project{ProjectID: "demo", ProjectNumber: "123"}
+			opts := ParametersReadOptions{Cached: true}
+			var err error
+			switch command {
+			case "experiments.list":
+				_, err = svc.ListRemoteConfigExperiments(context.Background(), project, opts)
+			case "experiments.show":
+				_, _, err = svc.GetRemoteConfigExperiment(context.Background(), project, "exp-1", opts)
+			case "rollouts.list":
+				_, err = svc.ListRemoteConfigRollouts(context.Background(), project, opts)
+			case "rollouts.show":
+				_, _, err = svc.GetRemoteConfigRollout(context.Background(), project, "rollout-1", opts)
+			}
+			if err != nil || requests != 1 {
+				t.Fatalf("metadata read: err=%v requests=%d", err, requests)
+			}
+		})
 	}
 }

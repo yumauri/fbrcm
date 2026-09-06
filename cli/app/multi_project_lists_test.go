@@ -140,7 +140,7 @@ func TestMultiProjectListsRuntimeContract(t *testing.T) {
 			}
 		})
 	}
-	// Missing cached app data must remain a typed failure without attempting discovery.
+	// Missing app data attempts a fetch; unavailable authentication remains a typed failure.
 	if err := os.RemoveAll(config.GetAppsCacheDirPath()); err != nil {
 		t.Fatal(err)
 	}

@@ -73,6 +73,7 @@ func newListDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 			if err != nil {
 				return err
 			}
+			cacheOpts.PreferCached, cacheOpts.CachedOnly = cacheOpts.CachedOnly, false
 			projects, ctx, err := shared.ResolveListProjects(cmd, svc, args, "app", cacheOpts.CachedOnly)
 			if err != nil {
 				return err
@@ -131,6 +132,7 @@ func newListDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 	cmd.Flags().Bool("show-deleted", false, "Include applications pending permanent deletion")
 	cmd.Flags().Bool("json", false, "Print applications as JSON")
 	addAppCacheFlags(cmd)
+	cmd.Flags().Lookup("cached").Usage = "Use cached applications even when stale; fetch from Firebase if absent"
 	return cmd
 }
 

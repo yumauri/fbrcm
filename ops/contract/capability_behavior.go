@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"slices"
 	"strings"
 )
 
@@ -98,7 +99,7 @@ func statelessUpdatingRemoteRead(extra ...effectBehavior) capabilityBehavior {
 	}, extra...)
 }
 
-func appCacheRead(extra ...effectBehavior) capabilityBehavior {
+func appCacheRead(fetchMissing bool, extra ...effectBehavior) capabilityBehavior {
 	remoteWhen := []BehaviorConditionClause{
 		conditionClause(predicate("option", "stateless", "equals", true)),
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true)),
@@ -107,6 +108,16 @@ func appCacheRead(extra ...effectBehavior) capabilityBehavior {
 	cacheWriteWhen := []BehaviorConditionClause{
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
+	}
+	if fetchMissing {
+		// Inventory reads accept stale cache but still fetch when it is absent.
+		for _, clauses := range [][]BehaviorConditionClause{remoteWhen, cacheWriteWhen} {
+			for i := range clauses {
+				clauses[i].AllOf = slices.DeleteFunc(clauses[i].AllOf, func(p BehaviorPredicate) bool {
+					return p.Source == "option" && p.Name == "cached"
+				})
+			}
+		}
 	}
 	effects := []effectBehavior{
 		effect("firebase_remote_read", remoteWhen...),
@@ -728,9 +739,9 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))),
 
 	"conditions.list": statelessUpdatingRemoteRead(),
-	"apps.list":       appCacheRead(),
-	"apps.show":       appCacheRead(),
-	"apps.config": destructive(appCacheRead(effect("local_file_write",
+	"apps.list":       appCacheRead(true),
+	"apps.show":       appCacheRead(false),
+	"apps.config": destructive(appCacheRead(false, effect("local_file_write",
 		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "an existing destination file may be overwritten"),
 	"conditions.show":     statelessUpdatingRemoteRead(),
 	"conditions.validate": requiredCacheableRemoteRead(effect("firebase_remote_validation")),

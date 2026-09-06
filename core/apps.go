@@ -57,9 +57,10 @@ type FirebaseAppConfig struct {
 }
 
 type ListFirebaseAppsOptions struct {
-	ShowDeleted bool
-	Update      bool
-	CachedOnly  bool
+	ShowDeleted  bool
+	Update       bool
+	CachedOnly   bool
+	PreferCached bool
 }
 
 type AppCacheSource string
@@ -149,7 +150,7 @@ func (s *Core) ListFirebaseApps(ctx context.Context, projectID string, opts List
 // deliberately local so one cache entry serves both list forms.
 func (s *Core) ReadFirebaseApps(ctx context.Context, projectID string, opts ListFirebaseAppsOptions) (FirebaseAppsResult, error) {
 	logger := corelog.For("core")
-	logger.Debug("read firebase applications requested", "project_id", projectID, "update", opts.Update, "cached_only", opts.CachedOnly, "show_deleted", opts.ShowDeleted)
+	logger.Debug("read firebase applications requested", "project_id", projectID, "update", opts.Update, "cached_only", opts.CachedOnly, "prefer_cached", opts.PreferCached, "show_deleted", opts.ShowDeleted)
 
 	policy := ExecutionPolicyFromContext(ctx)
 	if !policy.ReadLocalState {
@@ -163,13 +164,15 @@ func (s *Core) ReadFirebaseApps(ctx context.Context, projectID string, opts List
 	}
 
 	cached, cachedErr := loadAppsIndex(projectID)
-	if opts.CachedOnly {
-		if cachedErr != nil {
+	if opts.CachedOnly || (opts.PreferCached && !opts.Update) {
+		if cachedErr == nil {
+			cached.Apps = filterDeletedApps(cached.Apps, opts.ShowDeleted)
+			logApplicationsCacheServe(logger, projectID, cached.Source)
+			return cached, nil
+		}
+		if opts.CachedOnly || !errors.Is(cachedErr, os.ErrNotExist) {
 			return FirebaseAppsResult{}, appCacheLoadError("index", projectID, "", cachedErr)
 		}
-		cached.Apps = filterDeletedApps(cached.Apps, opts.ShowDeleted)
-		logApplicationsCacheServe(logger, projectID, cached.Source)
-		return cached, nil
 	}
 	if !opts.Update && cachedErr == nil && cached.Source == AppCacheSourceCache {
 		cached.Apps = filterDeletedApps(cached.Apps, opts.ShowDeleted)

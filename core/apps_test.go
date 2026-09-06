@@ -245,3 +245,67 @@ func appJSONResponse(req *http.Request, body string) *http.Response {
 		Request:    req,
 	}
 }
+
+func TestReadFirebaseAppsPreferCached(t *testing.T) {
+	for _, state := range []string{"stale", "missing", "missing-empty"} {
+		t.Run(state, func(t *testing.T) {
+			requests := 0
+			svc := newAppsTestCore(t, appRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+				requests++
+				body := `{"apps":[{"name":"projects/demo/androidApps/a","platform":"ANDROID","appId":"1:123:android:abc","state":"ACTIVE"}]}`
+				if state == "missing-empty" {
+					body = `{"apps":[]}`
+				}
+				return appJSONResponse(req, body), nil
+			}))
+			oldTime := time.Now().Add(-2 * time.Hour).UTC()
+			if state == "stale" {
+				payload := []byte(`[{"resource_name":"projects/demo/webApps/w","platform":"web","app_id":"1:123:web:abc","state":"ACTIVE"},{"resource_name":"projects/demo/webApps/d","platform":"web","app_id":"1:123:web:deleted","state":"DELETED"}]`)
+				if err := config.SaveAppsIndexCache("demo", oldTime, payload); err != nil {
+					t.Fatal(err)
+				}
+			}
+			opts := ListFirebaseAppsOptions{PreferCached: true}
+			result, err := svc.ReadFirebaseApps(context.Background(), "demo", opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result.RefreshError != nil || result.CacheError != nil {
+				t.Fatalf("warnings: %+v", result)
+			}
+			if state == "stale" {
+				if requests != 0 || result.Source != AppCacheSourceCacheStale || !result.CachedAt.Equal(oldTime) || len(result.Apps) != 1 {
+					t.Fatalf("stale result=%+v requests=%d", result, requests)
+				}
+				opts.ShowDeleted = true
+				all, err := svc.ReadFirebaseApps(context.Background(), "demo", opts)
+				if err != nil || len(all.Apps) != 2 || requests != 0 {
+					t.Fatalf("deleted filtering: %+v %v", all, err)
+				}
+			} else {
+				wantCount := 1
+				if state == "missing-empty" {
+					wantCount = 0
+				}
+				if requests != 1 || result.Source != AppCacheSourceFirebase || len(result.Apps) != wantCount {
+					t.Fatalf("missing result=%+v requests=%d", result, requests)
+				}
+				again, err := svc.ReadFirebaseApps(context.Background(), "demo", opts)
+				if err != nil || requests != 1 || again.Source != AppCacheSourceCache || len(again.Apps) != wantCount {
+					t.Fatalf("persisted result=%+v requests=%d err=%v", again, requests, err)
+				}
+			}
+		})
+	}
+}
+
+func TestReadFirebaseAppsCachedOnlyStillRequiresInventory(t *testing.T) {
+	svc := newAppsTestCore(t, appRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		t.Fatalf("cache-only read contacted Firebase: %s", req.URL)
+		return nil, errors.New("unexpected request")
+	}))
+	_, err := svc.ReadFirebaseApps(context.Background(), "demo", ListFirebaseAppsOptions{CachedOnly: true})
+	if _, ok := errors.AsType[*AppCacheMissError](err); !ok {
+		t.Fatalf("cache-only error=%v", err)
+	}
+}

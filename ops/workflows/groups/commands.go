@@ -79,7 +79,7 @@ func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 
 func addReadFlags(cmd invocation.FlagGroups) {
 	shared.AddProjectTargetFilterFlag(cmd)
-	cmd.Flags().Bool("update", false, "Revalidate cached Remote Config before printing")
+	shared.AddParametersReadFlags(cmd, "Revalidate cached Remote Config before printing")
 	cmd.Flags().Bool("json", false, "Print groups as JSON")
 }
 
@@ -89,9 +89,9 @@ func loadProjects(cmd invocation.Call, svc *core.Core) ([]loadedGroups, error) {
 	if err != nil {
 		return nil, err
 	}
-	update, _ := cmd.Flags().GetBool("update")
-	if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
-		return nil, shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+	opts, err := shared.ReadParametersReadOptions(cmd)
+	if err != nil {
+		return nil, err
 	}
 	projects, ctx, err := shared.ResolveProjectTargetsForExecution(ctx, cmd, svc, projectFilters)
 	if err != nil {
@@ -104,7 +104,7 @@ func loadProjects(cmd invocation.Call, svc *core.Core) ([]loadedGroups, error) {
 		if err != nil {
 			return nil, err
 		}
-		item, err := loadProjectGroups(projectCtx, svc, project, update)
+		item, err := loadProjectGroups(projectCtx, svc, project, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -113,8 +113,8 @@ func loadProjects(cmd invocation.Call, svc *core.Core) ([]loadedGroups, error) {
 	return loaded, nil
 }
 
-func loadProjectGroups(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedGroups, error) {
-	cache, source, err := loadCache(ctx, svc, project.ProjectID, update)
+func loadProjectGroups(ctx context.Context, svc *core.Core, project core.Project, opts core.ParametersReadOptions) (loadedGroups, error) {
+	cache, source, err := loadCache(ctx, svc, project.ProjectID, opts)
 	if err != nil {
 		return loadedGroups{}, err
 	}
@@ -150,15 +150,8 @@ func filterLoadedGroups(loaded []loadedGroups, rawFilters []string, search strin
 	return out
 }
 
-func loadCache(ctx context.Context, svc *core.Core, projectID string, update bool) (*core.ParametersCache, string, error) {
-	var cache *core.ParametersCache
-	var source string
-	var err error
-	if update {
-		cache, source, err = svc.RevalidateParameters(ctx, projectID)
-	} else {
-		cache, source, err = svc.GetParameters(ctx, projectID, false)
-	}
+func loadCache(ctx context.Context, svc *core.Core, projectID string, opts core.ParametersReadOptions) (*core.ParametersCache, string, error) {
+	cache, source, err := svc.ReadParameters(ctx, projectID, opts)
 	if err == nil {
 		return cache, source, nil
 	}
