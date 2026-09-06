@@ -175,3 +175,13 @@ func TestRenderAppListProjectColumnWidths(t *testing.T) {
 		t.Fatalf("narrow=%s", narrow)
 	}
 }
+
+func TestRenderAppListColorsProjectColumnLikeGet(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	project := "Demo"
+	got := renderAppListTable([]appListItem{{Project: project, DisplayName: "Android", Platform: core.AppPlatformAndroid, AppID: "1:2:android:3", State: "ACTIVE"}}, true, 200, false)
+	want := lipgloss.NewStyle().Foreground(clistyles.PaletteSlateBright).Render(project)
+	if !strings.Contains(got, want) {
+		t.Fatalf("project cell does not use get project color:\n%s", got)
+	}
+}

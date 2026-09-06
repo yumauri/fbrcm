@@ -55,6 +55,9 @@ func renderAppListTable(apps []appListItem, showProject bool, terminalWidth int,
 	}
 	shared.TruncateTableColumns(rows, widths, flexible...)
 	return shared.StyledTable(headers, rows, widths, nil, func(row, col int, style lipgloss.Style) lipgloss.Style {
+		if showProject && col == 0 {
+			return style.Foreground(clistyles.PaletteSlateBright)
+		}
 		if row >= 0 && row < len(platforms) && col == 1+offset {
 			return style.Foreground(clistyles.FirebaseAppPlatformColor(platforms[row]))
 		}

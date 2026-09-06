@@ -177,3 +177,13 @@ func TestRenderConditionListProjectColumnWidths(t *testing.T) {
 		t.Fatalf("narrow=%s", narrow)
 	}
 }
+
+func TestRenderConditionListColorsProjectColumnLikeGet(t *testing.T) {
+	t.Setenv("NO_COLOR", "")
+	project := "Demo"
+	got := renderConditionListTable([]conditionListItem{{Project: project, Priority: 1, Name: "staff", Expression: "true"}}, true, 200)
+	want := lipgloss.NewStyle().Foreground(clistyles.PaletteSlateBright).Render(project)
+	if !strings.Contains(got, want) {
+		t.Fatalf("project cell does not use get project color:\n%s", got)
+	}
+}

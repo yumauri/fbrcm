@@ -48,6 +48,9 @@ func renderConditionListTable(entries []conditionListItem, showProject bool, ter
 	}
 	shared.TruncateTableColumns(rows, widths, flexible...)
 	return shared.StyledTable(headers, rows, widths, map[int]bool{offset: true, 2 + offset: true}, func(row, col int, style lipgloss.Style) lipgloss.Style {
+		if showProject && col == 0 {
+			return style.Foreground(clistyles.PaletteSlateBright)
+		}
 		if row >= 0 && row < len(entries) && col == 1+offset && !clistyles.NoColorEnabled() {
 			return style.Foreground(clistyles.ConditionLipglossColor(entries[row].TagColor))
 		}
