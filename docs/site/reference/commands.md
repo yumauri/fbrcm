@@ -71,6 +71,17 @@ project or Remote Config commands for the first time.
 | `project export` / `import` | Move Remote Config documents |
 | `project defaults` | Download application defaults |
 
+## Firebase applications
+
+| Command | Purpose |
+| --- | --- |
+| `apps list` | List registered Android, iOS, and Web apps |
+| `apps show` | Inspect one app and its platform-specific details |
+| `apps config` | Download an app's Firebase SDK configuration |
+
+These are read-only Firebase Management operations. See
+[Firebase applications](/cli/apps) for selection and cache behavior.
+
 ## History and managed features
 
 | Command | Purpose |
@@ -89,7 +100,7 @@ project or Remote Config commands for the first time.
 | Command | Purpose |
 | --- | --- |
 | `doctor` | Diagnose credentials, APIs, connectivity, and storage |
-| `cache list/path/clear` | Inspect or remove cached templates |
+| `cache list/path/clear` | Inspect or remove cached templates and Firebase app data |
 | `config path/show/set/reset/validate/edit` | Manage configuration |
 | `hooks status/fingerprint/trust/untrust` | Manage repository hook trust |
 | `auth list/add/login/path/delete` | Add, validate, inspect, or remove identities |

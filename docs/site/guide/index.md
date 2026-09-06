@@ -286,9 +286,10 @@ fbrcm doctor
 ```
 
 The report checks local files, credentials, quota-project resolution, project
-discovery, and Remote Config access. It also checks
-`serviceusage.services.use`, `cloudconfig.configs.get`, and
-`cloudconfig.configs.update`.
+discovery, Remote Config access, and Firebase app read access. It checks
+`serviceusage.services.use`, `cloudconfig.configs.get`,
+`cloudconfig.configs.update`, `firebase.clients.list`, and
+`firebase.clients.get`.
 
 ## Preview your first change
 

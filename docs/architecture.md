@@ -25,14 +25,14 @@ dependency boundaries.
 ## `core/`
 
 The root `core` package is the domain facade used by the frontends and shared
-workflows. Its files expose authentication, project discovery, Remote Config
-reads and publication, parameter and condition trees, imports, drafts, history,
-and cross-project promotion.
+workflows. Its files expose authentication, project discovery, Firebase app
+reads, Remote Config reads and publication, parameter and condition trees,
+imports, drafts, history, and cross-project promotion.
 
 | Package | Responsibility |
 | --- | --- |
 | `core/config` | Global config, profiles, auth registry, project registry, caches, drafts, private file I/O, and path resolution |
-| `core/firebase` | Google credentials, resilient HTTP transport, shared request pacing and 429 cooldowns, project APIs, Remote Config APIs, defaults, history, rollback, diagnostics, and offline gating |
+| `core/firebase` | Google credentials, resilient HTTP transport, shared request pacing and 429 cooldowns, project APIs, Firebase Management app reads, Remote Config APIs, defaults, history, rollback, diagnostics, and offline gating |
 | `core/parameters` | Parameter/group/value tree models and display values |
 | `core/conditions` | Ordered condition definitions, usage indexing, validation, and mutation impact |
 | `core/groups` | Explicit parameter-group add, edit, rename, and delete operations |

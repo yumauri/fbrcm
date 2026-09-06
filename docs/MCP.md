@@ -62,8 +62,10 @@ configuration can be read with `apps.config`; Firebase applications cannot be
 created, renamed, or deleted through MCP.
 The `apps.list`, `apps.show`, and `apps.config` tools use the same profile-scoped
 one-hour application cache as the CLI. Their optional `update` input forces a
-refresh, while `cached` forbids network access and accepts stale data; the two
-inputs are mutually exclusive. Results include cache provenance.
+refresh. For `apps.show` and `apps.config`, `cached` requires a cache entry and
+forbids network access. For `apps.list`, `cached` accepts stale inventory but
+fetches it when absent. The two inputs are mutually exclusive. Results include
+cache provenance.
 External editors, terminal pickers, and the TUI are not available through tool
 calls.
 

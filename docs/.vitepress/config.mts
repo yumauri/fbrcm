@@ -129,6 +129,7 @@ export default defineConfig({
           { text: 'CLI overview', link: '/cli/' },
           { text: 'Parameters and conditions', link: '/cli/parameters' },
           { text: 'Projects and templates', link: '/cli/projects' },
+          { text: 'Firebase applications', link: '/cli/apps' },
           { text: 'Drafts', link: '/cli/drafts' },
           { text: 'Plans', link: '/cli/plans' },
           { text: 'History and managed features', link: '/cli/history' }

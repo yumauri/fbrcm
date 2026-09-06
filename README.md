@@ -133,15 +133,20 @@ On a new profile, fbrcm opens guided setup. It supports:
   Credentials.
 
 The identity needs access to the projects you want to manage. Project discovery
-uses the Cloud Resource Manager API; template reads, validation, publication,
-defaults, and history use the Firebase Remote Config API.
+uses the Cloud Resource Manager API. Template reads, validation, publication,
+defaults, and history use the Firebase Remote Config API. The `apps` commands
+use the Firebase Management API to list registered apps, inspect them, and
+download their SDK configuration.
 
 fbrcm requests the broad `cloud-platform` OAuth scope because Google's
 interactive consent flow rejects the narrower `firebase.remoteconfig` scope,
 while the grantable `firebase` scope is insufficient for Remote Config. This
 [Firebase discussion](https://groups.google.com/g/firebase-talk/c/a8H9GcGiYuA)
-reports the same limitation. fbrcm limits its Google API calls to Cloud Resource
-Manager and Firebase Remote Config; see the [privacy policy](PRIVACY.md) for the
+reports the same limitation. The Firebase Management API accepts
+`cloud-platform` for the read-only `apps` commands, so those commands do not
+need another scope. Its read-only scopes would not cover Remote Config writes.
+fbrcm limits its Google API calls to Cloud Resource Manager, Firebase Remote
+Config, and Firebase Management. See the [privacy policy](PRIVACY.md) for the
 data-access, local-storage, and deletion details.
 
 After setup, run the built-in diagnostic whenever you need to check credentials,
@@ -166,6 +171,9 @@ Any argument selects CLI mode:
 ```sh
 # Refresh and list accessible projects.
 fbrcm projects list --update
+
+# List the Firebase apps that conditions can target.
+fbrcm apps list my-app
 
 # Inspect one parameter across matching projects.
 fbrcm get feature_enabled --project '^prod'
@@ -314,6 +322,7 @@ Use `Ctrl+P` in the TUI or `fbrcm profile --help` in the CLI.
 | [Architecture](https://github.com/yumauri/fbrcm/blob/main/docs/architecture.md) | Package boundaries and maintainer invariants |
 | [Root group keys](https://github.com/yumauri/fbrcm/blob/main/docs/root-group-key.md) | Internal root-parameter representations |
 | [Privacy policy](PRIVACY.md) | Google API data access, OAuth scope rationale, local storage, sharing, and deletion |
+| [Terms of Service](TERMS.md) | Rules and responsibilities for using the official application and website |
 
 Every CLI command also has focused help:
 

@@ -40,15 +40,31 @@ The relevant permissions are:
 | `resourcemanager.projects.get` | Firebase project | Making the project visible during discovery |
 | `cloudconfig.configs.get` | Firebase project | Reading Remote Config |
 | `cloudconfig.configs.update` | Firebase project | Validating and publishing Remote Config |
+| `firebase.clients.list` | Firebase project | Listing registered Firebase apps |
+| `firebase.clients.get` | Firebase project | Reading app details and SDK configuration |
 
 The quota permission does not grant Remote Config access to that or any other
 project. Managed-feature operations such as deleting an experiment or rollout
 may require additional Firebase permissions.
 
 Use `fbrcm doctor` after setup to test the effective credential, quota project,
-Cloud Resource Manager access, and both Remote Config permissions. A deliberately
-read-only identity can read successfully while `doctor` still reports the
-missing `cloudconfig.configs.update` permission.
+Cloud Resource Manager access, Remote Config permissions, and both Firebase app
+permissions. A deliberately read-only identity can read Remote Config while
+`doctor` still reports the missing `cloudconfig.configs.update` permission.
+
+## OAuth scope
+
+Interactive OAuth and Google Cloud CLI Application Default Credentials use
+`https://www.googleapis.com/auth/cloud-platform`. The Firebase Management API
+accepts that scope for app listing, details, and SDK configuration. It also
+accepts narrower read-only scopes for those app operations alone.
+
+fbrcm uses one credential for app reads and Remote Config reads and writes. The
+narrower `firebase.remoteconfig` scope fails in Google's interactive consent
+flow, and the grantable `firebase` scope is insufficient for Remote Config.
+Adding `apps` therefore does not add another scope. See the
+[privacy policy](/privacy-policy#why-the-broad-oauth-scope-is-requested) for the
+complete rationale and data-use limits.
 
 ## Authentication methods
 

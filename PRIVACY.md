@@ -1,12 +1,14 @@
 # Privacy policy for fbrcm
 
-Last updated: August 30, 2026
+Last updated: September 6, 2026
 
 fbrcm is a local command-line and terminal application for managing Firebase
-Remote Config. It has no developer-operated backend, does not include telemetry
-or advertising, and does not send Google user data to the fbrcm developer.
-Google API requests are made directly from the user's machine using credentials
-selected by the user.
+Remote Config and reading Firebase apps that Remote Config conditions can
+reference.
+It has no developer-operated backend, does not include telemetry or advertising,
+and does not send Google user data to the fbrcm developer. Google API requests
+are made directly from the user's machine using credentials selected by the
+user.
 
 This policy applies to the official fbrcm application. Forks, modified builds,
 and programs or publication hooks configured by a user may behave differently.
@@ -58,11 +60,18 @@ reports the same narrower-scope problem.
 
 fbrcm also uses the Google Cloud Resource Manager API to discover projects and
 check required permissions. Those operations require a compatible Google Cloud
-scope and are not covered by a Firebase-only scope.
+scope and are not covered by a Firebase-only scope. The Firebase Management
+API's [app listing](https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects/searchApps)
+and [SDK configuration](https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.webApps/getConfig)
+methods accept `cloud-platform`. They also accept narrower read-only scopes for
+those operations alone, but those scopes do not cover fbrcm's Remote Config
+write commands.
 
-As a result, `cloud-platform` is currently the only working scope for fbrcm's
-interactive OAuth and user Application Default Credentials flows. fbrcm will
-move to a narrower usable scope if Google makes one available for these flows.
+fbrcm uses one credential for both read and write commands. As a result,
+`cloud-platform` is currently the only working scope for fbrcm's complete
+interactive OAuth and user Application Default Credentials workflows. The same
+scope covers the read-only Firebase app commands. fbrcm will move to a narrower
+usable scope if Google makes one available for the complete workflow.
 
 ## How fbrcm uses Google data
 
@@ -70,7 +79,9 @@ fbrcm uses Google data only for actions invoked by the user. These actions
 include selecting a quota project for Google API requests; discovering and
 displaying projects; reading, searching, comparing, and exporting Remote Config
 data; creating local caches and drafts; validating candidate templates; and
-applying changes selected by the user.
+applying changes selected by the user. It also uses Google data to list Firebase
+apps, show their registered details, and download their SDK configuration when
+the user runs an `apps` command.
 
 Depending on the command, an explicit user action can publish or restore a
 Remote Config template, roll back a version, or delete a selected Remote Config
@@ -83,7 +94,8 @@ Remote Config management features.
 fbrcm stores application state only on the user's machine unless the user
 explicitly sends or copies it elsewhere. The exact paths can be inspected with
 `fbrcm doctor`, `fbrcm profile path <profile>`, and
-`fbrcm auth path <auth-id>`.
+`fbrcm auth path <auth-id>`. Use `fbrcm cache path --kind apps` for the active
+profile's Firebase app cache.
 
 By default, fbrcm stores configuration under `.config/fbrcm` in the user's home
 directory, unless the user configures an XDG or fbrcm path override. fbrcm stores
@@ -99,8 +111,10 @@ Stored data can include:
 - OAuth access and refresh tokens in a profile cache file named `token.json`;
 - the local authentication registry and project metadata, including quota project
   IDs explicitly configured for an authentication identity or project;
-- complete Remote Config template caches and historical version snapshots; and
-- complete base and edited Remote Config templates in local drafts.
+- complete Remote Config template caches and historical version snapshots;
+- complete base and edited Remote Config templates in local drafts; and
+- cached Firebase app inventories, platform-specific app details, and downloaded
+  SDK configuration files.
 
 OAuth tokens are stored as plaintext JSON files, not in an operating-system
 keychain. fbrcm creates credential, configuration, cache, and draft files with
@@ -178,10 +192,11 @@ Users can remove local data with the following commands:
 
 - `fbrcm auth delete <auth-id>` removes an fbrcm identity and its locally stored
   imported OAuth client, token, or service-account key files;
-- `fbrcm cache clear` removes cached Remote Config version snapshots;
+- `fbrcm cache clear` removes cached Remote Config snapshots and Firebase app
+  data, including downloaded SDK configuration;
 - `fbrcm draft discard --all` removes all drafts in the active profile;
 - `fbrcm projects forget` removes tracked projects and their associated
-  template caches, version snapshots, and drafts; and
+  template caches, version snapshots, drafts, and Firebase app caches; and
 - `fbrcm profile delete <profile>` removes a non-active profile's complete
   configuration and cache directories.
 
@@ -192,9 +207,11 @@ grant at Google. To revoke the grant, visit
 Service-account keys and Google Cloud CLI credentials must also be revoked or
 removed through the corresponding Google Cloud or Google Cloud CLI controls.
 
-Deleting local fbrcm data does not delete Firebase projects or Remote Config
-data already published to Google. Remote data can be changed or deleted only
-through the applicable Firebase or Google Cloud controls and APIs.
+Deleting local fbrcm data does not delete Firebase projects, registered Firebase
+apps, downloaded configuration stored elsewhere, or Remote Config data already
+published to Google. Remote data can be changed or deleted only through the
+applicable Firebase or Google Cloud controls and APIs. fbrcm does not provide a
+command to create, change, or delete a Firebase app.
 
 ## Changes to this policy
 

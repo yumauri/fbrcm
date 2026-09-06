@@ -10,10 +10,10 @@ fbrcm doctor --json
 It checks credentials, connectivity, Firebase and Cloud Resource Manager API
 access, permissions, quota-project configuration, and local storage.
 
-`doctor` expects both `cloudconfig.configs.get` and
-`cloudconfig.configs.update` on cached Firebase projects. A deliberately
-read-only identity can still use read commands even though the update-permission
-check fails.
+`doctor` expects `cloudconfig.configs.get`, `cloudconfig.configs.update`,
+`firebase.clients.list`, and `firebase.clients.get` on cached Firebase projects.
+A deliberately read-only identity can still use read commands even though the
+Remote Config update-permission check fails.
 
 ## No projects appear
 
