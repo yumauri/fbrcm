@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yumauri/fbrcm/core"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
@@ -13,38 +12,43 @@ import (
 	"github.com/yumauri/fbrcm/ops/shared"
 )
 
-func renderConditionsTable(entries []core.ConditionEntry) string {
-	return renderConditionsTableAtWidth(entries, shared.TerminalWidth())
+func renderConditionsTableAtWidth(entries []core.ConditionEntry, terminalWidth int) string {
+	items := make([]conditionListItem, len(entries))
+	for i, entry := range entries {
+		items[i] = conditionListItem{ConditionEntry: entry}
+	}
+	return renderConditionListTable(items, false, terminalWidth)
 }
 
-func renderConditionsTableAtWidth(entries []core.ConditionEntry, terminalWidth int) string {
+func renderConditionListTable(entries []conditionListItem, showProject bool, terminalWidth int) string {
 	headers := []string{"Priority", "Name", "Used By", "Expression"}
+	offset := 0
+	if showProject {
+		headers = append([]string{"Project"}, headers...)
+		offset = 1
+	}
 	rows := make([][]string, 0, len(entries))
 	widths := shared.HeaderWidths(headers)
 	for _, entry := range entries {
-		widths[0] = max(widths[0], lipgloss.Width(fmt.Sprintf("%d", entry.Priority)))
-		widths[1] = max(widths[1], lipgloss.Width(entry.Name))
-		widths[2] = max(widths[2], lipgloss.Width(fmt.Sprintf("%d", len(entry.Usages))))
-		widths[3] = max(widths[3], lipgloss.Width(entry.Expression))
-	}
-
-	if terminalWidth > 0 {
-		availableExpressionWidth := terminalWidth - shared.TableWidth(widths[:3]) - 3
-		widths[3] = min(widths[3], max(lipgloss.Width(headers[3]), availableExpressionWidth))
-	}
-	for _, entry := range entries {
-		rowIndex := len(rows)
-		expression := clistyles.RenderFirebaseAppPlatforms(entry.Expression, conditionTableCellStyle(rowIndex, clistyles.PanelMuted))
-		row := []string{
-			fmt.Sprintf("%d", entry.Priority),
-			entry.Name,
-			fmt.Sprintf("%d", len(entry.Usages)),
-			ansi.Truncate(expression, widths[3], "…"),
+		row := []string{fmt.Sprintf("%d", entry.Priority), entry.Name, fmt.Sprintf("%d", len(entry.Usages)), entry.Expression}
+		if showProject {
+			row = append([]string{entry.Project}, row...)
 		}
+		shared.UpdateTableWidths(widths, row)
 		rows = append(rows, row)
 	}
-	return shared.StyledTable(headers, rows, widths, map[int]bool{0: true, 2: true}, func(row, col int, style lipgloss.Style) lipgloss.Style {
-		if row >= 0 && row < len(entries) && col == 1 && !clistyles.NoColorEnabled() {
+	flexible := []int{3 + offset, 1 + offset}
+	if showProject {
+		flexible = append(flexible, 0)
+	}
+	shared.FitTableColumns(widths, terminalWidth, flexible...)
+	shared.TruncateTableHeaders(headers, widths)
+	for i := range rows {
+		rows[i][3+offset] = clistyles.RenderFirebaseAppPlatforms(rows[i][3+offset], conditionTableCellStyle(i, clistyles.PanelMuted))
+	}
+	shared.TruncateTableColumns(rows, widths, flexible...)
+	return shared.StyledTable(headers, rows, widths, map[int]bool{offset: true, 2 + offset: true}, func(row, col int, style lipgloss.Style) lipgloss.Style {
+		if row >= 0 && row < len(entries) && col == 1+offset && !clistyles.NoColorEnabled() {
 			return style.Foreground(clistyles.ConditionLipglossColor(entries[row].TagColor))
 		}
 		return style

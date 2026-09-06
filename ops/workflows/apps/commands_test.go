@@ -273,7 +273,7 @@ func TestAppsCacheFlagsRejectStatelessExecution(t *testing.T) {
 func TestAppsListPublishesCacheProvenanceAndWarnings(t *testing.T) {
 	svc := appsCommandTestCore(t)
 	cachedAt := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
-	cmd := cliadapter.Command(newListDefinition(svc, fakeAppReader{source: core.AppCacheSourceCacheStale, cachedAt: cachedAt, refreshError: errors.New("offline")}))
+	cmd := cliadapter.Command(newListDefinition(svc, fakeAppReader{apps: []core.FirebaseApp{{AppID: "app"}}, source: core.AppCacheSourceCacheStale, cachedAt: cachedAt, refreshError: errors.New("offline")}))
 	cmd.SetContext(shared.WithMachineState(context.Background()))
 	var output bytes.Buffer
 	cmd.SetOut(&output)
@@ -286,7 +286,7 @@ func TestAppsListPublishesCacheProvenanceAndWarnings(t *testing.T) {
 	if err := json.Unmarshal(output.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result.Source != core.AppCacheSourceCacheStale || result.CachedAt == nil || !result.CachedAt.Equal(cachedAt) {
+	if len(result.Items) != 1 || result.Items[0].Source != core.AppCacheSourceCacheStale || result.Items[0].CachedAt == nil || !result.Items[0].CachedAt.Equal(cachedAt) {
 		t.Fatalf("result = %#v", result)
 	}
 	warnings := shared.MachineWarnings(cmd)

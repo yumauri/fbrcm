@@ -1238,7 +1238,15 @@ func selectionComposition(commandID string, arguments, options map[string]any) m
 	}
 	targetDefaults := []any{}
 	if commandID != "auth.bind" && options["project"] != nil {
-		targetDefaults = append(targetDefaults, map[string]any{"source": "options.project", "selection": "all_configured_projects_enabled_templates"})
+		selection := "all_configured_projects_enabled_templates"
+		if commandID == "apps.list" {
+			selection = "all_configured_projects"
+		}
+		rule := map[string]any{"source": "options.project", "selection": selection}
+		if commandID == "apps.list" || commandID == "conditions.list" {
+			rule["absent_argument"] = "project"
+		}
+		targetDefaults = append(targetDefaults, rule)
 	}
 	return map[string]any{
 		"operator": "selection_composition", "sources": sources,
@@ -1396,7 +1404,7 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 			return
 		}
 		ref := "#/$defs/target_selector"
-		if commandID == "auth.bind" {
+		if commandID == "auth.bind" || commandID == "apps.list" {
 			ref = "#/$defs/project_filter"
 		}
 		schema["items"] = map[string]any{"$ref": ref}
@@ -2258,7 +2266,7 @@ func extensionLanguageMetadata() map[string]any {
 				"project_alias_resolution":        operation(nil, "selection", "Compare the positional existing project-alias name exactly and case-sensitively against canonical repository alias keys. No match is a successful unchanged result because alias removal is idempotent; alias keys are unique."),
 				"schema_id_resolution":            operation(nil, "selection", "Look up the complete schema ID by exact case-sensitive equality in the embedded schema registry and return schema.not_found on zero matches; multiple matches are impossible because schema IDs are unique."),
 				"version_resolution":              operation(nil, "selection", "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, and versions.diff defaults an omitted to argument to current."),
-				"selection_composition":           operation([]string{"sources", "repeated_source_combination", "across_source_combination", "absent_source_behavior", "target_defaults"}, "selection", "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source is absent."),
+				"selection_composition":           operation([]string{"sources", "repeated_source_combination", "across_source_combination", "absent_source_behavior", "target_defaults"}, "selection", "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source and optional absent_argument are absent."),
 				"case_insensitive_substring":      operation([]string{"fields", "query_normalization", "haystack_normalization", "separator"}, "boolean", "Join the declared fields with separator, normalize the query and haystack as declared, and test whether the haystack contains the query."),
 				"parameter_search":                operation([]string{"normalized_fields", "raw_fields", "normalized_query", "raw_query", "match", "combination"}, "boolean", "Build both query variants. The normalized variant lowercases letters and digits, replaces every other rune with a space, and collapses Unicode whitespace; the raw variant only collapses Unicode whitespace. Match each against the corresponding joined fields and combine the results as declared."),
 			},
@@ -2336,6 +2344,14 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		return nil
 	}
 	constraints := make([]any, 0)
+	if commandID == "apps.list" || commandID == "conditions.list" {
+		constraints = append(constraints, map[string]any{"not": map[string]any{
+			"properties": map[string]any{
+				"arguments": map[string]any{"required": []string{"project"}},
+				"options":   map[string]any{"required": []string{"project"}},
+			}, "required": []string{"arguments", "options"},
+		}})
+	}
 	if contract.SupportsStatelessCommand(commandID) {
 		statelessProjectSchema := "stateless_target_selector"
 		if slices.Contains([]string{
@@ -2430,7 +2446,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 			})
 		}
-		if usesStatelessProjectOption(commandID) {
+		if usesStatelessProjectOption(commandID) || commandID == "apps.list" || commandID == "conditions.list" {
 			constraints = append(constraints, map[string]any{
 				"if": map[string]any{
 					"properties": map[string]any{

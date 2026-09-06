@@ -2065,11 +2065,11 @@
       "apps",
       "list"
     ],
-    "summary": "List applications registered in a Firebase project",
+    "summary": "List applications across Firebase projects",
     "arguments": [
       {
         "name": "project",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       }
@@ -2150,6 +2150,18 @@
           }
         ],
         "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
       },
       {
         "name": "--show-deleted",
@@ -8501,7 +8513,7 @@
     "arguments": [
       {
         "name": "project",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       }
@@ -8560,6 +8572,18 @@
           }
         ],
         "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter template targets by optional client@ or server@ project query; may be repeated"
       },
       {
         "name": "--search",

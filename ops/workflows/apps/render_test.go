@@ -162,3 +162,16 @@ func appStylePrefix(style lipgloss.Style) string {
 	}
 	return prefix
 }
+
+func TestRenderAppListProjectColumnWidths(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	items := []appListItem{{Project: "A very long project display name", DisplayName: "Application", Platform: core.AppPlatformAndroid, Namespace: "com.example.app", AppID: "1:123:android:abcdef", State: "ACTIVE"}}
+	natural := renderAppListTable(items, true, 250, false)
+	if !strings.Contains(natural, "│ Project ") || !strings.Contains(natural, items[0].Project) || strings.Contains(natural, "…") || lipgloss.Width(natural) >= 250 {
+		t.Fatalf("natural=%s", natural)
+	}
+	narrow := renderAppListTable(items, true, 60, false)
+	if lipgloss.Width(narrow) > 60 || !strings.Contains(narrow, "…") || strings.Contains(narrow, "\x1b[") {
+		t.Fatalf("narrow=%s", narrow)
+	}
+}

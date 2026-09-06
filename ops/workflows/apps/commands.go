@@ -21,13 +21,17 @@ type appReader interface {
 	ReadFirebaseAppConfig(context.Context, string, string, core.ListFirebaseAppsOptions) (core.FirebaseAppConfigResult, error)
 }
 
-type appListResult struct {
+type appListItem struct {
+	core.FirebaseApp
 	ProjectID string              `json:"project_id"`
 	Project   string              `json:"project"`
 	Source    core.AppCacheSource `json:"source" contract:"enum=firebase|cache|cache-stale"`
 	CachedAt  *time.Time          `json:"cached_at,omitempty"`
-	Count     int                 `json:"count"`
-	Items     []core.FirebaseApp  `json:"items"`
+}
+
+type appListResult struct {
+	Count int           `json:"count"`
+	Items []appListItem `json:"items"`
 }
 
 type appShowResult struct {
@@ -61,15 +65,15 @@ func NewDefinition(svc *core.Core) *invocation.Definition {
 
 func newListDefinition(svc *core.Core, reader appReader) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "list <project>",
-		Short: "List applications registered in a Firebase project",
-		Args:  invocation.ExactArgs(1),
+		Use:   "list [project]",
+		Short: "List applications across Firebase projects",
+		Args:  invocation.MaximumNArgs(1),
 		RunE: func(cmd invocation.Call, args []string) error {
 			cacheOpts, err := appCacheOptions(cmd)
 			if err != nil {
 				return err
 			}
-			project, ctx, err := resolveProject(cmd, svc, args[0])
+			projects, ctx, err := shared.ResolveListProjects(cmd, svc, args, "app", cacheOpts.CachedOnly)
 			if err != nil {
 				return err
 			}
@@ -83,30 +87,45 @@ func newListDefinition(svc *core.Core, reader appReader) *invocation.Definition 
 			}
 			showDeleted, _ := cmd.Flags().GetBool("show-deleted")
 			cacheOpts.ShowDeleted = showDeleted
-			read, err := reader.ReadFirebaseApps(ctx, project.ProjectID, cacheOpts)
-			if err != nil {
-				return classifyAppError(err)
-			}
-			addAppCacheWarnings(cmd, project.ProjectID, read.RefreshError, read.CacheError)
-			items := read.Apps
-			if platform != "" {
-				items = filterByPlatform(items, platform)
-			}
 			rawFilters, _ := cmd.Flags().GetStringArray("filter")
-			items = filterApps(items, rawFilters)
+			items := make([]appListItem, 0)
+			var singleRead core.FirebaseAppsResult
+			for _, project := range projects {
+				projectCtx, err := shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+				if err != nil {
+					return err
+				}
+				read, err := reader.ReadFirebaseApps(projectCtx, project.ProjectID, cacheOpts)
+				if err != nil {
+					return classifyAppError(err)
+				}
+				singleRead = read
+				addAppCacheWarnings(cmd, project.ProjectID, read.RefreshError, read.CacheError)
+				apps := read.Apps
+				if platform != "" {
+					apps = filterByPlatform(apps, platform)
+				}
+				for _, app := range filterApps(apps, rawFilters) {
+					items = append(items, appListItem{FirebaseApp: app, ProjectID: project.ProjectID, Project: project.Name, Source: read.Source, CachedAt: appCachedAt(read.CachedAt)})
+				}
+			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, appListResult{ProjectID: project.ProjectID, Project: project.Name, Source: read.Source, CachedAt: appCachedAt(read.CachedAt), Count: len(items), Items: items})
+				return shared.WriteJSON(cmd, appListResult{Count: len(items), Items: items})
 			}
 			nerdFontGlyphs, err := configuredNerdFontGlyphs()
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\nSource: %s%s\n\n", project.Name, project.ProjectID, read.Source, appCachedAtSuffix(read.CachedAt))
-			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderAppsTable(items, nerdFontGlyphs))
+			if len(args) > 0 {
+				project := projects[0]
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Project: %s (%s)\nSource: %s%s\n\n", project.Name, project.ProjectID, singleRead.Source, appCachedAtSuffix(singleRead.CachedAt))
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderAppListTable(items, len(args) == 0, shared.TerminalWidth(), nerdFontGlyphs))
 			return err
 		},
 	}
+	shared.AddProjectFilterFlag(cmd)
 	cmd.Flags().StringArrayP("filter", "f", nil, "Filter applications by mode-prefixed name, namespace, or app ID query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("platform", "", "Only list one platform: android, ios, or web")
 	cmd.Flags().Bool("show-deleted", false, "Include applications pending permanent deletion")
@@ -287,27 +306,6 @@ func resolveAppProject(cmd invocation.Call, svc *core.Core, appSelector string) 
 		}
 	} else {
 		return core.Project{}, nil, shared.InvalidArgument(fmt.Errorf("--project is required unless <app> is a complete Firebase App ID"))
-	}
-	if err != nil {
-		return core.Project{}, nil, err
-	}
-	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
-	if err != nil {
-		return core.Project{}, nil, err
-	}
-	cmd.SetContext(ctx)
-	return project, ctx, nil
-}
-
-func resolveProject(cmd invocation.Call, svc *core.Core, query string) (core.Project, context.Context, error) {
-	ctx := shared.CommandContext(cmd)
-	cachedOnly, _ := cmd.Flags().GetBool("cached")
-	var project core.Project
-	var err error
-	if cachedOnly {
-		project, err = shared.ResolveCachedProjectScopedResource(cmd, query, "app")
-	} else {
-		project, err = shared.ResolveProjectScopedResourceForExecution(ctx, cmd, svc, query, "app")
 	}
 	if err != nil {
 		return core.Project{}, nil, err

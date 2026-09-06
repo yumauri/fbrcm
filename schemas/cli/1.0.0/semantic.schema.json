@@ -1330,8 +1330,14 @@
               "items": {
                 "additionalProperties": false,
                 "properties": {
+                  "absent_argument": {
+                    "const": "project"
+                  },
                   "selection": {
-                    "const": "all_configured_projects_enabled_templates"
+                    "enum": [
+                      "all_configured_projects_enabled_templates",
+                      "all_configured_projects"
+                    ]
                   },
                   "source": {
                     "pattern": "^options\\.[a-z][a-z0-9_-]*$",
@@ -2647,7 +2653,7 @@
             "target_defaults"
           ],
           "result": "selection",
-          "semantics": "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source is absent."
+          "semantics": "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source and optional absent_argument are absent."
         },
         "theme_name_resolution": {
           "operands": null,

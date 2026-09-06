@@ -17,29 +17,45 @@ const (
 	nerdFontWebGlyph     = "\uf0ac" // nf-fa-globe
 )
 
-func renderAppsTable(apps []core.FirebaseApp, nerdFontGlyphs bool) string {
-	return renderAppsTableAtWidth(apps, shared.TerminalWidth(), nerdFontGlyphs)
+func renderAppsTableAtWidth(apps []core.FirebaseApp, terminalWidth int, nerdFontGlyphs bool) string {
+	items := make([]appListItem, len(apps))
+	for i, app := range apps {
+		items[i] = appListItem{FirebaseApp: app}
+	}
+	return renderAppListTable(items, false, terminalWidth, nerdFontGlyphs)
 }
 
-func renderAppsTableAtWidth(apps []core.FirebaseApp, terminalWidth int, nerdFontGlyphs bool) string {
+func renderAppListTable(apps []appListItem, showProject bool, terminalWidth int, nerdFontGlyphs bool) string {
 	headers := []string{"Name", "Platform", "Namespace", "App ID", "State"}
+	offset := 0
+	if showProject {
+		headers = append([]string{"Project"}, headers...)
+		offset = 1
+	}
 	rows := make([][]string, 0, len(apps))
 	platforms := make([]core.AppPlatform, 0, len(apps))
 	widths := shared.HeaderWidths(headers)
 	for _, app := range apps {
 		row := []string{emptyDash(app.DisplayName), platformLabel(app.Platform, nerdFontGlyphs), emptyDash(app.Namespace), app.AppID, emptyDash(app.State)}
+		if showProject {
+			row = append([]string{app.Project}, row...)
+		}
 		shared.UpdateTableWidths(widths, row)
 		rows = append(rows, row)
 		platforms = append(platforms, app.Platform)
 	}
-	shared.FitTableColumns(widths, terminalWidth, 0, 2, 3)
+	flexible := []int{offset, 2 + offset, 3 + offset}
+	if showProject {
+		flexible = append(flexible, 0)
+	}
+	shared.FitTableColumns(widths, terminalWidth, flexible...)
 	shared.TruncateTableHeaders(headers, widths)
 	for row := range rows {
-		rows[row][3] = renderAppID(rows[row][3], appTableCellStyle(row, clistyles.PanelMuted))
+		rows[row][3+offset] = renderAppID(rows[row][3+offset], appTableCellStyle(row, clistyles.PanelMuted))
 	}
-	shared.TruncateTableColumns(rows, widths, 0, 2, 3)
+	shared.TruncateTableColumns(rows, widths, flexible...)
 	return shared.StyledTable(headers, rows, widths, nil, func(row, col int, style lipgloss.Style) lipgloss.Style {
-		if row >= 0 && row < len(platforms) && col == 1 {
+		if row >= 0 && row < len(platforms) && col == 1+offset {
 			return style.Foreground(clistyles.FirebaseAppPlatformColor(platforms[row]))
 		}
 		return style

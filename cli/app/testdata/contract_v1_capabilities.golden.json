@@ -66,7 +66,7 @@
         "apps",
         "list"
       ],
-      "summary": "List applications registered in a Firebase project",
+      "summary": "List applications across Firebase projects",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:response",
       "side_effect_level": 2,

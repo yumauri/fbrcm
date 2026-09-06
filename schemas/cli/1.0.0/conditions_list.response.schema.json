@@ -20,6 +20,12 @@
               "priority": {
                 "type": "integer"
               },
+              "project": {
+                "type": "string"
+              },
+              "project_id": {
+                "type": "string"
+              },
               "tag_color": {
                 "type": "string"
               },
@@ -68,6 +74,8 @@
               "expression",
               "name",
               "priority",
+              "project",
+              "project_id",
               "usages"
             ],
             "type": "object"

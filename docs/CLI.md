@@ -31,7 +31,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 ├── apply <plan> [--dry-run] [--yes|-y] [--json]
 │
 ├── apps
-│   ├── list <project>
+│   ├── list [project]
+│   │   ├── --project, -p <query>  repeated
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --platform android|ios|web
 │   │   ├── --show-deleted
@@ -76,7 +77,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   └── zsh [--no-descriptions]
 │
 ├── conditions
-│   ├── list <project>
+│   ├── list [project]
+│   │   ├── --project, -p <query>  repeated
 │   │   ├── --filter, -f <query>  repeated
 │   │   ├── --search <text>
 │   │   ├── --expr <expr>
@@ -1508,13 +1510,16 @@ and `--change-note` are unavailable in this mode.
 
 Parameters containing Firebase-managed or unknown future values cannot be deleted. The same protection applies in remote, draft, and stdin modes.
 
-### `fbrcm conditions list <project>`
+### `fbrcm conditions list [project]`
 
 Lists condition definitions in Firebase evaluation-priority order. The command uses an unpublished draft when one exists; otherwise it reads the parameter cache. If a normal cache read fails but a stale cache exists, it prints that stale snapshot rather than discarding usable condition data.
+
+An optional positional `<project>` retains single-project resolution. It cannot be combined with repeatable `--project|-p` filters. Without a positional argument, filters are ORed; omitting filters selects all configured projects and enabled templates. Results are ordered by project name and project/target ID, preserving the existing order within each project.
 
 Flags:
 
 ```text
+-p, --project <query>  filter projects; may be repeated; mutually exclusive with <project>
 -f, --filter <query>   filter condition names; may be repeated
 --search <text>        case-insensitive substring search across name and expression
 --expr <expr>          filter using condition expression context
@@ -1526,7 +1531,9 @@ Condition filters use the shared mode prefixes described under Filter Queries. R
 
 With root `--stateless`, `<project>` must be a literal client or server target and the command fetches the latest Remote Config directly using `FBRCM_GOOGLE_ACCESS_TOKEN`. It does not read or write the project registry, parameter cache, drafts, or hooks; consequently the source is Firebase and no unpublished draft is applied. `--filter`, `--search`, and `--expr` retain their normal local filtering behavior after the fetch. `--update` cannot be combined with `--stateless` because stateless reads are already live.
 
-Human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Within expressions, the platform segment of every complete Firebase App ID is colored with Firebase's Android, iOS, or Web color. Long expressions are cropped with an ellipsis. In JSON mode, `data.items` contains the condition objects without repeated project/version/source context and `data.count` contains their count.
+With a positional project, human output prints project/version/source context followed by a terminal-width-aware table containing priority, color-styled name, usage count, and expression. Within expressions, the platform segment of every complete Firebase App ID is colored with Firebase's Android, iOS, or Web color. Long expressions and names are cropped with an ellipsis when needed. Without a positional project, the table has a first `Project` column, even if filters select only one target; long project names are cropped with an ellipsis. In both modes, each condition in `data.items` includes `project` (display name) and `project_id` (canonical template target ID), and `data.count` is the total condition count.
+
+Stateless bulk selection follows `get`: exact `=project-id` filters bypass discovery, other filters match live project IDs/names, and no filters discover all accessible projects. Template prefixes are supported. Stateless positional selection still requires one literal target.
 
 ### `fbrcm conditions show <project> <condition>`
 
@@ -1985,13 +1992,16 @@ All three subcommands are cache-first. `--update` forces a Firebase read and ref
 
 `<app>` is exact and case-sensitive. Resolution tries Firebase App ID, full resource name, namespace (Android package name, iOS bundle ID, or Web namespace), then display name. A missing value returns `app.not_found`; a non-unique value at the first matching tier returns `app.ambiguous` with candidate App IDs.
 
-### `fbrcm apps list <project>`
+### `fbrcm apps list [project]`
 
 Lists all active registered applications. Human output contains name, platform, namespace, App ID, and state. Platform labels use the Firebase-derived Android `#56bca6`, iOS `#4ca7ee`, and Web `#c73462` colors. The matching colon-delimited platform token in each App ID uses the same color. When `nerd_font_glyphs` is enabled, the platform column prefixes Android, iOS, and Web with their Nerd Font icons. The table uses natural content width and ellipsizes name, namespace, and App ID only when needed to fit the terminal. A non-empty `NO_COLOR` disables all of these colors without removing enabled glyphs.
+
+An optional positional `<project>` retains single-project resolution. It cannot be combined with repeatable `--project|-p` filters. Without a positional argument, filters are ORed; omitting filters selects all configured physical projects. Results are ordered by project name and project/target ID, preserving the existing order within each project.
 
 Flags:
 
 ```text
+-p, --project <query>  filter projects; may be repeated; mutually exclusive with <project>
 -f, --filter <query>              filter display name, namespace, or App ID; may be repeated
 --platform android|ios|web        include only one platform
 --show-deleted                    include applications pending permanent deletion
@@ -2001,6 +2011,10 @@ Flags:
 ```
 
 Filtering uses the shared mode prefixes and is applied locally after every Firebase page is loaded. Repeated filters are ORed.
+
+Without a positional project, the table has a first `Project` column, even if filters select one project. Long project names are cropped with an ellipsis. With a positional project, the existing project/source heading is retained. In both modes, `data.items` contains application summaries with `project` (display name), `project_id`, `source`, and optional `cached_at` on each item; `data.count` is the total application count.
+
+`--cached` resolves bulk selection using only the local registry and reads only application caches. Stateless bulk selection uses exact `=project-id` filters directly or discovers projects for other filters or omitted filters; it never consults aliases or local state. Template prefixes remain invalid for apps.
 
 ### `fbrcm apps show <app>`
 

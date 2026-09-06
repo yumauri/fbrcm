@@ -421,8 +421,9 @@ func extensionSchemaDefinitions() map[string]any {
 				"across_source_combination":   map[string]any{"const": "and"},
 				"absent_source_behavior":      map[string]any{"const": "match_all"},
 				"target_defaults": map[string]any{"type": "array", "uniqueItems": true, "items": object([]string{"source", "selection"}, map[string]any{
-					"source":    map[string]any{"type": "string", "pattern": `^options\.[a-z][a-z0-9_-]*$`},
-					"selection": map[string]any{"const": "all_configured_projects_enabled_templates"},
+					"source":          map[string]any{"type": "string", "pattern": `^options\.[a-z][a-z0-9_-]*$`},
+					"selection":       map[string]any{"enum": []string{"all_configured_projects_enabled_templates", "all_configured_projects"}},
+					"absent_argument": map[string]any{"const": "project"},
 				})},
 			}),
 			object([]string{"operator", "fields", "query_normalization", "haystack_normalization", "separator"}, map[string]any{

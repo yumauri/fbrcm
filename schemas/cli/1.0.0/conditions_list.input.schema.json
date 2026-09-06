@@ -25,6 +25,60 @@
     "path_segment": {
       "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
     },
+    "stateless_get_project_selector": {
+      "oneOf": [
+        {
+          "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?=[^=^/~@\\s][^@\\s]*$",
+          "type": "string",
+          "x-fbrcm-grammar": "[client@|server@]=literal physical project ID; exact mode bypasses project discovery",
+          "x-fbrcm-matching": [
+            {
+              "comparison": "exact_case_sensitive",
+              "default_template": "client",
+              "lookup": false,
+              "operator": "literal_project_id"
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/target_selector"
+            },
+            {
+              "not": {
+                "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?="
+              }
+            }
+          ],
+          "x-fbrcm-matching": [
+            {
+              "client_target_canonicalization": "unqualified_project_id",
+              "comparison": "unicode_case_insensitive",
+              "default_mode": "fuzzy",
+              "explicit_target_selection": "single_named_template",
+              "fields": [
+                "project_id",
+                "display_name"
+              ],
+              "mode_prefixes": {
+                "/": "includes",
+                "=": "exact",
+                "^": "starts-with",
+                "~": "fuzzy"
+              },
+              "operator": "mode_prefixed_query",
+              "query_normalization": "trim_unicode_whitespace",
+              "target_prefixes": [
+                "client",
+                "server"
+              ],
+              "unqualified_target_selection": "client_template"
+            }
+          ]
+        }
+      ]
+    },
     "stateless_target_selector": {
       "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\\s][^@\\s]*$",
       "type": "string",
@@ -51,12 +105,46 @@
           "target": "normalized_invocation"
         }
       ]
+    },
+    "target_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
     }
   },
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:input",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "allOf": [
+    {
+      "not": {
+        "properties": {
+          "arguments": {
+            "required": [
+              "project"
+            ]
+          },
+          "options": {
+            "required": [
+              "project"
+            ]
+          }
+        },
+        "required": [
+          "arguments",
+          "options"
+        ]
+      }
+    },
     {
       "properties": {
         "options": {
@@ -129,6 +217,43 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "stdin": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "options",
+          "stdin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "project": {
+                "items": {
+                  "$ref": "#/$defs/stateless_get_project_selector"
+                },
+                "type": "array"
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -139,9 +264,7 @@
           "$ref": "#/$defs/target_positional_selector"
         }
       },
-      "required": [
-        "project"
-      ],
+      "required": [],
       "type": "object"
     },
     "options": {
@@ -215,6 +338,14 @@
               "target": "normalized_invocation"
             }
           ]
+        },
+        "project": {
+          "description": "Filter template targets by optional client@ or server@ project query; may be repeated",
+          "items": {
+            "$ref": "#/$defs/target_selector"
+          },
+          "minItems": 1,
+          "type": "array"
         },
         "search": {
           "description": "Search condition names and expressions",
@@ -302,11 +433,18 @@
       "operator": "selection_composition",
       "repeated_source_combination": "or",
       "sources": [
+        "options.project",
         "options.filter",
         "options.search",
         "options.expr"
       ],
-      "target_defaults": []
+      "target_defaults": [
+        {
+          "absent_argument": "project",
+          "selection": "all_configured_projects_enabled_templates",
+          "source": "options.project"
+        }
+      ]
     }
   ]
 }

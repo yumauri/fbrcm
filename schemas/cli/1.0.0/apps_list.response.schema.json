@@ -3,13 +3,6 @@
     "success_data": {
       "additionalProperties": false,
       "properties": {
-        "cached_at": {
-          "format": "date-time",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "count": {
           "minimum": 0,
           "type": "integer"
@@ -23,6 +16,13 @@
               },
               "app_id": {
                 "type": "string"
+              },
+              "cached_at": {
+                "format": "date-time",
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "display_name": {
                 "type": "string"
@@ -42,7 +42,21 @@
                 ],
                 "type": "string"
               },
+              "project": {
+                "type": "string"
+              },
+              "project_id": {
+                "type": "string"
+              },
               "resource_name": {
+                "type": "string"
+              },
+              "source": {
+                "enum": [
+                  "firebase",
+                  "cache",
+                  "cache-stale"
+                ],
                 "type": "string"
               },
               "state": {
@@ -60,34 +74,20 @@
               "display_name",
               "namespace",
               "platform",
+              "project",
+              "project_id",
               "resource_name",
+              "source",
               "state"
             ],
             "type": "object"
           },
           "type": "array"
-        },
-        "project": {
-          "type": "string"
-        },
-        "project_id": {
-          "type": "string"
-        },
-        "source": {
-          "enum": [
-            "firebase",
-            "cache",
-            "cache-stale"
-          ],
-          "type": "string"
         }
       },
       "required": [
         "count",
-        "items",
-        "project",
-        "project_id",
-        "source"
+        "items"
       ],
       "type": "object",
       "x-fbrcm-invariants": [

@@ -15,6 +15,7 @@ import (
 	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
+	"github.com/yumauri/fbrcm/core/strfold"
 	"github.com/yumauri/fbrcm/internal/terminal/progress"
 	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/ops/invocation"
@@ -261,6 +262,57 @@ func ResolveProjectTargetsForExecution(ctx context.Context, cmd invocation.Call,
 	}
 
 	return selected, ctx, nil
+}
+
+// ResolveListProjects preserves scalar positional resolution and otherwise uses
+// bulk filters. Resource-scoped lists select physical projects; an empty
+// resource selects Remote Config template targets. Cached mode never discovers.
+func ResolveListProjects(cmd invocation.Call, svc *core.Core, args []string, resource string, cached bool) ([]core.Project, context.Context, error) {
+	ctx := CommandContext(cmd)
+	filters, err := cmd.Flags().GetStringArray("project")
+	if err != nil {
+		return nil, ctx, err
+	}
+	if len(args) > 0 && cmd.Flags().Changed("project") {
+		return nil, ctx, InvalidArgument(fmt.Errorf("<project> and --project cannot be used together"))
+	}
+	var projects []core.Project
+	if len(args) > 0 {
+		var project core.Project
+		if resource == "" {
+			project, err = ResolveProjectTargetForExecution(ctx, cmd, svc, args[0])
+		} else if cached {
+			project, err = ResolveCachedProjectScopedResource(cmd, args[0], resource)
+		} else {
+			project, err = ResolveProjectScopedResourceForExecution(ctx, cmd, svc, args[0], resource)
+		}
+		if err == nil {
+			projects = []core.Project{project}
+		}
+	} else if resource == "" {
+		projects, ctx, err = ResolveProjectTargetsForExecution(ctx, cmd, svc, filters)
+	} else {
+		if err = RejectTemplateProjectFilters(filters); err != nil {
+			return nil, ctx, err
+		}
+		if !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+			projects, ctx, err = ResolveProjectTargetsForExecution(ctx, cmd, svc, filters)
+		} else {
+			if cached {
+				projects, err = config.LoadProjects()
+			} else {
+				projects, _, err = svc.ListProjects(ctx)
+			}
+			if err == nil {
+				projects, err = FilterProjects(projects, filters)
+			}
+		}
+	}
+	if err != nil {
+		return nil, ctx, err
+	}
+	strfold.SortProjects(projects, func(p core.Project) string { return p.Name }, func(p core.Project) string { return p.ProjectID })
+	return projects, ctx, nil
 }
 
 // ResolveProjectMutationTargetsForExecution resolves target filters using the

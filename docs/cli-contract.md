@@ -1190,3 +1190,22 @@ different fingerprint at the same version. Generation happens in a staging
 directory and validates the lock before replacing checked-in files, so a lock
 rejection leaves the working tree untouched. Previous version directories are
 not removed by generation.
+
+### Optional project selection for application and condition lists
+
+`apps list [project]` and `conditions list [project]` accept either a scalar
+`arguments.project` or repeatable `options.project`, never both. The positional
+selector retains exact-then-filtered single-project resolution (a literal ID or
+template target in stateless mode). Without it, bulk filters are ORed, sorted by
+project name then canonical ID, and deduplicated. Omitted filters select all
+configured physical projects for apps or enabled template targets for conditions.
+Stateless bulk selection uses direct exact IDs or live discovery, as with `get`;
+apps reject template prefixes. Cache-only app listing never discovers projects.
+
+Both commands return `data.items` and `data.count`. Every item includes `project`
+(display name) and `project_id` in both selection modes. Condition project IDs
+are canonical template target IDs. App cache provenance (`source` and optional
+`cached_at`) is per item, replacing the former list-level provenance and project
+fields. Empty selections return an empty items array and zero count. Read failures
+fail the command without returning partial successful data. Version numbers stay
+unchanged under the pre-1.0 contract policy.

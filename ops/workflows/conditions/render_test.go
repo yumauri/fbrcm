@@ -164,3 +164,16 @@ func stylePrefix(style lipgloss.Style) string {
 	}
 	return prefix
 }
+
+func TestRenderConditionListProjectColumnWidths(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	items := []conditionListItem{{Project: "A very long project display name", Name: "a_very_long_condition_name", Priority: 1, Expression: "app.version >= '1234567890'"}}
+	natural := renderConditionListTable(items, true, 250)
+	if !strings.Contains(natural, "│ Project ") || !strings.Contains(natural, items[0].Project) || strings.Contains(natural, "…") || lipgloss.Width(natural) >= 250 {
+		t.Fatalf("natural=%s", natural)
+	}
+	narrow := renderConditionListTable(items, true, 55)
+	if lipgloss.Width(narrow) > 55 || !strings.Contains(narrow, "…") || strings.Contains(narrow, "\x1b[") {
+		t.Fatalf("narrow=%s", narrow)
+	}
+}

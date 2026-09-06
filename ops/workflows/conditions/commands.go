@@ -19,6 +19,12 @@ type loadedConditions struct {
 	Tree     *core.ConditionsTree `json:"-"`
 }
 
+type conditionListItem struct {
+	core.ConditionEntry
+	Project   string `json:"project"`
+	ProjectID string `json:"project_id"`
+}
+
 type conditionShowResult struct {
 	Project   core.Project        `json:"project"`
 	Version   string              `json:"version"`
@@ -43,7 +49,7 @@ func NewDefinition(svc *core.Core) *invocation.Definition {
 		newDeleteCommandDefinition(svc),
 		newValidateCommandDefinition(svc),
 	)
-	invocation.MustRegisterResponsePath(cmd, "list", []core.ConditionEntry{})
+	invocation.MustRegisterResponsePath(cmd, "list", []conditionListItem{})
 	invocation.MustRegisterResponsePath(cmd, "show", conditionShowResult{})
 	for _, path := range []string{"add", "edit", "rename", "move", "delete"} {
 		invocation.MustRegisterResponsePath(cmd, path, []sharedrc.RemoteMutationJSONResult{}, sharedrc.PlanCreatedResult{})
@@ -54,31 +60,58 @@ func NewDefinition(svc *core.Core) *invocation.Definition {
 
 func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "list <project>",
+		Use:   "list [project]",
 		Short: "List conditions in evaluation priority order",
-		Args:  invocation.ExactArgs(1),
+		Args:  invocation.MaximumNArgs(1),
 		RunE: func(cmd invocation.Call, args []string) error {
-			loaded, err := load(cmd, svc, args[0])
+			ctx := shared.CommandContext(cmd)
+			update, _ := cmd.Flags().GetBool("update")
+			if !core.ExecutionPolicyFromContext(ctx).ReadLocalState && update {
+				return shared.InvalidArgument(fmt.Errorf("--update cannot be used with --stateless; Remote Config reads are already live"))
+			}
+			projects, ctx, err := shared.ResolveListProjects(cmd, svc, args, "", false)
 			if err != nil {
 				return err
 			}
 			filters, _ := cmd.Flags().GetStringArray("filter")
 			search, _ := cmd.Flags().GetString("search")
 			rawExpr, _ := cmd.Flags().GetString("expr")
-			entries := filterEntries(loaded.Tree.Conditions, filters, search)
-			entries, err = filterEntriesByExpr(loaded.Project, entries, rawExpr)
-			if err != nil {
+			if _, err := shared.CompileExpr(rawExpr, ""); err != nil {
 				return err
+			}
+			items := make([]conditionListItem, 0)
+			var singleLoaded loadedConditions
+			for _, project := range projects {
+				projectCtx, err := shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+				if err != nil {
+					return err
+				}
+				loaded, err := loadProject(projectCtx, svc, project, update)
+				if err != nil {
+					return err
+				}
+				singleLoaded = loaded
+				entries := filterEntries(loaded.Tree.Conditions, filters, search)
+				entries, err = filterEntriesByExpr(project, entries, rawExpr)
+				if err != nil {
+					return err
+				}
+				for _, entry := range entries {
+					items = append(items, conditionListItem{ConditionEntry: entry, Project: project.Name, ProjectID: project.ProjectID})
+				}
 			}
 			jsonOut, _ := cmd.Flags().GetBool("json")
 			if jsonOut {
-				return shared.WriteJSON(cmd, entries)
+				return shared.WriteJSON(cmd, items)
 			}
-			printContext(cmd, loaded)
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderConditionsTable(entries))
+			if len(args) > 0 {
+				printContext(cmd, singleLoaded)
+			}
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderConditionListTable(items, len(args) == 0, shared.TerminalWidth()))
 			return nil
 		},
 	}
+	shared.AddProjectTargetFilterFlag(cmd)
 	addReadFlags(cmd)
 	cmd.Flags().StringArrayP("filter", "f", nil, "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("search", "", "Search condition names and expressions")
@@ -133,6 +166,10 @@ func load(cmd invocation.Call, svc *core.Core, query string) (loadedConditions, 
 		return loadedConditions{}, err
 	}
 	cmd.SetContext(ctx)
+	return loadProject(ctx, svc, project, update)
+}
+
+func loadProject(ctx context.Context, svc *core.Core, project core.Project, update bool) (loadedConditions, error) {
 	cache, source, err := loadCache(ctx, svc, project.ProjectID, update)
 	if err != nil {
 		return loadedConditions{}, err

@@ -16,9 +16,6 @@
     "draft": false
   },
   "data": {
-    "project_id": "northstar-wallet",
-    "project": "northstar-wallet",
-    "source": "firebase",
     "count": 3,
     "items": [
       {
@@ -28,7 +25,10 @@
         "app_id": "1:123456789012:android:a1",
         "namespace": "com.example.northstar",
         "api_key_id": "android-key",
-        "state": "ACTIVE"
+        "state": "ACTIVE",
+        "project_id": "northstar-wallet",
+        "project": "northstar-wallet",
+        "source": "firebase"
       },
       {
         "resource_name": "projects/northstar-wallet/iosApps/ios-app",
@@ -37,7 +37,10 @@
         "app_id": "1:123456789012:ios:b2",
         "namespace": "com.example.northstar",
         "api_key_id": "ios-key",
-        "state": "ACTIVE"
+        "state": "ACTIVE",
+        "project_id": "northstar-wallet",
+        "project": "northstar-wallet",
+        "source": "firebase"
       },
       {
         "resource_name": "projects/northstar-wallet/webApps/web-app",
@@ -46,7 +49,10 @@
         "app_id": "1:123456789012:web:c3",
         "namespace": "northstar-web",
         "api_key_id": "web-key",
-        "state": "ACTIVE"
+        "state": "ACTIVE",
+        "project_id": "northstar-wallet",
+        "project": "northstar-wallet",
+        "source": "firebase"
       }
     ]
   },
