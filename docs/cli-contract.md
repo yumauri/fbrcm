@@ -707,7 +707,11 @@ matching metadata publishes symbolic resolution as well: `current` and
 `latest` select the current publication, `previous` selects one publication
 before it, relative forms select the declared distance before current, live
 mode resolves Firebase history, cached mode resolves local snapshot numbers,
-and an omitted `versions diff` destination defaults to current. Version
+an omitted `versions diff` destination defaults to current, and `versions
+blame --at` defaults to current. Blame's parameter selector publishes exact,
+case-sensitive lookup across root and grouped parameters in every adjacent
+retained publication; no occurrence in the inspected retained history returns
+`parameter.not_found`. Version
 `--since` and `--until` values publish the exact Go
 `time.RFC3339` parser rule used at runtime instead of relying on the broader
 JSON Schema `date-time` format. Version `--before` is a canonical positive
@@ -854,7 +858,13 @@ Stateless `versions list` reads Firebase version history without consulting
 the current cache pointer or immutable snapshots. Its items therefore report
 `cached: false` and `current: false`; `cached` is rejected while the normal
 live pagination, time, and version-number filters remain available. Stateless
-`conditions list` fetches the latest Remote Config without cache or draft
+`versions blame` likewise reads the live retained-version index and fetches
+version metadata incrementally, requesting another page only when resolving
+`--at` or continuing the scan requires it. Each adjacent template is fetched
+directly. It writes no immutable snapshots, and its `--limit` bounds attributed
+changes rather than metadata pages or version reads.
+
+Stateless `conditions list` fetches the latest Remote Config without cache or draft
 overlay, then applies its name, search, and expression filters locally.
 `update` is rejected for conditions because stateless reads are already live.
 

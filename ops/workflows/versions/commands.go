@@ -21,8 +21,9 @@ import (
 
 // New constructs the top-level versions command.
 func NewDefinition(svc *core.Core) *invocation.Definition {
-	cmd := &invocation.Definition{Use: "versions", Short: "Inspect and recover project Remote Config versions", Long: "Inspect Firebase Remote Config version history and immutable local snapshots. Version selectors accept a number, current, latest, previous, current~N, or latest~N. Rollback uses Firebase history; restore republishes a locally cached snapshot."}
-	cmd.AddCommand(newVersionsListCommandDefinition(svc), newVersionsShowCommandDefinition(svc), newVersionsDiffCommandDefinition(svc), newVersionsExportCommandDefinition(svc), newVersionsRollbackCommandDefinition(svc, false), newVersionsRollbackCommandDefinition(svc, true))
+	cmd := &invocation.Definition{Use: "versions", Short: "Inspect and recover project Remote Config versions", Long: "Inspect Firebase Remote Config version history and immutable local snapshots. Blame traces one parameter through adjacent retained publications. Version selectors accept a number, current, latest, previous, current~N, or latest~N. Rollback uses Firebase history; restore republishes a locally cached snapshot."}
+	cmd.AddCommand(newVersionsBlameCommandDefinition(svc), newVersionsListCommandDefinition(svc), newVersionsShowCommandDefinition(svc), newVersionsDiffCommandDefinition(svc), newVersionsExportCommandDefinition(svc), newVersionsRollbackCommandDefinition(svc, false), newVersionsRollbackCommandDefinition(svc, true))
+	invocation.MustRegisterResponsePath(cmd, "blame", versionBlameResult{})
 	invocation.MustRegisterResponsePath(cmd, "list", []versionJSON{})
 	invocation.MustRegisterResponsePath(cmd, "show", versionShowResult{})
 	invocation.MustRegisterResponsePath(cmd, "diff", versionDiffResult{})

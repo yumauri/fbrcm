@@ -1,0 +1,46 @@
+{
+  "name": "versions_blame_stateless_json",
+  "command_id": "versions.blame",
+  "args": [
+    "--stateless",
+    "versions",
+    "blame",
+    "${PROJECT_ID}",
+    "blame_flag",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions",
+      "query": "pageSize=100",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=12",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "firebaseremoteconfig.googleapis.com",
+      "path": "/v1/projects/${PROJECT_ID}/remoteConfig",
+      "query": "versionNumber=11",
+      "status": 200
+    }
+  ],
+  "http_replay_only": true,
+  "expected_absent_state_paths": [
+    {"root": "config", "path": "config.toml"},
+    {"root": "cache", "path": "profiles/default/remote-config"},
+    {"root": "cache", "path": "profiles/default/drafts"}
+  ],
+  "envs": {
+    "FBRCM_GOOGLE_ACCESS_TOKEN": "${FBRCM_E2E_ACCESS_TOKEN}"
+  },
+  "json_output": true
+}

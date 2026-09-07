@@ -290,6 +290,11 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │       └── --json
 │
 ├── versions
+│   ├── blame <project> <parameter>
+│   │   ├── --limit <n>
+│   │   ├── --all
+│   │   ├── --at <version>
+│   │   └── --json
 │   ├── list <project>
 │   │   ├── --limit <n>
 │   │   ├── --all
@@ -1077,6 +1082,7 @@ theme.rename
 theme.reset
 theme.switch
 update
+versions.blame
 versions.diff
 versions.export
 versions.list
@@ -2277,6 +2283,65 @@ For non-cached `show`, `diff`, and `export`, project resolution may synchronize
 a missing or empty project registry before inspecting local version snapshots.
 Consequently a locally available immutable version does not by itself guarantee
 an offline invocation; `--cached` is the complete no-network policy.
+
+### `fbrcm versions blame <project> <parameter>`
+
+Shows the newest-first change log for one exact, case-sensitive parameter key.
+The command lists retained Firebase versions, compares every adjacent
+publication from the selected starting point toward older history, and omits
+publications that did not directly change the parameter. A displayed heading
+such as `version 141 → 142` therefore always names the two templates compared;
+the next displayed change may use a much older pair when intervening
+publications left the parameter unchanged.
+
+Flags:
+
+```text
+--limit <n>        maximum direct changes to print; default 1; must be greater than zero
+--all              scan all retained history; mutually exclusive with an explicit --limit
+--at <version>     newest publication to inspect; default current
+--json             print structured parameter history JSON
+```
+
+Human output is a vertical log joined by a dim left rail. Each entry begins
+with a full-terminal-width version heading on a gray background, then shows
+the adjacent version transition, author, publication time, optional change
+note, and the parameter change using the same terminal-width-aware side-by-side
+renderer as `versions diff --side-by-side`. Two empty rail lines separate
+consecutive entries. The older side of the transition is
+muted and the changed version is bright and bold when color is enabled. Large
+text and JSON values are formatted, wrapped, and reduced to contextual chunks
+around their changes.
+
+The change includes the parameter's group, description, value type, default
+value, and conditional values. Moving the same key between groups is therefore
+a direct parameter change. Because lookup is by exact key, a rename appears as
+a removal in the old key's log and an addition in the new key's log. Changes to
+a referenced condition's expression are not attributed to the parameter
+because they do not modify the parameter record itself.
+
+The scan stops after one direct change by default, even if it must fetch several
+unchanged publications to find it. `--limit` counts displayed changes, not
+Firebase requests. Version metadata is loaded one Firebase page at a time, and
+the next page is requested only when resolving `--at` or continuing the scan
+requires it. `--all` continues to the oldest retained publication. If the
+parameter already exists at that boundary, the output says its earlier origin
+is unavailable rather than inventing an addition. If it never occurs in the
+inspected retained history, the command returns `parameter.not_found`.
+
+This command always reads the live retained-version index; it has no `--cached`
+mode. Normal execution reuses and stores immutable version snapshots while
+walking history but does not change the current cache pointer. With root
+`--stateless`, `<project>` is a literal client or server target, every selected
+version is read directly from Firebase, and no local application state is read
+or written.
+
+In JSON mode, `data` contains `project`, `parameter`, `at_version`, `at_group`,
+`scanned_version_count`, `history_exhausted`, the retained `boundary`, and
+`changes`. Every change records `previous_version`, `version`, publication
+metadata, and the typed parameter diff. An absent boundary is explicit, while a
+null boundary means the requested limit stopped the scan before retained
+history was exhausted.
 
 ### `fbrcm versions list <project>`
 

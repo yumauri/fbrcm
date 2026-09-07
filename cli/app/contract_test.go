@@ -223,6 +223,7 @@ func TestResponseStringFormatsAreSemantic(t *testing.T) {
 		{"project.open", map[string]string{"url": "uri"}},
 		{"projects.list", map[string]string{"url": "uri"}},
 		{"versions.list", map[string]string{"updateTime": "date-time", "email": "email", "imageUrl": "uri"}},
+		{"versions.blame", map[string]string{"update_time": "date-time", "email": "email", "imageUrl": "uri"}},
 		{"experiments.list", map[string]string{"startTime": "date-time", "endTime": "date-time", "lastUpdateTime": "date-time"}},
 	}
 	for _, test := range tests {
@@ -331,7 +332,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		"personalizations.list": true, "personalizations.show": true,
 		"project.import": true, "projects.promote": true,
 		"rollouts.list": true, "rollouts.show": true,
-		"versions.diff": true, "versions.export": true, "versions.rollback": true, "versions.show": true,
+		"versions.blame": true, "versions.diff": true, "versions.export": true, "versions.rollback": true, "versions.show": true,
 	}
 	statelessCommands := make([]struct {
 		path       []string
@@ -906,7 +907,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
 		"personalizations.list", "personalizations.show", "project.defaults", "project.export", "project.import", "project.open", "project.show",
 		"projects.diff", "projects.list", "projects.promote", "rollouts.delete", "rollouts.list", "rollouts.show", "update",
-		"versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
+		"versions.blame", "versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
 	}; !slices.Equal(stateless, want) {
 		t.Fatalf("stateless capability index = %v, want %v", stateless, want)
 	}
@@ -1362,6 +1363,20 @@ func TestInvocationSchemasDistinguishSelectorsFromLiteralIdentifiers(t *testing.
 	validateContractValue(t, versionID, versionInput("current~300"), false)
 	validateContractValue(t, versionID, versionInput("+00042"), true)
 
+	blameID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:versions.blame:input"
+	blameInput := func(parameter, at string, options map[string]any) map[string]any {
+		values := maps.Clone(options)
+		if at != "" {
+			values["at"] = at
+		}
+		return map[string]any{"arguments": map[string]any{"project": "demo", "parameter": parameter}, "options": values, "stdin": nil}
+	}
+	validateContractValue(t, blameID, blameInput("flag", "current~299", map[string]any{}), true)
+	validateContractValue(t, blameID, blameInput("flag", "+00042", map[string]any{}), true)
+	validateContractValue(t, blameID, blameInput("flag", "current~300", map[string]any{}), false)
+	validateContractValue(t, blameID, blameInput(strings.Repeat("x", 257), "", map[string]any{}), false)
+	validateContractValue(t, blameID, blameInput("flag", "", map[string]any{"limit": 2, "all": true}), false)
+
 	projectID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:project.show:input"
 	projectInput := func(project string) map[string]any {
 		return map[string]any{"arguments": map[string]any{"project": project}, "options": map[string]any{}, "stdin": nil}
@@ -1567,6 +1582,7 @@ func TestExpandedStatelessInvocationSchemas(t *testing.T) {
 		{id: "rollouts.delete", arguments: map[string]any{"project": "demo", "rollout_id": "rollout_1"}, projectFields: []string{"project"}, physical: true},
 		{id: "rollouts.list", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "rollouts.show", arguments: map[string]any{"project": "demo", "rollout_id": "rollout_1"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
+		{id: "versions.blame", arguments: map[string]any{"project": "demo", "parameter": "flag"}, projectFields: []string{"project"}},
 		{id: "versions.diff", arguments: map[string]any{"project": "demo", "from": "11", "to": "12"}, projectFields: []string{"project"}, rejectCached: true},
 		{id: "versions.rollback", arguments: map[string]any{"project": "demo", "version": "11"}, projectFields: []string{"project"}},
 	}
@@ -2412,6 +2428,9 @@ func TestInvocationSchemasPublishCommandLocalSelectionSemantics(t *testing.T) {
 		id := "urn:fbrcm:schema:cli:" + contract.Version + ":command:" + commandID + ":input"
 		assertSchemaMarkers(t, id, `"operator": "`+operator+`"`)
 	}
+	assertSchemaMarkers(t, "urn:fbrcm:schema:cli:"+contract.Version+":command:versions.blame:input",
+		`"operator": "parameter_history_resolution"`, `"operator": "version_resolution"`,
+	)
 	assertSchemaMarkers(t, "urn:fbrcm:schema:cli:"+contract.Version+":command:conditions.add:input",
 		`"operator": "condition_priority"`, `"maximum": "resolved_condition_count_plus_one"`,
 	)

@@ -391,6 +391,7 @@ func extensionSchemaDefinitions() map[string]any {
 				"group_name_resolution",
 				"help_path_resolution",
 				"parameter_argument_resolution",
+				"parameter_history_resolution",
 				"personalization_id_resolution",
 				"profile_name_resolution",
 				"theme_name_resolution",

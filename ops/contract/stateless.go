@@ -44,6 +44,7 @@ var statelessCommands = map[string]statelessCommandSupport{
 	"rollouts.delete":       {requiresAccessToken: true},
 	"rollouts.show":         {requiresAccessToken: true},
 	"update":                {requiresAccessToken: true},
+	"versions.blame":        {requiresAccessToken: true},
 	"versions.diff":         {requiresAccessToken: true},
 	"versions.export":       {requiresAccessToken: true},
 	"versions.list":         {requiresAccessToken: true},

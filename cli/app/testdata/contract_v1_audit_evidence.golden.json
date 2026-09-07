@@ -44,6 +44,7 @@
     "profile.root_success": "cli/commands/profile/commands_test.go#TestProfileRootJSON",
     "schemagen.determinism": "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
     "theme.mutation_success": "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
+    "versions.blame_success": "ops/workflows/versions/blame_test.go#TestVersionsBlameCommandJSONSuccess",
     "versions.restore_success": "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp"
   },
   "commands": [
@@ -10533,6 +10534,93 @@
             "e2e:parameter_update_json",
             "e2e:parameter_update_stateless_json"
           ]
+        }
+      }
+    },
+    {
+      "id": "versions.blame",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:versions_blame_stateless_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
         }
       }
     },

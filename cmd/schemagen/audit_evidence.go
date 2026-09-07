@@ -162,6 +162,7 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"plan.artifact_runtime":                 "ops/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
 		"schemagen.determinism":                 "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
 		"theme.mutation_success":                "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
+		"versions.blame_success":                "ops/workflows/versions/blame_test.go#TestVersionsBlameCommandJSONSuccess",
 		"versions.restore_success":              "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
 	}
 }
@@ -225,6 +226,8 @@ func generatedAuditSuccessFallback(commandID string) string {
 		return "plan.metadata_success"
 	case "theme.delete", "theme.reset", "theme.switch":
 		return "theme.mutation_success"
+	case "versions.blame":
+		return "versions.blame_success"
 	case "versions.restore":
 		return "versions.restore_success"
 	default:

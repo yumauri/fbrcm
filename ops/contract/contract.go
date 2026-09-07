@@ -575,6 +575,12 @@ func Classify(err error) Problem {
 		problem.Details = SelectionDetails{Kind: "selection", Resource: "version", Query: versionLookup.Selector, Candidates: []SelectionCandidate{}}
 		return problem
 	}
+	if parameterLookup, ok := errors.AsType[*core.RemoteConfigParameterLookupError](err); ok {
+		problem.Code, problem.Category = "parameter.not_found", "not_found"
+		problem.Target = optionalString(parameterLookup.ProjectID)
+		problem.Details = SelectionDetails{Kind: "selection", Resource: "parameter", Query: parameterLookup.Parameter, Candidates: []SelectionCandidate{}}
+		return problem
+	}
 	if managedResource, ok := errors.AsType[*firebase.ManagedFeatureResourceError](err); ok {
 		problem.Code, problem.Category = "argument.invalid", "argument"
 		problem.Target = optionalString(managedResource.ItemID)

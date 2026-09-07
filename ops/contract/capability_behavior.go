@@ -781,6 +781,7 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	"projects.list":         projectsListRead(),
 	"rollouts.list":         managedFeatureRead(),
 	"rollouts.show":         managedFeatureRead(),
+	"versions.blame":        requiredCacheableRemoteRead(),
 	"versions.diff":         historicalVersionRead(),
 	"versions.list":         conditionalReadOnly(conditionClause(predicate("option", "cached", "equals", false))),
 	"versions.show":         historicalVersionRead(),
@@ -836,7 +837,7 @@ func init() {
 		"project.defaults", "project.export", "project.import", "project.open", "project.show",
 		"projects.diff", "projects.list", "projects.promote",
 		"rollouts.delete", "rollouts.list", "rollouts.show",
-		"versions.diff", "versions.export", "versions.list", "versions.restore", "versions.rollback", "versions.show",
+		"versions.blame", "versions.diff", "versions.export", "versions.list", "versions.restore", "versions.rollback", "versions.show",
 	} {
 		behavior, ok := capabilityBehaviors[id]
 		if !ok {

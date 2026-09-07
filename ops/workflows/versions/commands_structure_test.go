@@ -11,7 +11,10 @@ import (
 
 func TestNewCommandStructure(t *testing.T) {
 	cmd := New(nil)
-	cmdtest.AssertSubcommands(t, cmd, "diff", "export", "list", "restore", "rollback", "show")
+	cmdtest.AssertSubcommands(t, cmd, "blame", "diff", "export", "list", "restore", "rollback", "show")
+	for _, flag := range []string{"limit", "all", "at", "json"} {
+		cmdtest.AssertNestedFlag(t, cmd, []string{"blame"}, flag)
+	}
 	for _, flag := range []string{"limit", "all", "before", "since", "until", "cached", "json"} {
 		cmdtest.AssertNestedFlag(t, cmd, []string{"list"}, flag)
 	}
@@ -40,6 +43,15 @@ func TestNewCommandStructure(t *testing.T) {
 	cmdtest.AssertNestedFlag(t, cmd, []string{"restore"}, "change-note")
 	if rollback := cmdtest.FindCommand(t, cmd, "rollback"); rollback.Flags().Lookup("change-note") != nil {
 		t.Fatal("versions rollback unexpectedly exposes --change-note")
+	}
+}
+
+func TestVersionsBlameRejectsInvalidLimit(t *testing.T) {
+	cmd := New(nil)
+	cmd.SetArgs([]string{"blame", "demo", "flag", "--limit", "0"})
+	err := cmd.Execute()
+	if _, ok := errors.AsType[*shared.ArgumentError](err); !ok {
+		t.Fatalf("Execute() error = %v, want ArgumentError", err)
 	}
 }
 
