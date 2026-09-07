@@ -1,6 +1,6 @@
 module github.com/yumauri/fbrcm/e2e
 
-go 1.27.0
+go 1.27.1
 
 tool github.com/SpectoLabs/hoverfly/core/cmd/hoverfly
 

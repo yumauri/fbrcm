@@ -8,7 +8,7 @@ below remain subject to their respective terms.
 
 ======================================================================
 Component: The Go Programming Language runtime and standard library
-Version: go1.27.0
+Version: go1.27.1
 License: BSD-3-Clause
 Source: https://go.dev/
 
@@ -504,7 +504,7 @@ SOFTWARE.
 
 ======================================================================
 Component: github.com/charmbracelet/ultraviolet
-Version: v0.0.0-20260903151058-ae99b731b8c5
+Version: v0.0.0-20260906173415-0277a179edd9
 License: MIT
 Source: github.com/charmbracelet/ultraviolet
 
