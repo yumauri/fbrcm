@@ -85,6 +85,12 @@ All `edit` and `publish` tools require `--allow-writes`, as do
 Mutation tools require write permission even for a dry run. `plan.apply`
 belongs to `publish`, not `plans`.
 
+The `versions.blame` inspection tool traces direct changes to one exact
+parameter key. Supply `arguments.project` and `arguments.parameter`; optional
+`options.at`, `options.limit`, and `options.all` match the CLI command, with
+`all` and `limit` mutually exclusive. Results include adjacent version
+transitions, publication metadata, and typed parameter diffs.
+
 For inspection only, use these host arguments:
 
 ```json

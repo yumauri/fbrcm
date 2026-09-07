@@ -71,6 +71,7 @@ var catalog = map[string]catalogEntry{
 	"conditions.list":       {"conditions.list", "inspect", false},
 	"conditions.show":       {"conditions.show", "inspect", false},
 	"conditions.validate":   {"conditions.validate", "inspect", false},
+	"versions.blame":        {"versions.blame", "inspect", false},
 	"versions.list":         {"versions.list", "inspect", false},
 	"versions.show":         {"versions.show", "inspect", false},
 	"versions.diff":         {"versions.diff", "inspect", false},
