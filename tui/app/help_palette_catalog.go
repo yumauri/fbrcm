@@ -182,6 +182,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Edit selected value"
 		case tuiconfig.ActionExternalEdit:
 			return "Edit selected value externally"
+		case tuiconfig.ActionBlame:
+			return "Show parameter blame"
 		case tuiconfig.ActionMove:
 			return "Move selected item"
 		case tuiconfig.ActionToggle:
@@ -504,6 +506,8 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 		return "Update (reload) Remote Config for the current project."
 	case tuiconfig.ActionReloadAll:
 		return "Update (reload) Remote Config for every selected project."
+	case tuiconfig.ActionBlame:
+		return "Show the newest retained publication that directly changed the selected parameter."
 	case tuiconfig.ActionFirst, tuiconfig.ActionHome:
 		return "Move the selection to the first " + helpPaletteNavigationDescriptionTarget(block) + "."
 	case tuiconfig.ActionLast, tuiconfig.ActionEnd:

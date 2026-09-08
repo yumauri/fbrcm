@@ -8,6 +8,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/dictdiff"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 )
 
 // ParameterEntityName formats the entity name used by generic dictionary diff
@@ -36,6 +37,38 @@ func Parameter(group string, parameter *firebase.RemoteConfigParam) dictdiff.Dic
 		properties["value · default"] = Value(*parameter.DefaultValue, parameter.ValueType)
 	}
 	return properties
+}
+
+// ParameterChange prepares one Remote Config parameter change as a generic
+// dictionary diff. Names describe the left and right versions when provided.
+func ParameterChange(change rcdiff.ParameterChange, leftName, rightName string) dictdiff.Input {
+	leftGroup := change.Group
+	leftKey := change.Key
+	if change.PreviousKey != "" {
+		leftGroup = change.PreviousGroup
+		leftKey = change.PreviousKey
+	}
+	displayGroup := change.Group
+	if change.Final == nil {
+		displayGroup = leftGroup
+	}
+	leftProperties := Parameter(leftGroup, change.Current)
+	rightProperties := Parameter(change.Group, change.Final)
+	if leftKey != change.Key {
+		leftProperties["name"] = dictdiff.Enum(leftKey)
+		rightProperties["name"] = dictdiff.Enum(change.Key)
+	}
+	return dictdiff.Input{
+		EntityName: ParameterEntityName(displayGroup, change.Key),
+		Left: dictdiff.NamedDictionary{
+			Name:       leftName,
+			Properties: leftProperties,
+		},
+		Right: dictdiff.NamedDictionary{
+			Name:       rightName,
+			Properties: rightProperties,
+		},
+	}
 }
 
 // Value preserves Remote Config value semantics while choosing a generic

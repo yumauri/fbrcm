@@ -103,6 +103,12 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 		m.openDictionaryDiff(msg.Input, msg.Project)
 		return m, nil, true
 
+	case parameterscmp.BlameRequestedMsg:
+		return m, m.loadParameterBlameCmd(msg), true
+
+	case parameterBlameLoadedMsg:
+		return m.updateParameterBlameLoaded(msg)
+
 	case projectAuthBoundMsg:
 		return m.updateProjectAuthBound(msg)
 

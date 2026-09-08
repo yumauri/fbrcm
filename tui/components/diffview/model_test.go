@@ -58,6 +58,47 @@ func TestDiffViewUsesEditorSizedModalAndFullWidthPropertyRows(t *testing.T) {
 	}
 }
 
+func TestDiffViewShowsOptionalAttributionWithoutGrowingModal(t *testing.T) {
+	result := compared(t, dictdiff.Input{
+		EntityName: "Parameter: WEB / flag",
+		Left:       namedDictionaryWithValue("Earlier version: v1", dictdiff.String("old")),
+		Right:      namedDictionaryWithValue("Later version: v2", dictdiff.String("new")),
+	})
+	attribution := "Alice Smith <alice@example.com> on 2026-09-03 15:34:58"
+	m := New().OpenWithAttribution(80, 24, result, attribution)
+	view := testutil.NormalizeViewSnapshot(m.View())
+	if height := lipgloss.Height(m.View()); height != 20 {
+		t.Fatalf("attributed modal height = %d, want 20", height)
+	}
+	lines := strings.Split(view, "\n")
+	if len(lines) < 4 || !strings.Contains(lines[1], "Parameter: WEB / flag") ||
+		!strings.Contains(lines[2], attribution) ||
+		!strings.Contains(lines[3], "Earlier version: v1") {
+		t.Fatalf("attribution is not directly below the parameter heading:\n%s", view)
+	}
+	if plain := New().Open(80, 24, result).View(); strings.Contains(plain, attribution) {
+		t.Fatalf("ordinary diff unexpectedly contains blame attribution:\n%s", plain)
+	}
+}
+
+func TestAttributedDiffMouseRowsAccountForAttribution(t *testing.T) {
+	result := compared(t, dictdiff.Input{
+		Left: dictdiff.NamedDictionary{Properties: dictdiff.Dictionary{
+			"first": dictdiff.String("old first"), "second": dictdiff.String("old second"),
+		}},
+		Right: dictdiff.NamedDictionary{Properties: dictdiff.Dictionary{
+			"first": dictdiff.String("new first"), "second": dictdiff.String("new second"),
+		}},
+	})
+	m := New().OpenWithAttribution(80, 24, result, "Alice on 2026-09-03 15:34:58")
+	secondHeaderRow := 3
+	x, y := m.Position()
+	m, _ = m.Update(tea.MouseClickMsg{X: x + 2, Y: y + m.bodyStartRow() + secondHeaderRow, Button: tea.MouseLeft})
+	if m.cursor != 1 {
+		t.Fatalf("mouse-selected property = %d, want second property", m.cursor)
+	}
+}
+
 func TestDiffViewPropertyHeadersOmitChangeMarkersAndUseNormalTextColor(t *testing.T) {
 	const width = 24
 	m := New()

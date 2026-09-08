@@ -184,12 +184,7 @@ func renderVersionBlameChange(item core.ParameterHistoryChange, terminalWidth in
 	output.WriteString(renderVersionBlameHeading(item, terminalWidth))
 	output.WriteByte('\n')
 
-	author := versionBlameAuthor(item.Version.UpdateUser)
-	published := formatFirebaseVersionTime(item.Version.UpdateTime)
-	metadata := author
-	if published != "" {
-		metadata += " on " + published
-	}
+	metadata := rcdisplay.FormatRemoteConfigVersionAttribution(item.Version)
 	appendBlameText(&output, metadata, 0, terminalWidth)
 	if item.Version.RollbackSource != "" {
 		appendBlameText(&output, "Rollback source: version "+item.Version.RollbackSource, 0, terminalWidth)
@@ -240,20 +235,6 @@ func appendBlameText(output *strings.Builder, value string, indent, terminalWidt
 		for line := range strings.SplitSeq(wrapped, "\n") {
 			output.WriteString(blameRail("│") + "  " + strings.Repeat(" ", indent) + line + "\n")
 		}
-	}
-}
-
-func versionBlameAuthor(user firebase.RemoteConfigUser) string {
-	name, email := strings.TrimSpace(user.Name), strings.TrimSpace(user.Email)
-	switch {
-	case name != "" && email != "":
-		return name + " <" + email + ">"
-	case email != "":
-		return email
-	case name != "":
-		return name
-	default:
-		return "Unknown author"
 	}
 }
 

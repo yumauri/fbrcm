@@ -94,6 +94,7 @@ const (
 	ActionNew              Action = "new"
 	ActionNewGroup         Action = "new_group"
 	ActionDuplicate        Action = "duplicate"
+	ActionBlame            Action = "blame"
 	ActionMove             Action = "move"
 	ActionToggle           Action = "toggle"
 	ActionDelete           Action = "delete"

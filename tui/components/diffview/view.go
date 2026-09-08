@@ -48,9 +48,16 @@ func (m Model) View() string {
 	end := min(start+m.bodyHeight(), len(rows))
 	scrollbar := viewutil.ScrollbarState(len(rows), start, m.bodyHeight())
 
-	lines := []string{m.titleLine(innerWidth, border)}
+	lines := []string{
+		m.titleLine(innerWidth, border),
+		border.Render("│") + modalContentLine(m.entityHeader(contentWidth), contentWidth) + border.Render("│"),
+	}
+	if m.attribution != "" {
+		lines = append(lines,
+			border.Render("│")+modalContentLine(styles.PanelMuted.Render(m.attribution), contentWidth)+border.Render("│"),
+		)
+	}
 	lines = append(lines,
-		border.Render("│")+modalContentLine(m.entityHeader(contentWidth), contentWidth)+border.Render("│"),
 		border.Render("│")+modalContentLine(m.dictionaryHeader(contentWidth), contentWidth)+border.Render("│"),
 		border.Render("├"+strings.Repeat("─", innerWidth)+"┤"),
 	)
@@ -331,7 +338,18 @@ func (m Model) contentWidth() int {
 }
 
 func (m Model) bodyHeight() int {
-	return max(m.screenH-10, 3)
+	return max(m.screenH-10-m.attributionRows(), 3)
+}
+
+func (m Model) bodyStartRow() int {
+	return 4 + m.attributionRows()
+}
+
+func (m Model) attributionRows() int {
+	if m.attribution == "" {
+		return 0
+	}
+	return 1
 }
 
 func modalInnerWidth(contentWidth int) int {
