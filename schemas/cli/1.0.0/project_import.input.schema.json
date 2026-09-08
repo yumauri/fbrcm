@@ -1453,8 +1453,20 @@
           ]
         },
         "yes": {
-          "description": "Skip final import confirmation",
-          "type": "boolean"
+          "description": "Skip final import confirmation; applied when the operation requires confirmation",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "runtime_state",
+                  "name": "confirmation",
+                  "operator": "required",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],

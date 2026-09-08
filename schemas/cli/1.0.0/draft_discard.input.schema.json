@@ -135,8 +135,20 @@
           ]
         },
         "yes": {
-          "description": "Skip destructive confirmations",
-          "type": "boolean"
+          "description": "Skip destructive confirmations; applied when the operation requires confirmation",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "runtime_state",
+                  "name": "confirmation",
+                  "operator": "required",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],

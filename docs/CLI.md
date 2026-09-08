@@ -2341,7 +2341,11 @@ In JSON mode, `data` contains `project`, `parameter`, `at_version`, `at_group`,
 `changes`. Every change records `previous_version`, `version`, publication
 metadata, and the typed parameter diff. An absent boundary is explicit, while a
 null boundary means the requested limit stopped the scan before retained
-history was exhausted.
+history was exhausted. A successful result scans at least one retained version,
+never emits an `unchanged` change entry, and always returns `changes` as an
+array. `history_exhausted` is true exactly when `boundary` is present; a present
+parameter boundary carries its group (the empty string means ungrouped), while
+an absent parameter boundary carries `group: null`.
 
 ### `fbrcm versions list <project>`
 
@@ -2747,7 +2751,7 @@ Flags:
 --json                          print cache entries as JSON
 ```
 
-JSON entries include kind, canonical project or target ID in `project_id`, underlying project name, optional App ID resource, optional Remote Config version, file size, cached time, and path.
+JSON entries include kind, canonical project or target ID in `project_id`, underlying project name, file size, cached time, and path. A `remote-config` entry has a nonempty `version` and no `resource`; `app-details` and `app-config` entries have a nonempty App ID `resource` and no `version`; `apps-index` has neither.
 
 ### `fbrcm cache path`
 
@@ -2763,6 +2767,9 @@ Flags:
 ### `fbrcm cache clear`
 
 Deletes local Remote Config and application cache entries. `--kind` can limit deletion to one cache family. The confirmation reports entry count, total size, and project count. Drafts are never deleted by this command.
+JSON success data reports `status`, `entries_deleted`, `targets_affected`, and
+`bytes_deleted`. `unchanged` requires all three counts to be zero; `cleared`
+requires each to be positive.
 
 Flags:
 

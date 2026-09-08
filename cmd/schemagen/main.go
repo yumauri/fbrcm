@@ -608,8 +608,11 @@ func warningObjectSchema() map[string]any {
 		return map[string]any{"type": "object", "additionalProperties": false, "required": required, "properties": properties}
 	}
 	detailsByCode := map[string]map[string]any{
-		"cache.stale":                          object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
-		"cache.write_failed":                   object([]string{"error"}, map[string]any{"error": map[string]any{"type": "string", "minLength": 1}}),
+		"cache.stale": object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
+		"cache.write_failed": object([]string{"error"}, map[string]any{"error": map[string]any{
+			"type": "string", "minLength": 1, "maxLength": 4097,
+			"x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated",
+		}}),
 		"publication.non_atomic":               object([]string{"target_count"}, map[string]any{"target_count": map[string]any{"type": "integer", "minimum": 2}}),
 		"publication.cache_stale":              object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cache"}}),
 		"publication.draft_cleanup_failed":     object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cleanup"}}),

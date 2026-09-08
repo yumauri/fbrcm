@@ -1,6 +1,7 @@
 package contract
 
 import (
+	"reflect"
 	"slices"
 	"strings"
 )
@@ -445,20 +446,55 @@ func withStatelessCommandEffects(b capabilityBehavior) capabilityBehavior {
 	b.effects = effects
 	b.networkWhen = cloneConditions(b.networkWhen)
 	for effectIndex := range b.effects {
+		if statelessPolicyDisablesEffect(b.effects[effectIndex].name) {
+			b.effects[effectIndex].when = restrictConditionsToStateful(b.effects[effectIndex].when)
+			continue
+		}
 		for clauseIndex := range b.effects[effectIndex].when {
 			clause := &b.effects[effectIndex].when[clauseIndex]
-			if statelessPolicyDisablesEffect(b.effects[effectIndex].name) || clauseHasStatefulCommandPredicate(*clause) {
-				clause.AllOf = append(clause.AllOf, predicate("option", "stateless", "equals", false))
+			if clauseHasStatefulCommandPredicate(*clause) {
+				appendPredicateIfMissing(clause, predicate("option", "stateless", "equals", false))
 			}
 		}
 	}
 	for clauseIndex := range b.networkWhen {
 		clause := &b.networkWhen[clauseIndex]
 		if clauseHasStatefulCommandPredicate(*clause) {
-			clause.AllOf = append(clause.AllOf, predicate("option", "stateless", "equals", false))
+			appendPredicateIfMissing(clause, predicate("option", "stateless", "equals", false))
 		}
 	}
 	return b
+}
+
+func restrictConditionsToStateful(conditions []BehaviorConditionClause) []BehaviorConditionClause {
+	if len(conditions) == 0 {
+		return []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
+	}
+	result := make([]BehaviorConditionClause, 0, len(conditions))
+	for _, clause := range conditions {
+		if clauseHasPredicateValue(clause, "option", "stateless", "equals", true) {
+			continue
+		}
+		appendPredicateIfMissing(&clause, predicate("option", "stateless", "equals", false))
+		result = append(result, clause)
+	}
+	return result
+}
+
+func appendPredicateIfMissing(clause *BehaviorConditionClause, item BehaviorPredicate) {
+	if clauseHasPredicateValue(*clause, item.Source, item.Name, item.Operator, item.Value) {
+		return
+	}
+	clause.AllOf = append(clause.AllOf, item)
+}
+
+func clauseHasPredicateValue(clause BehaviorConditionClause, source, name, operator string, value any) bool {
+	for _, item := range clause.AllOf {
+		if item.Source == source && item.Name == name && item.Operator == operator && reflect.DeepEqual(item.Value, value) {
+			return true
+		}
+	}
+	return false
 }
 
 func statelessPolicyDisablesEffect(name string) bool {
@@ -470,7 +506,7 @@ func withStatelessCommandInteractions(conditions []BehaviorConditionClause) []Be
 	result := cloneConditions(conditions)
 	for index := range result {
 		if containsPredicate([]BehaviorConditionClause{result[index]}, "runtime_state", "authentication", "requires_human_authorization") {
-			result[index].AllOf = append(result[index].AllOf, predicate("option", "stateless", "equals", false))
+			appendPredicateIfMissing(&result[index], predicate("option", "stateless", "equals", false))
 		}
 	}
 	return result

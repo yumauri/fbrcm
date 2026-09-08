@@ -200,7 +200,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and add without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and add without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:input",
@@ -1009,7 +1021,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Apply the publication plan without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Apply the publication plan without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:input",
@@ -1668,7 +1692,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Overwrite an existing destination without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:input",
@@ -1801,12 +1837,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -1835,12 +1865,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -2326,12 +2350,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -2354,12 +2372,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -2782,12 +2794,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -2816,12 +2822,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -4075,7 +4075,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip confirmation dialog"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:input",
@@ -5148,7 +5160,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip confirmation dialog"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:input",
@@ -6227,7 +6251,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:input",
@@ -7002,7 +7038,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:input",
@@ -7827,7 +7875,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:input",
@@ -8722,28 +8782,6 @@
                 "source": "option",
                 "name": "stateless",
                 "operator": "equals",
-                "value": true
-              },
-              {
-                "source": "runtime_state",
-                "name": "remote_read",
-                "operator": "cache_write_succeeded",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          },
-          {
-            "all_of": [
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
                 "value": false
               },
               {
@@ -8757,12 +8795,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -8785,12 +8817,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -9100,7 +9126,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:input",
@@ -9882,7 +9920,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:input",
@@ -10739,28 +10789,6 @@
                 "source": "option",
                 "name": "stateless",
                 "operator": "equals",
-                "value": true
-              },
-              {
-                "source": "runtime_state",
-                "name": "remote_read",
-                "operator": "cache_write_succeeded",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          },
-          {
-            "all_of": [
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
                 "value": false
               },
               {
@@ -10774,12 +10802,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -10802,12 +10824,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -11578,7 +11594,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Reset without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Reset without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:input",
@@ -12254,7 +12282,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and delete without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and delete without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:input",
@@ -13821,7 +13861,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip destructive confirmations"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip destructive confirmations; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:input",
@@ -14273,7 +14325,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip publish confirmations"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip publish confirmations; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:input",
@@ -15191,7 +15255,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and duplicate without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and duplicate without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:input",
@@ -15917,7 +15993,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Delete without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Delete without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:input",
@@ -17141,34 +17229,6 @@
                 "source": "option",
                 "name": "stateless",
                 "operator": "equals",
-                "value": true
-              },
-              {
-                "source": "runtime_state",
-                "name": "remote_read",
-                "operator": "cache_write_succeeded",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          },
-          {
-            "all_of": [
-              {
-                "source": "stdin",
-                "name": "document",
-                "operator": "absent",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
                 "value": false
               },
               {
@@ -17182,12 +17242,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -17216,12 +17270,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -17561,7 +17609,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:input",
@@ -18342,7 +18402,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:input",
@@ -19162,7 +19234,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:input",
@@ -20038,28 +20122,6 @@
                 "source": "option",
                 "name": "stateless",
                 "operator": "equals",
-                "value": true
-              },
-              {
-                "source": "runtime_state",
-                "name": "remote_read",
-                "operator": "cache_write_succeeded",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          },
-          {
-            "all_of": [
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
                 "value": false
               },
               {
@@ -20073,12 +20135,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -20101,12 +20157,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -20422,7 +20472,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and apply without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:input",
@@ -21444,7 +21506,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Trust without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Trust without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:input",
@@ -22043,28 +22117,6 @@
                 "source": "option",
                 "name": "stateless",
                 "operator": "equals",
-                "value": true
-              },
-              {
-                "source": "runtime_state",
-                "name": "remote_read",
-                "operator": "cache_write_succeeded",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          },
-          {
-            "all_of": [
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
                 "value": false
               },
               {
@@ -22078,12 +22130,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -22106,12 +22152,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -22496,28 +22536,6 @@
                 "source": "option",
                 "name": "stateless",
                 "operator": "equals",
-                "value": true
-              },
-              {
-                "source": "runtime_state",
-                "name": "remote_read",
-                "operator": "cache_write_succeeded",
-                "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
-              }
-            ]
-          },
-          {
-            "all_of": [
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
                 "value": false
               },
               {
@@ -22531,12 +22549,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           },
@@ -22559,12 +22571,6 @@
                 "name": "remote_read",
                 "operator": "cache_write_succeeded",
                 "value": null
-              },
-              {
-                "source": "option",
-                "name": "stateless",
-                "operator": "equals",
-                "value": false
               }
             ]
           }
@@ -23141,7 +23147,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip confirmation dialog"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:input",
@@ -23888,7 +23906,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Overwrite an existing destination without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:input",
@@ -24181,7 +24211,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Overwrite an existing destination without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:input",
@@ -24618,7 +24660,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip final import confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip final import confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:input",
@@ -26740,7 +26794,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Import without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Import without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:input",
@@ -27034,7 +27100,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Remove the alias without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Remove the alias without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:input",
@@ -27218,7 +27296,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Replace an existing alias without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Replace an existing alias without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:input",
@@ -27756,7 +27846,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip confirmation dialog"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:input",
@@ -28587,7 +28689,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip final publish confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip final publish confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:input",
@@ -29218,7 +29332,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip confirmation dialog"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:input",
@@ -29656,7 +29782,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Delete without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Delete without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:input",
@@ -31094,7 +31232,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Delete without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Delete without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
@@ -32375,7 +32525,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Print diff and update without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Print diff and update without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:input",
@@ -33977,7 +34139,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Overwrite an existing destination without confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:input",
@@ -34724,7 +34898,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip final publish confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip final publish confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:input",
@@ -35331,7 +35517,19 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Skip final publish confirmation"
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Skip final publish confirmation; applied when the operation requires confirmation"
       }
     ],
     "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:input",

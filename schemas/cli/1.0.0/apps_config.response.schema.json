@@ -2,6 +2,34 @@
   "$defs": {
     "success_data": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "enum": [
+                  "cache",
+                  "cache-stale"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "properties": {
+              "cached_at": {
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "required": [
+              "cached_at"
+            ]
+          }
+        }
+      ],
       "properties": {
         "app": {
           "additionalProperties": false,
@@ -174,10 +202,8 @@
               "type": "integer"
             },
             "target": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "minLength": 1,
+              "type": "string"
             },
             "text_content": {
               "type": [

@@ -172,7 +172,7 @@ func loadAppsCacheRecord(path, kind, projectID, appID string) (*AppsCacheRecord,
 		logger.Error("decode "+appsCacheLabel(kind)+" cache failed", appsCacheLogFields(projectID, appID, path, "err", err)...)
 		return nil, fmt.Errorf("decode apps cache: %w", err)
 	}
-	if record.FormatVersion != AppsCacheFormatVersion || record.Kind != kind || record.ProjectID != projectID || record.AppID != appID {
+	if record.FormatVersion != AppsCacheFormatVersion || record.Kind != kind || record.ProjectID != projectID || record.AppID != appID || record.CachedAt.IsZero() {
 		logger.Error("decode "+appsCacheLabel(kind)+" cache failed", appsCacheLogFields(projectID, appID, path, "err", "invalid cache metadata")...)
 		return nil, fmt.Errorf("decode apps cache: invalid %s cache metadata", kind)
 	}
@@ -207,7 +207,8 @@ func ListAppsCacheEntries() ([]AppsCacheEntry, error) {
 		if err := json.Unmarshal(data, &record); err != nil {
 			return fmt.Errorf("decode apps cache %s: %w", path, err)
 		}
-		if record.FormatVersion != AppsCacheFormatVersion || (record.Kind != "index" && record.Kind != "details" && record.Kind != "config") || record.ProjectID == "" {
+		validAppID := (record.Kind == "index" && record.AppID == "") || (record.Kind != "index" && record.AppID != "")
+		if record.FormatVersion != AppsCacheFormatVersion || (record.Kind != "index" && record.Kind != "details" && record.Kind != "config") || record.ProjectID == "" || record.CachedAt.IsZero() || !validAppID {
 			return fmt.Errorf("decode apps cache %s: invalid cache metadata", path)
 		}
 		info, err := entry.Info()

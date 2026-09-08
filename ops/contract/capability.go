@@ -380,6 +380,10 @@ func describe(cmd *cobra.Command) Capability {
 				)}
 				usage += "; cannot be combined with --stateless or stdin"
 			}
+			if effective && flag.Name == "yes" {
+				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("runtime_state", "confirmation", "required", nil))}
+				usage += "; applied when the operation requires confirmation"
+			}
 			if id == "get" && flag.Name == "project" {
 				usage += "; with remote --stateless execution, exact (=) targets bypass discovery and other selectors filter remote project IDs and display names"
 			}

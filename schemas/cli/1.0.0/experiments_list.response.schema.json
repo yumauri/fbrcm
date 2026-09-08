@@ -234,18 +234,6 @@
               "field": "items"
             }
           }
-        },
-        {
-          "left": {
-            "field": "count"
-          },
-          "op": "eq",
-          "right": {
-            "op": "length",
-            "value": {
-              "field": "items"
-            }
-          }
         }
       ]
     }

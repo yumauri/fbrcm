@@ -62,8 +62,20 @@
           ]
         },
         "yes": {
-          "description": "Replace an existing alias without confirmation",
-          "type": "boolean"
+          "description": "Replace an existing alias without confirmation; applied when the operation requires confirmation",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "runtime_state",
+                  "name": "confirmation",
+                  "operator": "required",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],

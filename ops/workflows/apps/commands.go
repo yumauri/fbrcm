@@ -279,7 +279,7 @@ func addAppCacheWarnings(cmd invocation.Call, projectID string, refreshErr, cach
 	if cacheErr != nil {
 		shared.AddMachineWarning(cmd, shared.MachineWarning{Code: "cache.write_failed", Message: "Firebase application data was returned, but the local cache could not be updated.", Target: projectID, Details: struct {
 			Error string `json:"error"`
-		}{Error: cacheErr.Error()}})
+		}{Error: shared.SafeErrorText(cacheErr)}})
 		if !contract.Enabled(cmd) {
 			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: application cache update failed: %v\n", cacheErr)
 		}

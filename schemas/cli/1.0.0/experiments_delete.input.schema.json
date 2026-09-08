@@ -173,8 +173,20 @@
           ]
         },
         "yes": {
-          "description": "Delete without confirmation",
-          "type": "boolean"
+          "description": "Delete without confirmation; applied when the operation requires confirmation",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "runtime_state",
+                  "name": "confirmation",
+                  "operator": "required",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],
