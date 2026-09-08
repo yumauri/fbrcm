@@ -7,12 +7,21 @@ import (
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
-const (
-	panelTitleLabel = "Details"
-)
-
 func panelTitleKey() string {
 	return tuiconfig.ActionKeyHint(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails)
+}
+
+func (m Model) panelTitleLabel() string {
+	switch {
+	case m.data != nil:
+		return "Parameter"
+	case m.conditionData != nil:
+		return "Condition"
+	case m.groupData != nil:
+		return "Group"
+	default:
+		return "Details"
+	}
 }
 
 var (

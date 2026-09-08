@@ -65,13 +65,14 @@ func TestDiffViewShowsOptionalAttributionWithoutGrowingModal(t *testing.T) {
 		Right:      namedDictionaryWithValue("Later version: v2", dictdiff.String("new")),
 	})
 	attribution := "Alice Smith <alice@example.com> on 2026-09-03 15:34:58"
-	m := New().OpenWithAttribution(80, 24, result, attribution)
+	m := New().OpenWithContext(80, 24, result, "Blame", attribution)
 	view := testutil.NormalizeViewSnapshot(m.View())
 	if height := lipgloss.Height(m.View()); height != 20 {
 		t.Fatalf("attributed modal height = %d, want 20", height)
 	}
 	lines := strings.Split(view, "\n")
-	if len(lines) < 4 || !strings.Contains(lines[1], "Parameter: WEB / flag") ||
+	if len(lines) < 4 || !strings.Contains(lines[0], "Blame") || strings.Contains(lines[0], "Diff") ||
+		!strings.Contains(lines[1], "Parameter: WEB / flag") ||
 		!strings.Contains(lines[2], attribution) ||
 		!strings.Contains(lines[3], "Earlier version: v1") {
 		t.Fatalf("attribution is not directly below the parameter heading:\n%s", view)
@@ -90,7 +91,7 @@ func TestAttributedDiffMouseRowsAccountForAttribution(t *testing.T) {
 			"first": dictdiff.String("new first"), "second": dictdiff.String("new second"),
 		}},
 	})
-	m := New().OpenWithAttribution(80, 24, result, "Alice on 2026-09-03 15:34:58")
+	m := New().OpenWithContext(80, 24, result, "Blame", "Alice on 2026-09-03 15:34:58")
 	secondHeaderRow := 3
 	x, y := m.Position()
 	m, _ = m.Update(tea.MouseClickMsg{X: x + 2, Y: y + m.bodyStartRow() + secondHeaderRow, Button: tea.MouseLeft})

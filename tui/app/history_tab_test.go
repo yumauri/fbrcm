@@ -90,7 +90,7 @@ func TestHistoryDiffRequestOpensGenericDiffModal(t *testing.T) {
 	}
 	view := next.diffView.View()
 	for _, want := range []string{
-		"Parameter:", "WEB / flag", "Earlier version:", "v1",
+		"Diff", "Parameter:", "WEB / flag", "Earlier version:", "v1",
 		"Later version:", "v2", "value · default",
 	} {
 		if !strings.Contains(view, want) {
@@ -127,7 +127,7 @@ func TestParameterBlameLoadedOpensAttributedDiffModal(t *testing.T) {
 	}
 	view := next.diffView.View()
 	for _, want := range []string{
-		"Parameter:", "WEB / flag", "Earlier version:", "v141", "Later version:", "v142",
+		"Blame", "Parameter:", "WEB / flag", "Earlier version:", "v141", "Later version:", "v142",
 		rcdisplay.FormatRemoteConfigVersionAttribution(version), "false", "true",
 	} {
 		if !strings.Contains(view, want) {

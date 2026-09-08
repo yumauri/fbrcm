@@ -57,9 +57,10 @@ func (m Model) updateParameterBlameLoaded(msg parameterBlameLoadedMsg) (Model, t
 		"Earlier version: v"+change.PreviousVersion,
 		"Later version: v"+change.Version.VersionNumber,
 	)
-	m.openDictionaryDiffWithAttribution(
+	m.openDictionaryDiffWithContext(
 		input,
 		msg.project,
+		"Blame",
 		rcdisplay.FormatRemoteConfigVersionAttribution(change.Version),
 	)
 	return m, nil, true

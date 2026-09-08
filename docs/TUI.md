@@ -28,7 +28,8 @@ The workspace has four main areas:
 - **Parameters**, **Conditions**, **History**, **A/B Tests**,
   **Personalizations**, and **Rollouts** are tabs over the main data panel.
 - **Details** opens the selected parameter, group, condition, value, or managed
-  feature.
+  feature. Its panel title becomes **Parameter**, **Group**, or **Condition**
+  for those Remote Config entities.
 - **Logs** shows live application activity and errors.
 
 Promotion temporarily replaces the normal data tabs with a dedicated
@@ -317,7 +318,8 @@ surrounding chrome.
 Pressing `b` on a parameter or one of its expanded values scans retained
 Firebase history until it finds that parameter's newest direct change. The
 side-by-side diff includes the publishing user and local publication time below
-the parameter heading. Ordinary History diffs omit this attribution because
+the parameter heading. This popup is titled **Blame**; ordinary History diffs
+remain titled **Diff** and omit attribution because
 their selected versions do not necessarily represent one publication. In the
 diff popup, `Esc` closes the popup and `q` quits fbrcm.
 

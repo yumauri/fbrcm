@@ -10,6 +10,7 @@ import (
 
 type Model struct {
 	result      dictdiff.Result
+	title       string
 	open        bool
 	screenW     int
 	screenH     int
@@ -24,17 +25,21 @@ func New() Model {
 }
 
 func (m Model) Open(screenW, screenH int, result dictdiff.Result) Model {
-	return m.openWithAttribution(screenW, screenH, result, "")
+	return m.openWithContext(screenW, screenH, result, "Diff", "")
 }
 
-// OpenWithAttribution opens a diff with publication attribution below the
-// entity heading. Ordinary diffs use Open and do not show this row.
-func (m Model) OpenWithAttribution(screenW, screenH int, result dictdiff.Result, attribution string) Model {
-	return m.openWithAttribution(screenW, screenH, result, attribution)
+// OpenWithContext opens a diff with a contextual title and optional
+// publication attribution below the entity heading.
+func (m Model) OpenWithContext(screenW, screenH int, result dictdiff.Result, title, attribution string) Model {
+	return m.openWithContext(screenW, screenH, result, title, attribution)
 }
 
-func (m Model) openWithAttribution(screenW, screenH int, result dictdiff.Result, attribution string) Model {
+func (m Model) openWithContext(screenW, screenH int, result dictdiff.Result, title, attribution string) Model {
 	m.result = result
+	m.title = title
+	if m.title == "" {
+		m.title = "Diff"
+	}
 	m.open = true
 	m.screenW = screenW
 	m.screenH = screenH

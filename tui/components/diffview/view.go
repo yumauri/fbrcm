@@ -90,7 +90,7 @@ func (m Model) BodyView(width int) string {
 }
 
 func (m Model) titleLine(innerWidth int, border lipgloss.Style) string {
-	rendered, titleWidth := styles.PanelHeaderTab("", "Diff", true, true, max(innerWidth-2, 0))
+	rendered, titleWidth := styles.PanelHeaderTab("", m.title, true, true, max(innerWidth-2, 0))
 	fill := max(innerWidth-titleWidth-1, 0)
 	return border.Render("╭─") + rendered + border.Render(strings.Repeat("─", fill)+"╮")
 }

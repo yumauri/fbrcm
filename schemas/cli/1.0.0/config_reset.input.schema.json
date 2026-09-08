@@ -192,6 +192,7 @@
                 "keys.number_input.copy_value",
                 "keys.number_input.submit",
                 "keys.parameters",
+                "keys.parameters.blame",
                 "keys.parameters.collapse",
                 "keys.parameters.collapse_all",
                 "keys.parameters.collapse_groups",
