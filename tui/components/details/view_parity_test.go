@@ -264,7 +264,7 @@ func TestManagedValueCannotToggleToInAppDefault(t *testing.T) {
 	}
 }
 
-const detailsViewSnapshot = ` ╭─ ⁵Details ───────────────────────────────────────────────
+const detailsViewSnapshot = ` ╭─ ⁵Parameter ─────────────────────────────────────────────
  │ Project
  │ Demo Prod (demo-prod)
  │

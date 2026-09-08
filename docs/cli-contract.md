@@ -204,7 +204,8 @@ timeout, rate-limit, unavailable, or request-failure classifications and
 retryability. Message wording is never used for classification. Error messages and
 captured hook output redact common credential forms and are bounded to 4,096
 characters plus a truncation marker. This boundary also applies to messages in
-command result DTOs, including target-level mutation errors.
+command result DTOs, including target-level mutation errors, and to captured
+cache-write error text in warning details.
 
 Before a final rate-limit problem is emitted, authenticated API transports
 coordinate concurrency, pacing, and retries through one controller keyed by
@@ -653,6 +654,9 @@ metadata, config, hooks, and project-alias commands; to `--noopen` on
 machine-mode `auth login`; and to `--editor`, `--full`, and `--scope` on
 machine-mode `config edit`. The latter commands return interaction metadata
 before those human-interface options can affect execution.
+Every `--yes` confirmation-bypass flag is effective only when runtime state
+requires confirmation; the detailed capability and input schema publish that
+condition explicitly.
 Effective `--profile` values are trimmed and then validated against the shared
 filesystem-safe `path_segment` grammar. `auth bind --auth` uses the same grammar
 without trimming. Root models that profile validation conditionally because
@@ -707,7 +711,11 @@ matching metadata publishes symbolic resolution as well: `current` and
 `latest` select the current publication, `previous` selects one publication
 before it, relative forms select the declared distance before current, live
 mode resolves Firebase history, cached mode resolves local snapshot numbers,
-and an omitted `versions diff` destination defaults to current. Version
+an omitted `versions diff` destination defaults to current, and `versions
+blame --at` defaults to current. Blame's parameter selector publishes exact,
+case-sensitive lookup across root and grouped parameters in every adjacent
+retained publication; no occurrence in the inspected retained history returns
+`parameter.not_found`. Version
 `--since` and `--until` values publish the exact Go
 `time.RFC3339` parser rule used at runtime instead of relying on the broader
 JSON Schema `date-time` format. Version `--before` is a canonical positive
@@ -854,7 +862,13 @@ Stateless `versions list` reads Firebase version history without consulting
 the current cache pointer or immutable snapshots. Its items therefore report
 `cached: false` and `current: false`; `cached` is rejected while the normal
 live pagination, time, and version-number filters remain available. Stateless
-`conditions list` fetches the latest Remote Config without cache or draft
+`versions blame` likewise reads the live retained-version index and fetches
+version metadata incrementally, requesting another page only when resolving
+`--at` or continuing the scan requires it. Each adjacent template is fetched
+directly. It writes no immutable snapshots, and its `--limit` bounds attributed
+changes rather than metadata pages or version reads.
+
+Stateless `conditions list` fetches the latest Remote Config without cache or draft
 overlay, then applies its name, search, and expression filters locally.
 `update` is rejected for conditions because stateless reads are already live.
 
@@ -1001,7 +1015,8 @@ physical project ID.
 All `apps` read commands expose mutually exclusive `cached` and `update`
 options in stateful mode. Their response DTOs report `source` as `firebase`,
 `cache`, or `cache-stale`, and include `cached_at` when a persisted cache record
-was read or written. Inventory and details refresh failures may return stale
+was read or written. Cache-backed sources require a non-null timestamp, while a
+stateless Firebase read may omit it. Inventory and details refresh failures may return stale
 data with a structured `cache.stale` warning. `apps.config` does not implicitly
 fall back to stale SDK configuration; `cached: true` is required. Stateless
 schemas constrain both options to false. A successful Firebase response whose
@@ -1011,6 +1026,10 @@ interaction conditions mark profile bootstrap, project-registry persistence,
 configured-auth token persistence, identity-provider access, and browser
 authorization for Google or imported OAuth identities as stateful-only. An
 explicitly requested `--to` write remains available in either mode.
+
+`apps.config` artifacts always carry a nonempty Firebase resource name as their
+target. Inline and destination representations retain the shared artifact
+encoding, byte-count, digest, and overwrite invariants.
 
 Direct mutation result DTOs expose selection and no-op provenance:
 

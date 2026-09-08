@@ -191,7 +191,6 @@ func applyCollectionSemantics(schema map[string]any, itemType reflect.Type) {
 		rules, _ := schema["x-fbrcm-invariants"].([]any)
 		schema["x-fbrcm-invariants"] = append(rules, rule)
 	}
-	appendInvariant(invariant("eq", "left", invariantField("count"), "right", invariant("length", "value", invariantField("items"))))
 	switch qualifiedName {
 	case "github.com/yumauri/fbrcm/cli/commands/auth.authListItem":
 		appendInvariant(invariant("implies", "if", invariant("gt", "left", invariant("length", "value", invariantField("items")), "right", invariantConst(0)), "then", invariant("eq", "left", countWhere("default", true), "right", invariantConst(1))))
@@ -334,14 +333,22 @@ func applyTypeSemantics(schema map[string]any, typeOf reflect.Type) {
 	case "github.com/yumauri/fbrcm/cli/commands/cache.cacheClearResult":
 		schema["allOf"] = []any{
 			fieldValueConstraint("status", "unchanged", map[string]any{
-				"snapshots_deleted": map[string]any{"const": 0},
-				"targets_affected":  map[string]any{"const": 0},
-				"bytes_deleted":     map[string]any{"const": 0},
+				"entries_deleted":  map[string]any{"const": 0},
+				"targets_affected": map[string]any{"const": 0},
+				"bytes_deleted":    map[string]any{"const": 0},
 			}),
 			fieldValueConstraint("status", "cleared", map[string]any{
-				"snapshots_deleted": map[string]any{"minimum": 1},
-				"targets_affected":  map[string]any{"minimum": 1},
+				"entries_deleted":  map[string]any{"minimum": 1},
+				"targets_affected": map[string]any{"minimum": 1},
+				"bytes_deleted":    map[string]any{"minimum": 1},
 			}),
+		}
+	case "github.com/yumauri/fbrcm/cli/commands/cache.cacheEntry":
+		schema["allOf"] = []any{
+			fieldValueShapeConstraint("kind", "remote-config", map[string]any{"version": map[string]any{"type": "string", "minLength": 1}}, []string{"version"}, []string{"resource"}),
+			fieldValueShapeConstraint("kind", "apps-index", nil, nil, []string{"resource", "version"}),
+			fieldValueShapeConstraint("kind", "app-details", map[string]any{"resource": map[string]any{"type": "string", "minLength": 1}}, []string{"resource"}, []string{"version"}),
+			fieldValueShapeConstraint("kind", "app-config", map[string]any{"resource": map[string]any{"type": "string", "minLength": 1}}, []string{"resource"}, []string{"version"}),
 		}
 	case "github.com/yumauri/fbrcm/cli/commands/config.configValidationResult":
 		for name, severity := range map[string]string{"errors": "error", "warnings": "warning"} {
@@ -645,6 +652,23 @@ func applyCommandResponseSemantics(commandID string, typeOf reflect.Type, schema
 		properties["operation"] = map[string]any{"const": "restore"}
 	case "versions.rollback":
 		properties["operation"] = map[string]any{"const": "rollback"}
+	case "versions.blame":
+		applyVersionBlameResponseSemantics(schema)
+	case "apps.list":
+		if items, ok := properties["items"].(map[string]any); ok {
+			if item, ok := items["items"].(map[string]any); ok {
+				applyAppCacheResponseSemantics(item)
+			}
+		}
+	case "apps.show":
+		applyAppCacheResponseSemantics(schema)
+	case "apps.config":
+		applyAppCacheResponseSemantics(schema)
+		if artifact, ok := properties["artifact"].(map[string]any); ok {
+			if artifactProperties, ok := artifact["properties"].(map[string]any); ok {
+				artifactProperties["target"] = map[string]any{"type": "string", "minLength": 1}
+			}
+		}
 	case "experiments.delete":
 		properties["kind"] = map[string]any{"const": "experiment"}
 	case "rollouts.delete":
@@ -659,6 +683,57 @@ func applyCommandResponseSemantics(commandID string, typeOf reflect.Type, schema
 	case "auth.quota-project.unset", "project.quota-project.unset":
 		properties["status"] = map[string]any{"enum": []string{"unset", "unchanged"}}
 	}
+}
+
+func applyAppCacheResponseSemantics(schema map[string]any) {
+	schema["allOf"] = appendSchemaConstraints(schema["allOf"], map[string]any{
+		"if": map[string]any{
+			"properties": map[string]any{"source": map[string]any{"enum": []string{"cache", "cache-stale"}}},
+			"required":   []string{"source"},
+		},
+		"then": map[string]any{
+			"properties": map[string]any{"cached_at": map[string]any{"type": "string", "format": "date-time"}},
+			"required":   []string{"cached_at"},
+		},
+	})
+}
+
+func applyVersionBlameResponseSemantics(schema map[string]any) {
+	properties := schema["properties"].(map[string]any)
+	properties["parameter"] = map[string]any{"type": "string", "pattern": `.*\S.*`, "maxLength": 256}
+	properties["at_version"] = map[string]any{"type": "string", "minLength": 1}
+	properties["scanned_version_count"] = map[string]any{"type": "integer", "minimum": 1}
+
+	changes := properties["changes"].(map[string]any)
+	changes["type"] = "array"
+	changeItem := changes["items"].(map[string]any)
+	changeProperties := changeItem["properties"].(map[string]any)
+	change := changeProperties["change"].(map[string]any)
+	change["properties"].(map[string]any)["kind"] = map[string]any{"type": "string", "enum": []string{"added", "removed", "changed"}}
+
+	boundary := properties["boundary"].(map[string]any)
+	boundaryProperties := boundary["properties"].(map[string]any)
+	boundaryProperties["version"] = map[string]any{"type": "string", "minLength": 1}
+	boundary["allOf"] = []any{
+		fieldValueConstraint("state", "present", map[string]any{"group": map[string]any{"type": "string"}}),
+		fieldValueConstraint("state", "absent", map[string]any{"group": map[string]any{"type": "null"}}),
+	}
+
+	schema["allOf"] = appendSchemaConstraints(schema["allOf"],
+		map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"history_exhausted": map[string]any{"const": true}}, "required": []string{"history_exhausted"}},
+			"then": map[string]any{"properties": map[string]any{"boundary": map[string]any{"type": "object"}}},
+		},
+		map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"history_exhausted": map[string]any{"const": false}}, "required": []string{"history_exhausted"}},
+			"then": map[string]any{"properties": map[string]any{"boundary": map[string]any{"type": "null"}}},
+		},
+	)
+}
+
+func appendSchemaConstraints(existing any, constraints ...any) []any {
+	result, _ := existing.([]any)
+	return append(result, constraints...)
 }
 
 func applyAuthTypeSemantics(schema map[string]any) {
@@ -1118,7 +1193,7 @@ func semanticStringEnum(typeOf reflect.Type) []string {
 }
 
 func applyFieldSemantics(schema map[string]any, field reflect.StructField, name string) {
-	if schema["type"] == "integer" && (name == "count" || strings.HasSuffix(name, "_count") || slices.Contains([]string{"added", "bound", "bytes_deleted", "changed", "index", "removed", "selected", "size", "skipped", "snapshots_deleted", "targets_affected", "unchanged"}, name)) {
+	if schema["type"] == "integer" && (name == "count" || strings.HasSuffix(name, "_count") || slices.Contains([]string{"added", "bound", "bytes_deleted", "changed", "entries_deleted", "index", "removed", "selected", "size", "skipped", "snapshots_deleted", "targets_affected", "unchanged"}, name)) {
 		schema["minimum"] = 0
 	}
 	if name == "validation_source" {

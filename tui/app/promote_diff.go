@@ -16,10 +16,14 @@ func (m *Model) openPromotionDiff(item rcpromote.Item) {
 }
 
 func (m *Model) openDictionaryDiff(input dictdiff.Input, project core.Project) {
+	m.openDictionaryDiffWithContext(input, project, "Diff", "")
+}
+
+func (m *Model) openDictionaryDiffWithContext(input dictdiff.Input, project core.Project, title, attribution string) {
 	result, err := dictdiff.Compare(input)
 	if err != nil {
 		m.openErrorDialog("Diff Unavailable", project, err.Error())
 		return
 	}
-	m.diffView = m.diffView.Open(m.width, m.height, result)
+	m.diffView = m.diffView.OpenWithContext(m.width, m.height, result, title, attribution)
 }

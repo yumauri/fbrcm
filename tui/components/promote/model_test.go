@@ -1032,7 +1032,7 @@ func TestPromotePreparesSelectedEntityForGenericDiff(t *testing.T) {
 	if !ok {
 		t.Fatal("parameter change was not prepared for generic diff")
 	}
-	if input.EntityName != "Property: ANDROID / payload" ||
+	if input.EntityName != "Parameter: ANDROID / payload" ||
 		input.Left.Name != "Current target: Production (prod)" ||
 		input.Right.Name != "Promotion source: Development (dev)" {
 		t.Fatalf("generic diff identity = %q, %q -> %q", input.EntityName, input.Left.Name, input.Right.Name)
@@ -1095,7 +1095,7 @@ func TestPromoteDiffEntityNamesIncludeKinds(t *testing.T) {
 		}
 	}
 	want := map[rcdiff.ItemKind]string{
-		rcdiff.ItemParameter:        "Property: WEB / sc_public_term_of_use_url",
+		rcdiff.ItemParameter:        "Parameter: WEB / sc_public_term_of_use_url",
 		rcdiff.ItemGroupDescription: "Group: NPAW_PARAMETERS_ANDROID",
 		rcdiff.ItemCondition:        "Condition: For Store",
 	}

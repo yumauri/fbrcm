@@ -9,13 +9,15 @@ import (
 )
 
 type Model struct {
-	result    dictdiff.Result
-	open      bool
-	screenW   int
-	screenH   int
-	cursor    int
-	offset    int
-	collapsed map[string]bool
+	result      dictdiff.Result
+	title       string
+	open        bool
+	screenW     int
+	screenH     int
+	cursor      int
+	offset      int
+	collapsed   map[string]bool
+	attribution string
 }
 
 func New() Model {
@@ -23,13 +25,28 @@ func New() Model {
 }
 
 func (m Model) Open(screenW, screenH int, result dictdiff.Result) Model {
+	return m.openWithContext(screenW, screenH, result, "Diff", "")
+}
+
+// OpenWithContext opens a diff with a contextual title and optional
+// publication attribution below the entity heading.
+func (m Model) OpenWithContext(screenW, screenH int, result dictdiff.Result, title, attribution string) Model {
+	return m.openWithContext(screenW, screenH, result, title, attribution)
+}
+
+func (m Model) openWithContext(screenW, screenH int, result dictdiff.Result, title, attribution string) Model {
 	m.result = result
+	m.title = title
+	if m.title == "" {
+		m.title = "Diff"
+	}
 	m.open = true
 	m.screenW = screenW
 	m.screenH = screenH
 	m.cursor = 0
 	m.offset = 0
 	m.collapsed = make(map[string]bool)
+	m.attribution = attribution
 	m.ensureSelectedVisible()
 	return m
 }
@@ -71,7 +88,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		if msg.Mouse().X <= x || msg.Mouse().X >= x+lipgloss.Width(view)-1 {
 			return m, nil
 		}
-		bodyRow := msg.Mouse().Y - y - 4
+		bodyRow := msg.Mouse().Y - y - m.bodyStartRow()
 		rows := m.bodyRows(m.contentWidth())
 		index := m.offset + bodyRow
 		if bodyRow >= 0 && bodyRow < m.bodyHeight() && index >= 0 && index < len(rows) {

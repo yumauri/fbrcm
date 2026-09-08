@@ -608,8 +608,11 @@ func warningObjectSchema() map[string]any {
 		return map[string]any{"type": "object", "additionalProperties": false, "required": required, "properties": properties}
 	}
 	detailsByCode := map[string]map[string]any{
-		"cache.stale":                          object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
-		"cache.write_failed":                   object([]string{"error"}, map[string]any{"error": map[string]any{"type": "string", "minLength": 1}}),
+		"cache.stale": object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
+		"cache.write_failed": object([]string{"error"}, map[string]any{"error": map[string]any{
+			"type": "string", "minLength": 1, "maxLength": 4097,
+			"x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated",
+		}}),
 		"publication.non_atomic":               object([]string{"target_count"}, map[string]any{"target_count": map[string]any{"type": "integer", "minimum": 2}}),
 		"publication.cache_stale":              object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cache"}}),
 		"publication.draft_cleanup_failed":     object([]string{"stage"}, map[string]any{"stage": map[string]any{"const": "cleanup"}}),
@@ -1368,6 +1371,11 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 }
 
 func applyFlagSemantics(schema map[string]any, commandID, name string) {
+	if commandID == "versions.blame" && name == "at" {
+		delete(schema, "type")
+		delete(schema, "pattern")
+		schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/version_selector"}}
+	}
 	if name == "plan-out" {
 		addNormalization(schema, "trim_unicode_whitespace")
 		schema["not"] = map[string]any{"const": "-"}
@@ -1769,6 +1777,10 @@ func argumentSchema(commandID, name string) map[string]any {
 	}
 	if name == "parameter" && slices.Contains([]string{"delete", "get", "update"}, commandID) {
 		addMatchingRule(schema, map[string]any{"operator": "parameter_argument_resolution"})
+	}
+	if commandID == "versions.blame" && name == "parameter" {
+		schema["maxLength"] = 256
+		addMatchingRule(schema, map[string]any{"operator": "parameter_history_resolution"})
 	}
 	if commandID == "duplicate" && name == "source" {
 		addMatchingRule(schema, map[string]any{"operator": "duplicate_source_resolution"})
@@ -2260,12 +2272,13 @@ func extensionLanguageMetadata() map[string]any {
 				"command_path_resolution":         operation([]string{"candidate_source", "comparison", "omitted_result", "reserved_root_token", "unknown_result", "non_executable_result"}, "selection", "Resolve the supplied argv path components exactly and case-sensitively against the declared executable command inventory. Omission returns the capability index, the reserved single root token returns the executable root operation, unknown paths return the declared not-found problem, and navigational command groups return the declared non-executable problem."),
 				"help_path_resolution":            operation(nil, "selection", "Resolve the longest exact, case-sensitive existing command prefix, including navigational groups, and render its help. Ignore unmatched suffix components. With no existing first component or no components, render root help; this selector does not return not-found or ambiguity problems."),
 				"parameter_argument_resolution":   operation(nil, "selection", "Compare the untrimmed positional parameter selector exactly and case-sensitively against canonical parameter keys across root and groups. It conflicts with options.filter and composes with the other selector sources declared by selection_composition; zero matches produce the command's documented empty or no-op result."),
+				"parameter_history_resolution":    operation(nil, "selection", "Compare the untrimmed positional parameter selector exactly and case-sensitively against canonical parameter keys across root and groups in every adjacent retained publication. Return parameter.not_found when the parameter never occurs in the inspected retained history."),
 				"personalization_id_resolution":   operation(nil, "selection", "Compare the untrimmed positional personalization ID exactly and case-sensitively against canonical IDs and return personalization.not_found on zero matches."),
 				"profile_name_resolution":         operation(nil, "selection", "Compare the positional existing-profile name exactly and case-sensitively against canonical profile directory names. No match returns profile.not_found; profile names are unique."),
 				"theme_name_resolution":           operation(nil, "selection", "Accept the reserved built-in selector or compare the positional installed-theme name exactly and case-sensitively against regular .toml files in the themes directory. No match returns theme.not_found; theme names are unique."),
 				"project_alias_resolution":        operation(nil, "selection", "Compare the positional existing project-alias name exactly and case-sensitively against canonical repository alias keys. No match is a successful unchanged result because alias removal is idempotent; alias keys are unique."),
 				"schema_id_resolution":            operation(nil, "selection", "Look up the complete schema ID by exact case-sensitive equality in the embedded schema registry and return schema.not_found on zero matches; multiple matches are impossible because schema IDs are unique."),
-				"version_resolution":              operation(nil, "selection", "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, and versions.diff defaults an omitted to argument to current."),
+				"version_resolution":              operation(nil, "selection", "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, versions.diff defaults an omitted to argument to current, and versions.blame defaults --at to current."),
 				"selection_composition":           operation([]string{"sources", "repeated_source_combination", "across_source_combination", "absent_source_behavior", "target_defaults"}, "selection", "Combine values within every repeated selector source as declared, combine distinct present selector sources as declared, let absent sources match all candidates, and apply each declared target default when its source and optional absent_argument are absent."),
 				"case_insensitive_substring":      operation([]string{"fields", "query_normalization", "haystack_normalization", "separator"}, "boolean", "Join the declared fields with separator, normalize the query and haystack as declared, and test whether the haystack contains the query."),
 				"parameter_search":                operation([]string{"normalized_fields", "raw_fields", "normalized_query", "raw_query", "match", "combination"}, "boolean", "Build both query variants. The normalized variant lowercases letters and digits, replaces every other rune with a space, and collapses Unicode whitespace; the raw variant only collapses Unicode whitespace. Match each against the corresponding joined fields and combine the results as declared."),

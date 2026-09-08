@@ -81,7 +81,7 @@ selected groups, write permission, and execution mode.
 
 | Group | MCP tool names |
 | --- | --- |
-| `inspect` | `parameters.get`; `apps.list`, `apps.show`, `apps.config`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
+| `inspect` | `parameters.get`; `apps.list`, `apps.show`, `apps.config`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`, `versions.blame`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
 | `edit` | `parameters.add`, `parameters.update`, `parameters.delete`, `parameters.duplicate`; `groups.add`, `groups.edit`, `groups.rename`, `groups.delete`; `conditions.add`, `conditions.edit`, `conditions.rename`, `conditions.move`, `conditions.delete` |
 | `drafts` | `draft.list`, `draft.show`, `draft.diff`, `draft.change-note`, `draft.discard` |
 | `plans` | `plan.show`, `plan.validate` |
@@ -101,6 +101,13 @@ case-sensitive project ID, repository alias, or display name. If those tiers
 miss, it accepts the shared `~`, `^`, `/`, and `=` filter prefixes over project
 IDs and display names, with fuzzy matching by default, and requires exactly one
 result. Stateless project arguments remain literal IDs.
+
+`versions.blame` returns the newest-first direct change history for one exact
+parameter key. Its `at`, `limit`, and `all` options match the CLI command;
+`all` and `limit` are mutually exclusive. The tool loads retained Firebase
+version pages incrementally and returns each adjacent version transition,
+publication metadata, and typed parameter diff in the standard machine
+envelope.
 
 ## Tool input and results
 

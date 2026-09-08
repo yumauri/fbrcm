@@ -28,6 +28,26 @@ Omit the second version to compare a historical version with the current
 effective state. Parameter, group, condition, expression, and search filters
 can narrow the diff.
 
+## Trace one parameter
+
+```sh
+fbrcm versions blame example-project-id checkout_enabled
+fbrcm versions blame example-project-id checkout_enabled --all
+```
+
+Blame walks adjacent retained Firebase publications and prints only the ones
+that directly changed the exact parameter. Each vertical-log entry identifies
+the older and newer version, author, time, change note, and a side-by-side
+parameter diff. The default stops after the latest change; use `--limit` for a
+larger change count, `--all` for the complete retained history, or `--at` to
+start at a particular version.
+
+Unchanged publications are still inspected, so `--limit` does not cap Firebase
+requests. Version metadata is paginated lazily, however, so fbrcm requests the
+next page only when the scan needs to continue. When the parameter predates the
+oldest retained version, fbrcm marks that history boundary instead of claiming
+the oldest template created it.
+
 ## Export a version
 
 ```sh

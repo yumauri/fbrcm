@@ -17,6 +17,25 @@ func TestFormatLocalDateTime(t *testing.T) {
 	}
 }
 
+func TestFormatRemoteConfigVersionAttribution(t *testing.T) {
+	timestamp := time.Date(2026, time.September, 3, 15, 34, 58, 0, time.Local)
+	version := firebase.RemoteConfigVersion{
+		UpdateTime: timestamp.Format(time.RFC3339),
+		UpdateUser: firebase.RemoteConfigUser{Name: " Alex Stankevic ", Email: " alexs@setplex.com "},
+	}
+	if got, want := FormatRemoteConfigVersionAttribution(version),
+		"Alex Stankevic <alexs@setplex.com> on 2026-09-03 15:34:58"; got != want {
+		t.Fatalf("FormatRemoteConfigVersionAttribution() = %q, want %q", got, want)
+	}
+
+	if got := FormatRemoteConfigVersionAttribution(firebase.RemoteConfigVersion{}); got != "Unknown author" {
+		t.Fatalf("empty attribution = %q, want Unknown author", got)
+	}
+	if got := FormatRemoteConfigVersionTime("not-a-time"); got != "not-a-time" {
+		t.Fatalf("invalid version time = %q, want preserved value", got)
+	}
+}
+
 func TestFormatRelativeTime(t *testing.T) {
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	tests := map[string]struct {

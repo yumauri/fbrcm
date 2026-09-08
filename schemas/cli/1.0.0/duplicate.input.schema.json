@@ -355,8 +355,20 @@
           ]
         },
         "yes": {
-          "description": "Print diff and duplicate without confirmation",
-          "type": "boolean"
+          "description": "Print diff and duplicate without confirmation; applied when the operation requires confirmation",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "runtime_state",
+                  "name": "confirmation",
+                  "operator": "required",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],

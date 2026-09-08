@@ -423,7 +423,7 @@ func (m Model) parametersHelpActionAvailability(action tuiconfig.Action) (bool, 
 		if !mutableParamOK {
 			return false, "Firebase-managed parameters cannot be duplicated"
 		}
-	case tuiconfig.ActionOpenDetails, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
+	case tuiconfig.ActionOpenDetails, tuiconfig.ActionBlame, tuiconfig.ActionCopyName, tuiconfig.ActionCopyPath:
 		if !paramOK {
 			return false, "select a parameter"
 		}

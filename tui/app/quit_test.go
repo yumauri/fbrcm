@@ -6,6 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/yumauri/fbrcm/core/dictdiff"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
@@ -27,6 +28,33 @@ func TestQuitPromptsOnlyForDirtyDetails(t *testing.T) {
 	dirty, cmd, handled = dirty.updateKeyMessage(tea.KeyPressMsg(tea.Key{Code: 'q', Text: "q"}))
 	if !handled || cmd != nil || !dirty.dialog.IsOpen() {
 		t.Fatalf("dirty quit = handled:%v cmd:%v dialog:%v; want confirmation", handled, cmd != nil, dirty.dialog.IsOpen())
+	}
+}
+
+func TestQuitWorksWhileDiffPopupIsOpen(t *testing.T) {
+	m := New(nil)
+	m.diffView = m.diffView.Open(80, 24, dictdiff.Result{})
+	next, cmd, handled := m.updateOpenModal(tea.KeyPressMsg(tea.Key{Code: 'q', Text: "q"}))
+	if !handled || cmd == nil || next.diffView.IsOpen() {
+		t.Fatalf("diff quit = handled:%v cmd:%v open:%v", handled, cmd != nil, next.diffView.IsOpen())
+	}
+	message := cmd()
+	if _, ok := message.(tea.QuitMsg); !ok {
+		t.Fatalf("diff q command returned %T, want tea.QuitMsg", message)
+	}
+}
+
+func TestQuitFromDiffPreservesDirtyDetailsGuard(t *testing.T) {
+	m := conditionalValueDetailsTestModel()
+	m.details, _ = m.details.ActivateName()
+	m.details, _ = m.details.Update(tea.KeyPressMsg(tea.Key{Code: 'x', Text: "x"}))
+	m.details = m.details.DeactivateField()
+	m.diffView = m.diffView.Open(80, 24, dictdiff.Result{})
+
+	next, cmd, handled := m.updateOpenModal(tea.KeyPressMsg(tea.Key{Code: 'q', Text: "q"}))
+	if !handled || cmd != nil || next.diffView.IsOpen() || !next.dialog.IsOpen() {
+		t.Fatalf("dirty diff quit = handled:%v cmd:%v diff:%v dialog:%v",
+			handled, cmd != nil, next.diffView.IsOpen(), next.dialog.IsOpen())
 	}
 }
 

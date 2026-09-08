@@ -4,6 +4,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/tui/components/projectio"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
@@ -14,6 +15,10 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 		return m.updateWorkspaceMenu(msg)
 	}
 	if m.diffView.IsOpen() {
+		if key, ok := msg.(tea.KeyMsg); ok && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionQuit, key.String()) {
+			m.diffView = m.diffView.Close()
+			return m, m.requestQuit(), true
+		}
 		if size, ok := msg.(tea.WindowSizeMsg); ok {
 			m.updateWindowSize(size)
 			m.diffView = m.diffView.SetSize(size.Width, size.Height)

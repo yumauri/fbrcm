@@ -28,7 +28,8 @@ The workspace has four main areas:
 - **Parameters**, **Conditions**, **History**, **A/B Tests**,
   **Personalizations**, and **Rollouts** are tabs over the main data panel.
 - **Details** opens the selected parameter, group, condition, value, or managed
-  feature.
+  feature. Its panel title becomes **Parameter**, **Group**, or **Condition**
+  for those Remote Config entities.
 - **Logs** shows live application activity and errors.
 
 Promotion temporarily replaces the normal data tabs with a dedicated
@@ -303,6 +304,7 @@ surrounding chrome.
 | `a` | Add a parameter |
 | `A` | Add an empty parameter group |
 | `c` | Duplicate a parameter |
+| `b` | Show the latest retained change for the selected parameter |
 | `e` | Edit the selected value |
 | `E` | Edit the selected text or JSON value in an external editor |
 | `r` | Rename the selected parameter or group |
@@ -312,6 +314,14 @@ surrounding chrome.
 | `p` / `P` | Publish the current draft / all drafts |
 | `d` / `D` | Discard the current draft / all drafts |
 | `y` / `Y` | Copy the selected name / full path |
+
+Pressing `b` on a parameter or one of its expanded values scans retained
+Firebase history until it finds that parameter's newest direct change. The
+side-by-side diff includes the publishing user and local publication time below
+the parameter heading. This popup is titled **Blame**; ordinary History diffs
+remain titled **Diff** and omit attribution because
+their selected versions do not necessarily represent one publication. In the
+diff popup, `Esc` closes the popup and `q` quits fbrcm.
 
 Group deletion is explicit and removes the group with all of its parameters.
 Parameter mutations, imports, draft merges, and promotions otherwise preserve
@@ -494,7 +504,7 @@ pair is the previous and current version.
 
 | Default key | Action |
 | --- | --- |
-| `Enter` | Open the selected property's diff |
+| `Enter` | Open the selected parameter's diff |
 | `c` | Show only changes |
 | `,` / `.` | Move both sides to an older / newer pair |
 | `v` | Open the version picker |

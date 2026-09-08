@@ -1224,6 +1224,7 @@
                 "group_name_resolution",
                 "help_path_resolution",
                 "parameter_argument_resolution",
+                "parameter_history_resolution",
                 "personalization_id_resolution",
                 "profile_name_resolution",
                 "theme_name_resolution",
@@ -2591,6 +2592,11 @@
           "result": "selection",
           "semantics": "Compare the untrimmed positional parameter selector exactly and case-sensitively against canonical parameter keys across root and groups. It conflicts with options.filter and composes with the other selector sources declared by selection_composition; zero matches produce the command's documented empty or no-op result."
         },
+        "parameter_history_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Compare the untrimmed positional parameter selector exactly and case-sensitively against canonical parameter keys across root and groups in every adjacent retained publication. Return parameter.not_found when the parameter never occurs in the inspected retained history."
+        },
         "parameter_search": {
           "operands": [
             "normalized_fields",
@@ -2663,7 +2669,7 @@
         "version_resolution": {
           "operands": null,
           "result": "selection",
-          "semantics": "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, and versions.diff defaults an omitted to argument to current."
+          "semantics": "Resolve the untrimmed selector exactly and case-sensitively: a positive number directly; current and latest as the current publication; previous as one publication before current; current~N and latest~N as N publications before current. Live mode uses Firebase history, cached mode uses local snapshot numbers, unavailable results return version.not_found, versions.diff defaults an omitted to argument to current, and versions.blame defaults --at to current."
         }
       },
       "schema": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/matching_rules",

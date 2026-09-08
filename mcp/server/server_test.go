@@ -64,7 +64,7 @@ func TestCatalogPoliciesAndInputValidation(t *testing.T) {
 	for _, tool := range listed.Tools {
 		names[tool.Name] = true
 	}
-	if !names["parameters.get"] || names["parameters.update"] || names["draft.show"] || names["auth.login"] || names["config.set"] {
+	if !names["parameters.get"] || !names["versions.blame"] || names["parameters.update"] || names["draft.show"] || names["auth.login"] || names["config.set"] {
 		t.Fatalf("unexpected catalog: %v", names)
 	}
 	for _, input := range []string{
@@ -133,6 +133,9 @@ func TestOptionalWrappersNormalizeBeforeExecution(t *testing.T) {
 		{"conditions.list", `{"options":{"project":["=demo","^prod"]}}`, true},
 		{"conditions.list", `{"arguments":{"project":"demo"},"options":{"project":["=demo"]}}`, false},
 		{"conditions.list", `{"arguments":{"project":"^fuzzy"}}`, false},
+		{"versions.blame", `{"arguments":{"project":"demo","parameter":"feature"}}`, true},
+		{"versions.blame", `{"arguments":{"project":"demo","parameter":"feature"},"options":{"at":"current","limit":2}}`, true},
+		{"versions.blame", `{"arguments":{"project":"demo","parameter":"feature"},"options":{"all":true,"limit":2}}`, false},
 		{"parameters.add", `{"options":{"type":"string","value":"hello"}}`, false},
 		{"parameters.add", `{"arguments":{"parameter":"feature"}}`, false},
 		{"parameters.add", `{"arguments":{"parameter":"feature"},"options":{"value":"hello"}}`, false},

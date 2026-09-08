@@ -52,31 +52,7 @@ func renderVersionSideBySide(
 		if change.Kind == rcdiff.ChangeUnchanged {
 			continue
 		}
-		leftGroup := change.Group
-		leftKey := change.Key
-		if change.PreviousKey != "" {
-			leftGroup = change.PreviousGroup
-			leftKey = change.PreviousKey
-		}
-		displayGroup := change.Group
-		if change.Final == nil {
-			displayGroup = leftGroup
-		}
-		leftProperties := rcdiffinput.Parameter(leftGroup, change.Current)
-		rightProperties := rcdiffinput.Parameter(change.Group, change.Final)
-		if leftKey != change.Key {
-			leftProperties["name"] = dictdiff.Enum(leftKey)
-			rightProperties["name"] = dictdiff.Enum(change.Key)
-		}
-		inputs = append(inputs, dictdiff.Input{
-			EntityName: rcdiffinput.ParameterEntityName(displayGroup, change.Key),
-			Left: dictdiff.NamedDictionary{
-				Properties: leftProperties,
-			},
-			Right: dictdiff.NamedDictionary{
-				Properties: rightProperties,
-			},
-		})
+		inputs = append(inputs, rcdiffinput.ParameterChange(change, "", ""))
 	}
 
 	results := make([]dictdiff.Result, 0, len(inputs))

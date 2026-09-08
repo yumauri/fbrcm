@@ -1,0 +1,74 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:response",
+  "contract_version": "1.0.0",
+  "command": "versions.blame",
+  "requested_command": "versions.blame",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": null,
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project": {
+      "name": "northstar-wallet",
+      "project_id": "northstar-wallet",
+      "auth_id": "",
+      "templates": [
+        "client"
+      ],
+      "primary_template": "client"
+    },
+    "parameter": "blame_flag",
+    "at_version": "12",
+    "at_group": "",
+    "scanned_version_count": 2,
+    "history_exhausted": true,
+    "boundary": {
+      "version": "11",
+      "state": "present",
+      "group": ""
+    },
+    "changes": [
+      {
+        "previous_version": "11",
+        "version": "12",
+        "update_time": "2026-08-01T10:16:40Z",
+        "update_user": {
+          "name": "Yumaa Verdin",
+          "email": "yumaa.verdin@gmail.com"
+        },
+        "change_note": "Enable blame flag",
+        "update_origin": "REST_API",
+        "update_type": "INCREMENTAL_UPDATE",
+        "rollback_source": null,
+        "change": {
+          "key": "blame_flag",
+          "kind": "changed",
+          "current": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Flag used by blame E2E coverage",
+            "valueType": "BOOLEAN"
+          },
+          "final": {
+            "defaultValue": {
+              "value": "true"
+            },
+            "description": "Flag used by blame E2E coverage",
+            "valueType": "BOOLEAN"
+          }
+        }
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

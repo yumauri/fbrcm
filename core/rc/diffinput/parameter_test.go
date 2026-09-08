@@ -5,6 +5,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/dictdiff"
 	"github.com/yumauri/fbrcm/core/firebase"
+	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
 )
 
 func TestParameterPreservesRemoteConfigComparisonSemantics(t *testing.T) {
@@ -54,10 +55,28 @@ func TestValuePreservesUnknownValueOptionForComparison(t *testing.T) {
 }
 
 func TestParameterEntityNameUsesGroupKeyWithoutDescription(t *testing.T) {
-	if got := ParameterEntityName("WEB", "banner"); got != "Property: WEB / banner" {
+	if got := ParameterEntityName("WEB", "banner"); got != "Parameter: WEB / banner" {
 		t.Fatalf("ParameterEntityName() = %q", got)
 	}
-	if got := ParameterEntityName("", "ungrouped"); got != "Property: ungrouped" {
+	if got := ParameterEntityName("", "ungrouped"); got != "Parameter: ungrouped" {
 		t.Fatalf("ParameterEntityName() = %q", got)
+	}
+}
+
+func TestParameterChangePreservesMovedParameterIdentity(t *testing.T) {
+	before := &firebase.RemoteConfigParam{ValueType: "STRING", DefaultValue: &firebase.RemoteConfigValue{Value: "old"}}
+	after := &firebase.RemoteConfigParam{ValueType: "STRING", DefaultValue: &firebase.RemoteConfigValue{Value: "new"}}
+	input := ParameterChange(rcdiff.ParameterChange{
+		Key: "new_name", Group: "NEW", PreviousKey: "old_name", PreviousGroup: "OLD",
+		Kind: rcdiff.ChangeChanged, Current: before, Final: after,
+	}, "Earlier version: v1", "Later version: v2")
+
+	if input.EntityName != "Parameter: NEW / new_name" ||
+		input.Left.Name != "Earlier version: v1" || input.Right.Name != "Later version: v2" {
+		t.Fatalf("parameter change identity = %#v", input)
+	}
+	if input.Left.Properties["group"].Raw != "OLD" || input.Right.Properties["group"].Raw != "NEW" ||
+		input.Left.Properties["name"].Raw != "old_name" || input.Right.Properties["name"].Raw != "new_name" {
+		t.Fatalf("parameter move properties = left:%#v right:%#v", input.Left.Properties, input.Right.Properties)
 	}
 }

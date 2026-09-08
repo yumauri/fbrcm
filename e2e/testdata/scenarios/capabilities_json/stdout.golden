@@ -17,7 +17,7 @@
   },
   "data": {
     "contract_version": "1.0.0",
-    "count": 116,
+    "count": 117,
     "commands": [
       {
         "id": "add",
@@ -2217,6 +2217,26 @@
           "plan": true,
           "confirmation_bypass": true,
           "stdin": true,
+          "stateless": true
+        }
+      },
+      {
+        "id": "versions.blame",
+        "path": [
+          "versions",
+          "blame"
+        ],
+        "summary": "Show who changed one Remote Config parameter",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:response",
+        "side_effect_level": 2,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
           "stateless": true
         }
       },

@@ -1,0 +1,75 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/remoteConfig:listVersions"}],
+          "query": {
+            "pageSize": [{"matcher": "exact", "value": "100"}]
+          },
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"versions\":[{\"versionNumber\":\"12\",\"updateTime\":\"2026-08-01T10:16:40Z\",\"updateUser\":{\"name\":\"Yumaa Verdin\",\"email\":\"yumaa.verdin@gmail.com\"},\"description\":\"Enable blame flag\",\"updateOrigin\":\"REST_API\",\"updateType\":\"INCREMENTAL_UPDATE\"},{\"versionNumber\":\"11\",\"updateTime\":\"2026-07-30T18:10:01Z\",\"updateUser\":{\"name\":\"Yumaa Verdin\",\"email\":\"yumaa.verdin@gmail.com\"},\"updateOrigin\":\"REST_API\",\"updateType\":\"INCREMENTAL_UPDATE\"}]}",
+          "headers": {"Content-Type": ["application/json"]},
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/remoteConfig"}],
+          "query": {
+            "versionNumber": [{"matcher": "exact", "value": "12"}]
+          },
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"version\":{\"versionNumber\":\"12\"},\"parameters\":{\"blame_flag\":{\"defaultValue\":{\"value\":\"true\"},\"description\":\"Flag used by blame E2E coverage\",\"valueType\":\"BOOLEAN\"}}}",
+          "headers": {
+            "Content-Type": ["application/json"],
+            "Etag": ["etag-northstar-wallet-12"]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [{"matcher": "exact", "value": ""}],
+          "destination": [{"matcher": "exact", "value": "firebaseremoteconfig.googleapis.com"}],
+          "method": [{"matcher": "exact", "value": "GET"}],
+          "path": [{"matcher": "exact", "value": "/v1/projects/northstar-wallet/remoteConfig"}],
+          "query": {
+            "versionNumber": [{"matcher": "exact", "value": "11"}]
+          },
+          "scheme": [{"matcher": "exact", "value": "https"}]
+        },
+        "response": {
+          "body": "{\"version\":{\"versionNumber\":\"11\"},\"parameters\":{\"blame_flag\":{\"defaultValue\":{\"value\":\"false\"},\"description\":\"Flag used by blame E2E coverage\",\"valueType\":\"BOOLEAN\"}}}",
+          "headers": {
+            "Content-Type": ["application/json"],
+            "Etag": ["etag-northstar-wallet-11"]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

@@ -32,6 +32,9 @@ func TestResponseDataSchemaDescribesCollectionDTO(t *testing.T) {
 	if collection["additionalProperties"] != false {
 		t.Fatalf("collection schema is not strict: %#v", collection)
 	}
+	if invariants, _ := collection["x-fbrcm-invariants"].([]any); len(invariants) != 1 {
+		t.Fatalf("collection count invariants = %#v, want one", invariants)
+	}
 	properties := collection["properties"].(map[string]any)
 	items := properties["items"].(map[string]any)["items"].(map[string]any)
 	if items["additionalProperties"] != false {

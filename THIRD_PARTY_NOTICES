@@ -2222,7 +2222,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ======================================================================
 Component: golang.org/x/oauth2
-Version: v0.36.0
+Version: v0.37.0
 License: BSD-3-Clause
 Source: golang.org/x/oauth2
 
@@ -2259,7 +2259,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ======================================================================
 Component: golang.org/x/sync
-Version: v0.22.0
+Version: v0.23.0
 License: BSD-3-Clause
 Source: golang.org/x/sync
 
@@ -2321,7 +2321,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/sys
-Version: v0.47.0
+Version: v0.48.0
 License: BSD-3-Clause
 Source: golang.org/x/sys
 
@@ -2507,7 +2507,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/time
-Version: v0.15.0
+Version: v0.16.0
 License: BSD-3-Clause
 Source: golang.org/x/time
 

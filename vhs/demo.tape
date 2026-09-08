@@ -102,5 +102,5 @@ Type "a"
 Wait+Screen@10s /4 selected/
 Sleep 900 ms
 Enter
-Wait+Screen@10s /Property: app_shell/
+Wait+Screen@10s /Parameter: app_shell/
 Sleep 2500 ms

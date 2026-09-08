@@ -1,7 +1,8 @@
 # Editing and drafts in the TUI
 
-The Details panel shows the selected item and contains its edit form. Select a
-parameter, group, condition, or value and press `Enter` to open it.
+The Details panel shows the selected item and contains its edit form. Its title
+changes to **Parameter**, **Group**, or **Condition** for those entity types.
+Select a parameter, group, condition, or value and press `Enter` to open it.
 
 ## Parameters and groups
 
@@ -15,12 +16,19 @@ Empty and description-only groups remain visible.
 | `a` | Add a parameter |
 | `A` | Add an empty group |
 | `c` | Duplicate a parameter |
+| `b` | Show the latest retained change for the selected parameter |
 | `e` | Edit the selected value |
 | `E` | Edit text or JSON externally |
 | `r` | Rename a parameter or group |
 | `m` | Move a parameter or group |
 | `x` | Delete the selected item |
 | `y` / `Y` | Copy the name or full path |
+
+Press `b` on either a parameter or one of its expanded values to find its
+newest direct change in retained Firebase history. The side-by-side diff shows
+the publishing user and local publication time below the parameter heading.
+This popup is titled **Blame**; ordinary History popups remain titled **Diff**
+and omit that attribution. Press `Esc` to close the diff or `q` to quit fbrcm.
 
 Group deletion is an explicit group-level operation and removes every parameter
 inside it. Other parameter mutations preserve empty groups and descriptions.

@@ -10,6 +10,134 @@
         "items": {
           "items": {
             "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "remote-config"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "resource"
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "version": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "version"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "apps-index"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "resource"
+                        ]
+                      }
+                    },
+                    {
+                      "not": {
+                        "required": [
+                          "version"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "app-details"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "version"
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "resource": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "resource"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "app-config"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "allOf": [
+                    {
+                      "not": {
+                        "required": [
+                          "version"
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "resource": {
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "resource"
+                  ]
+                }
+              }
+            ],
             "properties": {
               "cached_at": {
                 "format": "date-time",
@@ -66,18 +194,6 @@
       ],
       "type": "object",
       "x-fbrcm-invariants": [
-        {
-          "left": {
-            "field": "count"
-          },
-          "op": "eq",
-          "right": {
-            "op": "length",
-            "value": {
-              "field": "items"
-            }
-          }
-        },
         {
           "left": {
             "field": "count"

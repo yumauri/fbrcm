@@ -59,7 +59,7 @@ func TestRenderVersionSideBySideAdaptsEveryRemoteConfigEntity(t *testing.T) {
 	for _, want := range []string{
 		"Condition: Audience",
 		"Group: WEB",
-		"Property: WEB / banner",
+		"Parameter: WEB / banner",
 		"expression",
 		"description",
 		"value · default",

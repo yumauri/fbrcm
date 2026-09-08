@@ -18,7 +18,7 @@ func TestGroupDetailsRendersAndStagesMetadata(t *testing.T) {
 		GroupNames: []string{"checkout", "other"},
 	})
 	view := ansi.Strip(m.View())
-	for _, want := range []string{"Details", "Name", "checkout", "Description", "Checkout flags", "Parameters", "1"} {
+	for _, want := range []string{"Group", "Name", "checkout", "Description", "Checkout flags", "Parameters", "1"} {
 		if !strings.Contains(view, want) {
 			t.Fatalf("group Details missing %q:\n%s", want, view)
 		}

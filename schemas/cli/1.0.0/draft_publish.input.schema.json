@@ -196,8 +196,20 @@
           ]
         },
         "yes": {
-          "description": "Skip publish confirmations",
-          "type": "boolean"
+          "description": "Skip publish confirmations; applied when the operation requires confirmation",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "runtime_state",
+                  "name": "confirmation",
+                  "operator": "required",
+                  "value": null
+                }
+              ]
+            }
+          ]
         }
       },
       "required": [],

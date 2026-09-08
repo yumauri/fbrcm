@@ -1,0 +1,239 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "stateless_target_selector": {
+      "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\\s][^@\\s]*$",
+      "type": "string",
+      "x-fbrcm-grammar": "[client@|server@]literal physical project ID; an omitted template prefix selects client",
+      "x-fbrcm-matching": [
+        {
+          "comparison": "exact_case_sensitive",
+          "default_template": "client",
+          "lookup": false,
+          "operator": "literal_project_id"
+        }
+      ]
+    },
+    "target_positional_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_positional_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_positional_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
+    "version_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/version_selector"
+        }
+      ],
+      "x-fbrcm-matching": [
+        {
+          "operator": "version_resolution"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "if": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "profile"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "else": {
+        "properties": {
+          "options": {
+            "properties": {
+              "profile": {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/path_segment"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          }
+        },
+        "required": [
+          "options"
+        ]
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "properties": {
+              "project": {
+                "$ref": "#/$defs/stateless_target_selector"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "all",
+              "limit"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "parameter": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "operator": "parameter_history_resolution"
+            }
+          ]
+        },
+        "project": {
+          "$ref": "#/$defs/target_positional_selector"
+        }
+      },
+      "required": [
+        "project",
+        "parameter"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "all": {
+          "description": "Print all changes in retained Firebase history",
+          "type": "boolean"
+        },
+        "at": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/version_selector"
+            }
+          ],
+          "description": "Newest version to inspect"
+        },
+        "limit": {
+          "description": "Maximum parameter changes to print",
+          "maximum": 2147483647,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ],
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "stateless": {
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)",
+          "type": "boolean"
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object"
+}

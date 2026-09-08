@@ -295,6 +295,41 @@ func TestAppsListPublishesCacheProvenanceAndWarnings(t *testing.T) {
 	}
 }
 
+func TestAppsCacheWriteWarningSanitizesErrorDetails(t *testing.T) {
+	svc := appsCommandTestCore(t)
+	secret := strings.Repeat("s", 48)
+	cacheErr := errors.New(`write failed: {"access_token":"` + secret + `"} ` + strings.Repeat("x", 5000))
+	cmd := cliadapter.Command(newListDefinition(svc, fakeAppReader{
+		apps:       []core.FirebaseApp{{AppID: "app"}},
+		cachedAt:   time.Now().UTC(),
+		cacheError: cacheErr,
+	}))
+	cmd.SetContext(shared.WithMachineState(context.Background()))
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"demo", "--json"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	warnings := shared.MachineWarnings(cmd)
+	if len(warnings) != 1 || warnings[0].Code != "cache.write_failed" {
+		t.Fatalf("warnings = %#v", warnings)
+	}
+	raw, err := json.Marshal(warnings[0].Details)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var details struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(raw, &details); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(details.Error, secret) || len([]rune(details.Error)) > 4097 || !strings.HasSuffix(details.Error, "…") {
+		t.Fatalf("unsafe warning details: %q", details.Error)
+	}
+}
+
 func appsCommandTestCore(t *testing.T) *core.Core {
 	t.Helper()
 	root := t.TempDir()

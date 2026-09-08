@@ -93,6 +93,64 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 	}
 }
 
+func TestConfirmationBypassFlagsPublishConditionalEffectiveness(t *testing.T) {
+	for _, capability := range contract.DetailedCapabilities(NewRootForContract("test")) {
+		if !capability.Supports.ConfirmationBypass {
+			continue
+		}
+		index := slices.IndexFunc(capability.Flags, func(flag contract.FlagCapability) bool { return flag.Name == "--yes" })
+		if index < 0 {
+			t.Fatalf("%s supports confirmation bypass without --yes", capability.ID)
+		}
+		flag := capability.Flags[index]
+		if !flag.Effective || len(flag.EffectiveWhen) != 1 || !capabilityConditionsHavePredicate(flag.EffectiveWhen, "runtime_state", "confirmation", "required") {
+			t.Fatalf("%s --yes effectiveness = %#v", capability.ID, flag)
+		}
+	}
+}
+
+func TestCapabilityPredicateClausesAreInternallyConsistent(t *testing.T) {
+	for _, capability := range contract.DetailedCapabilities(NewRootForContract("test")) {
+		conditionSets := map[string][]contract.BehaviorConditionClause{
+			"network": capability.NetworkWhen, "interaction": capability.InteractionWhen, "destructive": capability.DestructiveWhen,
+		}
+		for _, effect := range capability.SideEffectWhen {
+			conditionSets["effect:"+effect.Effect] = effect.When
+		}
+		for _, flag := range capability.Flags {
+			conditionSets["flag:"+flag.Name] = flag.EffectiveWhen
+		}
+		for _, item := range capability.IdempotencyWhen {
+			conditionSets["idempotency:"+item.Idempotency] = item.When
+		}
+		for label, clauses := range conditionSets {
+			for clauseIndex, clause := range clauses {
+				exact := make(map[string]bool)
+				equals := make(map[string]string)
+				for _, item := range clause.AllOf {
+					value, err := json.Marshal(item.Value)
+					if err != nil {
+						t.Fatal(err)
+					}
+					base := item.Source + "\x00" + item.Name + "\x00" + item.Operator
+					key := base + "\x00" + string(value)
+					if exact[key] {
+						t.Fatalf("%s %s clause %d repeats predicate %#v", capability.ID, label, clauseIndex, item)
+					}
+					exact[key] = true
+					if item.Operator != "equals" {
+						continue
+					}
+					if previous, exists := equals[base]; exists && previous != string(value) {
+						t.Fatalf("%s %s clause %d has conflicting equality predicates for %s", capability.ID, label, clauseIndex, item.Name)
+					}
+					equals[base] = string(value)
+				}
+			}
+		}
+	}
+}
+
 func TestEveryExecutableCommandHasDocumentationInventoryEntry(t *testing.T) {
 	raw, err := os.ReadFile("../../docs/CLI.md")
 	if err != nil {
@@ -223,6 +281,7 @@ func TestResponseStringFormatsAreSemantic(t *testing.T) {
 		{"project.open", map[string]string{"url": "uri"}},
 		{"projects.list", map[string]string{"url": "uri"}},
 		{"versions.list", map[string]string{"updateTime": "date-time", "email": "email", "imageUrl": "uri"}},
+		{"versions.blame", map[string]string{"update_time": "date-time", "email": "email", "imageUrl": "uri"}},
 		{"experiments.list", map[string]string{"startTime": "date-time", "endTime": "date-time", "lastUpdateTime": "date-time"}},
 	}
 	for _, test := range tests {
@@ -331,7 +390,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 		"personalizations.list": true, "personalizations.show": true,
 		"project.import": true, "projects.promote": true,
 		"rollouts.list": true, "rollouts.show": true,
-		"versions.diff": true, "versions.export": true, "versions.rollback": true, "versions.show": true,
+		"versions.blame": true, "versions.diff": true, "versions.export": true, "versions.rollback": true, "versions.show": true,
 	}
 	statelessCommands := make([]struct {
 		path       []string
@@ -906,7 +965,7 @@ func TestCapabilityDiscoveryIsCompactAndExact(t *testing.T) {
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
 		"personalizations.list", "personalizations.show", "project.defaults", "project.export", "project.import", "project.open", "project.show",
 		"projects.diff", "projects.list", "projects.promote", "rollouts.delete", "rollouts.list", "rollouts.show", "update",
-		"versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
+		"versions.blame", "versions.diff", "versions.export", "versions.list", "versions.rollback", "versions.show",
 	}; !slices.Equal(stateless, want) {
 		t.Fatalf("stateless capability index = %v, want %v", stateless, want)
 	}
@@ -1362,6 +1421,20 @@ func TestInvocationSchemasDistinguishSelectorsFromLiteralIdentifiers(t *testing.
 	validateContractValue(t, versionID, versionInput("current~300"), false)
 	validateContractValue(t, versionID, versionInput("+00042"), true)
 
+	blameID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:versions.blame:input"
+	blameInput := func(parameter, at string, options map[string]any) map[string]any {
+		values := maps.Clone(options)
+		if at != "" {
+			values["at"] = at
+		}
+		return map[string]any{"arguments": map[string]any{"project": "demo", "parameter": parameter}, "options": values, "stdin": nil}
+	}
+	validateContractValue(t, blameID, blameInput("flag", "current~299", map[string]any{}), true)
+	validateContractValue(t, blameID, blameInput("flag", "+00042", map[string]any{}), true)
+	validateContractValue(t, blameID, blameInput("flag", "current~300", map[string]any{}), false)
+	validateContractValue(t, blameID, blameInput(strings.Repeat("x", 257), "", map[string]any{}), false)
+	validateContractValue(t, blameID, blameInput("flag", "", map[string]any{"limit": 2, "all": true}), false)
+
 	projectID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:project.show:input"
 	projectInput := func(project string) map[string]any {
 		return map[string]any{"arguments": map[string]any{"project": project}, "options": map[string]any{}, "stdin": nil}
@@ -1567,6 +1640,7 @@ func TestExpandedStatelessInvocationSchemas(t *testing.T) {
 		{id: "rollouts.delete", arguments: map[string]any{"project": "demo", "rollout_id": "rollout_1"}, projectFields: []string{"project"}, physical: true},
 		{id: "rollouts.list", arguments: map[string]any{"project": "demo"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
 		{id: "rollouts.show", arguments: map[string]any{"project": "demo", "rollout_id": "rollout_1"}, projectFields: []string{"project"}, physical: true, rejectUpdate: true},
+		{id: "versions.blame", arguments: map[string]any{"project": "demo", "parameter": "flag"}, projectFields: []string{"project"}},
 		{id: "versions.diff", arguments: map[string]any{"project": "demo", "from": "11", "to": "12"}, projectFields: []string{"project"}, rejectCached: true},
 		{id: "versions.rollback", arguments: map[string]any{"project": "demo", "version": "11"}, projectFields: []string{"project"}},
 	}
@@ -2412,6 +2486,9 @@ func TestInvocationSchemasPublishCommandLocalSelectionSemantics(t *testing.T) {
 		id := "urn:fbrcm:schema:cli:" + contract.Version + ":command:" + commandID + ":input"
 		assertSchemaMarkers(t, id, `"operator": "`+operator+`"`)
 	}
+	assertSchemaMarkers(t, "urn:fbrcm:schema:cli:"+contract.Version+":command:versions.blame:input",
+		`"operator": "parameter_history_resolution"`, `"operator": "version_resolution"`,
+	)
 	assertSchemaMarkers(t, "urn:fbrcm:schema:cli:"+contract.Version+":command:conditions.add:input",
 		`"operator": "condition_priority"`, `"maximum": "resolved_condition_count_plus_one"`,
 	)
@@ -3002,6 +3079,23 @@ func TestResponseSchemasRejectImpossibleDTOStates(t *testing.T) {
 		edit func(map[string]any)
 	}{
 		{
+			path: []string{"cache", "clear"},
+			raw:  `{"path":"/cache","kind":"all","status":"unchanged","entries_deleted":0,"targets_affected":0,"bytes_deleted":0}`,
+			edit: func(data map[string]any) { data["entries_deleted"] = float64(1) },
+		},
+		{
+			path: []string{"cache", "clear"},
+			raw:  `{"path":"/cache","kind":"apps","status":"cleared","entries_deleted":1,"targets_affected":1,"bytes_deleted":100}`,
+			edit: func(data map[string]any) { data["entries_deleted"] = float64(0) },
+		},
+		{
+			path: []string{"cache", "list"},
+			raw:  `[{"kind":"remote-config","project_id":"demo","project":"Demo","version":"7","size":100,"cached_at":"2026-09-08T12:00:00Z","path":"/cache/demo/7.json"}]`,
+			edit: func(data map[string]any) {
+				data["items"].([]any)[0].(map[string]any)["resource"] = "impossible"
+			},
+		},
+		{
 			path: []string{"projects", "aliases", "remove"},
 			raw:  `{"alias":"prod","previous_project_id":"demo","status":"removed","changed":true,"source":"fbrcm"}`,
 			edit: func(data map[string]any) { data["status"] = "not_found" },
@@ -3152,6 +3246,114 @@ func TestResponseSchemasRejectImpossibleDTOStates(t *testing.T) {
 		test.edit(document["data"].(map[string]any))
 		validateContractValue(t, contract.SchemaID(contract.CommandID(cmd)), document, false)
 	}
+}
+
+func TestVersionsBlameResponseSchemaRejectsUnreachableHistoryStates(t *testing.T) {
+	id := contract.SchemaID("versions.blame")
+	baseData := func() map[string]any {
+		return map[string]any{
+			"project":   map[string]any{"name": "Demo", "project_id": "demo", "auth_id": "main"},
+			"parameter": "flag", "at_version": "5", "at_group": nil,
+			"scanned_version_count": 1, "history_exhausted": false, "boundary": nil, "changes": []any{},
+		}
+	}
+	valid := artifactEnvelopeValue("versions.blame", baseData())
+	validateContractValue(t, id, valid, true)
+
+	exhaustedPresent := artifactEnvelopeValue("versions.blame", baseData())
+	exhaustedPresentData := exhaustedPresent["data"].(map[string]any)
+	exhaustedPresentData["history_exhausted"] = true
+	exhaustedPresentData["boundary"] = map[string]any{"version": "1", "state": "present", "group": "settings"}
+	validateContractValue(t, id, exhaustedPresent, true)
+
+	exhaustedAbsent := artifactEnvelopeValue("versions.blame", baseData())
+	exhaustedAbsentData := exhaustedAbsent["data"].(map[string]any)
+	exhaustedAbsentData["history_exhausted"] = true
+	exhaustedAbsentData["boundary"] = map[string]any{"version": "1", "state": "absent", "group": nil}
+	validateContractValue(t, id, exhaustedAbsent, true)
+
+	tests := []struct {
+		name string
+		edit func(map[string]any)
+	}{
+		{name: "nil changes", edit: func(data map[string]any) { data["changes"] = nil }},
+		{name: "zero scanned versions", edit: func(data map[string]any) { data["scanned_version_count"] = 0 }},
+		{name: "exhausted without boundary", edit: func(data map[string]any) { data["history_exhausted"] = true }},
+		{name: "boundary before exhaustion", edit: func(data map[string]any) {
+			data["boundary"] = map[string]any{"version": "1", "state": "absent", "group": nil}
+		}},
+		{name: "present boundary without group", edit: func(data map[string]any) {
+			data["history_exhausted"] = true
+			data["boundary"] = map[string]any{"version": "1", "state": "present", "group": nil}
+		}},
+		{name: "absent boundary with group", edit: func(data map[string]any) {
+			data["history_exhausted"] = true
+			data["boundary"] = map[string]any{"version": "1", "state": "absent", "group": "settings"}
+		}},
+		{name: "unchanged entry", edit: func(data map[string]any) {
+			data["changes"] = []any{map[string]any{
+				"previous_version": "4", "version": "5", "update_time": "2026-09-08T12:00:00Z",
+				"update_user": map[string]any{}, "change_note": nil, "update_origin": "CONSOLE",
+				"update_type": "INCREMENTAL_UPDATE", "rollback_source": nil,
+				"change": map[string]any{"key": "flag", "kind": "unchanged"},
+			}}
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			document := artifactEnvelopeValue("versions.blame", baseData())
+			test.edit(document["data"].(map[string]any))
+			validateContractValue(t, id, document, false)
+		})
+	}
+}
+
+func TestAppsResponseSchemasRequireCacheTimestampAndArtifactTarget(t *testing.T) {
+	app := func() map[string]any {
+		return map[string]any{
+			"api_key_id": "key", "app_id": "1:123:web:abc", "display_name": "Demo", "namespace": "demo",
+			"platform": "web", "resource_name": "projects/demo/webApps/abc", "state": "ACTIVE",
+		}
+	}
+	cachedAt := "2026-09-08T12:00:00Z"
+
+	listItem := app()
+	listItem["project_id"], listItem["project"], listItem["source"], listItem["cached_at"] = "demo", "Demo", "cache", cachedAt
+	list := artifactEnvelopeValue("apps.list", map[string]any{"count": 1, "items": []any{listItem}})
+	validateContractValue(t, contract.SchemaID("apps.list"), list, true)
+	delete(listItem, "cached_at")
+	validateContractValue(t, contract.SchemaID("apps.list"), list, false)
+	listItem["source"] = "firebase"
+	validateContractValue(t, contract.SchemaID("apps.list"), list, true)
+
+	showData := app()
+	maps.Copy(showData, map[string]any{
+		"project_id": "demo", "etag": "etag", "package_name": nil, "bundle_id": nil,
+		"app_store_id": nil, "team_id": nil, "web_id": "web", "app_urls": []any{},
+		"sha1_hashes": []any{}, "sha256_hashes": []any{}, "source": "cache", "cached_at": cachedAt,
+	})
+	show := artifactEnvelopeValue("apps.show", showData)
+	validateContractValue(t, contract.SchemaID("apps.show"), show, true)
+	delete(showData, "cached_at")
+	validateContractValue(t, contract.SchemaID("apps.show"), show, false)
+	showData["source"] = "firebase"
+	validateContractValue(t, contract.SchemaID("apps.show"), show, true)
+
+	configData := map[string]any{
+		"app": app(), "suggested_filename": "firebase-config.json", "source": "cache", "cached_at": cachedAt,
+		"artifact": artifactContractData("json"),
+	}
+	configData["artifact"].(map[string]any)["target"] = "projects/demo/webApps/abc"
+	config := artifactEnvelopeValue("apps.config", configData)
+	validateContractValue(t, contract.SchemaID("apps.config"), config, true)
+	configData["artifact"].(map[string]any)["target"] = ""
+	validateContractValue(t, contract.SchemaID("apps.config"), config, false)
+
+	configData["artifact"].(map[string]any)["target"] = "projects/demo/webApps/abc"
+	delete(configData, "cached_at")
+	validateContractValue(t, contract.SchemaID("apps.config"), config, false)
+	configData["source"] = "firebase"
+	validateContractValue(t, contract.SchemaID("apps.config"), config, true)
 }
 
 func TestProjectsResetResponseAcceptsChangedAndNoOpResults(t *testing.T) {

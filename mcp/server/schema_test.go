@@ -21,10 +21,10 @@ func TestPublishedToolSchemasHaveExplicitObjectRoots(t *testing.T) {
 		writes    bool
 		count     int
 	}{
-		{"stateless_readonly", true, false, 21},
-		{"stateless_writable", true, true, 42},
-		{"stateful_readonly", false, false, 27},
-		{"stateful_writable", false, true, 52},
+		{"stateless_readonly", true, false, 22},
+		{"stateless_writable", true, true, 43},
+		{"stateful_readonly", false, false, 28},
+		{"stateful_writable", false, true, 53},
 	} {
 		t.Run(mode.name, func(t *testing.T) {
 			o := options()

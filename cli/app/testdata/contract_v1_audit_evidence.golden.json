@@ -2,13 +2,16 @@
   "audit_standard_version": "1.0.0",
   "contract_version": "1.0.0",
   "catalog": {
+    "app.apps_response_invariants": "cli/app/contract_test.go#TestAppsResponseSchemasRequireCacheTimestampAndArtifactTarget",
     "app.arity": "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
     "app.artifact_schema": "cli/app/contract_test.go#TestArtifactSchemasConstrainCommandReachableEncodings",
     "app.auth_add_quota_schema": "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
     "app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",
     "app.boundaries": "cli/app/contract_test.go#TestInvocationSchemasRejectMachineOnlyAndTypedValueContradictions",
     "app.capability_behavior": "cli/app/contract_test.go#TestDetailedCapabilityGoldenCoversAuthoritativeBehavior",
+    "app.capability_predicate_integrity": "cli/app/contract_test.go#TestCapabilityPredicateClausesAreInternallyConsistent",
     "app.completion_success": "cli/app/contract_test.go#TestJSONCompletionCommandsUseConformingResponseSchemas",
+    "app.confirmation_effectiveness": "cli/app/contract_test.go#TestConfirmationBypassFlagsPublishConditionalEffectiveness",
     "app.discovery": "cli/app/contract_test.go#TestEveryExecutableCommandHasCapabilityAndPublishedSchemas",
     "app.effectiveness": "cli/app/contract_test.go#TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas",
     "app.failure_codes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableProblemCodes",
@@ -26,6 +29,7 @@
     "app.stdin": "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
+    "app.versions_blame_response_invariants": "cli/app/contract_test.go#TestVersionsBlameResponseSchemaRejectsUnreachableHistoryStates",
     "app.warning_runtime": "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
     "apply.draft_cleanup_runtime": "ops/workflows/apply/commands_test.go#TestCleanupMatchingDraftDeletesOnlyExactSourceAndWarnsOnDriftOrFailure",
     "apply.no_change_success": "ops/workflows/apply/commands_test.go#TestApplyNoChangePlanSucceedsWithoutFirebase",
@@ -34,16 +38,19 @@
     "apps.config_success": "ops/workflows/apps/commands_test.go#TestAppsConfigCommandSuccess",
     "apps.list_success": "ops/workflows/apps/commands_test.go#TestAppsListCommandSuccess",
     "apps.show_success": "ops/workflows/apps/commands_test.go#TestAppsShowCommandSuccess",
+    "apps.warning_safety": "ops/workflows/apps/commands_test.go#TestAppsCacheWriteWarningSanitizesErrorDetails",
     "auth.google_quota_failure": "cli/commands/auth/commands_test.go#TestAuthAddGoogleRejectsInvalidQuotaProjectAsArgumentFailure",
     "auth.oauth_success": "core/firebase/auth_oauth_reauthorize_test.go#TestRecoverRejectedOAuthTokenReauthorizesWhenRefreshTokenIsInvalid",
     "contract.artifact_runtime": "ops/contract/contract_test.go#TestArtifactEncodesBinaryContent",
     "contract.batch_runtime": "ops/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
+    "contract.stateless_predicates": "ops/contract/stateless_test.go#TestStatelessCapabilityEffectsDoNotMutateSharedBehavior",
     "draft.publish_success": "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
     "plan.artifact_runtime": "ops/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
     "plan.metadata_success": "ops/workflows/plan/commands_test.go#TestPlanShowAndValidateJSON",
     "profile.root_success": "cli/commands/profile/commands_test.go#TestProfileRootJSON",
     "schemagen.determinism": "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
     "theme.mutation_success": "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
+    "versions.blame_success": "ops/workflows/versions/blame_test.go#TestVersionsBlameCommandJSONSuccess",
     "versions.restore_success": "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp"
   },
   "commands": [
@@ -98,6 +105,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:parameter_add_dry_run_json",
@@ -108,7 +116,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
             "e2e:parameter_add_stateless_json"
@@ -228,6 +238,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:apply_stateless_json"
           ]
@@ -235,7 +246,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:apply_stateless_json"
           ]
         },
@@ -339,6 +352,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:apps_config_stateless_json"
           ]
@@ -346,6 +360,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:apps_config_stateless_json"
           ]
         },
@@ -385,6 +401,7 @@
         },
         "success": {
           "evidence": [
+            "app.apps_response_invariants",
             "app.outcomes",
             "app.response_invariants",
             "e2e:apps_config_stateless_json"
@@ -394,6 +411,7 @@
           "evidence": [
             "app.outcomes",
             "app.warning_runtime",
+            "apps.warning_safety",
             "e2e:apps_config_stateless_json"
           ]
         }
@@ -437,6 +455,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:apps_list_stateless_json"
           ]
         },
@@ -476,6 +496,7 @@
         },
         "success": {
           "evidence": [
+            "app.apps_response_invariants",
             "app.outcomes",
             "app.response_invariants",
             "e2e:apps_list_stateless_json"
@@ -485,6 +506,7 @@
           "evidence": [
             "app.outcomes",
             "app.warning_runtime",
+            "apps.warning_safety",
             "e2e:apps_list_stateless_json"
           ]
         }
@@ -528,6 +550,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:apps_show_stateless_json"
           ]
         },
@@ -567,6 +591,7 @@
         },
         "success": {
           "evidence": [
+            "app.apps_response_invariants",
             "app.outcomes",
             "app.response_invariants",
             "e2e:apps_show_stateless_json"
@@ -576,6 +601,7 @@
           "evidence": [
             "app.outcomes",
             "app.warning_runtime",
+            "apps.warning_safety",
             "e2e:apps_show_stateless_json"
           ]
         }
@@ -1078,6 +1104,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:auth_delete_gcloud_json",
             "e2e:auth_delete_google_json",
@@ -1728,6 +1755,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:cache_clear_json"
           ]
@@ -2381,6 +2409,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:conditions_add_json",
@@ -2390,7 +2419,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
           ]
@@ -2505,6 +2536,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:conditions_delete_json",
@@ -2514,7 +2546,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
           ]
@@ -2629,6 +2663,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:conditions_edit_json",
@@ -2638,7 +2673,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
           ]
@@ -2749,6 +2786,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:conditions_list_filtered_json",
             "e2e:conditions_list_stateless_json"
           ]
@@ -2850,6 +2889,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:conditions_move_json",
@@ -2859,7 +2899,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
           ]
@@ -2974,6 +3016,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:conditions_rename_json",
@@ -2983,7 +3026,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
           ]
@@ -3094,6 +3139,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:conditions_show_json",
             "e2e:conditions_show_stateless_json"
           ]
@@ -3191,6 +3238,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:conditions_validate_json",
             "e2e:conditions_validate_stateless_json"
           ]
@@ -3433,6 +3482,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:config_reset_json"
           ]
@@ -3810,6 +3860,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:parameter_delete_dry_run_json",
@@ -3821,7 +3872,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
@@ -4198,6 +4251,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:draft_discard_json"
           ]
@@ -4468,6 +4522,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries"
           ]
@@ -4668,6 +4723,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:parameter_duplicate_dry_run_json",
@@ -4678,7 +4734,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
             "e2e:parameter_duplicate_stateless_json"
@@ -4786,6 +4844,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:experiments_delete_stateless_confirmation_json"
           ]
@@ -4793,6 +4852,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:experiments_delete_stateless_confirmation_json"
           ]
         },
@@ -4885,6 +4946,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:experiments_list_json",
             "e2e:experiments_list_stateless_json"
           ]
@@ -4982,6 +5045,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:experiments_show_json",
             "e2e:experiments_show_stateless_json"
           ]
@@ -5099,6 +5164,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:get_filtered_json",
             "e2e:get_stateless_all_projects_json",
             "e2e:get_stateless_contains_project_json",
@@ -5258,6 +5325,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:groups_add_json",
@@ -5267,7 +5335,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
           ]
@@ -5382,6 +5452,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:groups_delete_json",
@@ -5391,7 +5462,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
           ]
@@ -5506,6 +5579,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:groups_edit_json",
@@ -5515,7 +5589,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
           ]
@@ -5626,6 +5702,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:groups_list_filtered_json",
             "e2e:groups_list_stateless_json"
           ]
@@ -5727,6 +5805,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:groups_rename_json",
@@ -5736,7 +5815,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
           ]
@@ -6091,6 +6172,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:hooks_trust_json"
           ]
@@ -6361,6 +6443,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:personalizations_list_json",
             "e2e:personalizations_list_stateless_json"
           ]
@@ -6454,6 +6538,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:personalizations_show_json",
             "e2e:personalizations_show_stateless_json"
           ]
@@ -6787,6 +6873,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:profile_delete_json"
           ]
@@ -7233,6 +7320,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:project_defaults_file_json",
             "e2e:project_defaults_json",
@@ -7244,6 +7332,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:project_defaults_file_json",
             "e2e:project_defaults_json",
             "e2e:project_defaults_plist",
@@ -7368,6 +7458,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:project_export_file_json",
             "e2e:project_export_json",
@@ -7379,6 +7470,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:project_export_file_json",
             "e2e:project_export_json",
             "e2e:project_export_stateless_incorrect_token_json",
@@ -7493,6 +7586,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:project_import_stateless_json"
@@ -7501,7 +7595,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:project_import_stateless_json"
           ]
         },
@@ -7609,6 +7705,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:project_open_json",
             "e2e:project_open_stateless_json"
           ]
@@ -7953,6 +8051,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:project_show_json",
             "e2e:project_show_stateless_json"
           ]
@@ -8197,6 +8297,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:projects_aliases_import_json"
           ]
@@ -8374,6 +8475,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:projects_aliases_remove_json"
           ]
@@ -8465,6 +8567,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:projects_aliases_set_json"
           ]
@@ -8564,6 +8667,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:projects_diff_client_server_json",
             "e2e:projects_diff_stateless_json"
           ]
@@ -8650,6 +8755,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:projects_forget_json"
           ]
@@ -8756,6 +8862,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
             "e2e:projects_list_stateless_json"
@@ -8939,6 +9047,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:projects_promote_stateless_dry_run_json"
@@ -8947,7 +9056,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
         },
@@ -9039,6 +9150,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:projects_reset_json"
           ]
@@ -9218,6 +9330,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:rollouts_delete_stateless_confirmation_json"
           ]
@@ -9225,6 +9338,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:rollouts_delete_stateless_confirmation_json"
           ]
         },
@@ -9317,6 +9432,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:rollouts_list_json",
             "e2e:rollouts_list_stateless_json"
           ]
@@ -9410,6 +9527,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:rollouts_show_json",
             "e2e:rollouts_show_stateless_json"
           ]
@@ -9824,6 +9943,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness"
           ]
         },
@@ -10442,6 +10562,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries",
             "e2e:parameter_update_dry_run_json",
@@ -10452,7 +10573,9 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
             "app.plan_capability_boundaries",
+            "contract.stateless_predicates",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
             "e2e:parameter_update_stateless_json"
@@ -10537,6 +10660,96 @@
       }
     },
     {
+      "id": "versions.blame",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:versions_blame_stateless_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "app.versions_blame_response_invariants",
+            "e2e:versions_blame_stateless_json"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
       "id": "versions.diff",
       "classes": {
         "artifact": {
@@ -10582,6 +10795,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:versions_diff_filtered_json",
             "e2e:versions_diff_json",
             "e2e:versions_diff_stateless_json"
@@ -10682,6 +10897,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:versions_export_file_json",
             "e2e:versions_export_stateless_file_json"
@@ -10690,6 +10906,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:versions_export_file_json",
             "e2e:versions_export_stateless_file_json"
           ]
@@ -10787,6 +11005,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:versions_list",
             "e2e:versions_list_stateless_json"
           ]
@@ -10878,6 +11098,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "app.plan_capability_boundaries"
           ]
@@ -10974,6 +11195,7 @@
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
+            "app.confirmation_effectiveness",
             "app.effectiveness",
             "e2e:versions_rollback_stateless_dry_run_json"
           ]
@@ -10981,6 +11203,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:versions_rollback_stateless_dry_run_json"
           ]
         },
@@ -11080,6 +11304,8 @@
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.capability_predicate_integrity",
+            "contract.stateless_predicates",
             "e2e:versions_show_json",
             "e2e:versions_show_stateless_json"
           ]

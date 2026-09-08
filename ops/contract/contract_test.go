@@ -43,6 +43,7 @@ func TestClassifyStableProblemCategories(t *testing.T) {
 		{"permission", &firebase.APIError{Service: "remote-config", Operation: "get", StatusCode: 403}, "firebase.permission_denied", "permission", 5},
 		{"not found", &firebase.APIError{Service: "remote-config", Operation: "get", StatusCode: 404}, "resource.not_found", "not_found", 6},
 		{"version not found", &core.RemoteConfigVersionLookupError{Kind: "not_found", ProjectID: "demo", Selector: "7", Err: errors.New("version not found")}, "version.not_found", "not_found", 6},
+		{"history parameter not found", &core.RemoteConfigParameterLookupError{ProjectID: "demo", Parameter: "missing", Err: errors.New("parameter not found")}, "parameter.not_found", "not_found", 6},
 		{"malformed managed resource", &firebase.ManagedFeatureResourceError{Collection: "experiments", ItemID: "bad/resource", Err: errors.New("invalid resource")}, "argument.invalid", "argument", 2},
 		{"personalization not found", &core.ManagedFeatureLookupError{Feature: "personalization", ProjectID: "demo", ID: "missing", Err: errors.New("personalization not found")}, "personalization.not_found", "not_found", 6},
 		{"import group not found", &importer.MissingGroupsError{Missing: []string{"missing"}}, "group.not_found", "not_found", 6},

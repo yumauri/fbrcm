@@ -38,6 +38,7 @@ func TestConditionDetailsRendersStyledUsageStructureAndPrettyJSON(t *testing.T) 
 	got := testutil.NormalizeViewSnapshot(ansi.Strip(conditionDetailsTestModel().View()))
 
 	for _, want := range []string{
+		"Condition",
 		"Color\n │ ● GREEN",
 		"Used by 2 parameters",
 		"checkout / enabled",

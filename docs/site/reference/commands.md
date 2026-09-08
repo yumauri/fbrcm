@@ -87,6 +87,7 @@ These are read-only Firebase Management operations. See
 | Command | Purpose |
 | --- | --- |
 | `versions list/show` | Inspect Remote Config history |
+| `versions blame` | Trace direct changes to one parameter |
 | `versions diff` | Compare historical or current templates |
 | `versions export` | Export one historical template |
 | `versions rollback` | Ask Firebase to roll back to a retained version |

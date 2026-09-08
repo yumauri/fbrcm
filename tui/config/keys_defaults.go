@@ -107,6 +107,7 @@ func DefaultKeyMap() KeyMap {
 			ActionNew:            {"a"},
 			ActionNewGroup:       {"A"},
 			ActionDuplicate:      {"c"},
+			ActionBlame:          {"b"},
 			ActionMove:           {"m"},
 			ActionToggle:         {" ", "space"},
 			ActionDelete:         {"x"},

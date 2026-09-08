@@ -145,6 +145,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, m.selectionChangedCmd(true)
+		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionBlame, k):
+			if m.history {
+				return m, nil
+			}
+			return m, m.blameRequestedCmd()
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReload, k):
 			return m, m.revalidateCurrentProjectCmd()
 		case tuiconfig.Matches(tuiconfig.BlockParameters, tuiconfig.ActionReloadAll, k):

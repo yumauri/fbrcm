@@ -18,10 +18,10 @@ func (m Model) ViewWithBorder(borderActive bool) string {
 	}
 
 	body := strings.Split(m.viewport.View(), "\n")
-	return renderPanel(body, m.width, m.height, m.active, borderActive, m.Invalid(), m.scrollbar())
+	return renderPanel(body, m.width, m.height, m.active, borderActive, m.Invalid(), m.scrollbar(), m.panelTitleLabel())
 }
 
-func renderPanel(body []string, width, height int, active, borderActive, invalid bool, scrollbar scrollbarState) string {
+func renderPanel(body []string, width, height int, active, borderActive, invalid bool, scrollbar scrollbarState, title string) string {
 	if width <= 1 || height <= 1 {
 		return ""
 	}
@@ -35,7 +35,7 @@ func renderPanel(body []string, width, height int, active, borderActive, invalid
 	innerWidth := max(panelWidth-4, 0)
 	contentHeight := max(height-2, 0)
 
-	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey(), panelTitleLabel, active, max(panelWidth-2, 0))
+	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey(), title, active, max(panelWidth-2, 0))
 	topPrefixWidth := min(2, panelWidth)
 	topPrefix := borderStyle.Render("╭" + strings.Repeat("─", max(topPrefixWidth-1, 0)))
 	topFillWidth := max(panelWidth-topPrefixWidth-titleWidth, 0)
