@@ -1,6 +1,7 @@
 package conditions
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,35 +12,41 @@ import (
 	coreconditions "github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	rcmutate "github.com/yumauri/fbrcm/core/rc/mutate"
+	"github.com/yumauri/fbrcm/core/strfold"
 	"github.com/yumauri/fbrcm/ops/invocation"
 	"github.com/yumauri/fbrcm/ops/shared"
 	sharedrc "github.com/yumauri/fbrcm/ops/shared/rc"
 )
 
 type mutationOptions struct {
-	Draft      bool
-	DryRun     bool
-	Yes        bool
-	ChangeNote *string
+	ProjectFilters       []string
+	ProjectFilterChanged bool
+	Draft                bool
+	DryRun               bool
+	Yes                  bool
+	ChangeNote           *string
 }
 
 type conditionMutation func(*firebase.RemoteConfig) error
 
 func newAddCommandDefinition(svc *core.Core) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "add <project> <name>",
-		Short: "Add a condition",
-		Args:  invocation.ExactArgs(2),
+		Use:   "add [project] <name>",
+		Short: "Add a condition across projects",
+		Args:  invocation.RangeArgs(1, 2),
 		RunE: func(cmd invocation.Call, args []string) error {
+			projectQuery, name := conditionAddArguments(args)
 			expression, _ := cmd.Flags().GetString("expression")
 			color, _ := cmd.Flags().GetString("color")
 			priority, _ := cmd.Flags().GetInt("priority")
-			definition := core.ConditionDefinition{Name: args[1], Expression: expression, TagColor: color}
-			return runConditionMutation(cmd, svc, args[0], readMutationOptions(cmd), "add condition", "➕", false, func(cfg *firebase.RemoteConfig) error {
+			definition := core.ConditionDefinition{Name: name, Expression: expression, TagColor: color}
+			return runConditionMutationTargets(cmd, svc, projectQuery, readMutationOptions(cmd), "add condition", "➕", false, func(cfg *firebase.RemoteConfig) error {
 				return coreconditions.Add(cfg, definition, priority)
 			})
 		},
 	}
+	shared.AddProjectTargetFilterFlag(cmd)
 	cmd.Flags().String("expression", "", "Raw Firebase condition expression (required)")
 	cmd.Flags().String("color", "", "Firebase display color")
 	cmd.Flags().Int("priority", 0, "Evaluation priority; defaults to last")
@@ -149,23 +156,70 @@ func newMoveCommandDefinition(svc *core.Core) *invocation.Definition {
 
 func newDeleteCommandDefinition(svc *core.Core) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "delete <project> <condition>",
-		Short: "Delete a condition and its conditional values",
-		Args:  invocation.ExactArgs(2),
+		Use:   "delete [project] [condition]",
+		Short: "Delete matching conditions and their conditional values across projects",
+		Args:  invocation.MaximumNArgs(2),
 		RunE: func(cmd invocation.Call, args []string) error {
-			return runNamedConditionMutation(cmd, svc, args[0], args[1], readMutationOptions(cmd), "delete condition", "🗑️", true, func(cfg *firebase.RemoteConfig, name string) error {
-				tree := coreconditions.BuildTree(cfg, time.Time{}, "")
-				impact, err := tree.DeleteImpact(name)
+			projectQuery, exactName := conditionDeleteArguments(args)
+			filters, _ := cmd.Flags().GetStringArray("filter")
+			if exactName != nil && shared.HasFilters(filters) {
+				return shared.InvalidArgument(fmt.Errorf("condition argument cannot be used together with --filter"))
+			}
+			search, _ := cmd.Flags().GetString("search")
+			rawExpr, _ := cmd.Flags().GetString("expr")
+			compiledExpr, err := shared.CompileExpr(rawExpr, "")
+			if err != nil {
+				return err
+			}
+			opts := readMutationOptions(cmd)
+			return runConditionMutationPlans(cmd, svc, projectQuery, opts, "delete condition", "🗑️", func(project core.Project, cfg *sharedrc.ProjectConfig) (sharedrc.RemoteMutationPlan, error) {
+				tree := coreconditions.BuildTree(cfg.Config, time.Time{}, "")
+				matched, exactFound, err := selectConditionEntries(project, tree.Conditions, exactName, filters, search, compiledExpr)
 				if err != nil {
-					return err
+					return sharedrc.RemoteMutationPlan{}, err
 				}
-				if !shared.MachineMode(cmd) {
-					_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rcdisplay.FormatConditionDeleteImpact(len(impact.Usages), len(impact.RemovedParameters)))
+				if exactName != nil && !exactFound {
+					return sharedrc.RemoteMutationPlan{}, &shared.SelectionError{Resource: "condition", Kind: "not_found", Query: *exactName, Err: fmt.Errorf("condition %q not found", *exactName)}
 				}
-				return coreconditions.Delete(cfg, name)
+				if len(matched) == 0 {
+					return sharedrc.RemoteMutationPlan{}, nil
+				}
+				names := make([]string, len(matched))
+				conditionalValues := 0
+				for index, entry := range matched {
+					names[index] = entry.Name
+					conditionalValues += len(entry.Usages)
+				}
+				return sharedrc.RemoteMutationPlan{MatchedItemCount: len(names), Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
+					finalCfg, err := firebase.CloneRemoteConfig(current)
+					if err != nil {
+						return 0, nil, err
+					}
+					beforeParameters := len(rcmutate.CollectParamSlots(current))
+					for _, name := range names {
+						if err := coreconditions.Delete(finalCfg, name); err != nil {
+							return 0, nil, typedConditionMutationError(project.ProjectID, err)
+						}
+					}
+					if !shared.MachineMode(cmd) {
+						removedParameters := beforeParameters - len(rcmutate.CollectParamSlots(finalCfg))
+						_, _ = fmt.Fprintln(cmd.ErrOrStderr(), rcdisplay.FormatConditionDeleteImpact(conditionalValues, removedParameters))
+					}
+					diffText, changed := sharedrc.RenderRemoteConfigDiff(current, finalCfg)
+					if !changed {
+						return 0, finalCfg, nil
+					}
+					confirmed, err := shared.PrintDiffAndConfirm(cmd, opts.Yes, cmd.ErrOrStderr(), diffText, "Apply condition changes to "+project.ProjectID+"?", true)
+					if err != nil || !confirmed {
+						return 0, finalCfg, err
+					}
+					return len(names), finalCfg, nil
+				}}, nil
 			})
 		},
 	}
+	shared.AddProjectTargetFilterFlag(cmd)
+	addConditionFilterFlags(cmd)
 	addMutationFlags(cmd)
 	return cmd
 }
@@ -253,6 +307,12 @@ func addMutationFlags(cmd invocation.FlagGroups) {
 }
 
 func readMutationOptions(cmd invocation.Call) mutationOptions {
+	var projectFilters []string
+	projectFilterChanged := false
+	if cmd.Flags().Lookup("project") != nil {
+		projectFilters, _ = cmd.Flags().GetStringArray("project")
+		projectFilterChanged = cmd.Flags().Changed("project")
+	}
 	draft, _ := cmd.Flags().GetBool("draft")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
@@ -261,7 +321,24 @@ func readMutationOptions(cmd invocation.Call) mutationOptions {
 		value, _ := cmd.Flags().GetString("change-note")
 		changeNote = &value
 	}
-	return mutationOptions{Draft: draft, DryRun: dryRun, Yes: yes, ChangeNote: changeNote}
+	return mutationOptions{ProjectFilters: projectFilters, ProjectFilterChanged: projectFilterChanged, Draft: draft, DryRun: dryRun, Yes: yes, ChangeNote: changeNote}
+}
+
+func conditionAddArguments(args []string) (*string, string) {
+	if len(args) == 1 {
+		return nil, args[0]
+	}
+	return &args[0], args[1]
+}
+
+func conditionDeleteArguments(args []string) (*string, *string) {
+	if len(args) == 0 {
+		return nil, nil
+	}
+	if len(args) == 1 {
+		return &args[0], nil
+	}
+	return &args[0], &args[1]
 }
 
 func runNamedConditionMutation(cmd invocation.Call, svc *core.Core, projectQuery, requestedName string, opts mutationOptions, operation, emoji string, destructive bool, mutate func(*firebase.RemoteConfig, string) error) error {
@@ -275,27 +352,11 @@ func runNamedConditionMutation(cmd invocation.Call, svc *core.Core, projectQuery
 }
 
 func runConditionMutation(cmd invocation.Call, svc *core.Core, projectQuery string, opts mutationOptions, operation, emoji string, destructive bool, mutate conditionMutation) error {
-	ctx := shared.CommandContext(cmd)
-	if err := shared.RejectStatelessDraft(ctx, opts.Draft); err != nil {
-		return err
-	}
-	if opts.DryRun {
-		ctx = firebase.WithDryRun(ctx)
-	}
-	var err error
-	ctx, err = shared.WithChangeNote(ctx, opts.ChangeNote)
-	if err != nil {
-		return err
-	}
-	project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, projectQuery)
-	if err != nil {
-		return err
-	}
-	ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
-	if err != nil {
-		return err
-	}
-	plan := func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteMutationPlan, error) {
+	return runConditionMutationTargets(cmd, svc, &projectQuery, opts, operation, emoji, destructive, mutate)
+}
+
+func runConditionMutationTargets(cmd invocation.Call, svc *core.Core, projectQuery *string, opts mutationOptions, operation, emoji string, destructive bool, mutate conditionMutation) error {
+	return runConditionMutationPlans(cmd, svc, projectQuery, opts, operation, emoji, func(project core.Project, _ *sharedrc.ProjectConfig) (sharedrc.RemoteMutationPlan, error) {
 		return sharedrc.RemoteMutationPlan{MatchedItemCount: 1, Mutation: func(current *firebase.RemoteConfig) (int, *firebase.RemoteConfig, error) {
 			finalCfg, err := firebase.CloneRemoteConfig(current)
 			if err != nil {
@@ -314,18 +375,59 @@ func runConditionMutation(cmd invocation.Call, svc *core.Core, projectQuery stri
 			}
 			return 1, finalCfg, nil
 		}}, nil
+	})
+}
+
+func runConditionMutationPlans(cmd invocation.Call, svc *core.Core, projectQuery *string, opts mutationOptions, operation, emoji string, plan sharedrc.RemoteMutationPlanner) error {
+	ctx := shared.CommandContext(cmd)
+	if err := shared.RejectStatelessDraft(ctx, opts.Draft); err != nil {
+		return err
 	}
-	projects := []core.Project{project}
+	if opts.DryRun {
+		ctx = firebase.WithDryRun(ctx)
+	}
+	var err error
+	ctx, err = shared.WithChangeNote(ctx, opts.ChangeNote)
+	if err != nil {
+		return err
+	}
+	projects, defaultScope, ctx, err := resolveConditionMutationProjects(ctx, cmd, svc, projectQuery, opts)
+	if err != nil {
+		return err
+	}
 	var totals sharedrc.RemoteMutationTotals
 	if opts.Draft {
-		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, false, operation, plan)
+		totals, err = sharedrc.RunRemoteDraftLoop(ctx, cmd, svc, projects, defaultScope, operation, plan)
 	} else {
-		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, false, operation, emoji, plan)
+		totals, err = sharedrc.RunRemotePublishLoop(ctx, cmd, svc, projects, defaultScope, operation, emoji, plan)
 	}
 	if writeErr := sharedrc.WriteRemoteMutationResults(cmd, totals, map[bool]string{true: "draft", false: "publish"}[opts.Draft], emoji); writeErr != nil {
 		return writeErr
 	}
 	return err
+}
+
+func resolveConditionMutationProjects(ctx context.Context, cmd invocation.Call, svc *core.Core, projectQuery *string, opts mutationOptions) ([]core.Project, bool, context.Context, error) {
+	if projectQuery != nil {
+		if opts.ProjectFilterChanged {
+			return nil, false, ctx, shared.InvalidArgument(fmt.Errorf("<project> and --project cannot be used together"))
+		}
+		project, err := shared.ResolveProjectTargetForExecution(ctx, cmd, svc, *projectQuery)
+		if err != nil {
+			return nil, false, ctx, err
+		}
+		ctx, err = shared.FirebaseServiceContextForExecution(ctx, project.ProjectID)
+		if err != nil {
+			return nil, false, ctx, err
+		}
+		return []core.Project{project}, false, ctx, nil
+	}
+	projects, ctx, err := shared.ResolveProjectMutationTargetsForExecution(ctx, cmd, svc, opts.ProjectFilters)
+	if err != nil {
+		return nil, false, ctx, err
+	}
+	strfold.SortProjects(projects, func(project core.Project) string { return project.Name }, func(project core.Project) string { return project.ProjectID })
+	return projects, !opts.ProjectFilterChanged, ctx, nil
 }
 
 func typedConditionMutationError(projectID string, err error) error {

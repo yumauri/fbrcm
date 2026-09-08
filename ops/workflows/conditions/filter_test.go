@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/ops/shared"
 )
 
 func TestFilterEntriesSupportsGetStylePrefixes(t *testing.T) {
@@ -104,6 +105,36 @@ func TestConditionFiltersComposeWithAnd(t *testing.T) {
 	}
 	if len(filtered) != 1 || filtered[0].Name != "used" {
 		t.Fatalf("combined condition filters = %#v, want used", filtered)
+	}
+}
+
+func TestSelectConditionEntriesSupportsExactPositionalName(t *testing.T) {
+	project := core.Project{Name: "Demo", ProjectID: "demo"}
+	entries := []core.ConditionEntry{
+		{Name: "Beta", Expression: "release audience"},
+		{Name: "beta", Expression: "other audience"},
+	}
+	exact := "Beta"
+	compiled, err := shared.CompileExpr(`expression contains "release"`, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, found, err := selectConditionEntries(project, entries, &exact, nil, "audience", compiled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found || len(got) != 1 || got[0].Name != "Beta" {
+		t.Fatalf("exact selection = %#v, found %t", got, found)
+	}
+
+	missing := "BETA"
+	got, found, err = selectConditionEntries(project, entries, &missing, nil, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found || len(got) != 0 {
+		t.Fatalf("case-insensitive exact selection = %#v, found %t", got, found)
 	}
 }
 

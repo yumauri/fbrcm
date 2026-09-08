@@ -2071,6 +2071,9 @@
         {
           "additionalProperties": false,
           "properties": {
+            "default_project_scope": {
+              "const": "all_configured_projects_enabled_templates"
+            },
             "maximum": {
               "const": "resolved_condition_count_plus_one"
             },
@@ -2083,6 +2086,9 @@
             "project_argument": {
               "const": "arguments.project"
             },
+            "project_option": {
+              "const": "options.project"
+            },
             "zero_behavior": {
               "const": "append"
             }
@@ -2091,6 +2097,8 @@
             "operator",
             "operation",
             "project_argument",
+            "project_option",
+            "default_project_scope",
             "maximum",
             "zero_behavior"
           ],
@@ -2773,11 +2781,13 @@
           "operands": [
             "operation",
             "project_argument",
+            "project_option?",
+            "default_project_scope?",
             "maximum",
             "zero_behavior?"
           ],
           "result": "accept_or_reject",
-          "semantics": "After resolving the project template and loading its effective Remote Config, enforce the declared condition-count-dependent upper bound. Add accepts zero as append and otherwise accepts 1 through count plus one; move accepts 1 through count. Out-of-range values return condition.invalid."
+          "semantics": "After resolving every selected project template and loading its effective Remote Config, enforce the declared condition-count-dependent upper bound per target. Add accepts zero as append and otherwise accepts 1 through count plus one; move accepts 1 through count. Out-of-range values return condition.invalid for that target."
         },
         "dispatch_by_field": {
           "operands": [

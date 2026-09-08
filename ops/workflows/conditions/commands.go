@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/yumauri/fbrcm/core"
+	"github.com/yumauri/fbrcm/core/filter"
 	"github.com/yumauri/fbrcm/ops/invocation"
 	"github.com/yumauri/fbrcm/ops/shared"
 	sharedrc "github.com/yumauri/fbrcm/ops/shared/rc"
@@ -75,7 +76,8 @@ func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 			filters, _ := cmd.Flags().GetStringArray("filter")
 			search, _ := cmd.Flags().GetString("search")
 			rawExpr, _ := cmd.Flags().GetString("expr")
-			if _, err := shared.CompileExpr(rawExpr, ""); err != nil {
+			compiledExpr, err := shared.CompileExpr(rawExpr, "")
+			if err != nil {
 				return err
 			}
 			items := make([]conditionListItem, 0)
@@ -90,8 +92,7 @@ func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 					return err
 				}
 				singleLoaded = loaded
-				entries := filterEntries(loaded.Tree.Conditions, filters, search)
-				entries, err = filterEntriesByExpr(project, entries, rawExpr)
+				entries, _, err := selectConditionEntries(project, loaded.Tree.Conditions, nil, filters, search, compiledExpr)
 				if err != nil {
 					return err
 				}
@@ -112,10 +113,14 @@ func newListCommandDefinition(svc *core.Core) *invocation.Definition {
 	}
 	shared.AddProjectTargetFilterFlag(cmd)
 	addReadFlags(cmd)
+	addConditionFilterFlags(cmd)
+	return cmd
+}
+
+func addConditionFilterFlags(cmd invocation.FlagGroups) {
 	cmd.Flags().StringArrayP("filter", "f", nil, "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated")
 	cmd.Flags().String("search", "", "Search condition names and expressions")
 	cmd.Flags().String("expr", "", "Filter conditions by expr-lang expression")
-	return cmd
 }
 
 func newShowCommandDefinition(svc *core.Core) *invocation.Definition {
@@ -206,11 +211,22 @@ func loadCache(ctx context.Context, svc *core.Core, projectID string, opts core.
 }
 
 func filterEntries(entries []core.ConditionEntry, rawFilters []string, search string) []core.ConditionEntry {
+	out, _ := filterConditionEntriesByNameAndSearch(entries, nil, rawFilters, search)
+	return out
+}
+
+func filterConditionEntriesByNameAndSearch(entries []core.ConditionEntry, exactName *string, rawFilters []string, search string) ([]core.ConditionEntry, bool) {
 	filters := shared.ParseFilters(rawFilters)
 	search = strings.ToLower(strings.TrimSpace(search))
 	out := make([]core.ConditionEntry, 0, len(entries))
+	exactFound := exactName == nil
 	for _, entry := range entries {
-		if !shared.MatchAnyFilter(entry.Name, filters) {
+		if exactName != nil {
+			if entry.Name != *exactName {
+				continue
+			}
+			exactFound = true
+		} else if !shared.MatchAnyFilter(entry.Name, filters) {
 			continue
 		}
 		if search != "" {
@@ -221,7 +237,7 @@ func filterEntries(entries []core.ConditionEntry, rawFilters []string, search st
 		}
 		out = append(out, entry)
 	}
-	return out
+	return out, exactFound
 }
 
 func filterEntriesByExpr(project core.Project, entries []core.ConditionEntry, rawExpr string) ([]core.ConditionEntry, error) {
@@ -240,6 +256,25 @@ func filterEntriesByExpr(project core.Project, entries []core.ConditionEntry, ra
 		}
 	}
 	return out, nil
+}
+
+// selectConditionEntries applies either an exact positional condition name or
+// the list-style name filters, followed by the shared search and expression
+// filters. The boolean result reports whether an exact positional name existed
+// before the remaining filters were applied.
+func selectConditionEntries(project core.Project, entries []core.ConditionEntry, exactName *string, rawFilters []string, search string, compiledExpr *filter.Expression) ([]core.ConditionEntry, bool, error) {
+	filtered, exactFound := filterConditionEntriesByNameAndSearch(entries, exactName, rawFilters, search)
+	out := make([]core.ConditionEntry, 0, len(filtered))
+	for _, entry := range filtered {
+		match, err := shared.MatchConditionByCompiledExpr(compiledExpr, project, entry)
+		if err != nil {
+			return nil, exactFound, err
+		}
+		if match {
+			out = append(out, entry)
+		}
+	}
+	return out, exactFound, nil
 }
 
 func findCondition(tree *core.ConditionsTree, name string) (core.ConditionEntry, bool) {

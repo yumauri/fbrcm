@@ -144,11 +144,25 @@ fbrcm conditions edit example-project-id "Beta users" \
 fbrcm conditions move example-project-id "Beta users" 1 --draft
 fbrcm conditions rename example-project-id "Beta users" "Early access" --draft
 fbrcm conditions delete example-project-id "Early access" --dry-run
+
+fbrcm conditions add "Beta users" \
+  --project '=example-staging' \
+  --project '=example-preview' \
+  --expression 'percent <= 10' \
+  --draft
+
+fbrcm conditions delete \
+  --project '^example-' \
+  --expr 'usage_count == 0' \
+  --dry-run
 ```
 
 Rename updates every conditional-value reference. Delete removes the condition
-and its conditional values. Moving a condition can change value resolution, so
-fbrcm treats it as a reviewed Remote Config mutation.
+and its conditional values. `add` and `delete` accept repeatable project filters;
+without a positional project or project filters, they select every configured
+project and enabled template. Delete also supports the same name, search, and
+condition-expression filters as `conditions list`. Moving a condition can
+change value resolution, so fbrcm treats it as a reviewed Remote Config mutation.
 
 See [Filtering](/reference/filtering) for filter composition, expression
 contexts, value typing, and JSON queries.

@@ -2799,8 +2799,6 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 		"apps.show":         {"cache.stale", "cache.write_failed"},
 		"get":               {"cache.stale"},
 		"theme.import":      {"theme.already_exists"},
-		"conditions.add":    postPublication,
-		"conditions.delete": postPublication,
 		"conditions.edit":   postPublication,
 		"conditions.move":   postPublication,
 		"conditions.rename": postPublication,
@@ -2810,7 +2808,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 		"versions.rollback": postPublication,
 		"draft.publish":     {"publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
 	}
-	for _, id := range []string{"add", "delete", "duplicate", "update", "groups.add", "groups.delete", "groups.edit", "groups.rename"} {
+	for _, id := range []string{"add", "delete", "duplicate", "update", "conditions.add", "conditions.delete", "groups.add", "groups.delete", "groups.edit", "groups.rename"} {
 		warningsByCommand[id] = []string{"publication.non_atomic", "publication.cache_stale", "publication.post_publish_hook_failed"}
 	}
 	for _, capability := range contract.DetailedCapabilities(root) {

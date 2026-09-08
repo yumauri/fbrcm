@@ -512,7 +512,7 @@
         "conditions",
         "add"
       ],
-      "summary": "Add a condition",
+      "summary": "Add a condition across projects",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:response",
       "side_effect_level": 3,
@@ -532,7 +532,7 @@
         "conditions",
         "delete"
       ],
-      "summary": "Delete a condition and its conditional values",
+      "summary": "Delete matching conditions and their conditional values across projects",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:response",
       "side_effect_level": 3,

@@ -27,16 +27,24 @@ func BoundOption(name string) bool {
 func (in Input) Positionals(c contract.Capability) ([]string, error) {
 	var result []string
 	known := make(map[string]bool)
-	missing := false
+	omittedOptional := false
 	for _, argument := range c.Arguments {
 		known[argument.Name] = true
 		raw, ok := in.Arguments[argument.Name]
 		if !ok {
-			missing = true
+			if !argument.Required {
+				omittedOptional = true
+			}
 			continue
 		}
-		if missing {
+		// An omitted optional argument may precede a required argument when the
+		// command's arity disambiguates the compact positional form. Supplying a
+		// later optional argument still leaves an unrepresentable positional gap.
+		if omittedOptional && !argument.Required {
 			return nil, fmt.Errorf("cannot supply %s after an omitted positional argument", argument.Name)
+		}
+		if argument.Required {
+			omittedOptional = false
 		}
 		if argument.Repeated {
 			var values []string

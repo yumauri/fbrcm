@@ -1327,6 +1327,7 @@
                 "properties": {
                   "code": {
                     "enum": [
+                      "publication.non_atomic",
                       "publication.cache_stale",
                       "publication.post_publish_hook_failed"
                     ]

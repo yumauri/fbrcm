@@ -17,6 +17,7 @@ func TestExtensionValidatorsAcceptPublishedRuleShapes(t *testing.T) {
 			map[string]any{"operator": "parse_time", "specification": "Go time.RFC3339"},
 			map[string]any{
 				"operator": "condition_priority", "operation": "add", "project_argument": "arguments.project",
+				"project_option": "options.project", "default_project_scope": "all_configured_projects_enabled_templates",
 				"maximum": "resolved_condition_count_plus_one", "zero_behavior": "append",
 			},
 			map[string]any{

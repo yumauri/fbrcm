@@ -134,12 +134,14 @@ func extensionSchemaDefinitions() map[string]any {
 			"parser":   map[string]any{"const": "strconv.Atoi"},
 			"minimum":  map[string]any{"const": 1},
 		}),
-		object([]string{"operator", "operation", "project_argument", "maximum", "zero_behavior"}, map[string]any{
-			"operator":         map[string]any{"const": "condition_priority"},
-			"operation":        map[string]any{"const": "add"},
-			"project_argument": map[string]any{"const": "arguments.project"},
-			"maximum":          map[string]any{"const": "resolved_condition_count_plus_one"},
-			"zero_behavior":    map[string]any{"const": "append"},
+		object([]string{"operator", "operation", "project_argument", "project_option", "default_project_scope", "maximum", "zero_behavior"}, map[string]any{
+			"operator":              map[string]any{"const": "condition_priority"},
+			"operation":             map[string]any{"const": "add"},
+			"project_argument":      map[string]any{"const": "arguments.project"},
+			"project_option":        map[string]any{"const": "options.project"},
+			"default_project_scope": map[string]any{"const": "all_configured_projects_enabled_templates"},
+			"maximum":               map[string]any{"const": "resolved_condition_count_plus_one"},
+			"zero_behavior":         map[string]any{"const": "append"},
 		}),
 		object([]string{"operator", "operation", "project_argument", "maximum"}, map[string]any{
 			"operator":         map[string]any{"const": "condition_priority"},

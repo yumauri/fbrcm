@@ -1,7 +1,83 @@
 {
   "$defs": {
+    "expression": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/expression"
+        }
+      ],
+      "x-fbrcm-expression-context": "condition"
+    },
+    "filter_query": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "trim_unicode_whitespace",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    },
     "path_segment": {
       "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/path_segment"
+    },
+    "stateless_get_project_selector": {
+      "oneOf": [
+        {
+          "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?=[^=^/~@\\s][^@\\s]*$",
+          "type": "string",
+          "x-fbrcm-grammar": "[client@|server@]=literal physical project ID; exact mode bypasses project discovery",
+          "x-fbrcm-matching": [
+            {
+              "comparison": "exact_case_sensitive",
+              "default_template": "client",
+              "lookup": false,
+              "operator": "literal_project_id"
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/target_selector"
+            },
+            {
+              "not": {
+                "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?="
+              }
+            }
+          ],
+          "x-fbrcm-matching": [
+            {
+              "client_target_canonicalization": "unqualified_project_id",
+              "comparison": "unicode_case_insensitive",
+              "default_mode": "fuzzy",
+              "explicit_target_selection": "single_named_template",
+              "fields": [
+                "project_id",
+                "display_name"
+              ],
+              "mode_prefixes": {
+                "/": "includes",
+                "=": "exact",
+                "^": "starts-with",
+                "~": "fuzzy"
+              },
+              "operator": "mode_prefixed_query",
+              "query_normalization": "trim_unicode_whitespace",
+              "target_prefixes": [
+                "client",
+                "server"
+              ],
+              "unqualified_target_selection": "client_template"
+            }
+          ]
+        }
+      ]
     },
     "stateless_target_selector": {
       "pattern": "^(?:(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@)?[^=^/~@\\s][^@\\s]*$",
@@ -29,12 +105,46 @@
           "target": "normalized_invocation"
         }
       ]
+    },
+    "target_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/target_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
     }
   },
   "$id": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:input",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "allOf": [
+    {
+      "not": {
+        "properties": {
+          "arguments": {
+            "required": [
+              "project"
+            ]
+          },
+          "options": {
+            "required": [
+              "project"
+            ]
+          }
+        },
+        "required": [
+          "arguments",
+          "options"
+        ]
+      }
+    },
     {
       "properties": {
         "options": {
@@ -109,6 +219,43 @@
       }
     },
     {
+      "if": {
+        "properties": {
+          "options": {
+            "properties": {
+              "stateless": {
+                "const": true
+              }
+            },
+            "required": [
+              "stateless"
+            ]
+          },
+          "stdin": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "options",
+          "stdin"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "project": {
+                "items": {
+                  "$ref": "#/$defs/stateless_get_project_selector"
+                },
+                "type": "array"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "properties": {
         "options": {
           "not": {
@@ -143,6 +290,49 @@
           }
         }
       }
+    },
+    {
+      "not": {
+        "properties": {
+          "arguments": {
+            "required": [
+              "condition"
+            ]
+          },
+          "options": {
+            "required": [
+              "filter"
+            ]
+          }
+        },
+        "required": [
+          "arguments",
+          "options"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "arguments": {
+            "required": [
+              "condition"
+            ]
+          }
+        },
+        "required": [
+          "arguments"
+        ]
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "required": [
+              "project"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -163,10 +353,7 @@
           "$ref": "#/$defs/target_positional_selector"
         }
       },
-      "required": [
-        "project",
-        "condition"
-      ],
+      "required": [],
       "type": "object"
     },
     "options": {
@@ -210,6 +397,47 @@
           "description": "Preview the requested mutation without applying it",
           "type": "boolean"
         },
+        "expr": {
+          "$ref": "#/$defs/expression",
+          "description": "Filter conditions by expr-lang expression",
+          "pattern": ".*\\S.*",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "filter": {
+          "description": "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/filter_query"
+              }
+            ],
+            "x-fbrcm-matching": [
+              {
+                "comparison": "unicode_case_insensitive",
+                "default_mode": "fuzzy",
+                "fields": [
+                  "condition_name"
+                ],
+                "mode_prefixes": {
+                  "/": "includes",
+                  "=": "exact",
+                  "^": "starts-with",
+                  "~": "fuzzy"
+                },
+                "operator": "mode_prefixed_query",
+                "query_normalization": "trim_unicode_whitespace"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
         "no-local-config": {
           "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
           "type": "boolean"
@@ -248,6 +476,43 @@
           "x-fbrcm-normalization": [
             {
               "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "project": {
+          "description": "Filter template targets by optional client@ or server@ project query; may be repeated",
+          "items": {
+            "$ref": "#/$defs/target_selector"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "search": {
+          "description": "Search condition names and expressions",
+          "pattern": ".*\\S.*",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "fields": [
+                "name",
+                "expression"
+              ],
+              "haystack_normalization": "unicode_lowercase",
+              "operator": "case_insensitive_substring",
+              "query_normalization": "trim_then_unicode_lowercase",
+              "separator": "\n"
+            }
+          ],
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            },
+            {
+              "operator": "lowercase",
               "source": "argv",
               "target": "normalized_invocation"
             }
@@ -302,5 +567,27 @@
     "options",
     "stdin"
   ],
-  "type": "object"
+  "type": "object",
+  "x-fbrcm-matching": [
+    {
+      "absent_source_behavior": "match_all",
+      "across_source_combination": "and",
+      "operator": "selection_composition",
+      "repeated_source_combination": "or",
+      "sources": [
+        "options.project",
+        "options.filter",
+        "options.search",
+        "options.expr",
+        "arguments.condition"
+      ],
+      "target_defaults": [
+        {
+          "absent_argument": "project",
+          "selection": "all_configured_projects_enabled_templates",
+          "source": "options.project"
+        }
+      ]
+    }
+  ]
 }

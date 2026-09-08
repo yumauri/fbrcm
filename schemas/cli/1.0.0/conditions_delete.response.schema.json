@@ -1327,6 +1327,7 @@
                 "properties": {
                   "code": {
                     "enum": [
+                      "publication.non_atomic",
                       "publication.cache_stale",
                       "publication.post_publish_hook_failed"
                     ]
@@ -1361,6 +1362,7 @@
                       "condition.not_found",
                       "configuration.invalid",
                       "draft.exists",
+                      "expression.invalid",
                       "file.io_failed",
                       "filesystem.permission_denied",
                       "firebase.permission_denied",

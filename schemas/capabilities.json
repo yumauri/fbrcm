@@ -6091,11 +6091,11 @@
       "conditions",
       "add"
     ],
-    "summary": "Add a condition",
+    "summary": "Add a condition across projects",
     "arguments": [
       {
         "name": "project",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       },
@@ -6220,6 +6220,18 @@
           }
         ],
         "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter template targets by optional client@ or server@ project query; may be repeated"
       },
       {
         "name": "--stateless",
@@ -6908,17 +6920,17 @@
       "conditions",
       "delete"
     ],
-    "summary": "Delete a condition and its conditional values",
+    "summary": "Delete matching conditions and their conditional values across projects",
     "arguments": [
       {
         "name": "project",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       },
       {
         "name": "condition",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       }
@@ -6967,6 +6979,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--expr",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Filter conditions by expr-lang expression"
+      },
+      {
+        "name": "--filter",
+        "aliases": [
+          "-f"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -7007,6 +7041,28 @@
           }
         ],
         "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); cannot be combined with --stateless"
+      },
+      {
+        "name": "--project",
+        "aliases": [
+          "-p"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter template targets by optional client@ or server@ project query; may be repeated"
+      },
+      {
+        "name": "--search",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Search condition names and expressions"
       },
       {
         "name": "--stateless",
@@ -7072,6 +7128,7 @@
       "condition.not_found",
       "configuration.invalid",
       "draft.exists",
+      "expression.invalid",
       "file.io_failed",
       "filesystem.permission_denied",
       "firebase.permission_denied",

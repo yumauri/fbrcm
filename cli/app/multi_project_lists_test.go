@@ -182,6 +182,32 @@ func TestMultiProjectListInputSchemas(t *testing.T) {
 	}
 }
 
+func TestConditionMutationInputSchemasSupportPositionalAndBulkForms(t *testing.T) {
+	addID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:conditions.add:input"
+	add := func(arguments, options map[string]any) map[string]any {
+		options["expression"] = "percent <= 1"
+		return map[string]any{"arguments": arguments, "options": options, "stdin": nil}
+	}
+	validateContractValue(t, addID, add(map[string]any{"project": "demo", "name": "Beta"}, map[string]any{}), true)
+	validateContractValue(t, addID, add(map[string]any{"name": "Beta"}, map[string]any{}), true)
+	validateContractValue(t, addID, add(map[string]any{"name": "Beta"}, map[string]any{"project": []any{"=alpha", "=beta"}}), true)
+	validateContractValue(t, addID, add(map[string]any{"name": "Beta"}, map[string]any{"stateless": true, "project": []any{"=alpha", "=beta"}}), true)
+	validateContractValue(t, addID, add(map[string]any{"project": "demo", "name": "Beta"}, map[string]any{"project": []any{"=alpha"}}), false)
+
+	deleteID := "urn:fbrcm:schema:cli:" + contract.Version + ":command:conditions.delete:input"
+	deleteInput := func(arguments, options map[string]any) map[string]any {
+		return map[string]any{"arguments": arguments, "options": options, "stdin": nil}
+	}
+	validateContractValue(t, deleteID, deleteInput(map[string]any{"project": "demo", "condition": "Beta"}, map[string]any{}), true)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{"project": "demo"}, map[string]any{"expr": "usage_count == 0"}), true)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{}, map[string]any{"project": []any{"=alpha", "=beta"}, "filter": []any{"=Beta"}}), true)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{}, map[string]any{"stateless": true, "project": []any{"=alpha", "=beta"}, "filter": []any{"=Beta"}}), true)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{}, map[string]any{"expr": `expression == "true"`}), true)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{"condition": "Beta"}, map[string]any{}), false)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{"project": "demo", "condition": "Beta"}, map[string]any{"filter": []any{"=Beta"}}), false)
+	validateContractValue(t, deleteID, deleteInput(map[string]any{"project": "demo"}, map[string]any{"project": []any{"=alpha"}}), false)
+}
+
 func TestStatelessMultiProjectLists(t *testing.T) {
 	for _, family := range []string{"apps", "conditions"} {
 		for _, mode := range []string{"exact", "discovery", "filtered"} {

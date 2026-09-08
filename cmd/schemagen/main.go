@@ -1236,6 +1236,9 @@ func selectionComposition(commandID string, arguments, options map[string]any) m
 	if _, ok := arguments["parameter"]; ok && slices.Contains([]string{"delete", "get", "update"}, commandID) {
 		sources = append(sources, "arguments.parameter")
 	}
+	if _, ok := arguments["condition"]; ok && commandID == "conditions.delete" {
+		sources = append(sources, "arguments.condition")
+	}
 	if len(sources) == 0 {
 		return nil
 	}
@@ -1246,7 +1249,7 @@ func selectionComposition(commandID string, arguments, options map[string]any) m
 			selection = "all_configured_projects"
 		}
 		rule := map[string]any{"source": "options.project", "selection": selection}
-		if commandID == "apps.list" || commandID == "conditions.list" {
+		if commandID == "apps.list" || slices.Contains([]string{"conditions.add", "conditions.delete", "conditions.list"}, commandID) {
 			rule["absent_argument"] = "project"
 		}
 		targetDefaults = append(targetDefaults, rule)
@@ -1452,6 +1455,7 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 		if commandID == "conditions.add" {
 			addValidationRule(schema, map[string]any{
 				"operator": "condition_priority", "operation": "add", "project_argument": "arguments.project",
+				"project_option": "options.project", "default_project_scope": "all_configured_projects_enabled_templates",
 				"maximum": "resolved_condition_count_plus_one", "zero_behavior": "append",
 			})
 		}
@@ -1492,7 +1496,7 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 	}
 	if name == "search" {
 		switch commandID {
-		case "conditions.list":
+		case "conditions.list", "conditions.delete":
 			addNormalization(schema, "trim_unicode_whitespace", "lowercase")
 			addMatchingRule(schema, caseInsensitiveSubstringMatching("name", "expression"))
 		case "groups.list":
@@ -1660,7 +1664,7 @@ func projectPositionalMatching(targetAware bool) map[string]any {
 
 func filterMatchingFields(commandID string) []string {
 	switch commandID {
-	case "conditions.list":
+	case "conditions.list", "conditions.delete":
 		return []string{"condition_name"}
 	case "experiments.list":
 		return []string{"display_name"}
@@ -2224,7 +2228,7 @@ func extensionLanguageMetadata() map[string]any {
 				"parse_duration":             operation([]string{"parser", "require_positive"}, "accept_or_reject", "Parse the complete duration with the named runtime parser, reject syntax and overflow errors, and require a result greater than zero when require_positive is true."),
 				"parse_json":                 operation([]string{"specification", "consume"}, "accept_or_reject", "Parse the string as JSON and, when consume is entire_string, reject trailing non-whitespace input."),
 				"parse_positive_integer":     operation([]string{"parser", "minimum"}, "accept_or_reject", "Parse the entire decimal string with the named runtime parser and require a result at least minimum; parser overflow is rejection."),
-				"condition_priority":         operation([]string{"operation", "project_argument", "maximum", "zero_behavior?"}, "accept_or_reject", "After resolving the project template and loading its effective Remote Config, enforce the declared condition-count-dependent upper bound. Add accepts zero as append and otherwise accepts 1 through count plus one; move accepts 1 through count. Out-of-range values return condition.invalid."),
+				"condition_priority":         operation([]string{"operation", "project_argument", "project_option?", "default_project_scope?", "maximum", "zero_behavior?"}, "accept_or_reject", "After resolving every selected project template and loading its effective Remote Config, enforce the declared condition-count-dependent upper bound per target. Add accepts zero as append and otherwise accepts 1 through count plus one; move accepts 1 through count. Out-of-range values return condition.invalid for that target."),
 				"parse_time":                 operation([]string{"specification"}, "accept_or_reject", "Parse the complete timestamp using the named runtime layout and parser semantics."),
 				"parse_uri":                  operation([]string{"parser", "normalization", "require_absolute"}, "accept_or_reject", "Normalize the string as declared, parse it with the named parser, and require an absolute URI with a nonempty scheme when require_absolute is true."),
 				"parse_version_selector":     operation([]string{"absolute_parser", "relative_parser", "maximum_relative_distance"}, "accept_or_reject", "Apply the named runtime integer parsers to absolute and relative numeric components, require positive results, and reject a relative distance above the declared maximum."),
@@ -2357,7 +2361,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		return nil
 	}
 	constraints := make([]any, 0)
-	if commandID == "apps.list" || commandID == "conditions.list" {
+	if commandID == "apps.list" || slices.Contains([]string{"conditions.add", "conditions.delete", "conditions.list"}, commandID) {
 		constraints = append(constraints, map[string]any{"not": map[string]any{
 			"properties": map[string]any{
 				"arguments": map[string]any{"required": []string{"project"}},
@@ -2459,7 +2463,7 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 			})
 		}
-		if usesStatelessProjectOption(commandID) || commandID == "apps.list" || commandID == "conditions.list" {
+		if usesStatelessProjectOption(commandID) || commandID == "apps.list" || slices.Contains([]string{"conditions.add", "conditions.delete", "conditions.list"}, commandID) {
 			constraints = append(constraints, map[string]any{
 				"if": map[string]any{
 					"properties": map[string]any{
@@ -2618,6 +2622,19 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 				},
 			})
 		}
+	case "conditions.delete":
+		constraints = append(constraints,
+			argumentOptionMutualExclusion("condition", "filter"),
+			map[string]any{
+				"if": map[string]any{
+					"properties": map[string]any{"arguments": map[string]any{"required": []string{"condition"}}},
+					"required":   []string{"arguments"},
+				},
+				"then": map[string]any{
+					"properties": map[string]any{"arguments": map[string]any{"required": []string{"project"}}},
+				},
+			},
+		)
 	case "duplicate":
 		constraints = append(constraints, map[string]any{"x-fbrcm-validation": []any{map[string]any{"operator": "fields_differ", "fields": []any{"arguments.source", "arguments.target"}, "comparison": "exact_codepoint"}}})
 	case "config.set":
@@ -3072,10 +3089,10 @@ func commandWarningCodes(commandID string) []string {
 		return []string{"cache.stale"}
 	case "apps.config", "apps.list", "apps.show":
 		return []string{"cache.stale", "cache.write_failed"}
-	case "add", "delete", "duplicate", "update",
+	case "add", "delete", "duplicate", "update", "conditions.add", "conditions.delete",
 		"groups.add", "groups.delete", "groups.edit", "groups.rename":
 		return append([]string{"publication.non_atomic"}, postPublication...)
-	case "conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename",
+	case "conditions.edit", "conditions.move", "conditions.rename",
 		"project.import", "projects.promote", "versions.restore", "versions.rollback":
 		return postPublication
 	case "draft.publish":

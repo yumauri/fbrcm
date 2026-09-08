@@ -1210,7 +1210,7 @@ directory and validates the lock before replacing checked-in files, so a lock
 rejection leaves the working tree untouched. Previous version directories are
 not removed by generation.
 
-### Optional project selection for application and condition lists
+### Optional project selection for application lists and condition operations
 
 `apps list [project]` and `conditions list [project]` accept either a scalar
 `arguments.project` or repeatable `options.project`, never both. The positional
@@ -1221,7 +1221,27 @@ configured physical projects for apps or enabled template targets for conditions
 Stateless bulk selection uses direct exact IDs or live discovery, as with `get`;
 apps reject template prefixes. Cache-only app listing never discovers projects.
 
-Both commands return `data.items` and `data.count`. Every item includes `project`
+`conditions add [project] <name>` and `conditions delete [project] [condition]`
+use the same scalar-or-repeatable project selection. For `conditions.add`, the
+required `arguments.name` remains representable when optional
+`arguments.project` is omitted; the operation registry compacts that supported
+optional-before-required positional form. For `conditions.delete`, supplying
+`arguments.condition` requires `arguments.project`, preserving the existing
+two-positional exact lookup. Cross-project exact deletion uses
+`options.filter: ["=condition name"]` instead. Omitted project sources select
+all configured enabled templates.
+
+`conditions.delete` publishes the same condition selector composition as
+`conditions.list`: repeated `options.filter` values are ORed, while project,
+name-filter, search, and condition-context expression sources are ANDed. A
+positional condition conflicts with `options.filter`. Filter misses are
+successful per-target `no_match` results; an absent exact condition in the
+two-positional form remains `condition.not_found`. Multi-target add and delete
+results use the shared remote-mutation DTO, include target and match breadth,
+continue after target-local failures, and warn with `publication.non_atomic`
+for non-dry-run publication.
+
+The two list commands return `data.items` and `data.count`. Every item includes `project`
 (display name) and `project_id` in both selection modes. Condition project IDs
 are canonical template target IDs. App cache provenance (`source` and optional
 `cached_at`) is per item, replacing the former list-level provenance and project

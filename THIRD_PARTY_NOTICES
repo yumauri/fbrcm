@@ -2383,7 +2383,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/term
-Version: v0.45.0
+Version: v0.46.0
 License: BSD-3-Clause
 Source: golang.org/x/term
 
@@ -2445,7 +2445,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/text
-Version: v0.41.0
+Version: v0.42.0
 License: BSD-3-Clause
 Source: golang.org/x/text
 

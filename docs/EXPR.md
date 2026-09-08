@@ -78,6 +78,7 @@ fbrcm versions diff <project> <from> [<to>] --expr '...'
 fbrcm projects diff <source> <target> --expr '...'
 fbrcm projects promote <source> <target> --expr '...'
 fbrcm conditions list <project> --expr '...'
+fbrcm conditions delete [project] --expr '...'
 fbrcm projects list --expr '...'
 fbrcm projects update --expr '...'
 fbrcm projects forget --expr '...'
@@ -170,6 +171,7 @@ Condition context is used by:
 
 ```sh
 fbrcm conditions list <project> --expr '...'
+fbrcm conditions delete [project] --expr '...'
 ```
 
 The expression is evaluated once per condition. A matching expression keeps the condition in the human or JSON list. `--expr` is ANDed with `--filter` and `--search` when they are also present.
@@ -199,6 +201,7 @@ fbrcm conditions list demo --expr 'expression contains "app.version"'
 fbrcm conditions list demo --expr 'any(usages, #.group == "(root)")'
 fbrcm conditions list demo --expr 'any(usages, #.parameter startsWith "legacy_")'
 fbrcm conditions list demo --expr 'any(usages, #.value_type == "BOOLEAN" && #.value == true)'
+fbrcm conditions delete --expr 'expression contains "deprecated.property"' --dry-run
 ```
 
 ## Project context

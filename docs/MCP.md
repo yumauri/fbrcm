@@ -130,8 +130,10 @@ For example, call `parameters.get` with:
 
 Where valid for the tool, omitted `arguments` and `options` default to `{}`,
 and omitted `stdin` defaults to `null`. Required arguments and conditional
-requirements still apply: `conditions.list` needs `arguments.project`, and
-`parameters.add` needs its parameter and value/type options. Explicit values,
+requirements still apply: `conditions.add` needs `arguments.name` and
+`options.expression`, while `parameters.add` needs its parameter and value/type
+options. Condition list and filtered delete calls may omit `arguments.project`
+to select projects through `options.project` or use the default project scope. Explicit values,
 including `null`, are validated as supplied. Inputs are limited to 16 MiB.
 
 Completed calls return the [machine envelope](cli-contract.md#envelope) in

@@ -64,7 +64,7 @@ allow a stored boolean or number to match its string representation.
 
 ## Condition context
 
-`conditions list --expr` exposes `name`, `priority`, `expression`, `color`,
+`conditions list --expr` and `conditions delete --expr` expose `name`, `priority`, `expression`, `color`,
 `usage_count`, and `usages`, plus the project fields:
 
 ```sh
@@ -72,6 +72,7 @@ fbrcm conditions list example-project-id --expr 'usage_count == 0'
 fbrcm conditions list example-project-id --expr 'priority <= 5'
 fbrcm conditions list example-project-id \
   --expr 'any(usages, #.parameter startsWith "legacy_")'
+fbrcm conditions delete --expr 'expression contains "deprecated.property"' --dry-run
 ```
 
 ## Project context

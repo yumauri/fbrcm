@@ -1357,6 +1357,137 @@ func TestStatelessGroupsAddPublishesWithoutProfileState(t *testing.T) {
 	assertProfilePathsAbsent(t, configRoot, cacheRoot)
 }
 
+func TestStatelessConditionBulkMutationForms(t *testing.T) {
+	tests := []struct {
+		name             string
+		current          string
+		args             []string
+		candidateHas     []string
+		candidateDoesNot []string
+		matched          string
+		projects         []string
+	}{
+		{
+			name:         "add with positional project",
+			current:      `{"conditions":[],"parameters":{},"version":{"versionNumber":"12"}}`,
+			args:         []string{"--stateless", "conditions", "add", "demo", "Bulk condition", "--expression", "percent <= 1", "--yes", "--json"},
+			candidateHas: []string{`"name":"Bulk condition"`, `"expression":"percent \u003c= 1"`},
+			matched:      `"matched_item_count":1`,
+			projects:     []string{"demo"},
+		},
+		{
+			name:         "add with project filter",
+			current:      `{"conditions":[],"parameters":{},"version":{"versionNumber":"12"}}`,
+			args:         []string{"--stateless", "conditions", "add", "Bulk condition", "--project", "=demo", "--expression", "percent <= 1", "--yes", "--json"},
+			candidateHas: []string{`"name":"Bulk condition"`, `"expression":"percent \u003c= 1"`},
+			matched:      `"matched_item_count":1`,
+			projects:     []string{"demo"},
+		},
+		{
+			name:         "add with repeated project filters",
+			current:      `{"conditions":[],"parameters":{},"version":{"versionNumber":"12"}}`,
+			args:         []string{"--stateless", "conditions", "add", "Bulk condition", "--project", "=beta", "--project", "=alpha", "--expression", "percent <= 1", "--yes", "--json"},
+			candidateHas: []string{`"name":"Bulk condition"`, `"expression":"percent \u003c= 1"`},
+			matched:      `"matched_item_count":1`,
+			projects:     []string{"alpha", "beta"},
+		},
+		{
+			name:             "delete with positional project and condition",
+			current:          `{"conditions":[{"name":"unused","expression":"true"},{"name":"used","expression":"false"}],"parameters":{"flag":{"defaultValue":{"value":"off"},"conditionalValues":{"unused":{"value":"on"},"used":{"value":"also-on"}},"valueType":"STRING"}},"version":{"versionNumber":"12"}}`,
+			args:             []string{"--stateless", "conditions", "delete", "demo", "unused", "--yes", "--json"},
+			candidateHas:     []string{`"name":"used"`, `"used":{"value":"also-on"}`},
+			candidateDoesNot: []string{`"name":"unused"`, `"unused":{"value":"on"}`},
+			matched:          `"matched_item_count":1`,
+			projects:         []string{"demo"},
+		},
+		{
+			name:             "delete by expression",
+			current:          `{"conditions":[{"name":"unused","expression":"true"},{"name":"used","expression":"false"}],"parameters":{"flag":{"defaultValue":{"value":"off"},"conditionalValues":{"used":{"value":"on"}},"valueType":"STRING"}},"version":{"versionNumber":"12"}}`,
+			args:             []string{"--stateless", "conditions", "delete", "--project", "=demo", "--expr", "usage_count == 0", "--yes", "--json"},
+			candidateHas:     []string{`"name":"used"`, `"used":{"value":"on"}`},
+			candidateDoesNot: []string{`"name":"unused"`},
+			matched:          `"matched_item_count":1`,
+			projects:         []string{"demo"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			requests := make(map[string]int)
+			cmd, captured, configRoot, cacheRoot := newStatelessHTTPTestCommand(t, func(req *http.Request) (*http.Response, error) {
+				key := req.Method + " " + req.URL.EscapedPath()
+				if req.URL.RawQuery != "" {
+					key += "?" + req.URL.RawQuery
+				}
+				requests[key]++
+
+				body := ""
+				etag := ""
+				switch {
+				case req.Method == http.MethodGet && strings.HasSuffix(req.URL.EscapedPath(), ":listVersions"):
+					body = `{"versions":[{"versionNumber":"12","updateTime":"2026-08-21T00:00:00Z"}]}`
+				case req.Method == http.MethodGet:
+					body, etag = test.current, `"etag-12"`
+				case req.Method == http.MethodPut:
+					candidate, err := io.ReadAll(req.Body)
+					if err != nil {
+						t.Fatal(err)
+					}
+					for _, marker := range test.candidateHas {
+						if !strings.Contains(string(candidate), marker) {
+							t.Fatalf("candidate %s omits %s", candidate, marker)
+						}
+					}
+					for _, marker := range test.candidateDoesNot {
+						if strings.Contains(string(candidate), marker) {
+							t.Fatalf("candidate %s contains %s", candidate, marker)
+						}
+					}
+					body = strings.Replace(string(candidate), `"versionNumber":"12"`, `"versionNumber":"13"`, 1)
+					if req.URL.Query().Get("validateOnly") != "true" {
+						etag = `"etag-13"`
+					}
+				default:
+					t.Fatalf("unexpected request %s %s", req.Method, req.URL.String())
+				}
+				return statelessHTTPResponse(req, http.StatusOK, body, etag), nil
+			})
+			cmd.SetArgs(test.args)
+			executed, err := cmd.ExecuteC()
+			if err != nil {
+				t.Fatalf("condition mutation = %v; output: %s", err, captured.String())
+			}
+			compact := compactJSON(t, captured.Bytes())
+			for _, marker := range []string{`"status":"published"`, test.matched} {
+				if !strings.Contains(compact, marker) {
+					t.Fatalf("condition mutation output %s omits %s", captured.String(), marker)
+				}
+			}
+			for _, projectID := range test.projects {
+				if marker := `"target":"` + projectID + `"`; !strings.Contains(compact, marker) {
+					t.Fatalf("condition mutation output %s omits %s", captured.String(), marker)
+				}
+			}
+			if envelope := contract.BuildEnvelope(executed, "1.2.3", captured.Bytes(), nil); envelope.Context.Profile != nil || envelope.Outcome != "success" {
+				t.Fatalf("envelope = %#v", envelope)
+			}
+			for _, projectID := range test.projects {
+				for key, want := range map[string]int{
+					"GET /v1/projects/" + projectID + "/remoteConfig:listVersions?pageSize=1": 1,
+					"GET /v1/projects/" + projectID + "/remoteConfig?versionNumber=12":        1,
+					"PUT /v1/projects/" + projectID + "/remoteConfig?validateOnly=true":       1,
+					"PUT /v1/projects/" + projectID + "/remoteConfig":                         1,
+				} {
+					if requests[key] != want {
+						t.Fatalf("requests[%q] = %d, want %d; all requests: %#v", key, requests[key], want, requests)
+					}
+				}
+			}
+			assertProfilePathsAbsent(t, configRoot, cacheRoot)
+		})
+	}
+}
+
 func assertProfilePathsAbsent(t *testing.T, paths ...string) {
 	t.Helper()
 	for _, path := range paths {

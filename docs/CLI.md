@@ -87,7 +87,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── show <project> <condition>
 │   │   ├── --update
 │   │   └── --json
-│   ├── add <project> <name>
+│   ├── add [project] <name>
+│   │   ├── --project, -p <query>  repeated
 │   │   ├── --expression <expr>  required
 │   │   ├── --color <color>
 │   │   ├── --priority <n>
@@ -121,7 +122,11 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --yes, -y
 │   │   ├── --plan-out <path>
 │   │   └── --json
-│   ├── delete <project> <condition>
+│   ├── delete [project] [condition]
+│   │   ├── --project, -p <query>  repeated
+│   │   ├── --filter, -f <query>  repeated
+│   │   ├── --search <text>
+│   │   ├── --expr <expr>
 │   │   ├── --dry-run
 │   │   ├── --draft
 │   │   ├── --change-note <text>
@@ -732,6 +737,7 @@ Condition-context commands:
 
 ```text
 conditions list
+conditions delete
 ```
 
 Project-context commands:
@@ -1575,17 +1581,17 @@ With root `--stateless`, `<project>` is a literal client or server target. The c
 
 ### Condition mutations
 
-The following commands edit one project's complete Remote Config:
+The condition mutation commands edit complete Remote Config templates:
 
 ```text
-fbrcm conditions add <project> <name> --expression <expr>
+fbrcm conditions add [project] <name> --expression <expr>
 fbrcm conditions edit <project> <condition>
 fbrcm conditions rename <project> <condition> <new-name>
 fbrcm conditions move <project> <condition> <priority>
-fbrcm conditions delete <project> <condition>
+fbrcm conditions delete [project] [condition]
 ```
 
-For `edit`, `rename`, `move`, and `delete`, positional `<condition>` is
+For `edit`, `rename`, `move`, and the two-argument form of `delete`, positional `<condition>` is
 untrimmed and must match the canonical condition name exactly and
 case-sensitively. A mismatch returns `condition.not_found`.
 
@@ -1602,9 +1608,17 @@ All five commands support:
 --json      print structured mutation results
 ```
 
-Without `--draft`, mutations print the complete Remote Config diff, ask for confirmation unless `--yes` is set, validate with Firebase, and publish with ETag protection. They refuse immediate publication while the project has an unpublished draft. With `--draft`, mutations compose onto the existing draft or create one and remain local.
+Without `--draft`, mutations print the complete Remote Config diff, ask for confirmation unless `--yes` is set, validate with Firebase, and publish with ETag protection. They refuse immediate publication for a target that has an unpublished draft. With `--draft`, mutations compose onto the existing draft or create one and remain local.
 
-With root `--stateless`, `<project>` must be one literal client or server target. The command fetches that template directly with `FBRCM_GOOGLE_ACCESS_TOKEN`, transforms it in memory, validates it with Firebase, and publishes it with the fetched ETag. It does not resolve a profile or read or write the project registry, cache, version snapshots, drafts, or hooks. `--dry-run`, `--change-note`, confirmation, `--yes`, and JSON results retain their normal behavior. `--draft` is rejected because stateless execution cannot persist a local draft.
+With root `--stateless`, a positional `<project>` must be one literal client or server target. Bulk `add` and `delete` use the stateless project-filter behavior described below. Each command fetches the selected template directly with `FBRCM_GOOGLE_ACCESS_TOKEN`, transforms it in memory, validates it with Firebase, and publishes it with the fetched ETag. It does not resolve a profile or read or write the project registry, cache, version snapshots, drafts, or hooks. `--dry-run`, `--change-note`, confirmation, `--yes`, and JSON results retain their normal behavior. `--draft` is rejected because stateless execution cannot persist a local draft.
+
+`add` and `delete` preserve their existing positional single-project forms. They also accept repeatable target-aware project filters:
+
+```text
+-p, --project <query>  filter projects; may be repeated; mutually exclusive with positional [project]
+```
+
+For `add`, omitting positional `[project]` selects targets with `--project`; omitting both selects every configured project and enabled template. Repeated project filters are ORed, targets are deduplicated and sorted, and each target is prepared, confirmed, validated, and published independently. An error on one target does not stop later targets. Multi-target publication warns that successful targets cannot be rolled back if another target fails. Stateless exact filters bypass discovery; other filters use live project discovery.
 
 `add` appends the condition by default. Its additional flags are:
 
@@ -1616,7 +1630,7 @@ With root `--stateless`, `<project>` must be one literal client or server target
 
 The portable machine input contract limits `--priority` to 2,147,483,647, then
 runtime validation limits an explicit nonzero priority to the existing
-condition count plus one. Zero appends the new condition.
+condition count plus one for each selected target. Zero appends the new condition.
 
 `edit` requires at least one of:
 
@@ -1634,7 +1648,26 @@ colors are `BLUE`, `BROWN`, `CYAN`, `DEEP_ORANGE`, `GREEN`, `INDIGO`, `LIME`,
 case-insensitively. Imported condition objects accept only Firebase's `name`,
 `expression`, and `tagColor` fields; unsupported fields are rejected.
 
-`rename` updates the condition definition and every conditional-value reference to it. `move` inserts the complete condition at the requested 1-based priority and reports how many conditions and parameters may be affected by the priority change. Its current `strconv.Atoi` parser accepts an optional leading `+` and leading zeroes, but rejects zero, negative values, non-decimal text, and machine-integer overflow; runtime validation also rejects priorities above the existing condition count. `delete` removes the condition and its conditional values; parameters left without any value may also be removed, and the command reports that impact before confirmation.
+`rename` updates the condition definition and every conditional-value reference to it. `move` inserts the complete condition at the requested 1-based priority and reports how many conditions and parameters may be affected by the priority change. Its current `strconv.Atoi` parser accepts an optional leading `+` and leading zeroes, but rejects zero, negative values, non-decimal text, and machine-integer overflow; runtime validation also rejects priorities above the existing condition count.
+
+For `delete`, zero or one positional argument enables list-style condition selection:
+
+```text
+-f, --filter <query>  filter condition names; may be repeated
+--search <text>       case-insensitive substring search across name and expression
+--expr <expr>         filter using condition expression context
+```
+
+One positional argument is the project, matching `conditions list`; no positional arguments select `--project` targets or all configured targets. The positional condition in the two-argument compatibility form is mutually exclusive with `--filter`. Repeated name filters are ORed, while project selection, name filtering, search, and expression filtering are ANDed. With no condition selector, every condition in each selected target matches. Selection is evaluated against the initial effective configuration in Firebase priority order, then all matches are removed in one candidate. The command prints one aggregate impact and one complete diff per target before confirmation. It removes matching condition definitions and their conditional values; parameters left without any value may also be removed, while empty and description-only groups remain. A filter with no matches produces an unchanged `no_match` result for that target.
+
+Examples:
+
+```sh
+fbrcm conditions delete demo --expr 'usage_count == 0' --dry-run
+fbrcm conditions delete --expr 'expression == "percent <= 10"' --dry-run
+fbrcm conditions delete --filter '=Beta users' --project '=demo-a' --project '=demo-b' --yes
+fbrcm conditions add "Beta users" --project '^staging-' --expression 'percent <= 10' --draft
+```
 
 ### `fbrcm conditions validate <project>`
 

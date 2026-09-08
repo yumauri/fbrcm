@@ -62,8 +62,10 @@ Use each tool's discovered input schema when constructing calls:
 
 Optional `arguments` and `options` default to `{}` where valid, and optional
 `stdin` defaults to `null`. Required values must still be supplied. For example,
-`conditions.list` requires `arguments.project`. The agent cannot pass `yes`,
-switch profiles, or change server permissions through a tool call.
+`conditions.add` requires `arguments.name` and `options.expression`. Condition
+list and filtered delete calls may omit `arguments.project` and select targets
+through `options.project` or the default project scope. The agent cannot pass
+`yes`, switch profiles, or change server permissions through a tool call.
 
 ## Choose tools and permissions
 
