@@ -14,9 +14,9 @@ import (
 // renderers.
 func ParameterEntityName(group, key string) string {
 	if strings.TrimSpace(group) == "" {
-		return "Property: " + key
+		return "Parameter: " + key
 	}
-	return "Property: " + group + " / " + key
+	return "Parameter: " + group + " / " + key
 }
 
 // Parameter prepares one Remote Config parameter as a generic dictionary.

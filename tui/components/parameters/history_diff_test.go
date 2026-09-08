@@ -44,7 +44,7 @@ func TestHistoryEnterRequestsGenericPropertyDiff(t *testing.T) {
 	}
 	input := request.Input
 	if request.Project.ProjectID != project.ProjectID ||
-		input.EntityName != "Property: WEB / checkout_enabled" ||
+		input.EntityName != "Parameter: WEB / checkout_enabled" ||
 		input.Left.Name != "Earlier version: v1" ||
 		input.Right.Name != "Later version: v2" {
 		t.Fatalf("history diff identity = project:%#v entity:%q maps:%q -> %q",

@@ -120,7 +120,7 @@ func TestRenderVersionBlameUsesVerticalLogAndSideBySideDiff(t *testing.T) {
 		"┝━ version 141 → 142",
 		"│  Alice Smith <alice@example.com> on 2026-09-06",
 		"│      Enable beta checkout",
-		"│  Property: checkout / checkout_enabled",
+		"│  Parameter: checkout / checkout_enabled",
 		"│  value · default",
 		"false",
 		"true",

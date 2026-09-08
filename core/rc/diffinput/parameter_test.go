@@ -54,10 +54,10 @@ func TestValuePreservesUnknownValueOptionForComparison(t *testing.T) {
 }
 
 func TestParameterEntityNameUsesGroupKeyWithoutDescription(t *testing.T) {
-	if got := ParameterEntityName("WEB", "banner"); got != "Property: WEB / banner" {
+	if got := ParameterEntityName("WEB", "banner"); got != "Parameter: WEB / banner" {
 		t.Fatalf("ParameterEntityName() = %q", got)
 	}
-	if got := ParameterEntityName("", "ungrouped"); got != "Property: ungrouped" {
+	if got := ParameterEntityName("", "ungrouped"); got != "Parameter: ungrouped" {
 		t.Fatalf("ParameterEntityName() = %q", got)
 	}
 }

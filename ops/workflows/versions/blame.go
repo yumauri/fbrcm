@@ -142,7 +142,7 @@ func renderVersionBlame(project core.Project, history core.ParameterHistory, ter
 	fmt.Fprintf(&output, "Project: %s (%s)\n", project.Name, project.ProjectID)
 	parameterPath := history.Parameter
 	if history.AtGroup != nil {
-		parameterPath = strings.TrimPrefix(rcdiffinput.ParameterEntityName(*history.AtGroup, history.Parameter), "Property: ")
+		parameterPath = strings.TrimPrefix(rcdiffinput.ParameterEntityName(*history.AtGroup, history.Parameter), "Parameter: ")
 	}
 	fmt.Fprintf(&output, "Parameter: %s\n", parameterPath)
 

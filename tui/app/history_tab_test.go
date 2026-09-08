@@ -71,7 +71,7 @@ func TestHistoryDiffRequestOpensGenericDiffModal(t *testing.T) {
 	next, _, handled := m.updateAppMessage(parameterscmp.HistoryDiffRequestedMsg{
 		Project: core.Project{ProjectID: "demo", Name: "Demo"},
 		Input: dictdiff.Input{
-			EntityName: "Property: WEB / flag",
+			EntityName: "Parameter: WEB / flag",
 			Left: dictdiff.NamedDictionary{
 				Name:       "Earlier version: v1",
 				Properties: dictdiff.Dictionary{"value · default": dictdiff.Boolean(true)},
@@ -87,7 +87,7 @@ func TestHistoryDiffRequestOpensGenericDiffModal(t *testing.T) {
 	}
 	view := next.diffView.View()
 	for _, want := range []string{
-		"Property:", "WEB / flag", "Earlier version:", "v1",
+		"Parameter:", "WEB / flag", "Earlier version:", "v1",
 		"Later version:", "v2", "value · default",
 	} {
 		if !strings.Contains(view, want) {
