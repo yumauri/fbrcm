@@ -14,7 +14,7 @@ import (
 
 const (
 	Name = "fbrcm"
-	Logo = `▄─┐▄
+	Logo = `▄─╮▄
 █- █─▄ ▄─▄ ▄── ▄─▄─▄
 ▀  ▀─▀ ▀   ▀── ▀ ▀ ▀`
 

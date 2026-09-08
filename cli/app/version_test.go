@@ -10,7 +10,7 @@ import (
 	"github.com/yumauri/fbrcm/core/env"
 )
 
-const expectedPlainVersion = `▄─┐▄
+const expectedPlainVersion = `▄─╮▄
 █- █─▄ ▄─▄ ▄── ▄─▄─▄
 ▀  ▀─▀ ▀   ▀── ▀ ▀ ▀
 fbrcm 1.2.3 (commit abc123, built 2026-06-14)
