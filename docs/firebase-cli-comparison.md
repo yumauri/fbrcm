@@ -13,7 +13,7 @@ publish Firebase Remote Config. They are optimized for different workflows:
   enforce policy across every fbrcm publication path.
 
 This comparison covers the documented Firebase CLI command set and
-`firebase-tools` 15.29.0 as of September 6, 2026. Consult the
+`firebase-tools` 15.30.0 as of September 11, 2026. Consult the
 [current Firebase CLI reference](https://firebase.google.com/docs/cli) when
 using a later release.
 
@@ -60,6 +60,7 @@ approaches the same concern differently.
 | Read and publish server templates | ❌ | ✅ | fbrcm accepts explicit `server@project-id` targets and keeps their state separate from client templates. |
 | List template versions | ✅ | ✅ | Both read Firebase version history. |
 | Retrieve or export a historical version | ✅ | ✅ | Both can write a selected version to a file. |
+| Trace a parameter's retained version history | ❌ | ✅ | `fbrcm versions blame` reports only publications that directly changed the parameter, including the author, time, change note, and a side-by-side diff. |
 | Roll back to a retained Firebase version | ✅ | ✅ | fbrcm adds a reviewed diff and dry-run support. |
 | Restore a locally cached expired version | ❌ | ✅ | fbrcm can republish an immutable local snapshot after Firebase no longer returns it. |
 | Download application defaults | ❌ | ✅ | fbrcm downloads JSON, Android XML, or Apple plist defaults. |
@@ -76,7 +77,9 @@ approaches the same concern differently.
 | Parameter search and typed expression filters | ❌ | ✅ | fbrcm filters on keys, descriptions, values, conditions, types, and project context. |
 | Add, update, delete, or duplicate individual parameters | ⚠️ | ✅ | Firebase CLI publishes an edited complete template; fbrcm exposes typed item-level mutations. |
 | Manage parameter groups | ⚠️ | ✅ | fbrcm adds, edits, renames, and explicitly removes groups while preserving empty groups elsewhere. |
-| Manage conditions and evaluation priority | ⚠️ | ✅ | fbrcm edits definitions, colors, ordering, references, and conditional values. |
+| List conditions across projects | ⚠️ | ✅ | Firebase CLI requires fetching and processing templates separately; fbrcm combines selected client and server targets in one filtered table. |
+| Add or delete conditions across projects | ⚠️ | ✅ | Firebase CLI requires editing and deploying complete templates separately; fbrcm applies filtered, independently validated mutations across selected targets with diff, dry-run, draft, and ETag safeguards. |
+| Edit, rename, and reorder conditions | ⚠️ | ✅ | fbrcm edits definitions, colors, evaluation priority, references, and conditional values. |
 | Transform Remote Config through stdin | ❌ | ✅ | `get`, `add`, `update`, and `delete` can operate as JSON pipeline stages. |
 | Preview a structured Remote Config diff | ❌ | ✅ | fbrcm diffs drafts, versions, projects, imports, mutations, and promotions. |
 | Compare two projects or template types | ❌ | ✅ | `fbrcm projects diff` supports filters and CI exit codes. |
