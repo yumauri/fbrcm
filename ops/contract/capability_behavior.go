@@ -654,11 +654,17 @@ func themeSwitchBehavior() capabilityBehavior {
 }
 
 var capabilityBehaviors = map[string]capabilityBehavior{
-	"root":                  behavior(0, "none"),
-	"help":                  behavior(0, "none"),
-	"capabilities":          behavior(0, "none"),
-	"schema.list":           behavior(0, "none"),
-	"schema.show":           behavior(0, "none"),
+	"root":         behavior(0, "none"),
+	"help":         behavior(0, "none"),
+	"capabilities": behavior(0, "none"),
+	"schema.list":  behavior(0, "none"),
+	"schema.show":  behavior(0, "none"),
+	"setup": withInteraction(
+		behavior(0, "none"),
+		"required",
+		"guided_setup_returns_interaction",
+		conditionClause(predicate("runtime_state", "guided_setup", "required", nil)),
+	),
 	"plan.show":             withStdin(behavior(0, "none")),
 	"plan.validate":         withStdin(behavior(0, "none")),
 	"completion.bash":       behavior(0, "none"),

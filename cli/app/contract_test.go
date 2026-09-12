@@ -2842,7 +2842,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 				}
 			}
 			wantOutcomes := []string{"success", "failure"}
-			if capability.ID == "config.edit" || capability.ID == "mcp" {
+			if capability.ID == "config.edit" || capability.ID == "mcp" || capability.ID == "setup" {
 				wantOutcomes = []string{"failure"}
 			} else if partialCommands[capability.ID] {
 				wantOutcomes = []string{"success", "partial_success", "failure"}
@@ -3526,6 +3526,25 @@ func TestJSONConfigEditReturnsInteractionBeforeHumanFlagValidation(t *testing.T)
 	envelope, raw := executeJSONContract(t, "config", "edit", "--scope", "invalid", "--editor", "ignored", "--full", "--json")
 	if envelope.Outcome != "failure" || envelope.ExitCode != 10 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "interaction.required" {
 		t.Fatalf("envelope = %#v", envelope)
+	}
+	validateContractDocument(t, envelope.Schema, raw)
+}
+
+func TestJSONSetupReturnsGuidedInteraction(t *testing.T) {
+	envelope, raw := executeJSONContract(t, "setup", "--noopen", "--json")
+	if envelope.Outcome != "failure" || envelope.ExitCode != 10 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "interaction.required" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	detailsRaw, err := json.Marshal(envelope.Errors[0].Details)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var details map[string]any
+	if err := json.Unmarshal(detailsRaw, &details); err != nil {
+		t.Fatal(err)
+	}
+	if details["kind"] != "interaction" || details["interaction_type"] != "guided_setup" {
+		t.Fatalf("interaction details = %#v", details)
 	}
 	validateContractDocument(t, envelope.Schema, raw)
 }

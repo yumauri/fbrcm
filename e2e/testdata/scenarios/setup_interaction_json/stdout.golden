@@ -1,0 +1,45 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
+  "contract_version": "1.0.0",
+  "command": "setup",
+  "requested_command": "setup",
+  "outcome": "failure",
+  "exit_code": 10,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": null,
+  "errors": [
+    {
+      "code": "interaction.required",
+      "category": "interaction",
+      "message": "guided setup requires an interactive terminal; run `fbrcm setup` without --json",
+      "retryable": false,
+      "target": null,
+      "stage": null,
+      "details": {
+        "kind": "interaction",
+        "interaction_type": "guided_setup",
+        "required_option": null,
+        "destructive": false
+      },
+      "remediation": [
+        {
+          "description": "rerun with the complete non-interactive arguments",
+          "strategy": "retry_with_arguments",
+          "argv": [
+            "setup"
+          ]
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

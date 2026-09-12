@@ -32,6 +32,7 @@ import (
 	profilecmd "github.com/yumauri/fbrcm/cli/commands/profile"
 	projectcmd "github.com/yumauri/fbrcm/cli/commands/project"
 	projectscmd "github.com/yumauri/fbrcm/cli/commands/projects"
+	setupcmd "github.com/yumauri/fbrcm/cli/commands/setup"
 	themecmd "github.com/yumauri/fbrcm/cli/commands/theme"
 	updatecmd "github.com/yumauri/fbrcm/cli/commands/update"
 	versionscmd "github.com/yumauri/fbrcm/cli/commands/versions"
@@ -206,6 +207,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(plancmd.New())
 	rootCmd.AddCommand(projectcmd.New(s))
 	rootCmd.AddCommand(projectscmd.New(s))
+	rootCmd.AddCommand(setupcmd.New(s))
 	rootCmd.AddCommand(themecmd.New())
 	rootCmd.AddCommand(managedfeaturescmd.NewRollouts(s))
 	rootCmd.AddCommand(metacmd.NewCapabilities())

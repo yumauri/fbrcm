@@ -123,7 +123,13 @@ Start the TUI:
 fbrcm
 ```
 
-On a new profile, fbrcm opens guided setup. It supports:
+For guided setup in the command-line interface instead, run:
+
+```sh
+fbrcm setup
+```
+
+On a new profile, fbrcm opens guided TUI setup. Both guided setup paths support:
 
 - Google sign-in using fbrcm's built-in shared OAuth client (**unavailable —
   Google verification pending**);
@@ -157,8 +163,8 @@ fbrcm doctor
 ```
 
 See [TUI setup and workflows](https://github.com/yumauri/fbrcm/blob/main/docs/TUI.md#setup-and-authentication) for the
-guided path, or [CLI authentication](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md#fbrcm-auth-list) for
-non-interactive setup.
+full-screen path, or [guided CLI setup](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md#fbrcm-setup) for the
+line-oriented path.
 
 ## A quick tour
 

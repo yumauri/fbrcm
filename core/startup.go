@@ -3,9 +3,28 @@ package core
 import (
 	"errors"
 	"os"
+	"strconv"
 
 	"github.com/yumauri/fbrcm/core/config"
 )
+
+// SuggestedAuthID returns the first setup-friendly identity name that is not
+// already used by the supplied authentication registry.
+func SuggestedAuthID(auth []config.AuthEntry) string {
+	if len(auth) == 0 {
+		return "default"
+	}
+	used := make(map[string]struct{}, len(auth))
+	for _, entry := range auth {
+		used[entry.ID] = struct{}{}
+	}
+	for index := 2; ; index++ {
+		candidate := "account-" + strconv.Itoa(index)
+		if _, exists := used[candidate]; !exists {
+			return candidate
+		}
+	}
+}
 
 // StartupState describes the local state needed to choose between opening the
 // workspace and showing interactive setup. It deliberately performs no

@@ -52,7 +52,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "apply", "apps", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "apply", "apps", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "setup", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -83,7 +83,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{29, 29, 29}) {
+	if !reflect.DeepEqual(counts, []int{30, 30, 30}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }
@@ -1809,7 +1809,7 @@ func TestRootCommandShowsAuthSetupGuidanceBeforeUsage(t *testing.T) {
 
 	got := output.String()
 	errorAt := strings.Index(got, "Error: read auth config:")
-	hintAt := strings.Index(got, "Set up authentication by running `fbrcm` for guided setup")
+	hintAt := strings.Index(got, "Set up authentication by running `fbrcm setup` for guided CLI setup")
 	usageAt := strings.Index(got, "Usage:\n  fbrcm projects list")
 	if errorAt < 0 || hintAt < 0 || usageAt < 0 || errorAt >= hintAt || hintAt >= usageAt {
 		t.Fatalf("projects list output does not show auth setup guidance between error and usage:\n%s", got)

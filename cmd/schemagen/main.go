@@ -813,7 +813,7 @@ func problemDetailsSchema(selfRef string) map[string]any {
 	failure := map[string]any{"$ref": selfRef}
 	return map[string]any{"oneOf": []any{
 		map[string]any{"type": "null"},
-		object([]string{"kind", "interaction_type", "required_option", "destructive"}, map[string]any{"kind": map[string]any{"const": "interaction"}, "interaction_type": map[string]any{"enum": []string{"confirmation", "destination_conflict", "external_input", "input_required", "selection_required"}}, "required_option": map[string]any{"type": []string{"string", "null"}}, "destructive": map[string]any{"type": "boolean"}}),
+		object([]string{"kind", "interaction_type", "required_option", "destructive"}, map[string]any{"kind": map[string]any{"const": "interaction"}, "interaction_type": map[string]any{"enum": []string{"confirmation", "destination_conflict", "external_input", "guided_setup", "input_required", "selection_required"}}, "required_option": map[string]any{"type": []string{"string", "null"}}, "destructive": map[string]any{"type": "boolean"}}),
 		object([]string{"kind", "auth_id"}, map[string]any{"kind": map[string]any{"const": "oauth_authorization"}, "auth_id": stringValue}),
 		object([]string{"kind", "expression", "context"}, map[string]any{"kind": map[string]any{"const": "expression"}, "expression": stringValue, "context": stringValue}),
 		object([]string{"kind", "source"}, map[string]any{"kind": map[string]any{"const": "validation"}, "source": stringValue}),
@@ -850,7 +850,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "runtime_state"}}, "required": []string{"source"}},
-				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication_plan", "source_draft_cleanup", "publication", "authentication", "quota_project_credentials", "version_request", "external_editor", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
+				"then": map[string]any{"properties": map[string]any{"name": map[string]any{"enum": []string{"required_cache", "remote_read", "trusted_hook", "output_destination", "credential_file", "mutation_plan", "publication_plan", "source_draft_cleanup", "publication", "authentication", "quota_project_credentials", "version_request", "external_editor", "guided_setup", "promotion_selection", "confirmation", "profile_bootstrap", "profile_cache", "project_registry", "import_strategy", "import_merge_resolution", "draft_change_note", "diagnostic_cache_probe", "diagnostic_identity", "theme_source"}}}},
 			},
 			map[string]any{
 				"if":   map[string]any{"properties": map[string]any{"source": map[string]any{"const": "context"}}, "required": []string{"source"}},
@@ -863,6 +863,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 		{"required_cache", "not_usable"},
 		{"publication", "accepted"},
 		{"external_editor", "required"},
+		{"guided_setup", "required"},
 		{"promotion_selection", "required"},
 		{"profile_bootstrap", "required"},
 		{"profile_cache", "available"},
@@ -994,7 +995,7 @@ func capabilitySchema(published []contract.Capability) map[string]any {
 			"idempotency_when": map[string]any{"type": "array", "items": map[string]any{"type": "object", "additionalProperties": false, "required": []string{"idempotency", "when"}, "properties": map[string]any{"idempotency": map[string]any{"enum": []string{"yes", "no"}}, "when": conditionClauses}}},
 			"supports":         contract.CapabilitySupportSchema(),
 			"stdin_modes":      map[string]any{"type": "array", "uniqueItems": true, "items": map[string]any{"enum": []string{"json_document", "toml_document"}}},
-			"interaction":      map[string]any{"type": "object", "additionalProperties": false, "required": []string{"mode", "json_behavior"}, "properties": map[string]any{"mode": map[string]any{"enum": []string{"none", "optional", "required"}}, "json_behavior": map[string]any{"enum": []string{"non_interactive", "confirmation_required_without_bypass", "destination_conflict_returns_interaction", "external_input_returns_interaction", "browser_launch_suppressed", "oauth_authorization_returns_interaction", "browser_launch_suppressed_and_oauth_authorization_returns_interaction", "declared_conditions_return_interaction", "missing_input_returns_interaction", "deletion_preview_requires_confirmation", "import_requires_explicit_strategy_and_confirmation", "promotion_requires_explicit_selection_and_confirmation"}}}},
+			"interaction":      map[string]any{"type": "object", "additionalProperties": false, "required": []string{"mode", "json_behavior"}, "properties": map[string]any{"mode": map[string]any{"enum": []string{"none", "optional", "required"}}, "json_behavior": map[string]any{"enum": []string{"non_interactive", "confirmation_required_without_bypass", "destination_conflict_returns_interaction", "external_input_returns_interaction", "guided_setup_returns_interaction", "browser_launch_suppressed", "oauth_authorization_returns_interaction", "browser_launch_suppressed_and_oauth_authorization_returns_interaction", "declared_conditions_return_interaction", "missing_input_returns_interaction", "deletion_preview_requires_confirmation", "import_requires_explicit_strategy_and_confirmation", "promotion_requires_explicit_selection_and_confirmation"}}}},
 			"interaction_when": conditionClauses,
 		},
 		"allOf": []any{
@@ -1053,6 +1054,7 @@ func runtimeStatePredicateSemantics() []any {
 		definition("authentication", "token_persisted", "Authentication obtained and successfully persisted a new or refreshed local token."),
 		definition("version_request", "requires_network", "After applying the selector and --cached policy, at least one requested immutable version cannot be resolved from local snapshots and must be fetched from Firebase."),
 		definition("external_editor", "required", "Completing the requested command requires launching an external editor, which JSON mode does not launch."),
+		definition("guided_setup", "required", "Completing the requested command requires a human-guided authentication and project-discovery session, which JSON mode does not run."),
 		definition("promotion_selection", "required", "The promotion plan contains eligible items but the invocation supplies neither an explicit non-interactive selection nor an authorization that selects them."),
 		definition("confirmation", "required", "The completed plan requires confirmation and the invocation has not supplied the command's confirmation-bypass option."),
 		definition("confirmation", "authorized_or_not_required", "The command reached a confirmation-guarded effect because the invocation supplied the bypass option or the completed plan did not require confirmation."),

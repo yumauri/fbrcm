@@ -107,7 +107,7 @@ template; use `client@project-id` or `server@project-id` when needed.
 
 | Goal | Firebase CLI | fbrcm |
 | --- | --- | --- |
-| Initialize the local workflow | `firebase init remoteconfig` | Run `fbrcm` for guided setup, or use `fbrcm auth add ...` followed by `fbrcm projects update` |
+| Initialize the local workflow | `firebase init remoteconfig` | Run `fbrcm setup` for guided CLI setup, run `fbrcm` for the TUI, or use `fbrcm auth add ...` followed by `fbrcm projects update` |
 | Export current template | `firebase --project PROJECT remoteconfig:get -o FILE` | `fbrcm project export PROJECT --to FILE` |
 | Print current template | `firebase --project PROJECT remoteconfig:get` | `fbrcm project export PROJECT` |
 | Inspect current parameters | Edit or inspect exported JSON | `fbrcm get --project '=PROJECT'` |

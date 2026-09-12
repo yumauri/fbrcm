@@ -1,6 +1,6 @@
 {
   "contract_version": "1.0.0",
-  "count": 117,
+  "count": 118,
   "commands": [
     {
       "id": "add",
@@ -2014,6 +2014,25 @@
       "summary": "Show one generated CLI JSON Schema",
       "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:input",
       "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
+      "side_effect_level": 1,
+      "destructive": false,
+      "supports": {
+        "dry_run": false,
+        "draft": false,
+        "plan": false,
+        "confirmation_bypass": false,
+        "stdin": false,
+        "stateless": false
+      }
+    },
+    {
+      "id": "setup",
+      "path": [
+        "setup"
+      ],
+      "summary": "Interactively configure authentication and discover projects",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {

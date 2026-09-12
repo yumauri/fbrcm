@@ -31482,6 +31482,137 @@
     },
     {
       "const": {
+        "id": "setup",
+        "path": [
+          "setup"
+        ],
+        "summary": "Interactively configure authentication and discover projects",
+        "arguments": [],
+        "flags": [
+          {
+            "name": "--no-local-config",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+          },
+          {
+            "name": "--noopen",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": false,
+            "usage": "Do not open the OAuth authorization URL automatically; accepted but not applied by this command"
+          },
+          {
+            "name": "--profile",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+          },
+          {
+            "name": "--stateless",
+            "aliases": [],
+            "type": "bool",
+            "default": false,
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+          },
+          {
+            "name": "--timeout",
+            "aliases": [],
+            "type": "duration",
+            "default": "0s",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Maximum duration for the complete command"
+          }
+        ],
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:input",
+        "stdin_schema": null,
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
+        "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+        "problem_codes": [
+          "argument.invalid",
+          "command.canceled",
+          "command.timeout",
+          "configuration.invalid",
+          "file.io_failed",
+          "filesystem.permission_denied",
+          "interaction.required",
+          "internal.contract_violation",
+          "internal.unclassified",
+          "profile.invalid"
+        ],
+        "side_effect_level": 1,
+        "side_effects": [
+          "local_state_write"
+        ],
+        "side_effect_when": [
+          {
+            "effect": "local_state_write",
+            "when": [
+              {
+                "all_of": [
+                  {
+                    "source": "runtime_state",
+                    "name": "profile_bootstrap",
+                    "operator": "required",
+                    "value": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "network_access": "none",
+        "network_when": [],
+        "destructive": false,
+        "destructive_when": [],
+        "destructive_reasons": [],
+        "idempotency": "yes",
+        "idempotency_when": [],
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        },
+        "stdin_modes": [],
+        "interaction": {
+          "mode": "required",
+          "json_behavior": "guided_setup_returns_interaction"
+        },
+        "interaction_when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "guided_setup",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "const": {
         "id": "theme",
         "path": [
           "theme"
@@ -36932,6 +37063,7 @@
                           "quota_project_credentials",
                           "version_request",
                           "external_editor",
+                          "guided_setup",
                           "promotion_selection",
                           "confirmation",
                           "profile_bootstrap",
@@ -37026,6 +37158,32 @@
                     "properties": {
                       "name": {
                         "const": "external_editor"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "required"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "guided_setup"
                       },
                       "source": {
                         "const": "runtime_state"
@@ -37937,6 +38095,7 @@
                                 "quota_project_credentials",
                                 "version_request",
                                 "external_editor",
+                                "guided_setup",
                                 "promotion_selection",
                                 "confirmation",
                                 "profile_bootstrap",
@@ -38031,6 +38190,32 @@
                           "properties": {
                             "name": {
                               "const": "external_editor"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "required"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "guided_setup"
                             },
                             "source": {
                               "const": "runtime_state"
@@ -38897,6 +39082,7 @@
                                 "quota_project_credentials",
                                 "version_request",
                                 "external_editor",
+                                "guided_setup",
                                 "promotion_selection",
                                 "confirmation",
                                 "profile_bootstrap",
@@ -38991,6 +39177,32 @@
                           "properties": {
                             "name": {
                               "const": "external_editor"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "required"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "guided_setup"
                             },
                             "source": {
                               "const": "runtime_state"
@@ -39750,6 +39962,7 @@
             "confirmation_required_without_bypass",
             "destination_conflict_returns_interaction",
             "external_input_returns_interaction",
+            "guided_setup_returns_interaction",
             "browser_launch_suppressed",
             "oauth_authorization_returns_interaction",
             "browser_launch_suppressed_and_oauth_authorization_returns_interaction",
@@ -39841,6 +40054,7 @@
                           "quota_project_credentials",
                           "version_request",
                           "external_editor",
+                          "guided_setup",
                           "promotion_selection",
                           "confirmation",
                           "profile_bootstrap",
@@ -39935,6 +40149,32 @@
                     "properties": {
                       "name": {
                         "const": "external_editor"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "required"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "guided_setup"
                       },
                       "source": {
                         "const": "runtime_state"
@@ -40754,6 +40994,7 @@
                           "quota_project_credentials",
                           "version_request",
                           "external_editor",
+                          "guided_setup",
                           "promotion_selection",
                           "confirmation",
                           "profile_bootstrap",
@@ -40848,6 +41089,32 @@
                     "properties": {
                       "name": {
                         "const": "external_editor"
+                      },
+                      "source": {
+                        "const": "runtime_state"
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "name"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "operator": {
+                        "const": "required"
+                      },
+                      "value": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "name": {
+                        "const": "guided_setup"
                       },
                       "source": {
                         "const": "runtime_state"
@@ -41780,6 +42047,7 @@
                                 "quota_project_credentials",
                                 "version_request",
                                 "external_editor",
+                                "guided_setup",
                                 "promotion_selection",
                                 "confirmation",
                                 "profile_bootstrap",
@@ -41874,6 +42142,32 @@
                           "properties": {
                             "name": {
                               "const": "external_editor"
+                            },
+                            "source": {
+                              "const": "runtime_state"
+                            }
+                          },
+                          "required": [
+                            "source",
+                            "name"
+                          ]
+                        },
+                        "then": {
+                          "properties": {
+                            "operator": {
+                              "const": "required"
+                            },
+                            "value": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "name": {
+                              "const": "guided_setup"
                             },
                             "source": {
                               "const": "runtime_state"
@@ -42852,6 +43146,12 @@
       "name": "external_editor",
       "operator": "required",
       "semantics": "Completing the requested command requires launching an external editor, which JSON mode does not launch.",
+      "source": "runtime_state"
+    },
+    {
+      "name": "guided_setup",
+      "operator": "required",
+      "semantics": "Completing the requested command requires a human-guided authentication and project-discovery session, which JSON mode does not run.",
       "source": "runtime_state"
     },
     {

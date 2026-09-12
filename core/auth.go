@@ -12,7 +12,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 )
 
-const authSetupHint = "Set up authentication by running `fbrcm` for guided setup, or see `fbrcm auth add --help` for CLI options."
+const authSetupHint = "Set up authentication by running `fbrcm setup` for guided CLI setup, run `fbrcm` for the TUI, or see `fbrcm auth add --help` for individual CLI commands."
 
 // AuthError classifies expected authentication registry and selection failures
 // without coupling core services to the CLI contract package.

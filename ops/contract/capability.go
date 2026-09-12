@@ -512,6 +512,9 @@ func optionIgnored(id, name string) bool {
 	if id == "auth.login" && name == "noopen" {
 		return true
 	}
+	if id == "setup" && name == "noopen" {
+		return true
+	}
 	return id == "config.edit" && slices.Contains([]string{"editor", "full", "scope"}, name)
 }
 

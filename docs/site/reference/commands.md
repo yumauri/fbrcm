@@ -3,8 +3,9 @@
 Use this page to find a command. Run `fbrcm help <command>` for its full set of
 flags, or `fbrcm capabilities <command...> --json` for a machine-readable
 definition from the installed binary.
-Complete [CLI-only setup](/guide/#option-2-setup-using-only-the-cli) before using
-project or Remote Config commands for the first time.
+Run `fbrcm setup` for guided CLI setup, or follow the
+[manual CLI setup](/guide/#manual-cli-setup) before using project or Remote
+Config commands for the first time.
 
 ## Parameters and structure
 
@@ -100,6 +101,7 @@ These are read-only Firebase Management operations. See
 
 | Command | Purpose |
 | --- | --- |
+| `setup` | Guide authentication and Firebase project discovery |
 | `doctor` | Diagnose credentials, APIs, connectivity, and storage |
 | `cache list/path/clear` | Inspect or remove cached templates and Firebase app data |
 | `config path/show/set/reset/validate/edit` | Manage configuration |

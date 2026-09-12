@@ -317,6 +317,12 @@ terminal presentation and are not represented in JSON DTOs or schemas.
   interaction. OAuth refresh can contact Google's token endpoint and persist a
   refreshed token; gcloud ADC discovery can contact the metadata server when
   no local ADC source is available.
+- For an otherwise valid profile-based invocation, `setup --json` returns
+  `interaction.required` before opening a menu, file picker, or browser and
+  before changing authentication or project state. Normal global profile
+  bootstrap may still create the `default` profile. Guided setup is a human CLI
+  convenience; automation composes `auth add`, `auth login`, and `projects
+  update`.
 - `project open --json` returns the URL with `opened: false` and does not start
   a browser.
 - In human mode, `FBRCM_OFFLINE` makes `project open` print that URL to stdout

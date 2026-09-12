@@ -504,7 +504,7 @@ SOFTWARE.
 
 ======================================================================
 Component: github.com/charmbracelet/ultraviolet
-Version: v0.0.0-20260906173415-0277a179edd9
+Version: v0.0.0-20260910203606-6c9e17dc7a16
 License: MIT
 Source: github.com/charmbracelet/ultraviolet
 
@@ -1206,7 +1206,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ======================================================================
 Component: github.com/mattn/go-runewidth
-Version: v0.0.29
+Version: v0.0.30
 License: MIT
 Source: github.com/mattn/go-runewidth
 

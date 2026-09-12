@@ -9835,6 +9835,86 @@
       }
     },
     {
+      "id": "setup",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:setup_interaction_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.unknown_option",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.interaction",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:setup_interaction_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "not_applicable": "The JSON operation has no reachable success outcome."
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
       "id": "theme",
       "classes": {
         "artifact": {

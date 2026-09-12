@@ -2,7 +2,8 @@
 
 After these steps, fbrcm will have one working credential, a saved project
 list, and a cached Remote Config template. The last step previews a change
-without publishing it. Choose the TUI setup or the CLI-only setup.
+without publishing it. Choose guided setup in the TUI or CLI, or configure the
+CLI manually.
 
 ## What you need
 
@@ -144,7 +145,23 @@ fbrcm doctor
 Continue with the [TUI overview](/tui/) when you want to edit or compare data
 interactively.
 
-## Option 2: setup using only the CLI
+## Option 2: guided setup in the CLI
+
+Run the line-oriented setup wizard when you want guided onboarding without
+opening the full TUI:
+
+```sh
+fbrcm setup
+```
+
+It chooses an authentication method, asks for an identity name and quota
+project, imports a JSON credential when the method needs one, completes or
+validates authentication, and discovers accessible Firebase projects. Add
+`--noopen` to print an OAuth authorization URL instead of opening it
+automatically. Rerunning the command resumes a partially configured profile;
+an already configured profile exits without making a network request.
+
+## Manual CLI setup
 
 The examples below use these concrete names:
 

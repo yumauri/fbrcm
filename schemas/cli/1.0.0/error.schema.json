@@ -1124,6 +1124,7 @@
                 "confirmation",
                 "destination_conflict",
                 "external_input",
+                "guided_setup",
                 "input_required",
                 "selection_required"
               ]

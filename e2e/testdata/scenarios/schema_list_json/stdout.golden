@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "count": 246,
+    "count": 248,
     "items": [
       "urn:fbrcm:schema:cli:1.0.0:capability",
       "urn:fbrcm:schema:cli:1.0.0:command:add:input",
@@ -221,6 +221,8 @@
       "urn:fbrcm:schema:cli:1.0.0:command:schema.list:response",
       "urn:fbrcm:schema:cli:1.0.0:command:schema.show:input",
       "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
+      "urn:fbrcm:schema:cli:1.0.0:command:setup:input",
+      "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
       "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
       "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
       "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",

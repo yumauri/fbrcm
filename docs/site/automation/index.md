@@ -6,7 +6,8 @@ the workflow below and add `--json` to each call. Commands then return one
 versioned JSON envelope instead of terminal tables, colors, diffs, or prompts.
 
 The stateful examples assume you have already configured a profile through the
-[CLI-only setup path](/guide/#option-2-setup-using-only-the-cli).
+[manual CLI setup path](/guide/#manual-cli-setup). The guided `fbrcm setup`
+command is intentionally interactive and is not available in JSON mode.
 
 ## Discover the installed binary
 

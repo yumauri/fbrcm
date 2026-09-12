@@ -11,8 +11,8 @@ fbrcm draft list
 With no arguments, fbrcm opens the [TUI](/tui/). `fbrcm mcp` starts the
 [MCP server](/automation/mcp) for an AI application.
 
-If you have not configured credentials and discovered projects yet, complete
-the [CLI-only setup path](/guide/#option-2-setup-using-only-the-cli) first.
+If you have not configured credentials and discovered projects yet, run
+`fbrcm setup` or follow the [manual CLI setup](/guide/#manual-cli-setup) first.
 
 Use `fbrcm help <command>` for flags accepted by the installed version and the
 [command index](/reference/commands) for a map of the complete command set.

@@ -3,7 +3,6 @@ package setup
 import (
 	"context"
 	"os"
-	"strconv"
 
 	"charm.land/bubbles/v2/filepicker"
 	"charm.land/bubbles/v2/spinner"
@@ -388,19 +387,7 @@ func authTypeLabel(value string) string {
 }
 
 func (m Model) suggestedAuthID() string {
-	if len(m.auth) == 0 {
-		return "default"
-	}
-	used := make(map[string]struct{}, len(m.auth))
-	for _, entry := range m.auth {
-		used[entry.ID] = struct{}{}
-	}
-	for index := 2; ; index++ {
-		candidate := "account-" + strconv.Itoa(index)
-		if _, exists := used[candidate]; !exists {
-			return candidate
-		}
-	}
+	return core.SuggestedAuthID(m.auth)
 }
 
 func (m *Model) upsertAuth(entry config.AuthEntry) {

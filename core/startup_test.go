@@ -27,6 +27,16 @@ func TestInspectStartupStateEmptyProfile(t *testing.T) {
 	}
 }
 
+func TestSuggestedAuthID(t *testing.T) {
+	if got := SuggestedAuthID(nil); got != "default" {
+		t.Fatalf("SuggestedAuthID(nil) = %q", got)
+	}
+	auth := []config.AuthEntry{{ID: "default"}, {ID: "account-2"}, {ID: "account-4"}}
+	if got := SuggestedAuthID(auth); got != "account-3" {
+		t.Fatalf("SuggestedAuthID(auth) = %q", got)
+	}
+}
+
 func TestSwitchProfileKeepsFirebaseClientCacheProfileScoped(t *testing.T) {
 	svc := setupCoreTestEnv(t)
 	defaultKey := firebaseClientKey("main")

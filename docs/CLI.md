@@ -16,6 +16,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   ├── list
 │   └── show <schema-id>
 │
+├── setup [--noopen]
+│
 ├── mcp [--toolsets inspect,edit,drafts,plans,publish]
 │   ├── --allow-writes
 │   ├── --allow-hooks
@@ -1079,6 +1081,7 @@ rollouts.show
 root
 schema.list
 schema.show
+setup
 theme
 theme.delete
 theme.import
@@ -2754,6 +2757,52 @@ Flags:
 -y, --yes   skip confirmation
 ```
 
+### `fbrcm setup`
+
+Runs guided command-line setup for the effective profile. The wizard adds or
+resumes authentication, validates the selected identity, and discovers the
+Firebase projects available to it. It supports the built-in Google OAuth
+client when the running build contains it, imported OAuth Desktop client JSON,
+service-account JSON keys, and existing gcloud Application Default
+Credentials.
+
+An empty installation creates and uses the normal `default` profile. An
+existing profile with authentication but no project registry resumes at
+authentication and discovery. A cached-only profile keeps its projects and
+offers to configure an identity for live Firebase access. A profile that
+already contains authentication and projects reports that setup is complete
+without authenticating or making a network request.
+
+Setup never replaces an existing authentication identity. It suggests
+`default` for the first identity and the first unused `account-N` name later.
+Every newly added identity receives a persisted Google Cloud quota project.
+When an existing identity has no persisted quota project, the wizard asks for
+one before discovery. If valid credentials return no projects, setup offers to
+retry discovery, add another identity, or finish with valid authentication and
+no projects.
+
+The identity is saved before authentication and project discovery. If browser
+authorization is canceled or discovery fails, the saved identity remains so a
+later `fbrcm setup` invocation can resume. Prompts and progress use the
+terminal; the final summary is written to stdout.
+
+Flags:
+
+```text
+--noopen   print the OAuth authorization URL instead of opening it automatically
+```
+
+`--profile <name>` selects an existing profile for this invocation. Create a
+new named profile first with `fbrcm profile switch <name>`. `--stateless` is
+rejected because guided setup intentionally persists profile state.
+
+For an otherwise valid profile-based invocation, `fbrcm setup --json` never
+opens a menu, file picker, or browser and does not change authentication or
+project state. It returns `interaction.required` with exit status 10. Normal
+global profile bootstrap may still create the `default` profile when none
+exists. Scripts should compose `auth add`, `auth login`, and `projects update`
+instead.
+
 ### `fbrcm doctor`
 
 Runs a complete, non-interactive application health check. It verifies the selected profile and profile directories, auth registry, credential files, OAuth token presence and expiry, network/offline state, Cloud Resource Manager API access, Remote Config API reads, required Remote Config read/update and Firebase application read IAM permissions for cached projects, and profile cache writability. The writability check creates and removes a temporary probe file; capability metadata publishes those transient local file effects separately.
@@ -3047,7 +3096,7 @@ Flags:
 
 Lists configured auth identities.
 
-When a command needs Firebase access but the active profile has no configured auth identity, the error includes setup guidance. Run `fbrcm` for guided setup, or use `fbrcm auth add --help` to see the CLI authentication options.
+When a command needs Firebase access but the active profile has no configured auth identity, the error includes setup guidance. Run `fbrcm setup` for guided CLI setup, run `fbrcm` for the TUI, or use `fbrcm auth add --help` to see the individual CLI authentication commands.
 
 Flags:
 

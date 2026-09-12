@@ -11,7 +11,7 @@ the CLI, with permissions fixed when the server starts.
 ## Connect your AI application
 
 Install fbrcm and configure a profile using the
-[setup guide](/guide/#option-2-setup-using-only-the-cli). Authentication identities
+[guided CLI setup](/guide/#option-2-guided-setup-in-the-cli). Authentication identities
 and discovered projects belong to that profile; see
 [Authentication and discovery](/guide/authentication).
 
