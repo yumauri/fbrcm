@@ -322,7 +322,9 @@ terminal presentation and are not represented in JSON DTOs or schemas.
   before changing authentication or project state. Normal global profile
   bootstrap may still create the `default` profile. Guided setup is a human CLI
   convenience; automation composes `auth add`, `auth login`, and `projects
-  update`.
+  update`. The interaction has no remediation argv because completing it
+  requires removing the global `--json` option, not adding or replacing a
+  command argument.
 - `project open --json` returns the URL with `opened: false` and does not start
   a browser.
 - In human mode, `FBRCM_OFFLINE` makes `project open` print that URL to stdout
@@ -650,16 +652,23 @@ mutually exclusive with `--filter`; a mismatch yields the documented empty or
 no-op result. More generally, positional existing-resource names and IDs are
 literal, untrimmed, exact, and case-sensitive. Search behavior is confined to
 explicit query options such as `--filter`, `--search`, and `--project`.
-An option annotated with `x-fbrcm-effective: false` is accepted by argv parsing
-but not applied by that command. Conditional applicability uses
+An option annotated with `x-fbrcm-effective: false` is not applied by that
+command. It may be accepted and ignored, or its non-default value may be
+rejected by the normalized invocation schema. Conditional applicability uses
 `x-fbrcm-effective-when`; detailed flag records expose the same distinction as
 `effective` and `effective_when`. Root version output, for example, accepts but
 does not apply `--profile` or `--no-local-config`. Unconditional
 `effective: false` currently applies to `--profile` on `help`, contract
-metadata, config, hooks, and project-alias commands; to `--noopen` on
-machine-mode `auth login`; and to `--editor`, `--full`, and `--scope` on
-machine-mode `config edit`. The latter commands return interaction metadata
-before those human-interface options can affect execution.
+metadata, completion, config, hooks, and project-alias commands; to `--noopen` on
+machine-mode `auth login` and `setup`; to `--editor`, `--full`, and `--scope`
+on machine-mode `config edit`; and to `--stateless` whenever that command's
+invocation schema forbids `true`. Those unsupported stateless values are
+schema-rejected rather than ignored. The `mcp` exception described above also
+reports `supports.stateless: false` for its CLI JSON operation, but its entire
+accepted launch surface is ineffective because JSON mode always returns the
+early transport rejection. The human-interface options are accepted, but the
+latter commands return interaction metadata before those options can affect
+execution.
 Every `--yes` confirmation-bypass flag is effective only when runtime state
 requires confirmation; the detailed capability and input schema publish that
 condition explicitly.

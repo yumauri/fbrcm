@@ -2088,21 +2088,34 @@ func TestConfigSetInvocationSchemaPublishesClosedKeyGrammar(t *testing.T) {
 }
 
 func TestIgnoredProfileOptionsAreExplicitInInvocationSchemas(t *testing.T) {
-	for _, id := range []string{"capabilities", "config.show", "help", "hooks.status", "projects.aliases.list", "schema.list"} {
+	for _, id := range []string{"capabilities", "completion.bash", "config.show", "help", "hooks.status", "projects.aliases.list", "schema.list"} {
 		raw, err := schemas.ReadByID("urn:fbrcm:schema:cli:" + contract.Version + ":command:" + id + ":input")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !bytes.Contains(raw, []byte(`"x-fbrcm-effective": false`)) {
-			t.Errorf("%s does not mark --profile ineffective", id)
+		var document map[string]any
+		if err := json.Unmarshal(raw, &document); err != nil {
+			t.Fatal(err)
+		}
+		properties := document["properties"].(map[string]any)["options"].(map[string]any)["properties"].(map[string]any)
+		profile := properties["profile"].(map[string]any)
+		if profile["x-fbrcm-effective"] != false {
+			t.Errorf("%s does not mark --profile ineffective: %#v", id, profile)
 		}
 	}
 	raw, err := schemas.ReadByID("urn:fbrcm:schema:cli:" + contract.Version + ":command:root:input")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Contains(raw, []byte(`"x-fbrcm-effective": false`)) {
-		t.Fatal("root schema marks an effective option as ignored")
+	var rootSchema map[string]any
+	if err := json.Unmarshal(raw, &rootSchema); err != nil {
+		t.Fatal(err)
+	}
+	rootOptions := rootSchema["properties"].(map[string]any)["options"].(map[string]any)["properties"].(map[string]any)
+	for _, name := range []string{"profile", "no-local-config"} {
+		if rootOptions[name].(map[string]any)["x-fbrcm-effective"] == false {
+			t.Errorf("root schema marks effective --%s as ignored", name)
+		}
 	}
 	if got := bytes.Count(raw, []byte(`"x-fbrcm-effective-when"`)); got != 2 {
 		t.Fatalf("root schema conditional option effectiveness count = %d, want profile and no-local-config", got)
@@ -2113,6 +2126,7 @@ func TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas(t *testing.T
 	for id, optionNames := range map[string][]string{
 		"auth.login":  {"noopen"},
 		"config.edit": {"editor", "full", "scope"},
+		"setup":       {"noopen"},
 	} {
 		raw, err := schemas.ReadByID("urn:fbrcm:schema:cli:" + contract.Version + ":command:" + id + ":input")
 		if err != nil {
@@ -2128,6 +2142,38 @@ func TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas(t *testing.T
 			if option["x-fbrcm-effective"] != false {
 				t.Errorf("%s --%s does not publish x-fbrcm-effective false: %#v", id, name, option)
 			}
+		}
+	}
+
+	root := NewRootForContract("schema")
+	for _, capability := range contract.DetailedCapabilities(root) {
+		if capability.Supports.Stateless {
+			continue
+		}
+		flagIndex := slices.IndexFunc(capability.Flags, func(flag contract.FlagCapability) bool {
+			return flag.Name == "--stateless"
+		})
+		if flagIndex < 0 {
+			t.Fatalf("%s omits the inherited --stateless flag", capability.ID)
+		}
+		if capability.Flags[flagIndex].Effective {
+			t.Errorf("%s describes rejected --stateless=true as effective", capability.ID)
+		}
+		raw, err := schemas.ReadByID(capability.InvocationSchema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var document map[string]any
+		if err := json.Unmarshal(raw, &document); err != nil {
+			t.Fatal(err)
+		}
+		properties := document["properties"].(map[string]any)["options"].(map[string]any)["properties"].(map[string]any)
+		option := properties["stateless"].(map[string]any)
+		if option["x-fbrcm-effective"] != false {
+			t.Errorf("%s --stateless schema does not publish x-fbrcm-effective false: %#v", capability.ID, option)
+		}
+		if capability.ID != "mcp" && option["const"] != false {
+			t.Errorf("%s --stateless schema does not reject true: %#v", capability.ID, option)
 		}
 	}
 }
@@ -2875,6 +2921,12 @@ func TestCommandResponseSchemasConstrainReachableProblemCodes(t *testing.T) {
 					t.Errorf("unknown problem code %q", code)
 				}
 			}
+			profileFlag := slices.IndexFunc(capability.Flags, func(flag contract.FlagCapability) bool {
+				return flag.Name == "--profile" && flag.Effective
+			})
+			if profileFlag >= 0 && capability.ID != "doctor" && !strings.HasPrefix(capability.ID, "profile") && !slices.Contains(capability.ProblemCodes, "profile.not_found") {
+				t.Error("effective profile selection can reach profile.not_found, but the code is not advertised")
+			}
 			raw, err := schemas.ReadByID(capability.ResponseSchema)
 			if err != nil {
 				t.Fatal(err)
@@ -3531,6 +3583,7 @@ func TestJSONConfigEditReturnsInteractionBeforeHumanFlagValidation(t *testing.T)
 }
 
 func TestJSONSetupReturnsGuidedInteraction(t *testing.T) {
+	stateRoot := useTemporaryContractState(t)
 	envelope, raw := executeJSONContract(t, "setup", "--noopen", "--json")
 	if envelope.Outcome != "failure" || envelope.ExitCode != 10 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "interaction.required" {
 		t.Fatalf("envelope = %#v", envelope)
@@ -3546,7 +3599,74 @@ func TestJSONSetupReturnsGuidedInteraction(t *testing.T) {
 	if details["kind"] != "interaction" || details["interaction_type"] != "guided_setup" {
 		t.Fatalf("interaction details = %#v", details)
 	}
+	if len(envelope.Errors[0].Remediation) != 0 {
+		t.Fatalf("guided setup cannot provide a reusable JSON-mode remediation: %#v", envelope.Errors[0].Remediation)
+	}
 	validateContractDocument(t, envelope.Schema, raw)
+	for _, path := range []string{
+		filepath.Join(stateRoot, "config", "config.toml"),
+		filepath.Join(stateRoot, "config", "profiles", config.DefaultProfileName),
+		filepath.Join(stateRoot, "cache", "profiles", config.DefaultProfileName),
+	} {
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("profile bootstrap did not create %s: %v", path, err)
+		}
+	}
+}
+
+func TestJSONMissingProfileIsAConformingSelectionFailure(t *testing.T) {
+	useTemporaryContractState(t)
+
+	envelope, raw := executeJSONContract(t, "setup", "--profile", "missing", "--json")
+	if envelope.Outcome != "failure" || envelope.ExitCode != 6 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "profile.not_found" || envelope.Errors[0].Category != "not_found" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	validateContractDocument(t, envelope.Schema, raw)
+}
+
+func TestJSONSetupDoesNotMutateAnExistingProfile(t *testing.T) {
+	stateRoot := useTemporaryContractState(t)
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	configPath := filepath.Join(stateRoot, "config", "config.toml")
+	before, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	envelope, raw := executeJSONContract(t, "setup", "--json")
+	if envelope.Outcome != "failure" || envelope.ExitCode != 10 || len(envelope.Errors) != 1 || envelope.Errors[0].Code != "interaction.required" {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	validateContractDocument(t, envelope.Schema, raw)
+	after, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(before, after) {
+		t.Fatalf("setup JSON changed existing profile configuration\nbefore: %q\nafter:  %q", before, after)
+	}
+	for _, path := range []string{
+		filepath.Join(stateRoot, "config", "profiles", config.DefaultProfileName, "auth-config.json"),
+		filepath.Join(stateRoot, "config", "profiles", config.DefaultProfileName, "projects-config.json"),
+	} {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("setup JSON unexpectedly created %s: %v", path, err)
+		}
+	}
+}
+
+func useTemporaryContractState(t *testing.T) string {
+	t.Helper()
+	stateRoot := t.TempDir()
+	t.Setenv(env.ConfigDir, filepath.Join(stateRoot, "config"))
+	t.Setenv(env.CacheDir, filepath.Join(stateRoot, "cache"))
+	if err := config.SetProfileOverride(""); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = config.SetProfileOverride("") })
+	return stateRoot
 }
 
 func TestJSONBlankUpdateParameterIsAnArgumentFailure(t *testing.T) {

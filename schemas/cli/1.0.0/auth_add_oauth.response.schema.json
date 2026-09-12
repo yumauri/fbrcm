@@ -308,6 +308,7 @@
                       "internal.contract_violation",
                       "internal.unclassified",
                       "profile.invalid",
+                      "profile.not_found",
                       "resource.conflict",
                       "stdin.remote_config.invalid"
                     ]

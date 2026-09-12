@@ -24,8 +24,11 @@
     "app.outcomes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
     "app.plan_capability_boundaries": "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
     "app.plan_invocation_schema": "cli/app/contract_test.go#TestPublicationPlanInvocationSchemasPublishIntegrityAndInputSelection",
+    "app.profile_failure_runtime": "cli/app/contract_test.go#TestJSONMissingProfileIsAConformingSelectionFailure",
     "app.response_invariants": "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
     "app.selection": "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
+    "app.setup_json_runtime": "cli/app/contract_test.go#TestJSONSetupReturnsGuidedInteraction",
+    "app.setup_no_mutation_runtime": "cli/app/contract_test.go#TestJSONSetupDoesNotMutateAnExistingProfile",
     "app.stdin": "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
@@ -9866,12 +9869,16 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "app.setup_json_runtime",
+            "app.setup_no_mutation_runtime",
             "e2e:setup_interaction_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.setup_json_runtime",
+            "app.setup_no_mutation_runtime",
             "e2e:setup_interaction_json"
           ]
         },
@@ -9879,6 +9886,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.profile_failure_runtime",
+            "app.setup_json_runtime",
             "app.unknown_option",
             "e2e:setup_interaction_json"
           ]
@@ -9886,6 +9895,8 @@
         "interaction": {
           "evidence": [
             "app.interaction",
+            "app.setup_json_runtime",
+            "app.setup_no_mutation_runtime",
             "e2e:setup_interaction_json"
           ]
         },

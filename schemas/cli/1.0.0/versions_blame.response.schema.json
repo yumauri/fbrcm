@@ -791,6 +791,7 @@
                       "network.unavailable",
                       "parameter.not_found",
                       "profile.invalid",
+                      "profile.not_found",
                       "project.ambiguous",
                       "project.not_found",
                       "resource.not_found",

@@ -125,7 +125,8 @@
                       "network.offline",
                       "network.timeout",
                       "network.unavailable",
-                      "profile.invalid"
+                      "profile.invalid",
+                      "profile.not_found"
                     ]
                   }
                 },

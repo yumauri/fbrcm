@@ -78,6 +78,9 @@ func CommandProblemCodes(capability Capability) []string {
 	}
 	if commandUsesProfile(capability.ID) {
 		add("profile.invalid")
+		if capability.ID != "doctor" && !strings.HasPrefix(capability.ID, "profile") {
+			add("profile.not_found")
+		}
 	}
 	if commandCanReturnPathError(capability.ID) {
 		add("file.io_failed", "filesystem.permission_denied")

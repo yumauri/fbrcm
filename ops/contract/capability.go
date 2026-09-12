@@ -334,8 +334,17 @@ func describe(cmd *cobra.Command) Capability {
 				// the one-shot machine operation.
 				effective = false
 			}
+			statelessRejected := flag.Name == "stateless" && !SupportsStatelessCommand(id)
+			if statelessRejected {
+				// The normalized invocation schema forbids true for commands
+				// without a stateless execution path. A rejected value is not an
+				// effective machine option under the contract definition.
+				effective = false
+			}
 			usage := flag.Usage
-			if !effective {
+			if statelessRejected {
+				usage += "; true is rejected by this command"
+			} else if !effective {
 				usage += "; accepted but not applied by this command"
 			}
 			var effectiveWhen []BehaviorConditionClause
@@ -386,9 +395,6 @@ func describe(cmd *cobra.Command) Capability {
 			}
 			if id == "get" && flag.Name == "project" {
 				usage += "; with remote --stateless execution, exact (=) targets bypass discovery and other selectors filter remote project IDs and display names"
-			}
-			if flag.Name == "stateless" && !SupportsStatelessCommand(id) {
-				usage += "; true is currently rejected by this command"
 			}
 			if !effective {
 				effectiveWhen = nil
@@ -499,7 +505,7 @@ func describe(cmd *cobra.Command) Capability {
 }
 
 func profileOptionIgnored(id string) bool {
-	return id == "help" || id == "capabilities" || strings.HasPrefix(id, "schema.") ||
+	return id == "help" || id == "capabilities" || strings.HasPrefix(id, "schema.") || strings.HasPrefix(id, "completion.") ||
 		strings.HasPrefix(id, "plan.") ||
 		strings.HasPrefix(id, "config.") || strings.HasPrefix(id, "hooks.") ||
 		strings.HasPrefix(id, "projects.aliases.") || strings.HasPrefix(id, "theme")

@@ -310,6 +310,9 @@ func TestJSONReturnsInteractionBeforeInspectingState(t *testing.T) {
 	if !errors.As(err, &interaction) || interaction.Type != "guided_setup" {
 		t.Fatalf("error = %#v", err)
 	}
+	if len(interaction.SuggestedArgv) != 0 {
+		t.Fatalf("guided setup cannot suggest reusable JSON arguments: %v", interaction.SuggestedArgv)
+	}
 	if svc.inspectCalls != 0 {
 		t.Fatalf("inspect calls = %d, want 0", svc.inspectCalls)
 	}

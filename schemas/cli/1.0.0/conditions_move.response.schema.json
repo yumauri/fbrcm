@@ -1377,6 +1377,7 @@
                       "network.unavailable",
                       "plan.exists",
                       "profile.invalid",
+                      "profile.not_found",
                       "project.ambiguous",
                       "project.not_found",
                       "publication.cache_failed",

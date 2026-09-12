@@ -82,6 +82,14 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 					evidence = append(evidence, "app.auth_google_configuration_failure", "auth.google_quota_failure")
 				}
 			}
+			if capability.ID == "setup" {
+				switch class {
+				case "effectiveness", "effects", "interaction":
+					evidence = append(evidence, "app.setup_json_runtime", "app.setup_no_mutation_runtime")
+				case "failure":
+					evidence = append(evidence, "app.profile_failure_runtime", "app.setup_json_runtime")
+				}
+			}
 			if capability.Supports.Plan {
 				switch class {
 				case "artifact", "success":
@@ -158,12 +166,15 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.outcomes":                           "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
 		"app.plan_capability_boundaries":         "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
 		"app.plan_invocation_schema":             "cli/app/contract_test.go#TestPublicationPlanInvocationSchemasPublishIntegrityAndInputSelection",
+		"app.profile_failure_runtime":            "cli/app/contract_test.go#TestJSONMissingProfileIsAConformingSelectionFailure",
 		"app.response_invariants":                "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
 		"app.apps_response_invariants":           "cli/app/contract_test.go#TestAppsResponseSchemasRequireCacheTimestampAndArtifactTarget",
 		"app.versions_blame_response_invariants": "cli/app/contract_test.go#TestVersionsBlameResponseSchemaRejectsUnreachableHistoryStates",
 		"app.selection":                          "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
 		"app.stdin":                              "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
 		"app.stdin_restrictions":                 "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
+		"app.setup_json_runtime":                 "cli/app/contract_test.go#TestJSONSetupReturnsGuidedInteraction",
+		"app.setup_no_mutation_runtime":          "cli/app/contract_test.go#TestJSONSetupDoesNotMutateAnExistingProfile",
 		"app.unknown_option":                     "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
 		"app.warning_runtime":                    "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
 		"apps.config_success":                    "ops/workflows/apps/commands_test.go#TestAppsConfigCommandSuccess",

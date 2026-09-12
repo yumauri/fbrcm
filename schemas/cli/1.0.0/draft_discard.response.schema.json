@@ -122,6 +122,7 @@
                       "internal.contract_violation",
                       "internal.unclassified",
                       "profile.invalid",
+                      "profile.not_found",
                       "project.ambiguous",
                       "project.not_found"
                     ]

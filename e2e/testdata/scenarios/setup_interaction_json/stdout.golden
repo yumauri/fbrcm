@@ -30,15 +30,7 @@
         "required_option": null,
         "destructive": false
       },
-      "remediation": [
-        {
-          "description": "rerun with the complete non-interactive arguments",
-          "strategy": "retry_with_arguments",
-          "argv": [
-            "setup"
-          ]
-        }
-      ]
+      "remediation": []
     }
   ],
   "warnings": []

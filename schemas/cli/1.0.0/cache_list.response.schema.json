@@ -272,7 +272,8 @@
                       "filesystem.permission_denied",
                       "internal.contract_violation",
                       "internal.unclassified",
-                      "profile.invalid"
+                      "profile.invalid",
+                      "profile.not_found"
                     ]
                   }
                 },

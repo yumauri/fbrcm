@@ -255,6 +255,7 @@
                       "network.timeout",
                       "network.unavailable",
                       "profile.invalid",
+                      "profile.not_found",
                       "resource.not_found"
                     ]
                   }

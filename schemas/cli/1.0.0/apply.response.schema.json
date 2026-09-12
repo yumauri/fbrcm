@@ -583,6 +583,7 @@
                       "plan.stale",
                       "plan.unsupported_version",
                       "profile.invalid",
+                      "profile.not_found",
                       "publication.cache_failed",
                       "publication.hook_failed",
                       "remote_config.conflict",

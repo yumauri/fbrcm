@@ -55,7 +55,6 @@ func newCommand(svc setupService, prompts prompter) *cobra.Command {
 				"guided_setup",
 				false,
 				"",
-				"setup",
 			)
 		}
 		noOpen, err := cmd.Flags().GetBool("noopen")

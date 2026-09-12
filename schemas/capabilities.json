@@ -250,6 +250,7 @@
       "parameter.exists",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -1071,6 +1072,7 @@
       "plan.stale",
       "plan.unsupported_version",
       "profile.invalid",
+      "profile.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
       "remote_config.conflict",
@@ -1737,6 +1739,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -2268,6 +2271,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -2694,6 +2698,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -3065,8 +3070,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -3096,6 +3101,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "resource.conflict"
     ],
     "side_effect_level": 1,
@@ -3256,8 +3262,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -3284,7 +3290,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -3454,8 +3461,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -3486,6 +3493,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "resource.conflict",
       "stdin.remote_config.invalid"
     ],
@@ -3692,8 +3700,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -3724,6 +3732,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "resource.conflict",
       "stdin.remote_config.invalid"
     ],
@@ -3914,8 +3923,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -3947,6 +3956,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -4052,8 +4062,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -4106,7 +4116,8 @@
       "interaction.required",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -4255,8 +4266,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -4283,7 +4294,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -4381,8 +4393,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -4417,7 +4429,8 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 2,
     "side_effects": [
@@ -4559,8 +4572,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -4588,7 +4601,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -4683,8 +4697,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -4712,7 +4726,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -4817,8 +4832,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -4852,7 +4867,8 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 2,
     "side_effects": [
@@ -4968,8 +4984,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5003,7 +5019,8 @@
       "network.offline",
       "network.timeout",
       "network.unavailable",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 2,
     "side_effects": [
@@ -5137,8 +5154,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5189,7 +5206,8 @@
       "interaction.required",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -5332,8 +5350,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5359,7 +5377,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -5450,8 +5469,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5477,7 +5496,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -5564,8 +5584,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5669,8 +5689,8 @@
         "default": "",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
       },
       {
         "name": "--stateless",
@@ -5679,8 +5699,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5782,8 +5802,8 @@
         "default": "",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
       },
       {
         "name": "--stateless",
@@ -5792,8 +5812,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -5895,8 +5915,8 @@
         "default": "",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
       },
       {
         "name": "--stateless",
@@ -5905,8 +5925,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -6008,8 +6028,8 @@
         "default": "",
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+        "effective": false,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
       },
       {
         "name": "--stateless",
@@ -6018,8 +6038,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -6312,6 +6332,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -7145,6 +7166,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -7982,6 +8004,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -8770,6 +8793,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -9233,6 +9257,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -10027,6 +10052,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -10777,6 +10803,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -11146,6 +11173,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -11374,8 +11402,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -11502,8 +11530,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -11628,8 +11656,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -11831,8 +11859,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -11973,8 +12001,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -12092,8 +12120,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -12390,6 +12418,7 @@
       "parameter.not_found",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -13128,8 +13157,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -13361,8 +13390,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -13391,6 +13420,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -13640,8 +13670,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -13685,6 +13715,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -13895,8 +13926,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -13950,6 +13981,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -14096,8 +14128,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -14123,7 +14155,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -14204,8 +14237,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -14231,7 +14264,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -14359,8 +14393,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -14432,6 +14466,7 @@
       "parameters_cache.not_found",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -15041,8 +15076,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -15082,6 +15117,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -15364,6 +15400,7 @@
       "parameter.not_found",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -16093,6 +16130,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -16466,6 +16504,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -16798,6 +16837,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -17192,6 +17232,7 @@
       "parameter.ambiguous",
       "parameter.not_found",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found",
@@ -17715,6 +17756,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -18508,6 +18550,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -19340,6 +19383,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -20110,6 +20154,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -20578,6 +20623,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -21222,8 +21268,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -21325,8 +21371,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -21433,8 +21479,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -21540,8 +21586,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -21707,8 +21753,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -22105,6 +22151,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -22524,6 +22571,7 @@
       "network.unavailable",
       "personalization.not_found",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -22838,8 +22886,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -22956,8 +23004,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -23066,8 +23114,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -23181,8 +23229,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -23412,8 +23460,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -23527,8 +23575,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -23649,8 +23697,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -23804,8 +23852,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -24006,6 +24054,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -24311,6 +24360,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -24767,6 +24817,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -25530,6 +25581,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -25737,8 +25789,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -25765,6 +25817,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -25871,8 +25924,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -25907,6 +25960,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -26024,8 +26078,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -26060,6 +26114,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -26268,6 +26323,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -26543,8 +26599,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--templates",
@@ -26581,6 +26637,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -26687,8 +26744,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -26715,6 +26772,7 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found"
     ],
@@ -26828,8 +26886,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -27017,8 +27075,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -27134,8 +27192,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -27330,8 +27388,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -27665,6 +27723,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -27880,8 +27939,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -27933,7 +27992,8 @@
       "interaction.required",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -28213,6 +28273,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "resource.not_found"
     ],
     "side_effect_level": 2,
@@ -28468,8 +28529,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -28495,7 +28556,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -28796,6 +28858,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -29366,8 +29429,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -29418,7 +29481,8 @@
       "interaction.required",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -29599,8 +29663,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -29652,6 +29716,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "resource.not_found"
     ],
     "side_effect_level": 2,
@@ -29882,6 +29947,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -30243,6 +30309,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -30575,6 +30642,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found"
@@ -30817,8 +30885,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -30857,7 +30925,8 @@
       "configuration.invalid",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -30938,8 +31007,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31048,8 +31117,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31161,8 +31230,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31189,7 +31258,8 @@
       "interaction.required",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -31280,8 +31350,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31307,7 +31377,8 @@
       "filesystem.permission_denied",
       "internal.contract_violation",
       "internal.unclassified",
-      "profile.invalid"
+      "profile.invalid",
+      "profile.not_found"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -31395,8 +31466,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31599,8 +31670,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31791,8 +31862,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -31905,8 +31976,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -32025,8 +32096,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -32177,8 +32248,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -32330,8 +32401,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -32762,6 +32833,7 @@
       "parameter.not_found",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -33599,6 +33671,7 @@
       "network.unavailable",
       "parameter.not_found",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found",
@@ -33961,6 +34034,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found",
@@ -34368,6 +34442,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found",
@@ -34824,6 +34899,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found",
@@ -35061,8 +35137,8 @@
         "default": false,
         "required": false,
         "repeatable": false,
-        "effective": true,
-        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command"
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
       },
       {
         "name": "--timeout",
@@ -35132,6 +35208,7 @@
       "network.unavailable",
       "plan.exists",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -35750,6 +35827,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "publication.cache_failed",
@@ -36312,6 +36390,7 @@
       "network.timeout",
       "network.unavailable",
       "profile.invalid",
+      "profile.not_found",
       "project.ambiguous",
       "project.not_found",
       "resource.not_found",

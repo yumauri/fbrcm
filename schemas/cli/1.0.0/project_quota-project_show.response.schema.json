@@ -132,6 +132,7 @@
                       "network.timeout",
                       "network.unavailable",
                       "profile.invalid",
+                      "profile.not_found",
                       "project.ambiguous",
                       "project.not_found"
                     ]

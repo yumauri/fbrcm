@@ -43,8 +43,9 @@
         },
         "stateless": {
           "const": false,
-          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is currently rejected by this command",
-          "type": "boolean"
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
         },
         "timeout": {
           "description": "Maximum duration for the complete command",
