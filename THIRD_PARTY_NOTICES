@@ -101,7 +101,7 @@ SOFTWARE.
 
 ======================================================================
 Component: charm.land/bubbletea/v2
-Version: v2.0.9
+Version: v2.0.10
 License: MIT
 Source: charm.land/bubbletea/v2
 
@@ -194,7 +194,7 @@ SOFTWARE.
 
 ======================================================================
 Component: cloud.google.com/go/compute/metadata
-Version: v0.9.1
+Version: v0.10.0
 License: Apache-2.0
 Source: cloud.google.com/go/compute/metadata
 
@@ -504,7 +504,7 @@ SOFTWARE.
 
 ======================================================================
 Component: github.com/charmbracelet/ultraviolet
-Version: v0.0.0-20260910203606-6c9e17dc7a16
+Version: v0.0.0-20261001125412-878653296cfd
 License: MIT
 Source: github.com/charmbracelet/ultraviolet
 
@@ -1139,7 +1139,7 @@ SOFTWARE.
 
 ======================================================================
 Component: github.com/itchyny/timefmt-go
-Version: v0.1.8
+Version: v0.1.9
 License: MIT
 Source: github.com/itchyny/timefmt-go
 
@@ -1147,7 +1147,7 @@ Source: github.com/itchyny/timefmt-go
 
 The MIT License (MIT)
 
-Copyright (c) 2020-2025 itchyny
+Copyright (c) 2020-2026 itchyny
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
