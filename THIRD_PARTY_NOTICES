@@ -8,7 +8,7 @@ below remain subject to their respective terms.
 
 ======================================================================
 Component: The Go Programming Language runtime and standard library
-Version: go1.27.1
+Version: go1.27.2
 License: BSD-3-Clause
 Source: https://go.dev/
 
@@ -101,7 +101,7 @@ SOFTWARE.
 
 ======================================================================
 Component: charm.land/bubbletea/v2
-Version: v2.0.10
+Version: v2.1.0
 License: MIT
 Source: charm.land/bubbletea/v2
 
@@ -504,7 +504,7 @@ SOFTWARE.
 
 ======================================================================
 Component: github.com/charmbracelet/ultraviolet
-Version: v0.0.0-20261001125412-878653296cfd
+Version: v0.0.0-20261008173134-6b8d4baf91b4
 License: MIT
 Source: github.com/charmbracelet/ultraviolet
 
@@ -535,7 +535,7 @@ SOFTWARE.
 
 ======================================================================
 Component: github.com/charmbracelet/x/ansi
-Version: v0.11.8
+Version: v0.11.9
 License: MIT
 Source: github.com/charmbracelet/x/ansi
 
@@ -1206,7 +1206,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ======================================================================
 Component: github.com/mattn/go-runewidth
-Version: v0.0.30
+Version: v0.0.31
 License: MIT
 Source: github.com/mattn/go-runewidth
 
@@ -2259,7 +2259,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ======================================================================
 Component: golang.org/x/sync
-Version: v0.23.0
+Version: v0.24.0
 License: BSD-3-Clause
 Source: golang.org/x/sync
 
@@ -2321,7 +2321,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/sys
-Version: v0.48.0
+Version: v0.49.0
 License: BSD-3-Clause
 Source: golang.org/x/sys
 
@@ -2383,7 +2383,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/term
-Version: v0.46.0
+Version: v0.47.0
 License: BSD-3-Clause
 Source: golang.org/x/term
 
@@ -2445,7 +2445,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/text
-Version: v0.42.0
+Version: v0.43.0
 License: BSD-3-Clause
 Source: golang.org/x/text
 
