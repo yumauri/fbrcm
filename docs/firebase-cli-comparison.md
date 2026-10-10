@@ -13,7 +13,10 @@ publish Firebase Remote Config. They are optimized for different workflows:
   enforce policy across every fbrcm publication path.
 
 This comparison covers the documented Firebase CLI command set and
-`firebase-tools` 15.30.0 as of September 11, 2026. Consult the
+[`firebase-tools` 15.33.0](https://github.com/firebase/firebase-tools/releases/tag/v15.33.0)
+as of October 10, 2026, verified against the
+[npm registry's current release](https://registry.npmjs.org/firebase-tools/latest).
+Consult the
 [current Firebase CLI reference](https://firebase.google.com/docs/cli) when
 using a later release.
 
@@ -67,7 +70,7 @@ approaches the same concern differently.
 | List registered Firebase apps | ✅ | ✅ | Firebase CLI lists one active project; fbrcm can combine selected projects and cache the inventory. |
 | Inspect platform-specific app details | ⚠️ | ✅ | Firebase CLI lists app summaries and has separate Android SHA commands. fbrcm has one read-only details command for Android, iOS, and Web apps. |
 | Download Firebase app SDK configuration | ✅ | ✅ | Firebase CLI prints the configuration; fbrcm can print it, write a private file, or return a typed JSON artifact. |
-| Create or change Firebase apps | ✅ | ❌ | Firebase CLI can create apps and manage Android SHA hashes. fbrcm keeps all app operations read-only. |
+| Create or change Firebase apps | ✅ | ❌ | Firebase CLI can create apps, manage Android SHA hashes, and offer to create a missing default Hosting site when creating a Web app. fbrcm keeps all app operations read-only. |
 | List, inspect, and delete A/B tests | ✅ | ✅ | fbrcm also correlates experiments with their published parameter bindings and variant values. |
 | List, inspect, and delete rollouts | ✅ | ✅ | fbrcm also correlates rollout metadata with published parameter bindings. |
 | Inspect personalizations | ❌ | ✅ | fbrcm lists personalization IDs and bindings visible in the published template. |
