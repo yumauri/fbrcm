@@ -39,6 +39,8 @@ docs/site/public/LICENSE.txt
 .DS_Store
 
 # Local config and tokens
+cmd/build-google-auth.sh
+cmd/fbrcm-cli-desktop_client_secret.json
 client_secret.json
 projects-config.json
 token.json
