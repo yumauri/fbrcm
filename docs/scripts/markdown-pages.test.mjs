@@ -8,10 +8,18 @@ test('removes frontmatter and creates useful landing-page Markdown', () => {
 layout: home
 title: Firebase Remote Config Manager
 hero:
+  name: fbrcm
+  text: Firebase Remote Config Manager
   tagline: Manage Remote Config from your terminal
   actions:
-    - text: Get started
+    - theme: alt
+      text: About
+      link: /about
+    - theme: brand
+      text: Get started
       link: /guide/
+  image:
+    light: /fbrcm-light.gif
 ---
 `
 
@@ -20,6 +28,8 @@ hero:
     `# fbrcm - Firebase Remote Config Manager
 
 Manage Remote Config from your terminal
+
+[About](/about.md)
 
 [Get started](/guide/index.md)
 `

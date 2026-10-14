@@ -94,6 +94,7 @@ export default defineConfig({
     logo: { src: '/fbrcm-logo.svg', alt: 'fbrcm' },
     siteTitle: false,
     nav: [
+      { text: 'About', link: '/about' },
       { text: 'Guide', link: '/guide/' },
       { text: 'TUI', link: '/tui/' },
       { text: 'CLI', link: '/cli/' },
@@ -110,6 +111,7 @@ export default defineConfig({
       {
         text: 'Start here',
         items: [
+          { text: 'About fbrcm', link: '/about' },
           { text: 'Getting started', link: '/guide/' },
           { text: 'Authentication and discovery', link: '/guide/authentication' },
           { text: 'How fbrcm works', link: '/guide/mental-model' },

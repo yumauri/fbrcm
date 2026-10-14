@@ -1,6 +1,6 @@
 # Privacy policy for fbrcm
 
-Last updated: September 6, 2026
+Last updated: October 14, 2026
 
 fbrcm is a local command-line and terminal application for managing Firebase
 Remote Config and reading Firebase apps that Remote Config conditions can
@@ -12,6 +12,34 @@ user.
 
 This policy applies to the official fbrcm application. Forks, modified builds,
 and programs or publication hooks configured by a user may behave differently.
+
+## Data-handling summary
+
+- **Access:** fbrcm accesses Google Cloud project metadata, Firebase Remote
+  Config templates and history, registered Firebase app information and SDK
+  configuration, and the permission and quota information needed for those
+  operations.
+- **Use:** this data supports the project discovery, configuration inspection,
+  editing, validation, publication, and Firebase app inspection actions you
+  request.
+- **Storage and protection:** credentials, caches, drafts, and configuration
+  remain on your machine, with private file permissions where supported.
+  Google API traffic uses HTTPS. Local files are not encrypted by fbrcm.
+- **Sharing:** fbrcm communicates directly with Google. The developer does not
+  receive or sell your Google user data. Exports and optional hooks or other
+  programs you configure can handle that data separately, as described below.
+- **Retention and deletion:** local data remains until replaced or deleted by
+  you. You can delete local credentials, caches, and drafts using fbrcm's
+  commands and revoke Google authorization through your Google Account.
+
+## Google API data policy and Limited Use
+
+fbrcm follows the
+[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
+including its Limited Use requirements, for Google API data use and transfers.
+Google user data is used only to provide the application features described in
+this policy. The developer does not use Google user data to develop, improve,
+or train AI or machine-learning models.
 
 ## Google data fbrcm accesses
 

@@ -22,6 +22,20 @@ function frontmatterScalar(frontmatter, key) {
   return match ? cleanScalar(match[1]) : undefined
 }
 
+function frontmatterSection(frontmatter, key) {
+  const lines = frontmatter.split(/\r?\n/)
+  const index = lines.findIndex((line) => line.trim() === `${key}:`)
+  if (index < 0) return ''
+
+  const indentation = lines[index].search(/\S/)
+  const section = []
+  for (const line of lines.slice(index + 1)) {
+    if (line.trim() && line.search(/\S/) <= indentation) break
+    section.push(line)
+  }
+  return section.join('\n')
+}
+
 function splitFrontmatter(source) {
   const match = source.match(frontmatterPattern)
 
@@ -126,14 +140,17 @@ export function renderMarkdownPage(source, relativePath) {
     const description =
       frontmatterScalar(frontmatter, 'tagline') ??
       frontmatterScalar(frontmatter, 'description')
-    const actionText = frontmatterScalar(frontmatter, 'text')
-    const actionLink = frontmatterScalar(frontmatter, 'link')
+    const actions = frontmatterSection(frontmatter, 'actions')
     const sections = []
 
     if (heading) sections.push(`# ${heading}`)
     if (description) sections.push(description)
-    if (actionText && actionLink) {
-      sections.push(`[${actionText}](${markdownTarget(actionLink)})`)
+    for (const action of actions.split(/^\s*-\s+/m).slice(1)) {
+      const actionText = frontmatterScalar(action, 'text')
+      const actionLink = frontmatterScalar(action, 'link')
+      if (actionText && actionLink) {
+        sections.push(`[${actionText}](${markdownTarget(actionLink)})`)
+      }
     }
     if (body) sections.push(body)
 
