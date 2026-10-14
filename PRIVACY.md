@@ -34,9 +34,9 @@ and programs or publication hooks configured by a user may behave differently.
 
 ## Google API data policy and Limited Use
 
-fbrcm follows the
-[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
-including its Limited Use requirements, for Google API data use and transfers.
+fbrcm’s use and transfer of information received from Google APIs adheres to the
+[Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy#additional_requirements_for_specific_api_scopes),
+including the Limited Use requirements.
 Google user data is used only to provide the application features described in
 this policy. The developer does not use Google user data to develop, improve,
 or train AI or machine-learning models.
