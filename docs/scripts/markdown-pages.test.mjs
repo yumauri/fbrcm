@@ -74,16 +74,16 @@ Run Linux command.
 })
 
 test('turns visual badges into readable Markdown labels', () => {
-  const source = `# Authentication
+  const source = `# Features
 
-### Google sign-in <Badge type="warning" text="Unavailable — Google verification pending" />
+### Preview feature <Badge type="warning" text="Experimental" />
 `
 
   assert.equal(
-    renderMarkdownPage(source, 'guide/authentication.md'),
-    `# Authentication
+    renderMarkdownPage(source, 'guide/features.md'),
+    `# Features
 
-### Google sign-in **Unavailable — Google verification pending**
+### Preview feature **Experimental**
 `
   )
 })

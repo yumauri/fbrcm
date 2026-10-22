@@ -1,6 +1,6 @@
 # Privacy policy for fbrcm
 
-Last updated: October 14, 2026
+Last updated: October 22, 2026
 
 fbrcm is a local command-line and terminal application for managing Firebase
 Remote Config and reading Firebase apps that Remote Config conditions can
@@ -153,9 +153,7 @@ fbrcm credential file. A token supplied to stateless mode through
 `FBRCM_GOOGLE_ACCESS_TOKEN` is used in memory and is not persisted by fbrcm.
 
 Official release binaries include fbrcm's built-in OAuth Desktop client. fbrcm
-does not store this client in the user's profile configuration. The built-in
-Google sign-in method is unavailable until Google completes verification of
-fbrcm's OAuth application.
+does not store this client in the user's profile configuration.
 
 The separate bring-your-own `oauth` method stores the client JSON selected by
 the user.

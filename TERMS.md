@@ -1,15 +1,12 @@
 # Terms of Service for fbrcm
 
-Last updated: September 6, 2026
+Last updated: October 22, 2026
 
 These terms apply to the official fbrcm application, its built-in Google OAuth
 client, and the fbrcm documentation website. fbrcm is a local command-line and
 terminal application for managing Firebase Remote Config. It can also read
 registered Firebase apps and download their SDK configuration. It does not
 provide user accounts or a developer-operated backend.
-
-The built-in Google sign-in method is unavailable until Google completes
-verification of fbrcm's OAuth application.
 
 By using the official application or website, you agree to these terms. If you
 do not agree, do not use them.

@@ -3109,10 +3109,6 @@ In JSON mode, `data.items` contains identities and `data.count` contains their c
 
 ### `fbrcm auth add google <auth-id>`
 
-The built-in `google` method is unavailable until Google completes
-verification of fbrcm's OAuth application. Use `auth add oauth`,
-`auth add service-account`, or `auth add gcloud` in the meantime.
-
 Adds or replaces an interactive OAuth identity that uses fbrcm's built-in
 Google Desktop client. The command accepts neither a credential file nor stdin.
 It does not copy the built-in client into profile configuration. Official

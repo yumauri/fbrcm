@@ -70,14 +70,8 @@ complete rationale and data-use limits.
 
 ### Google sign-in
 
-<Badge type="warning" text="Unavailable — Google verification pending" />
-
 Official fbrcm release binaries include fbrcm's OAuth Desktop client. You do
 not need to create a Google Cloud OAuth client or download a client JSON.
-
-This method will remain unavailable until Google completes verification of
-fbrcm's OAuth application. Use Google Cloud CLI ADC, your own OAuth Desktop app,
-or a service-account key in the meantime.
 
 ```sh
 fbrcm auth add google example-auth-name \
@@ -161,7 +155,7 @@ fbrcm auth login example-auth-name
 fbrcm caches tokens locally for later commands. Use
 `fbrcm auth path example-auth-name` to inspect the exact client-secret and token
 paths. This bring-your-own method stores its imported client separately from
-the built-in `google` method <Badge type="warning" text="Unavailable — Google verification pending" />.
+the built-in `google` method.
 
 ### Service-account key
 
