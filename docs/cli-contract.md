@@ -154,6 +154,23 @@ Each item in `errors` has stable fields:
 ```
 
 Automation should branch on `code` or `category`, never parse `message`.
+Missing authentication registries in `auth path`, `auth delete`, and auth
+quota-project operations return `auth.setup_required` with status `4`.
+Invalid Remote Config stdin for `get` returns `remote_config.invalid` with
+status `8`, including in stateless mode. `projects forget` with an existing
+registry but no matching projects returns `project.not_found` with status `6`.
+Filesystem path errors retain `file.io_failed` (status `13`) or
+`filesystem.permission_denied` (status `5`), even when their underlying
+operating-system error also implements the network-error interface. Missing
+plan files and missing local project registries follow this filesystem rule.
+Malformed, integrity-failed, and unsupported publication plans use
+`plan.invalid`, `plan.integrity_failed`, and `plan.unsupported_version`, with
+`details.kind: "publication_plan"`, validation status `8`, and no automatic
+retry. `plan.exists` and `plan.stale` are non-retryable conflicts (status `7`)
+with conflict details. Missing quota selection uses
+`auth.quota_project_required` (status `4`) with `details.kind: "quota_project"`,
+`target_project_id`, and `targetless`. A quota-header programming invariant
+uses `internal.contract_violation` (status `15`) with internal details.
 `message` is intended for logs. `details` is a typed object when the error has
 additional machine data. `target` and `stage` identify a failed batch target or
 pipeline stage when available. `retryable` describes whether repeating the

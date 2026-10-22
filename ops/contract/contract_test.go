@@ -6,10 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -59,6 +61,10 @@ func TestClassifyStableProblemCategories(t *testing.T) {
 		{"unavailable", firebase.ErrOffline, "network.offline", "unavailable", 11},
 		{"partial", &shared.BatchError{FailedTargets: []string{"failed"}, SuccessfulTargetCount: 1}, "batch.partial_success", "partial_success", 12},
 		{"io", &os.PathError{Op: "open", Path: "/missing", Err: os.ErrNotExist}, "file.io_failed", "io", 13},
+		{"syscall io", &os.PathError{Op: "open", Path: "/missing", Err: syscall.ENOENT}, "file.io_failed", "io", 13},
+		{"wrapped syscall io", fmt.Errorf("read plan: %w", &os.PathError{Op: "open", Path: "/missing", Err: syscall.ENOENT}), "file.io_failed", "io", 13},
+		{"syscall permission", &os.PathError{Op: "open", Path: "/private", Err: syscall.EACCES}, "filesystem.permission_denied", "permission", 5},
+		{"syscall disk full", &os.PathError{Op: "write", Path: "/full", Err: syscall.ENOSPC}, "file.io_failed", "io", 13},
 		{"hook", &corehooks.Error{Event: corehooks.PrePublish, Err: errors.New("failed")}, "hook.failed", "hook", 14},
 		{"canceled", context.Canceled, "command.canceled", "canceled", 130},
 	}

@@ -17,6 +17,7 @@
     "app.failure_codes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableProblemCodes",
     "app.failure_runtime": "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
     "app.interaction": "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
+    "app.invalid_plan_inputs": "cli/app/audit_runtime_test.go#TestJSONInvalidPublicationPlanInputsConform",
     "app.invocation_semantics": "cli/app/contract_test.go#TestSemanticInvocationSchemasRejectInvalidCombinations",
     "app.mcp_json_boundary": "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",
     "app.mcp_json_failure": "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
@@ -24,6 +25,7 @@
     "app.outcomes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings",
     "app.plan_capability_boundaries": "cli/app/contract_test.go#TestPublicationPlanCapabilitiesDescribeRuntimeBoundaries",
     "app.plan_invocation_schema": "cli/app/contract_test.go#TestPublicationPlanInvocationSchemasPublishIntegrityAndInputSelection",
+    "app.plan_quota_app_problems": "cli/app/audit_runtime_test.go#TestTypedPlanQuotaAndAppProblemsConform",
     "app.profile_failure_runtime": "cli/app/contract_test.go#TestJSONMissingProfileIsAConformingSelectionFailure",
     "app.response_invariants": "cli/app/contract_test.go#TestResponseSchemasRejectImpossibleDTOStates",
     "app.selection": "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
@@ -31,6 +33,7 @@
     "app.setup_no_mutation_runtime": "cli/app/contract_test.go#TestJSONSetupDoesNotMutateAnExistingProfile",
     "app.stdin": "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
+    "app.unconfigured_input_failures": "cli/app/audit_runtime_test.go#TestJSONUnconfiguredAndInvalidInputFailuresConform",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
     "app.versions_blame_response_invariants": "cli/app/contract_test.go#TestVersionsBlameResponseSchemaRejectsUnreachableHistoryStates",
     "app.warning_runtime": "cli/app/contract_test.go#TestPostPublicationFailureEnvelopesAndWarningsConform",
@@ -131,6 +134,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
@@ -259,6 +263,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.invalid_plan_inputs",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:apply_stateless_json"
           ]
@@ -295,6 +301,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.invalid_plan_inputs",
             "app.plan_invocation_schema",
             "app.stdin",
             "app.stdin_restrictions",
@@ -372,6 +379,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:apps_config_stateless_json"
           ]
@@ -467,6 +475,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:apps_list_stateless_json"
           ]
@@ -562,6 +571,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:apps_show_stateless_json"
           ]
@@ -655,6 +665,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_add_gcloud_json"
           ]
@@ -748,6 +759,7 @@
             "app.auth_google_configuration_failure",
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "auth.google_quota_failure",
             "e2e:auth_add_google_json",
@@ -840,6 +852,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_add_oauth_json"
           ]
@@ -932,6 +945,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_add_service_account_json"
           ]
@@ -1024,6 +1038,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_bind_json"
           ]
@@ -1128,6 +1143,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:auth_delete_gcloud_json",
             "e2e:auth_delete_google_json",
@@ -1242,6 +1259,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_list_google_json",
             "e2e:auth_list_json"
@@ -1331,6 +1349,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_login_google_interaction_json",
             "e2e:auth_login_google_json"
@@ -1433,6 +1452,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:auth_path_google_json",
             "e2e:auth_path_json"
@@ -1521,6 +1542,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:auth_quota_project_set_json"
           ]
@@ -1606,6 +1629,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_quota_project_show_json"
           ]
@@ -1687,6 +1711,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:auth_quota_project_unset_json"
           ]
@@ -1773,6 +1799,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:cache_clear_json"
           ]
@@ -1866,6 +1893,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:cache_list_json",
             "e2e:cache_list_narrow"
@@ -1950,6 +1978,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:cache_path_json"
           ]
@@ -2031,6 +2060,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:capabilities_json"
           ]
@@ -2110,6 +2140,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -2184,6 +2215,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -2258,6 +2290,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -2332,6 +2365,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -2433,6 +2467,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_add_json",
             "e2e:conditions_add_stateless_json"
@@ -2560,6 +2595,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_delete_json",
             "e2e:conditions_delete_stateless_json"
@@ -2687,6 +2723,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_edit_json",
             "e2e:conditions_edit_stateless_json"
@@ -2799,6 +2836,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_list_filtered_json",
             "e2e:conditions_list_stateless_json"
@@ -2913,6 +2951,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_move_json",
             "e2e:conditions_move_stateless_json"
@@ -3040,6 +3079,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_rename_json",
             "e2e:conditions_rename_stateless_json"
@@ -3152,6 +3192,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_show_json",
             "e2e:conditions_show_stateless_json"
@@ -3251,6 +3292,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_validate_json",
             "e2e:conditions_validate_stateless_json"
@@ -3338,6 +3380,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -3418,6 +3461,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_path_json"
           ]
@@ -3500,6 +3544,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_reset_json"
           ]
@@ -3593,6 +3638,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_set_json",
             "e2e:config_set_theme_json"
@@ -3682,6 +3728,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_show_json"
           ]
@@ -3768,6 +3815,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_validate_invalid_json",
             "e2e:config_validate_valid_json"
@@ -3888,6 +3936,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
@@ -4015,6 +4064,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:doctor_json"
           ]
@@ -4096,6 +4146,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_change_note_json"
           ]
@@ -4181,6 +4232,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_diff_json"
           ]
@@ -4269,6 +4321,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_discard_json"
           ]
@@ -4365,6 +4418,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_list_json",
             "e2e:draft_list_narrow"
@@ -4453,6 +4507,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_path_json"
           ]
@@ -4540,6 +4595,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -4636,6 +4692,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_show_json"
           ]
@@ -4749,6 +4806,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
@@ -4864,6 +4922,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:experiments_delete_stateless_confirmation_json"
           ]
@@ -4959,6 +5018,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:experiments_list_json",
             "e2e:experiments_list_stateless_json"
@@ -5058,6 +5118,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:experiments_show_json",
             "e2e:experiments_show_stateless_json"
@@ -5183,6 +5244,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:get_filtered_json",
             "e2e:get_stateless_all_projects_json",
@@ -5349,6 +5412,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_add_json",
             "e2e:groups_add_stateless_json"
@@ -5476,6 +5540,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_delete_json",
             "e2e:groups_delete_stateless_json"
@@ -5603,6 +5668,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_edit_json",
             "e2e:groups_edit_stateless_json"
@@ -5715,6 +5781,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_list_filtered_json",
             "e2e:groups_list_stateless_json"
@@ -5829,6 +5896,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_rename_json",
             "e2e:groups_rename_stateless_json"
@@ -5939,6 +6007,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:help_projects_diff",
             "e2e:help_projects_diff_json"
@@ -6027,6 +6096,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:hooks_fingerprint_json"
           ]
@@ -6108,6 +6178,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:hooks_status_json"
           ]
@@ -6190,6 +6261,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:hooks_trust_json"
           ]
@@ -6278,6 +6350,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:hooks_untrust_json"
           ]
@@ -6370,6 +6443,7 @@
             "app.failure_runtime",
             "app.mcp_json_boundary",
             "app.mcp_json_failure",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:mcp_json"
           ]
@@ -6456,6 +6530,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:personalizations_list_json",
             "e2e:personalizations_list_stateless_json"
@@ -6551,6 +6626,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:personalizations_show_json",
             "e2e:personalizations_show_stateless_json"
@@ -6643,6 +6719,9 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.invalid_plan_inputs",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:plan_show_json"
           ]
@@ -6666,6 +6745,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.invalid_plan_inputs",
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:plan_show_json"
@@ -6728,6 +6808,9 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.invalid_plan_inputs",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:plan_validate_json"
           ]
@@ -6751,6 +6834,7 @@
         },
         "stdin": {
           "evidence": [
+            "app.invalid_plan_inputs",
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:plan_validate_json"
@@ -6808,6 +6892,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -6891,6 +6976,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:profile_delete_json"
           ]
@@ -6982,6 +7068,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:profile_list_json"
           ]
@@ -7063,6 +7150,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:profile_path_json"
           ]
@@ -7144,6 +7232,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:profile_rename_json"
           ]
@@ -7232,6 +7321,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:profile_switch_json"
           ]
@@ -7348,6 +7438,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_defaults_file_json",
             "e2e:project_defaults_json",
@@ -7486,6 +7577,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_export_file_json",
             "e2e:project_export_json",
@@ -7608,6 +7700,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_import_stateless_json"
           ]
@@ -7718,6 +7811,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_open_json",
             "e2e:project_open_stateless_json"
@@ -7806,6 +7900,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:project_quota_project_set_json"
           ]
@@ -7891,6 +7987,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_quota_project_show_json"
           ]
@@ -7972,6 +8069,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_quota_project_unset_json"
           ]
@@ -8064,6 +8162,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_show_json",
             "e2e:project_show_stateless_json"
@@ -8152,6 +8251,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_templates_set_json"
           ]
@@ -8233,6 +8333,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:project_templates_show_json"
           ]
@@ -8315,6 +8417,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_aliases_import_json"
           ]
@@ -8408,6 +8511,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_aliases_list_json",
             "e2e:projects_aliases_list_narrow"
@@ -8493,6 +8597,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_aliases_remove_json"
           ]
@@ -8585,6 +8690,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_aliases_set_json"
           ]
@@ -8680,6 +8786,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_diff_client_server_json",
             "e2e:projects_diff_stateless_json"
@@ -8773,6 +8880,8 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:projects_forget_json"
           ]
@@ -8876,6 +8985,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
@@ -8973,6 +9083,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_path_json"
           ]
@@ -9069,6 +9180,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_promote_stateless_dry_run_json"
           ]
@@ -9168,6 +9280,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_reset_json"
           ]
@@ -9256,6 +9369,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_update_json"
           ]
@@ -9350,6 +9464,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:rollouts_delete_stateless_confirmation_json"
           ]
@@ -9445,6 +9560,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:rollouts_list_json",
             "e2e:rollouts_list_stateless_json"
@@ -9540,6 +9656,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:rollouts_show_json",
             "e2e:rollouts_show_stateless_json"
@@ -9633,6 +9750,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:root_version",
             "e2e:root_version_json"
@@ -9717,6 +9835,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:schema_list_json"
           ]
@@ -9798,6 +9917,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:schema_show_json"
           ]
@@ -9886,6 +10006,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.profile_failure_runtime",
             "app.setup_json_runtime",
             "app.unknown_option",
@@ -9970,6 +10091,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:theme_current_json"
           ]
@@ -10047,6 +10169,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -10138,6 +10261,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:theme_import_directory_json",
             "e2e:theme_import_json"
@@ -10241,6 +10365,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:theme_list_json"
           ]
@@ -10322,6 +10447,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:theme_path_json"
           ]
@@ -10403,6 +10529,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:theme_rename_json"
           ]
@@ -10486,6 +10613,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -10563,6 +10691,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -10676,6 +10805,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
@@ -10797,6 +10927,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_blame_stateless_json"
           ]
@@ -10897,6 +11028,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_diff_filtered_json",
             "e2e:versions_diff_json",
@@ -11007,6 +11139,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_export_file_json",
             "e2e:versions_export_stateless_file_json"
@@ -11106,6 +11239,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_list",
             "e2e:versions_list_stateless_json"
@@ -11204,6 +11338,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option"
           ]
         },
@@ -11303,6 +11438,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_rollback_stateless_dry_run_json"
           ]
@@ -11405,6 +11541,7 @@
           "evidence": [
             "app.failure_codes",
             "app.failure_runtime",
+            "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_show_json",
             "e2e:versions_show_stateless_json"

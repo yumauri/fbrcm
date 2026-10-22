@@ -114,13 +114,13 @@ func GenerateCA(ctx context.Context, hoverflyBinary, directory string) (certific
 		select {
 		case <-ctx.Done():
 			_ = cmd.Process.Kill()
-			<-wait
+			<-wait //nolint:errcheck // Forced termination is expected; preserve the context error.
 			return "", "", fmt.Errorf("generate Hoverfly CA: %w", ctx.Err())
 		case err := <-wait:
 			return "", "", processExitError("Hoverfly exited while generating CA", err, combined.String())
 		case <-deadline.C:
 			_ = cmd.Process.Kill()
-			<-wait
+			<-wait //nolint:errcheck // Forced termination is expected; preserve the timeout.
 			return "", "", fmt.Errorf("timed out generating Hoverfly CA\n%s", combined.String())
 		case <-ticker.C:
 			_, certErr := os.Stat(certificatePath)
@@ -133,10 +133,10 @@ func GenerateCA(ctx context.Context, hoverflyBinary, directory string) (certific
 	}
 	_ = cmd.Process.Signal(os.Interrupt)
 	select {
-	case <-wait:
+	case <-wait: //nolint:errcheck // CA files are verified; the server was intentionally interrupted.
 	case <-time.After(2 * time.Second):
 		_ = cmd.Process.Kill()
-		<-wait
+		<-wait //nolint:errcheck // CA files are verified; the server was intentionally killed.
 	}
 	return certificatePath, keyPath, nil
 }
@@ -215,7 +215,7 @@ func (h *Hoverfly) Stop() error {
 				h.stopErr = fmt.Errorf("kill Hoverfly: %w", err)
 				return
 			}
-			<-h.wait
+			<-h.wait //nolint:errcheck // The server was intentionally killed after its shutdown grace period.
 		}
 	})
 	return h.stopErr

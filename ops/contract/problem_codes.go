@@ -110,7 +110,11 @@ func CommandProblemCodes(capability Capability) []string {
 		}
 	}
 	if capability.Supports.Stdin && !slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID) {
-		add("stdin.remote_config.invalid")
+		if capability.ID == "get" {
+			add("remote_config.invalid")
+		} else {
+			add("stdin.remote_config.invalid")
+		}
 	}
 	if capabilityHasFlag(capability, "--expr") {
 		add("expression.invalid")
@@ -152,7 +156,7 @@ func CommandProblemCodes(capability Capability) []string {
 		case id == "auth.login":
 			add("auth.credentials_invalid", "auth.not_found", "auth.setup_required")
 		case id == "auth.delete" || id == "auth.path" || strings.HasPrefix(id, "auth.quota-project."):
-			add("auth.not_found")
+			add("auth.not_found", "auth.setup_required")
 		}
 	case strings.HasPrefix(id, "draft."):
 		if slices.Contains([]string{"draft.change-note", "draft.diff", "draft.discard", "draft.publish", "draft.show"}, id) {
@@ -227,6 +231,8 @@ func CommandProblemCodes(capability Capability) []string {
 		add("group.not_found")
 	case "projects.diff", "projects.promote":
 		add("group.not_found")
+	case "projects.forget":
+		add("project.not_found")
 	case "experiments.delete", "rollouts.delete":
 		add("interaction.required")
 	}

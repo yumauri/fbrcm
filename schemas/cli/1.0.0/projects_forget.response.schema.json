@@ -121,7 +121,8 @@
                       "internal.contract_violation",
                       "internal.unclassified",
                       "profile.invalid",
-                      "profile.not_found"
+                      "profile.not_found",
+                      "project.not_found"
                     ]
                   }
                 },

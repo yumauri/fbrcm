@@ -112,6 +112,7 @@
                       "argument.invalid",
                       "auth.configuration_invalid",
                       "auth.not_found",
+                      "auth.setup_required",
                       "command.canceled",
                       "command.timeout",
                       "configuration.invalid",

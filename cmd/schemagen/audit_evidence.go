@@ -90,6 +90,18 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 					evidence = append(evidence, "app.profile_failure_runtime", "app.setup_json_runtime")
 				}
 			}
+			if class == "failure" && slices.Contains([]string{
+				"auth.path", "auth.delete", "auth.quota-project.set", "auth.quota-project.unset",
+				"get", "plan.show", "plan.validate", "project.quota-project.set", "project.templates.show", "projects.forget",
+			}, capability.ID) {
+				evidence = append(evidence, "app.unconfigured_input_failures")
+			}
+			if class == "failure" {
+				evidence = append(evidence, "app.plan_quota_app_problems")
+			}
+			if slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID) && (class == "failure" || class == "stdin") {
+				evidence = append(evidence, "app.invalid_plan_inputs")
+			}
 			if capability.Supports.Plan {
 				switch class {
 				case "artifact", "success":
@@ -145,6 +157,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"app.invalid_plan_inputs":                "cli/app/audit_runtime_test.go#TestJSONInvalidPublicationPlanInputsConform",
+		"app.plan_quota_app_problems":            "cli/app/audit_runtime_test.go#TestTypedPlanQuotaAndAppProblemsConform",
+		"app.unconfigured_input_failures":        "cli/app/audit_runtime_test.go#TestJSONUnconfiguredAndInvalidInputFailuresConform",
 		"app.mcp_json_boundary":                  "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",
 		"app.mcp_json_failure":                   "cli/app/mcp_test.go#TestMCPJSONFailureDoesNotBootstrapProfile",
 		"app.arity":                              "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",

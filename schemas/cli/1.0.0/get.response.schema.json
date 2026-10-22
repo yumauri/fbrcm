@@ -226,8 +226,8 @@
                       "profile.not_found",
                       "project.ambiguous",
                       "project.not_found",
-                      "resource.not_found",
-                      "stdin.remote_config.invalid"
+                      "remote_config.invalid",
+                      "resource.not_found"
                     ]
                   }
                 },

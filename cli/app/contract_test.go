@@ -3685,7 +3685,11 @@ func TestRequestedTimeoutUsesLastValue(t *testing.T) {
 
 func executeJSONContract(t *testing.T, args ...string) (contract.Envelope, []byte) {
 	t.Helper()
-	root := NewRootForContract("test")
+	return executeJSONContractRoot(t, NewRootForContract("test"), args...)
+}
+
+func executeJSONContractRoot(t *testing.T, root *cobra.Command, args ...string) (contract.Envelope, []byte) {
+	t.Helper()
 	var captured bytes.Buffer
 	root.SetOut(&captured)
 	root.SetErr(&bytes.Buffer{})

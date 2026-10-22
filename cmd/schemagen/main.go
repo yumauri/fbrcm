@@ -709,14 +709,14 @@ func problemObjectSchema(selfRef string, codes []string) map[string]any {
 
 func problemCodeConstraints() []any {
 	byCategory := map[string][]string{
-		"argument":        {"argument.invalid", "argument.unknown_command", "auth.id_invalid", "command.not_executable", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
+		"argument":        {"argument.invalid", "argument.unknown_command", "app.ambiguous", "auth.id_invalid", "command.not_executable", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
 		"configuration":   {"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "theme.invalid"},
 		"profile":         {"profile.invalid"},
-		"auth":            {"auth.configuration_invalid", "auth.credentials_invalid", "auth.setup_required"},
+		"auth":            {"auth.configuration_invalid", "auth.credentials_invalid", "auth.quota_project_required", "auth.setup_required"},
 		"permission":      {"firebase.permission_denied", "filesystem.permission_denied"},
-		"not_found":       {"auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
-		"conflict":        {"draft.exists", "hooks.changed", "parameter.exists", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "remote_config.conflict", "resource.conflict", "theme.conflict"},
-		"validation":      {"condition.invalid", "diagnostic.failed", "expression.invalid", "firebase.request_failed", "remote_config.invalid", "remote_config.validation_failed", "result.unsuccessful", "stdin.remote_config.invalid", "validation.failed"},
+		"not_found":       {"app.not_found", "auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
+		"conflict":        {"draft.exists", "hooks.changed", "parameter.exists", "plan.exists", "plan.stale", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "remote_config.conflict", "resource.conflict", "theme.conflict"},
+		"validation":      {"condition.invalid", "diagnostic.failed", "expression.invalid", "firebase.request_failed", "plan.integrity_failed", "plan.invalid", "plan.unsupported_version", "remote_config.invalid", "remote_config.validation_failed", "result.unsuccessful", "stdin.remote_config.invalid", "validation.failed"},
 		"timeout":         {"command.timeout", "firebase.timeout", "network.timeout"},
 		"interaction":     {"interaction.required"},
 		"unavailable":     {"firebase.rate_limited", "firebase.service_unavailable", "network.offline", "network.unavailable"},
@@ -747,17 +747,19 @@ func problemCodeConstraints() []any {
 		codes []string
 		kind  []string
 	}{
+		{[]string{"plan.integrity_failed", "plan.invalid", "plan.unsupported_version"}, []string{"publication_plan"}},
+		{[]string{"auth.quota_project_required"}, []string{"quota_project"}},
 		{[]string{"argument.unknown_command"}, []string{"invocation"}},
 		{[]string{"interaction.required"}, []string{"interaction", "oauth_authorization"}},
 		{[]string{"expression.invalid"}, []string{"expression"}},
 		{[]string{"hook.failed"}, []string{"hook"}},
 		{[]string{"firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout"}, []string{"remote_api"}},
 		{[]string{"resource.not_found"}, []string{"remote_api", "selection"}},
-		{[]string{"condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "theme.not_found", "version.not_found"}, []string{"selection"}},
+		{[]string{"app.ambiguous", "app.not_found", "condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "theme.not_found", "version.not_found"}, []string{"selection"}},
 		{[]string{"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "profile.invalid", "theme.invalid", "condition.invalid", "remote_config.invalid", "remote_config.validation_failed", "stdin.remote_config.invalid"}, []string{"validation"}},
 		{[]string{"auth.credentials_invalid"}, []string{"remote_api", "validation"}},
 		{[]string{"auth.configuration_invalid", "auth.id_invalid", "auth.not_found", "auth.setup_required"}, []string{"auth"}},
-		{[]string{"draft.exists", "hooks.changed", "parameter.exists", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "resource.conflict", "theme.conflict"}, []string{"conflict"}},
+		{[]string{"draft.exists", "hooks.changed", "parameter.exists", "plan.exists", "plan.stale", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "resource.conflict", "theme.conflict"}, []string{"conflict"}},
 		{[]string{"remote_config.conflict"}, []string{"conflict", "remote_api"}},
 		{[]string{"batch.failed", "batch.partial_success"}, []string{"batch"}},
 		{[]string{"file.io_failed", "filesystem.permission_denied"}, []string{"file"}},
@@ -788,6 +790,7 @@ func problemCodeConstraints() []any {
 	result = append(result, map[string]any{
 		"if": map[string]any{
 			"properties": map[string]any{"code": map[string]any{"enum": []string{
+				"app.ambiguous", "app.not_found", "auth.quota_project_required", "plan.exists", "plan.integrity_failed", "plan.invalid", "plan.stale", "plan.unsupported_version",
 				"argument.invalid", "argument.unknown_command", "auth.configuration_invalid", "auth.credentials_invalid", "auth.id_invalid", "auth.not_found", "auth.setup_required",
 				"command.canceled", "command.not_executable", "command.not_found", "condition.invalid", "condition.not_found",
 				"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "diagnostic.failed",
@@ -813,6 +816,9 @@ func problemDetailsSchema(selfRef string) map[string]any {
 	failure := map[string]any{"$ref": selfRef}
 	return map[string]any{"oneOf": []any{
 		map[string]any{"type": "null"},
+		object([]string{"kind"}, map[string]any{"kind": map[string]any{"const": "publication_plan"}}),
+		object([]string{"kind"}, map[string]any{"kind": map[string]any{"const": "internal"}}),
+		object([]string{"kind", "target_project_id", "targetless"}, map[string]any{"kind": map[string]any{"const": "quota_project"}, "target_project_id": stringValue, "targetless": map[string]any{"type": "boolean"}}),
 		object([]string{"kind", "interaction_type", "required_option", "destructive"}, map[string]any{"kind": map[string]any{"const": "interaction"}, "interaction_type": map[string]any{"enum": []string{"confirmation", "destination_conflict", "external_input", "guided_setup", "input_required", "selection_required"}}, "required_option": map[string]any{"type": []string{"string", "null"}}, "destructive": map[string]any{"type": "boolean"}}),
 		object([]string{"kind", "auth_id"}, map[string]any{"kind": map[string]any{"const": "oauth_authorization"}, "auth_id": stringValue}),
 		object([]string{"kind", "expression", "context"}, map[string]any{"kind": map[string]any{"const": "expression"}, "expression": stringValue, "context": stringValue}),

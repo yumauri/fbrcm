@@ -428,10 +428,7 @@ func ExitCode(cmd operation.Call, err error) int {
 	if errors.As(err, &exitErr) && exitErr.Code > 0 {
 		return exitErr.Code
 	}
-	problem := Classify(err)
-	if cmd != nil && problem.Category == "internal" && !shared.CommandRunStarted(cmd) {
-		problem.Category = "argument"
-	}
+	problem, _ := classifyCommandError(cmd, CommandID(cmd), err)
 	return exitCodeForCategory(problem.Category)
 }
 
@@ -485,7 +482,7 @@ func classifyCommandError(cmd operation.Call, command string, err error) (Proble
 				RequestedCommand string `json:"requested_command"`
 				ResolvedCommand  string `json:"resolved_command"`
 			}{Kind: "invocation", RequestedCommand: requestedCommandID(cmd), ResolvedCommand: CommandID(cmd)}
-		} else if cmd != nil && problem.Category == "internal" && !shared.CommandRunStarted(cmd) {
+		} else if cmd != nil && problem.Code == "internal.unclassified" && !shared.CommandRunStarted(cmd) {
 			problem.Code, problem.Category = "argument.invalid", "argument"
 		}
 		return problem, false
@@ -826,6 +823,20 @@ func Classify(err error) Problem {
 		}
 		return problem
 	}
+	// A filesystem syscall error can also satisfy net.Error. Preserve the
+	// enclosing path operation before considering the generic network interface.
+	if pathErr, ok := errors.AsType[*os.PathError](err); ok {
+		problem.Code, problem.Category = "file.io_failed", "io"
+		if errors.Is(err, os.ErrPermission) {
+			problem.Code, problem.Category = "filesystem.permission_denied", "permission"
+		}
+		problem.Details = struct {
+			Kind      string `json:"kind"`
+			Operation string `json:"operation"`
+			Path      string `json:"path"`
+		}{Kind: "file", Operation: pathErr.Op, Path: pathErr.Path}
+		return problem
+	}
 	if netErr, ok := errors.AsType[net.Error](err); ok {
 		problem.Code, problem.Category, problem.Retryable = "network.unavailable", "unavailable", true
 		if netErr.Timeout() {
@@ -890,18 +901,6 @@ func Classify(err error) Problem {
 		default:
 			problem.Code = "plan.invalid"
 		}
-		return problem
-	}
-	if pathErr, ok := errors.AsType[*os.PathError](err); ok {
-		problem.Code, problem.Category = "file.io_failed", "io"
-		if errors.Is(err, os.ErrPermission) {
-			problem.Code, problem.Category = "filesystem.permission_denied", "permission"
-		}
-		problem.Details = struct {
-			Kind      string `json:"kind"`
-			Operation string `json:"operation"`
-			Path      string `json:"path"`
-		}{Kind: "file", Operation: pathErr.Op, Path: pathErr.Path}
 		return problem
 	}
 	return problem

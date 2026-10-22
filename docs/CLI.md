@@ -1164,6 +1164,19 @@ They differ for an unknown nested command: the failure uses the published
 `root` response schema while `requested_command` retains the attempted path and
 the `argument.unknown_command` problem carries `details.kind: "invocation"`.
 
+JSON failures preserve their typed cause: missing auth setup in auth path,
+delete, and quota-project operations returns `auth.setup_required` (exit 4);
+invalid `get` stdin returns `remote_config.invalid` (exit 8); and
+`projects forget` with an existing registry and no matching projects returns
+`project.not_found` (exit 6). Missing plan files and missing local project
+registries return `file.io_failed` (exit 13). Filesystem permission failures
+return `filesystem.permission_denied` (exit 5).
+Invalid, integrity-failed, and unsupported publication plans retain their
+`plan.*` validation problems (exit 8) and `publication_plan` details. Missing
+quota-project selection returns `auth.quota_project_required` (exit 4) with
+`quota_project` details. These failures are non-retryable until their cause is
+corrected.
+
 ### `fbrcm capabilities [command...]`
 
 Lists all executable command capabilities, or describes the command at the

@@ -10,6 +10,7 @@
                 "enum": [
                   "argument.invalid",
                   "argument.unknown_command",
+                  "app.ambiguous",
                   "auth.id_invalid",
                   "command.not_executable",
                   "draft.ambiguous",
@@ -37,6 +38,7 @@
                 "enum": [
                   "auth.configuration_invalid",
                   "auth.credentials_invalid",
+                  "auth.quota_project_required",
                   "auth.setup_required"
                 ]
               }
@@ -108,6 +110,8 @@
                   "draft.exists",
                   "hooks.changed",
                   "parameter.exists",
+                  "plan.exists",
+                  "plan.stale",
                   "profile.conflict",
                   "project_alias.conflict",
                   "project_alias.read_only",
@@ -219,6 +223,7 @@
             "properties": {
               "code": {
                 "enum": [
+                  "app.not_found",
                   "auth.not_found",
                   "command.not_found",
                   "condition.not_found",
@@ -370,6 +375,9 @@
                   "diagnostic.failed",
                   "expression.invalid",
                   "firebase.request_failed",
+                  "plan.integrity_failed",
+                  "plan.invalid",
+                  "plan.unsupported_version",
                   "remote_config.invalid",
                   "remote_config.validation_failed",
                   "result.unsuccessful",
@@ -414,6 +422,70 @@
             "properties": {
               "retryable": {
                 "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "plan.integrity_failed",
+                  "plan.invalid",
+                  "plan.unsupported_version"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "publication_plan"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "auth.quota_project_required"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "quota_project"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
               }
             }
           }
@@ -615,6 +687,8 @@
             "properties": {
               "code": {
                 "enum": [
+                  "app.ambiguous",
+                  "app.not_found",
                   "condition.not_found",
                   "draft.ambiguous",
                   "draft.not_found",
@@ -768,6 +842,8 @@
                   "draft.exists",
                   "hooks.changed",
                   "parameter.exists",
+                  "plan.exists",
+                  "plan.stale",
                   "profile.conflict",
                   "project_alias.conflict",
                   "project_alias.read_only",
@@ -933,6 +1009,14 @@
             "properties": {
               "code": {
                 "enum": [
+                  "app.ambiguous",
+                  "app.not_found",
+                  "auth.quota_project_required",
+                  "plan.exists",
+                  "plan.integrity_failed",
+                  "plan.invalid",
+                  "plan.stale",
+                  "plan.unsupported_version",
                   "argument.invalid",
                   "argument.unknown_command",
                   "auth.configuration_invalid",
@@ -1035,6 +1119,50 @@
           "oneOf": [
             {
               "type": "null"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "publication_plan"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "internal"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "quota_project"
+                },
+                "target_project_id": {
+                  "type": "string"
+                },
+                "targetless": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "kind",
+                "target_project_id",
+                "targetless"
+              ],
+              "type": "object"
             },
             {
               "additionalProperties": false,
