@@ -12,13 +12,19 @@ publish Firebase Remote Config. They are optimized for different workflows:
   many projects and both client and server templates. Repository hooks can
   enforce policy across every fbrcm publication path.
 
-This comparison covers the documented Firebase CLI command set and
-[`firebase-tools` 15.33.0](https://github.com/firebase/firebase-tools/releases/tag/v15.33.0)
-as of October 10, 2026, verified against the
-[npm registry's current release](https://registry.npmjs.org/firebase-tools/latest).
-Consult the
-[current Firebase CLI reference](https://firebase.google.com/docs/cli) when
-using a later release.
+This comparison covers the terminal commands in
+[`firebase-tools` 15.34.1](https://github.com/firebase/firebase-tools/releases/tag/v15.34.1)
+as of October 23, 2026, verified against the
+[published npm package](https://registry.npmjs.org/firebase-tools/15.34.1)
+and its version-tagged source. The
+[Firebase CLI reference](https://firebase.google.com/docs/cli) provides general
+setup and command documentation.
+
+The package also includes Firebase MCP tools for getting a client template,
+publishing a complete template, and rolling back a version. Those agent-facing
+tools are separate from the terminal commands compared below; they do not
+provide dedicated parameter-editing, diff, draft, or server-template workflows.
+See the [15.34.1 Remote Config MCP tools](https://github.com/firebase/firebase-tools/tree/v15.34.1/src/mcp/tools/remoteconfig).
 
 ## Which tool should I use?
 
@@ -61,15 +67,15 @@ approaches the same concern differently.
 | Read current client template | ✅ | ✅ | Firebase CLI uses `remoteconfig:get`; fbrcm uses `project export` for the complete JSON or `get` for parameter views. |
 | Publish complete client template | ✅ | ✅ | Firebase CLI deploys the file configured in `firebase.json`; fbrcm imports a selected file or stdin. |
 | Read and publish server templates | ❌ | ✅ | fbrcm accepts explicit `server@project-id` targets and keeps their state separate from client templates. |
-| List template versions | ✅ | ✅ | Both read Firebase version history. |
+| List template versions | ✅ | ✅ | Both read Firebase version history. Firebase CLI requests one page with `--limit`; fbrcm can paginate through retained history with `--all`. |
 | Retrieve or export a historical version | ✅ | ✅ | Both can write a selected version to a file. |
 | Trace a parameter's retained version history | ❌ | ✅ | `fbrcm versions blame` reports only publications that directly changed the parameter, including the author, time, change note, and a side-by-side diff. |
 | Roll back to a retained Firebase version | ✅ | ✅ | fbrcm adds a reviewed diff and dry-run support. |
 | Restore a locally cached expired version | ❌ | ✅ | fbrcm can republish an immutable local snapshot after Firebase no longer returns it. |
 | Download application defaults | ❌ | ✅ | fbrcm downloads JSON, Android XML, or Apple plist defaults. |
-| List registered Firebase apps | ✅ | ✅ | Firebase CLI lists one active project; fbrcm can combine selected projects and cache the inventory. |
+| List registered Firebase apps | ✅ | ✅ | Firebase CLI lists one selected project; fbrcm can combine selected projects and cache the inventory. |
 | Inspect platform-specific app details | ⚠️ | ✅ | Firebase CLI lists app summaries and has separate Android SHA commands. fbrcm has one read-only details command for Android, iOS, and Web apps. |
-| Download Firebase app SDK configuration | ✅ | ✅ | Firebase CLI prints the configuration; fbrcm can print it, write a private file, or return a typed JSON artifact. |
+| Download Firebase app SDK configuration | ✅ | ✅ | Firebase CLI prints the configuration or writes it with `--out FILE`; fbrcm can print it, write a private file, or return a typed JSON artifact. |
 | Create or change Firebase apps | ✅ | ❌ | Firebase CLI can create apps, manage Android SHA hashes, and offer to create a missing default Hosting site when creating a Web app. fbrcm keeps all app operations read-only. |
 | List, inspect, and delete A/B tests | ✅ | ✅ | fbrcm also correlates experiments with their published parameter bindings and variant values. |
 | List, inspect, and delete rollouts | ✅ | ✅ | fbrcm also correlates rollout metadata with published parameter bindings. |
@@ -89,8 +95,8 @@ approaches the same concern differently.
 | Promote selected changes between projects | ❌ | ✅ | fbrcm handles required conditions, group descriptions, optional pruning, and target revalidation. |
 | Local drafts | ❌ | ✅ | Drafts retain an immutable base and compose multiple related edits. |
 | Three-way rebase before publish | ❌ | ✅ | fbrcm rebases draft intent over current Firebase state and preserves conflicts for review. |
-| Item-level dry run | ⚠️ | ✅ | Firebase CLI has a generic deploy dry run; fbrcm previews individual mutations, imports, promotions, drafts, and version changes. |
-| ETag-protected publication | ✅ | ✅ | Both use Firebase concurrency protection. |
+| Item-level dry run | ⚠️ | ✅ | Firebase CLI's deploy dry run runs predeploy hooks and basic local template checks without a Remote Config API validation request or structured diff; fbrcm previews individual mutations, imports, promotions, drafts, and version changes. |
+| ETag-protected publication | ✅ | ✅ | Firebase CLI fetches a fresh ETag for deployment and can bypass it with `--force`; fbrcm ties publication to the state used to prepare the reviewed candidate. |
 | Machine-readable JSON | ✅ | ✅ | Firebase CLI has a global `--json`; fbrcm defines stable output contracts per operation. |
 | Cache and offline inspection | ❌ | ✅ | fbrcm keeps project, template, and immutable version snapshots for offline work. |
 | Credential health and permission diagnostics | ⚠️ | ✅ | `fbrcm doctor` checks identities, storage, connectivity, APIs, and Remote Config read/update permissions. |
@@ -98,7 +104,7 @@ approaches the same concern differently.
 | Repository project aliases | ✅ | ✅ | fbrcm reads Firebase CLI aliases from `.firebaserc`, merges native `.fbrcm.toml` aliases with conflict detection, supports explicit import, and composes aliases with client/server template targets. |
 | Repository-local configuration | ✅ | ✅ | Firebase CLI uses `firebase.json` and `.firebaserc`; fbrcm discovers the nearest `.fbrcm.toml` and deeply overlays it on user-wide `config.toml`. |
 | Pre- and post-publication hooks | ✅ | ✅ | Firebase CLI defines `predeploy` and `postdeploy` hooks for deployable resources in `firebase.json`. fbrcm defines Remote Config `pre_publish` and `post_publish` hooks, supplies current/candidate/context JSON files, and requires explicit trust for repository hooks. |
-| User-authored Remote Config change note | ❌ | ✅ | fbrcm exposes `--change-note`, stores `change_note` with drafts, prompts in TUI publication reviews, and maps it to the REST API's writable `version.description`. Firebase CLI's `--message` is used for Hosting release comments. |
+| User-authored Remote Config change note | ❌ | ✅ | fbrcm exposes `--change-note`, stores `change_note` with drafts, prompts in TUI publication reviews, and maps it to the REST API's writable `version.description`. Firebase CLI's Remote Config deploy body omits `version`; `deploy --message` does not set a Remote Config change note. |
 | Deploy other Firebase products | ✅ | ❌ | fbrcm intentionally focuses on Remote Config. |
 
 ## Command equivalents
@@ -112,14 +118,14 @@ template; use `client@project-id` or `server@project-id` when needed.
 | --- | --- | --- |
 | Initialize the local workflow | `firebase init remoteconfig` | Run `fbrcm setup` for guided CLI setup, run `fbrcm` for the TUI, or use `fbrcm auth add ...` followed by `fbrcm projects update` |
 | Export current template | `firebase --project PROJECT remoteconfig:get -o FILE` | `fbrcm project export PROJECT --to FILE` |
-| Print current template | `firebase --project PROJECT remoteconfig:get` | `fbrcm project export PROJECT` |
-| Inspect current parameters | Edit or inspect exported JSON | `fbrcm get --project '=PROJECT'` |
+| Return current template as JSON | `firebase --project PROJECT --json remoteconfig:get` (template inside the result envelope) | `fbrcm project export PROJECT` |
+| Inspect current parameters | `remoteconfig:get` lists names; inspect exported JSON for values | `fbrcm get --project '=PROJECT'` |
 | Export historical version | `firebase --project PROJECT remoteconfig:get -v VERSION -o FILE` | `fbrcm versions export PROJECT VERSION --to FILE` |
 | Show version metadata | Included in `remoteconfig:get` output | `fbrcm versions show PROJECT VERSION` |
 | List recent versions | `firebase --project PROJECT remoteconfig:versions:list --limit N` | `fbrcm versions list PROJECT --limit N` |
-| List every retained version | `firebase --project PROJECT remoteconfig:versions:list --limit 0` | `fbrcm versions list PROJECT --all` |
+| List every retained version | No automatic pagination; `--limit N` requests one page | `fbrcm versions list PROJECT --all` |
 | Publish template file | `firebase --project PROJECT deploy --only remoteconfig` | `fbrcm project import PROJECT --from FILE [--change-note TEXT]` |
-| Preview template-file deployment | `firebase --project PROJECT deploy --only remoteconfig --dry-run` | `fbrcm project import PROJECT --from FILE --dry-run` |
+| Dry-run template-file deployment | `firebase --project PROJECT deploy --only remoteconfig --dry-run` (basic local checks) | `fbrcm project import PROJECT --from FILE --dry-run` |
 | Stage template file without publishing | No equivalent | `fbrcm project import PROJECT --from FILE --draft` |
 | Configure publication hooks | Add `predeploy` or `postdeploy` under the resource in `firebase.json` | Add `hooks.pre_publish` or `hooks.post_publish` to `.fbrcm.toml` or global `config.toml` |
 | Inspect repository hook trust | No explicit trust workflow | `fbrcm hooks status` or `fbrcm hooks fingerprint` |
@@ -129,7 +135,7 @@ template; use `client@project-id` or `server@project-id` when needed.
 | List registered apps | `firebase --project PROJECT apps:list [PLATFORM]` | `fbrcm apps list PROJECT [--platform PLATFORM]` |
 | Inspect app details | No single cross-platform equivalent | `fbrcm apps show APP --project PROJECT` |
 | Print SDK configuration | `firebase --project PROJECT apps:sdkconfig PLATFORM APP_ID` | `fbrcm apps config APP --project PROJECT` |
-| Save SDK configuration | Redirect `apps:sdkconfig` output | `fbrcm apps config APP --project PROJECT --to FILE` |
+| Save SDK configuration | `firebase --project PROJECT apps:sdkconfig PLATFORM APP_ID --out FILE` | `fbrcm apps config APP --project PROJECT --to FILE` |
 | List experiments | `firebase --project PROJECT remoteconfig:experiments:list` | `fbrcm experiments list PROJECT` |
 | Show experiment | `firebase --project PROJECT remoteconfig:experiments:get ID` | `fbrcm experiments show PROJECT ID` |
 | Delete experiment | `firebase --project PROJECT remoteconfig:experiments:delete ID` | `fbrcm experiments delete PROJECT ID` |
@@ -141,6 +147,17 @@ The two filtering syntaxes for managed features are not interchangeable.
 Firebase CLI's experiment and rollout `--filter` accepts a full resource-name
 filter. fbrcm filters experiment display names locally and otherwise uses its
 shared project and parameter filtering conventions.
+
+Firebase CLI's [`remoteconfig:get`](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/commands/remoteconfig-get.ts)
+prints a summary table by default. `--output FILE` writes the template without
+its `version` metadata, while `--json` returns the complete template inside the
+command result envelope. SDK configuration has its own
+[`--out FILE` option](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/commands/apps-sdkconfig.ts).
+
+The [`remoteconfig:versions:list` implementation](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/remoteconfig/versionslist.ts)
+makes one request and does not follow `nextPageToken`. Its command help describes
+`--limit 0` as fetching all versions, but the terminal option is passed through
+as `pageSize=0`; it does not implement an all-pages traversal.
 
 ## fbrcm workflows without a Firebase CLI equivalent
 
@@ -250,10 +267,31 @@ deterministic.
 
 ### Safety and local state
 
-Both tools use Firebase ETags. fbrcm also keeps local drafts and
-historical snapshots. Immediate fbrcm writes refuse to bypass an existing
-draft, and draft publication rebases local intent rather than silently
-overwriting unrelated remote changes.
+Both tools use Firebase ETags, but protect different points in the workflow.
+Firebase CLI's Remote Config release fetches the current ETag immediately before
+publishing the complete local template. It does not compare that template with
+the remote state from which it was originally edited; `--force` sends
+`If-Match: *`. See the
+[release step](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/deploy/remoteconfig/release.ts)
+and [publication request](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/deploy/remoteconfig/functions.ts).
+
+fbrcm keeps local drafts and historical snapshots and ties publication to the
+state used to prepare the reviewed candidate. Immediate fbrcm writes refuse to
+bypass an existing draft, and draft publication rebases local intent rather
+than silently overwriting unrelated remote changes.
+
+### Deployment dry runs
+
+For Remote Config, Firebase CLI's `deploy --only remoteconfig --dry-run` runs
+predeploy hooks, parses the configured template, fetches an ETag, and checks that
+the ETag is nonempty and `conditions`, if present, is an array. It skips
+publication and postdeploy hooks. It does not submit the candidate to Firebase
+with `validate_only=true` or display a structured template diff. See the
+[deployment orchestration](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/deploy/index.ts)
+and [Remote Config preparation](https://github.com/firebase/firebase-tools/blob/v15.34.1/src/deploy/remoteconfig/prepare.ts).
+
+fbrcm dry runs prepare the selected change, show its diff, and run applicable
+publication validation and pre-publication hooks without publishing it.
 
 ### Hook scope and trust
 
