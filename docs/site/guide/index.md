@@ -96,7 +96,7 @@ scoop install fbrcm
 </template>
 <template #source>
 
-Install from source with Go 1.27.1 or newer:
+Install from source with Go 1.27.3 or newer:
 
 ```sh
 go install github.com/yumauri/fbrcm@latest
