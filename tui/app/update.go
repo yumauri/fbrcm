@@ -65,6 +65,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Source:   ready.Source,
 		})
 		cmds = appendCmd(cmds, cmd)
+		if !m.workspaceInitialized {
+			m.workspaceInitialized = true
+			if projects := m.projects.AllProjects(); len(projects) == 1 {
+				if selectionCmd := m.projects.SelectOnly(projects[0].ProjectID); selectionCmd != nil {
+					cmds = appendCmd(cmds, selectionCmd)
+					m.setProjectsMode(projectsPanelModeCollapsed)
+					m.setActive(panels.Parameters)
+				}
+			}
+		}
 		if m.width > 0 && m.height > 0 {
 			m.applyLayout()
 		}

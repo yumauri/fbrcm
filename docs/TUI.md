@@ -232,7 +232,11 @@ for a missing themes directory, so opening the picker never creates it.
 ## Projects
 
 Selecting one project shows its parameters. Marking several projects combines
-their trees for comparison.
+their trees for comparison. When a workspace opens with exactly one visible,
+accessible project target, fbrcm selects it automatically, collapses Projects,
+and focuses Parameters. This includes a workspace reduced to one project by a
+whitelist or blacklist. Multiple visible template rows keep the project selector
+open. Later refreshes preserve the user's current focus and panel layout.
 
 Repository aliases from `.fbrcm.toml` and `.firebaserc` appear after the project
 name, for example `Production [prod, production]`. Normal project filters match

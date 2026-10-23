@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "name": "Northstar Wallet",
+      "project_id": "northstar-wallet",
+      "auth_id": "e2e"
+    },
+    {
+      "name": "Unrelated",
+      "project_id": "unrelated-project",
+      "auth_id": "e2e"
+    }
+  ]
+}

@@ -21,6 +21,8 @@
 [1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
 [1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
 [1mINFO[m loaded projects from cache [2mcomponent[m[2m=[mcore [2mcount[m[2m=[m1
+[1mDEBU[m read project visibility config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/project-visibility.json
+[1mDEBU[m project visibility config missing; using defaults [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/project-visibility.json
 [1mDEBU[m get parameters requested [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet [2mforce[m[2m=[mfalse
 [1mDEBU[m inspect parameters cache [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
 [1mDEBU[m read current parameters cache [2mcomponent[m[2m=[mconfig [2mproject_id[m[2m=[mnorthstar-wallet [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/remote-config/northstar-wallet.json
@@ -29,8 +31,6 @@
 [1mINFO[m parameters cache stale [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet [2metag[m[2m=[mfixture-etag-version-12
 [1mINFO[m verifying stale parameters cache [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet
 [1mINFO[m verify parameters cache against firebase [2mcomponent[m[2m=[mcore [2mproject_id[m[2m=[mnorthstar-wallet [2metag[m[2m=[mfixture-etag-version-12
-[1mDEBU[m read projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json
-[1mINFO[m loaded projects config [2mcomponent[m[2m=[mconfig [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/projects-config.json [2mcount[m[2m=[m1 [2msynced_at[m[2m=[m2024-01-01T00:00:00Z
 [1mDEBU[m create firebase service [2mcomponent[m[2m=[mfirebase [2mauth_id[m[2m=[me2e [2mauth_type[m[2m=[moauth
 [1mINFO[m load oauth client secret [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/config/profiles/default/auth/e2e/client-secret.json
 [1mDEBU[m read cached oauth token [2mcomponent[m[2m=[mfirebase [2mpath[m[2m=[m<E2E_RUN_ROOT>/environment/cache/profiles/default/auth/e2e/token.json

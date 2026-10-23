@@ -34,6 +34,8 @@ import (
 type Model struct {
 	svc *core.Core
 
+	workspaceInitialized bool
+
 	projects         projects.Model
 	parameters       parameters.Model
 	conditions       conditions.Model

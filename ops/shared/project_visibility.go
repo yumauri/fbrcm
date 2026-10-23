@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"context"
+
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/filter"
@@ -8,10 +10,20 @@ import (
 	"github.com/yumauri/fbrcm/ops/invocation"
 )
 
+func projectSelectionVisibilityContext(ctx context.Context) (context.Context, error) {
+	if core.IncludesHiddenProjects(ctx) || !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
+		return ctx, nil
+	}
+	return core.WithProjectVisibilitySnapshot(ctx)
+}
+
 // VisibleProjectSelection applies the profile policy before normal filtering.
 // Explicit exact filters report hidden targets instead of silently skipping them.
 func VisibleProjectSelection(cmd invocation.Call, projects []core.Project, rawFilters []string) ([]core.Project, error) {
-	ctx := CommandContext(cmd)
+	ctx, err := projectSelectionVisibilityContext(CommandContext(cmd))
+	if err != nil {
+		return nil, err
+	}
 	visible, err := core.VisibleProjects(ctx, projects)
 	if err != nil || core.IncludesHiddenProjects(ctx) || !core.ExecutionPolicyFromContext(ctx).ReadLocalState {
 		return visible, err
@@ -39,7 +51,10 @@ func VisibleProjectSelection(cmd invocation.Call, projects []core.Project, rawFi
 }
 
 func visibleProjectArguments(cmd invocation.Call, projects []core.Project, query string, aliases map[string]string) ([]core.Project, error) {
-	ctx := CommandContext(cmd)
+	ctx, err := projectSelectionVisibilityContext(CommandContext(cmd))
+	if err != nil {
+		return nil, err
+	}
 	visible, err := core.VisibleProjects(ctx, projects)
 	if err != nil {
 		return nil, err

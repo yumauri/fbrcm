@@ -1481,7 +1481,7 @@ Flags:
 --cached                use cached Remote Config even when stale; fetch if absent
 ```
 
-Default output is a terminal table. Firebase-managed values use compact human summaries. Personalizations render as `◈ (personalization)`, and unknown future value options render as `(optionName)`. Experiments with published template variants render as `⚗ 15% : true | false | true`, or as `⚗ true | false` when the template has no exposure percentage; unavailable or incomplete variant data falls back to `⚗ (a/b test)`. Rollouts render their published value without another API request as `◐ 10% → 20 | (no change)`. The vertical bar groups variants within one managed value and remains distinct from the slash that separates collapsed conditional values. Percentages use the shared gold count color, concrete managed values use the parameter type's value color, and placeholders such as `(no change)` and `(empty string)` use the same muted gray as the surrounding chrome. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status. Status is `fetch` for freshly fetched or just-verified data, `cached` for a usable cache, `stale` for expired cache accepted with `--cached` or used after a failed refresh, `missing` when no data is available, and `error` when cached data is shown alongside a load error.
+Default output is a terminal table. When project selection resolves to exactly one visible template target, the human table omits the Project column, including when only one project is configured or visibility rules leave one project. Multiple selected targets retain the column, including separate client and server templates. JSON rows always retain project identity. Firebase-managed values use compact human summaries. Personalizations render as `◈ (personalization)`, and unknown future value options render as `(optionName)`. Experiments with published template variants render as `⚗ 15% : true | false | true`, or as `⚗ true | false` when the template has no exposure percentage; unavailable or incomplete variant data falls back to `⚗ (a/b test)`. Rollouts render their published value without another API request as `◐ 10% → 20 | (no change)`. The vertical bar groups variants within one managed value and remains distinct from the slash that separates collapsed conditional values. Percentages use the shared gold count color, concrete managed values use the parameter type's value color, and placeholders such as `(no change)` and `(empty string)` use the same muted gray as the surrounding chrome. JSON output includes the same unstyled summaries together with project, project ID, group, key, description, default value, conditionals, type, version, cache time, and status. Status is `fetch` for freshly fetched or just-verified data, `cached` for a usable cache, `stale` for expired cache accepted with `--cached` or used after a failed refresh, `missing` when no data is available, and `error` when cached data is shown alongside a load error.
 
 Stdin mode reads Remote Config JSON from stdin and queries only that config. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. As an experimental human-only convenience on supported systems, a directory on stdin makes `get` read top-level `.json` files as multiple projects; this transport is not published in machine schemas or capability metadata.
 
@@ -2592,6 +2592,19 @@ a whitelist hides every project outside its members. Blacklist exclusions take
 precedence when both lists are enabled. An enabled empty whitelist hides every
 project. `clear` retains activation state; use `disable` to stop applying a list
 while retaining its members.
+
+Successful loads and saves log at `info`, including each list's enabled state and
+membership count. With `FBRCM_LOG_LEVEL=debug`, logs also show visibility-file
+reads, fallback to defaults when the file is absent, and settings before saving.
+Read, decode, validation, and write failures log at `error`. These entries include
+the active profile's file path. Related checks within one project-selection or
+listing operation share a single visibility-file read; later operations reload
+the current preferences.
+
+Bulk project selection also shares the loaded projects registry with subsequent
+Firebase requests, so resolving each project's authentication and quota-project
+override does not reread `projects-config.json`. Later operations and registry
+mutations read the current registry from disk.
 
 Rules store literal, case-sensitive physical project IDs and cover both client
 and server templates. Names, aliases, credentials, and accessibility do not

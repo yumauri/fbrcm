@@ -113,14 +113,18 @@ func ResolveCachedProjectNumber(cmd invocation.Call, projectNumber string) (core
 }
 
 func resolveProjectNumber(cmd invocation.Call, projects []core.Project, projectNumber string) (core.Project, error) {
+	ctx, err := projectSelectionVisibilityContext(CommandContext(cmd))
+	if err != nil {
+		return core.Project{}, err
+	}
 	for _, project := range projects {
 		if project.ProjectNumber == projectNumber {
-			if err := core.RequireProjectVisible(CommandContext(cmd), project.ProjectID); err != nil {
+			if err := core.RequireProjectVisible(ctx, project.ProjectID); err != nil {
 				return core.Project{}, err
 			}
 		}
 	}
-	projects, err := core.VisibleProjects(CommandContext(cmd), projects)
+	projects, err = core.VisibleProjects(ctx, projects)
 	if err != nil {
 		return core.Project{}, err
 	}
@@ -214,6 +218,7 @@ func ResolveProjectTargetsForExecution(ctx context.Context, cmd invocation.Call,
 		if err != nil {
 			return nil, ctx, err
 		}
+		ctx = core.WithProjectRegistrySnapshot(ctx, projects)
 		projects, err = VisibleProjectSelection(cmd, projects, rawFilters)
 		if err != nil {
 			return nil, ctx, err
@@ -320,6 +325,7 @@ func ResolveListProjects(cmd invocation.Call, svc *core.Core, args []string, res
 				projects, _, err = svc.ListProjects(ctx)
 			}
 			if err == nil {
+				ctx = core.WithProjectRegistrySnapshot(ctx, projects)
 				projects, err = VisibleProjectSelection(cmd, projects, filters)
 			}
 			if err == nil {

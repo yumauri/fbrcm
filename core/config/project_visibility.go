@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	corelog "github.com/yumauri/fbrcm/core/log"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 	"github.com/yumauri/fbrcm/core/strfold"
 )
@@ -68,28 +69,50 @@ func (p *ProjectVisibility) normalize() error {
 
 func LoadProjectVisibility() (ProjectVisibility, error) {
 	path := GetProjectVisibilityFilePath()
+	logger := corelog.For("config").With("path", path)
+	logger.Debug("read project visibility config")
 	var policy ProjectVisibility
 	if err := readJSONFile(path, &policy); err != nil {
 		if isNotExist(err) {
+			logger.Debug("project visibility config missing; using defaults")
 			return DefaultProjectVisibility(), nil
 		}
 		if isDecodeError(err) {
+			logger.Error("decode project visibility config failed", "err", err)
 			return policy, invalidConfiguration(path, "decoding", err)
 		}
+		logger.Error("read project visibility config failed", "err", err)
 		return policy, fmt.Errorf("read project visibility: %w", err)
 	}
 	if err := policy.normalize(); err != nil {
+		logger.Error("validate project visibility config failed", "err", err)
 		return policy, invalidConfiguration(path, "validation", err)
 	}
+	logger.Info("loaded project visibility config",
+		"blacklist_enabled", policy.Blacklist.Enabled, "blacklist_count", len(policy.Blacklist.ProjectIDs),
+		"whitelist_enabled", policy.Whitelist.Enabled, "whitelist_count", len(policy.Whitelist.ProjectIDs))
 	return policy, nil
 }
 
 func SaveProjectVisibility(policy ProjectVisibility) error {
+	path := GetProjectVisibilityFilePath()
+	logger := corelog.For("config").With("path", path)
 	if err := policy.normalize(); err != nil {
-		return invalidConfiguration(GetProjectVisibilityFilePath(), "validation", err)
+		logger.Error("validate project visibility config failed", "err", err)
+		return invalidConfiguration(path, "validation", err)
 	}
 	if err := EnsurePrivateDir(GetConfigDirPath()); err != nil {
+		logger.Error("prepare project visibility config directory failed", "err", err)
 		return err
 	}
-	return writeJSONFile(GetProjectVisibilityFilePath(), policy)
+	logger = logger.With(
+		"blacklist_enabled", policy.Blacklist.Enabled, "blacklist_count", len(policy.Blacklist.ProjectIDs),
+		"whitelist_enabled", policy.Whitelist.Enabled, "whitelist_count", len(policy.Whitelist.ProjectIDs))
+	logger.Debug("write project visibility config")
+	if err := writeJSONFile(path, policy); err != nil {
+		logger.Error("write project visibility config failed", "err", err)
+		return err
+	}
+	logger.Info("saved project visibility config")
+	return nil
 }

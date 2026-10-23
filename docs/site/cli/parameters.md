@@ -32,8 +32,10 @@ Useful selectors include:
 --update               revalidate caches before reading
 ```
 
-When you select one exact project, human output omits the redundant project
-column. Machine output retains complete target context.
+When selection resolves to one visible template target, human output omits the
+redundant Project column. This also applies with no project filter when only one
+project is configured or a whitelist or blacklist leaves one visible project.
+Machine output retains complete target context.
 
 ## Add and duplicate
 

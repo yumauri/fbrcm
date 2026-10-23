@@ -189,13 +189,12 @@ func runGetRemote(cmd invocation.Call, svc *core.Core, opts getOptions) error {
 		return nil
 	}
 
-	projectExact := singleExactProjectFilter(opts.projectFilters) && len(loaded) == 1
 	paramExact := opts.paramArgument != nil || singleExactParameterFilter(opts.paramFilters)
 	tableRows := rows
 	if opts.all {
 		tableRows = buildTableRows(loaded, rows)
 	}
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), table.Render(tableRows, shared.ParseFilters(opts.paramFilters), paramExact, !projectExact))
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), table.Render(tableRows, shared.ParseFilters(opts.paramFilters), paramExact, len(loaded) != 1))
 	logGetTotals("table", tableRows)
 	return nil
 }

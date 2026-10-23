@@ -62,3 +62,48 @@ func TestVisibleProjectsPreservesInventoryAndSkipsStatelessReads(t *testing.T) {
 		t.Fatal("malformed policy must fail closed")
 	}
 }
+
+func TestProjectVisibilitySnapshotIsScopedToOneOperation(t *testing.T) {
+	setupCoreTestEnv(t)
+	policy := config.DefaultProjectVisibility()
+	policy.Blacklist.ProjectIDs = []string{"alpha"}
+	if err := config.SaveProjectVisibility(policy); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	snapshot, err := WithProjectVisibilitySnapshot(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Both checks must reuse the loaded policy even if the file changes midway.
+	if err := os.WriteFile(config.GetProjectVisibilityFilePath(), []byte("{"), config.PrivateFileMode); err != nil {
+		t.Fatal(err)
+	}
+	visible, err := VisibleProjects(snapshot, []Project{{ProjectID: "alpha"}, {ProjectID: "beta"}})
+	if err != nil || len(visible) != 1 || visible[0].ProjectID != "beta" {
+		t.Fatalf("snapshot selection = %#v, %v", visible, err)
+	}
+	var hidden *ProjectHiddenError
+	if err := RequireProjectVisible(snapshot, "server@alpha"); !errors.As(err, &hidden) {
+		t.Fatalf("snapshot hidden check = %v", err)
+	}
+	if _, err := WithProjectVisibilitySnapshot(ctx); err == nil {
+		t.Fatal("later operation must read the changed file and fail closed")
+	}
+	policy.Blacklist.Enabled = false
+	if err := config.SaveProjectVisibility(policy); err != nil {
+		t.Fatal(err)
+	}
+	next, err := WithProjectVisibilitySnapshot(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := RequireProjectVisible(next, "alpha"); err != nil {
+		t.Fatalf("later operation did not load updated preferences: %v", err)
+	}
+	stateless := WithExecutionPolicy(snapshot, StatelessExecutionPolicy())
+	loaded, err := ProjectVisibilityForContext(stateless)
+	if err != nil || loaded.HiddenReason("alpha") != "" {
+		t.Fatalf("stateless execution reused local preferences: %#v, %v", loaded, err)
+	}
+}

@@ -1,0 +1,51 @@
+┌────────────┬────────────────────────────────┬─────────┬───────────────────────────────────────────────────┐
+│ Group      │ Key                            │ Type    │ Values                                            │
+├────────────┼────────────────────────────────┼─────────┼───────────────────────────────────────────────────┤
+│ banking    │ account_nickname_max_length    │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ banking    │ ach_transfer_limit_daily       │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ banking    │ card_freeze_enabled            │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ false                     │
+│ banking    │ instant_cashout_fee_bps        │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ banking    │ open_banking_enabled           │ BOOLEAN │ ╌┬╌ uk_open_banking ╌╌╌ true                      │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                     │
+│ banking    │ pending_transaction_days       │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ banking    │ plaid_products                 │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ []                        │
+│ insights   │ cashflow_forecast_days         │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ insights   │ enable_subscription_detection  │ BOOLEAN │ ╌┬╌ android_beta_10 ╌╌╌ true                      │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                     │
+│ insights   │ insight_min_transaction_count  │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ insights   │ merchant_logo_cdn              │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ fixture-default           │
+│ insights   │ monthly_budget_enabled         │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ false                     │
+│ insights   │ savings_nudge_threshold        │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ insights   │ spending_categories            │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ []                        │
+│ onboarding │ enable_passkey_signup          │ BOOLEAN │ ╌┬╌ android_beta_10 ╌╌╌ true                      │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                     │
+│ onboarding │ funding_minimum_amount         │ NUMBER  │ ╌┬╌ android_beta_10 ╌╌╌ 2                         │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 1                         │
+│ onboarding │ kyc_provider                   │ STRING  │ ╌┬╌ employees ╌╌╌╌╌╌╌╌╌ fixture-employees         │
+│            │                                │         │  ├╌ android_beta_10 ╌╌╌ fixture-android_beta_10   │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ fixture-default           │
+│ onboarding │ kyc_retry_limit                │ NUMBER  │ ╌┬╌ kyc_pending ╌╌╌╌╌╌╌ 2                         │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 1                         │
+│ onboarding │ onboarding_steps               │ JSON    │ ╌┬╌ uk_open_banking ╌╌╌ ["fixture"]               │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ []                        │
+│ onboarding │ show_income_question           │ BOOLEAN │ ╌┬╌ webapp ╌╌╌╌╌╌╌╌╌╌╌╌ true                      │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                     │
+│ onboarding │ welcome_bonus_copy             │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ fixture-default           │
+│ risk       │ block_crypto_card_loads        │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ false                     │
+│ risk       │ device_binding_grace_hours     │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ risk       │ high_risk_transfer_limit       │ NUMBER  │ ╌┬╌ high_risk_session ╌ 2                         │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 1                         │
+│ risk       │ require_step_up_for_new_device │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ false                     │
+│ risk       │ risk_banner_copy               │ STRING  │ ╌┬╌ high_risk_session ╌ fixture-high_risk_session │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ fixture-default           │
+│ risk       │ step_up_methods                │ JSON    │ ╌┬╌ employees ╌╌╌╌╌╌╌╌╌ ["fixture"]               │
+│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ []                        │
+│ risk       │ velocity_window_minutes        │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ support    │ document_upload_max_mb         │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ support    │ incident_status_url            │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ fixture-default           │
+│ support    │ maintenance_banner             │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ []                        │
+│ support    │ show_tax_center                │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ false                     │
+│ support    │ statement_months_available     │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 1                         │
+│ support    │ support_chat_enabled           │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ false                     │
+│ support    │ support_queue_copy             │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ fixture-default           │
+└────────────┴────────────────────────────────┴─────────┴───────────────────────────────────────────────────┘

@@ -120,7 +120,7 @@ func TestFilterHelpers(t *testing.T) {
 		name  string
 		exact func([]string) bool
 	}{
-		{name: "project", exact: singleExactProjectFilter},
+		{name: "project", exact: shared.SingleExactProjectTargetFilter},
 		{name: "parameter", exact: singleExactParameterFilter},
 	} {
 		if !fn.exact([]string{"=alpha"}) {

@@ -46,6 +46,14 @@ func printProjects(cmd invocation.Call, svc *core.Core, projects []core.Project,
 		aliasesByID = config.ProjectAliasesByID(aliases)
 	}
 
+	originalContext := shared.CommandContext(cmd)
+	ctx, err := core.WithProjectVisibilitySnapshot(core.WithProjectRegistrySnapshot(originalContext, projects))
+	if err != nil {
+		return err
+	}
+	cmd.SetContext(ctx)
+	defer cmd.SetContext(originalContext)
+
 	projects, err = shared.VisibleProjectSelection(cmd, projects, filterValues)
 	if err != nil {
 		return err

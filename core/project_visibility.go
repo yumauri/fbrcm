@@ -8,6 +8,7 @@ import (
 )
 
 type includeHiddenProjectsKey struct{}
+type projectVisibilitySnapshotKey struct{}
 
 func WithHiddenProjects(ctx context.Context, include bool) context.Context {
 	if ctx == nil {
@@ -39,7 +40,26 @@ func ProjectVisibilityForContext(ctx context.Context) (config.ProjectVisibility,
 	if !ExecutionPolicyFromContext(ctx).ReadLocalState {
 		return config.DefaultProjectVisibility(), nil
 	}
+	if ctx != nil {
+		if policy, ok := ctx.Value(projectVisibilitySnapshotKey{}).(config.ProjectVisibility); ok {
+			return policy, nil
+		}
+	}
 	return config.LoadProjectVisibility()
+}
+
+// WithProjectVisibilitySnapshot shares one policy read among related checks.
+// Keep the returned context scoped to one operation so later selections and TUI
+// refreshes read the current profile's latest preferences.
+func WithProjectVisibilitySnapshot(ctx context.Context) (context.Context, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	policy, err := ProjectVisibilityForContext(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	return context.WithValue(ctx, projectVisibilitySnapshotKey{}, policy), nil
 }
 
 // VisibleProjects applies policy before selectors, template expansion, or

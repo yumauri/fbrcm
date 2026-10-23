@@ -268,12 +268,7 @@ func (s *Core) ProjectByID(projectID string) (Project, error) {
 	if err != nil {
 		return Project{}, err
 	}
-	for _, project := range projects {
-		if project.ProjectID == projectID {
-			return project, nil
-		}
-	}
-	return Project{}, fmt.Errorf("project %q is not in projects config", projectID)
+	return findProjectByID(projects, projectID)
 }
 
 // SetProjectTemplatePreferences persists the enabled Remote Config templates
@@ -346,7 +341,7 @@ func (s *Core) ResolveProjectQuotaProject(ctx context.Context, projectID string)
 	if err != nil {
 		return Project{}, firebase.QuotaProjectSelection{Source: firebase.QuotaProjectSourceUnresolved}, err
 	}
-	project, err := s.ProjectByID(target.ProjectID)
+	project, err := s.projectByIDForContext(ctx, target.ProjectID)
 	if err != nil {
 		return Project{}, firebase.QuotaProjectSelection{Source: firebase.QuotaProjectSourceUnresolved}, err
 	}

@@ -1,0 +1,16 @@
+{
+  "cached_at": "2024-01-01T00:00:00Z",
+  "etag": "single-project-fixture",
+  "remote_config": {
+    "version": {
+      "versionNumber": "1"
+    },
+    "parameters": {
+      "welcome_message": {
+        "defaultValue": {
+          "value": "Welcome"
+        }
+      }
+    }
+  }
+}

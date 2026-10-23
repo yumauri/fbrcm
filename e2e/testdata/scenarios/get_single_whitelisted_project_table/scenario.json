@@ -1,0 +1,12 @@
+{
+  "name": "get_single_whitelisted_project_table",
+  "command_id": "get",
+  "args": [
+    "get",
+    "--cached"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "fixture": "single_project",
+  "offline": true
+}

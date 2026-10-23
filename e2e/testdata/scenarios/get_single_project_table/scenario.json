@@ -1,0 +1,12 @@
+{
+  "name": "get_single_project_table",
+  "command_id": "get",
+  "args": [
+    "get",
+    "--cached"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "fixture": "read_state",
+  "offline": true
+}

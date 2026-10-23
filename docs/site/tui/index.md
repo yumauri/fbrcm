@@ -57,7 +57,10 @@ performs the same action as `Enter`.
 ## Select projects and templates
 
 Selecting one project shows its parameters. Mark several projects with `Space`
-to compare their trees.
+to compare their trees. If a workspace opens with only one visible, accessible
+project target, fbrcm selects it automatically, collapses Projects, and focuses
+Parameters. This includes a workspace limited to one project by visibility
+rules. Later refreshes preserve your focus and layout.
 
 | Key | Project action |
 | --- | --- |

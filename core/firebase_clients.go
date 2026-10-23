@@ -22,7 +22,7 @@ func (s *Core) firebaseServiceForProject(ctx context.Context, projectID string) 
 	if err := requireLocalStateRead(ctx, "configured Firebase service resolution"); err != nil {
 		return nil, err
 	}
-	project, err := s.ProjectByID(target.ProjectID)
+	project, err := s.projectByIDForContext(ctx, target.ProjectID)
 	if err != nil {
 		return nil, err
 	}
