@@ -110,9 +110,10 @@ go run ./cmd/genoauthclient -clean
 Use a local development client unless you have access to the official release
 credentials.
 
-When both OAuth environment variables are unset, the generator and release
-workflow produce an uncredentialed build in which Google sign-in is unavailable.
-Setting only one variable is an error.
+When both OAuth environment variables are unset, the generator produces an
+uncredentialed local build in which Google sign-in is unavailable. Setting only
+one variable is an error. The official release workflow requires both secrets
+and stops before building if either is missing, empty, or whitespace-only.
 
 ## First run
 

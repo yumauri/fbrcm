@@ -18,6 +18,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate OAuth release credentials
+        shell: bash
+        env:
+          FBRCM_GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_ID }}
+          FBRCM_GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.FBRCM_GOOGLE_OAUTH_CLIENT_SECRET }}
+        run: |
+          for credential in FBRCM_GOOGLE_OAUTH_CLIENT_ID FBRCM_GOOGLE_OAUTH_CLIENT_SECRET; do
+            credential_value="${!credential-}"
+            if [[ -z "${credential_value//[[:space:]]/}" ]]; then
+              echo "::error::Required release secret $credential is missing or empty."
+              exit 1
+            fi
+          done
+
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
