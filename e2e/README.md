@@ -3,6 +3,12 @@
 This directory is a separate Go module. The repository's normal `go test ./...`
 does not discover or run these tests; run them explicitly from `e2e/`.
 
+The Build workflow runs this module's `golangci-lint run`, `go vet ./...`, and
+`go test -count=1 ./...` on branch pushes and pull requests. The Release workflow
+runs the same checks before publication. Tests use the default replay mode and
+require no Firebase credentials; any failed check stops the job. Both workflows
+include the root and E2E `go.sum` files in the Go dependency cache key.
+
 The harness runs a real `fbrcm` process through an HTTPS Hoverfly proxy. Replay
 mode never contacts Firebase: unmatched requests fail at the proxy. The command's
 stdout, stderr, exit status, HTTP method, destination, request count, and replay

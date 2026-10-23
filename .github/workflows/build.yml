@@ -23,6 +23,9 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            e2e/go.sum
 
       - name: Generate machine contract
         run: go run ./cmd/schemagen
@@ -41,11 +44,25 @@ jobs:
         with:
           version: v2.15.0
 
+      - name: Lint E2E
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          working-directory: e2e
+
       - name: Vet
+        run: go vet ./...
+
+      - name: Vet E2E
+        working-directory: e2e
         run: go vet ./...
 
       - name: Test
         run: go test -race ./...
+
+      - name: Test E2E (replay)
+        working-directory: e2e
+        run: go test -count=1 ./...
 
       - name: Build snapshot (GoReleaser dry-run)
         uses: goreleaser/goreleaser-action@v7
