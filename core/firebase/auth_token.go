@@ -113,18 +113,9 @@ func writeCachedToken(path string, tok *oauth2.Token) error {
 		return fmt.Errorf("encoding OAuth token: %w", err)
 	}
 	logger.Debug("write cached oauth token", "path", path)
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, config.PrivateFileMode); err != nil {
+	if err := config.WritePrivateFileAtomic(path, data); err != nil {
 		logger.Error("write cached oauth token failed", "path", path, "err", err)
 		return fmt.Errorf("writing cached OAuth token: %w", err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		logger.Error("rename cached oauth token failed", "path", path, "err", err)
-		return fmt.Errorf("writing cached OAuth token: %w", err)
-	}
-	if err := config.EnsurePrivateFile(path); err != nil {
-		return fmt.Errorf("tightening cached OAuth token permissions: %w", err)
 	}
 	logger.Debug("saved cached oauth token", "path", path)
 	return nil
