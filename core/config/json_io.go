@@ -76,5 +76,5 @@ func writeJSONFile(path string, v any) error {
 	if err != nil {
 		return &encodeError{err: err}
 	}
-	return WritePrivateFile(path, data)
+	return WritePrivateFileAtomic(path, data)
 }
