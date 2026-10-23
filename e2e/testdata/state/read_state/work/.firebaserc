@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "production": "firebase-production-project",
+    "shared": "northstar-wallet"
+  }
+}
