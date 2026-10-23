@@ -38,6 +38,9 @@ Install the latest release:
 curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | sh
 ```
 
+The installer verifies the release archive against `checksums.txt` before
+extracting it, using `sha256sum` or `shasum`.
+
 The installer places `fbrcm` in `/usr/local/bin` by default. To use another
 directory:
 

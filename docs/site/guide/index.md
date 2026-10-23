@@ -109,6 +109,9 @@ README to build the `google` method with a local client.
 </template>
 </ContentTabs>
 
+The macOS and Linux installer verifies the release archive against
+`checksums.txt` before extraction, using `sha256sum` or `shasum`.
+
 Confirm that the binary is available:
 
 ```sh

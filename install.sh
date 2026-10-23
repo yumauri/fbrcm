@@ -25,6 +25,7 @@ need() {
 }
 
 need curl
+need awk
 need grep
 need install
 need mktemp
@@ -32,6 +33,15 @@ need sed
 need tar
 need tr
 need uname
+
+if command -v sha256sum >/dev/null 2>&1; then
+  SHA256_TOOL=sha256sum
+elif command -v shasum >/dev/null 2>&1; then
+  SHA256_TOOL=shasum
+else
+  echo "Missing required command: sha256sum or shasum"
+  exit 1
+fi
 
 # Detect OS and architecture
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -57,11 +67,44 @@ if [ -z "$LATEST" ]; then
   exit 1
 fi
 
-URL="https://github.com/$REPO/releases/download/${LATEST}/${APP}_${OS}_${ARCH}.${EXT}"
+ASSET="${APP}_${OS}_${ARCH}.${EXT}"
+BASE_URL="https://github.com/$REPO/releases/download/${LATEST}"
 
 echo "Downloading $APP $LATEST for $OS/$ARCH..."
 TMP=$(mktemp -d)
-curl -sSfL "$URL" | tar -xz -C "$TMP"
+ARCHIVE="$TMP/$ASSET"
+CHECKSUMS="$TMP/checksums.txt"
+curl -sSfL "$BASE_URL/$ASSET" -o "$ARCHIVE"
+curl -sSfL "$BASE_URL/checksums.txt" -o "$CHECKSUMS"
+
+if ! EXPECTED_CHECKSUM=$(awk -v asset="$ASSET" '
+  NF == 2 && ($2 == asset || $2 == "*" asset) &&
+    length($1) == 64 && $1 !~ /[^[:xdigit:]]/ {
+      checksum = tolower($1)
+      matches++
+    }
+  END {
+    if (matches != 1) exit 1
+    print checksum
+  }
+' "$CHECKSUMS"); then
+  echo "Could not find a unique valid checksum for $ASSET."
+  exit 1
+fi
+
+if [ "$SHA256_TOOL" = sha256sum ]; then
+  ACTUAL_CHECKSUM=$(sha256sum "$ARCHIVE")
+else
+  ACTUAL_CHECKSUM=$(shasum -a 256 "$ARCHIVE")
+fi
+ACTUAL_CHECKSUM=${ACTUAL_CHECKSUM%% *}
+
+if [ "$ACTUAL_CHECKSUM" != "$EXPECTED_CHECKSUM" ]; then
+  echo "Checksum verification failed for $ASSET."
+  exit 1
+fi
+
+tar -xzf "$ARCHIVE" -C "$TMP"
 
 if [ ! -f "$TMP/LICENSE" ]; then
   echo "The release archive does not contain LICENSE."
