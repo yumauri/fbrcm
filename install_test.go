@@ -59,7 +59,8 @@ func TestUnixInstallerChecksumVerification(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			for _, tool := range []string{"awk", "cp", "grep", "install", "mkdir", "rm", "sed", "tr"} {
+			// GNU tar launches gzip through PATH when extracting .tar.gz files.
+			for _, tool := range []string{"awk", "cp", "grep", "gzip", "install", "mkdir", "rm", "sed", "tr"} {
 				path, err := exec.LookPath(tool)
 				if err != nil {
 					t.Fatal(err)
@@ -76,6 +77,7 @@ func TestUnixInstallerChecksumVerification(t *testing.T) {
 			}
 			writeScript("uname", `case "$1" in -s) echo Darwin ;; -m) echo arm64 ;; *) exit 1 ;; esac`)
 			writeScript("mktemp", `mkdir "$TEST_DOWNLOAD_DIR"; echo "$TEST_DOWNLOAD_DIR"`)
+			// These responses and downloads are local fixtures, not GitHub requests.
 			writeScript("curl", `
 out= url=
 while [ "$#" -gt 0 ]; do
@@ -86,11 +88,11 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 case "$url" in
-  https://api.github.com/repos/yumauri/fbrcm/releases/latest) echo '{"tag_name": "v1.0.0"}' ;;
-  https://github.com/yumauri/fbrcm/releases/download/v1.0.0/checksums.txt)
+  https://api.github.com/repos/yumauri/fbrcm/releases/latest) echo '{"tag_name": "v0.0.0-installer-test"}' ;;
+  https://github.com/yumauri/fbrcm/releases/download/v0.0.0-installer-test/checksums.txt)
     if [ "$TEST_FAILED_URL" = checksums ]; then echo 'download failed' >&2; exit 22; fi
     cp "$TEST_CHECKSUMS" "$out" ;;
-  https://github.com/yumauri/fbrcm/releases/download/v1.0.0/fbrcm_darwin_arm64.tar.gz)
+  https://github.com/yumauri/fbrcm/releases/download/v0.0.0-installer-test/fbrcm_darwin_arm64.tar.gz)
     if [ "$TEST_FAILED_URL" = archive ]; then echo 'download failed' >&2; exit 22; fi
     cp "$TEST_ARCHIVE" "$out" ;;
   *) echo "unexpected URL: $url" >&2; exit 1 ;;
