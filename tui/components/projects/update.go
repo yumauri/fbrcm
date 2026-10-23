@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/core/browser"
+	coreconfig "github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
@@ -92,6 +93,13 @@ func (m *Model) updateLoaded(msg messages.ProjectsLoadedMsg) tea.Cmd {
 	if aliasesByID != nil {
 		m.aliasesByID = aliasesByID
 	}
+	policy, policyErr := coreconfig.LoadProjectVisibility()
+	if policyErr != nil {
+		msg.Err = policyErr
+		msg.Projects = nil
+	} else {
+		m.visibility = policy
+	}
 	m.baseProjects = msg.Projects
 	selectionChanged := m.rebuildTargets()
 	m.source = msg.Source
@@ -125,7 +133,7 @@ func (m Model) updateKey(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if !m.active {
 		return m, nil
 	}
-	if m.collapsed {
+	if m.collapsed && !tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionShowHidden, msg.String()) {
 		return m, nil
 	}
 
@@ -208,6 +216,18 @@ func (m Model) updateProjectKey(k string) (Model, tea.Cmd) {
 			return m, nil
 		}
 		return m, m.selectionChangedCmd()
+	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionShowHidden, k):
+		m.showHidden = !m.showHidden
+		selectionChanged := m.rebuildTargets()
+		m.syncViewport()
+		var cmds []tea.Cmd
+		if selectionChanged {
+			cmds = append(cmds, m.selectionChangedCmd())
+		}
+		if m.filter.ExpressionMode() {
+			cmds = append(cmds, m.loadExpressionConfigsCmd())
+		}
+		return m, tea.Batch(cmds...)
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionToggleTemplates, k):
 		return m, m.toggleCurrentTemplatesCmd()
 	case tuiconfig.Matches(tuiconfig.BlockProjects, tuiconfig.ActionMakePrimary, k):

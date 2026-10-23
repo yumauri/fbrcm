@@ -124,7 +124,7 @@ func (m Model) secondaryTitle() secondaryTitleState {
 		}
 	default:
 		return secondaryTitleState{
-			text:  fmt.Sprintf("%d", len(m.baseProjects)),
+			text:  fmt.Sprintf("%d", m.visibleProjectCount()),
 			style: styles.SecondaryTitleCount,
 		}
 	}
@@ -140,6 +140,16 @@ func (m Model) secondaryTitleText() string {
 	case m.err != nil:
 		return "E"
 	default:
-		return fmt.Sprintf("%d", len(m.baseProjects))
+		return fmt.Sprintf("%d", m.visibleProjectCount())
 	}
+}
+
+func (m Model) visibleProjectCount() int {
+	count := 0
+	for _, project := range m.baseProjects {
+		if m.showHidden || m.visibility.HiddenReason(project.ProjectID) == "" {
+			count++
+		}
+	}
+	return count
 }

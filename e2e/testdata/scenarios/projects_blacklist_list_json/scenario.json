@@ -1,0 +1,21 @@
+{
+  "name": "projects_blacklist_list_json",
+  "command_id": "projects.blacklist.list",
+  "args": [
+    "projects",
+    "blacklist",
+    "list",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "expected_state_files": [
+    {
+      "root": "config",
+      "path": "profiles/default/project-visibility.json"
+    }
+  ],
+  "json_output": true,
+  "fixture": "project_visibility",
+  "offline": true
+}

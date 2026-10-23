@@ -352,6 +352,14 @@ func describe(cmd *cobra.Command) Capability {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "version", "equals", false))}
 				usage += "; accepted but not applied with --version"
 			}
+			if effective && flag.Name == "include-hidden" {
+				when := conditionClause(predicate("option", "stateless", "equals", false))
+				if id == "get" {
+					when.AllOf = append(when.AllOf, predicate("stdin", "document", "absent", nil))
+				}
+				effectiveWhen = []BehaviorConditionClause{when}
+				usage += "; ignored during stateless or stdin-only execution"
+			}
 			if effective && SupportsStatelessCommand(id) && flag.Name == "profile" {
 				effectiveWhen = []BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", false))}
 				usage += "; cannot be combined with --stateless"
@@ -512,6 +520,9 @@ func profileOptionIgnored(id string) bool {
 }
 
 func optionIgnored(id, name string) bool {
+	if name == "include-hidden" {
+		return !UsesProjectVisibility(id)
+	}
 	if name == "profile" {
 		return profileOptionIgnored(id)
 	}
@@ -642,4 +653,24 @@ func CommandNetworkAccess(cmd *cobra.Command) string {
 
 func hasFlag(cmd *cobra.Command, name string) bool {
 	return cmd.Flags().Lookup(name) != nil || cmd.InheritedFlags().Lookup(name) != nil
+}
+
+// IsProjectVisibilityCommand identifies local policy administration, which uses
+// the complete discovery inventory and never applies the visibility filter.
+func IsProjectVisibilityCommand(id string) bool {
+	return strings.HasPrefix(id, "projects.blacklist.") || strings.HasPrefix(id, "projects.whitelist.")
+}
+
+// UsesProjectVisibility describes commands whose normal workspace selection
+// consults the profile policy, including cache-only and draft operations.
+func UsesProjectVisibility(id string) bool {
+	if strings.HasPrefix(id, "project.") || strings.HasPrefix(id, "apps.") || strings.HasPrefix(id, "versions.") ||
+		strings.HasPrefix(id, "conditions.") || strings.HasPrefix(id, "groups.") || strings.HasPrefix(id, "experiments.") ||
+		strings.HasPrefix(id, "personalizations.") || strings.HasPrefix(id, "rollouts.") {
+		return true
+	}
+	if strings.HasPrefix(id, "draft.") {
+		return id != "draft.path"
+	}
+	return slices.Contains([]string{"add", "apply", "delete", "duplicate", "get", "update", "projects.list", "projects.update", "projects.diff", "projects.promote"}, id)
 }

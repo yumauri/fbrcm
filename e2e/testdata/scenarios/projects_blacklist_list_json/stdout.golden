@@ -1,0 +1,40 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:response",
+  "contract_version": "1.0.0",
+  "command": "projects.blacklist.list",
+  "requested_command": "projects.blacklist.list",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "list": "blacklist",
+    "enabled": true,
+    "count": 2,
+    "items": [
+      {
+        "project_id": "future-project",
+        "project": "",
+        "known": false,
+        "hidden_reason": "blacklisted"
+      },
+      {
+        "project_id": "northstar-wallet",
+        "project": "Northstar Wallet",
+        "known": true,
+        "hidden_reason": "blacklisted"
+      }
+    ],
+    "visible_project_count": 0
+  },
+  "errors": [],
+  "warnings": []
+}

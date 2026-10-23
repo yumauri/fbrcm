@@ -772,6 +772,9 @@
           "select": [
             "enter"
           ],
+          "show_hidden": [
+            "H"
+          ],
           "toggle_mode": [
             "c"
           ],

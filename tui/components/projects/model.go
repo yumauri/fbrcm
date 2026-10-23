@@ -22,6 +22,8 @@ import (
 type Model struct {
 	svc *core.Core
 
+	visibility             coreconfig.ProjectVisibility
+	showHidden             bool
 	baseProjects           []core.Project
 	allProjects            []core.Project
 	projects               []core.Project
@@ -64,6 +66,7 @@ func New(svc *core.Core) Model {
 	vp.SoftWrap = false
 	return Model{
 		svc:                 svc,
+		visibility:          coreconfig.DefaultProjectVisibility(),
 		viewport:            vp,
 		filter:              filterbox.New(),
 		expressionConfigs:   make(map[string]*firebase.RemoteConfig),
@@ -221,8 +224,8 @@ func (m Model) CurrentProjectEnabled() bool {
 	return ok && !project.Disabled
 }
 
-// AllProjects returns a stable copy of every project in the panel, including
-// projects currently hidden by filtering.
+// AllProjects returns a stable copy of current workspace targets, including
+// targets currently hidden by temporary text or expression filtering.
 func (m Model) AllProjects() []core.Project {
 	return append([]core.Project(nil), m.allProjects...)
 }

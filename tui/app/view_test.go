@@ -276,7 +276,7 @@ No logs yet.
 
 
 ──────────────────────────────────────────────────────────────────────────────────────────
-q quit • ? help • c collapse • enter select • space mark • t templates • p make primary …`
+q quit • ? help • c collapse • enter select • space mark • t templates • H show hidden …`
 
 const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮╭─ ²Parameters ── \≡ ── ³Conditions ──────────────────── default
  Loading projects...    ││Select project in Projects panel.                              │

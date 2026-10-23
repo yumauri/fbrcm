@@ -12,6 +12,9 @@ import (
 func (m *Model) rebuildTargets() bool {
 	targets := make([]core.Project, 0, len(m.baseProjects)*2)
 	for _, project := range m.baseProjects {
+		if !m.showHidden && m.visibility.HiddenReason(project.ProjectID) != "" {
+			continue
+		}
 		for _, kind := range project.TemplateKinds() {
 			targets = append(targets, project.TemplateTarget(kind))
 		}

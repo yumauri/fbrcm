@@ -188,13 +188,18 @@ func ValidateQueryFlags(cmd invocation.Call) error {
 // RejectTemplateProjectFilters enforces project-scoped commands that do not
 // accept client@ or server@ template selectors.
 func RejectTemplateProjectFilters(values []string) error {
+	return RejectTemplateFilters(values, "project")
+}
+
+// RejectTemplateFilters validates physical-project filters for a named option.
+func RejectTemplateFilters(values []string, flagName string) error {
 	for _, raw := range values {
 		_, explicit, err := rctarget.ParseSelector(raw)
 		if err != nil {
-			return InvalidArgument(fmt.Errorf("--project: %w", err))
+			return InvalidArgument(fmt.Errorf("--%s: %w", flagName, err))
 		}
 		if explicit {
-			return InvalidArgument(fmt.Errorf("--project %q uses template syntax, but this command is project-scoped", raw))
+			return InvalidArgument(fmt.Errorf("--%s %q uses template syntax, but this command is project-scoped", flagName, raw))
 		}
 	}
 	return nil

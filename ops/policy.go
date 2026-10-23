@@ -18,6 +18,13 @@ import (
 // is explicit and separate from Firebase credentials and mutation approval.
 func PreparePolicy(call invocation.Call, allowHooks, allowOAuth bool) error {
 	ctx := shared.CommandContext(call)
+	if call.Flags().Lookup("include-hidden") != nil {
+		include, err := call.Flags().GetBool("include-hidden")
+		if err != nil {
+			return shared.InvalidArgument(err)
+		}
+		ctx = core.WithHiddenProjects(ctx, include)
+	}
 	stateless, err := call.Flags().GetBool("stateless")
 	if err != nil {
 		return shared.InvalidArgument(err)

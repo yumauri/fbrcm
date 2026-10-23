@@ -88,6 +88,13 @@
               "etag": {
                 "type": "string"
               },
+              "hidden_reason": {
+                "enum": [
+                  "blacklisted",
+                  "not_whitelisted"
+                ],
+                "type": "string"
+              },
               "number": {
                 "type": "string"
               },
@@ -256,6 +263,7 @@
                       "network.unavailable",
                       "profile.invalid",
                       "profile.not_found",
+                      "project.hidden",
                       "resource.not_found"
                     ]
                   }

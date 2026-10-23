@@ -318,7 +318,7 @@ func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tu
 		if action == tuiconfig.ActionBindAuth && m.authCount <= 1 {
 			return false, "at least two authentication identities are required"
 		}
-		if action == tuiconfig.ActionRefresh || action == tuiconfig.ActionToggleMode {
+		if action == tuiconfig.ActionRefresh || action == tuiconfig.ActionToggleMode || action == tuiconfig.ActionShowHidden {
 			return true, ""
 		}
 		if !m.projects.HasCurrentProject() {

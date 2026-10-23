@@ -1,6 +1,7 @@
 package draft
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"slices"
@@ -37,19 +38,40 @@ type listItem struct {
 	ChangeNote    *string        `json:"change_note"`
 }
 
-func loadItems(rawFilters []string) ([]listItem, error) {
+func loadItems(cmd invocation.Call, rawFilters []string) ([]listItem, error) {
 	ids, err := config.ListDraftProjectIDs()
 	if err != nil {
 		return nil, err
 	}
 	names := projectNames()
 	projects := configuredProjects()
+	candidates := make([]core.Project, 0, len(ids))
+	for _, id := range ids {
+		target, err := rctarget.Parse(id)
+		if err != nil {
+			return nil, err
+		}
+		project := projects[target.ProjectID]
+		project.ProjectID = target.ProjectID
+		candidates = append(candidates, project)
+	}
+	visible, err := shared.VisibleProjectSelection(cmd, candidates, rawFilters)
+	if err != nil {
+		return nil, err
+	}
+	allowed := make(map[string]bool, len(visible))
+	for _, project := range visible {
+		allowed[project.ProjectID] = true
+	}
 	filters := shared.ParseFilters(rawFilters)
 	items := make([]listItem, 0, len(ids))
 	for _, projectID := range ids {
 		target, targetErr := rctarget.Parse(projectID)
 		if targetErr != nil {
 			return nil, targetErr
+		}
+		if !allowed[target.ProjectID] {
+			continue
 		}
 		name := names[target.ProjectID]
 		project := projects[target.ProjectID]
@@ -205,7 +227,7 @@ func configuredProjects() map[string]core.Project {
 	return out
 }
 
-func resolveDraft(query string) (string, core.Project, error) {
+func resolveDraft(ctx context.Context, query string) (string, core.Project, error) {
 	ids, err := config.ListDraftProjectIDs()
 	if err != nil {
 		return "", core.Project{}, err
@@ -216,6 +238,9 @@ func resolveDraft(query string) (string, core.Project, error) {
 	}
 	value := requested.ProjectID
 	if matches := exactDraftMatches(ids, value, requested.Kind, explicit); len(matches) == 1 {
+		if err := core.RequireProjectVisible(ctx, matches[0]); err != nil {
+			return "", core.Project{}, err
+		}
 		return matches[0], projectForID(matches[0]), nil
 	}
 	aliases, err := config.LoadProjectAliases()
@@ -225,12 +250,19 @@ func resolveDraft(query string) (string, core.Project, error) {
 	if alias, projectID, ok := config.ResolveProjectAlias(aliases, value); ok {
 		matches := exactDraftMatches(ids, projectID, requested.Kind, explicit)
 		if len(matches) == 1 {
+			if err := core.RequireProjectVisible(ctx, matches[0]); err != nil {
+				return "", core.Project{}, err
+			}
 			return matches[0], projectForID(matches[0]), nil
 		}
 		if len(matches) == 0 {
 			return "", core.Project{}, &shared.SelectionError{Resource: "draft", Kind: "not_found", Query: query, Err: fmt.Errorf("draft not found for alias %q (%s)", alias, projectID)}
 		}
 		return "", core.Project{}, &shared.SelectionError{Resource: "draft", Kind: "ambiguous", Query: query, Candidates: draftCandidates(matches), Err: fmt.Errorf("several drafts match alias %q (%s): %s", alias, projectID, strings.Join(matches, ", "))}
+	}
+	ids, err = visibleDraftIDs(ctx, ids)
+	if err != nil {
+		return "", core.Project{}, err
 	}
 	matches := make([]string, 0)
 	for _, id := range ids {
@@ -251,6 +283,9 @@ func resolveDraft(query string) (string, core.Project, error) {
 		}
 	}
 	if len(matches) == 1 {
+		if err := core.RequireProjectVisible(ctx, matches[0]); err != nil {
+			return "", core.Project{}, err
+		}
 		return matches[0], projectForID(matches[0]), nil
 	}
 	if len(matches) == 0 {
@@ -279,6 +314,9 @@ func resolveDraft(query string) (string, core.Project, error) {
 		}
 	}
 	if len(matches) == 1 {
+		if err := core.RequireProjectVisible(ctx, matches[0]); err != nil {
+			return "", core.Project{}, err
+		}
 		return matches[0], projectForID(matches[0]), nil
 	}
 	if len(matches) == 0 {
@@ -339,12 +377,16 @@ func selectedDraftIDs(cmd invocation.Call, args []string) ([]string, error) {
 		return nil, shared.InvalidArgument(fmt.Errorf("provide at least one project or use --all"))
 	}
 	if all {
-		return config.ListDraftProjectIDs()
+		ids, err := config.ListDraftProjectIDs()
+		if err != nil {
+			return nil, err
+		}
+		return visibleDraftIDs(shared.CommandContext(cmd), ids)
 	}
 	ids := make([]string, 0, len(args))
 	seen := make(map[string]bool)
 	for _, query := range args {
-		id, _, err := resolveDraft(query)
+		id, _, err := resolveDraft(shared.CommandContext(cmd), query)
 		if err != nil {
 			return nil, err
 		}
@@ -422,4 +464,21 @@ func filterDiff(project core.Project, result rcdiff.Result, from, to *firebase.R
 		result.GroupDescriptions = groups
 	}
 	return result, nil
+}
+
+// Drafts may outlive discovery records, so evaluate their physical IDs directly.
+func visibleDraftIDs(ctx context.Context, ids []string) ([]string, error) {
+	projects := make([]core.Project, 0, len(ids))
+	for _, id := range ids {
+		projects = append(projects, core.Project{ProjectID: id})
+	}
+	visible, err := core.VisibleProjects(ctx, projects)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(visible))
+	for _, project := range visible {
+		out = append(out, project.ProjectID)
+	}
+	return out, nil
 }

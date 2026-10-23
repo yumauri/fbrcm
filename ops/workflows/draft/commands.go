@@ -67,7 +67,7 @@ func newListCommandDefinition() *invocation.Definition {
 
 func runList(cmd invocation.Call, _ []string) error {
 	filters, _ := cmd.Flags().GetStringArray("filter")
-	items, err := loadItems(filters)
+	items, err := loadItems(cmd, filters)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func newChangeNoteCommandDefinition(svc *core.Core) *invocation.Definition {
 		Short: "Show or update a Remote Config draft change note",
 		Args:  invocation.RangeArgs(1, 2),
 		RunE: func(cmd invocation.Call, args []string) error {
-			projectID, _, err := resolveDraft(args[0])
+			projectID, _, err := resolveDraft(shared.CommandContext(cmd), args[0])
 			if err != nil {
 				return err
 			}
@@ -127,7 +127,7 @@ func newChangeNoteCommandDefinition(svc *core.Core) *invocation.Definition {
 }
 
 func runShow(cmd invocation.Call, args []string) error {
-	projectID, _, err := resolveDraft(args[0])
+	projectID, _, err := resolveDraft(shared.CommandContext(cmd), args[0])
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func newDiffCommandDefinition(svc *core.Core) *invocation.Definition {
 }
 
 func runDiff(cmd invocation.Call, svc *core.Core, query string) error {
-	projectID, project, err := resolveDraft(query)
+	projectID, project, err := resolveDraft(shared.CommandContext(cmd), query)
 	if err != nil {
 		return err
 	}

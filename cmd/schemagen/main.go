@@ -608,7 +608,8 @@ func warningObjectSchema() map[string]any {
 		return map[string]any{"type": "object", "additionalProperties": false, "required": required, "properties": properties}
 	}
 	detailsByCode := map[string]map[string]any{
-		"cache.stale": object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
+		"project.remains_hidden": object([]string{"reason"}, map[string]any{"reason": map[string]any{"const": "blacklisted"}}),
+		"cache.stale":            object([]string{"source"}, map[string]any{"source": map[string]any{"type": "string", "minLength": 1}}),
 		"cache.write_failed": object([]string{"error"}, map[string]any{"error": map[string]any{
 			"type": "string", "minLength": 1, "maxLength": 4097,
 			"x-fbrcm-safe-text": "at most 4096 Unicode code points, followed by one ellipsis when truncated",
@@ -714,7 +715,7 @@ func problemCodeConstraints() []any {
 		"profile":         {"profile.invalid"},
 		"auth":            {"auth.configuration_invalid", "auth.credentials_invalid", "auth.quota_project_required", "auth.setup_required"},
 		"permission":      {"firebase.permission_denied", "filesystem.permission_denied"},
-		"not_found":       {"app.not_found", "auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
+		"not_found":       {"project.hidden", "app.not_found", "auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
 		"conflict":        {"draft.exists", "hooks.changed", "parameter.exists", "plan.exists", "plan.stale", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "remote_config.conflict", "resource.conflict", "theme.conflict"},
 		"validation":      {"condition.invalid", "diagnostic.failed", "expression.invalid", "firebase.request_failed", "plan.integrity_failed", "plan.invalid", "plan.unsupported_version", "remote_config.invalid", "remote_config.validation_failed", "result.unsuccessful", "stdin.remote_config.invalid", "validation.failed"},
 		"timeout":         {"command.timeout", "firebase.timeout", "network.timeout"},
@@ -752,6 +753,7 @@ func problemCodeConstraints() []any {
 		{[]string{"argument.unknown_command"}, []string{"invocation"}},
 		{[]string{"interaction.required"}, []string{"interaction", "oauth_authorization"}},
 		{[]string{"expression.invalid"}, []string{"expression"}},
+		{[]string{"project.hidden"}, []string{"project_visibility"}},
 		{[]string{"hook.failed"}, []string{"hook"}},
 		{[]string{"firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout"}, []string{"remote_api"}},
 		{[]string{"resource.not_found"}, []string{"remote_api", "selection"}},
@@ -796,7 +798,7 @@ func problemCodeConstraints() []any {
 				"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "diagnostic.failed",
 				"draft.ambiguous", "draft.exists", "draft.not_found", "expression.invalid", "file.io_failed", "filesystem.permission_denied", "firebase.permission_denied", "firebase.request_failed",
 				"group.not_found", "hooks.not_configured", "interaction.required", "internal.contract_violation", "internal.unclassified", "parameter.ambiguous", "parameter.exists", "parameter.not_found",
-				"parameters_cache.not_found", "personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.not_found", "project_alias.conflict", "project_alias.read_only",
+				"parameters_cache.not_found", "personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.hidden", "project.not_found", "project_alias.conflict", "project_alias.read_only",
 				"publication.cache_failed", "publication.hook_failed", "remote_config.invalid", "remote_config.validation_failed", "resource.conflict", "resource.not_found",
 				"result.unsuccessful", "schema.not_found", "stdin.remote_config.invalid", "theme.conflict", "theme.invalid", "theme.not_found", "validation.failed", "version.not_found",
 			}}},
@@ -825,6 +827,7 @@ func problemDetailsSchema(selfRef string) map[string]any {
 		object([]string{"kind", "source"}, map[string]any{"kind": map[string]any{"const": "validation"}, "source": stringValue}),
 		object([]string{"kind"}, map[string]any{"kind": map[string]any{"const": "auth"}}),
 		object([]string{"kind", "resource"}, map[string]any{"kind": map[string]any{"const": "conflict"}, "resource": stringValue}),
+		object([]string{"kind", "reason"}, map[string]any{"kind": map[string]any{"const": "project_visibility"}, "reason": map[string]any{"enum": []string{"blacklisted", "not_whitelisted"}}}),
 		object([]string{"kind", "resource", "query", "candidates"}, map[string]any{"kind": map[string]any{"const": "selection"}, "resource": stringValue, "query": stringValue, "candidates": map[string]any{"type": "array", "items": candidate}}),
 		object([]string{"kind", "requested_command", "resolved_command"}, map[string]any{"kind": map[string]any{"const": "invocation"}, "requested_command": stringValue, "resolved_command": stringValue}),
 		object([]string{"kind", "operation", "failed_targets", "failures", "successful_target_count", "published_target_count"}, map[string]any{"kind": map[string]any{"const": "batch"}, "operation": stringValue, "failed_targets": map[string]any{"type": "array", "items": stringValue}, "failures": map[string]any{"type": "array", "items": failure}, "successful_target_count": map[string]any{"type": "integer", "minimum": 0}, "published_target_count": map[string]any{"type": "integer", "minimum": 0}}),
@@ -1406,7 +1409,9 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 		delete(schema, "type")
 	}
 	if name == "filter" {
-		if commandID == "draft.list" {
+		if contract.IsProjectVisibilityCommand(commandID) {
+			schema["items"] = map[string]any{"$ref": "#/$defs/project_filter"}
+		} else if commandID == "draft.list" {
 			schema["items"] = map[string]any{"$ref": "#/$defs/draft_filter"}
 		} else {
 			schema["items"] = map[string]any{
@@ -1671,6 +1676,9 @@ func projectPositionalMatching(targetAware bool) map[string]any {
 }
 
 func filterMatchingFields(commandID string) []string {
+	if contract.IsProjectVisibilityCommand(commandID) {
+		return []string{"project_id", "display_name", "repository_aliases"}
+	}
 	switch commandID {
 	case "conditions.list", "conditions.delete":
 		return []string{"condition_name"}
@@ -1835,7 +1843,7 @@ func argumentSchema(commandID, name string) map[string]any {
 		schema["maxLength"] = 100
 		schema["pattern"] = `.*\S.*`
 	}
-	if commandID == "projects.aliases.set" && name == "project_id" {
+	if (commandID == "projects.aliases.set" || contract.IsProjectVisibilityCommand(commandID)) && name == "project_id" {
 		return map[string]any{"$ref": "#/$defs/physical_project_id"}
 	}
 	if name == "quota_project_id" {
@@ -2369,6 +2377,12 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		return nil
 	}
 	constraints := make([]any, 0)
+	if contract.IsProjectVisibilityCommand(commandID) && (strings.HasSuffix(commandID, ".add") || strings.HasSuffix(commandID, ".remove")) {
+		constraints = append(constraints, map[string]any{"oneOf": []any{
+			map[string]any{"properties": map[string]any{"arguments": map[string]any{"required": []string{"project_id"}}, "options": map[string]any{"not": map[string]any{"required": []string{"filter"}}}}},
+			map[string]any{"properties": map[string]any{"options": map[string]any{"required": []string{"filter"}}, "arguments": map[string]any{"not": map[string]any{"required": []string{"project_id"}}}}},
+		}})
+	}
 	if commandID == "apps.list" || slices.Contains([]string{"conditions.add", "conditions.delete", "conditions.list"}, commandID) {
 		constraints = append(constraints, map[string]any{"not": map[string]any{
 			"properties": map[string]any{
@@ -3089,6 +3103,9 @@ func commandReachableOutcomes(capability contract.Capability, successDataSchema 
 }
 
 func commandWarningCodes(commandID string) []string {
+	if commandID == "projects.whitelist.add" {
+		return []string{"project.remains_hidden"}
+	}
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	switch commandID {
 	case "apply":

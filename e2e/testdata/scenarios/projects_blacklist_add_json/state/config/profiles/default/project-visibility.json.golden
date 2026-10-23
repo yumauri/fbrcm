@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "blacklist": {
+    "enabled": true,
+    "project_ids": [
+      "another-future-project",
+      "future-project",
+      "northstar-wallet"
+    ]
+  },
+  "whitelist": {
+    "enabled": true,
+    "project_ids": [
+      "northstar-wallet"
+    ]
+  }
+}

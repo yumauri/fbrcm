@@ -9,7 +9,7 @@ versioned [machine contract](cli-contract.md).
 ## Command tree
 
 ```text
-fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] [--json] [--timeout <duration>]
+fbrcm [--help] [--version] [--profile <name>] [--stateless] [--include-hidden] [--no-local-config] [--json] [--timeout <duration>]
 │
 ├── capabilities [command...]
 ├── schema
@@ -379,6 +379,20 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--no-local-config] 
 │   │   ├── --yes, -y
 │   │   ├── --plan-out <path>
 │   │   └── --json
+│   ├── blacklist
+│   │   ├── list
+│   │   ├── add [project-id...] [--filter|-f <query>]  repeated
+│   │   ├── remove [project-id...] [--filter|-f <query>]  repeated
+│   │   ├── clear
+│   │   ├── enable
+│   │   └── disable
+│   ├── whitelist
+│   │   ├── list
+│   │   ├── add [project-id...] [--filter|-f <query>]  repeated
+│   │   ├── remove [project-id...] [--filter|-f <query>]  repeated
+│   │   ├── clear
+│   │   ├── enable
+│   │   └── disable
 │   ├── aliases
 │   │   ├── list [--json]
 │   │   ├── set <alias> <project-id> [--yes|-y] [--json]
@@ -1075,6 +1089,18 @@ projects.path
 projects.promote
 projects.reset
 projects.update
+projects.whitelist.add
+projects.whitelist.clear
+projects.whitelist.disable
+projects.whitelist.enable
+projects.whitelist.list
+projects.whitelist.remove
+projects.blacklist.add
+projects.blacklist.clear
+projects.blacklist.disable
+projects.blacklist.enable
+projects.blacklist.list
+projects.blacklist.remove
 rollouts.delete
 rollouts.list
 rollouts.show
@@ -2556,9 +2582,112 @@ Restore JSON includes `change_note`. Native rollback does not accept a change no
 
 Rollback and restore JSON results include `project_id`, `operation`, `previous_version`, `source_version`, `published_version`, `dry_run`, `changed`, `validated`, and `validation_source`, including no-op results where `changed` is `false`. Their command schemas fix `operation` to `rollback` or `restore` respectively and correlate post-publication failure statuses with Firebase validation provenance and the corresponding error stage. Human previews are written separately from JSON data so stdout remains machine-readable.
 
+### Persistent project visibility
+
+Project visibility belongs to the active profile and is saved in
+`profiles/<profile>/project-visibility.json`, independently of the rebuildable
+project registry. The blacklist is enabled and empty by default. The whitelist
+is disabled and empty by default. When enabled, a blacklist hides its members;
+a whitelist hides every project outside its members. Blacklist exclusions take
+precedence when both lists are enabled. An enabled empty whitelist hides every
+project. `clear` retains activation state; use `disable` to stop applying a list
+while retaining its members.
+
+Rules store literal, case-sensitive physical project IDs and cover both client
+and server templates. Names, aliases, credentials, and accessibility do not
+change membership. Hiding retains snapshots, caches, drafts, and all project
+preferences. Discovery still synchronizes the complete inventory; `projects
+forget` and `projects reset` retain visibility rules. Inventory administration,
+auth binding, and cache administration continue to use the full inventory.
+
+Ordinary project selection, including cached reads and draft commands, applies
+visibility before selectors, template reads, and expressions. Exact selection of
+a hidden project fails with `project.hidden` (exit `6`). The global
+`--include-hidden` flag bypasses visibility for one invocation; ordinary filters
+still narrow the selection and disabled projects remain inaccessible. A
+publication plan containing a hidden target requires this override before it
+can be applied. Stateless and stdin-only execution ignore visibility preferences.
+`projects list --include-hidden --json` exposes optional `hidden_reason` values
+`blacklisted` and `not_whitelisted`.
+
+```sh
+fbrcm projects blacklist add legacy-prod playground
+fbrcm projects whitelist add product-dev product-staging product-prod
+fbrcm projects whitelist enable
+fbrcm projects list --include-hidden
+fbrcm project show legacy-prod --include-hidden
+```
+
+Both groups provide the commands below. Every command supports global `--json`,
+performs no discovery or Firebase access, and requires no confirmation. Literal
+IDs can be stored before discovery. `add` and `remove` require either at least
+one literal ID or repeatable `--filter|-f`; these forms are mutually exclusive.
+Filters use the shared matching modes and aliases. `add --filter` resolves once
+against the full local inventory; `remove --filter` resolves against stored list
+members, including unknown IDs. Only resolved IDs are persisted, so later
+projects do not automatically join a list through a previous filter. No matches
+produce an unchanged result. Template prefixes are rejected.
+
+`list` reports activation, stored entries (including unknown projects), their
+current exclusion reasons, and the visible inventory count. Human tables use
+ellipsis cropping when space is limited. Mutation JSON includes `list`,
+`operation`, `enabled`, `changed`, `affected_project_ids`, remaining `count`,
+`visible_project_count`, `selection` (kind, requested IDs or filters, matched
+count), and nullable `no_op_reason` (`no_match` or `already_applied`). Adding a
+blacklisted ID to the whitelist reports that it remains hidden; JSON emits a
+structured `project.remains_hidden` warning.
+
+### `fbrcm projects blacklist list`
+
+Lists the stored membership and activation state.
+
+### `fbrcm projects blacklist add [project-id...]`
+
+Adds IDs without changing activation state; existing members are unchanged.
+
+### `fbrcm projects blacklist remove [project-id...]`
+
+Removes matching IDs; absent members are unchanged.
+
+### `fbrcm projects blacklist clear`
+
+Removes every stored ID without changing activation state.
+
+### `fbrcm projects blacklist enable`
+
+Enables the stored rules. An empty whitelist hides every project.
+
+### `fbrcm projects blacklist disable`
+
+Disables the rules while retaining all stored IDs.
+
+### `fbrcm projects whitelist list`
+
+Lists the stored membership and activation state.
+
+### `fbrcm projects whitelist add [project-id...]`
+
+Adds IDs without changing activation state; existing members are unchanged.
+
+### `fbrcm projects whitelist remove [project-id...]`
+
+Removes matching IDs; absent members are unchanged.
+
+### `fbrcm projects whitelist clear`
+
+Removes every stored ID without changing activation state.
+
+### `fbrcm projects whitelist enable`
+
+Enables the stored rules. An empty whitelist hides every project.
+
+### `fbrcm projects whitelist disable`
+
+Disables the rules while retaining all stored IDs.
+
 ### `fbrcm projects list`
 
-Lists projects using cache-first loading.
+Lists visible projects using cache-first loading. Use global `--include-hidden` to inspect the full inventory.
 
 Flags:
 
@@ -2579,7 +2708,7 @@ identity's quota project, or an ADC quota project if using a gcloud identity.
 
 ### `fbrcm projects update`
 
-Syncs projects from Firebase into cache, then prints them.
+Syncs the complete project inventory from Firebase into cache, then prints visible projects. Use global `--include-hidden` to print every project.
 
 Flags:
 
@@ -2760,7 +2889,7 @@ Flags:
 
 ### `fbrcm projects reset`
 
-Resets the locally cached projects registry by deleting its rebuildable config file. Project Remote Config snapshots, cached versions, and drafts are not deleted.
+Resets the locally cached projects registry by deleting its rebuildable config file. Persistent blacklist and whitelist rules are retained. Project Remote Config snapshots, cached versions, and drafts are not deleted.
 In JSON mode, `status` is `reset`; `changed` is `true` when the registry file
 was removed and `false` when it was already absent.
 

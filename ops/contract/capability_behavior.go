@@ -868,6 +868,13 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 }
 
 func init() {
+	for _, name := range []string{"blacklist", "whitelist"} {
+		capabilityBehaviors["projects."+name+".list"] = behavior(0, "none")
+		for _, action := range []string{"add", "remove", "clear", "enable", "disable"} {
+			capabilityBehaviors["projects."+name+"."+action] = localWrite()
+		}
+	}
+
 	for _, id := range []string{
 		"add", "delete", "duplicate", "update",
 		"apps.config", "apps.list", "apps.show",

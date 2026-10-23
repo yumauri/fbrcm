@@ -45,6 +45,31 @@ for the full resolution order.
 Use `fbrcm doctor` when discovery fails. It checks credentials, connectivity,
 API access, permissions, and local storage in one report.
 
+## Keep only the projects you work with
+
+Hide a few projects with a blacklist, or explicitly choose a workspace with a
+whitelist:
+
+```sh
+fbrcm projects blacklist add legacy-project sandbox-project
+fbrcm projects whitelist add development-project production-project
+fbrcm projects whitelist enable
+fbrcm projects list --include-hidden
+```
+
+Both groups support `list`, `add`, `remove`, `clear`, `enable`, and `disable`.
+The blacklist starts enabled; the whitelist starts disabled. Blacklist exclusions
+take precedence. An enabled empty whitelist hides every project; `clear` keeps
+activation, while `disable` retains membership without restricting the workspace.
+Use repeatable `--filter` instead of literal IDs for bulk membership changes.
+Filters resolve the local inventory once and save IDs.
+
+Visibility is profile-scoped, covers both template kinds, and survives discovery,
+forgetting, and registry reset. Hidden projects keep their caches and drafts.
+Ordinary CLI and TUI selection excludes hidden projects. Add `--include-hidden`
+to a CLI invocation or press `H` in the TUI Projects panel to temporarily show
+them. Stateless execution ignores local visibility rules.
+
 ## Use repository aliases
 
 ```sh

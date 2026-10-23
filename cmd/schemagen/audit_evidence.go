@@ -71,6 +71,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 				continue
 			}
 			evidence := append([]string(nil), generatedAuditBaseEvidence(class)...)
+			if contract.IsProjectVisibilityCommand(capability.ID) {
+				evidence = append(evidence, "visibility.commands_runtime", "visibility.selection_runtime", "visibility.invocation_schema")
+			}
 			if capability.ID == "mcp" {
 				evidence = append(evidence, "app.mcp_json_boundary", "app.mcp_json_failure")
 			}
@@ -157,6 +160,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"visibility.commands_runtime":            "cli/app/project_visibility_test.go#TestProjectVisibilityCommandsConform",
+		"visibility.selection_runtime":           "cli/app/project_visibility_test.go#TestProjectVisibilitySelectionAndPersistenceConform",
+		"visibility.invocation_schema":           "cli/app/project_visibility_test.go#TestProjectVisibilityInvocationSchemas",
 		"app.invalid_plan_inputs":                "cli/app/audit_runtime_test.go#TestJSONInvalidPublicationPlanInputsConform",
 		"app.plan_quota_app_problems":            "cli/app/audit_runtime_test.go#TestTypedPlanQuotaAndAppProblemsConform",
 		"app.unconfigured_input_failures":        "cli/app/audit_runtime_test.go#TestJSONUnconfiguredAndInvalidInputFailuresConform",
@@ -254,6 +260,9 @@ func generatedAuditBaseEvidence(class string) []string {
 }
 
 func generatedAuditSuccessFallback(commandID string) string {
+	if contract.IsProjectVisibilityCommand(commandID) {
+		return "visibility.commands_runtime"
+	}
 	switch commandID {
 	case "apply":
 		return "apply.no_change_success"
@@ -333,6 +342,9 @@ func generatedSchemaContainsKey(value any, key string) bool {
 }
 
 func generatedAuditMutation(commandID string) bool {
+	if contract.IsProjectVisibilityCommand(commandID) {
+		return !strings.HasSuffix(commandID, ".list")
+	}
 	return slices.Contains([]string{
 		"add", "apply", "auth.add.gcloud", "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.bind", "auth.delete", "auth.login", "auth.quota-project.set", "auth.quota-project.unset",
 		"cache.clear", "conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename", "config.edit", "config.reset", "config.set", "delete", "draft.change-note", "draft.discard", "draft.publish", "duplicate",

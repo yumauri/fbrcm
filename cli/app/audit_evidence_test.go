@@ -194,6 +194,9 @@ func responseReachableOutcomes(raw []byte) []string {
 }
 
 func isAuditMutation(commandID string) bool {
+	if contract.IsProjectVisibilityCommand(commandID) {
+		return !strings.HasSuffix(commandID, ".list")
+	}
 	return slices.Contains([]string{
 		"add", "apply", "auth.add.gcloud", "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.bind", "auth.delete", "auth.login", "auth.quota-project.set", "auth.quota-project.unset",
 		"cache.clear", "conditions.add", "conditions.delete", "conditions.edit", "conditions.move", "conditions.rename", "config.edit", "config.reset", "config.set", "delete", "draft.change-note", "draft.discard", "draft.publish", "duplicate",

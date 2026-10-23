@@ -225,6 +225,7 @@
                       "profile.invalid",
                       "profile.not_found",
                       "project.ambiguous",
+                      "project.hidden",
                       "project.not_found",
                       "remote_config.invalid",
                       "resource.not_found"

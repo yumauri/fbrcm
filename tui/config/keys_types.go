@@ -78,6 +78,7 @@ const (
 	ActionDefaults        Action = "defaults"
 	ActionPromote         Action = "promote"
 	ActionToggleTemplates Action = "toggle_templates"
+	ActionShowHidden      Action = "show_hidden"
 	ActionMakePrimary     Action = "make_primary"
 	ActionSwap            Action = "swap"
 	ActionPrune           Action = "prune"

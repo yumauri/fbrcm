@@ -223,6 +223,7 @@
         "properties": {
           "code": {
             "enum": [
+              "project.hidden",
               "app.not_found",
               "auth.not_found",
               "command.not_found",
@@ -573,6 +574,37 @@
               "kind": {
                 "enum": [
                   "expression"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "code": {
+            "enum": [
+              "project.hidden"
+            ]
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "then": {
+        "properties": {
+          "details": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "project_visibility"
                 ]
               }
             },
@@ -1056,6 +1088,7 @@
               "profile.invalid",
               "profile.not_found",
               "project.ambiguous",
+              "project.hidden",
               "project.not_found",
               "project_alias.conflict",
               "project_alias.read_only",
@@ -1170,6 +1203,7 @@
         "profile.invalid",
         "profile.not_found",
         "project.ambiguous",
+        "project.hidden",
         "project.not_found",
         "project_alias.conflict",
         "project_alias.read_only",
@@ -1352,6 +1386,25 @@
           "required": [
             "kind",
             "resource"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "project_visibility"
+            },
+            "reason": {
+              "enum": [
+                "blacklisted",
+                "not_whitelisted"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "reason"
           ],
           "type": "object"
         },

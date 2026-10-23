@@ -56,6 +56,45 @@ func TestApplyNoChangePlanSucceedsWithoutFirebase(t *testing.T) {
 	}
 }
 
+func TestApplyRejectsHiddenTargetBeforeFirebase(t *testing.T) {
+	t.Setenv(env.ConfigDir, t.TempDir())
+	t.Setenv(env.CacheDir, t.TempDir())
+	if err := config.SwitchProfile(config.DefaultProfileName); err != nil {
+		t.Fatal(err)
+	}
+	policy := config.DefaultProjectVisibility()
+	policy.Blacklist.ProjectIDs = []string{"demo"}
+	if err := config.SaveProjectVisibility(policy); err != nil {
+		t.Fatal(err)
+	}
+	rawConfig := json.RawMessage(`{"parameters":{},"version":{"versionNumber":"1"}}`)
+	plan := publication.New("test", "update", "stateful", nil)
+	plan.Targets = append(plan.Targets, publication.Target{
+		Target: "server@demo", ProjectID: "demo", Template: "server", Action: publication.ActionNone,
+		Base: publication.Snapshot{Version: "1", RemoteConfig: rawConfig}, Candidate: publication.Snapshot{RemoteConfig: rawConfig},
+		Validation: publication.Validation{Source: "local", ValidatedAt: plan.CreatedAt}, Source: publication.Source{Kind: "direct"},
+	})
+	if err := publication.Seal(plan); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := publication.Marshal(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "hidden.fbrcm-plan.json")
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := New(nil)
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{path, "--json"})
+	var hidden *core.ProjectHiddenError
+	if err := cmd.Execute(); !errors.As(err, &hidden) || hidden.ProjectID != "server@demo" {
+		t.Fatalf("apply bypassed project visibility: %v", err)
+	}
+}
+
 func TestClassifyPublishResultCoversEveryStatusAndWarning(t *testing.T) {
 	published := json.RawMessage(`{"parameters":{},"version":{"versionNumber":"2"}}`)
 	longFailure := errors.New(strings.Repeat("failure ", 900))

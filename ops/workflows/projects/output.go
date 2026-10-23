@@ -46,22 +46,40 @@ func printProjects(cmd invocation.Call, svc *core.Core, projects []core.Project,
 		aliasesByID = config.ProjectAliasesByID(aliases)
 	}
 
+	projects, err = shared.VisibleProjectSelection(cmd, projects, filterValues)
+	if err != nil {
+		return err
+	}
 	projects = shared.FilterProjectsWithAliases(projects, filterValues, aliasesByID)
 	projects, err = shared.FilterProjectsByExpr(shared.CommandContext(cmd), svc, projects, projectExpr)
+	if err != nil {
+		return err
+	}
+	policy, err := core.ProjectVisibilityForContext(shared.CommandContext(cmd))
 	if err != nil {
 		return err
 	}
 	highlightFilters := shared.ParseFilters(filterValues)
 
 	if jsonOut {
-		if err := shared.WriteJSON(cmd, projectsJSONWithAliases(projects, withURL, aliasesByID)); err != nil {
+		rows := projectsJSONWithAliases(projects, withURL, aliasesByID)
+		for i := range rows {
+			rows[i].HiddenReason = policy.HiddenReason(rows[i].ProjectID)
+		}
+		if err := shared.WriteJSON(cmd, rows); err != nil {
 			return fmt.Errorf("encode projects json: %w", err)
 		}
 		logProjectsTotal(projects)
 		return nil
 	}
 
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProjectsTableWithAliases(projects, highlightFilters, withURL, aliasesByID))
+	displayProjects := append([]core.Project(nil), projects...)
+	for i := range displayProjects {
+		if reason := policy.HiddenReason(displayProjects[i].ProjectID); reason != "" {
+			displayProjects[i].Name += " (" + core.ProjectVisibilityReasonText(reason) + ")"
+		}
+	}
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), renderProjectsTableWithAliases(displayProjects, highlightFilters, withURL, aliasesByID))
 	logProjectsTotal(projects)
 	return nil
 }

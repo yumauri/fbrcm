@@ -1,0 +1,43 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:response",
+  "contract_version": "1.0.0",
+  "command": "project.templates.show",
+  "requested_command": "project.templates.show",
+  "outcome": "failure",
+  "exit_code": 6,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": null,
+  "errors": [
+    {
+      "code": "project.hidden",
+      "category": "not_found",
+      "message": "project \"northstar-wallet\" is hidden (blacklisted); use --include-hidden or change projects blacklist/whitelist",
+      "retryable": false,
+      "target": "northstar-wallet",
+      "stage": null,
+      "details": {
+        "kind": "project_visibility",
+        "reason": "blacklisted"
+      },
+      "remediation": [
+        {
+          "description": "include hidden projects for this invocation",
+          "strategy": "retry_with_arguments",
+          "argv": [
+            "--include-hidden"
+          ]
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

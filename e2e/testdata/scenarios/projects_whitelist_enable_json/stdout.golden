@@ -1,0 +1,38 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:response",
+  "contract_version": "1.0.0",
+  "command": "projects.whitelist.enable",
+  "requested_command": "projects.whitelist.enable",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "list": "whitelist",
+    "operation": "enable",
+    "enabled": true,
+    "changed": false,
+    "affected_project_ids": [],
+    "count": 1,
+    "visible_project_count": 0,
+    "selection": {
+      "kind": "list",
+      "project_ids": [
+        "northstar-wallet"
+      ],
+      "filters": [],
+      "matched_item_count": 1
+    },
+    "no_op_reason": "already_applied"
+  },
+  "errors": [],
+  "warnings": []
+}

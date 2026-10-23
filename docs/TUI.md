@@ -250,6 +250,7 @@ aliases`.
 | `o` | Open Remote Config in the Firebase console |
 | `b` | Bind the focused or marked projects to another identity |
 | `t` | Toggle the focused project's template rows |
+| `H` | Show or hide projects excluded by visibility rules |
 | `p` | Make the focused template primary |
 | `i` | Import Remote Config |
 | `e` | Export Remote Config |
@@ -272,6 +273,18 @@ The selection is local and controls unqualified CLI project targets as well as
 the default TUI row. It does not create or delete Firebase templates. Explicit
 CLI targets such as `client@project-id` and `server@project-id` always override
 the saved preference.
+
+### Persistent project visibility
+
+The Projects panel applies the active profile's blacklist and whitelist to both
+client and server templates. Manage membership with `fbrcm projects blacklist`
+and `fbrcm projects whitelist`. Press `H` in Projects, or choose **Show or hide
+excluded projects** in the Actions palette, to include hidden projects for the
+current workspace session. The configurable key is `keys.projects.show_hidden`.
+Showing a hidden project displays its exclusion reason and retains accessibility
+checks. Turning the toggle off removes hidden projects from the selection and
+from downstream panels. If rules hide every project, the empty workspace shows
+the toggle hint instead of treating the profile as unconfigured.
 
 ## Parameters and groups
 

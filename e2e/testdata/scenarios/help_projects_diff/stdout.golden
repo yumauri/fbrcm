@@ -15,6 +15,7 @@ Flags:
       --search string        Search parameters by name, description, values, and conditions
 
 Global Flags:
+      --include-hidden     Include projects hidden by the profile blacklist or whitelist for this invocation
       --no-local-config    Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)
       --profile string     Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)
       --stateless          Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN)

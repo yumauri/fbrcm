@@ -1,0 +1,437 @@
+{
+  "$defs": {
+    "success_data": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "changed": {
+                "const": true
+              }
+            },
+            "required": [
+              "changed"
+            ]
+          },
+          "then": {
+            "properties": {
+              "no_op_reason": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "changed": {
+                "const": false
+              }
+            },
+            "required": [
+              "changed"
+            ]
+          },
+          "then": {
+            "properties": {
+              "affected_project_ids": {
+                "maxItems": 0
+              },
+              "no_op_reason": {
+                "enum": [
+                  "no_match",
+                  "already_applied"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "enable"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "affected_project_ids": {
+                "maxItems": 0
+              },
+              "enabled": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "disable"
+              }
+            },
+            "required": [
+              "operation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "affected_project_ids": {
+                "maxItems": 0
+              },
+              "enabled": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "no_op_reason": {
+                "const": "no_match"
+              }
+            },
+            "required": [
+              "no_op_reason"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selection": {
+                "properties": {
+                  "matched_item_count": {
+                    "const": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "affected_project_ids": {
+          "items": {
+            "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_id"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "changed": {
+          "type": "boolean"
+        },
+        "count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "list": {
+          "const": "blacklist"
+        },
+        "no_op_reason": {
+          "enum": [
+            "no_match",
+            "already_applied",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operation": {
+          "const": "remove"
+        },
+        "selection": {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "ids"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "filters": {
+                    "maxItems": 0
+                  },
+                  "project_ids": {
+                    "minItems": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "filters"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "filters": {
+                    "minItems": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "list"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "filters": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "filters": {
+              "items": {
+                "allOf": [
+                  {
+                    "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/filter_query"
+                  }
+                ],
+                "not": {
+                  "pattern": "^\\s*(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@"
+                }
+              },
+              "type": "array"
+            },
+            "kind": {
+              "enum": [
+                "ids",
+                "filters",
+                "list"
+              ],
+              "type": "string"
+            },
+            "matched_item_count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "project_ids": {
+              "items": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/physical_project_id"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "filters",
+            "kind",
+            "matched_item_count",
+            "project_ids"
+          ],
+          "type": "object",
+          "x-fbrcm-invariants": [
+            {
+              "left": {
+                "field": "matched_item_count"
+              },
+              "op": "eq",
+              "right": {
+                "op": "length",
+                "value": {
+                  "field": "project_ids"
+                }
+              }
+            }
+          ]
+        },
+        "visible_project_count": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "affected_project_ids",
+        "changed",
+        "count",
+        "enabled",
+        "list",
+        "no_op_reason",
+        "operation",
+        "selection",
+        "visible_project_count"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:response",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "$ref": "urn:fbrcm:schema:cli:1.0.0:envelope"
+    },
+    {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "success",
+                  "partial_success"
+                ]
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/success_data"
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "outcome": {
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "warnings": {
+              "maxItems": 0,
+              "type": "array"
+            }
+          }
+        },
+        {
+          "properties": {
+            "errors": {
+              "items": {
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "argument.invalid",
+                      "command.canceled",
+                      "command.timeout",
+                      "configuration.invalid",
+                      "file.io_failed",
+                      "filesystem.permission_denied",
+                      "internal.contract_violation",
+                      "internal.unclassified",
+                      "profile.invalid",
+                      "profile.not_found"
+                    ]
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              },
+              "type": "array"
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "success"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "enum": [
+                  0
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "failure"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "not": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "command": {
+          "const": "projects.blacklist.remove"
+        },
+        "data": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/success_data"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "schema": {
+          "const": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:response"
+        }
+      },
+      "required": [
+        "schema",
+        "command",
+        "data"
+      ],
+      "type": "object"
+    }
+  ]
+}

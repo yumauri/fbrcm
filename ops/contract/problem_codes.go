@@ -13,7 +13,7 @@ var knownProblemCodeValues = []string{
 	"diagnostic.failed", "draft.ambiguous", "draft.exists", "draft.not_found", "expression.invalid", "file.io_failed", "firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout", "filesystem.permission_denied",
 	"group.not_found", "hook.failed", "hooks.changed", "hooks.not_configured", "interaction.required", "internal.contract_violation", "internal.unclassified",
 	"network.offline", "network.timeout", "network.unavailable", "parameter.ambiguous", "parameter.exists", "parameter.not_found", "parameters_cache.not_found",
-	"personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.not_found", "project_alias.conflict", "project_alias.read_only", "publication.cache_failed", "publication.hook_failed",
+	"personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.hidden", "project.not_found", "project_alias.conflict", "project_alias.read_only", "publication.cache_failed", "publication.hook_failed",
 	"plan.exists", "plan.integrity_failed", "plan.invalid", "plan.stale", "plan.unsupported_version",
 	"theme.conflict", "theme.invalid", "theme.not_found",
 	"remote_config.conflict", "remote_config.invalid", "remote_config.validation_failed", "resource.conflict", "resource.not_found", "result.unsuccessful", "schema.not_found", "stdin.remote_config.invalid", "validation.failed", "version.not_found",
@@ -28,6 +28,7 @@ var knownWarningCodeValues = []string{
 	"publication.post_publish_hook_failed",
 	"plan.source_draft_changed",
 	"theme.already_exists",
+	"project.remains_hidden",
 }
 
 // KnownProblemCodes returns the advisory catalog of stable codes currently
@@ -123,6 +124,9 @@ func CommandProblemCodes(capability Capability) []string {
 		add("project.ambiguous", "project.not_found")
 	}
 
+	if UsesProjectVisibility(capability.ID) {
+		add("project.hidden")
+	}
 	id := capability.ID
 	switch {
 	case id == "root":

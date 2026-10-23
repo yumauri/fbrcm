@@ -1328,6 +1328,22 @@
             }
           ]
         },
+        "include-hidden": {
+          "description": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
         "keep-portable-conditions-only": {
           "description": "Keep only portable conditions and remove destination-specific usages",
           "type": "boolean"

@@ -88,6 +88,7 @@
                       "profile.invalid",
                       "profile.not_found",
                       "project.ambiguous",
+                      "project.hidden",
                       "project.not_found"
                     ]
                   }

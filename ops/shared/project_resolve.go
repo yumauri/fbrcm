@@ -113,6 +113,18 @@ func ResolveCachedProjectNumber(cmd invocation.Call, projectNumber string) (core
 }
 
 func resolveProjectNumber(cmd invocation.Call, projects []core.Project, projectNumber string) (core.Project, error) {
+	for _, project := range projects {
+		if project.ProjectNumber == projectNumber {
+			if err := core.RequireProjectVisible(CommandContext(cmd), project.ProjectID); err != nil {
+				return core.Project{}, err
+			}
+		}
+	}
+	projects, err := core.VisibleProjects(CommandContext(cmd), projects)
+	if err != nil {
+		return core.Project{}, err
+	}
+
 	matches := make([]core.Project, 0, 1)
 	for _, project := range projects {
 		if project.ProjectNumber == projectNumber {
@@ -199,6 +211,10 @@ func ResolveProjectTargetsForExecution(ctx context.Context, cmd invocation.Call,
 	if core.ExecutionPolicyFromContext(ctx).ReadLocalState {
 		progress.Start("Loading projects…")
 		projects, _, err := svc.ListProjects(ctx)
+		if err != nil {
+			return nil, ctx, err
+		}
+		projects, err = VisibleProjectSelection(cmd, projects, rawFilters)
 		if err != nil {
 			return nil, ctx, err
 		}
@@ -302,6 +318,9 @@ func ResolveListProjects(cmd invocation.Call, svc *core.Core, args []string, res
 				projects, err = config.LoadProjects()
 			} else {
 				projects, _, err = svc.ListProjects(ctx)
+			}
+			if err == nil {
+				projects, err = VisibleProjectSelection(cmd, projects, filters)
 			}
 			if err == nil {
 				projects, err = FilterProjects(projects, filters)
@@ -416,6 +435,10 @@ func resolveProjectArg(cmd invocation.Call, projects []core.Project, query strin
 }
 
 func resolveProjectArgWithAliases(cmd invocation.Call, projects []core.Project, query string, aliases map[string]string) (core.Project, error) {
+	projects, err := visibleProjectArguments(cmd, projects, query, aliases)
+	if err != nil {
+		return core.Project{}, err
+	}
 	for _, project := range projects {
 		if project.ProjectID == query {
 			return project, nil

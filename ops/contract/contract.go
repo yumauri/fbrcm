@@ -596,6 +596,16 @@ func Classify(err error) Problem {
 		problem.Details = SelectionDetails{Kind: "selection", Resource: "project", Query: projectLookup.Query, Candidates: []SelectionCandidate{}}
 		return problem
 	}
+	if hidden, ok := errors.AsType[*core.ProjectHiddenError](err); ok {
+		problem.Code, problem.Category = "project.hidden", "not_found"
+		problem.Target = optionalString(hidden.ProjectID)
+		problem.Details = struct {
+			Kind   string `json:"kind"`
+			Reason string `json:"reason"`
+		}{Kind: "project_visibility", Reason: hidden.Reason}
+		problem.Remediation = []Remediation{{Description: "include hidden projects for this invocation", Strategy: shared.RemediationRetryWithArguments, Argv: []string{"--include-hidden"}}}
+		return problem
+	}
 	if interaction, ok := errors.AsType[*shared.InteractionError](err); ok {
 		problem.Code, problem.Category = "interaction.required", "interaction"
 		problem.Retryable = false

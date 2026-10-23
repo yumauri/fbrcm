@@ -204,6 +204,7 @@ func (k helpKeyMap) projectsHelp() []key.Binding {
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionSelect, "select"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMark, "mark"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleTemplates, "templates"),
+		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionShowHidden, "show hidden"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMakePrimary, "make primary"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionDelete, "forget"),
 	}

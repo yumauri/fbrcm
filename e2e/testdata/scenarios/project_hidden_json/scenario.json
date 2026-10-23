@@ -1,0 +1,16 @@
+{
+  "name": "project_hidden_json",
+  "command_id": "project.templates.show",
+  "args": [
+    "project",
+    "templates",
+    "show",
+    "northstar-wallet",
+    "--json"
+  ],
+  "expected_exit_code": 6,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "project_visibility",
+  "offline": true
+}

@@ -2839,20 +2839,21 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 	}
 	postPublication := []string{"publication.cache_stale", "publication.post_publish_hook_failed"}
 	warningsByCommand := map[string][]string{
-		"apply":             {"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
-		"apps.config":       {"cache.stale", "cache.write_failed"},
-		"apps.list":         {"cache.stale", "cache.write_failed"},
-		"apps.show":         {"cache.stale", "cache.write_failed"},
-		"get":               {"cache.stale"},
-		"theme.import":      {"theme.already_exists"},
-		"conditions.edit":   postPublication,
-		"conditions.move":   postPublication,
-		"conditions.rename": postPublication,
-		"project.import":    postPublication,
-		"projects.promote":  postPublication,
-		"versions.restore":  postPublication,
-		"versions.rollback": postPublication,
-		"draft.publish":     {"publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
+		"projects.whitelist.add": {"project.remains_hidden"},
+		"apply":                  {"plan.source_draft_changed", "publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
+		"apps.config":            {"cache.stale", "cache.write_failed"},
+		"apps.list":              {"cache.stale", "cache.write_failed"},
+		"apps.show":              {"cache.stale", "cache.write_failed"},
+		"get":                    {"cache.stale"},
+		"theme.import":           {"theme.already_exists"},
+		"conditions.edit":        postPublication,
+		"conditions.move":        postPublication,
+		"conditions.rename":      postPublication,
+		"project.import":         postPublication,
+		"projects.promote":       postPublication,
+		"versions.restore":       postPublication,
+		"versions.rollback":      postPublication,
+		"draft.publish":          {"publication.cache_stale", "publication.draft_cleanup_failed", "publication.non_atomic", "publication.post_publish_hook_failed"},
 	}
 	for _, id := range []string{"add", "delete", "duplicate", "update", "conditions.add", "conditions.delete", "groups.add", "groups.delete", "groups.edit", "groups.rename"} {
 		warningsByCommand[id] = []string{"publication.non_atomic", "publication.cache_stale", "publication.post_publish_hook_failed"}

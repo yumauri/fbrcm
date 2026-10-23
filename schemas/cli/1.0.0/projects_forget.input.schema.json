@@ -82,6 +82,11 @@
           "minItems": 1,
           "type": "array"
         },
+        "include-hidden": {
+          "description": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
         "no-local-config": {
           "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
           "type": "boolean"

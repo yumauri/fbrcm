@@ -80,6 +80,13 @@
         "etag": {
           "type": "string"
         },
+        "hidden_reason": {
+          "enum": [
+            "blacklisted",
+            "not_whitelisted"
+          ],
+          "type": "string"
+        },
         "number": {
           "type": "string"
         },
@@ -225,6 +232,7 @@
                       "profile.invalid",
                       "profile.not_found",
                       "project.ambiguous",
+                      "project.hidden",
                       "project.not_found",
                       "resource.not_found"
                     ]

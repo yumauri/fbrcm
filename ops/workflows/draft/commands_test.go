@@ -2,6 +2,7 @@ package draft
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -280,13 +281,13 @@ prod = "acme-production-42"
 	for query, want := range map[string]string{
 		"prod": "server@acme-production-42", "client@prod": "acme-production-42", "server@prod": "server@acme-production-42",
 	} {
-		got, _, err := resolveDraft(query)
+		got, _, err := resolveDraft(context.Background(), query)
 		if err != nil || got != want {
 			t.Fatalf("resolveDraft(%q) = %q, %v; want %q", query, got, err, want)
 		}
 	}
 	for _, query := range []string{"PROD", "production", " prod", "^acme", "/production", "=PRODUCTION"} {
-		got, _, err := resolveDraft(query)
+		got, _, err := resolveDraft(context.Background(), query)
 		if err != nil || got != "server@acme-production-42" {
 			t.Fatalf("filter fallback resolveDraft(%q) = %q, %v", query, got, err)
 		}
@@ -295,7 +296,7 @@ prod = "acme-production-42"
 	if err := config.SaveProjects(nil, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	got, _, err := resolveDraft("prod")
+	got, _, err := resolveDraft(context.Background(), "prod")
 	if err != nil || got != "acme-production-42" {
 		t.Fatalf("unregistered alias draft = %q, %v", got, err)
 	}
@@ -310,7 +311,7 @@ prod = "acme-production-42"
 	}
 	saveResolutionDraft(t, "prod")
 	saveResolutionDraft(t, "acme-production-42")
-	got, _, err := resolveDraft("prod")
+	got, _, err := resolveDraft(context.Background(), "prod")
 	if err != nil || got != "prod" {
 		t.Fatalf("exact draft precedence = %q, %v", got, err)
 	}
@@ -330,7 +331,7 @@ func TestResolveDraftFilterFallbackReportsOnlyMatchingVariants(t *testing.T) {
 		saveResolutionDraft(t, project.ProjectID)
 	}
 
-	_, _, err := resolveDraft("^production")
+	_, _, err := resolveDraft(context.Background(), "^production")
 	var selection *shared.SelectionError
 	if !errors.As(err, &selection) || selection.Kind != "ambiguous" || len(selection.Candidates) != 2 {
 		t.Fatalf("draft resolution error = %#v", err)

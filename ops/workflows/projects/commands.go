@@ -19,6 +19,7 @@ func NewDefinition(svc *core.Core) *invocation.Definition {
 		Short: "Manage Firebase projects for Remote Config",
 	}
 	projectsCmd.AddCommand(newListCommandDefinition(svc), newUpdateCommandDefinition(svc), newForgetCommandDefinition(svc), newDiffCommandDefinition(svc), newPromoteCommandDefinition(svc), newAliasesCommandDefinition(), newPathCommandDefinition(), newResetCommandDefinition(svc))
+	projectsCmd.AddCommand(newVisibilityCommandDefinition("blacklist"), newVisibilityCommandDefinition("whitelist"))
 	invocation.MustRegisterResponsePath(projectsCmd, "list", []shared.ProjectJSON{})
 	invocation.MustRegisterResponsePath(projectsCmd, "update", []shared.ProjectJSON{})
 	invocation.MustRegisterResponsePath(projectsCmd, "forget", projectsForgetResult{})

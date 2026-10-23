@@ -87,6 +87,28 @@
         "usage": "Target parameter group"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -252,6 +274,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -961,6 +984,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -1073,6 +1118,7 @@
       "plan.unsupported_version",
       "profile.invalid",
       "profile.not_found",
+      "project.hidden",
       "publication.cache_failed",
       "publication.hook_failed",
       "remote_config.conflict",
@@ -1589,6 +1635,28 @@
         "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -1741,6 +1809,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -2137,6 +2206,28 @@
         "usage": "Filter applications by mode-prefixed name, namespace, or app ID query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -2273,6 +2364,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -2582,6 +2674,28 @@
         "usage": "Use cached application data without contacting Firebase, even when stale; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -2700,6 +2814,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -3024,6 +3139,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--label",
         "aliases": [],
         "type": "string",
@@ -3215,6 +3340,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--label",
         "aliases": [],
@@ -3413,6 +3548,16 @@
         "repeatable": false,
         "effective": true,
         "usage": "Import OAuth client secret from file path; if omitted, read stdin or open file picker"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
       },
       {
         "name": "--label",
@@ -3654,6 +3799,16 @@
         "usage": "Import service account key from file path; if omitted, read stdin or open file picker"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--label",
         "aliases": [],
         "type": "string",
@@ -3885,6 +4040,16 @@
         "usage": "Auth id to bind"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -4035,6 +4200,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -4241,6 +4416,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -4357,6 +4542,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -4547,6 +4742,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -4672,6 +4877,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -4808,6 +5023,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -4960,6 +5185,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -5120,6 +5355,16 @@
     "summary": "Clear local cache entries",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--kind",
         "aliases": [],
@@ -5317,6 +5562,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--kind",
         "aliases": [],
         "type": "string",
@@ -5435,6 +5690,16 @@
     "summary": "Print a cache directory path",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--kind",
         "aliases": [],
@@ -5561,6 +5826,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -5665,6 +5940,16 @@
     "summary": "Generate the autocompletion script for bash",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-descriptions",
         "aliases": [],
@@ -5779,6 +6064,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-descriptions",
         "aliases": [],
         "type": "bool",
@@ -5892,6 +6187,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-descriptions",
         "aliases": [],
         "type": "bool",
@@ -6004,6 +6309,16 @@
     "summary": "Generate the autocompletion script for zsh",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-descriptions",
         "aliases": [],
@@ -6193,6 +6508,28 @@
         "usage": "Raw Firebase condition expression (required)"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -6337,6 +6674,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -7025,6 +7363,28 @@
         "usage": "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -7171,6 +7531,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -7876,6 +8237,28 @@
         "usage": "New raw Firebase condition expression"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-color",
         "aliases": [],
         "type": "bool",
@@ -8009,6 +8392,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -8671,6 +9055,28 @@
         "usage": "Filter conditions by mode-prefixed name query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -8798,6 +9204,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -9139,6 +9546,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -9262,6 +9691,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -9934,6 +10364,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -10057,6 +10509,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -10703,6 +11156,28 @@
         "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -10808,6 +11283,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -11095,6 +11571,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -11178,6 +11676,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -11369,6 +11868,16 @@
         "usage": "Start with a complete generated keybinding template; accepted but not applied by this command"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -11497,6 +12006,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -11622,6 +12141,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -11826,6 +12355,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -11968,6 +12507,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -12086,6 +12635,16 @@
     "summary": "Validate layered configuration and keybindings",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -12277,6 +12836,28 @@
         "usage": "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -12423,6 +13004,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -13134,6 +13716,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -13367,6 +13959,28 @@
         "usage": "Clear the stored change note"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -13425,6 +14039,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 1,
@@ -13627,6 +14242,28 @@
         "usage": "Select parameters in group; may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -13720,6 +14357,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -13903,6 +14541,28 @@
         "usage": "Discard every draft in the active profile"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -13986,6 +14646,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 1,
@@ -14105,6 +14766,28 @@
         "usage": "Filter template targets by optional client@ or server@ project query; may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -14159,7 +14842,8 @@
       "internal.contract_violation",
       "internal.unclassified",
       "profile.invalid",
-      "profile.not_found"
+      "profile.not_found",
+      "project.hidden"
     ],
     "side_effect_level": 1,
     "side_effects": [
@@ -14213,6 +14897,16 @@
     "summary": "Print Remote Config drafts directory path",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -14360,6 +15054,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -14471,6 +15187,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -15043,6 +15760,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -15122,6 +15861,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 1,
@@ -15268,6 +16008,28 @@
         "usage": "Filter projects by expr-lang expression"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -15405,6 +16167,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -16029,6 +16792,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -16135,6 +16920,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -16405,6 +17191,28 @@
         "usage": "Filter experiments by mode-prefixed display-name query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -16509,6 +17317,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -16738,6 +17547,28 @@
         "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -16842,6 +17673,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -17102,6 +17934,34 @@
         "usage": "Filter parameters by mode-prefixed query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              },
+              {
+                "source": "stdin",
+                "name": "document",
+                "operator": "absent",
+                "value": null
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -17237,6 +18097,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "remote_config.invalid",
       "resource.not_found"
@@ -17627,6 +18488,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -17761,6 +18644,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -18421,6 +19305,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -18555,6 +19461,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -19244,6 +20151,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-description",
         "aliases": [],
         "type": "bool",
@@ -19388,6 +20317,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -20033,6 +20963,28 @@
         "usage": "Filter group names by mode-prefixed query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -20159,6 +21111,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -20494,6 +21447,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -20628,6 +21603,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -21245,6 +22221,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -21347,6 +22333,16 @@
     "summary": "Print the effective local hooks fingerprint",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -21456,6 +22452,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -21562,6 +22568,16 @@
     "summary": "Trust the current local hook definition",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -21729,6 +22745,16 @@
     "summary": "Remove trust for the current local config",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -21915,6 +22941,16 @@
         "usage": "Mutation approval: host (explicit elicitation) or none (operator-authorized unattended execution); accepted but not applied by this command"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -22052,6 +23088,28 @@
         "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -22156,6 +23214,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -22471,6 +23530,28 @@
         "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -22576,6 +23657,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -22863,6 +23945,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -22981,6 +24073,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -23090,6 +24192,16 @@
     "summary": "Manage profiles",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -23205,6 +24317,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -23437,6 +24559,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -23551,6 +24683,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -23673,6 +24815,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -23829,6 +24981,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -23941,6 +25103,28 @@
         "repeatable": false,
         "effective": true,
         "usage": "Defaults format: json, xml, or plist"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
       },
       {
         "name": "--no-local-config",
@@ -24059,6 +25243,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -24249,6 +25434,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -24365,6 +25572,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -24639,6 +25847,28 @@
         "usage": "Import only specified parameter group; may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--keep-portable-conditions-only",
         "aliases": [],
         "type": "bool",
@@ -24822,6 +26052,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -25504,6 +26735,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -25586,6 +26839,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -25766,6 +27020,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -25822,6 +27098,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 1,
@@ -25901,6 +27178,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -25965,6 +27264,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 2,
@@ -26055,6 +27355,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -26119,6 +27441,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 2,
@@ -26224,6 +27547,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -26328,6 +27673,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -26566,6 +27912,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -26642,6 +28010,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 1,
@@ -26721,6 +28090,28 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -26777,6 +28168,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found"
     ],
     "side_effect_level": 1,
@@ -26861,6 +28253,16 @@
         "repeatable": false,
         "effective": true,
         "usage": "Firebase RC file to import"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
       },
       {
         "name": "--no-local-config",
@@ -27052,6 +28454,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -27168,6 +28580,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -27365,6 +28787,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -27538,6 +28970,844 @@
     ]
   },
   {
+    "id": "projects.blacklist.add",
+    "path": [
+      "projects",
+      "blacklist",
+      "add"
+    ],
+    "summary": "Add project IDs to the profile blacklist",
+    "arguments": [
+      {
+        "name": "project_id",
+        "required": false,
+        "repeated": true,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--filter",
+        "aliases": [
+          "-f"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.blacklist.clear",
+    "path": [
+      "projects",
+      "blacklist",
+      "clear"
+    ],
+    "summary": "Clear the profile project blacklist",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.blacklist.disable",
+    "path": [
+      "projects",
+      "blacklist",
+      "disable"
+    ],
+    "summary": "Disable the profile project blacklist",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.blacklist.enable",
+    "path": [
+      "projects",
+      "blacklist",
+      "enable"
+    ],
+    "summary": "Enable the profile project blacklist",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.blacklist.list",
+    "path": [
+      "projects",
+      "blacklist",
+      "list"
+    ],
+    "summary": "List stored project IDs and activation state",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.blacklist.remove",
+    "path": [
+      "projects",
+      "blacklist",
+      "remove"
+    ],
+    "summary": "Remove project IDs from the profile blacklist",
+    "arguments": [
+      {
+        "name": "project_id",
+        "required": false,
+        "repeated": true,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--filter",
+        "aliases": [
+          "-f"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
     "id": "projects.diff",
     "path": [
       "projects",
@@ -27622,6 +29892,28 @@
         "repeatable": true,
         "effective": true,
         "usage": "Select parameters in group; may be repeated"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
       },
       {
         "name": "--no-local-config",
@@ -27728,6 +30020,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -27914,6 +30207,16 @@
         "repeatable": true,
         "effective": true,
         "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
       },
       {
         "name": "--no-local-config",
@@ -28164,6 +30467,28 @@
         "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -28278,6 +30603,7 @@
       "network.unavailable",
       "profile.invalid",
       "profile.not_found",
+      "project.hidden",
       "resource.not_found"
     ],
     "side_effect_level": 2,
@@ -28507,6 +30833,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -28701,6 +31037,28 @@
         "usage": "Select parameters in group; may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--interactive",
         "aliases": [],
         "type": "bool",
@@ -28864,6 +31222,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -29407,6 +31766,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -29641,6 +32010,28 @@
         "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -29721,6 +32112,7 @@
       "network.unavailable",
       "profile.invalid",
       "profile.not_found",
+      "project.hidden",
       "resource.not_found"
     ],
     "side_effect_level": 2,
@@ -29825,6 +32217,844 @@
     ]
   },
   {
+    "id": "projects.whitelist.add",
+    "path": [
+      "projects",
+      "whitelist",
+      "add"
+    ],
+    "summary": "Add project IDs to the profile whitelist",
+    "arguments": [
+      {
+        "name": "project_id",
+        "required": false,
+        "repeated": true,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--filter",
+        "aliases": [
+          "-f"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.whitelist.clear",
+    "path": [
+      "projects",
+      "whitelist",
+      "clear"
+    ],
+    "summary": "Clear the profile project whitelist",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.whitelist.disable",
+    "path": [
+      "projects",
+      "whitelist",
+      "disable"
+    ],
+    "summary": "Disable the profile project whitelist",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.whitelist.enable",
+    "path": [
+      "projects",
+      "whitelist",
+      "enable"
+    ],
+    "summary": "Enable the profile project whitelist",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.whitelist.list",
+    "path": [
+      "projects",
+      "whitelist",
+      "list"
+    ],
+    "summary": "List stored project IDs and activation state",
+    "arguments": [],
+    "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
+    "id": "projects.whitelist.remove",
+    "path": [
+      "projects",
+      "whitelist",
+      "remove"
+    ],
+    "summary": "Remove project IDs from the profile whitelist",
+    "arguments": [
+      {
+        "name": "project_id",
+        "required": false,
+        "repeated": true,
+        "schema": "string"
+      }
+    ],
+    "flags": [
+      {
+        "name": "--filter",
+        "aliases": [
+          "-f"
+        ],
+        "type": "stringArray",
+        "default": [],
+        "required": false,
+        "repeatable": true,
+        "effective": true,
+        "usage": "Filter projects by mode-prefixed query (^, /, ~, =); may be repeated"
+      },
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
+        "name": "--no-local-config",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)"
+      },
+      {
+        "name": "--profile",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)"
+      },
+      {
+        "name": "--stateless",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command"
+      },
+      {
+        "name": "--timeout",
+        "aliases": [],
+        "type": "duration",
+        "default": "0s",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Maximum duration for the complete command"
+      }
+    ],
+    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:input",
+    "stdin_schema": null,
+    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "problem_codes": [
+      "argument.invalid",
+      "command.canceled",
+      "command.timeout",
+      "configuration.invalid",
+      "file.io_failed",
+      "filesystem.permission_denied",
+      "internal.contract_violation",
+      "internal.unclassified",
+      "profile.invalid",
+      "profile.not_found"
+    ],
+    "side_effect_level": 1,
+    "side_effects": [
+      "local_state_write"
+    ],
+    "side_effect_when": [
+      {
+        "effect": "local_state_write",
+        "when": [
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "mutation_plan",
+                "operator": "has_changes",
+                "value": null
+              },
+              {
+                "source": "runtime_state",
+                "name": "confirmation",
+                "operator": "authorized_or_not_required",
+                "value": null
+              }
+            ]
+          },
+          {
+            "all_of": [
+              {
+                "source": "runtime_state",
+                "name": "profile_bootstrap",
+                "operator": "required",
+                "value": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "network_access": "none",
+    "network_when": [],
+    "destructive": false,
+    "destructive_when": [],
+    "destructive_reasons": [],
+    "idempotency": "yes",
+    "idempotency_when": [],
+    "supports": {
+      "dry_run": false,
+      "draft": false,
+      "plan": false,
+      "confirmation_bypass": false,
+      "stdin": false,
+      "stateless": false
+    },
+    "stdin_modes": [],
+    "interaction": {
+      "mode": "none",
+      "json_behavior": "non_interactive"
+    },
+    "interaction_when": []
+  },
+  {
     "id": "rollouts.delete",
     "path": [
       "rollouts",
@@ -29846,6 +33076,28 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -29953,6 +33205,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -30211,6 +33464,28 @@
         "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -30315,6 +33590,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -30544,6 +33820,28 @@
         "usage": "Use cached Remote Config even when stale; fetch from Firebase if absent; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -30648,6 +33946,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found"
     ],
@@ -30839,6 +34138,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -30985,6 +34294,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -31095,6 +34414,16 @@
     ],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -31197,6 +34526,16 @@
     "summary": "Interactively configure authentication and discover projects",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -31328,6 +34667,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -31443,6 +34792,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -31637,6 +34996,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--name",
         "aliases": [],
@@ -31840,6 +35209,16 @@
     "arguments": [],
     "flags": [
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -31953,6 +35332,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -32073,6 +35462,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -32215,6 +35614,16 @@
     "summary": "Reset a theme selection to the built-in palette",
     "arguments": [],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -32368,6 +35777,16 @@
       }
     ],
     "flags": [
+      {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": false,
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command"
+      },
       {
         "name": "--no-local-config",
         "aliases": [],
@@ -32623,6 +36042,28 @@
         "usage": "Target parameter group"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--name",
         "aliases": [],
         "type": "string",
@@ -32839,6 +36280,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -33584,6 +37026,28 @@
         "usage": "Newest version to inspect"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--limit",
         "aliases": [],
         "type": "int",
@@ -33677,6 +37141,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found",
       "version.not_found"
@@ -33927,6 +37392,28 @@
         "usage": "Select parameters in group; may be repeated"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -34040,6 +37527,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found",
       "version.not_found"
@@ -34332,6 +37820,28 @@
         "usage": "Require a local snapshot and do not contact Firebase; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -34448,6 +37958,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found",
       "version.not_found"
@@ -34793,6 +38304,28 @@
         "usage": "List local cached versions without contacting Firebase; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--limit",
         "aliases": [],
         "type": "int",
@@ -34905,6 +38438,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found",
       "version.not_found"
@@ -35105,6 +38639,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -35214,6 +38770,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -35723,6 +39280,28 @@
         "usage": "Preview the requested mutation without applying it"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -35833,6 +39412,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "publication.cache_failed",
       "publication.hook_failed",
@@ -36314,6 +39894,28 @@
         "usage": "Require a local snapshot and do not contact Firebase; cannot be combined with --stateless"
       },
       {
+        "name": "--include-hidden",
+        "aliases": [],
+        "type": "bool",
+        "default": false,
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "effective_when": [
+          {
+            "all_of": [
+              {
+                "source": "option",
+                "name": "stateless",
+                "operator": "equals",
+                "value": false
+              }
+            ]
+          }
+        ],
+        "usage": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution"
+      },
+      {
         "name": "--no-local-config",
         "aliases": [],
         "type": "bool",
@@ -36396,6 +39998,7 @@
       "profile.invalid",
       "profile.not_found",
       "project.ambiguous",
+      "project.hidden",
       "project.not_found",
       "resource.not_found",
       "version.not_found"

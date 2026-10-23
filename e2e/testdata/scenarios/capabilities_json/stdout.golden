@@ -17,7 +17,7 @@
   },
   "data": {
     "contract_version": "1.0.0",
-    "count": 118,
+    "count": 130,
     "commands": [
       {
         "id": "add",
@@ -1786,6 +1786,132 @@
         }
       },
       {
+        "id": "projects.blacklist.add",
+        "path": [
+          "projects",
+          "blacklist",
+          "add"
+        ],
+        "summary": "Add project IDs to the profile blacklist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.blacklist.clear",
+        "path": [
+          "projects",
+          "blacklist",
+          "clear"
+        ],
+        "summary": "Clear the profile project blacklist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.blacklist.disable",
+        "path": [
+          "projects",
+          "blacklist",
+          "disable"
+        ],
+        "summary": "Disable the profile project blacklist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.blacklist.enable",
+        "path": [
+          "projects",
+          "blacklist",
+          "enable"
+        ],
+        "summary": "Enable the profile project blacklist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.blacklist.list",
+        "path": [
+          "projects",
+          "blacklist",
+          "list"
+        ],
+        "summary": "List stored project IDs and activation state",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.blacklist.remove",
+        "path": [
+          "projects",
+          "blacklist",
+          "remove"
+        ],
+        "summary": "Remove project IDs from the profile blacklist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
         "id": "projects.diff",
         "path": [
           "projects",
@@ -1915,6 +2041,132 @@
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:response",
         "side_effect_level": 2,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.whitelist.add",
+        "path": [
+          "projects",
+          "whitelist",
+          "add"
+        ],
+        "summary": "Add project IDs to the profile whitelist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.whitelist.clear",
+        "path": [
+          "projects",
+          "whitelist",
+          "clear"
+        ],
+        "summary": "Clear the profile project whitelist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.whitelist.disable",
+        "path": [
+          "projects",
+          "whitelist",
+          "disable"
+        ],
+        "summary": "Disable the profile project whitelist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.whitelist.enable",
+        "path": [
+          "projects",
+          "whitelist",
+          "enable"
+        ],
+        "summary": "Enable the profile project whitelist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.whitelist.list",
+        "path": [
+          "projects",
+          "whitelist",
+          "list"
+        ],
+        "summary": "List stored project IDs and activation state",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:response",
+        "side_effect_level": 1,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": false,
+          "stateless": false
+        }
+      },
+      {
+        "id": "projects.whitelist.remove",
+        "path": [
+          "projects",
+          "whitelist",
+          "remove"
+        ],
+        "summary": "Remove project IDs from the profile whitelist",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:response",
+        "side_effect_level": 1,
         "destructive": false,
         "supports": {
           "dry_run": false,

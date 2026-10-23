@@ -78,6 +78,11 @@ func run(cmd invocation.Call, svc *core.Core, path string) error {
 	if err != nil {
 		return err
 	}
+	for _, target := range plan.Targets {
+		if err := core.RequireProjectVisible(ctx, target.Target); err != nil {
+			return err
+		}
+	}
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
 	if dryRun {

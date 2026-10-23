@@ -75,6 +75,11 @@ func newShowCommandDefinition(svc *core.Core) *invocation.Definition {
 					return aliasErr
 				}
 				payload := shared.NewProjectJSONWithAliases(project, aliases, true)
+				policy, err := core.ProjectVisibilityForContext(ctx)
+				if err != nil {
+					return err
+				}
+				payload.HiddenReason = policy.HiddenReason(project.ProjectID)
 				payload.EffectiveQuotaProjectID = quotaSelection.ProjectID
 				payload.QuotaProjectSource = quotaSelection.Source
 				return shared.WriteJSON(cmd, payload)
@@ -84,7 +89,15 @@ func newShowCommandDefinition(svc *core.Core) *invocation.Definition {
 			if aliasErr != nil {
 				return aliasErr
 			}
-			_, err = fmt.Fprintln(cmd.OutOrStdout(), renderProjectDetailsWithQuota(project, aliases, quotaSelection))
+			details := renderProjectDetailsWithQuota(project, aliases, quotaSelection)
+			policy, err := core.ProjectVisibilityForContext(ctx)
+			if err != nil {
+				return err
+			}
+			if reason := policy.HiddenReason(project.ProjectID); reason != "" {
+				details += "\nVisibility: " + core.ProjectVisibilityReasonText(reason)
+			}
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), details)
 			return err
 		},
 	}

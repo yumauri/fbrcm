@@ -18,6 +18,7 @@ type ProjectJSON struct {
 	ConfiguredQuotaProjectID string                      `json:"configured_quota_project_id,omitempty"`
 	EffectiveQuotaProjectID  string                      `json:"effective_quota_project_id,omitempty"`
 	QuotaProjectSource       firebase.QuotaProjectSource `json:"quota_project_source,omitempty" contract:"enum=environment|project|auth|credentials|target"`
+	HiddenReason             string                      `json:"hidden_reason,omitempty" contract:"enum=blacklisted|not_whitelisted"`
 	Disabled                 bool                        `json:"disabled"`
 	DiscoveredBy             []string                    `json:"discovered_by,omitempty"`
 	Templates                []rctarget.Kind             `json:"templates"`

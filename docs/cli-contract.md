@@ -72,6 +72,38 @@ validation is not applied, `supports.stateless` is false, and
 Run `fbrcm mcp` without `--json` for the streaming server. Its tool input and
 envelope mapping are documented in the [MCP guide](MCP.md#tool-input-and-results).
 
+## Persistent project visibility
+
+Profile-backed project selection applies persistent blacklist/whitelist rules
+before ordinary selectors, expressions, and template reads. Both template kinds
+share membership by physical project ID. Blacklist exclusions take precedence;
+an enabled empty whitelist selects no projects. `--include-hidden` bypasses
+these rules for one invocation without changing accessibility checks. Stateless
+and stdin-only operations do not consult visibility files. Inventory and cache
+administration remain complete; discovery, forgetting, and registry reset retain
+the separate profile visibility file.
+
+The `projects.blacklist.{list,add,remove,clear,enable,disable}` and
+`projects.whitelist.{list,add,remove,clear,enable,disable}` commands are local,
+non-interactive and idempotent, with no remote effects, stdin, draft, or dry-run
+mode. Membership commands accept literal physical IDs or repeatable filters,
+mutually exclusively. Filters resolve once against local inventory (adding) or
+stored membership (removing), and persist IDs. No match is a successful no-op.
+Mutation DTOs preserve selection kind, resolved IDs, original filters, matched
+count, changed IDs, remaining membership count, activation, visible inventory
+count, and nullable no-op provenance. Enabling/disabling changes activation
+rather than membership, so affected membership IDs remain empty.
+
+An explicit hidden target returns typed `project.hidden`, category `not_found`,
+exit `6`, `retryable: false`, target identity, and details
+`{"kind":"project_visibility","reason":"blacklisted"}` (or reason
+`not_whitelisted`).
+The remediation adds `--include-hidden` to the invocation. Projects returned
+with the override may carry `hidden_reason`. Whitelisting a blacklisted project
+emits `project.remains_hidden` with the target ID, `reason: "blacklisted"`, and
+safe remediation argv to remove that blacklist entry. JSON stdout remains a
+single versioned envelope.
+
 ## Envelope
 
 ### Result structure

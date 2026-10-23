@@ -1,0 +1,15 @@
+{
+  "name": "projects_list_include_hidden_json",
+  "command_id": "projects.list",
+  "args": [
+    "projects",
+    "list",
+    "--include-hidden",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "json_output": true,
+  "fixture": "project_visibility",
+  "offline": true
+}

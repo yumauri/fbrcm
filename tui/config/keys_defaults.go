@@ -73,6 +73,7 @@ func DefaultKeyMap() KeyMap {
 			ActionDefaults:        {"d"},
 			ActionPromote:         {"v"},
 			ActionToggleTemplates: {"t"},
+			ActionShowHidden:      {"H"},
 			ActionMakePrimary:     {"p"},
 			ActionUp:              {"up", "k"},
 			ActionDown:            {"down", "j"},

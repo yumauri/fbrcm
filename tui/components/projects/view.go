@@ -7,6 +7,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
+	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 type lineKind int
@@ -45,7 +46,11 @@ func (m *Model) contentLines() []string {
 		if m.loading {
 			lines = append(lines, "Loading projects...")
 		} else if len(m.allProjects) == 0 && m.filter.Value() == "" {
-			lines = append(lines, "No projects configured")
+			if len(m.baseProjects) > 0 {
+				lines = append(lines, "Hidden by rules; "+tuiconfig.Label(tuiconfig.BlockProjects, tuiconfig.ActionShowHidden)+" to show")
+			} else {
+				lines = append(lines, "No projects configured")
+			}
 		} else {
 			lines = append(lines, "No matching projects")
 		}
@@ -88,6 +93,9 @@ func (m *Model) contentLines() []string {
 			projectID := " " + project.ProjectID
 			if project.Disabled {
 				projectID += " · disabled"
+			}
+			if reason := m.visibility.HiddenReason(project.ProjectID); reason != "" {
+				projectID += " · " + core.ProjectVisibilityReasonText(reason)
 			}
 			lines = append(lines, projectID)
 			lineKinds = append(lineKinds, lineKindProjectID)

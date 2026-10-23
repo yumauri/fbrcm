@@ -26,6 +26,11 @@
     "options": {
       "additionalProperties": false,
       "properties": {
+        "include-hidden": {
+          "description": "Include projects hidden by the profile blacklist or whitelist for this invocation; accepted but not applied by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
         "label": {
           "description": "Auth identity label",
           "pattern": "^(?:$|.*\\S.*)$",

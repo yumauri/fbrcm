@@ -57,7 +57,10 @@
     "schemagen.determinism": "cmd/schemagen/determinism_test.go#TestStageGeneratedContractIsByteDeterministic",
     "theme.mutation_success": "cli/commands/theme/reset_test.go#TestSwitchBuiltInAndResetClearSelections",
     "versions.blame_success": "ops/workflows/versions/blame_test.go#TestVersionsBlameCommandJSONSuccess",
-    "versions.restore_success": "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp"
+    "versions.restore_success": "ops/workflows/versions/contracts_test.go#TestVersionPublishJSONRepresentsNoOp",
+    "visibility.commands_runtime": "cli/app/project_visibility_test.go#TestProjectVisibilityCommandsConform",
+    "visibility.invocation_schema": "cli/app/project_visibility_test.go#TestProjectVisibilityInvocationSchemas",
+    "visibility.selection_runtime": "cli/app/project_visibility_test.go#TestProjectVisibilitySelectionAndPersistenceConform"
   },
   "commands": [
     {
@@ -8301,11 +8304,13 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json",
             "schemagen.determinism"
           ]
@@ -8313,6 +8318,7 @@
         "discovery": {
           "evidence": [
             "app.discovery",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
@@ -8320,12 +8326,14 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
@@ -8336,6 +8344,7 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
@@ -8347,6 +8356,7 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
@@ -8363,6 +8373,7 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
+            "e2e:project_hidden_json",
             "e2e:project_templates_show_json"
           ]
         },
@@ -8735,6 +8746,689 @@
       }
     },
     {
+      "id": "projects.blacklist.add",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_blacklist_add_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_blacklist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.blacklist.clear",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_blacklist_clear_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_blacklist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.blacklist.disable",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_blacklist_disable_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_blacklist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.blacklist.enable",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_blacklist_enable_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_blacklist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.blacklist.list",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_blacklist_list_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_blacklist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.blacklist.remove",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_blacklist_remove_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_blacklist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
       "id": "projects.diff",
       "classes": {
         "artifact": {
@@ -8941,34 +9635,42 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
             "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
             "app.discovery",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "effects": {
@@ -8976,9 +9678,11 @@
             "app.capability_behavior",
             "app.capability_predicate_integrity",
             "contract.stateless_predicates",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "failure": {
@@ -8987,17 +9691,21 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "interaction": {
           "evidence": [
             "app.interaction",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "invocation": {
@@ -9005,9 +9713,11 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "no_op": {
@@ -9016,9 +9726,11 @@
         "selection": {
           "evidence": [
             "app.selection",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "stdin": {
@@ -9028,9 +9740,11 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
+            "e2e:projects_list_include_hidden_json",
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
-            "e2e:projects_list_stateless_json"
+            "e2e:projects_list_stateless_json",
+            "e2e:projects_list_visible_json"
           ]
         },
         "warning": {
@@ -9409,6 +10123,696 @@
             "app.outcomes",
             "app.response_invariants",
             "e2e:projects_update_json"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.whitelist.add",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_whitelist_add_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "evidence": [
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:projects_whitelist_add_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        }
+      }
+    },
+    {
+      "id": "projects.whitelist.clear",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_whitelist_clear_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_whitelist_clear_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.whitelist.disable",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_whitelist_disable_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_whitelist_disable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.whitelist.enable",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_whitelist_enable_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_whitelist_enable_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.whitelist.list",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_whitelist_list_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "not_applicable": "The command has no selector with matching or lookup semantics."
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_whitelist_list_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "warning": {
+          "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "projects.whitelist.remove",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.boundaries",
+            "app.invocation_semantics",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "e2e:projects_whitelist_remove_json",
+            "schemagen.determinism",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.discovery",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.capability_behavior",
+            "app.effectiveness",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.capability_behavior",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "interaction": {
+          "not_applicable": "The command has no interactive branch in JSON mode."
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "no_op": {
+          "evidence": [
+            "app.no_op",
+            "app.response_invariants",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "selection": {
+          "evidence": [
+            "app.selection",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
+          ]
+        },
+        "stdin": {
+          "not_applicable": "The command does not accept a normalized stdin document."
+        },
+        "success": {
+          "evidence": [
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:projects_whitelist_remove_json",
+            "visibility.commands_runtime",
+            "visibility.invocation_schema",
+            "visibility.selection_runtime"
           ]
         },
         "warning": {

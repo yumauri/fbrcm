@@ -164,6 +164,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Download application defaults"
 		case tuiconfig.ActionPromote:
 			return "Promote to another project"
+		case tuiconfig.ActionShowHidden:
+			return "Show or hide excluded projects"
 		case tuiconfig.ActionToggleTemplates:
 			return "Toggle project templates"
 		case tuiconfig.ActionMakePrimary:
@@ -498,6 +500,8 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 		return "Move keyboard focus to the " + strings.TrimPrefix(strings.ToLower(title), "focus ") + " panel."
 	case tuiconfig.ActionRefresh:
 		return "Update the cached project list from Firebase."
+	case tuiconfig.ActionShowHidden:
+		return "Temporarily include or hide projects excluded by the profile blacklist or whitelist."
 	case tuiconfig.ActionToggleTemplates:
 		return "Show both client and server templates, or keep only the focused template."
 	case tuiconfig.ActionMakePrimary:

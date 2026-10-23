@@ -406,6 +406,27 @@ func applyTypeSemantics(schema map[string]any, typeOf reflect.Type) {
 			fieldValueConstraint("type", "service-account", map[string]any{"deleted_paths": onePath}),
 			fieldValueConstraint("type", "gcloud", map[string]any{"deleted_paths": map[string]any{"type": "null"}}),
 		}
+	case "github.com/yumauri/fbrcm/ops/workflows/projects.visibilitySelection":
+		properties["project_ids"] = map[string]any{"type": "array", "uniqueItems": true, "items": map[string]any{"$ref": SemanticRef("physical_project_id")}}
+		properties["filters"] = map[string]any{"type": "array", "items": map[string]any{
+			"allOf": []any{map[string]any{"$ref": SemanticRef("filter_query")}},
+			"not":   map[string]any{"pattern": `^\s*(?:[cC][lL][iI][eE][nN][tT]|[sS][eE][rR][vV][eE][rR])@`},
+		}}
+		schema["allOf"] = []any{
+			fieldValueConstraint("kind", "ids", map[string]any{"project_ids": map[string]any{"minItems": 1}, "filters": map[string]any{"maxItems": 0}}),
+			fieldValueConstraint("kind", "filters", map[string]any{"filters": map[string]any{"minItems": 1}}),
+			fieldValueConstraint("kind", "list", map[string]any{"filters": map[string]any{"maxItems": 0}}),
+		}
+		schema["x-fbrcm-invariants"] = []any{invariant("eq", "left", invariantField("matched_item_count"), "right", invariant("length", "value", invariantField("project_ids")))}
+	case "github.com/yumauri/fbrcm/ops/workflows/projects.visibilityMutationResult":
+		properties["affected_project_ids"] = map[string]any{"type": "array", "uniqueItems": true, "items": map[string]any{"$ref": SemanticRef("physical_project_id")}}
+		schema["allOf"] = []any{
+			fieldValueConstraint("changed", true, map[string]any{"no_op_reason": map[string]any{"type": "null"}}),
+			fieldValueConstraint("changed", false, map[string]any{"no_op_reason": map[string]any{"enum": []string{"no_match", "already_applied"}}, "affected_project_ids": map[string]any{"maxItems": 0}}),
+			fieldValueConstraint("operation", "enable", map[string]any{"enabled": map[string]any{"const": true}, "affected_project_ids": map[string]any{"maxItems": 0}}),
+			fieldValueConstraint("operation", "disable", map[string]any{"enabled": map[string]any{"const": false}, "affected_project_ids": map[string]any{"maxItems": 0}}),
+			fieldValueConstraint("no_op_reason", "no_match", map[string]any{"selection": map[string]any{"properties": map[string]any{"matched_item_count": map[string]any{"const": 0}}}}),
+		}
 	case "github.com/yumauri/fbrcm/ops/shared.ProjectJSON":
 		applyProjectTemplateSemantics(schema)
 		if aliases, ok := properties["aliases"].(map[string]any); ok {
@@ -640,6 +661,13 @@ func applyCommandResponseSemantics(commandID string, typeOf reflect.Type, schema
 		applyArtifactCommandSemantics(commandID, schema)
 	}
 	properties, _ := schema["properties"].(map[string]any)
+	if IsProjectVisibilityCommand(commandID) {
+		parts := strings.Split(commandID, ".")
+		properties["list"] = map[string]any{"const": parts[1]}
+		if parts[2] != "list" {
+			properties["operation"] = map[string]any{"const": parts[2]}
+		}
+	}
 	switch commandID {
 	case "auth.add.google", "auth.add.oauth", "auth.add.service-account", "auth.add.gcloud":
 		authType := strings.TrimPrefix(commandID, "auth.add.")
@@ -828,11 +856,11 @@ func applyArtifactCommandSemantics(commandID string, schema map[string]any) {
 	jsonVariant["json_content"] = contentRef
 }
 
-func fieldValueConstraint(field, value string, thenProperties map[string]any) map[string]any {
+func fieldValueConstraint(field string, value any, thenProperties map[string]any) map[string]any {
 	return fieldValueShapeConstraint(field, value, thenProperties, nil, nil)
 }
 
-func fieldValueShapeConstraint(field, value string, thenProperties map[string]any, required, forbidden []string) map[string]any {
+func fieldValueShapeConstraint(field string, value any, thenProperties map[string]any, required, forbidden []string) map[string]any {
 	then := make(map[string]any)
 	if thenProperties != nil {
 		then["properties"] = thenProperties
