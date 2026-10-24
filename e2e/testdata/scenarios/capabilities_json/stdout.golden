@@ -2358,7 +2358,7 @@
           "theme",
           "import"
         ],
-        "summary": "Import themes from a file, directory, or HTTP URL",
+        "summary": "Import themes from a file, directory, HTTP URL, or repository URL",
         "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
         "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
         "side_effect_level": 2,

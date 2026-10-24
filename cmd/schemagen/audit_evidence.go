@@ -85,6 +85,16 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 					evidence = append(evidence, "app.auth_google_configuration_failure", "auth.google_quota_failure")
 				}
 			}
+			if capability.ID == "theme.import" {
+				switch class {
+				case "success", "no_op", "warning", "effects":
+					evidence = append(evidence, "app.theme_repository_runtime")
+				case "failure", "boundary":
+					evidence = append(evidence, "app.theme_repository_failure")
+				case "selection", "invocation":
+					evidence = append(evidence, "app.theme_repository_ref")
+				}
+			}
 			if capability.ID == "setup" {
 				switch class {
 				case "effectiveness", "effects", "interaction":
@@ -194,6 +204,9 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"app.selection":                          "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
 		"app.stdin":                              "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
 		"app.stdin_restrictions":                 "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
+		"app.theme_repository_runtime":           "cli/app/theme_repository_test.go#TestRepositoryThemeImportRuntimeEnvelopes",
+		"app.theme_repository_failure":           "cli/app/theme_repository_test.go#TestRepositoryThemeImportFailuresConform",
+		"app.theme_repository_ref":               "cli/app/theme_repository_test.go#TestRepositoryThemeAmbiguityAndRefSchema",
 		"app.setup_json_runtime":                 "cli/app/contract_test.go#TestJSONSetupReturnsGuidedInteraction",
 		"app.setup_no_mutation_runtime":          "cli/app/contract_test.go#TestJSONSetupDoesNotMutateAnExistingProfile",
 		"app.unknown_option":                     "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",

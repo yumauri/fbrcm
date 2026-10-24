@@ -23,6 +23,7 @@ import (
 	corehooks "github.com/yumauri/fbrcm/core/hooks"
 	"github.com/yumauri/fbrcm/core/rc/importer"
 	"github.com/yumauri/fbrcm/core/rc/publication"
+	"github.com/yumauri/fbrcm/core/themesource"
 	operation "github.com/yumauri/fbrcm/ops/invocation"
 	"github.com/yumauri/fbrcm/ops/machine"
 	"github.com/yumauri/fbrcm/ops/shared"
@@ -502,6 +503,9 @@ func classifyCommandError(cmd operation.Call, command string, err error) (Proble
 
 func Classify(err error) Problem {
 	problem := Problem{Code: "internal.unclassified", Category: "internal", Message: shared.SafeErrorText(err), Retryable: false, Details: nil, Remediation: []Remediation{}}
+	if source, ok := errors.AsType[*themesource.Error](err); ok {
+		return classifyThemeSource(problem, source)
+	}
 	if _, ok := errors.AsType[*firebase.InvalidChangeNoteError](err); ok {
 		problem.Code, problem.Category = "argument.invalid", "argument"
 		return problem

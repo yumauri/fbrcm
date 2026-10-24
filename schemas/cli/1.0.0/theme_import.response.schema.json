@@ -8,6 +8,42 @@
             "path": {
               "type": "string"
             },
+            "repository_source": {
+              "additionalProperties": false,
+              "properties": {
+                "commit": {
+                  "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "provider": {
+                  "enum": [
+                    "github",
+                    "gitlab"
+                  ],
+                  "type": "string"
+                },
+                "repository": {
+                  "type": "string"
+                },
+                "requested_ref": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "commit",
+                "path",
+                "provider",
+                "repository",
+                "requested_ref"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            },
             "source": {
               "type": "string"
             },
@@ -120,6 +156,42 @@
               },
               "minItems": 1,
               "type": "array"
+            },
+            "repository_source": {
+              "additionalProperties": false,
+              "properties": {
+                "commit": {
+                  "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "provider": {
+                  "enum": [
+                    "github",
+                    "gitlab"
+                  ],
+                  "type": "string"
+                },
+                "repository": {
+                  "type": "string"
+                },
+                "requested_ref": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "commit",
+                "path",
+                "provider",
+                "repository",
+                "requested_ref"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
             },
             "skipped_count": {
               "minimum": 0,
@@ -264,6 +336,7 @@
                   "code": {
                     "enum": [
                       "argument.invalid",
+                      "auth.credentials_invalid",
                       "command.canceled",
                       "command.timeout",
                       "configuration.invalid",
@@ -278,6 +351,12 @@
                       "stdin.remote_config.invalid",
                       "theme.conflict",
                       "theme.invalid",
+                      "theme.source_ambiguous",
+                      "theme.source_invalid_response",
+                      "theme.source_limit",
+                      "theme.source_not_found",
+                      "theme.source_permission_denied",
+                      "theme.source_rate_limited",
                       "validation.failed"
                     ]
                   }

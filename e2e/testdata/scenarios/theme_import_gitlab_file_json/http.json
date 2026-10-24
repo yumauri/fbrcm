@@ -1,0 +1,181 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "gitlab.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v4/projects/company%2Fteam%2Ftheme-pack/repository/commits/main"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "{\"id\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "gitlab.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v4/projects/company%2Fteam%2Ftheme-pack/repository/tree"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "page": [
+              {
+                "matcher": "exact",
+                "value": "1"
+              }
+            ],
+            "path": [
+              {
+                "matcher": "exact",
+                "value": "themes"
+              }
+            ],
+            "per_page": [
+              {
+                "matcher": "exact",
+                "value": "100"
+              }
+            ],
+            "ref": [
+              {
+                "matcher": "exact",
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        },
+        "response": {
+          "body": "[{\"name\": \"aurora.toml\", \"path\": \"themes/aurora.toml\", \"type\": \"blob\", \"mode\": \"100644\"}]",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "gitlab.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v4/projects/company%2Fteam%2Ftheme-pack/repository/files/themes%2Faurora.toml/raw"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "ref": [
+              {
+                "matcher": "exact",
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        },
+        "response": {
+          "body": "[colors]\nprimary = \"1\"\n",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

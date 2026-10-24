@@ -15,6 +15,7 @@ import (
 
 	coreconfig "github.com/yumauri/fbrcm/core/config"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/core/themesource"
 	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/ops/contract"
 	"github.com/yumauri/fbrcm/ops/shared"
@@ -519,10 +520,11 @@ type themeDeleteResult struct {
 }
 
 type themeImportResult struct {
-	Theme  string `json:"theme"`
-	Status string `json:"status" contract:"enum=imported"`
-	Path   string `json:"path"`
-	Source string `json:"source"`
+	RepositorySource *themesource.Provenance `json:"repository_source,omitempty"`
+	Theme            string                  `json:"theme"`
+	Status           string                  `json:"status" contract:"enum=imported"`
+	Path             string                  `json:"path"`
+	Source           string                  `json:"source"`
 }
 
 type themeBatchImportItem struct {
@@ -533,9 +535,10 @@ type themeBatchImportItem struct {
 }
 
 type themeBatchImportResult struct {
-	Source        string                 `json:"source"`
-	Count         int                    `json:"count"`
-	ImportedCount int                    `json:"imported_count"`
-	SkippedCount  int                    `json:"skipped_count"`
-	Items         []themeBatchImportItem `json:"items"`
+	RepositorySource *themesource.Provenance `json:"repository_source,omitempty"`
+	Source           string                  `json:"source"`
+	Count            int                     `json:"count"`
+	ImportedCount    int                     `json:"imported_count"`
+	SkippedCount     int                     `json:"skipped_count"`
+	Items            []themeBatchImportItem  `json:"items"`
 }

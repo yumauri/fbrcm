@@ -127,7 +127,13 @@ func TestImportCommandSingleThemeStillRejectsExistingDestination(t *testing.T) {
 
 func TestReadThemeImportDownloadsHTTPSource(t *testing.T) {
 	setupThemeCommandTest(t)
-	client := &http.Client{Transport: themeRoundTripFunc(func(*http.Request) (*http.Response, error) {
+	t.Setenv(env.GitHubToken, "github-secret")
+	t.Setenv(env.GitHubTokenFallback, "github-fallback-secret")
+	t.Setenv(env.GitLabToken, "gitlab-secret")
+	client := &http.Client{Transport: themeRoundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if req.Header.Get("Authorization") != "" || req.Header.Get("PRIVATE-TOKEN") != "" {
+			t.Fatal("provider token leaked to a generic HTTP source")
+		}
 		return &http.Response{StatusCode: http.StatusOK, Status: "200 OK", Body: io.NopCloser(strings.NewReader("[colors]\nprimary = \"1\"\n"))}, nil
 	})}
 	cmd := newImportCommand(client)
@@ -385,5 +391,26 @@ func TestImportCommandRejectsDirectoryStdinInMachineMode(t *testing.T) {
 	err = cmd.Execute()
 	if err == nil || !strings.Contains(err.Error(), "experimental human-mode") {
 		t.Fatalf("execute error = %v", err)
+	}
+}
+
+func TestImportCommandKeepsLocalDirectoryPercentSigns(t *testing.T) {
+	root := setupThemeCommandTest(t)
+	directory := filepath.Join(root, "100%themes")
+	if err := os.Mkdir(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(directory, "aurora.toml"), []byte("[colors]\nprimary=\"1\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := newImportCommand(http.DefaultClient)
+	var output bytes.Buffer
+	cmd.SetOut(&output)
+	cmd.SetArgs([]string{directory})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "imported theme: aurora") {
+		t.Fatalf("output=%q", output.String())
 	}
 }

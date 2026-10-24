@@ -35381,7 +35381,7 @@
           "theme",
           "import"
         ],
-        "summary": "Import themes from a file, directory, or HTTP URL",
+        "summary": "Import themes from a file, directory, HTTP URL, or repository URL",
         "arguments": [
           {
             "name": "source",
@@ -35432,6 +35432,16 @@
             "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
           },
           {
+            "name": "--ref",
+            "aliases": [],
+            "type": "string",
+            "default": "",
+            "required": false,
+            "repeatable": false,
+            "effective": true,
+            "usage": "Disambiguate the revision prefix already present in a repository browser URL"
+          },
+          {
             "name": "--stateless",
             "aliases": [],
             "type": "bool",
@@ -35458,6 +35468,7 @@
         "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
         "problem_codes": [
           "argument.invalid",
+          "auth.credentials_invalid",
           "command.canceled",
           "command.timeout",
           "configuration.invalid",
@@ -35472,6 +35483,12 @@
           "stdin.remote_config.invalid",
           "theme.conflict",
           "theme.invalid",
+          "theme.source_ambiguous",
+          "theme.source_invalid_response",
+          "theme.source_limit",
+          "theme.source_not_found",
+          "theme.source_permission_denied",
+          "theme.source_rate_limited",
           "validation.failed"
         ],
         "side_effect_level": 2,
@@ -45651,6 +45668,12 @@
           "theme.conflict",
           "theme.invalid",
           "theme.not_found",
+          "theme.source_ambiguous",
+          "theme.source_invalid_response",
+          "theme.source_limit",
+          "theme.source_not_found",
+          "theme.source_permission_denied",
+          "theme.source_rate_limited",
           "validation.failed",
           "version.not_found"
         ]
@@ -46952,19 +46975,19 @@
     {
       "name": "theme_source",
       "operator": "requires_network",
-      "semantics": "The theme import source uses an HTTP or HTTPS URL and therefore requires a network download.",
+      "semantics": "The theme import source uses an HTTP or HTTPS URL and therefore requires network access, including provider API requests for repository browser URLs.",
       "source": "runtime_state"
     },
     {
       "name": "theme_source",
       "operator": "is_directory",
-      "semantics": "The selected theme import source is a directory batch, so repeated imports preserve existing destinations and skip them with warnings.",
+      "semantics": "The selected theme import source is a local or repository directory batch, so repeated imports preserve existing destinations and skip them with warnings.",
       "source": "runtime_state"
     },
     {
       "name": "theme_source",
       "operator": "is_single",
-      "semantics": "The selected theme import source is one file, URL, or TOML stdin document, so an existing destination makes a repeated import fail.",
+      "semantics": "The selected theme import source is one local or remote file, or TOML stdin document, so an existing destination makes a repeated import fail.",
       "source": "runtime_state"
     },
     {

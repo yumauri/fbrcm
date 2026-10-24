@@ -15,19 +15,21 @@ import (
 	"github.com/spf13/cobra"
 
 	coreconfig "github.com/yumauri/fbrcm/core/config"
+	"github.com/yumauri/fbrcm/core/firebase"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/core/strfold"
+	"github.com/yumauri/fbrcm/core/themesource"
 	"github.com/yumauri/fbrcm/internal/terminal/progress"
 	"github.com/yumauri/fbrcm/ops/contract"
 	"github.com/yumauri/fbrcm/ops/shared"
 )
 
-const maximumThemeImportBytes = 1024 * 1024
+const maximumThemeImportBytes = themesource.MaximumFileBytes
 
 func newImportCommand(client *http.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "import [source]",
-		Short: "Import themes from a file, directory, or HTTP URL",
+		Short: "Import themes from a file, directory, HTTP URL, or repository URL",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			source := ""
@@ -43,6 +45,20 @@ func newImportCommand(client *http.Client) *cobra.Command {
 					return shared.InvalidArgument(err)
 				}
 			}
+			ref, err := cmd.Flags().GetString("ref")
+			if err != nil {
+				return err
+			}
+			if cmd.Flags().Changed("ref") && ref == "" {
+				return shared.InvalidArgument(fmt.Errorf("--ref cannot be empty"))
+			}
+			repositorySource, err := themesource.Parse(source, ref)
+			if err != nil {
+				return err
+			}
+			if repositorySource != nil {
+				return importRepositoryThemes(cmd, client, repositorySource, nameOverride)
+			}
 			if source != "" {
 				if handled, err := importThemeDirectoryPath(cmd, source, nameOverride); handled || err != nil {
 					return err
@@ -57,20 +73,25 @@ func newImportCommand(client *http.Client) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			path, err := coreconfig.ImportTheme(name, raw)
-			if err != nil {
-				return err
-			}
-			result := themeImportResult{Theme: name, Status: "imported", Path: path, Source: resolvedSource}
-			if contract.Enabled(cmd) {
-				return shared.WriteJSON(cmd, result)
-			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "imported theme: %s\n%s\n", name, path)
-			return err
+			return importSingleTheme(cmd, resolvedSource, name, raw, nil)
 		},
 	}
 	cmd.Flags().String("name", "", "Install the imported theme under this name")
+	cmd.Flags().String("ref", "", "Disambiguate the revision prefix already present in a repository browser URL")
 	return cmd
+}
+
+func importSingleTheme(cmd *cobra.Command, source, name string, raw []byte, provenance *themesource.Provenance) error {
+	destination, err := coreconfig.ImportTheme(name, raw)
+	if err != nil {
+		return err
+	}
+	result := themeImportResult{Theme: name, Status: "imported", Path: destination, Source: source, RepositorySource: provenance}
+	if contract.Enabled(cmd) {
+		return shared.WriteJSON(cmd, result)
+	}
+	_, err = fmt.Fprintf(cmd.OutOrStdout(), "imported theme: %s\n%s\n", name, destination)
+	return err
 }
 
 func readThemeImport(cmd *cobra.Command, client *http.Client, source, nameOverride string) ([]byte, string, string, error) {
@@ -188,10 +209,47 @@ func importThemeDirectory(cmd *cobra.Command, dir *os.File, source, nameOverride
 	if len(names) == 0 {
 		return shared.InvalidArgument(fmt.Errorf("theme directory %s contains no top-level .toml files", source))
 	}
-	imports := make([]coreconfig.ThemeImport, 0, len(names))
-	skipped := make([]coreconfig.SkippedThemeImport, 0)
+	files := make([]themeBatchSource, 0, len(names))
 	for _, filename := range names {
-		name, err := themeNameFromFilename(filename)
+		files = append(files, themeBatchSource{name: filename, read: func() ([]byte, error) {
+			child, err := openChild(filename)
+			if err != nil {
+				return nil, fmt.Errorf("open theme directory file %q: %w", filename, err)
+			}
+			childInfo, statErr := child.Stat()
+			if statErr != nil {
+				_ = child.Close()
+				return nil, fmt.Errorf("inspect theme directory file %q: %w", filename, statErr)
+			}
+			if !childInfo.Mode().IsRegular() {
+				_ = child.Close()
+				return nil, nil
+			}
+			raw, readErr := readLimitedTheme(child, "theme directory file "+filename)
+			closeErr := child.Close()
+			if readErr != nil {
+				return nil, readErr
+			}
+			if closeErr != nil {
+				return nil, fmt.Errorf("close theme directory file %q: %w", filename, closeErr)
+			}
+			return raw, nil
+		}})
+	}
+	return importThemeBatch(cmd, source, files, nil)
+}
+
+type themeBatchSource struct {
+	name string
+	read func() ([]byte, error)
+}
+
+func importThemeBatch(cmd *cobra.Command, source string, files []themeBatchSource, provenance *themesource.Provenance) error {
+	slices.SortFunc(files, func(a, b themeBatchSource) int { return strfold.Compare(a.name, b.name) })
+	imports := make([]coreconfig.ThemeImport, 0, len(files))
+	skipped := make([]coreconfig.SkippedThemeImport, 0)
+	for _, file := range files {
+		name, err := themeNameFromFilename(file.name)
 		if err != nil {
 			return err
 		}
@@ -203,26 +261,12 @@ func importThemeDirectory(cmd *cobra.Command, dir *os.File, source, nameOverride
 			skipped = append(skipped, coreconfig.SkippedThemeImport{Name: name, Path: destination})
 			continue
 		}
-		child, err := openChild(filename)
+		raw, err := file.read()
 		if err != nil {
-			return fmt.Errorf("open theme directory file %q: %w", filename, err)
+			return err
 		}
-		childInfo, statErr := child.Stat()
-		if statErr != nil {
-			_ = child.Close()
-			return fmt.Errorf("inspect theme directory file %q: %w", filename, statErr)
-		}
-		if !childInfo.Mode().IsRegular() {
-			_ = child.Close()
+		if raw == nil {
 			continue
-		}
-		raw, readErr := readLimitedTheme(child, "theme directory file "+filename)
-		closeErr := child.Close()
-		if readErr != nil {
-			return readErr
-		}
-		if closeErr != nil {
-			return fmt.Errorf("close theme directory file %q: %w", filename, closeErr)
 		}
 		imports = append(imports, coreconfig.ThemeImport{Name: name, Data: raw})
 	}
@@ -246,7 +290,9 @@ func importThemeDirectory(cmd *cobra.Command, dir *os.File, source, nameOverride
 		})
 	}
 	if contract.Enabled(cmd) {
-		return shared.WriteJSON(cmd, newThemeBatchImportResult(source, imported, skipped))
+		result := newThemeBatchImportResult(source, imported, skipped)
+		result.RepositorySource = provenance
+		return shared.WriteJSON(cmd, result)
 	}
 	for _, item := range imported {
 		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "imported theme: %s\n%s\n", item.Name, item.Path); err != nil {
@@ -297,6 +343,9 @@ func readLimitedThemeFile(path string) ([]byte, error) {
 }
 
 func downloadTheme(cmd *cobra.Command, client *http.Client, source string) ([]byte, error) {
+	if firebase.IsOffline() {
+		return nil, firebase.ErrOffline
+	}
 	if client == nil {
 		client = http.DefaultClient
 	}

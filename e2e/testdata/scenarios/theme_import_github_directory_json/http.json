@@ -1,0 +1,251 @@
+{
+  "data": {
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    },
+    "pairs": [
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.github.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/repos/acme/theme-pack/commits/main"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "{\"sha\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"commit\": {\"tree\": {\"sha\": \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}}}",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.github.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/repos/acme/theme-pack/git/trees/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "{\"tree\": [{\"path\": \"themes\", \"type\": \"tree\", \"mode\": \"040000\", \"sha\": \"cccccccccccccccccccccccccccccccccccccccc\"}]}",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.github.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/repos/acme/theme-pack/git/trees/cccccccccccccccccccccccccccccccccccccccc"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "{\"tree\": [{\"path\": \"parent.toml\", \"type\": \"blob\", \"mode\": \"100644\"}, {\"path\": \"child.toml\", \"type\": \"blob\", \"mode\": \"100644\"}]}",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.github.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/repos/acme/theme-pack/contents/themes/child.toml"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "ref": [
+              {
+                "matcher": "exact",
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        },
+        "response": {
+          "body": "inherits = \"parent\"\n[colors]\nerror = \"2\"\n",
+          "headers": {
+            "Content-Type": [
+              "text/plain"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.github.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/repos/acme/theme-pack/contents/themes/parent.toml"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "ref": [
+              {
+                "matcher": "exact",
+                "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        },
+        "response": {
+          "body": "[colors]\nprimary = \"1\"\n",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 200,
+          "templated": false
+        }
+      }
+    ]
+  },
+  "meta": {
+    "hoverflyVersion": "v1.12.10",
+    "schemaVersion": "v5.3",
+    "timeExported": "2024-01-01T00:00:00Z"
+  }
+}

@@ -349,11 +349,28 @@ terminal presentation and are not represented in JSON DTOs or schemas.
   `--merge-resolve=import`.
 - Promotion requires `--all` or explicit selection filters. `--interactive`
   is unavailable in JSON mode.
-- `theme import --json` accepts a positional file path, directory path, or HTTP
-  URL, or a TOML document on redirected stdin. Stdin requires `--name`.
+- `theme import --json` accepts a positional file path, directory path, raw HTTP
+  URL, GitHub.com/GitLab.com browser URL, or a TOML document on redirected stdin. Stdin requires `--name`.
   Directory batches skip existing theme destinations and return structured
   `theme.already_exists` warnings. Without any input, the command returns
   `interaction.required` instead of opening the file selector.
+  Repository sources resolve branch/tag refs to a single commit and retain it
+  for all reads. `--ref` disambiguates a revision prefix already present in the
+  browser URL; it requires a repository browser source and never overrides its
+  revision. Source validation publishes the repository URL grammar and batch
+  limits. Repository results add optional typed `repository_source` provenance
+  (`provider`, `repository`, `requested_ref`, `commit`, `path`); other source
+  modes omit it. `source` excludes browser query parameters and fragments.
+  Provider tokens come only from `GH_TOKEN`/`GITHUB_TOKEN` or `GITLAB_TOKEN` and
+  never appear in output. Provider errors are typed at their origin and expose
+  `theme.source_ambiguous` (argument), `theme.source_not_found` (not_found),
+  `theme.source_permission_denied` (permission), `theme.source_rate_limited`
+  (unavailable, retryable), and `theme.source_invalid_response`/`theme.source_limit`
+  (validation). Authentication and transport failures use existing auth/network
+  codes. HTTP details preserve service, operation, status, and retry delay,
+  excluding response bodies. A 404 preserves the missing-or-inaccessible
+  distinction. Ambiguity includes candidate refs and safe remediation argv.
+  JSON never opens provider authentication, a browser, or an external CLI.
 - `config edit --json` always returns `interaction.required`. For `google` and
   imported `oauth`, `auth login --json` first tries a valid cached access token
   or refresh token. It returns `interaction.required` only when human

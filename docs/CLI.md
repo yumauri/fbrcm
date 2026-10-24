@@ -261,7 +261,7 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--include-hidden] [
 │   ├── path <theme> [--json]
 │   ├── rename <old-name> <new-name> [--json]
 │   ├── delete <theme> [--yes|-y] [--json]
-│   └── import [<source>] [--name <name>] [--json]
+│   └── import [<source>] [--name <name>] [--ref <ref>] [--json]
 │
 ├── project
 │   ├── show <project> [--update] [--json]
@@ -568,6 +568,9 @@ FBRCM_PROFILE
 
 | Variable | Behavior |
 | --- | --- |
+| `GH_TOKEN` | Authenticate GitHub.com theme repository imports. Takes precedence over `GITHUB_TOKEN`; requires repository Contents read access. |
+| `GITHUB_TOKEN` | Fallback token for GitHub.com theme repository imports when `GH_TOKEN` is empty or unset. |
+| `GITLAB_TOKEN` | Authenticate GitLab.com theme repository imports; use a token with `read_api` access to the selected project. |
 | `FBRCM_GOOGLE_ACCESS_TOKEN` | Supply the static Google OAuth access token required by supported stateless commands that call Firebase APIs. Tokenless `project open` and stateless `get` stdin mode do not use it. The token alone does not activate stateless mode and is never refreshed or persisted. |
 | `FBRCM_PROFILE` | Select an existing profile for this process. The root `--profile` flag takes precedence. |
 | `FBRCM_CONFIG_DIR` | Override the fbrcm config root. Takes precedence over `XDG_CONFIG_HOME` and the home-directory fallback. |
@@ -3562,8 +3565,9 @@ Flags:
 
 ### `fbrcm theme import [source]`
 
-Imports themes from a local `.toml` file, a local directory, or an HTTP/HTTPS
-URL. A file or URL uses its filename as the theme name unless `--name` supplies
+Imports themes from a local `.toml` file, a local directory, an HTTP/HTTPS raw
+file URL, or a GitHub.com/GitLab.com repository browser URL. A file or URL uses
+its filename as the theme name unless `--name` supplies
 another valid name. A directory imports its top-level regular `.toml` files as
 one batch, deriving names from filenames; `--name` is unavailable in this mode.
 Redirected TOML stdin is also accepted and requires `--name`. A positional
@@ -3582,6 +3586,7 @@ Flags:
 
 ```text
 --name <name>   install a single imported theme under this name
+--ref <ref>     disambiguate the revision prefix already present in a repository URL
 ```
 
 Examples:
@@ -3590,7 +3595,57 @@ Examples:
 fbrcm theme import ./nord.toml --name nord-dark
 fbrcm theme import ./theme-pack/
 fbrcm theme import --name nord < ./nord.toml
+fbrcm theme import https://github.com/yumauri/fbrcm/tree/main/themes
+fbrcm theme import https://github.com/yumauri/fbrcm/blob/main/themes/aurora.toml
+fbrcm theme import https://github.com/yumauri/fbrcm/tree/0253c6268cff029bc545265b83862c3fd270614b/themes
+fbrcm theme import https://gitlab.com/company/team/theme-pack/-/tree/main/themes
+fbrcm theme import https://github.com/company/theme-pack/tree/feature/colors/themes --ref feature/colors
 ```
+
+Repository browser URLs must use HTTPS on `github.com` or `gitlab.com`, with
+`blob/<ref>/<path>` for one file or `tree/<ref>/<path>` for a directory. GitLab
+URLs include `/-/` after the project; nested namespaces are supported. Refs may
+be branches, tags, or commit SHAs. Each import resolves its ref to one commit
+before listing or downloading, so all imported files use the same snapshot.
+Directories import only top-level regular `.toml` files; symlinks, submodules,
+subdirectories, and other files are skipped. A single-file URL must identify a
+regular `.toml` file. The command does not clone repositories or parse HTML.
+
+Refs containing slashes may make the revision/path boundary ambiguous. fbrcm
+checks candidate interpretations through the provider API. If several match,
+it fails with `theme.source_ambiguous` and offers explicit `--ref` commands.
+`--ref` selects the decoded revision prefix already in the URL; it cannot
+replace that revision, cannot be empty, and is unavailable for local paths,
+raw HTTP URLs, and stdin. It accepts at most 1024 characters without ASCII whitespace
+or control characters. Browser query parameters and fragments are ignored and
+omitted from the reported repository source URL. Embedded credentials, custom
+ports, and self-hosted provider browser URLs are unsupported.
+
+Public repositories need no token. Private repositories use `GH_TOKEN` (then
+`GITHUB_TOKEN`) for GitHub, or `GITLAB_TOKEN` for GitLab. GitHub fine-grained
+tokens need Contents read permission; GitLab tokens need `read_api` access.
+Tokens are never persisted and are sent only to the matching provider API.
+Generic HTTP downloads do not receive provider tokens. Provider API redirects
+are rejected; update a moved repository's browser URL instead. API response
+bodies and credential values are omitted from source errors. A provider 404
+may mean missing content or insufficient access to a private repository.
+There is no interactive provider login, including in JSON mode.
+
+Repository imports allow at most 256 selected themes, including skipped themes,
+and 16 MiB of downloaded theme data in total. Each metadata response is limited
+to 8 MiB, with a 64 MiB aggregate metadata limit, at most 1024 API requests,
+128 pages per GitLab directory, and 64 decoded revision/path segments per URL.
+Requests time out after at most 20 seconds and honor the command timeout and
+cancellation. Incomplete listings fail explicitly. Existing destinations are
+checked before their theme data is downloaded. Network theme imports, including
+raw HTTP downloads, are suppressed in offline mode.
+
+Repository JSON success results also include `repository_source` with `provider`,
+`repository`, `requested_ref`, resolved `commit`, and repository-relative `path`.
+Local, stdin, and generic HTTP results omit this field. Repository downloads
+finish before batch validation and installation; a download or validation
+failure installs no themes. Repository imports preserve the same inheritance,
+collision, warning, and write-failure rollback behavior as local imports.
 
 As an experimental human-only convenience on supported systems, stdin may also
 be a directory. It has the same batch, inheritance, and collision behavior as a

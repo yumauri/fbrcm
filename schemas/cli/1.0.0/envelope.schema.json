@@ -10,6 +10,7 @@
                 "enum": [
                   "argument.invalid",
                   "argument.unknown_command",
+                  "theme.source_ambiguous",
                   "app.ambiguous",
                   "auth.id_invalid",
                   "command.not_executable",
@@ -223,6 +224,7 @@
             "properties": {
               "code": {
                 "enum": [
+                  "theme.source_not_found",
                   "project.hidden",
                   "app.not_found",
                   "auth.not_found",
@@ -282,6 +284,7 @@
             "properties": {
               "code": {
                 "enum": [
+                  "theme.source_permission_denied",
                   "firebase.permission_denied",
                   "filesystem.permission_denied"
                 ]
@@ -348,6 +351,7 @@
             "properties": {
               "code": {
                 "enum": [
+                  "theme.source_rate_limited",
                   "firebase.rate_limited",
                   "firebase.service_unavailable",
                   "network.offline",
@@ -372,6 +376,8 @@
             "properties": {
               "code": {
                 "enum": [
+                  "theme.source_invalid_response",
+                  "theme.source_limit",
                   "condition.invalid",
                   "diagnostic.failed",
                   "expression.invalid",
@@ -404,6 +410,7 @@
             "properties": {
               "code": {
                 "enum": [
+                  "theme.source_rate_limited",
                   "command.timeout",
                   "firebase.rate_limited",
                   "firebase.service_unavailable",
@@ -636,6 +643,73 @@
                   "kind": {
                     "enum": [
                       "hook"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "theme.source_ambiguous"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "selection"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "code": {
+                "enum": [
+                  "theme.source_not_found",
+                  "theme.source_permission_denied",
+                  "theme.source_rate_limited",
+                  "theme.source_invalid_response",
+                  "theme.source_limit"
+                ]
+              }
+            },
+            "required": [
+              "code"
+            ]
+          },
+          "then": {
+            "properties": {
+              "details": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "remote_api",
+                      "validation"
                     ]
                   }
                 },

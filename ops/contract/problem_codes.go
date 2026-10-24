@@ -16,6 +16,7 @@ var knownProblemCodeValues = []string{
 	"personalization.not_found", "profile.conflict", "profile.invalid", "profile.not_found", "project.ambiguous", "project.hidden", "project.not_found", "project_alias.conflict", "project_alias.read_only", "publication.cache_failed", "publication.hook_failed",
 	"plan.exists", "plan.integrity_failed", "plan.invalid", "plan.stale", "plan.unsupported_version",
 	"theme.conflict", "theme.invalid", "theme.not_found",
+	"theme.source_ambiguous", "theme.source_not_found", "theme.source_permission_denied", "theme.source_rate_limited", "theme.source_invalid_response", "theme.source_limit",
 	"remote_config.conflict", "remote_config.invalid", "remote_config.validation_failed", "resource.conflict", "resource.not_found", "result.unsuccessful", "schema.not_found", "stdin.remote_config.invalid", "validation.failed", "version.not_found",
 }
 
@@ -183,7 +184,8 @@ func CommandProblemCodes(capability Capability) []string {
 		case "theme.delete", "theme.rename":
 			add("theme.conflict", "theme.invalid", "theme.not_found")
 		case "theme.import":
-			add("theme.conflict", "theme.invalid", "validation.failed")
+			add("theme.conflict", "theme.invalid", "validation.failed", "auth.credentials_invalid",
+				"theme.source_ambiguous", "theme.source_not_found", "theme.source_permission_denied", "theme.source_rate_limited", "theme.source_invalid_response", "theme.source_limit")
 		case "theme.switch":
 			add("theme.invalid", "theme.not_found")
 		}

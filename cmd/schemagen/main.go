@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/publication"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
+	"github.com/yumauri/fbrcm/core/themesource"
 	"github.com/yumauri/fbrcm/ops/contract"
 	"github.com/yumauri/fbrcm/ops/machine"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
@@ -710,17 +711,17 @@ func problemObjectSchema(selfRef string, codes []string) map[string]any {
 
 func problemCodeConstraints() []any {
 	byCategory := map[string][]string{
-		"argument":        {"argument.invalid", "argument.unknown_command", "app.ambiguous", "auth.id_invalid", "command.not_executable", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
+		"argument":        {"argument.invalid", "argument.unknown_command", "theme.source_ambiguous", "app.ambiguous", "auth.id_invalid", "command.not_executable", "draft.ambiguous", "parameter.ambiguous", "project.ambiguous"},
 		"configuration":   {"configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid", "hooks.not_configured", "theme.invalid"},
 		"profile":         {"profile.invalid"},
 		"auth":            {"auth.configuration_invalid", "auth.credentials_invalid", "auth.quota_project_required", "auth.setup_required"},
-		"permission":      {"firebase.permission_denied", "filesystem.permission_denied"},
-		"not_found":       {"project.hidden", "app.not_found", "auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
+		"permission":      {"theme.source_permission_denied", "firebase.permission_denied", "filesystem.permission_denied"},
+		"not_found":       {"theme.source_not_found", "project.hidden", "app.not_found", "auth.not_found", "command.not_found", "condition.not_found", "draft.not_found", "group.not_found", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.not_found", "resource.not_found", "schema.not_found", "theme.not_found", "version.not_found"},
 		"conflict":        {"draft.exists", "hooks.changed", "parameter.exists", "plan.exists", "plan.stale", "profile.conflict", "project_alias.conflict", "project_alias.read_only", "remote_config.conflict", "resource.conflict", "theme.conflict"},
-		"validation":      {"condition.invalid", "diagnostic.failed", "expression.invalid", "firebase.request_failed", "plan.integrity_failed", "plan.invalid", "plan.unsupported_version", "remote_config.invalid", "remote_config.validation_failed", "result.unsuccessful", "stdin.remote_config.invalid", "validation.failed"},
+		"validation":      {"theme.source_invalid_response", "theme.source_limit", "condition.invalid", "diagnostic.failed", "expression.invalid", "firebase.request_failed", "plan.integrity_failed", "plan.invalid", "plan.unsupported_version", "remote_config.invalid", "remote_config.validation_failed", "result.unsuccessful", "stdin.remote_config.invalid", "validation.failed"},
 		"timeout":         {"command.timeout", "firebase.timeout", "network.timeout"},
 		"interaction":     {"interaction.required"},
-		"unavailable":     {"firebase.rate_limited", "firebase.service_unavailable", "network.offline", "network.unavailable"},
+		"unavailable":     {"theme.source_rate_limited", "firebase.rate_limited", "firebase.service_unavailable", "network.offline", "network.unavailable"},
 		"partial_success": {"batch.partial_success", "publication.cache_failed", "publication.hook_failed"},
 		"io":              {"file.io_failed"},
 		"hook":            {"hook.failed"},
@@ -741,7 +742,7 @@ func problemCodeConstraints() []any {
 		})
 	}
 	result = append(result, map[string]any{
-		"if":   map[string]any{"properties": map[string]any{"code": map[string]any{"enum": []string{"command.timeout", "firebase.rate_limited", "firebase.service_unavailable", "firebase.timeout", "hooks.changed", "network.offline", "network.timeout", "network.unavailable"}}}, "required": []string{"code"}},
+		"if":   map[string]any{"properties": map[string]any{"code": map[string]any{"enum": []string{"theme.source_rate_limited", "command.timeout", "firebase.rate_limited", "firebase.service_unavailable", "firebase.timeout", "hooks.changed", "network.offline", "network.timeout", "network.unavailable"}}}, "required": []string{"code"}},
 		"then": map[string]any{"properties": map[string]any{"retryable": map[string]any{"const": true}}},
 	})
 	for _, rule := range []struct {
@@ -755,6 +756,8 @@ func problemCodeConstraints() []any {
 		{[]string{"expression.invalid"}, []string{"expression"}},
 		{[]string{"project.hidden"}, []string{"project_visibility"}},
 		{[]string{"hook.failed"}, []string{"hook"}},
+		{[]string{"theme.source_ambiguous"}, []string{"selection"}},
+		{[]string{"theme.source_not_found", "theme.source_permission_denied", "theme.source_rate_limited", "theme.source_invalid_response", "theme.source_limit"}, []string{"remote_api", "validation"}},
 		{[]string{"firebase.permission_denied", "firebase.rate_limited", "firebase.request_failed", "firebase.service_unavailable", "firebase.timeout"}, []string{"remote_api"}},
 		{[]string{"resource.not_found"}, []string{"remote_api", "selection"}},
 		{[]string{"app.ambiguous", "app.not_found", "condition.not_found", "draft.ambiguous", "draft.not_found", "group.not_found", "parameter.ambiguous", "parameter.not_found", "parameters_cache.not_found", "personalization.not_found", "profile.not_found", "project.ambiguous", "project.not_found", "theme.not_found", "version.not_found"}, []string{"selection"}},
@@ -1078,9 +1081,9 @@ func runtimeStatePredicateSemantics() []any {
 		definition("diagnostic_cache_probe", "delete_succeeded", "Doctor successfully removed the temporary cache probe file it created."),
 		definition("diagnostic_identity", "available", "Doctor resolved a locally usable configured identity with which it can attempt its Firebase diagnostic read."),
 		definition("quota_project_credentials", "requires_network", "Resolving a gcloud identity's ADC quota_project_id may need to contact the metadata service because no higher-precedence environment, project, or auth quota project is configured."),
-		definition("theme_source", "requires_network", "The theme import source uses an HTTP or HTTPS URL and therefore requires a network download."),
-		definition("theme_source", "is_directory", "The selected theme import source is a directory batch, so repeated imports preserve existing destinations and skip them with warnings."),
-		definition("theme_source", "is_single", "The selected theme import source is one file, URL, or TOML stdin document, so an existing destination makes a repeated import fail."),
+		definition("theme_source", "requires_network", "The theme import source uses an HTTP or HTTPS URL and therefore requires network access, including provider API requests for repository browser URLs."),
+		definition("theme_source", "is_directory", "The selected theme import source is a local or repository directory batch, so repeated imports preserve existing destinations and skip them with warnings."),
+		definition("theme_source", "is_single", "The selected theme import source is one local or remote file, or TOML stdin document, so an existing destination makes a repeated import fail."),
 		definition("credential_file", "write_succeeded", "The command successfully created or replaced the OAuth client-secret or service-account credential file."),
 	}
 }
@@ -1219,6 +1222,10 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		})
 	}
 	if capability.ID == "theme.import" {
+		constraints = append(constraints, map[string]any{
+			"if":   map[string]any{"properties": map[string]any{"options": map[string]any{"required": []string{"ref"}}}, "required": []string{"options"}},
+			"then": map[string]any{"properties": map[string]any{"arguments": map[string]any{"required": []string{"source"}, "properties": map[string]any{"source": map[string]any{"$ref": contract.SemanticRef("theme_repository_url")}}}}},
+		})
 		constraints = append(constraints, map[string]any{
 			"if": map[string]any{"allOf": []any{
 				map[string]any{"properties": map[string]any{"stdin": map[string]any{"not": map[string]any{"type": "null"}}}, "required": []string{"stdin"}},
@@ -1398,6 +1405,12 @@ func applyFlagSemantics(schema map[string]any, commandID, name string) {
 		delete(schema, "pattern")
 		schema["allOf"] = []any{map[string]any{"$ref": "#/$defs/physical_project_id"}}
 		addNormalization(schema, "trim_unicode_whitespace")
+	}
+	if commandID == "theme.import" && name == "ref" {
+		schema["minLength"] = 1
+		schema["maxLength"] = 1024
+		schema["pattern"] = `^[^\x00-\x20\x7f]+$`
+		schema["x-fbrcm-grammar"] = "exact decoded revision prefix already present in a GitHub.com or GitLab.com browser URL; disambiguates ref/path boundaries and does not override the URL revision"
 	}
 	if commandID == "theme.import" && name == "name" {
 		delete(schema, "pattern")
@@ -1881,8 +1894,8 @@ func argumentSchema(commandID, name string) map[string]any {
 		return result
 	}
 	if commandID == "theme.import" && name == "source" {
-		schema["x-fbrcm-grammar"] = "local .toml file path, local directory path, or absolute HTTP/HTTPS URL whose path ends in .toml"
-		addValidationRule(schema, map[string]any{"operator": "theme_import_source", "maximum_bytes": 1048576})
+		schema["x-fbrcm-grammar"] = "local .toml file path; local directory path; absolute HTTP/HTTPS raw file URL ending in .toml; or HTTPS github.com/{owner}/{repo}/{blob|tree}/{ref}/{path} or gitlab.com/{namespace}/{project}/-/{blob|tree}/{ref}/{path}. Refs may contain slashes; repository directories import top-level regular .toml files only"
+		addValidationRule(schema, map[string]any{"operator": "theme_import_source", "maximum_bytes": themesource.MaximumFileBytes, "repository_maximum_files": themesource.MaximumFiles, "repository_maximum_batch_bytes": themesource.MaximumBatchBytes})
 	}
 	if slices.Contains([]string{"experiment_id", "rollout_id"}, name) {
 		schema["pattern"] = `.*\S.*`
@@ -2176,6 +2189,11 @@ func semanticSchema() map[string]any {
 	}
 	definitions["physical_project_id"] = map[string]any{"type": "string", "pattern": `^[^=^/~@\s][^@\s]*$`, "x-fbrcm-grammar": "literal physical project ID without target-selector syntax"}
 	definitions["project_alias"] = map[string]any{"type": "string", "pattern": `^[a-z][a-z0-9_-]{0,62}$`}
+	definitions["theme_repository_url"] = map[string]any{
+		"type": "string", "format": "uri",
+		"pattern":         `^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\.[cC][oO][mM]/[^/?#]+/[^/?#]+/(?:blob|tree)/[^?#]+|[gG][iI][tT][lL][aA][bB]\.[cC][oO][mM]/(?:[^/?#]+/){2,}-/(?:blob|tree)/[^?#]+)(?:[?#].*)?$`,
+		"x-fbrcm-grammar": "provider browser URL; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments",
+	}
 	definitions["path_segment"] = map[string]any{"type": "string", "pattern": `^[^/\\\s](?:[^/\\]*[^/\\\s])?$`, "not": map[string]any{"enum": []string{".", ".."}}, "x-fbrcm-grammar": "nonempty single filesystem-safe path segment"}
 	definitions["version_selector"] = map[string]any{
 		"type": "string", "pattern": `^(?:\+?0*[1-9]\d*|current|latest|previous|(?:current|latest)~\+?0*(?:[1-9]\d?|[12]\d{2}))$`,

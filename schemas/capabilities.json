@@ -34986,7 +34986,7 @@
       "theme",
       "import"
     ],
-    "summary": "Import themes from a file, directory, or HTTP URL",
+    "summary": "Import themes from a file, directory, HTTP URL, or repository URL",
     "arguments": [
       {
         "name": "source",
@@ -35037,6 +35037,16 @@
         "usage": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE); accepted but not applied by this command"
       },
       {
+        "name": "--ref",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Disambiguate the revision prefix already present in a repository browser URL"
+      },
+      {
         "name": "--stateless",
         "aliases": [],
         "type": "bool",
@@ -35063,6 +35073,7 @@
     "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
     "problem_codes": [
       "argument.invalid",
+      "auth.credentials_invalid",
       "command.canceled",
       "command.timeout",
       "configuration.invalid",
@@ -35077,6 +35088,12 @@
       "stdin.remote_config.invalid",
       "theme.conflict",
       "theme.invalid",
+      "theme.source_ambiguous",
+      "theme.source_invalid_response",
+      "theme.source_limit",
+      "theme.source_not_found",
+      "theme.source_permission_denied",
+      "theme.source_rate_limited",
       "validation.failed"
     ],
     "side_effect_level": 2,

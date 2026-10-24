@@ -33,6 +33,9 @@
     "app.setup_no_mutation_runtime": "cli/app/contract_test.go#TestJSONSetupDoesNotMutateAnExistingProfile",
     "app.stdin": "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
+    "app.theme_repository_failure": "cli/app/theme_repository_test.go#TestRepositoryThemeImportFailuresConform",
+    "app.theme_repository_ref": "cli/app/theme_repository_test.go#TestRepositoryThemeAmbiguityAndRefSchema",
+    "app.theme_repository_runtime": "cli/app/theme_repository_test.go#TestRepositoryThemeImportRuntimeEnvelopes",
     "app.unconfigured_input_failures": "cli/app/audit_runtime_test.go#TestJSONUnconfiguredAndInvalidInputFailuresConform",
     "app.unknown_option": "cli/app/contract_test.go#TestEveryExecutableCommandFailureEnvelopeConformsToItsSchema",
     "app.versions_blame_response_invariants": "cli/app/contract_test.go#TestVersionsBlameResponseSchemaRejectsUnreachableHistoryStates",
@@ -11652,13 +11655,18 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
+            "app.theme_repository_failure",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
         "determinism": {
           "evidence": [
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json",
             "schemagen.determinism"
           ]
@@ -11667,6 +11675,8 @@
           "evidence": [
             "app.discovery",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11675,13 +11685,18 @@
             "app.capability_behavior",
             "app.effectiveness",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
+            "app.theme_repository_runtime",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11690,8 +11705,11 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
+            "app.theme_repository_failure",
             "app.unknown_option",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11699,6 +11717,8 @@
           "evidence": [
             "app.interaction",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11706,8 +11726,11 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.theme_repository_ref",
             "app.unknown_option",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11715,7 +11738,10 @@
           "evidence": [
             "app.no_op",
             "app.response_invariants",
+            "app.theme_repository_runtime",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11727,6 +11753,8 @@
             "app.stdin",
             "app.stdin_restrictions",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
@@ -11734,15 +11762,21 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
+            "app.theme_repository_runtime",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         },
         "warning": {
           "evidence": [
             "app.outcomes",
+            "app.theme_repository_runtime",
             "app.warning_runtime",
             "e2e:theme_import_directory_json",
+            "e2e:theme_import_github_directory_json",
+            "e2e:theme_import_gitlab_file_json",
             "e2e:theme_import_json"
           ]
         }

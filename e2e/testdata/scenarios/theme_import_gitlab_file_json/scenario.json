@@ -1,0 +1,49 @@
+{
+  "name": "theme_import_gitlab_file_json",
+  "command_id": "theme.import",
+  "args": [
+    "theme",
+    "import",
+    "https://gitlab.com/company/team/theme-pack/-/blob/main/themes/aurora.toml",
+    "--ref",
+    "main",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "gitlab.com",
+      "path": "/api/v4/projects/company%2Fteam%2Ftheme-pack/repository/commits/main",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "gitlab.com",
+      "path": "/api/v4/projects/company%2Fteam%2Ftheme-pack/repository/tree",
+      "query": "page=1&path=themes&per_page=100&ref=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "gitlab.com",
+      "path": "/api/v4/projects/company%2Fteam%2Ftheme-pack/repository/files/themes%2Faurora.toml/raw",
+      "query": "ref=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": 200
+    }
+  ],
+  "expected_state_files": [
+    {
+      "root": "config",
+      "path": "themes/aurora.toml"
+    }
+  ],
+  "json_output": true,
+  "log_level": "warn",
+  "envs": {
+    "GH_TOKEN": "",
+    "GITHUB_TOKEN": "",
+    "GITLAB_TOKEN": ""
+  },
+  "http_replay_only": true
+}

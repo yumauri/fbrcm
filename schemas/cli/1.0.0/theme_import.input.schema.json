@@ -525,6 +525,34 @@
   "allOf": [
     {
       "if": {
+        "properties": {
+          "options": {
+            "required": [
+              "ref"
+            ]
+          }
+        },
+        "required": [
+          "options"
+        ]
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "properties": {
+              "source": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/theme_repository_url"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
         "allOf": [
           {
             "properties": {
@@ -573,11 +601,13 @@
           "minLength": 1,
           "pattern": ".*\\S.*",
           "type": "string",
-          "x-fbrcm-grammar": "local .toml file path, local directory path, or absolute HTTP/HTTPS URL whose path ends in .toml",
+          "x-fbrcm-grammar": "local .toml file path; local directory path; absolute HTTP/HTTPS raw file URL ending in .toml; or HTTPS github.com/{owner}/{repo}/{blob|tree}/{ref}/{path} or gitlab.com/{namespace}/{project}/-/{blob|tree}/{ref}/{path}. Refs may contain slashes; repository directories import top-level regular .toml files only",
           "x-fbrcm-validation": [
             {
               "maximum_bytes": 1048576,
-              "operator": "theme_import_source"
+              "operator": "theme_import_source",
+              "repository_maximum_batch_bytes": 16777216,
+              "repository_maximum_files": 256
             }
           ]
         }
@@ -614,6 +644,14 @@
           "pattern": ".*\\S.*",
           "type": "string",
           "x-fbrcm-effective": false
+        },
+        "ref": {
+          "description": "Disambiguate the revision prefix already present in a repository browser URL",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^[^\\x00-\\x20\\x7f]+$",
+          "type": "string",
+          "x-fbrcm-grammar": "exact decoded revision prefix already present in a GitHub.com or GitLab.com browser URL; disambiguates ref/path boundaries and does not override the URL revision"
         },
         "stateless": {
           "const": false,

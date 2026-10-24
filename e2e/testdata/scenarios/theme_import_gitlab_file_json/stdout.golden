@@ -1,0 +1,33 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+  "contract_version": "1.0.0",
+  "command": "theme.import",
+  "requested_command": "theme.import",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "repository_source": {
+      "provider": "gitlab",
+      "repository": "company/team/theme-pack",
+      "requested_ref": "main",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "path": "themes/aurora.toml"
+    },
+    "theme": "aurora",
+    "status": "imported",
+    "path": "<E2E_RUN_ROOT>/environment/config/themes/aurora.toml",
+    "source": "https://gitlab.com/company/team/theme-pack/-/blob/main/themes/aurora.toml"
+  },
+  "errors": [],
+  "warnings": []
+}

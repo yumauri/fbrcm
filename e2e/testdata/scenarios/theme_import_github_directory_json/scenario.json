@@ -1,0 +1,65 @@
+{
+  "name": "theme_import_github_directory_json",
+  "command_id": "theme.import",
+  "args": [
+    "theme",
+    "import",
+    "https://github.com/acme/theme-pack/tree/main/themes",
+    "--ref",
+    "main",
+    "--json"
+  ],
+  "expected_exit_code": 0,
+  "expected_http": [
+    {
+      "method": "GET",
+      "host": "api.github.com",
+      "path": "/repos/acme/theme-pack/commits/main",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "api.github.com",
+      "path": "/repos/acme/theme-pack/git/trees/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "api.github.com",
+      "path": "/repos/acme/theme-pack/git/trees/cccccccccccccccccccccccccccccccccccccccc",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "api.github.com",
+      "path": "/repos/acme/theme-pack/contents/themes/child.toml",
+      "query": "ref=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "api.github.com",
+      "path": "/repos/acme/theme-pack/contents/themes/parent.toml",
+      "query": "ref=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": 200
+    }
+  ],
+  "expected_state_files": [
+    {
+      "root": "config",
+      "path": "themes/child.toml"
+    },
+    {
+      "root": "config",
+      "path": "themes/parent.toml"
+    }
+  ],
+  "json_output": true,
+  "log_level": "warn",
+  "envs": {
+    "GH_TOKEN": "",
+    "GITHUB_TOKEN": "",
+    "GITLAB_TOKEN": ""
+  },
+  "http_replay_only": true
+}

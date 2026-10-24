@@ -1,0 +1,45 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+  "contract_version": "1.0.0",
+  "command": "theme.import",
+  "requested_command": "theme.import",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": false,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "repository_source": {
+      "provider": "github",
+      "repository": "acme/theme-pack",
+      "requested_ref": "main",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "path": "themes"
+    },
+    "source": "https://github.com/acme/theme-pack/tree/main/themes",
+    "count": 2,
+    "imported_count": 2,
+    "skipped_count": 0,
+    "items": [
+      {
+        "theme": "child",
+        "status": "imported",
+        "path": "<E2E_RUN_ROOT>/environment/config/themes/child.toml"
+      },
+      {
+        "theme": "parent",
+        "status": "imported",
+        "path": "<E2E_RUN_ROOT>/environment/config/themes/parent.toml"
+      }
+    ]
+  },
+  "errors": [],
+  "warnings": []
+}

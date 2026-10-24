@@ -1776,6 +1776,12 @@
         }
       ]
     },
+    "theme_repository_url": {
+      "format": "uri",
+      "pattern": "^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\\.[cC][oO][mM]/[^/?#]+/[^/?#]+/(?:blob|tree)/[^?#]+|[gG][iI][tT][lL][aA][bB]\\.[cC][oO][mM]/(?:[^/?#]+/){2,}-/(?:blob|tree)/[^?#]+)(?:[?#].*)?$",
+      "type": "string",
+      "x-fbrcm-grammar": "provider browser URL; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments"
+    },
     "validation_rule": {
       "oneOf": [
         {
@@ -2016,11 +2022,19 @@
             },
             "operator": {
               "const": "theme_import_source"
+            },
+            "repository_maximum_batch_bytes": {
+              "const": 16777216
+            },
+            "repository_maximum_files": {
+              "const": 256
             }
           },
           "required": [
             "operator",
-            "maximum_bytes"
+            "maximum_bytes",
+            "repository_maximum_files",
+            "repository_maximum_batch_bytes"
           ],
           "type": "object"
         },
