@@ -148,6 +148,7 @@ export default defineConfig({
       {
         text: 'Reference',
         items: [
+          { text: 'Compatibility guarantees', link: '/reference/compatibility' },
           { text: 'Filtering', link: '/reference/filtering' },
           { text: 'Configuration', link: '/reference/configuration' },
           { text: 'Themes', link: '/reference/themes' },

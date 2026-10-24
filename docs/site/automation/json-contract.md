@@ -1,5 +1,9 @@
 # JSON contract
 
+Contract `1.0.0` is the released baseline for fbrcm 1.0.0. See the
+[compatibility guarantees](/reference/compatibility) for schema versioning,
+upgrade rules, and the exclusion of human layouts from automation interfaces.
+
 With `--json`, each one-shot CLI invocation writes one JSON document and one
 trailing newline to stdout. This includes argument and startup failures. Parse
 stdout only. Explicitly enabled logs and trusted hooks may write to stderr.
@@ -19,7 +23,7 @@ Every response contains the same top-level fields:
   "requested_command": "projects.list",
   "outcome": "success",
   "exit_code": 0,
-  "producer": { "name": "fbrcm", "version": "0.20.0" },
+  "producer": { "name": "fbrcm", "version": "1.0.0" },
   "context": {
     "profile": "default",
     "offline": false,

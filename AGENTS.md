@@ -33,10 +33,12 @@
 - Do not add command-local JSON formats, `map[string]any` machine payloads, human tables or usage text on JSON stdout, or prompts, editors, file pickers, and browser launches in JSON mode. Raw content must use the contract artifact DTO.
 - For every new command or machine-contract change, update `docs/CLI.md` and `docs/cli-contract.md`, run `go run ./cmd/schemagen`, review the generated schemas and `cli/app/testdata/contract_v1_capabilities.golden.json`, and add success, failure, interaction, exit-code, and schema/golden coverage appropriate to the command.
 
-## Pre-1.0 contract evolution
+## Released compatibility boundary
 
-- Until fbrcm version 1.0.0, breaking changes to persisted configuration and versioned machine contracts are allowed. Keep their format and contract version numbers at `1`, and do not add backward-compatibility migrations solely for a pre-1.0 breaking change unless the user explicitly requests them.
-- Version 1.0.0 freezes those versioned contracts. Treat compatibility, migrations, and version bumps as required design concerns for changes made after that release.
+- fbrcm 1.0.0 freezes the supported interfaces in `docs/compatibility.md`. Preserve documented CLI behavior, versioned JSON contracts, public MCP tool contracts, and durable persisted data across compatible releases. The pre-1.0 in-place breaking-change exception has ended.
+- Keep existing integer file-format versions at `1` unless their encoding changes incompatibly. Such changes require the appropriate version and migration; versionless durable formats also need an explicit migration boundary. Do not discard drafts or retained version snapshots as disposable caches.
+- Never clear `released: true` or replace a released fingerprint in `schemas/cli/contract.lock.json` to bypass generation. Apply the appropriate contract/application version bump, regenerate, review, test, and lock the new version before release.
+- Human table layouts, default TUI bindings, and exported Go packages are not stable integration interfaces. Custom key-configuration syntax and stored action identifiers remain covered as durable configuration.
 
 ## User-visible wording
 

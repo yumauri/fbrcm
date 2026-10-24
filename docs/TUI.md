@@ -1,5 +1,10 @@
 # fbrcm TUI
 
+Default keybindings, panel layouts, and mouse flows may change in patch or
+minor releases. They are not stable automation interfaces. Existing valid
+custom key configurations and their action identifiers remain covered by the
+[persisted-data compatibility guarantee](compatibility.md#persisted-format-boundary).
+
 Run `fbrcm` without arguments to open the interactive interface:
 
 ```sh

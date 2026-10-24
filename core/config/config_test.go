@@ -305,7 +305,7 @@ func TestValidateProfileNameAndAuthID(t *testing.T) {
 
 func TestLoadAuthMissingCorruptAndRoundTrip(t *testing.T) {
 	if AuthConfigVersion != 1 {
-		t.Fatalf("AuthConfigVersion = %d, want 1 before v1.0.0", AuthConfigVersion)
+		t.Fatalf("AuthConfigVersion = %d, want the released 1.0.0 baseline version 1", AuthConfigVersion)
 	}
 	setupTestDirs(t)
 	if err := SwitchProfile(DefaultProfileName); err != nil {
@@ -381,7 +381,7 @@ func TestGoogleAuthEntryPersistsOnlyItsTokenPath(t *testing.T) {
 
 func TestLoadProjectsMissingEmptyCorruptAndRoundTrip(t *testing.T) {
 	if ProjectsConfigVersion != 1 {
-		t.Fatalf("ProjectsConfigVersion = %d, want 1 before v1.0.0", ProjectsConfigVersion)
+		t.Fatalf("ProjectsConfigVersion = %d, want the released 1.0.0 baseline version 1", ProjectsConfigVersion)
 	}
 	setupTestDirs(t)
 	if err := SwitchProfile(DefaultProfileName); err != nil {

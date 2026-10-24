@@ -3,6 +3,11 @@
 fbrcm combines built-in defaults, global user configuration, and an optional
 repository configuration file.
 
+Valid 1.0.0 configuration and durable data remain readable during 1.x upgrades,
+directly or through a documented migration. Existing integer format versions
+remain `1`. See [compatibility guarantees](/reference/compatibility) for the
+distinction between durable data and rebuildable caches.
+
 ## Configuration layers
 
 Global settings live in `config.toml` under the operating system's user config

@@ -484,8 +484,9 @@ the change MUST:
 8. satisfy all section-7 acceptance criteria.
 
 A released contract follows the compatibility and versioning rules in
-`docs/cli-contract.md`. The current unreleased v1 contract may be corrected in
-place, but it MUST still pass this audit standard before release.
+`docs/cli-contract.md`. An unreleased contract may be corrected in place, but it
+MUST still pass this audit standard before release. Contract `1.0.0` is now
+release-locked; this does not change the criteria or historical audit results.
 
 ## 10. Canonical audit report header
 

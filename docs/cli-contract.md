@@ -4,6 +4,11 @@ This document defines the stable machine interface used by agents, CI, and
 scripts. Contract version `1.0.0` applies whenever the global `--json` flag is
 present. Without `--json`, commands use human-readable output.
 
+Contract `1.0.0` is the released, locked baseline for fbrcm 1.0.0. The
+[compatibility policy](compatibility.md) defines CLI, JSON, MCP, and persisted
+data guarantees, their version boundaries, and the human UI and Go-library
+interfaces that are excluded.
+
 For a concise integration workflow and safe usage examples, start with the
 [agent quickstart](agent-quickstart.md).
 
@@ -1294,18 +1299,21 @@ focused scenarios cover success, empty/no-op data, invalid input and
 expressions, interaction, validation sources, timeout/cancellation, mixed
 batches with typed target failures, help/version response modes,
 post-publication failures, warning remediation, and bounded secret redaction
-in envelope and result messages. A changed command ID,
-removed or renamed field, changed field type, changed meaning, or changed exit
-status requires a new major contract version. Additive optional fields and new
-commands require a minor version. Documentation-only corrections may use a
-patch version.
+in envelope and result messages. The
+[contract-version rules](compatibility.md#cli-and-json-evolution) require a
+major version for incompatible inputs, outputs, meanings, closed-enum changes,
+or exit statuses; a minor version for compatible additions; and a patch version
+for fingerprinted clarifications that preserve validation and semantics.
+Published schema IDs are immutable. Consumers use the installed binary's
+advertised schema/version; there is no output-version negotiation flag.
 
 `schemas/cli/contract.lock.json` fingerprints the current generated schemas,
 capability goldens, and audit-evidence golden and records whether that contract
-has been released.
-While `released` is `false`, the unreleased v1 contract may be corrected without
-inventing a version bump. Once it is set to `true`, the generator rejects a
-different fingerprint at the same version. Generation happens in a staging
+has been released. Contract `1.0.0` has `released: true`; the pre-1.0 in-place
+correction policy has ended. The generator rejects a different fingerprint at
+the same released version and preserves the release marker on unchanged
+regeneration. A future version is reviewed before its own release marker is
+enabled; never clear a released marker to bypass the gate. Generation happens in a staging
 directory and validates the lock before replacing checked-in files, so a lock
 rejection leaves the working tree untouched. Previous version directories are
 not removed by generation.
@@ -1346,8 +1354,9 @@ The two list commands return `data.items` and `data.count`. Every item includes 
 are canonical template target IDs. App cache provenance (`source` and optional
 `cached_at`) is per item, replacing the former list-level provenance and project
 fields. Empty selections return an empty items array and zero count. Read failures
-fail the command without returning partial successful data. Version numbers stay
-unchanged under the pre-1.0 contract policy.
+fail the command without returning partial successful data. These shapes are
+part of the released `1.0.0` baseline; subsequent changes follow the
+compatibility policy.
 
 
 ### Remote Config freshness flags

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/yumauri/fbrcm/ops/contract"
 )
 
 func TestErrorSchemaGenerationIsDeterministic(t *testing.T) {
@@ -34,16 +36,48 @@ func TestContractLockAllowsUnreleasedSurfaceToChangeAtSameVersion(t *testing.T) 
 
 func TestReleasedContractLockRequiresVersionBump(t *testing.T) {
 	if err := validateContractLock(
+		contractLock{Version: "1.0.0", SHA256: "same", Released: true},
+		contractLock{Version: "1.0.0", SHA256: "same"},
+	); err != nil {
+		t.Fatalf("unchanged released surface was rejected: %v", err)
+	}
+	if err := validateContractLock(
 		contractLock{Version: "1.0.0", SHA256: "old", Released: true},
 		contractLock{Version: "1.0.0", SHA256: "new"},
 	); err == nil {
 		t.Fatal("changed released surface was accepted at the same contract version")
 	}
 	if err := validateContractLock(
-		contractLock{Version: "1.0.0", SHA256: "old"},
+		contractLock{Version: "1.0.0", SHA256: "old", Released: true},
 		contractLock{Version: "1.1.0", SHA256: "new"},
 	); err != nil {
 		t.Fatalf("versioned generated surface was rejected: %v", err)
+	}
+}
+
+func TestGenerationPreservesReleasedContractLock(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	stage := filepath.Join(root, "stage")
+	schemaDir := filepath.Join(stage, "schemas", "cli", contract.Version)
+	write(schemaDir, "example.schema.json", map[string]string{"type": "object"})
+	digest, err := generatedContractDigest(stage, schemaDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := contractLock{Version: contract.Version, SHA256: digest, Released: true}
+	write(filepath.Join("schemas", "cli"), "contract.lock.json", previous)
+	enforceContractLock(stage, schemaDir)
+	raw, err := os.ReadFile(filepath.Join(stage, "schemas", "cli", "contract.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var generated contractLock
+	if err := json.Unmarshal(raw, &generated); err != nil {
+		t.Fatal(err)
+	}
+	if generated != previous {
+		t.Fatalf("released lock changed during generation: got %+v, want %+v", generated, previous)
 	}
 }
 

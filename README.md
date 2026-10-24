@@ -4,6 +4,11 @@
 TUI to explore and edit projects, or use the CLI for scripts, repeatable
 operations, and machine-readable output.
 
+Starting with 1.0.0, documented CLI behavior, JSON contracts, MCP tools, and
+durable persisted data have [compatibility guarantees](docs/compatibility.md).
+Human table layouts, default TUI bindings, and exported Go packages are outside
+that stability promise.
+
 > [!TIP]
 > Using `fbrcm` from an LLM agent, script, or CI runner? Start with the
 > [agent quickstart](https://github.com/yumauri/fbrcm/blob/main/docs/agent-quickstart.md).

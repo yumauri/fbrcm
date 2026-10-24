@@ -1,5 +1,10 @@
 # MCP server
 
+From 1.0.0, public MCP tool names, contracts, results, launch options, and
+authorization policy are covered by the
+[compatibility guarantees](/reference/compatibility). Discovery remains
+conditional on launch configuration and negotiated host capabilities.
+
 Use the built-in MCP server to work with Firebase Remote Config from an
 MCP-compatible AI application. The application launches `fbrcm mcp` and calls
 its tools over stdio. You do not need to start a separate server before chatting.

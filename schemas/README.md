@@ -4,7 +4,8 @@
 response schemas for every executable CLI command plus the shared envelope,
 problem, capability, semantic-definition, Remote Config stdin, combined
 credential stdin, OAuth credential stdin, and service-account credential stdin
-schemas.
+schemas, plus theme stdin and publication plan schemas. Contract `1.0.0` is the
+released baseline; see the [compatibility policy](../docs/compatibility.md).
 
 Each command response schema includes the exact registered success-data DTO.
 It references the published envelope schema, which contains the problem
@@ -34,8 +35,10 @@ or an edit to the original invocation. The envelope schema constrains success,
 partial success, and failure to their valid combinations of exit status, data,
 and errors, including the required mapping from the first problem category to
 the process status. Problem `details` objects are discriminated by `kind`, and
-the code property publishes the current catalog under
-`x-fbrcm-known-values` while remaining forward-compatible with new codes.
+the code property publishes a closed enum of known top-level problems. Each
+command narrows it to its reachable codes. Only explicitly marked nested batch
+target problems are open extension points; other closed enums cannot silently
+gain values under the compatibility promise.
 
 Artifact schemas enforce the relationship between encoding, inline content,
 destination, and overwrite state. Remote Config stdin schemas enforce the
@@ -51,14 +54,20 @@ go run ./cmd/schemagen
 ```
 
 Generation writes the schema files, `schemas/capabilities.json`, and
-`cli/app/testdata/contract_v1_capabilities.golden.json`; review all three.
+the compact and detailed capability goldens, audit-evidence golden, and lock;
+review all generated changes.
 The embedded capability catalog describes shared operations and is checked
 against live CLI discovery by regression tests.
 
 `schemas/cli/contract.lock.json` records the generated contract's fingerprint.
-A contract marked as released requires a version bump before its fingerprint
-can change; an unreleased contract can be regenerated in place. Do not edit
-generated schema files or the lock by hand.
+Contract `1.0.0` is marked `released: true`. Generation preserves that marker
+and rejects fingerprint changes at the same released version before replacing
+any assets. Follow the compatibility policy for the appropriate version bump.
+For a new version, regenerate and review it before setting its release marker
+to `true`. Do not hand-edit generated schemas or a fingerprint, and never clear
+a released marker to evade the lock. The release workflow rejects an
+unreleased lock. This fingerprint covers CLI artifacts; MCP adaptation and
+persisted formats also require compatibility review and regression evidence.
 
 ## MCP schema adaptation
 

@@ -5,6 +5,12 @@ Config. The application launches fbrcm as a subprocess and communicates over
 stdio JSON-RPC. The server exposes tools; it has no HTTP MCP endpoint,
 resources, prompts, or background-task API.
 
+From 1.0.0, public tool names, operation mappings, discovered contracts, launch
+options, and authorization behavior are covered by the
+[compatibility policy](compatibility.md#mcp-boundary). Discovery remains
+conditional on launch policy, and MCP protocol negotiation is independent of
+the shared CLI JSON contract version.
+
 For launch flags and defaults, see the [command reference](CLI.md#mcp-server).
 For package boundaries and implementation details, see
 [architecture](architecture.md#mcp).

@@ -6,6 +6,10 @@ Running it without arguments opens the [TUI](TUI.md); `fbrcm mcp` starts the
 [agent quickstart](agent-quickstart.md); the global `--json` flag enables the
 versioned [machine contract](cli-contract.md).
 
+From 1.0.0, the documented command syntax and behavior are stable under the
+[compatibility policy](compatibility.md). Human table layouts, terminal
+styling, and message wording may change; automate with JSON or MCP.
+
 ## Command tree
 
 ```text

@@ -43,6 +43,18 @@ jobs:
       - name: Generate machine contract
         run: go run ./cmd/schemagen
 
+      - name: Require released machine contract
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          lock = json.loads(Path("schemas/cli/contract.lock.json").read_text())
+          if lock.get("released") is not True:
+              sys.exit("Machine contract is unreleased; review and enable its release lock before publishing.")
+          PY
+
       - name: Verify generated files are current
         run: git diff --exit-code
 

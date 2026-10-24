@@ -6,6 +6,7 @@ fbrcm is not a thin wrapper around Firebase's Remote Config API. It adds cross-p
 
 ## Start here for automation
 
+- [Compatibility guarantees](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/compatibility.md): the 1.0.0 CLI, JSON, MCP, persisted-data boundary and explicit UI/Go API exclusions
 - [MCP server](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/MCP.md): connect an AI application, discover tools, configure permissions, and recover authentication
 - [Agent quickstart](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/agent-quickstart.md): discover commands, validate output, and preview changes before publication
 - [CLI machine contract](https://raw.githubusercontent.com/yumauri/fbrcm/main/docs/cli-contract.md): full JSON envelope schema, error categories, exit statuses, retry semantics
