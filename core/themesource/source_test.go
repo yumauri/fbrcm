@@ -118,6 +118,9 @@ func (f *fixture) serve(req *http.Request) (*http.Response, error) {
 	if _, ref, ok := strings.Cut(apiPath, marker); ok {
 		commit, ok := f.refs[ref]
 		if !ok {
+			if f.provider == "github" {
+				return response(http.StatusUnprocessableEntity, `{"message":"No commit found for SHA: `+ref+`","status":"422"}`), nil
+			}
 			return response(404, "not found"), nil
 		}
 		if f.provider == "github" {
@@ -559,5 +562,74 @@ func TestGitHubRepositorySegmentsAreEscaped(t *testing.T) {
 	client := NewClient(nil, source)
 	if client.base() != "https://api.github.com/repos/acme/pack%23test" {
 		t.Fatalf("base=%s", client.base())
+	}
+}
+
+func TestGitHubFolderURLIgnoresRejectedAlternativeRef(t *testing.T) {
+	fixture := newFixture(t, "github")
+	source, err := Parse("https://github.com/yumauri/fbrcm/tree/main/themes", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository, err := NewClient(fixture.client(), source).Resolve(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repository.Provenance.RequestedRef != "main" || repository.Provenance.Path != "themes" {
+		t.Fatalf("provenance = %#v", repository.Provenance)
+	}
+	probedAlternative := false
+	for _, req := range fixture.requests {
+		if strings.HasSuffix(req.URL.Path, "/commits/main/themes") {
+			probedAlternative = true
+		}
+	}
+	if !probedAlternative {
+		t.Fatal("did not check the alternative main/themes ref")
+	}
+	files, err := repository.Files(context.Background())
+	if err != nil || len(files) != 1 {
+		t.Fatalf("files = %v, %v", files, err)
+	}
+	if _, err := repository.Read(context.Background(), files[0]); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGitHubUnknownRefKeeps422Status(t *testing.T) {
+	fixture := newFixture(t, "github")
+	fixture.refs = map[string]string{}
+	source := fixture.parse(t, "tree", "main", "themes", "main")
+	_, err := NewClient(fixture.client(), source).Resolve(context.Background())
+	problem := requireKind(t, err, "not_found")
+	if problem.HTTPStatus != http.StatusUnprocessableEntity || problem.Operation != "resolve_ref" {
+		t.Fatalf("problem = %#v", problem)
+	}
+}
+
+func TestGitHub422OutsideRefLookupRemainsFailure(t *testing.T) {
+	for _, stage := range []string{"listing", "download"} {
+		t.Run(stage, func(t *testing.T) {
+			fixture := newFixture(t, "github")
+			fixture.override = func(req *http.Request) *http.Response {
+				if stage == "listing" && strings.Contains(req.URL.Path, "/git/trees/") || stage == "download" && strings.Contains(req.URL.Path, "/contents/") {
+					return response(http.StatusUnprocessableEntity, "secret-value")
+				}
+				return nil
+			}
+			source := fixture.parse(t, "tree", "main", "themes", "")
+			repository, err := NewClient(fixture.client(), source).Resolve(context.Background())
+			if err == nil {
+				var files []File
+				files, err = repository.Files(context.Background())
+				if err == nil {
+					_, err = repository.Read(context.Background(), files[0])
+				}
+			}
+			problem := requireKind(t, err, "request_failed")
+			if problem.HTTPStatus != http.StatusUnprocessableEntity || strings.Contains(err.Error(), "secret-value") {
+				t.Fatalf("problem = %#v", problem)
+			}
+		})
 	}
 }

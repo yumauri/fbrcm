@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"regexp"
@@ -105,6 +106,16 @@ func (c *Client) resolveCommit(ctx context.Context, ref, selectedPath string) (*
 			} `json:"commit"`
 		}
 		if _, err := c.json(ctx, c.base()+"/commits/"+url.PathEscape(ref), &result); err != nil {
+			// GitHub returns 422 when this endpoint cannot resolve a ref,
+			// including alternative ref/path splits during URL discovery.
+			// Keep this interpretation local to commit lookup: a 422 while
+			// listing or downloading content must still abort the import.
+			if remote, ok := errors.AsType[*Error](err); ok && remote.Kind == "request_failed" && remote.HTTPStatus == http.StatusUnprocessableEntity {
+				missing := *remote
+				missing.Kind, missing.Operation = "not_found", "resolve_ref"
+				missing.Err = fmt.Errorf("github: repository revision was not found or is inaccessible (HTTP 422)")
+				return nil, &missing
+			}
 			return nil, err
 		}
 		repo.Provenance.Commit, repo.rootTree = result.SHA, result.Commit.Tree.SHA

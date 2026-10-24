@@ -3612,8 +3612,11 @@ subdirectories, and other files are skipped. A single-file URL must identify a
 regular `.toml` file. The command does not clone repositories or parse HTML.
 
 Refs containing slashes may make the revision/path boundary ambiguous. fbrcm
-checks candidate interpretations through the provider API. If several match,
-it fails with `theme.source_ambiguous` and offers explicit `--ref` commands.
+checks candidate interpretations through the provider API. A GitHub 422 during
+commit lookup means that candidate ref could not be resolved; discovery continues
+and preserves any valid interpretation. A 422 during listing or downloading
+remains an error. If several interpretations match, the command fails with
+`theme.source_ambiguous` and offers explicit `--ref` commands.
 `--ref` selects the decoded revision prefix already in the URL; it cannot
 replace that revision, cannot be empty, and is unavailable for local paths,
 raw HTTP URLs, and stdin. It accepts at most 1024 characters without ASCII whitespace

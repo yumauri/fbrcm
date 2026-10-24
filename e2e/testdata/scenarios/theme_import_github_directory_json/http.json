@@ -116,6 +116,50 @@
           "path": [
             {
               "matcher": "exact",
+              "value": "/repos/acme/theme-pack/commits/main%2Fthemes"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ]
+        },
+        "response": {
+          "body": "{\"message\": \"No commit found for SHA: main/themes\", \"documentation_url\": \"https://docs.github.com/rest/commits/commits#get-a-commit\", \"status\": \"422\"}",
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ]
+          },
+          "status": 422,
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "body": [
+            {
+              "matcher": "exact",
+              "value": ""
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.github.com"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "path": [
+            {
+              "matcher": "exact",
               "value": "/repos/acme/theme-pack/git/trees/cccccccccccccccccccccccccccccccccccccccc"
             }
           ],

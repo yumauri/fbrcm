@@ -64,6 +64,9 @@ func (f *repositoryHTTPFixture) install(t *testing.T) {
 		}
 		if strings.Contains(req.URL.Path, "/commits/") {
 			if !strings.HasSuffix(req.URL.Path, "/commits/main") && (!f.ambiguous || !strings.HasSuffix(req.URL.Path, "/commits/main/themes")) {
+				if provider == "github" {
+					return respond(http.StatusUnprocessableEntity, `{"message":"No commit found for SHA"}`), nil
+				}
 				return respond(404, ""), nil
 			}
 			if provider == "gitlab" {
@@ -218,7 +221,8 @@ func TestRepositoryThemeImportFailuresConform(t *testing.T) {
 		exit   int
 	}{
 		{"invalid credentials", 401, "auth.credentials_invalid", 4}, {"rate limit", 429, "theme.source_rate_limited", 11},
-		{"not found or inaccessible", 404, "theme.source_not_found", 6}, {"server failure", 503, "network.unavailable", 11},
+		{"not found or inaccessible", 404, "theme.source_not_found", 6},
+		{"unknown GitHub ref", 422, "theme.source_not_found", 6}, {"server failure", 503, "network.unavailable", 11},
 		{"redirect", 302, "theme.source_invalid_response", 8},
 	} {
 		t.Run(test.name, func(t *testing.T) {

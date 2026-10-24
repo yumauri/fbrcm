@@ -5,8 +5,6 @@
     "theme",
     "import",
     "https://github.com/acme/theme-pack/tree/main/themes",
-    "--ref",
-    "main",
     "--json"
   ],
   "expected_exit_code": 0,
@@ -22,6 +20,12 @@
       "host": "api.github.com",
       "path": "/repos/acme/theme-pack/git/trees/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "status": 200
+    },
+    {
+      "method": "GET",
+      "host": "api.github.com",
+      "path": "/repos/acme/theme-pack/commits/main%2Fthemes",
+      "status": 422
     },
     {
       "method": "GET",

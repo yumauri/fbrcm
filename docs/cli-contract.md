@@ -369,7 +369,13 @@ terminal presentation and are not represented in JSON DTOs or schemas.
   (validation). Authentication and transport failures use existing auth/network
   codes. HTTP details preserve service, operation, status, and retry delay,
   excluding response bodies. A 404 preserves the missing-or-inaccessible
-  distinction. Ambiguity includes candidate refs and safe remediation argv.
+  distinction. GitHub 422 responses from commit lookup are typed as unresolved
+  refs (`theme.source_not_found`, exit 6) and skipped during candidate discovery;
+  if no interpretation matches, the error preserves HTTP status 422 and
+  `operation: "resolve_ref"`. A valid interpretation is retained when another
+  candidate cannot resolve. A 422 from listing or downloading still fails with
+  `theme.source_invalid_response` (exit 8). Ambiguity includes candidate refs and
+  safe remediation argv.
   JSON never opens provider authentication, a browser, or an external CLI.
 - `config edit --json` always returns `interaction.required`. For `google` and
   imported `oauth`, `auth login --json` first tries a valid cached access token
