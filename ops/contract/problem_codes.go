@@ -111,12 +111,11 @@ func CommandProblemCodes(capability Capability) []string {
 			add("draft.exists")
 		}
 	}
-	if capability.Supports.Stdin && !slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID) {
-		if capability.ID == "get" {
-			add("remote_config.invalid")
-		} else {
-			add("stdin.remote_config.invalid")
-		}
+	switch capability.ID {
+	case "get":
+		add("remote_config.invalid")
+	case "add", "update", "delete", "project.import":
+		add("stdin.remote_config.invalid")
 	}
 	if capabilityHasFlag(capability, "--expr") {
 		add("expression.invalid")

@@ -3816,8 +3816,7 @@
           "internal.unclassified",
           "profile.invalid",
           "profile.not_found",
-          "resource.conflict",
-          "stdin.remote_config.invalid"
+          "resource.conflict"
         ],
         "side_effect_level": 1,
         "side_effects": [
@@ -4067,8 +4066,7 @@
           "internal.unclassified",
           "profile.invalid",
           "profile.not_found",
-          "resource.conflict",
-          "stdin.remote_config.invalid"
+          "resource.conflict"
         ],
         "side_effect_level": 1,
         "side_effects": [
@@ -35480,7 +35478,6 @@
           "network.offline",
           "network.timeout",
           "network.unavailable",
-          "stdin.remote_config.invalid",
           "theme.conflict",
           "theme.invalid",
           "theme.source_ambiguous",

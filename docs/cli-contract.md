@@ -33,6 +33,11 @@ schema without terminal styling.
 Each `completion.<shell> --json` operation likewise places the generated shell
 script in `data.text` under its own response schema and bypasses profile and
 Firebase initialization.
+Cobra's hidden `__complete` shell protocol (alias `__completeNoDesc`) is a
+human-only transport, not a machine operation. Combining it with `--json`
+returns `command.not_executable` at status `2` under the published root response
+schema, with canonical `requested_command: "__complete"`. The rejection never
+runs completion, initializes a profile, or publishes an internal schema ID.
 Invoking a non-executable command group without a subcommand is also help and
 uses the `help` response schema. An invalid subcommand below a group is an
 argument failure under the published root response schema; it never advertises
@@ -361,6 +366,14 @@ terminal presentation and are not represented in JSON DTOs or schemas.
   limits. Repository results add optional typed `repository_source` provenance
   (`provider`, `repository`, `requested_ref`, `commit`, `path`); other source
   modes omit it. `source` excludes browser query parameters and fragments.
+  The invocation-level `theme_import_source` semantic rule publishes its source,
+  name, and ref field paths, decoded-prefix matching, name restrictions, and
+  filesystem/provider/TOML validation boundaries. Standard schema constraints
+  also reject `--name` on repository directory URLs, including percent-encoded
+  browser markers. The generator rejects rule operators without published
+  semantics. Invalid TOML uses `theme.invalid`, and invalid credential stdin
+  uses `auth.credentials_invalid`; those commands do not advertise
+  `stdin.remote_config.invalid`.
   Provider tokens come only from `GH_TOKEN`/`GITHUB_TOKEN` or `GITLAB_TOKEN` and
   never appear in output. Provider errors are typed at their origin and expose
   `theme.source_ambiguous` (argument), `theme.source_not_found` (not_found),

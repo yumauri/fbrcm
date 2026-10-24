@@ -1,12 +1,17 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
@@ -16,6 +21,68 @@ import (
 	"github.com/yumauri/fbrcm/ops/contract"
 	"github.com/yumauri/fbrcm/ops/shared"
 )
+
+func TestJSONShellCompletionTransportUsesPublishedRootFailure(t *testing.T) {
+	for _, name := range []string{cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd} {
+		for _, test := range []struct {
+			args []string
+			code string
+		}{
+			{[]string{name, "get", "", "--json"}, "command.not_executable"},
+			{[]string{"--json", name, "get", ""}, "command.not_executable"},
+			{[]string{name, "--json"}, "command.not_executable"},
+			{[]string{"--json", name}, "command.not_executable"},
+		} {
+			t.Run(strings.Join(test.args, "/"), func(t *testing.T) {
+				state := useTemporaryContractState(t)
+				root := NewRootForContract("test")
+				envelope, raw := executeJSONContractRoot(t, root, test.args...)
+				if envelope.Command != "root" || envelope.RequestedCommand != cobra.ShellCompRequestCmd || envelope.ExitCode != 2 || envelope.Errors[0].Code != test.code || envelope.Data != nil {
+					t.Fatalf("shell transport failure = %s", raw)
+				}
+				validateContractDocument(t, envelope.Schema, raw)
+				stderr := root.ErrOrStderr().(*bytes.Buffer)
+				if stderr.Len() != 0 {
+					t.Fatalf("shell completion ran: %s", stderr.Bytes())
+				}
+				entries, err := os.ReadDir(state)
+				if err != nil || len(entries) != 0 {
+					t.Fatalf("completion persisted state: %v, %v", entries, err)
+				}
+			})
+		}
+	}
+}
+
+func TestJSONStdinProblemsMatchInputDomain(t *testing.T) {
+	for _, test := range []struct {
+		path []string
+		code string
+		exit int
+	}{
+		{[]string{"auth", "add", "oauth", "audit"}, "auth.credentials_invalid", 4},
+		{[]string{"auth", "add", "service-account", "audit"}, "auth.credentials_invalid", 4},
+		{[]string{"theme", "import", "--name", "audit"}, "theme.invalid", 3},
+	} {
+		t.Run(strings.Join(test.path, "."), func(t *testing.T) {
+			useTemporaryContractState(t)
+			root := NewRootForContract("test")
+			root.SetIn(shared.DocumentInput(strings.NewReader("invalid")))
+			envelope, raw := executeJSONContractRoot(t, root, append(test.path, "--json")...)
+			if envelope.ExitCode != test.exit || len(envelope.Errors) != 1 || envelope.Errors[0].Code != test.code {
+				t.Fatalf("stdin failure = %s", raw)
+			}
+			validateContractDocument(t, envelope.Schema, raw)
+			capability, err := contract.FindCapability(root, strings.Split(envelope.Command, "."))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if slices.Contains(capability.ProblemCodes, "stdin.remote_config.invalid") {
+				t.Fatal("non-Remote Config input advertises stdin.remote_config.invalid")
+			}
+		})
+	}
+}
 
 func TestJSONUnconfiguredAndInvalidInputFailuresConform(t *testing.T) {
 	tests := []struct {

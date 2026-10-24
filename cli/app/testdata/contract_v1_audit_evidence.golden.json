@@ -31,7 +31,9 @@
     "app.selection": "cli/app/contract_test.go#TestInvocationSchemasPublishCommandLocalSelectionSemantics",
     "app.setup_json_runtime": "cli/app/contract_test.go#TestJSONSetupReturnsGuidedInteraction",
     "app.setup_no_mutation_runtime": "cli/app/contract_test.go#TestJSONSetupDoesNotMutateAnExistingProfile",
+    "app.shell_transport_failure": "cli/app/audit_runtime_test.go#TestJSONShellCompletionTransportUsesPublishedRootFailure",
     "app.stdin": "cli/app/contract_test.go#TestPublishedStdinSchemaDescribesRemoteConfig",
+    "app.stdin_domain_problems": "cli/app/audit_runtime_test.go#TestJSONStdinProblemsMatchInputDomain",
     "app.stdin_restrictions": "cli/app/contract_test.go#TestStdinMutationSchemasRejectIgnoredRemoteOptions",
     "app.theme_repository_failure": "cli/app/theme_repository_test.go#TestRepositoryThemeImportFailuresConform",
     "app.theme_repository_ref": "cli/app/theme_repository_test.go#TestRepositoryThemeAmbiguityAndRefSchema",
@@ -859,6 +861,7 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
+            "app.stdin_domain_problems",
             "app.unknown_option",
             "e2e:auth_add_oauth_json"
           ]
@@ -890,6 +893,7 @@
         "stdin": {
           "evidence": [
             "app.stdin",
+            "app.stdin_domain_problems",
             "app.stdin_restrictions",
             "e2e:auth_add_oauth_json"
           ]
@@ -952,6 +956,7 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
+            "app.stdin_domain_problems",
             "app.unknown_option",
             "e2e:auth_add_service_account_json"
           ]
@@ -983,6 +988,7 @@
         "stdin": {
           "evidence": [
             "app.stdin",
+            "app.stdin_domain_problems",
             "app.stdin_restrictions",
             "e2e:auth_add_service_account_json"
           ]
@@ -11182,6 +11188,7 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
+            "app.shell_transport_failure",
             "app.unknown_option",
             "e2e:root_version",
             "e2e:root_version_json"
@@ -11194,6 +11201,7 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
+            "app.shell_transport_failure",
             "app.unknown_option",
             "e2e:root_version",
             "e2e:root_version_json"
@@ -11705,6 +11713,7 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
+            "app.stdin_domain_problems",
             "app.theme_repository_failure",
             "app.unknown_option",
             "e2e:theme_import_directory_json",
@@ -11751,6 +11760,7 @@
         "stdin": {
           "evidence": [
             "app.stdin",
+            "app.stdin_domain_problems",
             "app.stdin_restrictions",
             "e2e:theme_import_directory_json",
             "e2e:theme_import_github_directory_json",

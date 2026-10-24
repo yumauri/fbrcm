@@ -3582,6 +3582,13 @@ existing themes without overwriting them and emits one warning per skipped
 theme. JSON mode returns a batch result with imported and skipped counts, item
 statuses, and structured `theme.already_exists` warnings.
 
+The JSON input schema rejects `--name` for repository directory URLs. Its
+`theme_import_source` semantic rule describes decoded URL/ref matching,
+filename-derived names, directory restrictions, and runtime validation limits.
+Invalid theme TOML returns `theme.invalid`; invalid OAuth and service-account
+stdin returns `auth.credentials_invalid` for the respective auth commands.
+These inputs do not use the Remote Config stdin problem code.
+
 Flags:
 
 ```text
@@ -3659,6 +3666,11 @@ See [Theming](theming.md) for the file format, inheritance rules, and fallback
 behavior.
 
 ### `fbrcm completion`
+
+The hidden shell protocol commands `__complete` and `__completeNoDesc` are
+human-only. With `--json`, they return a root-contract
+`command.not_executable` failure (exit `2`). Use `capabilities` for JSON
+discovery and the shell subcommands below to generate completion scripts.
 
 Generates shell completion scripts.
 

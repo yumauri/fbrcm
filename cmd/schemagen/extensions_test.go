@@ -2,6 +2,28 @@ package main
 
 import "testing"
 
+func TestEveryExtensionRuleOperatorPublishesSemantics(t *testing.T) {
+	// A structurally valid AST is insufficient when agents cannot discover
+	// what its operator means. Generation must reject that incomplete language.
+	for section, operator := range map[string]string{
+		"validation": "compile_expression", "normalization": "lowercase",
+		"matching": "mode_prefixed_query", "input_selection": "first_available",
+	} {
+		t.Run(section, func(t *testing.T) {
+			semantic := semanticSchema()
+			if _, err := newExtensionValidators(semantic); err != nil {
+				t.Fatal(err)
+			}
+			language := semantic["x-fbrcm-extension-language"].(map[string]any)
+			operators := language[section].(map[string]any)["operators"].(map[string]any)
+			delete(operators, operator)
+			if _, err := newExtensionValidators(semantic); err == nil {
+				t.Fatal("accepted an operator with no published semantics")
+			}
+		})
+	}
+}
+
 func TestExtensionValidatorsAcceptPublishedRuleShapes(t *testing.T) {
 	validators, err := newExtensionValidators(semanticSchema())
 	if err != nil {

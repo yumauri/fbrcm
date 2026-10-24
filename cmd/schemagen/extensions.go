@@ -26,6 +26,9 @@ func newExtensionValidators(semantic map[string]any) (extensionValidators, error
 	if err := json.Unmarshal(raw, &normalized); err != nil {
 		return extensionValidators{}, fmt.Errorf("normalize semantic schema: %w", err)
 	}
+	if err := validateExtensionOperatorMetadata(normalized.(map[string]any)); err != nil {
+		return extensionValidators{}, err
+	}
 	compiler := jsonschema.NewCompiler()
 	if err := compiler.AddResource(contract.SemanticSchemaID(), normalized); err != nil {
 		return extensionValidators{}, fmt.Errorf("register semantic schema: %w", err)
@@ -58,6 +61,59 @@ func newExtensionValidators(semantic map[string]any) (extensionValidators, error
 		return extensionValidators{}, err
 	}
 	return extensionValidators{validation: validation, normalization: normalization, matching: matching, invariants: invariants, inputSelection: inputSelection}, nil
+}
+
+// The rule AST and its discoverable meaning form one language. A new AST
+// alternative must not silently introduce an operator agents cannot interpret.
+func validateExtensionOperatorMetadata(semantic map[string]any) error {
+	definitions, _ := semantic["$defs"].(map[string]any)
+	language, _ := semantic["x-fbrcm-extension-language"].(map[string]any)
+	for _, section := range []string{"validation", "normalization", "matching", "input_selection"} {
+		metadata, _ := language[section].(map[string]any)
+		operators, _ := metadata["operators"].(map[string]any)
+		var inspect func(any) error
+		inspect = func(value any) error {
+			switch node := value.(type) {
+			case map[string]any:
+				properties, _ := node["properties"].(map[string]any)
+				selector, _ := properties["operator"].(map[string]any)
+				names := []string{}
+				if name, ok := selector["const"].(string); ok {
+					names = append(names, name)
+				}
+				if alternatives, ok := selector["enum"].([]any); ok {
+					for _, alternative := range alternatives {
+						if name, ok := alternative.(string); ok {
+							names = append(names, name)
+						}
+					}
+				}
+				for _, name := range names {
+					definition, _ := operators[name].(map[string]any)
+					meaning, _ := definition["semantics"].(string)
+					if meaning == "" {
+						return fmt.Errorf("%s operator %q has no published semantics", section, name)
+					}
+				}
+				for _, child := range node {
+					if err := inspect(child); err != nil {
+						return err
+					}
+				}
+			case []any:
+				for _, child := range node {
+					if err := inspect(child); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		}
+		if err := inspect(definitions[section+"_rule"]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (v extensionValidators) Validate(document any) error {
@@ -122,7 +178,11 @@ func extensionSchemaDefinitions() map[string]any {
 		object([]string{"operator", "parser", "normalization", "require_absolute"}, map[string]any{"operator": map[string]any{"const": "parse_uri"}, "parser": map[string]any{"const": "net/url.ParseRequestURI"}, "normalization": map[string]any{"const": "trim_unicode_whitespace"}, "require_absolute": map[string]any{"const": true}}),
 		object([]string{"operator", "allow_empty"}, map[string]any{"operator": map[string]any{"const": "reject_raw_whitespace_only"}, "allow_empty": map[string]any{"const": true}}),
 		object([]string{"operator", "specification"}, map[string]any{"operator": map[string]any{"const": "parse_time"}, "specification": map[string]any{"const": "Go time.RFC3339"}}),
-		object([]string{"operator", "maximum_bytes", "repository_maximum_files", "repository_maximum_batch_bytes"}, map[string]any{"operator": map[string]any{"const": "theme_import_source"}, "maximum_bytes": map[string]any{"const": 1048576}, "repository_maximum_files": map[string]any{"const": 256}, "repository_maximum_batch_bytes": map[string]any{"const": 16777216}}),
+		object([]string{"operator", "source", "name_option", "ref_option", "maximum_bytes", "repository_maximum_files", "repository_maximum_batch_bytes"}, map[string]any{
+			"operator": map[string]any{"const": "theme_import_source"},
+			"source":   map[string]any{"const": "arguments.source"}, "name_option": map[string]any{"const": "options.name"}, "ref_option": map[string]any{"const": "options.ref"},
+			"maximum_bytes": map[string]any{"const": 1048576}, "repository_maximum_files": map[string]any{"const": 256}, "repository_maximum_batch_bytes": map[string]any{"const": 16777216},
+		}),
 		object([]string{"operator", "absolute_parser", "relative_parser", "maximum_relative_distance"}, map[string]any{
 			"operator":                  map[string]any{"const": "parse_version_selector"},
 			"absolute_parser":           map[string]any{"const": "strconv.ParseInt base 10 bitSize 64; require result > 0"},

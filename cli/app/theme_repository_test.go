@@ -284,10 +284,25 @@ func TestRepositoryThemeAmbiguityAndRefSchema(t *testing.T) {
 		valid       bool
 	}{
 		{source, "main", true}, {"HTTPS://GITHUB.COM/acme/pack/tree/main/themes", "main", true}, {repositoryBrowserURL("gitlab", "tree", ""), "feature/colors", true},
+		{"https://github.com/acme/pack/tr%65e/main/themes", "main", true},
+		{"https://gitlab.com/company/pack/%2D/tr%65e/main/themes", "main", true},
 		{"./themes", "main", false}, {"https://example.com/theme.toml", "main", false},
 		{source, "", false}, {source, "bad ref", false}, {source, strings.Repeat("a", 1025), false},
 	} {
 		validateContractValue(t, schemaID, map[string]any{"arguments": map[string]any{"source": test.source}, "options": map[string]any{"ref": test.ref}, "stdin": nil}, test.valid)
+	}
+	for _, provider := range []string{"github", "gitlab"} {
+		for _, kind := range []string{"tree", "tr%65e", "blob"} {
+			directory := kind != "blob"
+			filename := ""
+			if !directory {
+				filename = "aurora.toml"
+			}
+			value := map[string]any{"arguments": map[string]any{"source": repositoryBrowserURL(provider, kind, filename)}, "options": map[string]any{"name": "renamed"}, "stdin": nil}
+			validateContractValue(t, schemaID, value, !directory)
+			delete(value["options"].(map[string]any), "name")
+			validateContractValue(t, schemaID, value, true)
+		}
 	}
 }
 
@@ -299,6 +314,9 @@ func TestRepositoryThemeInputAndOfflineFailures(t *testing.T) {
 		code    string
 	}{
 		{"name on directory", []string{repositoryBrowserURL("github", "tree", ""), "--name", "renamed"}, false, "argument.invalid"},
+		{"name on encoded directory", []string{repositoryBrowserURL("github", "tr%65e", ""), "--name", "renamed"}, false, "argument.invalid"},
+		{"encoded directory offline", []string{repositoryBrowserURL("github", "tr%65e", ""), "--ref", "main"}, true, "network.offline"},
+		{"encoded GitLab marker offline", []string{"https://gitlab.com/company/pack/%2D/tr%65e/main/themes", "--ref", "main"}, true, "network.offline"},
 		{"ref mismatch", []string{repositoryBrowserURL("github", "tree", ""), "--ref", "other"}, false, "argument.invalid"},
 		{"empty ref", []string{repositoryBrowserURL("github", "tree", ""), "--ref", ""}, false, "argument.invalid"},
 		{"ref with stdin", []string{"--ref", "main"}, false, "argument.invalid"},

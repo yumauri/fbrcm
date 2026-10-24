@@ -526,6 +526,36 @@
     {
       "if": {
         "properties": {
+          "arguments": {
+            "properties": {
+              "source": {
+                "$ref": "urn:fbrcm:schema:cli:1.0.0:semantic#/$defs/theme_repository_directory_url"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        },
+        "required": [
+          "arguments"
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "not": {
+              "required": [
+                "name"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
           "options": {
             "required": [
               "ref"
@@ -601,15 +631,7 @@
           "minLength": 1,
           "pattern": ".*\\S.*",
           "type": "string",
-          "x-fbrcm-grammar": "local .toml file path; local directory path; absolute HTTP/HTTPS raw file URL ending in .toml; or HTTPS github.com/{owner}/{repo}/{blob|tree}/{ref}/{path} or gitlab.com/{namespace}/{project}/-/{blob|tree}/{ref}/{path}. Refs may contain slashes; repository directories import top-level regular .toml files only",
-          "x-fbrcm-validation": [
-            {
-              "maximum_bytes": 1048576,
-              "operator": "theme_import_source",
-              "repository_maximum_batch_bytes": 16777216,
-              "repository_maximum_files": 256
-            }
-          ]
+          "x-fbrcm-grammar": "local .toml file path; local directory path; absolute HTTP/HTTPS raw file URL ending in .toml; or HTTPS github.com/{owner}/{repo}/{blob|tree}/{ref}/{path} or gitlab.com/{namespace}/{project}/-/{blob|tree}/{ref}/{path}. Refs may contain slashes; repository directories import top-level regular .toml files only"
         }
       },
       "required": [],
@@ -705,6 +727,17 @@
         "arguments.source",
         "stdin.document"
       ]
+    }
+  ],
+  "x-fbrcm-validation": [
+    {
+      "maximum_bytes": 1048576,
+      "name_option": "options.name",
+      "operator": "theme_import_source",
+      "ref_option": "options.ref",
+      "repository_maximum_batch_bytes": 16777216,
+      "repository_maximum_files": 256,
+      "source": "arguments.source"
     }
   ]
 }

@@ -112,8 +112,14 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 			if class == "failure" {
 				evidence = append(evidence, "app.plan_quota_app_problems")
 			}
+			if capability.ID == "root" && (class == "failure" || class == "invocation") {
+				evidence = append(evidence, "app.shell_transport_failure")
+			}
 			if slices.Contains([]string{"apply", "plan.show", "plan.validate"}, capability.ID) && (class == "failure" || class == "stdin") {
 				evidence = append(evidence, "app.invalid_plan_inputs")
+			}
+			if slices.Contains([]string{"auth.add.oauth", "auth.add.service-account", "theme.import"}, capability.ID) && (class == "failure" || class == "stdin") {
+				evidence = append(evidence, "app.stdin_domain_problems")
 			}
 			if capability.Supports.Plan {
 				switch class {
@@ -174,6 +180,8 @@ func generatedAuditEvidenceCatalog() map[string]string {
 		"visibility.selection_runtime":           "cli/app/project_visibility_test.go#TestProjectVisibilitySelectionAndPersistenceConform",
 		"visibility.invocation_schema":           "cli/app/project_visibility_test.go#TestProjectVisibilityInvocationSchemas",
 		"app.invalid_plan_inputs":                "cli/app/audit_runtime_test.go#TestJSONInvalidPublicationPlanInputsConform",
+		"app.stdin_domain_problems":              "cli/app/audit_runtime_test.go#TestJSONStdinProblemsMatchInputDomain",
+		"app.shell_transport_failure":            "cli/app/audit_runtime_test.go#TestJSONShellCompletionTransportUsesPublishedRootFailure",
 		"app.plan_quota_app_problems":            "cli/app/audit_runtime_test.go#TestTypedPlanQuotaAndAppProblemsConform",
 		"app.unconfigured_input_failures":        "cli/app/audit_runtime_test.go#TestJSONUnconfiguredAndInvalidInputFailuresConform",
 		"app.mcp_json_boundary":                  "cli/app/mcp_test.go#TestMCPJSONContractDescribesOnlyEarlyTransportRejection",

@@ -106,6 +106,10 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			// argument to its hidden completion command. That token is commonly
 			// empty, and completion must not initialize application state.
 			if cmd.Name() == cobra.ShellCompRequestCmd {
+				if shared.MachineMode(cmd) || contract.JSONRequested(args) {
+					cmd.SetContext(machine.WithProfileless(shared.CommandContext(cmd)))
+					return &shared.ArgumentError{Code: "command.not_executable", Err: fmt.Errorf("shell completion requests use shell framing and are unavailable with --json; use capabilities for machine discovery")}
+				}
 				return nil
 			}
 			if err := shared.ValidateNonBlankInputs(cmd, args); err != nil {

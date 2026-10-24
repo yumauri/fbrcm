@@ -220,7 +220,7 @@ func BuildEnvelope(cmd operation.Call, version string, captured []byte, err erro
 		Errors:           problems,
 		Warnings:         collectedWarnings(cmd),
 	}
-	if hasResponseModel(cmd) || IsCommandGroup(cmd) {
+	if hasResponseModel(cmd) || IsCommandGroup(cmd) || IsShellCompletionTransport(cmd) {
 		if validationErr := validatePublishedEnvelope(envelope); validationErr != nil {
 			return contractViolationEnvelope(envelope, validationErr)
 		}
@@ -337,6 +337,12 @@ func contractViolationEnvelope(envelope Envelope, err error) Envelope {
 }
 
 func envelopeCommandID(cmd operation.Call) string {
+	// Cobra creates this endpoint only while executing a completion request,
+	// after the public operation tree and schemas have been registered. JSON
+	// rejection (including arity failures before PreRun) uses the root contract.
+	if IsShellCompletionTransport(cmd) {
+		return "root"
+	}
 	if cmd != nil {
 		if help := cmd.Flags().Lookup("help"); help != nil && help.Changed && help.Value.String() == "true" {
 			return "help"

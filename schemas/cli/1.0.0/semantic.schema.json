@@ -1776,11 +1776,17 @@
         }
       ]
     },
+    "theme_repository_directory_url": {
+      "format": "uri",
+      "pattern": "^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\\.[cC][oO][mM]/+[^/?#]+/[^/?#]+/(?:t|%74)(?:r|%72)(?:e|%65)(?:e|%65)/[^?#]+|[gG][iI][tT][lL][aA][bB]\\.[cC][oO][mM]/+(?:[^/?#]+/){2,}(?:-|%2[dD])/(?:t|%74)(?:r|%72)(?:e|%65)(?:e|%65)/[^?#]+)(?:[?#].*)?$",
+      "type": "string",
+      "x-fbrcm-grammar": "provider browser URL; percent-decode each path segment once; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments"
+    },
     "theme_repository_url": {
       "format": "uri",
-      "pattern": "^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\\.[cC][oO][mM]/[^/?#]+/[^/?#]+/(?:blob|tree)/[^?#]+|[gG][iI][tT][lL][aA][bB]\\.[cC][oO][mM]/(?:[^/?#]+/){2,}-/(?:blob|tree)/[^?#]+)(?:[?#].*)?$",
+      "pattern": "^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\\.[cC][oO][mM]/+[^/?#]+/[^/?#]+/(?:(?:b|%62)(?:l|%6[cC])(?:o|%6[fF])(?:b|%62)|(?:t|%74)(?:r|%72)(?:e|%65)(?:e|%65))/[^?#]+|[gG][iI][tT][lL][aA][bB]\\.[cC][oO][mM]/+(?:[^/?#]+/){2,}(?:-|%2[dD])/(?:(?:b|%62)(?:l|%6[cC])(?:o|%6[fF])(?:b|%62)|(?:t|%74)(?:r|%72)(?:e|%65)(?:e|%65))/[^?#]+)(?:[?#].*)?$",
       "type": "string",
-      "x-fbrcm-grammar": "provider browser URL; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments"
+      "x-fbrcm-grammar": "provider browser URL; percent-decode each path segment once; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments"
     },
     "validation_rule": {
       "oneOf": [
@@ -2020,18 +2026,30 @@
             "maximum_bytes": {
               "const": 1048576
             },
+            "name_option": {
+              "const": "options.name"
+            },
             "operator": {
               "const": "theme_import_source"
+            },
+            "ref_option": {
+              "const": "options.ref"
             },
             "repository_maximum_batch_bytes": {
               "const": 16777216
             },
             "repository_maximum_files": {
               "const": 256
+            },
+            "source": {
+              "const": "arguments.source"
             }
           },
           "required": [
             "operator",
+            "source",
+            "name_option",
+            "ref_option",
             "maximum_bytes",
             "repository_maximum_files",
             "repository_maximum_batch_bytes"
@@ -2920,6 +2938,18 @@
           ],
           "result": "accept_or_reject",
           "semantics": "Require the named remote service to accept the instance under the declared grammar."
+        },
+        "theme_import_source": {
+          "operands": [
+            "source",
+            "name_option",
+            "ref_option",
+            "maximum_bytes",
+            "repository_maximum_files",
+            "repository_maximum_batch_bytes"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Read the declared paths from the complete normalized invocation without trimming them. Select the positional source before TOML stdin. Parse HTTP URLs with net/url.Parse; repository browser sources require HTTPS on github.com or gitlab.com without credentials or a custom port. Decode path segments once, reject empty, dot, dot-dot, backslash or control-character segments and encoded slashes in repository namespaces, and allow at most 64 revision/path segments. A supplied ref must be a decoded revision prefix already present in that browser URL, never an override; otherwise return argument.invalid. A supplied name is forbidden for local or repository directories. Raw and repository single-file sources must end with case-sensitive .toml; infer the theme name from the basename unless name is supplied. Validate inferred and supplied names as filesystem-safe theme names other than built-in. Filesystem type/existence, decoded paths, ref/path ambiguity and lookup, TOML/inheritance validation, file byte limits and repository batch budgets are runtime boundaries: return typed argument, file, theme, or theme.source problems. Resolve all viable ref/path boundaries through the provider API, return theme.source_ambiguous with candidates when multiple survive, and pin the selected revision to one commit. Import only top-level regular .toml files, skip existing directory destinations with theme.already_exists, and reject single-file destination conflicts with theme.conflict. Enforce the declared byte/file budgets before installing the batch."
         },
         "unique_by": {
           "operands": [

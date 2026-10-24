@@ -1187,6 +1187,10 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		}}
 	}
 	if capability.ID == "theme.import" {
+		addValidationRule(result, map[string]any{
+			"operator": "theme_import_source", "source": "arguments.source", "name_option": "options.name", "ref_option": "options.ref",
+			"maximum_bytes": themesource.MaximumFileBytes, "repository_maximum_files": themesource.MaximumFiles, "repository_maximum_batch_bytes": themesource.MaximumBatchBytes,
+		})
 		result["x-fbrcm-input-selection"] = []any{map[string]any{
 			"operator": "first_available", "sources": []any{"arguments.source", "stdin.document"},
 			"on_missing": "interaction.required", "later_sources": "ignored_without_consumption",
@@ -1222,6 +1226,12 @@ func inputSchema(capability contract.Capability, command *cobra.Command) map[str
 		})
 	}
 	if capability.ID == "theme.import" {
+		constraints = append(constraints, map[string]any{
+			"if": map[string]any{"properties": map[string]any{"arguments": map[string]any{
+				"required": []string{"source"}, "properties": map[string]any{"source": map[string]any{"$ref": contract.SemanticRef("theme_repository_directory_url")}},
+			}}, "required": []string{"arguments"}},
+			"then": map[string]any{"properties": map[string]any{"options": map[string]any{"not": map[string]any{"required": []string{"name"}}}}},
+		})
 		constraints = append(constraints, map[string]any{
 			"if":   map[string]any{"properties": map[string]any{"options": map[string]any{"required": []string{"ref"}}}, "required": []string{"options"}},
 			"then": map[string]any{"properties": map[string]any{"arguments": map[string]any{"required": []string{"source"}, "properties": map[string]any{"source": map[string]any{"$ref": contract.SemanticRef("theme_repository_url")}}}}},
@@ -1895,7 +1905,6 @@ func argumentSchema(commandID, name string) map[string]any {
 	}
 	if commandID == "theme.import" && name == "source" {
 		schema["x-fbrcm-grammar"] = "local .toml file path; local directory path; absolute HTTP/HTTPS raw file URL ending in .toml; or HTTPS github.com/{owner}/{repo}/{blob|tree}/{ref}/{path} or gitlab.com/{namespace}/{project}/-/{blob|tree}/{ref}/{path}. Refs may contain slashes; repository directories import top-level regular .toml files only"
-		addValidationRule(schema, map[string]any{"operator": "theme_import_source", "maximum_bytes": themesource.MaximumFileBytes, "repository_maximum_files": themesource.MaximumFiles, "repository_maximum_batch_bytes": themesource.MaximumBatchBytes})
 	}
 	if slices.Contains([]string{"experiment_id", "rollout_id"}, name) {
 		schema["pattern"] = `.*\S.*`
@@ -2136,6 +2145,31 @@ func expressionContext(commandID string) string {
 	}
 }
 
+func themeRepositoryURLSchema(directoryOnly bool) map[string]any {
+	// Parse decodes each path segment before interpreting the browser marker.
+	// Accept equivalent percent-encoded markers as well as their literal form.
+	segment := func(value string) string {
+		var pattern strings.Builder
+		for _, ch := range value {
+			escape := fmt.Sprintf("%%%02x", ch)
+			for _, hex := range "abcdef" {
+				escape = strings.ReplaceAll(escape, string(hex), "["+string(hex)+strings.ToUpper(string(hex))+"]")
+			}
+			pattern.WriteString("(?:" + regexp.QuoteMeta(string(ch)) + "|" + escape + ")")
+		}
+		return pattern.String()
+	}
+	marker := segment("tree")
+	if !directoryOnly {
+		marker = "(?:" + segment("blob") + "|" + marker + ")"
+	}
+	return map[string]any{
+		"type": "string", "format": "uri",
+		"pattern":         `^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\.[cC][oO][mM]/+[^/?#]+/[^/?#]+/` + marker + `/[^?#]+|[gG][iI][tT][lL][aA][bB]\.[cC][oO][mM]/+(?:[^/?#]+/){2,}` + segment("-") + `/` + marker + `/[^?#]+)(?:[?#].*)?$`,
+		"x-fbrcm-grammar": "provider browser URL; percent-decode each path segment once; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments",
+	}
+}
+
 func semanticSchema() map[string]any {
 	definitions := map[string]any{
 		"remote_mutation_status": map[string]any{"type": "string", "enum": []string{"unchanged", "preparation-failed", "published", "validation-failed", "conflict", "publish-failed", "published-cache-failed", "published-hook-failed", "drafted", "would-draft", "would-publish", "draft-failed"}},
@@ -2189,11 +2223,8 @@ func semanticSchema() map[string]any {
 	}
 	definitions["physical_project_id"] = map[string]any{"type": "string", "pattern": `^[^=^/~@\s][^@\s]*$`, "x-fbrcm-grammar": "literal physical project ID without target-selector syntax"}
 	definitions["project_alias"] = map[string]any{"type": "string", "pattern": `^[a-z][a-z0-9_-]{0,62}$`}
-	definitions["theme_repository_url"] = map[string]any{
-		"type": "string", "format": "uri",
-		"pattern":         `^[hH][tT][tT][pP][sS]://(?:[gG][iI][tT][hH][uU][bB]\.[cC][oO][mM]/[^/?#]+/[^/?#]+/(?:blob|tree)/[^?#]+|[gG][iI][tT][lL][aA][bB]\.[cC][oO][mM]/(?:[^/?#]+/){2,}-/(?:blob|tree)/[^?#]+)(?:[?#].*)?$`,
-		"x-fbrcm-grammar": "provider browser URL; revision/path boundaries are resolved by API and optionally disambiguated by --ref; maximum 64 revision/path segments",
-	}
+	definitions["theme_repository_url"] = themeRepositoryURLSchema(false)
+	definitions["theme_repository_directory_url"] = themeRepositoryURLSchema(true)
 	definitions["path_segment"] = map[string]any{"type": "string", "pattern": `^[^/\\\s](?:[^/\\]*[^/\\\s])?$`, "not": map[string]any{"enum": []string{".", ".."}}, "x-fbrcm-grammar": "nonempty single filesystem-safe path segment"}
 	definitions["version_selector"] = map[string]any{
 		"type": "string", "pattern": `^(?:\+?0*[1-9]\d*|current|latest|previous|(?:current|latest)~\+?0*(?:[1-9]\d?|[12]\d{2}))$`,
@@ -2264,6 +2295,7 @@ func extensionLanguageMetadata() map[string]any {
 				"parse_positive_integer":     operation([]string{"parser", "minimum"}, "accept_or_reject", "Parse the entire decimal string with the named runtime parser and require a result at least minimum; parser overflow is rejection."),
 				"condition_priority":         operation([]string{"operation", "project_argument", "project_option?", "default_project_scope?", "maximum", "zero_behavior?"}, "accept_or_reject", "After resolving every selected project template and loading its effective Remote Config, enforce the declared condition-count-dependent upper bound per target. Add accepts zero as append and otherwise accepts 1 through count plus one; move accepts 1 through count. Out-of-range values return condition.invalid for that target."),
 				"parse_time":                 operation([]string{"specification"}, "accept_or_reject", "Parse the complete timestamp using the named runtime layout and parser semantics."),
+				"theme_import_source":        operation([]string{"source", "name_option", "ref_option", "maximum_bytes", "repository_maximum_files", "repository_maximum_batch_bytes"}, "accept_or_reject", "Read the declared paths from the complete normalized invocation without trimming them. Select the positional source before TOML stdin. Parse HTTP URLs with net/url.Parse; repository browser sources require HTTPS on github.com or gitlab.com without credentials or a custom port. Decode path segments once, reject empty, dot, dot-dot, backslash or control-character segments and encoded slashes in repository namespaces, and allow at most 64 revision/path segments. A supplied ref must be a decoded revision prefix already present in that browser URL, never an override; otherwise return argument.invalid. A supplied name is forbidden for local or repository directories. Raw and repository single-file sources must end with case-sensitive .toml; infer the theme name from the basename unless name is supplied. Validate inferred and supplied names as filesystem-safe theme names other than built-in. Filesystem type/existence, decoded paths, ref/path ambiguity and lookup, TOML/inheritance validation, file byte limits and repository batch budgets are runtime boundaries: return typed argument, file, theme, or theme.source problems. Resolve all viable ref/path boundaries through the provider API, return theme.source_ambiguous with candidates when multiple survive, and pin the selected revision to one commit. Import only top-level regular .toml files, skip existing directory destinations with theme.already_exists, and reject single-file destination conflicts with theme.conflict. Enforce the declared byte/file budgets before installing the batch."),
 				"parse_uri":                  operation([]string{"parser", "normalization", "require_absolute"}, "accept_or_reject", "Normalize the string as declared, parse it with the named parser, and require an absolute URI with a nonempty scheme when require_absolute is true."),
 				"parse_version_selector":     operation([]string{"absolute_parser", "relative_parser", "maximum_relative_distance"}, "accept_or_reject", "Apply the named runtime integer parsers to absolute and relative numeric components, require positive results, and reject a relative distance above the declared maximum."),
 				"reject_raw_whitespace_only": operation([]string{"allow_empty"}, "accept_or_reject", "Inspect the original argv string before normalization; accept an exact empty string when allow_empty is true, but reject every nonempty string made only of Unicode whitespace."),

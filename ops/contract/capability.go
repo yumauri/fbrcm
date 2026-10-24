@@ -303,6 +303,12 @@ func IsCommandGroup(call invocation.Call) bool {
 	return ok && cmd != nil && cmd.Annotations[commandGroupAnnotation] == "true"
 }
 
+// IsShellCompletionTransport recognizes Cobra's dynamically installed shell
+// protocol endpoint. It is not an executable CLI JSON operation.
+func IsShellCompletionTransport(call invocation.Call) bool {
+	return CommandID(call) == cobra.ShellCompRequestCmd
+}
+
 func describe(cmd *cobra.Command) Capability {
 	id := CommandID(cmd)
 	path := []string{}

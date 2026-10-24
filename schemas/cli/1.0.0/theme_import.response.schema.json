@@ -348,7 +348,6 @@
                       "network.offline",
                       "network.timeout",
                       "network.unavailable",
-                      "stdin.remote_config.invalid",
                       "theme.conflict",
                       "theme.invalid",
                       "theme.source_ambiguous",
