@@ -46,8 +46,8 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 			currentCount++
 		}
 	}
-	if currentCount != index.Count*2+12 {
-		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+12)
+	if currentCount != index.Count*2+11 {
+		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+11)
 	}
 	seen := make(map[string]bool, index.Count)
 	for _, capability := range detailed {
@@ -519,7 +519,7 @@ func TestCapabilitiesDescribeMachineModeSafetyAndInteraction(t *testing.T) {
 	if projectImport.NetworkAccess != "required" || !slices.Contains(projectImport.SideEffects, "firebase_remote_read") || !slices.Contains(projectImport.SideEffects, "local_draft_write") {
 		t.Fatalf("project.import capability = %#v", projectImport)
 	}
-	if projectImport.StdinSchema == nil || *projectImport.StdinSchema != "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config_import" {
+	if projectImport.StdinSchema == nil || *projectImport.StdinSchema != "urn:fbrcm:schema:cli:"+contract.Version+":stdin:remote_config_import" {
 		t.Fatalf("project.import stdin schema = %#v", projectImport.StdinSchema)
 	}
 	if len(projectImport.InteractionWhen) != 5 || projectImport.InteractionWhen[0].AllOf[1].Name != "confirmation" || projectImport.InteractionWhen[1].AllOf[2].Name != "import_strategy" || projectImport.InteractionWhen[2].AllOf[0].Name != "import_merge_resolution" || !capabilityConditionsHavePredicate(projectImport.InteractionWhen, "runtime_state", "authentication", "requires_human_authorization") {

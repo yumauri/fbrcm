@@ -237,10 +237,10 @@
         "usage": "Print diff and add without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:add:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:remote_config",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -1082,10 +1082,10 @@
         "usage": "Apply the publication plan without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apply:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:publication_plan",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apply:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -1777,10 +1777,10 @@
         "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.config:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.config:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "app.ambiguous",
       "app.not_found",
@@ -2334,10 +2334,10 @@
         "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -2782,10 +2782,10 @@
         "usage": "Refresh application data from Firebase and update the cache; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "app.ambiguous",
       "app.not_found",
@@ -3209,10 +3209,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.gcloud:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.gcloud:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -3411,10 +3411,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.google:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.google:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -3620,10 +3620,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:oauth_credentials",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.oauth:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:oauth_credentials",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.oauth:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -3868,10 +3868,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:service_account_credentials",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.service-account:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:service_account_credentials",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.service-account:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -4100,10 +4100,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.bind:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.bind:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -4273,10 +4273,10 @@
         "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -4464,10 +4464,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -4601,10 +4601,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.login:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.login:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -4790,10 +4790,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -4926,10 +4926,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.set:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.set:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -5072,10 +5072,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -5234,10 +5234,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.unset:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.unset:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -5438,10 +5438,10 @@
         "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.clear:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.clear:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -5620,10 +5620,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -5749,10 +5749,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -5874,10 +5874,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:capabilities:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:capabilities:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -5999,10 +5999,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.bash:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.bash:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -6122,10 +6122,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.fish:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.fish:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -6245,10 +6245,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.powershell:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.powershell:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -6368,10 +6368,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.zsh:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.zsh:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -6636,10 +6636,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.add:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -7491,10 +7491,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -8353,10 +8353,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.edit:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.edit:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -9171,10 +9171,10 @@
         "usage": "Revalidate cached Remote Config before printing; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -9652,10 +9652,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.move:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.move:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -10470,10 +10470,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.rename:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.rename:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -11250,10 +11250,10 @@
         "usage": "Revalidate cached Remote Config before printing; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -11643,10 +11643,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.validate:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.validate:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -11926,10 +11926,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.edit:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.edit:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -12064,10 +12064,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -12224,10 +12224,10 @@
         "usage": "Reset without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.reset:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.reset:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -12413,10 +12413,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.set:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.set:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -12565,10 +12565,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -12694,10 +12694,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.validate:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.validate:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -12964,10 +12964,10 @@
         "usage": "Print diff and delete without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:delete:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:remote_config",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -13764,10 +13764,10 @@
         "usage": "Optional maximum time for the complete diagnostic run"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:doctor:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:doctor:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -14019,10 +14019,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.change-note:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.change-note:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -14322,10 +14322,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.diff:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.diff:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -14625,10 +14625,10 @@
         "usage": "Skip destructive confirmations; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.discard:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.discard:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -14826,10 +14826,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -14946,10 +14946,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -15148,10 +15148,10 @@
         "usage": "Skip publish confirmations; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.publish:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.publish:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -15840,10 +15840,10 @@
         "usage": "Write output to file path"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -16126,10 +16126,10 @@
         "usage": "Print diff and duplicate without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:duplicate:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:duplicate:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -16888,10 +16888,10 @@
         "usage": "Delete without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -17285,10 +17285,10 @@
         "usage": "Revalidate cached Remote Config before reading parameter bindings; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -17641,10 +17641,10 @@
         "usage": "Revalidate cached Remote Config before reading parameter bindings; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -18062,10 +18062,10 @@
         "usage": "Revalidate cached parameters before printing; cannot be combined with --stateless or stdin"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:get:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:remote_config",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:get:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -18606,10 +18606,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.add:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -19423,10 +19423,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -20279,10 +20279,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.edit:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.edit:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -21079,10 +21079,10 @@
         "usage": "Revalidate cached Remote Config before printing; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -21565,10 +21565,10 @@
         "usage": "Print diff and apply without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.rename:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.rename:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -22269,10 +22269,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:help:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:help:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -22382,10 +22382,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.fingerprint:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.fingerprint:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -22500,10 +22500,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.status:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.status:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -22641,10 +22641,10 @@
         "usage": "Trust without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.trust:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.trust:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -22794,10 +22794,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.untrust:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.untrust:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -23015,10 +23015,10 @@
         "usage": "Enabled toolsets: inspect, edit, drafts, plans, publish, diagnostics; accepted but not applied by this command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:mcp:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:mcp:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid"
     ],
@@ -23182,10 +23182,10 @@
         "usage": "Revalidate cached Remote Config before reading parameter bindings; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -23624,10 +23624,10 @@
         "usage": "Revalidate cached Remote Config before reading parameter bindings; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -23993,10 +23993,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.show:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:publication_plan",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -24121,10 +24121,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.validate:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:publication_plan",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.validate:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -24241,10 +24241,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -24390,10 +24390,10 @@
         "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -24607,10 +24607,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -24732,10 +24732,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -24864,10 +24864,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.rename:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.rename:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -25029,10 +25029,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.switch:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.switch:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -25211,10 +25211,10 @@
         "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.defaults:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.defaults:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -25540,10 +25540,10 @@
         "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.export:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.export:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -26013,10 +26013,10 @@
         "usage": "Skip final import confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config_import",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.import:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:remote_config_import",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.import:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -26807,10 +26807,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.open:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.open:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -27080,10 +27080,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.set:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.set:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -27238,10 +27238,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -27415,10 +27415,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.unset:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.unset:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -27641,10 +27641,10 @@
         "usage": "Update projects from Firebase before printing; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -27992,10 +27992,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.set:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.set:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -28150,10 +28150,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -28327,10 +28327,10 @@
         "usage": "Import without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.import:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.import:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -28502,10 +28502,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -28653,10 +28653,10 @@
         "usage": "Remove the alias without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.remove:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.remove:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -28859,10 +28859,10 @@
         "usage": "Replace an existing alias without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.set:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.set:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29047,10 +29047,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.add:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29183,10 +29183,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.clear:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.clear:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29319,10 +29319,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.disable:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.disable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29455,10 +29455,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.enable:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.enable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29591,10 +29591,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29730,10 +29730,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.remove:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.remove:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -29986,10 +29986,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.diff:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.diff:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -30281,10 +30281,10 @@
         "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.forget:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.forget:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -30571,10 +30571,10 @@
         "usage": "Include Firebase Console Remote Config URL"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -30881,10 +30881,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -31183,10 +31183,10 @@
         "usage": "Skip final publish confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.promote:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.promote:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -31838,10 +31838,10 @@
         "usage": "Skip confirmation dialog; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.reset:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.reset:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -32080,10 +32080,10 @@
         "usage": "Include Firebase Console Remote Config URL"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.update:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.update:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -32294,10 +32294,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.add:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.add:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -32430,10 +32430,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.clear:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.clear:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -32566,10 +32566,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.disable:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.disable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -32702,10 +32702,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.enable:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.enable:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -32838,10 +32838,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -32977,10 +32977,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.remove:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.remove:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -33173,10 +33173,10 @@
         "usage": "Delete without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -33558,10 +33558,10 @@
         "usage": "Revalidate cached Remote Config before reading parameter bindings; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -33914,10 +33914,10 @@
         "usage": "Revalidate cached Remote Config before reading parameter bindings; cannot be combined with --stateless"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -34222,10 +34222,10 @@
         "usage": "Print build version"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:root:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:root:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "argument.unknown_command",
@@ -34342,10 +34342,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -34462,10 +34462,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -34585,10 +34585,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:setup:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:setup:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -34715,10 +34715,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -34865,10 +34865,10 @@
         "usage": "Delete without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.delete:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.delete:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -35065,10 +35065,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:theme",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.import:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:theme",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.import:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.credentials_invalid",
@@ -35273,10 +35273,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -35397,10 +35397,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.path:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.path:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -35527,10 +35527,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.rename:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.rename:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -35689,10 +35689,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.reset:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.reset:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -35852,10 +35852,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.switch:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.switch:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "command.canceled",
@@ -36256,10 +36256,10 @@
         "usage": "Print diff and update without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:input",
-    "stdin_schema": "urn:fbrcm:schema:cli:1.0.0:stdin:remote_config",
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:update:input",
+    "stdin_schema": "urn:fbrcm:schema:cli:1.1.0:stdin:remote_config",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:update:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -37003,7 +37003,7 @@
       "versions",
       "blame"
     ],
-    "summary": "Show who changed one Remote Config parameter",
+    "summary": "Show who changed a Remote Config parameter or condition",
     "arguments": [
       {
         "name": "project",
@@ -37013,7 +37013,7 @@
       },
       {
         "name": "parameter",
-        "required": true,
+        "required": false,
         "repeated": false,
         "schema": "string"
       }
@@ -37038,6 +37038,16 @@
         "repeatable": false,
         "effective": true,
         "usage": "Newest version to inspect"
+      },
+      {
+        "name": "--condition",
+        "aliases": [],
+        "type": "string",
+        "default": "",
+        "required": false,
+        "repeatable": false,
+        "effective": true,
+        "usage": "Trace an exact condition name instead of a parameter"
       },
       {
         "name": "--include-hidden",
@@ -37069,7 +37079,7 @@
         "required": false,
         "repeatable": false,
         "effective": true,
-        "usage": "Maximum parameter changes to print"
+        "usage": "Maximum changes to print"
       },
       {
         "name": "--no-local-config",
@@ -37124,10 +37134,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.blame:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.blame:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -37137,6 +37147,7 @@
       "auth.setup_required",
       "command.canceled",
       "command.timeout",
+      "condition.not_found",
       "configuration.invalid",
       "file.io_failed",
       "filesystem.permission_denied",
@@ -37510,10 +37521,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.diff:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.diff:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -37942,10 +37953,10 @@
         "usage": "Overwrite an existing destination without confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.export:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.export:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -38422,10 +38433,10 @@
         "usage": "Only versions before RFC3339 time"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.list:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.list:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -38749,10 +38760,10 @@
         "usage": "Skip final publish confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.restore:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.restore:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -39392,10 +39403,10 @@
         "usage": "Skip final publish confirmation; applied when the operation requires confirmation"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.rollback:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.rollback:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",
@@ -39982,10 +39993,10 @@
         "usage": "Maximum duration for the complete command"
       }
     ],
-    "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:input",
+    "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.show:input",
     "stdin_schema": null,
-    "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:response",
-    "error_schema": "urn:fbrcm:schema:cli:1.0.0:error",
+    "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.show:response",
+    "error_schema": "urn:fbrcm:schema:cli:1.1.0:error",
     "problem_codes": [
       "argument.invalid",
       "auth.configuration_invalid",

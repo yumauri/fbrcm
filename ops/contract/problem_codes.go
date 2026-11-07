@@ -231,7 +231,7 @@ func CommandProblemCodes(capability Capability) []string {
 	case "get", "delete", "update":
 		add("parameter.ambiguous", "parameter.not_found")
 	case "versions.blame":
-		add("parameter.not_found")
+		add("parameter.not_found", "condition.not_found")
 	case "project.import":
 		add("group.not_found")
 	case "projects.diff", "projects.promote":

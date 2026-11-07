@@ -99,7 +99,7 @@ func Add(cfg *firebase.RemoteConfig, definition Definition, priority int) error 
 	if err != nil {
 		return err
 	}
-	if _, ok := conditionIndex(cfg, name); ok {
+	if _, ok := firebase.ConditionIndex(cfg, name); ok {
 		return fmt.Errorf("condition %q already exists", name)
 	}
 	if priority == 0 {
@@ -117,7 +117,7 @@ func Add(cfg *firebase.RemoteConfig, definition Definition, priority int) error 
 }
 
 func EditDefinition(cfg *firebase.RemoteConfig, name string, edit Edit) error {
-	index, ok := conditionIndex(cfg, name)
+	index, ok := firebase.ConditionIndex(cfg, name)
 	if !ok {
 		return fmt.Errorf("condition %q not found", name)
 	}
@@ -148,7 +148,7 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 	if cfg == nil {
 		return fmt.Errorf("remote config is nil")
 	}
-	index, ok := conditionIndex(cfg, edit.Name)
+	index, ok := firebase.ConditionIndex(cfg, edit.Name)
 	if !ok {
 		return fmt.Errorf("condition %q not found", edit.Name)
 	}
@@ -168,7 +168,7 @@ func EditDetails(cfg *firebase.RemoteConfig, edit DetailsEdit) error {
 		return fmt.Errorf("condition priority must be between 1 and %d", len(cfg.Conditions))
 	}
 	if nextName != edit.Name {
-		if _, exists := conditionIndex(cfg, nextName); exists {
+		if _, exists := firebase.ConditionIndex(cfg, nextName); exists {
 			return fmt.Errorf("condition %q already exists", nextName)
 		}
 	}
@@ -251,7 +251,7 @@ func editUsageValues(cfg *firebase.RemoteConfig, conditionName string, edits []U
 }
 
 func Rename(cfg *firebase.RemoteConfig, name, nextName string) error {
-	index, ok := conditionIndex(cfg, name)
+	index, ok := firebase.ConditionIndex(cfg, name)
 	if !ok {
 		return fmt.Errorf("condition %q not found", name)
 	}
@@ -262,7 +262,7 @@ func Rename(cfg *firebase.RemoteConfig, name, nextName string) error {
 	if cfg.Conditions[index].Name == nextName {
 		return fmt.Errorf("condition not changed")
 	}
-	if _, exists := conditionIndex(cfg, nextName); exists {
+	if _, exists := firebase.ConditionIndex(cfg, nextName); exists {
 		return fmt.Errorf("condition %q already exists", nextName)
 	}
 	previousName := cfg.Conditions[index].Name
@@ -276,7 +276,7 @@ func Rename(cfg *firebase.RemoteConfig, name, nextName string) error {
 }
 
 func Move(cfg *firebase.RemoteConfig, name string, priority int) error {
-	index, ok := conditionIndex(cfg, name)
+	index, ok := firebase.ConditionIndex(cfg, name)
 	if !ok {
 		return fmt.Errorf("condition %q not found", name)
 	}
@@ -298,7 +298,7 @@ func Move(cfg *firebase.RemoteConfig, name string, priority int) error {
 }
 
 func Delete(cfg *firebase.RemoteConfig, name string) error {
-	index, ok := conditionIndex(cfg, name)
+	index, ok := firebase.ConditionIndex(cfg, name)
 	if !ok {
 		return fmt.Errorf("condition %q not found", name)
 	}
@@ -308,18 +308,6 @@ func Delete(cfg *firebase.RemoteConfig, name string) error {
 	}
 	rcmutate.DropUnknownConditionReferences(cfg)
 	return nil
-}
-
-func conditionIndex(cfg *firebase.RemoteConfig, name string) (int, bool) {
-	if cfg == nil {
-		return 0, false
-	}
-	for index, condition := range cfg.Conditions {
-		if condition.Name == name {
-			return index, true
-		}
-	}
-	return 0, false
 }
 
 func renameConditionalValues(params map[string]firebase.RemoteConfigParam, name, nextName string) {

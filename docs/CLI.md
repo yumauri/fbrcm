@@ -9,6 +9,9 @@ versioned [machine contract](cli-contract.md).
 From 1.0.0, the documented command syntax and behavior are stable under the
 [compatibility policy](compatibility.md). Human table layouts, terminal
 styling, and message wording may change; automate with JSON or MCP.
+The upcoming 1.1.0 release includes condition blame under CLI
+JSON contract `1.1.0`, which is currently unreleased and may be regenerated in
+place. The published `1.0.0` schemas remain available unchanged.
 
 ## Command tree
 
@@ -301,7 +304,8 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--include-hidden] [
 │       └── --json
 │
 ├── versions
-│   ├── blame <project> <parameter>
+│   ├── blame <project> [<parameter>]
+│   │   ├── --condition <name>
 │   │   ├── --limit <n>
 │   │   ├── --all
 │   │   ├── --at <version>
@@ -844,7 +848,7 @@ The plan commands accept `-` as the input path to read one plan JSON document
 from stdin; any stdin supplied with a non-`-` path is ignored without being
 consumed. Their standalone schema is
 `urn:fbrcm:schema:cli:1.0.0:publication_plan`; the normalized stdin schema is
-`urn:fbrcm:schema:cli:1.0.0:stdin:publication_plan`.
+`urn:fbrcm:schema:cli:1.1.0:stdin:publication_plan`.
 
 ### Draft lifecycle and write safety
 
@@ -2366,11 +2370,27 @@ a missing or empty project registry before inspecting local version snapshots.
 Consequently a locally available immutable version does not by itself guarantee
 an offline invocation; `--cached` is the complete no-network policy.
 
-### `fbrcm versions blame <project> <parameter>`
+### `fbrcm versions blame <project> [<parameter>]`
 
-Shows the newest-first change log for one exact, case-sensitive parameter key.
-The command lists retained Firebase versions, compares every adjacent
-publication from the selected starting point toward older history, and omits
+Shows the newest-first change log for one exact, case-sensitive parameter key
+or condition name. Supply either the positional parameter or `--condition <name>`;
+providing both or neither is an argument error. Names are not trimmed.
+
+```sh
+fbrcm versions blame example-project checkout_enabled
+fbrcm versions blame example-project --condition "Beta Users" --all
+```
+
+For conditions, each entry attributes a definition or evaluation-position
+change to its publishing user and publication time. Expression, display-color,
+and one-based priority changes count; parameter usage/value changes alone do
+not. Renames appear as removal under the old name and addition under the new
+name. Use `--all` to look for the addition that introduced a condition. The
+identity is the publisher, which may be a service account or someone publishing
+another person's draft; unpublished draft authorship is not available.
+
+For parameters, the command lists retained Firebase versions, compares every
+adjacent publication from the selected starting point toward older history, and omits
 publications that did not directly change the parameter. A displayed heading
 such as `version 141 → 142` therefore always names the two templates compared;
 the next displayed change may use a much older pair when intervening
@@ -2379,10 +2399,11 @@ publications left the parameter unchanged.
 Flags:
 
 ```text
+--condition <name> trace a condition instead of a positional parameter
 --limit <n>        maximum direct changes to print; default 1; must be greater than zero
 --all              scan all retained history; mutually exclusive with an explicit --limit
 --at <version>     newest publication to inspect; default current
---json             print structured parameter history JSON
+--json             print structured parameter or condition history JSON
 ```
 
 Human output is a vertical log joined by a dim left rail. Each entry begins
@@ -2428,6 +2449,20 @@ never emits an `unchanged` change entry, and always returns `changes` as an
 array. `history_exhausted` is true exactly when `boundary` is present; a present
 parameter boundary carries its group (the empty string means ungrouped), while
 an absent parameter boundary carries `group: null`.
+
+Condition history follows the same pagination, starting-version, limit, cache,
+and stateless policies. If a condition already exists in the oldest retained
+publication, its earlier origin is unavailable; fbrcm never invents a creation
+event at that boundary. If the exact name never occurs in inspected history,
+the command returns `condition.not_found` (exit `6`).
+
+Condition JSON uses `condition` instead of `parameter`, omits `at_group`, and
+returns typed condition diffs in `changes[].change`, including before/after
+definitions and one-based positions. Its boundary contains only `version` and
+`state` (`present` or `absent`), with no parameter group. All publication metadata,
+scan-count, exhaustion, and nullable-boundary semantics match parameter history.
+Parameter JSON remains unchanged. These additions are part of unreleased CLI
+JSON contract `1.1.0`; the published `1.0.0` schemas remain available unchanged.
 
 ### `fbrcm versions list <project>`
 

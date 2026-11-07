@@ -21,28 +21,37 @@ import (
 
 func newVersionsBlameCommandDefinition(svc *core.Core) *invocation.Definition {
 	cmd := &invocation.Definition{
-		Use:   "blame <project> <parameter>",
-		Short: "Show who changed one Remote Config parameter",
-		Args:  invocation.ExactArgs(2),
+		Use:   "blame <project> [<parameter>]",
+		Short: "Show who changed a Remote Config parameter or condition",
+		Args:  invocation.RangeArgs(1, 2),
 		RunE: func(cmd invocation.Call, args []string) error {
 			return runVersionsBlame(cmd, svc, args)
 		},
 	}
-	cmd.Flags().Int("limit", 1, "Maximum parameter changes to print")
+	cmd.Flags().String("condition", "", "Trace an exact condition name instead of a parameter")
+	cmd.Flags().Int("limit", 1, "Maximum changes to print")
 	cmd.Flags().Bool("all", false, "Print all changes in retained Firebase history")
 	cmd.Flags().String("at", "current", "Newest version to inspect")
-	cmd.Flags().Bool("json", false, "Print parameter history as JSON")
+	cmd.Flags().Bool("json", false, "Print change history as JSON")
 	cmd.MarkFlagsMutuallyExclusive("all", "limit")
 	return cmd
 }
 
 func runVersionsBlame(cmd invocation.Call, svc *core.Core, args []string) error {
-	parameter := args[1]
-	if strings.TrimSpace(parameter) == "" {
-		return shared.InvalidArgument(fmt.Errorf("parameter must not be blank"))
+	condition, _ := cmd.Flags().GetString("condition")
+	conditionMode := cmd.Flags().Changed("condition")
+	if conditionMode == (len(args) == 2) {
+		return shared.InvalidArgument(fmt.Errorf("provide either a parameter argument or --condition <name>"))
 	}
-	if utf8.RuneCountInString(parameter) > 256 {
-		return shared.InvalidArgument(fmt.Errorf("parameter %q exceeds 256 characters", parameter))
+	name, kind := condition, "condition"
+	if !conditionMode {
+		name, kind = args[1], "parameter"
+	}
+	if strings.TrimSpace(name) == "" {
+		return shared.InvalidArgument(fmt.Errorf("%s must not be blank", kind))
+	}
+	if !conditionMode && utf8.RuneCountInString(name) > 256 {
+		return shared.InvalidArgument(fmt.Errorf("parameter %q exceeds 256 characters", name))
 	}
 	limit, _ := cmd.Flags().GetInt("limit")
 	if limit < 1 {
@@ -59,32 +68,46 @@ func runVersionsBlame(cmd invocation.Call, svc *core.Core, args []string) error 
 		return err
 	}
 	cmd.SetContext(ctx)
-	progress.Start("Scanning parameter history for " + project.ProjectID + "…")
-	history, err := svc.GetRemoteConfigParameterHistory(ctx, project.ProjectID, parameter, core.ParameterHistoryOptions{At: at, Limit: limit, All: all})
-	if err != nil {
-		return err
-	}
+	progress.Start("Scanning " + kind + " history for " + project.ProjectID + "…")
 	jsonOut, _ := cmd.Flags().GetBool("json")
-	if jsonOut {
-		return shared.WriteJSON(cmd, versionBlameJSON(project, history))
+	opts := core.RemoteConfigHistoryOptions{At: at, Limit: limit, All: all}
+	var text string
+	if conditionMode {
+		history, historyErr := svc.GetRemoteConfigConditionHistory(ctx, project.ProjectID, name, opts)
+		if historyErr != nil {
+			return historyErr
+		}
+		if jsonOut {
+			return shared.WriteJSON(cmd, conditionBlameJSON(project, history))
+		}
+		text, err = renderConditionBlame(project, history, shared.TerminalWidth())
+	} else {
+		history, historyErr := svc.GetRemoteConfigParameterHistory(ctx, project.ProjectID, name, opts)
+		if historyErr != nil {
+			return historyErr
+		}
+		if jsonOut {
+			return shared.WriteJSON(cmd, versionBlameJSON(project, history))
+		}
+		text, err = renderVersionBlame(project, history, shared.TerminalWidth())
 	}
-	text, err := renderVersionBlame(project, history, shared.TerminalWidth())
 	if err != nil {
 		return err
 	}
+
 	_, err = fmt.Fprintln(cmd.OutOrStdout(), text)
 	return err
 }
 
 type versionBlameResult struct {
-	Project             core.Project             `json:"project"`
-	Parameter           string                   `json:"parameter"`
-	AtVersion           string                   `json:"at_version"`
-	AtGroup             *string                  `json:"at_group"`
-	ScannedVersionCount int                      `json:"scanned_version_count"`
-	HistoryExhausted    bool                     `json:"history_exhausted"`
-	Boundary            *versionBlameBoundary    `json:"boundary"`
-	Changes             []versionBlameChangeJSON `json:"changes"`
+	Project             core.Project                                     `json:"project"`
+	Parameter           string                                           `json:"parameter"`
+	AtVersion           string                                           `json:"at_version"`
+	AtGroup             *string                                          `json:"at_group"`
+	ScannedVersionCount int                                              `json:"scanned_version_count"`
+	HistoryExhausted    bool                                             `json:"history_exhausted"`
+	Boundary            *versionBlameBoundary                            `json:"boundary"`
+	Changes             []versionBlameChangeJSON[rcdiff.ParameterChange] `json:"changes"`
 }
 
 type versionBlameBoundary struct {
@@ -93,7 +116,7 @@ type versionBlameBoundary struct {
 	Group   *string `json:"group"`
 }
 
-type versionBlameChangeJSON struct {
+type versionBlameChangeJSON[T any] struct {
 	PreviousVersion string                    `json:"previous_version"`
 	Version         string                    `json:"version"`
 	UpdateTime      string                    `json:"update_time" contract:"format=date-time"`
@@ -102,14 +125,14 @@ type versionBlameChangeJSON struct {
 	UpdateOrigin    string                    `json:"update_origin"`
 	UpdateType      string                    `json:"update_type"`
 	RollbackSource  *string                   `json:"rollback_source"`
-	Change          rcdiff.ParameterChange    `json:"change"`
+	Change          T                         `json:"change"`
 }
 
 func versionBlameJSON(project core.Project, history core.ParameterHistory) versionBlameResult {
 	result := versionBlameResult{
 		Project: project, Parameter: history.Parameter, AtVersion: history.AtVersion, AtGroup: history.AtGroup,
 		ScannedVersionCount: history.ScannedVersionCount, HistoryExhausted: history.HistoryExhausted,
-		Changes: make([]versionBlameChangeJSON, 0, len(history.Changes)),
+		Changes: make([]versionBlameChangeJSON[rcdiff.ParameterChange], 0, len(history.Changes)),
 	}
 	if history.Boundary != nil {
 		state := "absent"
@@ -122,34 +145,66 @@ func versionBlameJSON(project core.Project, history core.ParameterHistory) versi
 		result.Boundary = &versionBlameBoundary{Version: history.Boundary.Version, State: state, Group: group}
 	}
 	for _, item := range history.Changes {
-		result.Changes = append(result.Changes, versionBlameChangeJSON{
-			PreviousVersion: item.PreviousVersion,
-			Version:         item.Version.VersionNumber,
-			UpdateTime:      item.Version.UpdateTime,
-			UpdateUser:      item.Version.UpdateUser,
-			ChangeNote:      optionalVersionString(item.Version.ChangeNote),
-			UpdateOrigin:    item.Version.UpdateOrigin,
-			UpdateType:      item.Version.UpdateType,
-			RollbackSource:  optionalVersionString(item.Version.RollbackSource),
-			Change:          item.Change,
-		})
+		result.Changes = append(result.Changes, blameChangeJSON(item.PreviousVersion, item.Version, item.Change))
 	}
 	return result
 }
 
+func blameChangeJSON[T any](previousVersion string, version firebase.RemoteConfigVersion, change T) versionBlameChangeJSON[T] {
+	return versionBlameChangeJSON[T]{
+		PreviousVersion: previousVersion, Version: version.VersionNumber,
+		UpdateTime: version.UpdateTime, UpdateUser: version.UpdateUser,
+		ChangeNote: optionalVersionString(version.ChangeNote), UpdateOrigin: version.UpdateOrigin,
+		UpdateType: version.UpdateType, RollbackSource: optionalVersionString(version.RollbackSource), Change: change,
+	}
+}
+
+type blameLogChange struct {
+	PreviousVersion string
+	Version         firebase.RemoteConfigVersion
+	Diff            rcdiff.Result
+}
+
+type blameLogBoundary struct {
+	Version string
+	Present bool
+}
+
+type blameLog struct {
+	Kind                string
+	Name                string
+	Label               string
+	Changes             []blameLogChange
+	ScannedVersionCount int
+	HistoryExhausted    bool
+	Boundary            *blameLogBoundary
+}
+
 func renderVersionBlame(project core.Project, history core.ParameterHistory, terminalWidth int) (string, error) {
+	path := history.Parameter
+	if history.AtGroup != nil {
+		path = strings.TrimPrefix(rcdiffinput.ParameterEntityName(*history.AtGroup, history.Parameter), "Parameter: ")
+	}
+	log := blameLog{Kind: "Parameter", Name: history.Parameter, Label: "Parameter: " + path,
+		ScannedVersionCount: history.ScannedVersionCount, HistoryExhausted: history.HistoryExhausted}
+	if history.Boundary != nil {
+		log.Boundary = &blameLogBoundary{Version: history.Boundary.Version, Present: history.Boundary.Present}
+	}
+	for _, item := range history.Changes {
+		log.Changes = append(log.Changes, blameLogChange{PreviousVersion: item.PreviousVersion, Version: item.Version, Diff: rcdiff.Result{Parameters: []rcdiff.ParameterChange{item.Change}}})
+	}
+	return renderBlameLog(project, log, terminalWidth)
+}
+
+func renderBlameLog(project core.Project, history blameLog, terminalWidth int) (string, error) {
 	var output strings.Builder
 	fmt.Fprintf(&output, "Project: %s (%s)\n", project.Name, project.ProjectID)
-	parameterPath := history.Parameter
-	if history.AtGroup != nil {
-		parameterPath = strings.TrimPrefix(rcdiffinput.ParameterEntityName(*history.AtGroup, history.Parameter), "Parameter: ")
-	}
-	fmt.Fprintf(&output, "Parameter: %s\n", parameterPath)
+	fmt.Fprintln(&output, history.Label)
 
 	if len(history.Changes) == 0 {
 		output.WriteString("\nNo attributable change found.\n")
 		if history.Boundary != nil && history.Boundary.Present {
-			fmt.Fprintf(&output, "Parameter %q already exists in the oldest retained version, %s.\n", history.Parameter, history.Boundary.Version)
+			fmt.Fprintf(&output, "%s %q already exists in the oldest retained version, %s.\n", history.Kind, history.Name, history.Boundary.Version)
 			output.WriteString("Its original author and creation time are unavailable.\n")
 		}
 		return strings.TrimRight(output.String(), "\n"), nil
@@ -169,7 +224,7 @@ func renderVersionBlame(project core.Project, history core.ParameterHistory, ter
 	}
 	output.WriteString(blameRail("┆"))
 	if history.HistoryExhausted && history.Boundary != nil && history.Boundary.Present {
-		fmt.Fprintf(&output, "\n\nHistory boundary: parameter already exists in retained version %s; its earlier origin is unavailable.", history.Boundary.Version)
+		fmt.Fprintf(&output, "\n\nHistory boundary: %s already exists in retained version %s; its earlier origin is unavailable.", strings.ToLower(history.Kind), history.Boundary.Version)
 	} else if !history.HistoryExhausted {
 		fmt.Fprintf(&output, "\n\nShowing %s after scanning %s.",
 			rcdisplay.FormatCount(len(history.Changes), "change", "changes"),
@@ -179,9 +234,9 @@ func renderVersionBlame(project core.Project, history core.ParameterHistory, ter
 	return output.String(), nil
 }
 
-func renderVersionBlameChange(item core.ParameterHistoryChange, terminalWidth int) (string, error) {
+func renderVersionBlameChange(item blameLogChange, terminalWidth int) (string, error) {
 	var output strings.Builder
-	output.WriteString(renderVersionBlameHeading(item, terminalWidth))
+	output.WriteString(renderVersionBlameHeading(item.PreviousVersion, item.Version.VersionNumber, terminalWidth))
 	output.WriteByte('\n')
 
 	metadata := rcdisplay.FormatRemoteConfigVersionAttribution(item.Version)
@@ -194,7 +249,7 @@ func renderVersionBlameChange(item core.ParameterHistoryChange, terminalWidth in
 		appendBlameText(&output, note, 4, terminalWidth)
 	}
 
-	diffText, err := renderVersionSideBySide(rcdiff.Result{Parameters: []rcdiff.ParameterChange{item.Change}}, max(terminalWidth-3, 1))
+	diffText, err := renderVersionSideBySide(item.Diff, max(terminalWidth-3, 1))
 	if err != nil {
 		return "", err
 	}
@@ -211,21 +266,14 @@ func renderVersionBlameChange(item core.ParameterHistoryChange, terminalWidth in
 	return strings.TrimRight(output.String(), "\n"), nil
 }
 
-func renderVersionBlameHeading(item core.ParameterHistoryChange, terminalWidth int) string {
+func renderVersionBlameHeading(previousVersion, version string, terminalWidth int) string {
 	rail := "┝━ "
-	transition := "version " + item.PreviousVersion + " → "
-	version := item.Version.VersionNumber
-	if clistyles.NoColorEnabled() {
-		return rail + transition + version
-	}
-
-	background := clistyles.ColorInactiveSelection
-	headingWidth := lipgloss.Width(rail + transition + version)
-	padding := strings.Repeat(" ", max(terminalWidth-headingWidth, 0))
-	return lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDark).Background(background).Render(rail) +
-		clistyles.PanelMuted.Background(background).Render(transition) +
-		lipgloss.NewStyle().Bold(true).Foreground(clistyles.PaletteSlateBright).Background(background).Render(version) +
-		lipgloss.NewStyle().Background(background).Render(padding)
+	transition := "version " + previousVersion + " → "
+	return clistyles.RenderBackgroundRow(terminalWidth, clistyles.ColorInactiveSelection,
+		clistyles.RowSpan{Text: rail, Style: lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDark)},
+		clistyles.RowSpan{Text: transition, Style: clistyles.PanelMuted},
+		clistyles.RowSpan{Text: version, Style: lipgloss.NewStyle().Bold(true).Foreground(clistyles.PaletteSlateBright)},
+	)
 }
 
 func appendBlameText(output *strings.Builder, value string, indent, terminalWidth int) {

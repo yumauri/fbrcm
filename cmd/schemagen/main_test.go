@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/yumauri/fbrcm/ops/contract"
@@ -78,6 +80,47 @@ func TestGenerationPreservesReleasedContractLock(t *testing.T) {
 	}
 	if generated != previous {
 		t.Fatalf("released lock changed during generation: got %+v, want %+v", generated, previous)
+	}
+}
+
+func TestGenerationRejectsChangedReleasedContractBeforePublishing(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	stage := filepath.Join(root, "stage")
+	schemaDir := filepath.Join(stage, "schemas", "cli", contract.Version)
+	write(schemaDir, "example.schema.json", map[string]string{"type": "object"})
+	digest, err := generatedContractDigest(stage, schemaDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lockPath := filepath.Join("schemas", "cli", "contract.lock.json")
+	publishedSchemaPath := filepath.Join("schemas", "cli", contract.Version, "example.schema.json")
+	write(filepath.Dir(lockPath), filepath.Base(lockPath), contractLock{Version: contract.Version, SHA256: digest, Released: true})
+	write(filepath.Dir(publishedSchemaPath), filepath.Base(publishedSchemaPath), map[string]string{"type": "object"})
+	before := make(map[string][]byte)
+	for _, path := range []string{lockPath, publishedSchemaPath} {
+		before[path], err = os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(schemaDir, "example.schema.json", map[string]string{"type": "string"})
+	var lockPanic any
+	func() {
+		defer func() { lockPanic = recover() }()
+		enforceContractLock(stage, schemaDir)
+	}()
+	if err, ok := lockPanic.(error); !ok || !strings.Contains(err.Error(), "CLI contract changed without a version bump") {
+		t.Fatalf("changed released contract rejection = %v", lockPanic)
+	}
+	if _, err := os.Stat(filepath.Join(stage, lockPath)); !os.IsNotExist(err) {
+		t.Fatalf("rejected generation staged a replacement lock: %v", err)
+	}
+	for path, want := range before {
+		got, err := os.ReadFile(path)
+		if err != nil || !bytes.Equal(got, want) {
+			t.Fatalf("rejected generation modified %s: %v", path, err)
+		}
 	}
 }
 

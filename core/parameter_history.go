@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	rcdiff "github.com/yumauri/fbrcm/core/rc/diff"
@@ -11,11 +10,7 @@ import (
 
 // ParameterHistoryOptions controls how much retained Firebase history is
 // inspected for one parameter.
-type ParameterHistoryOptions struct {
-	At    string
-	Limit int
-	All   bool
-}
+type ParameterHistoryOptions = RemoteConfigHistoryOptions
 
 // RemoteConfigParameterLookupError identifies a parameter that does not occur
 // anywhere in the inspected retained history.
@@ -62,141 +57,35 @@ type ParameterHistory struct {
 // selected publication toward older publications. It compares every adjacent
 // publication and returns only direct changes to parameter.
 func (s *Core) GetRemoteConfigParameterHistory(ctx context.Context, projectID, parameter string, opts ParameterHistoryOptions) (ParameterHistory, error) {
-	selector := opts.At
-	if selector == "" {
-		selector = "current"
-	}
-	if opts.Limit < 1 {
-		return ParameterHistory{}, fmt.Errorf("parameter history limit must be greater than zero")
-	}
-
-	distance, relative, err := currentRelativeDistance(selector)
-	if err != nil {
-		return ParameterHistory{}, invalidVersionSelector(projectID, selector, err)
-	}
-	var number int64
-	if !relative {
-		number, err = strconv.ParseInt(selector, 10, 64)
-		if err != nil || number <= 0 {
-			return ParameterHistory{}, invalidVersionSelector(projectID, selector, fmt.Errorf("invalid Remote Config version %q", selector))
-		}
-	}
-
-	versions := make([]RemoteConfigVersionEntry, 0, 100)
-	nextPageToken := ""
-	historyExhausted := false
-	loadNextPage := func() error {
-		page, listErr := s.ListRemoteConfigVersions(ctx, projectID, VersionListOptions{Limit: 100, PageToken: nextPageToken})
-		if listErr != nil {
-			return listErr
-		}
-		versions = append(versions, page.Versions...)
-		historyExhausted = page.NextPageToken == ""
-		nextPageToken = page.NextPageToken
-		return nil
-	}
-
-	anchor := -1
-	searchFrom := 0
-	for anchor < 0 {
-		if err := loadNextPage(); err != nil {
-			return ParameterHistory{}, err
-		}
-		if relative {
-			if distance < len(versions) {
-				anchor = distance
-			}
-		} else {
-			for index := searchFrom; index < len(versions); index++ {
-				candidate, parseErr := strconv.ParseInt(versions[index].VersionNumber, 10, 64)
-				if parseErr == nil && candidate == number {
-					anchor = index
-					break
-				}
-			}
-			searchFrom = len(versions)
-		}
-		if anchor < 0 && historyExhausted {
-			if len(versions) == 0 {
-				return ParameterHistory{}, versionNotFound(projectID, selector, fmt.Errorf("project %s has no retained Remote Config versions", projectID))
-			}
-			if relative {
-				return ParameterHistory{}, versionNotFound(projectID, selector, fmt.Errorf("project %s has no Remote Config version %d publications before current", projectID, distance))
-			}
-			return ParameterHistory{}, versionNotFound(projectID, selector, fmt.Errorf("remote config version %s was not found in retained history for project %s", selector, projectID))
-		}
-	}
-
-	result := ParameterHistory{
-		Parameter: parameter,
-		AtVersion: versions[anchor].VersionNumber,
-		Changes:   make([]ParameterHistoryChange, 0),
-	}
-
-	newer, err := s.GetRemoteConfigVersion(ctx, projectID, versions[anchor].VersionNumber, false)
+	scan, err := scanRemoteConfigHistory(ctx, s, projectID, opts,
+		func(cfg *firebase.RemoteConfig) bool { _, _, ok := remoteConfigParameter(cfg, parameter); return ok },
+		func(newer, older *firebase.RemoteConfig) (rcdiff.ParameterChange, rcdiff.ChangeKind, bool) {
+			change, found := remoteConfigParameterChange(newer, older, parameter)
+			return change, change.Kind, found
+		},
+	)
 	if err != nil {
 		return ParameterHistory{}, err
 	}
-	result.ScannedVersionCount = 1
-	if group, _, ok := remoteConfigParameter(newer.Config, parameter); ok {
+	if !scan.Seen {
+		return ParameterHistory{}, &RemoteConfigParameterLookupError{
+			ProjectID: projectID, Parameter: parameter,
+			Err: fmt.Errorf("parameter %q was not found in retained Remote Config history for project %s", parameter, projectID),
+		}
+	}
+	result := ParameterHistory{Parameter: parameter, AtVersion: scan.AtVersion,
+		ScannedVersionCount: scan.ScannedVersionCount, HistoryExhausted: scan.HistoryExhausted,
+		Changes: make([]ParameterHistoryChange, 0, len(scan.Changes)),
+	}
+	if group, _, ok := remoteConfigParameter(scan.AtConfig, parameter); ok {
 		result.AtGroup = &group
 	}
-	seen := result.AtGroup != nil
-
-	cursor := anchor
-	for {
-		if cursor+1 >= len(versions) {
-			if historyExhausted {
-				break
-			}
-			if err := loadNextPage(); err != nil {
-				return ParameterHistory{}, err
-			}
-			if cursor+1 >= len(versions) {
-				if historyExhausted {
-					break
-				}
-				continue
-			}
-		}
-
-		olderEntry := versions[cursor+1]
-		older, getErr := s.GetRemoteConfigVersion(ctx, projectID, olderEntry.VersionNumber, false)
-		if getErr != nil {
-			return ParameterHistory{}, getErr
-		}
-		result.ScannedVersionCount++
-
-		change, found := remoteConfigParameterChange(newer.Config, older.Config, parameter)
-		if found {
-			seen = true
-			if change.Kind != rcdiff.ChangeUnchanged {
-				result.Changes = append(result.Changes, ParameterHistoryChange{
-					PreviousVersion: olderEntry.VersionNumber,
-					Version:         versions[cursor].RemoteConfigVersion,
-					Change:          change,
-				})
-			}
-		}
-		newer = older
-		cursor++
-
-		if !opts.All && len(result.Changes) >= opts.Limit {
-			break
-		}
+	for _, change := range scan.Changes {
+		result.Changes = append(result.Changes, ParameterHistoryChange(change))
 	}
-
-	result.HistoryExhausted = historyExhausted && cursor == len(versions)-1
-	if result.HistoryExhausted {
-		group, _, present := remoteConfigParameter(newer.Config, parameter)
-		result.Boundary = &ParameterHistoryBoundary{Version: versions[cursor].VersionNumber, Present: present, Group: group}
-	}
-	if !seen {
-		return ParameterHistory{}, &RemoteConfigParameterLookupError{
-			ProjectID: projectID,
-			Parameter: parameter,
-			Err:       fmt.Errorf("parameter %q was not found in retained Remote Config history for project %s", parameter, projectID),
-		}
+	if scan.Boundary != nil {
+		group, _, _ := remoteConfigParameter(scan.BoundaryConfig, parameter)
+		result.Boundary = &ParameterHistoryBoundary{Version: scan.Boundary.Version, Present: scan.Boundary.Present, Group: group}
 	}
 	return result, nil
 }

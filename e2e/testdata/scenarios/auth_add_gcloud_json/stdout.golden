@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.gcloud:response",
+  "contract_version": "1.1.0",
   "command": "auth.add.gcloud",
   "requested_command": "auth.add.gcloud",
   "outcome": "success",

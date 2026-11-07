@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.list:response",
+  "contract_version": "1.1.0",
   "command": "profile.list",
   "requested_command": "profile.list",
   "outcome": "success",

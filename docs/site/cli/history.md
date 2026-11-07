@@ -48,6 +48,25 @@ next page only when the scan needs to continue. When the parameter predates the
 oldest retained version, fbrcm marks that history boundary instead of claiming
 the oldest template created it.
 
+## Trace one condition
+
+```sh
+fbrcm versions blame example-project-id --condition "Beta Users"
+fbrcm versions blame example-project-id --condition "Beta Users" --all
+```
+
+Condition blame attributes additions, removals, expression/color edits and
+priority changes to their publishing user and time. Parameter usage changes
+alone are excluded. Names match exactly, including case and whitespace. A
+rename is a removal under the old name and an addition under the new name.
+The same `--limit`, `--at`, `--all` and `--json` options apply. Supply either a
+parameter argument or `--condition`, never both.
+
+Use `--all` to find the addition that introduced the condition. When it already
+exists at the retained-history boundary, its original creator and creation
+time remain unavailable. Attribution identifies the publisher, which may be
+a service account or someone publishing another person's draft.
+
 ## Export a version
 
 ```sh

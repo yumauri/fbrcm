@@ -43,6 +43,19 @@ func main() {
 }
 
 func stageGeneratedContract(stageRoot string) {
+	// Retain every published schema byte-for-byte in the staged fingerprint.
+	entries, err := os.ReadDir(filepath.Join("schemas", "cli"))
+	if err != nil {
+		panic(err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() && entry.Name() != contract.Version {
+			target := filepath.Join(stageRoot, "schemas", "cli", entry.Name())
+			if err := os.CopyFS(target, os.DirFS(filepath.Join("schemas", "cli", entry.Name()))); err != nil {
+				panic(err)
+			}
+		}
+	}
 	root := app.NewRootForContract("schema")
 	index := contract.Capabilities(root)
 	detailed := contract.DetailedCapabilities(root)
@@ -82,7 +95,9 @@ func stageGeneratedContract(stageRoot string) {
 	writeSchema("stdin.service_account_credentials.schema.json", standaloneSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:service_account_credentials", "Google service-account credential JSON", serviceAccountCredentialSchema()))
 	writeSchema("stdin.theme.schema.json", themeStdinSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:theme"))
 	writeSchema("stdin.publication_plan.schema.json", publicationPlanSchema("urn:fbrcm:schema:cli:"+contract.Version+":stdin:publication_plan"))
-	writeSchema("publication_plan.schema.json", publicationPlanSchema(publication.SchemaID))
+	if strings.Contains(publication.SchemaID, ":cli:"+contract.Version+":") {
+		writeSchema("publication_plan.schema.json", publicationPlanSchema(publication.SchemaID))
+	}
 	for _, capability := range detailed {
 		command := root
 		if capability.ID != "root" {
@@ -1402,6 +1417,12 @@ func flagSchema(commandID string, flag contract.FlagCapability) map[string]any {
 }
 
 func applyFlagSemantics(schema map[string]any, commandID, name string) {
+	if commandID == "versions.blame" && name == "condition" {
+		schema["minLength"] = 1
+		schema["pattern"] = `.*\S.*`
+		addMatchingRule(schema, map[string]any{"operator": "condition_history_resolution"})
+	}
+
 	if commandID == "versions.blame" && name == "at" {
 		delete(schema, "type")
 		delete(schema, "pattern")
@@ -2337,6 +2358,7 @@ func extensionLanguageMetadata() map[string]any {
 				"draft_batch_selection":           operation([]string{"project_source", "all_source", "composition", "canonical_order"}, "selection", "Require exactly one of explicit project selectors or the truthy all option. Resolve each project selector with draft_resolution, deduplicate canonical target IDs, and sort them lexicographically; all selects every existing local draft target ID."),
 				"condition_name_resolution":       operation(nil, "selection", "Resolve a condition by exact name first, then by Unicode case-insensitive equality in stored condition order. This operator is used by the non-positional update condition option; no match returns condition.not_found."),
 				"condition_positional_resolution": operation(nil, "selection", "Compare the untrimmed positional condition selector exactly and case-sensitively against canonical condition names. No match returns condition.not_found; duplicate exact names resolve to the first stored condition."),
+				"condition_history_resolution":    operation(nil, "selection", "Compare the untrimmed --condition selector exactly and case-sensitively against canonical condition names in every adjacent retained publication. Return condition.not_found when the condition never occurs in the inspected retained history. Renames are separate removal and addition events; expressions, colors and evaluation positions are compared, independently of parameter usages."),
 				"duplicate_source_resolution":     operation(nil, "selection", "Compare the untrimmed positional source name exactly and case-sensitively against parameter keys across root and all groups, skip a target on zero matches, and return parameter.ambiguous with candidates on multiple exact matches."),
 				"group_name_resolution":           operation(nil, "selection", "Compare the untrimmed positional group selector exactly and case-sensitively against canonical group map keys. Zero matches skip that target; multiple matches are impossible because group keys are unique."),
 				"command_path_resolution":         operation([]string{"candidate_source", "comparison", "omitted_result", "reserved_root_token", "unknown_result", "non_executable_result"}, "selection", "Resolve the supplied argv path components exactly and case-sensitively against the declared executable command inventory. Omission returns the capability index, the reserved single root token returns the executable root operation, unknown paths return the declared not-found problem, and navigational command groups return the declared non-executable problem."),
@@ -2427,6 +2449,13 @@ func optionConstraints(commandID string, command *cobra.Command, publishedOption
 		return nil
 	}
 	constraints := make([]any, 0)
+	if commandID == "versions.blame" {
+		constraints = append(constraints, map[string]any{"oneOf": []any{
+			map[string]any{"properties": map[string]any{"arguments": map[string]any{"required": []string{"parameter"}}, "options": map[string]any{"not": map[string]any{"required": []string{"condition"}}}}},
+			map[string]any{"properties": map[string]any{"options": map[string]any{"required": []string{"condition"}}, "arguments": map[string]any{"not": map[string]any{"required": []string{"parameter"}}}}},
+		}})
+	}
+
 	if contract.IsProjectVisibilityCommand(commandID) && (strings.HasSuffix(commandID, ".add") || strings.HasSuffix(commandID, ".remove")) {
 		constraints = append(constraints, map[string]any{"oneOf": []any{
 			map[string]any{"properties": map[string]any{"arguments": map[string]any{"required": []string{"project_id"}}, "options": map[string]any{"not": map[string]any{"required": []string{"filter"}}}}},

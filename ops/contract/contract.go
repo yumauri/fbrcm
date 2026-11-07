@@ -30,7 +30,7 @@ import (
 	"github.com/yumauri/fbrcm/schemas"
 )
 
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 type Producer struct {
 	Name    string `json:"name"`
@@ -580,6 +580,12 @@ func Classify(err error) Problem {
 		}
 		problem.Code, problem.Category = "version.not_found", "not_found"
 		problem.Details = SelectionDetails{Kind: "selection", Resource: "version", Query: versionLookup.Selector, Candidates: []SelectionCandidate{}}
+		return problem
+	}
+	if conditionLookup, ok := errors.AsType[*core.RemoteConfigConditionLookupError](err); ok {
+		problem.Code, problem.Category = "condition.not_found", "not_found"
+		problem.Target = optionalString(conditionLookup.ProjectID)
+		problem.Details = SelectionDetails{Kind: "selection", Resource: "condition", Query: conditionLookup.Condition, Candidates: []SelectionCandidate{}}
 		return problem
 	}
 	if parameterLookup, ok := errors.AsType[*core.RemoteConfigParameterLookupError](err); ok {

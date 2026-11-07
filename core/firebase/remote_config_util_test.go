@@ -5,6 +5,31 @@ import (
 	"testing"
 )
 
+func TestConditionIndexPreservesExactFirstMatch(t *testing.T) {
+	cfg := &RemoteConfig{Conditions: []RemoteConfigCondition{
+		{Name: "Beta Users"}, {Name: "beta users"}, {Name: "Beta Users"},
+	}}
+	for _, test := range []struct {
+		name  string
+		index int
+		found bool
+	}{
+		{"Beta Users", 0, true},
+		{"beta users", 1, true},
+		{" Beta Users", 0, false},
+		{"Beta Users ", 0, false},
+		{"missing", 0, false},
+	} {
+		index, found := ConditionIndex(cfg, test.name)
+		if index != test.index || found != test.found {
+			t.Errorf("ConditionIndex(%q) = %d, %t; want %d, %t", test.name, index, found, test.index, test.found)
+		}
+	}
+	if _, found := ConditionIndex(nil, "Beta Users"); found {
+		t.Fatal("ConditionIndex(nil) found a condition")
+	}
+}
+
 func TestParseCloneRemoteConfigDeepCopiesParsedConfig(t *testing.T) {
 	raw := []byte(`{"parameters":{"flag":{"defaultValue":{"value":"on"}}}}`)
 

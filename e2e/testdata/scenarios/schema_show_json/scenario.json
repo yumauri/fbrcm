@@ -4,7 +4,7 @@
   "args": [
     "schema",
     "show",
-    "urn:fbrcm:schema:cli:1.0.0:command:get:response",
+    "urn:fbrcm:schema:cli:1.1.0:command:get:response",
     "--json"
   ],
   "expected_exit_code": 0,

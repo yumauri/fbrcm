@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.rename:response",
+  "contract_version": "1.1.0",
   "command": "conditions.rename",
   "requested_command": "conditions.rename",
   "outcome": "success",

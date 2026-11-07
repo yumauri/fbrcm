@@ -151,7 +151,7 @@ func TestVersionBlameHeadingUsesFullWidthGrayBackground(t *testing.T) {
 	}
 
 	const width = 48
-	got := renderVersionBlameHeading(item, width)
+	got := renderVersionBlameHeading(item.PreviousVersion, item.Version.VersionNumber, width)
 	if gotWidth := lipgloss.Width(got); gotWidth != width {
 		t.Fatalf("heading width = %d, want %d: %q", gotWidth, width, got)
 	}

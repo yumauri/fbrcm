@@ -12,7 +12,7 @@ import (
 func TestNewCommandStructure(t *testing.T) {
 	cmd := New(nil)
 	cmdtest.AssertSubcommands(t, cmd, "blame", "diff", "export", "list", "restore", "rollback", "show")
-	for _, flag := range []string{"limit", "all", "at", "json"} {
+	for _, flag := range []string{"condition", "limit", "all", "at", "json"} {
 		cmdtest.AssertNestedFlag(t, cmd, []string{"blame"}, flag)
 	}
 	for _, flag := range []string{"limit", "all", "before", "since", "until", "cached", "json"} {

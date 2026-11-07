@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.import:response",
+  "contract_version": "1.1.0",
   "command": "theme.import",
   "requested_command": "theme.import",
   "outcome": "success",

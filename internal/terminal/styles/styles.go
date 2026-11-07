@@ -27,12 +27,14 @@ var (
 	FirebaseIOS        = lipgloss.Color(corestyles.FirebaseIOS)
 	FirebaseWeb        = lipgloss.Color(corestyles.FirebaseWeb)
 
-	ColorRowStripe         = corestyles.ColorRowStripe
-	ColorInactiveSelection = corestyles.ColorInactiveSelection
-	ColorAdded             = corestyles.ColorAdded
-	ColorRemoved           = corestyles.ColorRemoved
-	ColorChanged           = corestyles.ColorChanged
-	ColorNote              = corestyles.ColorNote
+	ColorRowStripe                = corestyles.ColorRowStripe
+	ColorInactiveSelection        = corestyles.ColorInactiveSelection
+	ColorAdded                    = corestyles.ColorAdded
+	ColorRemoved                  = corestyles.ColorRemoved
+	ColorChanged                  = corestyles.ColorChanged
+	ColorNote                     = corestyles.ColorNote
+	ColorHistoryAddedBackground   = corestyles.ColorHistoryAddedBackground
+	ColorHistoryRemovedBackground = corestyles.ColorHistoryRemovedBackground
 
 	PanelMuted = lipgloss.NewStyle().
 			Foreground(PaletteSlateDim)

@@ -1,6 +1,10 @@
 # JSON contract
 
-Contract `1.0.0` is the released baseline for fbrcm 1.0.0. See the
+Contract `1.1.0` is under development and has not been published. It includes
+`versions blame --condition` while preserving parameter blame.
+Its schemas and fingerprint may be regenerated in place while `released: false`.
+The published `1.0.0` schemas and released lock remain available unchanged.
+Examples below use the current development contract. See the
 [compatibility guarantees](/reference/compatibility) for schema versioning,
 upgrade rules, and the exclusion of human layouts from automation interfaces.
 
@@ -17,13 +21,13 @@ Every response contains the same top-level fields:
 
 ```json
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.list:response",
+  "contract_version": "1.1.0",
   "command": "projects.list",
   "requested_command": "projects.list",
   "outcome": "success",
   "exit_code": 0,
-  "producer": { "name": "fbrcm", "version": "1.0.0" },
+  "producer": { "name": "fbrcm", "version": "1.1.0" },
   "context": {
     "profile": "default",
     "offline": false,
@@ -94,7 +98,7 @@ or written to the destination, never both.
 fbrcm capabilities update --json
 fbrcm schema list --json
 fbrcm schema show \
-  urn:fbrcm:schema:cli:1.0.0:command:update:response \
+  urn:fbrcm:schema:cli:1.1.0:command:update:response \
   --json
 ```
 

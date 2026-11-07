@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.unset:response",
+  "contract_version": "1.1.0",
   "command": "project.quota-project.unset",
   "requested_command": "project.quota-project.unset",
   "outcome": "success",

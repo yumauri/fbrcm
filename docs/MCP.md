@@ -108,6 +108,12 @@ miss, it accepts the shared `~`, `^`, `/`, and `=` filter prefixes over project
 IDs and display names, with fuzzy matching by default, and requires exactly one
 result. Stateless project arguments remain literal IDs.
 
+`versions.blame` also accepts `options.condition` for one exact condition name,
+mutually exclusive with `arguments.parameter`. Condition results identify the
+condition and attribute expression, color, priority, addition and removal changes
+to their publication user and time. The same limit, starting-version and retained
+boundary rules apply. Existing parameter inputs and results remain supported.
+
 `versions.blame` returns the newest-first direct change history for one exact
 parameter key. Its `at`, `limit`, and `all` options match the CLI command;
 `all` and `limit` are mutually exclusive. The tool loads retained Firebase

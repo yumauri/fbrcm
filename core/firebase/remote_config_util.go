@@ -38,3 +38,17 @@ func MarshalRemoteConfig(cfg *RemoteConfig) ([]byte, error) {
 	}
 	return data, nil
 }
+
+// ConditionIndex resolves an untrimmed condition name exactly and case-sensitively.
+// Duplicate names resolve to the first stored condition.
+func ConditionIndex(cfg *RemoteConfig, name string) (int, bool) {
+	if cfg == nil {
+		return 0, false
+	}
+	for index, condition := range cfg.Conditions {
+		if condition.Name == name {
+			return index, true
+		}
+	}
+	return 0, false
+}

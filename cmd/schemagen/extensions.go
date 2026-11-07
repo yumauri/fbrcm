@@ -449,6 +449,7 @@ func extensionSchemaDefinitions() map[string]any {
 				"auth_id_resolution",
 				"condition_name_resolution",
 				"condition_positional_resolution",
+				"condition_history_resolution",
 				"duplicate_source_resolution",
 				"group_name_resolution",
 				"help_path_resolution",

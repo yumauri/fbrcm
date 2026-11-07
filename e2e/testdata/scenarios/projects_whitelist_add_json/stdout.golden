@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.add:response",
+  "contract_version": "1.1.0",
   "command": "projects.whitelist.add",
   "requested_command": "projects.whitelist.add",
   "outcome": "success",

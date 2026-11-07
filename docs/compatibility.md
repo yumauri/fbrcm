@@ -6,6 +6,22 @@ separate versions. The CLI JSON contract starts at `1.0.0`; existing integer
 file-format versions remain `1`. The pre-1.0 permission to break these
 interfaces without migration or a version change has ended.
 
+## Upcoming 1.1.0 release boundary
+
+Version 1.1.0 has not been published. Its CLI JSON contract has `released: false`
+and may be regenerated in place before release. It adds
+condition blame through CLI/MCP `versions.blame`. Released 1.0.0 interfaces,
+schemas, and durable data remain covered by the existing compatibility promise.
+Once 1.1.0 is published, its interfaces join that promise and its released lock
+must not be changed without the appropriate contract-version bump.
+
+| Versioned surface | Boundary for this release |
+| --- | --- |
+| Application | fbrcm `1.1.0`; documented CLI behavior remains compatible throughout 1.x. |
+| CLI JSON | Contract `1.1.0`, currently unreleased and mutable before publication; published `1.0.0` schemas and their archived lock remain unchanged. |
+| MCP | Negotiated protocol version, with the documented public tool catalog, launch policy, schema adaptation and shared operation envelopes. The CLI lock does not independently freeze MCP adaptation. |
+| Persisted formats | Existing integer versions remain `1`; versionless durable formats retain their established meaning. No encoding change or migration is introduced by this release. |
+
 ## Stable interfaces
 
 | Interface | Guarantee within fbrcm 1.x |
@@ -13,7 +29,7 @@ interfaces without migration or a version change has ended.
 | Documented CLI commands | Command paths, positional arguments, flags and aliases, accepted inputs, defaults, selector/filter/expression semantics, documented environment variables, confirmation requirements, side effects, and exit-status meanings remain compatible. |
 | CLI JSON | Versioned envelopes, command IDs, schema URNs, DTO fields and meanings, problem/warning codes and details, remediation strategies, artifact contracts, capability metadata, and normative semantic annotations follow the contract-version rules below. |
 | MCP | Public tool names and their operation mappings, launch options, discovered input/output contracts, wrapper defaults, result/error mapping, and write/hook/confirmation/authentication policy remain compatible for the same launch configuration and negotiated protocol capabilities. |
-| Durable persisted data | Supported configuration, identities, user preferences, drafts, retained snapshots, and publication plans written by 1.0.0 remain readable and retain their meaning on 1.x upgrades, directly or through a documented migration. |
+| Durable persisted data | Supported configuration, identities, user preferences, drafts, retained snapshots, and publication plans written by any released 1.x version remain readable and retain their meaning on upgrades to later 1.x versions, directly or through a documented migration. |
 
 The [CLI reference](CLI.md), [JSON contract](cli-contract.md), and
 [MCP reference](MCP.md) define the concrete behavior. Fixing behavior that
@@ -91,13 +107,16 @@ plan formats currently use integer version `1`. TOML configuration, themes,
 hook trust records, and Remote Config snapshot wrappers have no separate
 format-version field; that does not exempt their supported data from upgrade
 compatibility. A release number alone never increments a file-format version.
+The upcoming 1.1.0 release keeps the existing encodings, including the
+publication-plan artifact schema `urn:fbrcm:schema:cli:1.0.0:publication_plan` and its integer
+`format_version: 1`.
 
 An incompatible encoding needs a distinct format version where one exists and
 a documented migration before replacing durable data. Versionless formats need
 an unambiguous migration boundary rather than silent reinterpretation. Preserve
 user data and provide recovery for migration failures. Unsupported future
 versions must be rejected without overwriting them. No migrations are needed
-merely to label the unchanged 1.0.0 baseline as stable.
+for the unchanged encodings in 1.1.0.
 
 Transient application inventories, freshness metadata, discovery results, and
 other rebuildable caches may be refreshed or invalidated. They are not a backup
@@ -107,8 +126,10 @@ cache clearing, draft discard, profile deletion, and credential replacement
 retain their documented destructive behavior. Token refresh and hook trust
 revalidation may still be necessary after an upgrade.
 
-The guarantee is for upgrades from released 1.0.0 data, not arbitrary pre-1.0
-files, files from future versions, or downgrades. Formatting, JSON member order,
+The guarantee covers data from released 1.0.0 and subsequent released 1.x
+versions when upgrading to later 1.x versions. It does not cover
+arbitrary pre-1.0 files, files from newer versions than the reading binary, or
+downgrades. Formatting, JSON member order,
 comments, and byte-for-byte round trips are not promised unless an artifact
 contract explicitly requires them. Directly editing internal cache or token
 representations is not a supported integration; use the CLI and returned paths.
@@ -134,26 +155,41 @@ Integrate through the documented CLI, JSON, or MCP interfaces.
 
 Explicitly documented experimental human-only transports, such as theme
 directory stdin, remain outside the promise. Historical audit reports record
-their original release state; `released: false` in those reports is not the
-current release policy.
+their original release state; the current release status is recorded in
+`schemas/cli/contract.lock.json`.
 
 ## Release lock
 
-`schemas/cli/contract.lock.json` marks CLI contract `1.0.0` as `released: true`.
-Its SHA-256 freezes the generated CLI schemas, compact/detailed capabilities,
+The released `1.0.0` fingerprint and marker are archived unchanged in
+`schemas/cli/contract-1.0.0.lock.json`. `schemas/cli/contract.lock.json` records
+unreleased contract `1.1.0` with `released: false`. Its schemas, capabilities,
+audit evidence, and fingerprint may be regenerated in place before publication.
+The SHA-256 freezes the generated CLI schemas, compact/detailed capabilities,
 and audit-evidence golden. The embedded capability catalog is regenerated and
 tested against those records. This lock is a generation gate, not a fingerprint
 of every runtime implementation, MCP adaptation, or persisted format.
 
 Run `go run ./cmd/schemagen` before releasing. It must preserve the released
 marker and digest at the same version, and reject a changed fingerprint before
-publishing any generated files. Future generated changes need the appropriate
-contract-version bump and reviewed schemas, capabilities, evidence, tests, and
-documentation. Even a test-evidence-only fingerprint change requires a version
-bump; it does not authorize changing runtime behavior. Never clear the released
+publishing any generated files. After publication, generated changes need the
+appropriate contract-version bump and reviewed schemas, capabilities, evidence, tests, and
+documentation. After publication, even a test-evidence-only fingerprint change
+requires a version bump; it does not authorize changing runtime behavior. Never clear the released
 marker or replace a released fingerprint to bypass this gate.
 
 A new contract version is staged as unreleased until its review is complete;
 then set its release marker after generation. The release workflow requires a
 released lock before publishing binaries. Persisted-format and MCP compatibility
 still require review and regression evidence in addition to this CLI gate.
+When advancing beyond 1.1.0, retain its released lock as
+`schemas/cli/contract-1.1.0.lock.json` before replacing the current lock with
+the next contract version, as was done for 1.0.0.
+
+
+## Condition blame development boundary
+
+Condition blame is included in unreleased CLI JSON contract `1.1.0` alongside
+`explain`. Existing parameter blame invocations and data remain unchanged. The
+existing MCP `versions.blame` tool gains the same optional condition selector.
+No durable file format changes. Release review must freeze the `1.1.0` lock
+before publishing binaries; the released `1.0.0` lock and schemas remain unchanged.

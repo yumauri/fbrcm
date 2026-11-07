@@ -95,7 +95,7 @@ func TestCLI(t *testing.T) {
 				KeyPath:           key,
 				FixturesRoot:      filepath.Join(e2eRoot, "testdata", "fixtures"),
 				StateFixturesRoot: filepath.Join(e2eRoot, "testdata", "state"),
-				SchemasRoot:       filepath.Join(e2eRoot, "..", "schemas", "cli", "1.0.0"),
+				SchemasRoot:       filepath.Join(e2eRoot, "..", "schemas", "cli"),
 				AccessToken:       os.Getenv("FBRCM_E2E_ACCESS_TOKEN"),
 				ScenarioRoot:      t.TempDir(),
 				ToolsRoot:         toolDirectory,

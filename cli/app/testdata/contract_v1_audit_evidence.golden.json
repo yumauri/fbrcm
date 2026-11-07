@@ -1,6 +1,6 @@
 {
   "audit_standard_version": "1.0.0",
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "catalog": {
     "app.apps_response_invariants": "cli/app/contract_test.go#TestAppsResponseSchemasRequireCacheTimestampAndArtifactTarget",
     "app.arity": "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
@@ -11,6 +11,9 @@
     "app.capability_behavior": "cli/app/contract_test.go#TestDetailedCapabilityGoldenCoversAuthoritativeBehavior",
     "app.capability_predicate_integrity": "cli/app/contract_test.go#TestCapabilityPredicateClausesAreInternallyConsistent",
     "app.completion_success": "cli/app/contract_test.go#TestJSONCompletionCommandsUseConformingResponseSchemas",
+    "app.condition_blame_invocation": "cli/app/condition_blame_test.go#TestConditionBlameInvocationSchema",
+    "app.condition_blame_response_invariants": "cli/app/condition_blame_test.go#TestConditionBlameResponseSchemaRejectsUnreachableStates",
+    "app.condition_blame_runtime": "cli/app/condition_blame_test.go#TestConditionBlameMachineEnvelopes",
     "app.confirmation_effectiveness": "cli/app/contract_test.go#TestConfirmationBypassFlagsPublishConditionalEffectiveness",
     "app.discovery": "cli/app/contract_test.go#TestEveryExecutableCommandHasCapabilityAndPublishedSchemas",
     "app.effectiveness": "cli/app/contract_test.go#TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas",
@@ -11324,32 +11327,37 @@
           "evidence": [
             "app.boundaries",
             "app.invocation_semantics",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "determinism": {
           "evidence": [
             "e2e:schema_show_json",
+            "e2e:schema_show_retained_json",
             "schemagen.determinism"
           ]
         },
         "discovery": {
           "evidence": [
             "app.discovery",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "effectiveness": {
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "effects": {
           "evidence": [
             "app.capability_behavior",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "failure": {
@@ -11358,7 +11366,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "interaction": {
@@ -11369,7 +11378,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "no_op": {
@@ -11378,7 +11388,8 @@
         "selection": {
           "evidence": [
             "app.selection",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "stdin": {
@@ -11388,7 +11399,8 @@
           "evidence": [
             "app.outcomes",
             "app.response_invariants",
-            "e2e:schema_show_json"
+            "e2e:schema_show_json",
+            "e2e:schema_show_retained_json"
           ]
         },
         "warning": {
@@ -12364,12 +12376,15 @@
         "boundary": {
           "evidence": [
             "app.boundaries",
+            "app.condition_blame_runtime",
             "app.invocation_semantics",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
         "determinism": {
           "evidence": [
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json",
             "schemagen.determinism"
           ]
@@ -12377,6 +12392,7 @@
         "discovery": {
           "evidence": [
             "app.discovery",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
@@ -12384,6 +12400,7 @@
           "evidence": [
             "app.capability_behavior",
             "app.effectiveness",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
@@ -12391,30 +12408,37 @@
           "evidence": [
             "app.capability_behavior",
             "app.capability_predicate_integrity",
+            "app.condition_blame_runtime",
             "contract.stateless_predicates",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
         "failure": {
           "evidence": [
+            "app.condition_blame_runtime",
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
         "interaction": {
           "evidence": [
             "app.interaction",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
         "invocation": {
           "evidence": [
             "app.arity",
+            "app.condition_blame_invocation",
             "app.invocation_semantics",
             "app.unknown_option",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
@@ -12423,7 +12447,9 @@
         },
         "selection": {
           "evidence": [
+            "app.condition_blame_invocation",
             "app.selection",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },
@@ -12432,9 +12458,12 @@
         },
         "success": {
           "evidence": [
+            "app.condition_blame_response_invariants",
+            "app.condition_blame_runtime",
             "app.outcomes",
             "app.response_invariants",
             "app.versions_blame_response_invariants",
+            "e2e:versions_blame_condition_stateless_json",
             "e2e:versions_blame_stateless_json"
           ]
         },

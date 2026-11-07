@@ -1,10 +1,13 @@
 # CLI JSON schemas
 
-`cli/1.0.0/` is generated and checked in. It contains Draft 2020-12 input and
+`cli/1.1.0/` is the current unreleased development contract, including
+condition blame. Released `cli/1.0.0/` remains checked in and embedded
+unchanged as the released baseline. The current directory contains Draft 2020-12 input and
 response schemas for every executable CLI command plus the shared envelope,
 problem, capability, semantic-definition, Remote Config stdin, combined
 credential stdin, OAuth credential stdin, and service-account credential stdin
-schemas, plus theme stdin and publication plan schemas. Contract `1.0.0` is the
+schemas, plus theme and publication plan stdin schemas. The fixed publication-plan
+artifact schema retains its original `1.0.0` ID. Contract `1.0.0` is the
 released baseline; see the [compatibility policy](../docs/compatibility.md).
 
 Each command response schema includes the exact registered success-data DTO.
@@ -60,7 +63,10 @@ The embedded capability catalog describes shared operations and is checked
 against live CLI discovery by regression tests.
 
 `schemas/cli/contract.lock.json` records the generated contract's fingerprint.
-Contract `1.0.0` is marked `released: true`. Generation preserves that marker
+The released `1.0.0` marker and digest are archived in
+`cli/contract-1.0.0.lock.json`. The current `1.1.0` lock has `released: false`
+and its development schemas may be regenerated in place until publication.
+Generation preserves a released marker
 and rejects fingerprint changes at the same released version before replacing
 any assets. Follow the compatibility policy for the appropriate version bump.
 For a new version, regenerate and review it before setting its release marker

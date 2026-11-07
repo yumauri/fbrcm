@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:project.import:response",
+  "contract_version": "1.1.0",
   "command": "project.import",
   "requested_command": "project.import",
   "outcome": "success",

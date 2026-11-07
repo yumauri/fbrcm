@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.path:response",
+  "contract_version": "1.1.0",
   "command": "theme.path",
   "requested_command": "theme.path",
   "outcome": "success",

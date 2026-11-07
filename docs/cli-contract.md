@@ -1,13 +1,16 @@
 # fbrcm machine contract v1
 
 This document defines the stable machine interface used by agents, CI, and
-scripts. Contract version `1.0.0` applies whenever the global `--json` flag is
+scripts. Contract version `1.1.0` applies whenever the global `--json` flag is
 present. Without `--json`, commands use human-readable output.
 
-Contract `1.0.0` is the released, locked baseline for fbrcm 1.0.0. The
-[compatibility policy](compatibility.md) defines CLI, JSON, MCP, and persisted
-data guarantees, their version boundaries, and the human UI and Go-library
-interfaces that are excluded.
+Contract `1.0.0` is the released, locked baseline for fbrcm 1.0.0. Contract
+`1.1.0` is unreleased and includes condition history through the
+optional `versions blame --condition <name>` selector. Existing parameter
+invocations and response fields remain unchanged. The development schemas may
+be regenerated in place until release; the published `1.0.0` schemas and released
+fingerprint remain unchanged. The [compatibility policy](compatibility.md)
+defines CLI, JSON, MCP, and persisted data guarantees and their version boundaries.
 
 For a concise integration workflow and safe usage examples, start with the
 [agent quickstart](agent-quickstart.md).
@@ -122,8 +125,8 @@ Every result has this shape:
 
 ```json
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.list:response",
+  "contract_version": "1.1.0",
   "command": "projects.list",
   "requested_command": "projects.list",
   "outcome": "success",
@@ -490,7 +493,7 @@ fbrcm capabilities --json
 fbrcm capabilities root --json
 fbrcm capabilities project import --json
 fbrcm schema list --json
-fbrcm schema show urn:fbrcm:schema:cli:1.0.0:command:project.import:input --json
+fbrcm schema show urn:fbrcm:schema:cli:1.1.0:command:project.import:input --json
 ```
 
 The no-argument JSON form returns a compact index containing each command's
@@ -1162,12 +1165,15 @@ credential file exists.
 
 ## Published schemas and versioning
 
-Draft 2020-12 JSON Schemas are checked in under `schemas/cli/1.0.0/` and
+Draft 2020-12 JSON Schemas are checked in under `schemas/cli/1.1.0/` and
 embedded in the binary. Each executable command has one input schema and one
 response schema. Shared envelope, error, capability, semantic, general Remote
 Config stdin, project-import Remote Config stdin, combined credential stdin,
-OAuth credential stdin, service-account credential stdin, strict publication
-plan stdin, and standalone publication-plan schemas are published beside them.
+OAuth credential stdin, service-account credential stdin, and strict publication
+plan stdin schemas are published beside them. Historical
+`schemas/cli/1.0.0/` resources remain embedded unchanged, including the fixed
+publication-plan artifact schema, whose ID and file format do not change with
+the CLI contract version.
 
 Every command response schema references the shared published envelope schema
 and defines the command's exact successful `data` DTO. Enforceable correlations
@@ -1309,8 +1315,10 @@ advertised schema/version; there is no output-version negotiation flag.
 
 `schemas/cli/contract.lock.json` fingerprints the current generated schemas,
 capability goldens, and audit-evidence golden and records whether that contract
-has been released. Contract `1.0.0` has `released: true`; the pre-1.0 in-place
-correction policy has ended. The generator rejects a different fingerprint at
+has been released. Contract `1.1.0` is under development with `released: false`
+and may be regenerated in place before publication. The released `1.0.0` marker
+and fingerprint are retained in `schemas/cli/contract-1.0.0.lock.json`. The
+pre-1.0 in-place correction policy has ended. The generator rejects a different fingerprint at
 the same released version and preserves the release marker on unchanged
 regeneration. A future version is reviewed before its own release marker is
 enabled; never clear a released marker to bypass the gate. Generation happens in a staging
@@ -1389,3 +1397,37 @@ predicate uses this selected freshness policy; `cached=true` does not prohibit
 network or cache-write effects. `apps show --cached` and `apps config --cached`
 still require local data. Mutual exclusion with `--update`, rejection with
 `--stateless`, DTOs, and contract version are unchanged.
+
+
+### Condition blame
+
+`versions.blame` accepts exactly one entity selector: `arguments.parameter` or
+`options.condition`. The project remains required; the parameter is conditionally
+required when `--condition` is absent. Both selectors are untrimmed, exact and
+case-sensitive. Blank selectors, both/neither selector, invalid `--at`, nonpositive
+limits and explicit `--all` with `--limit` return `argument.invalid` (exit `2`).
+This is non-interactive in every mode, including JSON; no condition-selection
+prompt is opened. Stateless client and server targets use the same live history
+scan and never read or write local state. Normal mode reuses immutable historical
+snapshots without changing the current pointer; the retained-version index is live.
+
+Parameter success DTOs are preserved. Condition success DTOs carry `project`,
+`condition`, `at_version`, `scanned_version_count`, `history_exhausted`, `boundary`
+and `changes`. Each change preserves the adjacent previous/published versions,
+publication user/time, nullable change note and rollback source, origin, type,
+and a typed condition diff. Expressions, display colors and one-based evaluation
+positions are compared with the shared Remote Config diff rules; parameter usage
+changes do not count. Renames are separate removal/addition events for their exact
+names. The publishing identity does not establish who authored an unpublished draft.
+
+Changes are newest first and never `unchanged`; `--limit` (default `1`) counts
+changes rather than fetched versions. `--all` scans to the retention boundary.
+`--at` accepts the existing numeric and symbolic version selectors. Conditions
+absent everywhere inspected return typed `condition.not_found` (exit `6`), with
+selection resource `condition`, the exact query, and target template ID. Earlier
+absence at a boundary is explicit (`state: absent`); earlier presence is
+`state: present` and means creation attribution is unavailable. Condition boundaries
+omit `group`. `boundary` is null exactly when `history_exhausted` is false, and
+`changes` is always an array, including successful empty history. No new persisted
+format or public MCP tool is introduced; the existing `versions.blame` tool
+compatibly accepts the same condition option and typed results.

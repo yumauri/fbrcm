@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:setup:response",
+  "contract_version": "1.1.0",
   "command": "setup",
   "requested_command": "setup",
   "outcome": "failure",

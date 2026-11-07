@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.show:response",
+  "contract_version": "1.1.0",
   "command": "plan.show",
   "requested_command": "plan.show",
   "outcome": "success",

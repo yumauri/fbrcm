@@ -1,5 +1,5 @@
 {
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "count": 130,
   "commands": [
     {
@@ -8,8 +8,8 @@
         "add"
       ],
       "summary": "Add Remote Config parameter",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:add:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:add:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:add:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -27,8 +27,8 @@
         "apply"
       ],
       "summary": "Apply an immutable publication plan",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apply:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apply:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apply:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -47,8 +47,8 @@
         "config"
       ],
       "summary": "Download Firebase application SDK configuration",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.config:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.config:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.config:response",
       "side_effect_level": 2,
       "destructive": true,
       "supports": {
@@ -67,8 +67,8 @@
         "list"
       ],
       "summary": "List applications across Firebase projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -87,8 +87,8 @@
         "show"
       ],
       "summary": "Show Firebase application details",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:apps.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:apps.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -108,8 +108,8 @@
         "gcloud"
       ],
       "summary": "Add gcloud ADC auth identity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.gcloud:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.gcloud:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.gcloud:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -129,8 +129,8 @@
         "google"
       ],
       "summary": "Add Google OAuth auth identity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.google:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.google:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.google:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -150,8 +150,8 @@
         "oauth"
       ],
       "summary": "Add OAuth auth identity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.oauth:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.oauth:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.oauth:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -171,8 +171,8 @@
         "service-account"
       ],
       "summary": "Add service account auth identity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.add.service-account:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.service-account:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.add.service-account:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -191,8 +191,8 @@
         "bind"
       ],
       "summary": "Bind projects to auth identity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.bind:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.bind:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.bind:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -211,8 +211,8 @@
         "delete"
       ],
       "summary": "Delete an auth identity and its files",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.delete:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -231,8 +231,8 @@
         "list"
       ],
       "summary": "List auth identities",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -251,8 +251,8 @@
         "login"
       ],
       "summary": "Authenticate auth identity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.login:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.login:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.login:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -271,8 +271,8 @@
         "path"
       ],
       "summary": "Print auth file paths",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -292,8 +292,8 @@
         "set"
       ],
       "summary": "Set an auth identity's quota project",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.set:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.set:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -313,8 +313,8 @@
         "show"
       ],
       "summary": "Show an auth identity's quota-project resolution",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -334,8 +334,8 @@
         "unset"
       ],
       "summary": "Remove an auth identity's quota-project setting",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:auth.quota-project.unset:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.unset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:auth.quota-project.unset:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -354,8 +354,8 @@
         "clear"
       ],
       "summary": "Clear local cache entries",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.clear:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.clear:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.clear:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -374,8 +374,8 @@
         "list"
       ],
       "summary": "List local cache entries",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -394,8 +394,8 @@
         "path"
       ],
       "summary": "Print a cache directory path",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -413,8 +413,8 @@
         "capabilities"
       ],
       "summary": "Describe CLI commands for machine discovery",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:capabilities:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:capabilities:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:capabilities:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -433,8 +433,8 @@
         "bash"
       ],
       "summary": "Generate the autocompletion script for bash",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.bash:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.bash:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.bash:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -453,8 +453,8 @@
         "fish"
       ],
       "summary": "Generate the autocompletion script for fish",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.fish:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.fish:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.fish:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -473,8 +473,8 @@
         "powershell"
       ],
       "summary": "Generate the autocompletion script for powershell",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.powershell:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.powershell:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.powershell:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -493,8 +493,8 @@
         "zsh"
       ],
       "summary": "Generate the autocompletion script for zsh",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:completion.zsh:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.zsh:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:completion.zsh:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -513,8 +513,8 @@
         "add"
       ],
       "summary": "Add a condition across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.add:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.add:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.add:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -533,8 +533,8 @@
         "delete"
       ],
       "summary": "Delete matching conditions and their conditional values across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.delete:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -553,8 +553,8 @@
         "edit"
       ],
       "summary": "Edit a condition expression or color",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.edit:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.edit:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.edit:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -573,8 +573,8 @@
         "list"
       ],
       "summary": "List conditions in evaluation priority order",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -593,8 +593,8 @@
         "move"
       ],
       "summary": "Move a condition to a new evaluation priority",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.move:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.move:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.move:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -613,8 +613,8 @@
         "rename"
       ],
       "summary": "Rename a condition and all of its parameter references",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.rename:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.rename:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.rename:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -633,8 +633,8 @@
         "show"
       ],
       "summary": "Show a condition and every parameter that uses it",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -653,8 +653,8 @@
         "validate"
       ],
       "summary": "Validate the current draft or published conditions with Firebase",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:conditions.validate:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.validate:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:conditions.validate:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -673,8 +673,8 @@
         "edit"
       ],
       "summary": "Edit global or repository configuration in a text editor",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.edit:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.edit:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.edit:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -693,8 +693,8 @@
         "path"
       ],
       "summary": "Print a configuration file path",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -713,8 +713,8 @@
         "reset"
       ],
       "summary": "Reset global configuration to built-in defaults",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.reset:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.reset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.reset:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -733,8 +733,8 @@
         "set"
       ],
       "summary": "Set a global configuration value",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.set:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.set:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -753,8 +753,8 @@
         "show"
       ],
       "summary": "Show effective global configuration",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.show:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -773,8 +773,8 @@
         "validate"
       ],
       "summary": "Validate layered configuration and keybindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:config.validate:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.validate:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:config.validate:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -792,8 +792,8 @@
         "delete"
       ],
       "summary": "Delete Remote Config parameters",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:delete:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -811,8 +811,8 @@
         "doctor"
       ],
       "summary": "Check profile, credentials, connectivity, APIs, permissions, and cache",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:doctor:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:doctor:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:doctor:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -831,8 +831,8 @@
         "change-note"
       ],
       "summary": "Show or update a Remote Config draft change note",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.change-note:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.change-note:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -851,8 +851,8 @@
         "diff"
       ],
       "summary": "Compare a draft with its base or current Remote Config",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.diff:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.diff:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.diff:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -871,8 +871,8 @@
         "discard"
       ],
       "summary": "Discard local Remote Config drafts",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.discard:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.discard:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -891,8 +891,8 @@
         "list"
       ],
       "summary": "List local Remote Config drafts",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -911,8 +911,8 @@
         "path"
       ],
       "summary": "Print Remote Config drafts directory path",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -931,8 +931,8 @@
         "publish"
       ],
       "summary": "Safely rebase and publish Remote Config drafts",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.publish:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.publish:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.publish:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -951,8 +951,8 @@
         "show"
       ],
       "summary": "Show a local Remote Config draft",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.show:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -970,8 +970,8 @@
         "duplicate"
       ],
       "summary": "Duplicate a Remote Config parameter",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:duplicate:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:duplicate:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:duplicate:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -990,8 +990,8 @@
         "delete"
       ],
       "summary": "Delete an experiment",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.delete:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -1010,8 +1010,8 @@
         "list"
       ],
       "summary": "List experiments and their parameter bindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1030,8 +1030,8 @@
         "show"
       ],
       "summary": "Show experiment details and parameter bindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:experiments.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:experiments.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1049,8 +1049,8 @@
         "get"
       ],
       "summary": "Get parameters from all projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:get:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:get:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:get:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1069,8 +1069,8 @@
         "add"
       ],
       "summary": "Add an empty parameter group across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.add:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.add:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.add:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -1089,8 +1089,8 @@
         "delete"
       ],
       "summary": "Delete a group across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.delete:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -1109,8 +1109,8 @@
         "edit"
       ],
       "summary": "Edit a group description across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.edit:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.edit:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.edit:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -1129,8 +1129,8 @@
         "list"
       ],
       "summary": "List parameter groups across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1149,8 +1149,8 @@
         "rename"
       ],
       "summary": "Rename a parameter group across projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:groups.rename:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.rename:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:groups.rename:response",
       "side_effect_level": 3,
       "destructive": false,
       "supports": {
@@ -1168,8 +1168,8 @@
         "help"
       ],
       "summary": "Help about any command",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:help:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:help:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:help:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1188,8 +1188,8 @@
         "fingerprint"
       ],
       "summary": "Print the effective local hooks fingerprint",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.fingerprint:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.fingerprint:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.fingerprint:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1208,8 +1208,8 @@
         "status"
       ],
       "summary": "Show effective hooks and local trust status",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.status:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.status:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.status:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1228,8 +1228,8 @@
         "trust"
       ],
       "summary": "Trust the current local hook definition",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.trust:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.trust:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.trust:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1248,8 +1248,8 @@
         "untrust"
       ],
       "summary": "Remove trust for the current local config",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:hooks.untrust:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.untrust:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:hooks.untrust:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -1267,8 +1267,8 @@
         "mcp"
       ],
       "summary": "Serve Firebase Remote Config tools over MCP stdio",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:mcp:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:mcp:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:mcp:response",
       "side_effect_level": 0,
       "destructive": false,
       "supports": {
@@ -1287,8 +1287,8 @@
         "list"
       ],
       "summary": "List personalizations and their parameter bindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1307,8 +1307,8 @@
         "show"
       ],
       "summary": "Show personalization parameter bindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:personalizations.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:personalizations.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1327,8 +1327,8 @@
         "show"
       ],
       "summary": "Show a publication plan and its diffs",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.show:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1347,8 +1347,8 @@
         "validate"
       ],
       "summary": "Validate publication plan structure and integrity",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.validate:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.validate:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1366,8 +1366,8 @@
         "profile"
       ],
       "summary": "Manage profiles",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1386,8 +1386,8 @@
         "delete"
       ],
       "summary": "Delete profile config and cache directories",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.delete:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -1406,8 +1406,8 @@
         "list"
       ],
       "summary": "List profiles",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1426,8 +1426,8 @@
         "path"
       ],
       "summary": "Print profile config and cache directory paths",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1446,8 +1446,8 @@
         "rename"
       ],
       "summary": "Rename an existing profile",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.rename:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.rename:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.rename:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1466,8 +1466,8 @@
         "switch"
       ],
       "summary": "Switch to a profile, creating it if needed",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:profile.switch:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.switch:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:profile.switch:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1486,8 +1486,8 @@
         "defaults"
       ],
       "summary": "Download template application defaults",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.defaults:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.defaults:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.defaults:response",
       "side_effect_level": 2,
       "destructive": true,
       "supports": {
@@ -1506,8 +1506,8 @@
         "export"
       ],
       "summary": "Export project Remote Config JSON",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.export:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.export:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.export:response",
       "side_effect_level": 2,
       "destructive": true,
       "supports": {
@@ -1526,8 +1526,8 @@
         "import"
       ],
       "summary": "Import project Remote Config JSON",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.import:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.import:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.import:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -1546,8 +1546,8 @@
         "open"
       ],
       "summary": "Open project Remote Config in the Firebase console",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.open:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.open:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.open:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1567,8 +1567,8 @@
         "set"
       ],
       "summary": "Set a project's quota-project override",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.set:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.set:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1588,8 +1588,8 @@
         "show"
       ],
       "summary": "Show a project's quota-project resolution",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1609,8 +1609,8 @@
         "unset"
       ],
       "summary": "Remove a project's quota-project override",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.quota-project.unset:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.unset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.quota-project.unset:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1629,8 +1629,8 @@
         "show"
       ],
       "summary": "Show project details and auth access",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1650,8 +1650,8 @@
         "set"
       ],
       "summary": "Set enabled or primary templates",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.set:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.set:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1671,8 +1671,8 @@
         "show"
       ],
       "summary": "Show enabled and primary templates",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:project.templates.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:project.templates.show:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1692,8 +1692,8 @@
         "import"
       ],
       "summary": "Import Firebase CLI project aliases into .fbrcm.toml",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.import:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.import:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.import:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -1713,8 +1713,8 @@
         "list"
       ],
       "summary": "List repository project aliases",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1734,8 +1734,8 @@
         "remove"
       ],
       "summary": "Remove a repository project alias",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.remove:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.remove:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -1755,8 +1755,8 @@
         "set"
       ],
       "summary": "Set a repository project alias",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.set:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.set:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.set:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -1776,8 +1776,8 @@
         "add"
       ],
       "summary": "Add project IDs to the profile blacklist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.add:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.add:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1797,8 +1797,8 @@
         "clear"
       ],
       "summary": "Clear the profile project blacklist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.clear:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.clear:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.clear:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1818,8 +1818,8 @@
         "disable"
       ],
       "summary": "Disable the profile project blacklist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.disable:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.disable:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.disable:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1839,8 +1839,8 @@
         "enable"
       ],
       "summary": "Enable the profile project blacklist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.enable:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.enable:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.enable:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1860,8 +1860,8 @@
         "list"
       ],
       "summary": "List stored project IDs and activation state",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1881,8 +1881,8 @@
         "remove"
       ],
       "summary": "Remove project IDs from the profile blacklist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.remove:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.remove:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.remove:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1901,8 +1901,8 @@
         "diff"
       ],
       "summary": "Compare Remote Config between two projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.diff:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.diff:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.diff:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1921,8 +1921,8 @@
         "forget"
       ],
       "summary": "Forget locally tracked projects and delete their local data",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.forget:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.forget:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.forget:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -1941,8 +1941,8 @@
         "list"
       ],
       "summary": "List projects using cache-first loading",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -1961,8 +1961,8 @@
         "path"
       ],
       "summary": "Print projects config file path",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -1981,8 +1981,8 @@
         "promote"
       ],
       "summary": "Promote selected Remote Config changes between projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.promote:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.promote:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.promote:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -2001,8 +2001,8 @@
         "reset"
       ],
       "summary": "Reset the cached projects registry",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.reset:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.reset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.reset:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -2021,8 +2021,8 @@
         "update"
       ],
       "summary": "Update projects from Firebase into cache",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.update:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.update:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.update:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2042,8 +2042,8 @@
         "add"
       ],
       "summary": "Add project IDs to the profile whitelist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.add:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.add:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.add:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2063,8 +2063,8 @@
         "clear"
       ],
       "summary": "Clear the profile project whitelist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.clear:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.clear:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.clear:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2084,8 +2084,8 @@
         "disable"
       ],
       "summary": "Disable the profile project whitelist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.disable:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.disable:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.disable:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2105,8 +2105,8 @@
         "enable"
       ],
       "summary": "Enable the profile project whitelist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.enable:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.enable:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.enable:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2126,8 +2126,8 @@
         "list"
       ],
       "summary": "List stored project IDs and activation state",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2147,8 +2147,8 @@
         "remove"
       ],
       "summary": "Remove project IDs from the profile whitelist",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.whitelist.remove:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.remove:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.whitelist.remove:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2167,8 +2167,8 @@
         "delete"
       ],
       "summary": "Delete a rollout",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.delete:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -2187,8 +2187,8 @@
         "list"
       ],
       "summary": "List rollouts and their parameter bindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2207,8 +2207,8 @@
         "show"
       ],
       "summary": "Show rollout details and parameter bindings",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:rollouts.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:rollouts.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2224,8 +2224,8 @@
       "id": "root",
       "path": [],
       "summary": "Firebase Remote Config manager",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:root:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:root:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:root:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2244,8 +2244,8 @@
         "list"
       ],
       "summary": "List command schema identifiers",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2264,8 +2264,8 @@
         "show"
       ],
       "summary": "Show one generated CLI JSON Schema",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:schema.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:schema.show:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2283,8 +2283,8 @@
         "setup"
       ],
       "summary": "Interactively configure authentication and discover projects",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:setup:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:setup:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:setup:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2302,8 +2302,8 @@
         "theme"
       ],
       "summary": "Manage themes",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2322,8 +2322,8 @@
         "delete"
       ],
       "summary": "Delete an installed theme",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.delete:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.delete:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.delete:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -2342,8 +2342,8 @@
         "import"
       ],
       "summary": "Import themes from a file, directory, HTTP URL, or repository URL",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.import:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.import:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.import:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2362,8 +2362,8 @@
         "list"
       ],
       "summary": "List installed themes",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.list:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2382,8 +2382,8 @@
         "path"
       ],
       "summary": "Print a theme file path",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.path:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.path:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.path:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2402,8 +2402,8 @@
         "rename"
       ],
       "summary": "Rename an installed theme",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.rename:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.rename:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.rename:response",
       "side_effect_level": 1,
       "destructive": false,
       "supports": {
@@ -2422,8 +2422,8 @@
         "reset"
       ],
       "summary": "Reset a theme selection to the built-in palette",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.reset:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.reset:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.reset:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -2442,8 +2442,8 @@
         "switch"
       ],
       "summary": "Select an installed theme",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:theme.switch:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.switch:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:theme.switch:response",
       "side_effect_level": 1,
       "destructive": true,
       "supports": {
@@ -2461,8 +2461,8 @@
         "update"
       ],
       "summary": "Update Remote Config parameters",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:update:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:update:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:update:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -2480,9 +2480,9 @@
         "versions",
         "blame"
       ],
-      "summary": "Show who changed one Remote Config parameter",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.blame:response",
+      "summary": "Show who changed a Remote Config parameter or condition",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.blame:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.blame:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2501,8 +2501,8 @@
         "diff"
       ],
       "summary": "Compare two Remote Config versions",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.diff:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.diff:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.diff:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2521,8 +2521,8 @@
         "export"
       ],
       "summary": "Export historical Remote Config JSON",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.export:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.export:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.export:response",
       "side_effect_level": 2,
       "destructive": true,
       "supports": {
@@ -2541,8 +2541,8 @@
         "list"
       ],
       "summary": "List Remote Config versions",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.list:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.list:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.list:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {
@@ -2561,8 +2561,8 @@
         "restore"
       ],
       "summary": "Republish a locally cached Remote Config version",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.restore:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.restore:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.restore:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -2581,8 +2581,8 @@
         "rollback"
       ],
       "summary": "Roll back to a Firebase Remote Config version",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.rollback:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.rollback:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.rollback:response",
       "side_effect_level": 3,
       "destructive": true,
       "supports": {
@@ -2601,8 +2601,8 @@
         "show"
       ],
       "summary": "Show Remote Config version metadata or JSON",
-      "invocation_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:input",
-      "response_schema": "urn:fbrcm:schema:cli:1.0.0:command:versions.show:response",
+      "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.show:input",
+      "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:versions.show:response",
       "side_effect_level": 2,
       "destructive": false,
       "supports": {

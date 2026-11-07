@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.change-note:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.change-note:response",
+  "contract_version": "1.1.0",
   "command": "draft.change-note",
   "requested_command": "draft.change-note",
   "outcome": "success",

@@ -343,7 +343,10 @@ to run a scenario with `FBRCM_OFFLINE=1`; this is useful for deterministic stale
 cache and fallback coverage and still enforces a zero-request HTTP contract.
 Set `json_output` when stdout uses the versioned CLI JSON envelope. The harness
 then validates stdout against
-`schemas/cli/1.0.0/<command>.response.schema.json` before snapshot comparison.
+`schemas/cli/<active-version>/<command>.response.schema.json` before snapshot
+comparison. The active version comes from `schemas/cli/contract.lock.json`;
+retained schema versions are also loaded so references to durable artifacts
+remain valid. A response using an older envelope version is rejected.
 Use `envs` for explicit command environment setup. An exact
 `${FBRCM_E2E_ACCESS_TOKEN}` value selects the harness's effective live-or-replay
 token; any other value is passed literally. For example:

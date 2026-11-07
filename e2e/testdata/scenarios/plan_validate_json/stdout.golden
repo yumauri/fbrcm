@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:plan.validate:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:plan.validate:response",
+  "contract_version": "1.1.0",
   "command": "plan.validate",
   "requested_command": "plan.validate",
   "outcome": "success",

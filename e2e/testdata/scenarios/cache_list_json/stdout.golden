@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:cache.list:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:cache.list:response",
+  "contract_version": "1.1.0",
   "command": "cache.list",
   "requested_command": "cache.list",
   "outcome": "success",

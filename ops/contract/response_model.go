@@ -728,7 +728,11 @@ func applyAppCacheResponseSemantics(schema map[string]any) {
 
 func applyVersionBlameResponseSemantics(schema map[string]any) {
 	properties := schema["properties"].(map[string]any)
-	properties["parameter"] = map[string]any{"type": "string", "pattern": `.*\S.*`, "maxLength": 256}
+	if _, parameterMode := properties["parameter"]; parameterMode {
+		properties["parameter"] = map[string]any{"type": "string", "pattern": `.*\S.*`, "maxLength": 256}
+	} else {
+		properties["condition"] = map[string]any{"type": "string", "pattern": `.*\S.*`}
+	}
 	properties["at_version"] = map[string]any{"type": "string", "minLength": 1}
 	properties["scanned_version_count"] = map[string]any{"type": "integer", "minimum": 1}
 
@@ -742,9 +746,11 @@ func applyVersionBlameResponseSemantics(schema map[string]any) {
 	boundary := properties["boundary"].(map[string]any)
 	boundaryProperties := boundary["properties"].(map[string]any)
 	boundaryProperties["version"] = map[string]any{"type": "string", "minLength": 1}
-	boundary["allOf"] = []any{
-		fieldValueConstraint("state", "present", map[string]any{"group": map[string]any{"type": "string"}}),
-		fieldValueConstraint("state", "absent", map[string]any{"group": map[string]any{"type": "null"}}),
+	if _, parameterMode := properties["parameter"]; parameterMode {
+		boundary["allOf"] = []any{
+			fieldValueConstraint("state", "present", map[string]any{"group": map[string]any{"type": "string"}}),
+			fieldValueConstraint("state", "absent", map[string]any{"group": map[string]any{"type": "null"}}),
+		}
 	}
 
 	schema["allOf"] = appendSchemaConstraints(schema["allOf"],

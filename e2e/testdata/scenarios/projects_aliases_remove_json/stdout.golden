@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.aliases.remove:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.aliases.remove:response",
+  "contract_version": "1.1.0",
   "command": "projects.aliases.remove",
   "requested_command": "projects.aliases.remove",
   "outcome": "success",

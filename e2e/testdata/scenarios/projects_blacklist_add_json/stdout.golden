@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:projects.blacklist.add:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:projects.blacklist.add:response",
+  "contract_version": "1.1.0",
   "command": "projects.blacklist.add",
   "requested_command": "projects.blacklist.add",
   "outcome": "success",

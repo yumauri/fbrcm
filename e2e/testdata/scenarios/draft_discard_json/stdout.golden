@@ -1,6 +1,6 @@
 {
-  "schema": "urn:fbrcm:schema:cli:1.0.0:command:draft.discard:response",
-  "contract_version": "1.0.0",
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:draft.discard:response",
+  "contract_version": "1.1.0",
   "command": "draft.discard",
   "requested_command": "draft.discard",
   "outcome": "success",

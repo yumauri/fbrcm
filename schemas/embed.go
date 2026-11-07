@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-//go:embed cli/1.0.0/*.json
+//go:embed cli/*/*.json
 var files embed.FS
 
 type documentID struct {
@@ -25,7 +25,7 @@ var (
 )
 
 func loadIndex() {
-	entries, err := fs.Glob(files, "cli/1.0.0/*.json")
+	entries, err := fs.Glob(files, "cli/*/*.json")
 	if err != nil {
 		indexErr = err
 		return
