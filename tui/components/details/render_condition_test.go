@@ -112,6 +112,56 @@ func TestConditionDetailsAppIDColorsRespectNoColor(t *testing.T) {
 	t.Fatalf("condition Details did not render Expression field: %q", lines)
 }
 
+func TestConditionDetailsDisplaysEachConjunctionOnItsOwnLine(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	const expression = `app.id == '1:849939820737:android:ed93ceabe966b1d1' && app.version.contains(['2.10.261.0', '3.11.272'])`
+	m := conditionDetailsTestModel().SetBounds(0, 0, 120, 40)
+	m.conditionData.Condition.Expression = expression
+	m = m.SetConditionExpression(expression)
+	lines := m.renderContentLines()
+	for index, line := range lines {
+		if strings.TrimSpace(ansi.Strip(line)) != "Expression" {
+			continue
+		}
+		want := []string{
+			`app.id == '1:849939820737:android:ed93ceabe966b1d1'`,
+			`app.version.contains(['2.10.261.0', '3.11.272'])`,
+		}
+		for offset, expected := range want {
+			if got := strings.TrimSpace(ansi.Strip(lines[index+1+offset])); got != expected {
+				t.Fatalf("expression line %d = %q, want %q", offset, got, expected)
+			}
+		}
+		if m.Dirty() || m.conditionExpression != expression {
+			t.Fatal("display formatting changed the raw expression or marked Details dirty")
+		}
+		return
+	}
+	t.Fatal("Expression field was not rendered")
+}
+
+func TestConditionDetailsMultilineExpressionKeepsUsageMouseAndEditorAligned(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	m := conditionDetailsTestModel().SetConditionExpression(`device.os == 'web' && app.version == '2' && true`)
+	for index, line := range m.renderContentLines() {
+		if strings.TrimSpace(ansi.Strip(line)) != "(root) / payload" {
+			continue
+		}
+		y := m.y + 1 + index - m.viewport.YOffset()
+		m, _ = m.Update(tea.MouseClickMsg{X: 3, Y: y, Button: tea.MouseLeft})
+		usage, ok := m.SelectedUsage()
+		if !ok || usage.ParameterKey != "payload" {
+			t.Fatal("click on rendered usage did not select payload")
+		}
+		_, editorY := m.conditionUsageEditorPosition()
+		if editorY != y+1 {
+			t.Fatalf("usage editor starts at %d, want %d", editorY, y+1)
+		}
+		return
+	}
+	t.Fatal("payload usage was not rendered")
+}
+
 func TestConditionUsageInAppDefaultUsesEmptyValueStyle(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	const label = "(in-app default)"

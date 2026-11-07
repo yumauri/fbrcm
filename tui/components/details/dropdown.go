@@ -6,6 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/yumauri/fbrcm/core"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
+	"github.com/yumauri/fbrcm/core/rc/evaluate"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -153,7 +154,7 @@ func (m Model) conditionUsageParameterLine(index int) int {
 	condition := m.conditionData.Condition
 	line := 1 + len(wrappedLines(rcdisplay.FormatProject(m.conditionData.Project.Name, m.conditionData.Project.ProjectID), width)) + 1
 	line += 3 * 3 // priority, name, color
-	line += 1 + len(strings.Split(m.conditionExpression, "\n")) + 1
+	line += 1 + len(strings.Split(evaluate.FormatExpression(m.conditionExpression), "\n")) + 1
 	line += 2 // Used by heading and spacer.
 	for usageIndex, usage := range condition.Usages {
 		if usageIndex == index {

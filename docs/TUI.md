@@ -349,7 +349,9 @@ Conditions are shown in Firebase evaluation order. In both the list and
 Details, the platform segment of every complete Firebase App ID in an
 expression uses Firebase's Android, iOS, or Web color. Details also include the
 raw expression, display color, priority, and every parameter value that refers
-to the condition.
+to the condition. In Details, each top-level `&&` clause starts on a separate
+line, omitting the `&&` separators. This is display formatting;
+the stored expression and expression editor retain the original text.
 
 | Default key | Action |
 | --- | --- |
