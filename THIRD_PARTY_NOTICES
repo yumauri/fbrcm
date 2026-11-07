@@ -101,7 +101,7 @@ SOFTWARE.
 
 ======================================================================
 Component: charm.land/bubbletea/v2
-Version: v2.1.0
+Version: v2.1.1
 License: MIT
 Source: charm.land/bubbletea/v2
 
@@ -1108,7 +1108,7 @@ Apache License
 
 ======================================================================
 Component: github.com/itchyny/gojq
-Version: v0.12.19
+Version: v0.12.20
 License: MIT
 Source: github.com/itchyny/gojq
 
@@ -2081,7 +2081,7 @@ Apache License
 
 ======================================================================
 Component: github.com/spf13/pflag
-Version: v1.0.10
+Version: v1.1.0
 License: BSD-3-Clause
 Source: github.com/spf13/pflag
 
@@ -2156,7 +2156,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ======================================================================
 Component: github.com/xo/terminfo
-Version: v1.2.0
+Version: v1.3.1
 License: MIT
 Source: github.com/xo/terminfo
 

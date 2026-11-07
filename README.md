@@ -54,7 +54,7 @@ curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh |
   INSTALL_DIR="$HOME/.local/bin" sh
 ```
 
-With [Homebrew](https://brew.sh):
+With [Homebrew](https://brew.sh) 7.0.11 or newer:
 
 ```sh
 brew tap yumauri/tap

@@ -48,7 +48,7 @@ before choosing a setup path.
 >
 <template #macos>
 
-Install with Homebrew:
+Install with Homebrew 7.0.11 or newer:
 
 ```sh
 brew tap yumauri/tap
@@ -70,7 +70,7 @@ Run the installer to download the latest release:
 curl -sSfL https://raw.githubusercontent.com/yumauri/fbrcm/main/install.sh | sh
 ```
 
-If you use Homebrew on Linux, you can install from the tap instead:
+If you use Homebrew 7.0.11 or newer on Linux, you can install from the tap instead:
 
 ```sh
 brew tap yumauri/tap
