@@ -23,8 +23,8 @@ func TestPublishedToolSchemasHaveExplicitObjectRoots(t *testing.T) {
 	}{
 		{"stateless_readonly", true, false, 22},
 		{"stateless_writable", true, true, 43},
-		{"stateful_readonly", false, false, 28},
-		{"stateful_writable", false, true, 53},
+		{"stateful_readonly", false, false, 29},
+		{"stateful_writable", false, true, 54},
 	} {
 		t.Run(mode.name, func(t *testing.T) {
 			o := options()

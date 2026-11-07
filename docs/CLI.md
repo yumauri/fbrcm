@@ -9,7 +9,7 @@ versioned [machine contract](cli-contract.md).
 From 1.0.0, the documented command syntax and behavior are stable under the
 [compatibility policy](compatibility.md). Human table layouts, terminal
 styling, and message wording may change; automate with JSON or MCP.
-The upcoming 1.1.0 release includes condition blame under CLI
+The upcoming 1.1.0 release includes `explain` and condition blame under CLI
 JSON contract `1.1.0`, which is currently unreleased and may be regenerated in
 place. The published `1.0.0` schemas remain available unchanged.
 
@@ -205,6 +205,15 @@ fbrcm [--help] [--version] [--profile <name>] [--stateless] [--include-hidden] [
 │   ├── list <project> [--filter|-f <query>]... [--update] [--json]
 │   ├── show <project> <experiment-id> [--update] [--json]
 │   └── delete <project> <experiment-id> [--yes|-y]
+│
+├── explain <parameter>
+│   ├── --project, -p <query>
+│   ├── --from <file|->
+│   ├── --entry <original-HAR-entry>
+│   ├── --set <field=value>  repeated
+│   ├── --no-input
+│   ├── --cached | --update
+│   └── --json
 │
 ├── get [parameter]
 │   ├── --project, -p <query>  repeated
@@ -973,6 +982,12 @@ complete fbrcm subcommand argument list. Agents should branch on that
 [MCP guide](MCP.md) for host setup, tool discovery, inputs, permissions,
 authentication, and manual testing.
 
+The stateful `inspect` toolset includes `parameters.explain`, which reuses the
+`explain --json` contract. Supply cURL text or a HAR object through the tool's
+`stdin` property, or use `options.from` for a local capture file. Missing facts
+produce structured unknown results; ambiguous HAR captures require an explicit
+`options.entry`. This tool is excluded in stateless mode.
+
 | Flag | Default | Behavior |
 | --- | --- | --- |
 | `--toolsets <groups>` | `inspect,edit,drafts,plans,publish` | Select a non-empty comma-separated list from these groups and `diagnostics`. |
@@ -1057,6 +1072,7 @@ duplicate
 experiments.delete
 experiments.list
 experiments.show
+explain
 get
 groups.add
 groups.delete
@@ -1497,6 +1513,81 @@ Default output is a terminal table. When project selection resolves to exactly o
 Stdin mode reads Remote Config JSON from stdin and queries only that config. It also accepts an fbrcm parameters cache JSON file and reads its internal `remote_config` field. As an experimental human-only convenience on supported systems, a directory on stdin makes `get` read top-level `.json` files as multiple projects; this transport is not published in machine schemas or capability metadata.
 
 With root `--stateless` and no stdin, omitting `--project` discovers all projects accessible to `FBRCM_GOOGLE_ACCESS_TOKEN` and fetches their client templates. Non-exact selectors keep the normal modes: `test` and `~test` are fuzzy, `^test` is starts-with, and `/test` is contains. They trigger one discovery pass and match remote project IDs and display names only, never repository aliases. Exact `=project-id` treats the query as a literal physical Firebase project ID and fetches it directly without discovery. Optional `client@` or `server@` prefixes select the template kind, so `server@=project-id` is a direct server-template target while `server@test` discovers and filters before selecting server templates. Repeated selectors are ORed; mixed direct and discovered results are unioned and deduplicated. The command never reads or writes the project registry, parameter cache, drafts, or hooks, and reports `cached_at: null` with status `fetch`. Parameter selection, `--filter`, `--search`, `--expr`, and `--all` retain their normal local output behavior. `--update` is rejected because the read is already live. Discovery may require `GOOGLE_CLOUD_QUOTA_PROJECT` because its initial list request has no target-project quota fallback; exact-only selection can use the requested project fallback. Stateless stdin mode remains available without an access token or `--project`; it is already profileless and non-persistent. `--update` is also rejected whenever stdin is used because stdin is the complete input.
+
+### `fbrcm explain <parameter>`
+
+Explains selection of one exact, case-sensitive parameter key in a published
+client or server template, including grouped parameters. It reads the template
+with the same cache/fetch policy as `get`; it does not evaluate unpublished drafts.
+Pass `--project|-p` to select the template target, or infer the project and
+namespace from a captured Firebase Remote Config `:fetch` POST request.
+
+An unprefixed decimal project number resolves by exact stored project number.
+Other `--project` values use the shared single-target selector: exact project ID,
+repository alias, then display name, followed by a mode-prefixed query over IDs
+and display names (fuzzy by default). Zero or multiple matches return
+`project.not_found` or `project.ambiguous`. `--cached` resolves projects solely
+from the local registry. Without a capture an unqualified selector uses the
+configured primary template. With a capture, the physical project must agree;
+its namespace selects client or server, and a conflicting explicit template
+prefix returns `argument.invalid`.
+
+```text
+--from <file|->       read a cURL command or HAR; format is detected from content
+--entry <number>      select the original one-based HAR entry; default 0 is automatic
+--set <field=value>   supply an input; repeatable, with later canonical-field assignments winning
+--no-input            leave unavailable inputs unknown instead of prompting
+--cached              use cached Remote Config, fetching if absent
+--update              revalidate the template with Firebase
+--json                return the versioned structured explanation, without prompts
+```
+
+Piped stdin is detected automatically. `--from -` explicitly selects stdin;
+another `--from` path takes precedence over piped input. HAR files may include
+unrelated traffic; only Firebase fetch requests are candidates and their original
+entry numbers are preserved. Several fetches require a human choice or `--entry`.
+Captures and decompressed bodies are limited to 32 MiB. Captured requests are
+parsed as data and never executed; authentication headers and URL credentials
+are not included in the explanation.
+The capture parser accepts a quoted `curl` executable as well as the usual
+browser export. HAR decoding accepts omitted and null fields as zero values,
+case-insensitive JSON field names, and unrelated entries without valid URLs,
+fetch-body encodings, or HTTP status bounds. Fetch-specific checks apply only
+to matching Firebase requests. Invalid capture content returns `capture.invalid`.
+
+Human output prints project, parameter, template, and request context before
+asking for missing facts. It shows the raw conditions in template priority order,
+step-by-step short-circuit evaluation, the default fallback, and the selected
+result or priority-ordered alternatives. Only conditions that supply this
+parameter are evaluated. `true` targets all users within the project.
+
+Inputs include app identity/version/build, platform, language/country/category,
+browser/OS targets, Analytics properties/audiences, custom signals, timestamps,
+and Firebase-assigned percentiles. Indexed fields accept quoted names, for
+example `--set "app.customSignal['environment']=sandbox"`. `/unknown` and `/unset`
+distinguish unknown and absent values; a JSON-quoted string escapes these markers.
+Percentiles must be finite numbers from 0 to 100, audience answers accept
+true/false or yes/no, and timestamps accept RFC3339 or ISO date-time in UTC.
+`dateTime` and `device.dateTime` share one input. Category classification and
+Firebase-only information are requested rather than guessed when unverified.
+
+JSON mode always implies non-interaction; `--no-input` is accepted but redundant.
+Missing facts, unsupported expressions, and uncertain observations are successful
+explanations with unresolved states and exit `0`. Missing parameters return
+`parameter.not_found` (exit `6`), malformed captures return `capture.invalid`
+(exit `8`), and an ambiguous capture returns `interaction.required` (exit `10`)
+with safe candidate metadata and `required_option: "--entry"`.
+
+The [explain JSON contract](cli-contract.md#parameter-explanations) defines
+structured predicates, provenance, guarded outcomes, and captured-response
+comparison. A predicted template value is separate from a captured backend value
+and from any value activated or cached by the running app.
+
+```sh
+fbrcm explain new_player --from request.txt --cached
+fbrcm explain new_player --from capture.har --entry 3 --json
+fbrcm explain new_player --project demo --set device.os=web --json
+```
 
 ### `fbrcm update [parameter]`
 

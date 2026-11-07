@@ -7,6 +7,7 @@ import (
 )
 
 var knownProblemCodeValues = []string{
+	"capture.invalid",
 	"argument.invalid", "argument.unknown_command", "auth.configuration_invalid", "auth.credentials_invalid", "auth.id_invalid", "auth.not_found", "auth.quota_project_required", "auth.setup_required",
 	"app.ambiguous", "app.not_found", "batch.failed", "batch.partial_success", "command.canceled", "command.not_executable", "command.not_found", "command.timeout",
 	"condition.invalid", "condition.not_found", "configuration.invalid", "configuration.local_disabled", "configuration.local_not_found", "configuration.project_aliases_invalid",
@@ -21,6 +22,7 @@ var knownProblemCodeValues = []string{
 }
 
 var knownWarningCodeValues = []string{
+	"explain.capture_version_mismatch",
 	"cache.stale",
 	"cache.write_failed",
 	"publication.cache_stale",
@@ -112,6 +114,8 @@ func CommandProblemCodes(capability Capability) []string {
 		}
 	}
 	switch capability.ID {
+	case "explain":
+		add("capture.invalid", "remote_config.invalid", "parameter.not_found")
 	case "get":
 		add("remote_config.invalid")
 	case "add", "update", "delete", "project.import":

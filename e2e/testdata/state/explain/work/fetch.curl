@@ -1,0 +1,1 @@
+curl 'https://firebaseremoteconfig.googleapis.com/v1/projects/northstar-wallet/namespaces/firebase:fetch' --data '{"app_id":"1:123456789:web:e2e","custom_signals":{"environment":"qa"}}'

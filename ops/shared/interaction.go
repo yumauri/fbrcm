@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"sync/atomic"
+	"time"
 
 	"github.com/yumauri/fbrcm/ops/invocation"
 )
@@ -12,11 +13,21 @@ var machineMode atomic.Bool
 
 // InteractionError reports that a command needs a choice machine mode cannot make.
 type InteractionError struct {
-	Message        string
-	Type           string
-	Destructive    bool
-	RequiredOption string
-	SuggestedArgv  []string
+	Message           string
+	Type              string
+	Destructive       bool
+	RequiredOption    string
+	SuggestedArgv     []string
+	CaptureCandidates []CaptureCandidate
+}
+
+type CaptureCandidate struct {
+	Entry      int        `json:"entry"`
+	Project    string     `json:"project"`
+	Namespace  string     `json:"namespace"`
+	CapturedAt *time.Time `json:"captured_at"`
+	AppID      *string    `json:"app_id"`
+	HTTPStatus int        `json:"http_status"`
 }
 
 func (e *InteractionError) Error() string { return e.Message }

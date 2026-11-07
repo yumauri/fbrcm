@@ -17,7 +17,7 @@
   },
   "data": {
     "contract_version": "1.1.0",
-    "count": 130,
+    "count": 131,
     "commands": [
       {
         "id": "add",
@@ -1058,6 +1058,25 @@
           "confirmation_bypass": false,
           "stdin": false,
           "stateless": true
+        }
+      },
+      {
+        "id": "explain",
+        "path": [
+          "explain"
+        ],
+        "summary": "Explain a parameter value using a captured cURL request or HAR",
+        "invocation_schema": "urn:fbrcm:schema:cli:1.1.0:command:explain:input",
+        "response_schema": "urn:fbrcm:schema:cli:1.1.0:command:explain:response",
+        "side_effect_level": 2,
+        "destructive": false,
+        "supports": {
+          "dry_run": false,
+          "draft": false,
+          "plan": false,
+          "confirmation_bypass": false,
+          "stdin": true,
+          "stateless": false
         }
       },
       {

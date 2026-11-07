@@ -5,7 +5,7 @@ scripts. Contract version `1.1.0` applies whenever the global `--json` flag is
 present. Without `--json`, commands use human-readable output.
 
 Contract `1.0.0` is the released, locked baseline for fbrcm 1.0.0. Contract
-`1.1.0` is unreleased and includes condition history through the
+`1.1.0` is unreleased and includes `explain` and condition history through the
 optional `versions blame --condition <name>` selector. Existing parameter
 invocations and response fields remain unchanged. The development schemas may
 be regenerated in place until release; the published `1.0.0` schemas and released
@@ -84,6 +84,9 @@ validation is not applied, `supports.stateless` is false, and
 
 Run `fbrcm mcp` without `--json` for the streaming server. Its tool input and
 envelope mapping are documented in the [MCP guide](MCP.md#tool-input-and-results).
+The stateful MCP `parameters.explain` inspection tool maps to operation
+`explain` and uses its existing invocation and response schemas, including
+cURL-string/HAR-object stdin and successful unresolved evaluations.
 
 ## Persistent project visibility
 
@@ -1163,14 +1166,136 @@ successful changes and failures.
 nonempty paths, and `gcloud` returns `null` because no application-managed
 credential file exists.
 
+## Parameter explanations
+
+`explain <parameter> --json` returns a single successful envelope with exit `0`
+when evaluation is known or unresolved. It never emits the human header, prompts,
+or terminal styling. Only conditions supplying the exact parameter are included.
+It is a read operation that may refresh local caches; it does not execute or
+persist captured requests, mutate templates, or activate values in an app.
+
+Its `data` has `project_id`, `template`, `parameter`, nullable `capture`, `inputs`,
+`conditions`, `result`, `possible_outcomes`, and `needed_inputs`. Arrays are always
+arrays, including when empty. Optional scalar/object values use explicit null.
+
+- `template` identifies client/server kind, version, ETag, source (`cache`,
+  `cache-verified`, `cache-stale`, or `firebase`), and nullable cache timestamp.
+  `parameter` includes the key, declared type, nullable group, description, and
+  default value.
+- Value objects distinguish `literal` (string `value`, including empty strings),
+  `in_app_default`, `managed`, and `unknown`. Non-literals have null `value`.
+  Managed values carry `managed_kind` (`personalization`, `experiment`, `rollout`,
+  or `unrecognized`); other kinds have null `managed_kind`. Boolean and numeric
+  parameter values remain Firebase strings and are distinct from evaluation states.
+- `result.scope` is `template`. Selection has `state: resolved|unresolved`, with
+  source `condition|default` and condition name when resolved, otherwise null.
+  Value certainty is independent: identical literal values across all guarded
+  outcomes can establish a value while selection remains unresolved. A definite
+  Firebase-managed winner has resolved selection and a managed value.
+- Conditions preserve actual one-based template priorities, including gaps,
+  names, tag colors, raw expressions, and values. Evaluation is `true|false|unknown`.
+  Selection is `selected|not_selected|undetermined`; exclusion reasons distinguish
+  `not_matched`, `higher_priority_match`, and `subsumed`, with blocking condition
+  names. `none` has no blockers.
+- Each rule has a condition-local `r1`, `r2`, ... ID, original source expression,
+  `span` with zero-based UTF-8 byte offsets and exclusive end, typed `predicate`,
+  execution `status`, nullable `evaluation`, stable `reason_code`, informational
+  `message`, and canonical input references. Spans always refer to the condition's
+  original expression, never the rendered staircase. Predicates distinguish
+  literals, comparisons, browser/OS targets, and opaque unsupported syntax.
+  Comparison mode distinguishes text, number, version, timestamp, percentile,
+  audience, and client targets. Version targets have explicit name/operator/value
+  structures, with null version meaning any version.
+- Evaluated rules have `true|false|unknown` results. Skipped rules have null
+  evaluation, `short_circuit` reason, and no consumed inputs. Unsupported expressions
+  have `unknown` evaluation and `unsupported_expression` reason. Other reasons are
+  `none`, `missing_input`, `input_unavailable`, `input_absent`, or
+  `comparison_unavailable`. Consumers never need to parse English messages.
+- Inputs distinguish `known`, `absent`, `unknown`, and `bounded`. Known values are
+  strings; other states have null `value`. Unconfirmed observations are retained
+  separately in `observed_value`. Bounded time observations expose nullable
+  `time_min`/`time_max` as RFC3339 timestamps. Sources have a stable `kind`
+  (`request_body`, `request_header`, `capture_metadata`, `override`, `derived`,
+  `unknown`), descriptive label, and canonical derivation dependencies.
+  `used_by` identifies condition/rule consumers. `needed_inputs` and each input's
+  `required_for_resolution` include only uncertain inputs used by a candidate
+  that can still affect selection; unknown lower-priority details do not by
+  themselves make the final result unresolved.
+- Unresolved selection has priority-ordered `possible_outcomes`. Every branch
+  has a source, nullable condition name, value, and `when` array. All guards in
+  that array must hold. A guard `{condition, matches}` refers to a condition's
+  truth, not its selection. Later branches explicitly require earlier candidates
+  to fail. Proven subsumed branches are removed; a known match becomes the final
+  fallback instead of the default. Pruning proves identical/stricter conjunctions
+  conservatively; the contract does not claim arbitrary constraint satisfiability.
+  Resolved selection has an empty alternatives array.
+- `capture` identifies `curl|har`, original entry number, nullable timestamp, and
+  response evidence for this parameter only. The response distinguishes `present`,
+  `absent`, and `unavailable`, preserves HTTP status, template version, response
+  state, typed personalization/rollout assignments, and experiment IDs. Comparison
+  is `match|mismatch|inconclusive|unavailable`. A value comparison is conclusive
+  only with a literal prediction, matching known template versions, and no
+  Firebase-managed assignment/experiment ambiguity. Mismatches are explanation
+  data and retain exit `0`. Different template versions also emit
+  `explain.capture_version_mismatch`; stale fallback emits `cache.stale`.
+
+Capture errors use typed `capture.invalid` validation problems (exit `8`). With
+several Firebase fetches and no `--entry`, JSON mode returns `interaction.required`
+(exit `10`) with `interaction_type: capture_selection`, `required_option: --entry`,
+and candidates containing entry, `project` (the raw project ID or number from
+the fetch URL), namespace, timestamp, App ID, and HTTP
+status. Candidate metadata never includes request URLs, headers, or credentials.
+Malformed overrides are `argument.invalid` (exit `2`); missing parameters are
+`parameter.not_found` (exit `6`). Missing facts and unsupported Firebase expressions
+are successful explanation states, not invocation failures.
+
+The invocation schema accepts a raw cURL/HAR string or decoded HAR object for
+structured stdin. `--from` paths and raw CLI stdin retain automatic format detection;
+`--from -` selects stdin. `--cached` and `--update` are mutually exclusive. A project
+is required when no capture is supplied. JSON mode never asks for missing facts;
+repeat `--set field=value` to supply them. Capture input and expanded gzip content
+are bounded to 32 MiB. Client percentage assignment, server-only facts, and
+unverified classification rules are never fabricated from identifiers or headers.
+
+`explain_project_resolution` publishes the single-project algorithm: an
+unprefixed value accepted by `strconv.ParseUint(query, 10, 64)` selects the exact
+stored project number. Other values use positional target resolution (exact
+ID/alias/display-name precedence, then mode-prefixed ID/display-name matching).
+`--cached` uses only the local project registry. Without a capture the configured
+primary template is used; otherwise the captured namespace selects the template
+and must agree with an explicit prefix. The resolved physical project ID or
+stored number must equal the capture's project. Lookup and capture-consistency
+checks run at execution and return typed project or argument problems.
+`explain_capture_entry_resolution` publishes original-index selection and the
+ambiguous-capture interaction boundary. Entry is a nonnegative signed 64-bit
+integer, with zero meaning automatic selection of a single candidate.
+
+The `explain_capture_source` input-selection annotation gives non-`-` file paths
+precedence over supplied stdin, which remains unconsumed. `capture_document`
+identifies the runtime parser and byte budget for both raw strings and HAR
+objects. Capture-string syntax, case-insensitive HAR field decoding, candidate
+existence, selected-fetch URL/body/status checks, and base64/gzip decoding are
+runtime validation boundaries returning `capture.invalid` (exit `8`). Structural
+schemas retain concrete HAR fields and their nullable decoder shapes; omitted or
+null fields use Go decoder zero values. Unrelated HAR entries are skipped without
+requiring absolute URIs, supported body encodings, or bounded statuses. Quoted
+`curl` executables and escaped/whitespace-separated indexed override keys are
+accepted by the published parsers. The override annotation validates the complete
+assignment, including field syntax, marker handling and typed values. Indexed
+field whitespace includes vertical tabs, as accepted by the evaluator lexer.
+HAR timestamps use Go's `time.Time.UnmarshalJSON` parser at runtime, including
+its accepted single-digit hour forms; the structural schema does not impose
+the narrower JSON Schema `date-time` format on capture input. Response
+timestamps remain canonical RFC3339 values.
+
 ## Published schemas and versioning
 
 Draft 2020-12 JSON Schemas are checked in under `schemas/cli/1.1.0/` and
 embedded in the binary. Each executable command has one input schema and one
 response schema. Shared envelope, error, capability, semantic, general Remote
 Config stdin, project-import Remote Config stdin, combined credential stdin,
-OAuth credential stdin, service-account credential stdin, and strict publication
-plan stdin schemas are published beside them. Historical
+OAuth credential stdin, service-account credential stdin, strict publication
+plan and cURL/HAR capture stdin schemas are published beside them. Historical
 `schemas/cli/1.0.0/` resources remain embedded unchanged, including the fixed
 publication-plan artifact schema, whose ID and file format do not change with
 the CLI contract version.

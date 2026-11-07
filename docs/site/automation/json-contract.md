@@ -1,7 +1,7 @@
 # JSON contract
 
 Contract `1.1.0` is under development and has not been published. It includes
-`versions blame --condition` while preserving parameter blame.
+`explain` and `versions blame --condition` while preserving parameter blame.
 Its schemas and fingerprint may be regenerated in place while `released: false`.
 The published `1.0.0` schemas and released lock remain available unchanged.
 Examples below use the current development contract. See the

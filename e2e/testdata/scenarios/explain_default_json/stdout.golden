@@ -1,0 +1,198 @@
+{
+  "schema": "urn:fbrcm:schema:cli:1.1.0:command:explain:response",
+  "contract_version": "1.1.0",
+  "command": "explain",
+  "requested_command": "explain",
+  "outcome": "success",
+  "exit_code": 0,
+  "producer": {
+    "name": "fbrcm",
+    "version": "dev"
+  },
+  "context": {
+    "profile": "default",
+    "offline": true,
+    "dry_run": false,
+    "draft": false
+  },
+  "data": {
+    "project_id": "northstar-wallet",
+    "template": {
+      "kind": "client",
+      "version": "42",
+      "etag": "fixture-explain-etag",
+      "source": "cache",
+      "cached_at": "2024-01-02T03:04:05Z"
+    },
+    "parameter": {
+      "key": "feature_enabled",
+      "type": "BOOLEAN",
+      "group": null,
+      "description": "",
+      "default_value": {
+        "kind": "literal",
+        "value": "false",
+        "managed_kind": null
+      }
+    },
+    "capture": null,
+    "inputs": [
+      {
+        "field": "device.os",
+        "type": "text",
+        "state": "known",
+        "value": "android",
+        "observed_value": null,
+        "source": {
+          "kind": "override",
+          "description": "command line",
+          "derived_from": []
+        },
+        "reason_code": "none",
+        "message": "",
+        "time_min": null,
+        "time_max": null,
+        "used_by": [
+          {
+            "condition": "web_qa",
+            "rule": "r1"
+          },
+          {
+            "condition": "web",
+            "rule": "r1"
+          }
+        ],
+        "required_for_resolution": false
+      }
+    ],
+    "conditions": [
+      {
+        "name": "web_qa",
+        "priority": 1,
+        "tag_color": "BLUE",
+        "expression": "device.os == 'web' \u0026\u0026 app.customSignal['environment'].exactlyMatches(['qa'])",
+        "value": {
+          "kind": "literal",
+          "value": "true",
+          "managed_kind": null
+        },
+        "evaluation": "false",
+        "selection": "not_selected",
+        "exclusion_reason": "not_matched",
+        "blocked_by": [],
+        "rules": [
+          {
+            "id": "r1",
+            "expression": "device.os == 'web'",
+            "span": {
+              "start": 0,
+              "end": 18
+            },
+            "predicate": {
+              "kind": "comparison",
+              "field": "device.os",
+              "operator": "==",
+              "comparison": "text",
+              "expected": [
+                "web"
+              ],
+              "literal": null,
+              "targets": []
+            },
+            "status": "evaluated",
+            "evaluation": "false",
+            "reason_code": "none",
+            "message": "device.os = 'android' (command line) does not equal 'web'",
+            "inputs": [
+              "device.os"
+            ]
+          },
+          {
+            "id": "r2",
+            "expression": "app.customSignal['environment'].exactlyMatches(['qa'])",
+            "span": {
+              "start": 22,
+              "end": 76
+            },
+            "predicate": {
+              "kind": "comparison",
+              "field": "app.customSignal['environment']",
+              "operator": "exactlyMatches",
+              "comparison": "text",
+              "expected": [
+                "qa"
+              ],
+              "literal": null,
+              "targets": []
+            },
+            "status": "skipped",
+            "evaluation": null,
+            "reason_code": "short_circuit",
+            "message": "",
+            "inputs": []
+          }
+        ]
+      },
+      {
+        "name": "web",
+        "priority": 2,
+        "tag_color": "GREEN",
+        "expression": "device.os == 'web'",
+        "value": {
+          "kind": "literal",
+          "value": "false",
+          "managed_kind": null
+        },
+        "evaluation": "false",
+        "selection": "not_selected",
+        "exclusion_reason": "not_matched",
+        "blocked_by": [],
+        "rules": [
+          {
+            "id": "r1",
+            "expression": "device.os == 'web'",
+            "span": {
+              "start": 0,
+              "end": 18
+            },
+            "predicate": {
+              "kind": "comparison",
+              "field": "device.os",
+              "operator": "==",
+              "comparison": "text",
+              "expected": [
+                "web"
+              ],
+              "literal": null,
+              "targets": []
+            },
+            "status": "evaluated",
+            "evaluation": "false",
+            "reason_code": "none",
+            "message": "device.os = 'android' (command line) does not equal 'web'",
+            "inputs": [
+              "device.os"
+            ]
+          }
+        ]
+      }
+    ],
+    "result": {
+      "scope": "template",
+      "selection": {
+        "state": "resolved",
+        "source": "default",
+        "condition": null
+      },
+      "value": {
+        "kind": "literal",
+        "value": "false",
+        "managed_kind": null
+      }
+    },
+    "possible_outcomes": [],
+    "needed_inputs": []
+  },
+  "errors": [],
+  "warnings": []
+}

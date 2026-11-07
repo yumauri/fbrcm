@@ -376,6 +376,7 @@
             "properties": {
               "code": {
                 "enum": [
+                  "capture.invalid",
                   "theme.source_invalid_response",
                   "theme.source_limit",
                   "condition.invalid",
@@ -846,6 +847,7 @@
                   "profile.invalid",
                   "theme.invalid",
                   "condition.invalid",
+                  "capture.invalid",
                   "remote_config.invalid",
                   "remote_config.validation_failed",
                   "stdin.remote_config.invalid"
@@ -1274,6 +1276,55 @@
             {
               "additionalProperties": false,
               "properties": {
+                "candidates": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "app_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "captured_at": {
+                        "format": "date-time",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "entry": {
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "http_status": {
+                        "maximum": 599,
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "namespace": {
+                        "enum": [
+                          "firebase",
+                          "firebase-server"
+                        ]
+                      },
+                      "project": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "entry",
+                      "project",
+                      "namespace",
+                      "captured_at",
+                      "app_id",
+                      "http_status"
+                    ],
+                    "type": "object"
+                  },
+                  "minItems": 2,
+                  "type": "array"
+                },
                 "destructive": {
                   "type": "boolean"
                 },
@@ -1284,7 +1335,8 @@
                     "external_input",
                     "guided_setup",
                     "input_required",
-                    "selection_required"
+                    "selection_required",
+                    "capture_selection"
                   ]
                 },
                 "kind": {
@@ -2456,6 +2508,39 @@
             "if": {
               "properties": {
                 "code": {
+                  "const": "explain.capture_version_mismatch"
+                }
+              },
+              "required": [
+                "code"
+              ]
+            },
+            "then": {
+              "properties": {
+                "details": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "captured_version": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "evaluated_version": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "captured_version",
+                    "evaluated_version"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "code": {
                   "const": "plan.source_draft_changed"
                 }
               },
@@ -2656,6 +2741,7 @@
             "enum": [
               "cache.stale",
               "cache.write_failed",
+              "explain.capture_version_mismatch",
               "plan.source_draft_changed",
               "project.remains_hidden",
               "publication.cache_stale",

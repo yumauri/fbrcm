@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "count": 543,
+    "count": 546,
     "items": [
       "urn:fbrcm:schema:cli:1.0.0:capability",
       "urn:fbrcm:schema:cli:1.0.0:command:add:input",
@@ -395,6 +395,8 @@
       "urn:fbrcm:schema:cli:1.1.0:command:experiments.list:response",
       "urn:fbrcm:schema:cli:1.1.0:command:experiments.show:input",
       "urn:fbrcm:schema:cli:1.1.0:command:experiments.show:response",
+      "urn:fbrcm:schema:cli:1.1.0:command:explain:input",
+      "urn:fbrcm:schema:cli:1.1.0:command:explain:response",
       "urn:fbrcm:schema:cli:1.1.0:command:get:input",
       "urn:fbrcm:schema:cli:1.1.0:command:get:response",
       "urn:fbrcm:schema:cli:1.1.0:command:groups.add:input",
@@ -554,6 +556,7 @@
       "urn:fbrcm:schema:cli:1.1.0:envelope",
       "urn:fbrcm:schema:cli:1.1.0:error",
       "urn:fbrcm:schema:cli:1.1.0:semantic",
+      "urn:fbrcm:schema:cli:1.1.0:stdin:capture",
       "urn:fbrcm:schema:cli:1.1.0:stdin:credentials",
       "urn:fbrcm:schema:cli:1.1.0:stdin:oauth_credentials",
       "urn:fbrcm:schema:cli:1.1.0:stdin:publication_plan",

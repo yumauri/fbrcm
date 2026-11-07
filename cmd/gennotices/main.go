@@ -278,6 +278,8 @@ func identifyLicense(files []licenseFile) (string, error) {
 		return "Apache-2.0", nil
 	case strings.Contains(text, "Permission is hereby granted, free of charge"):
 		return "MIT", nil
+	case strings.Contains(text, "Mozilla Public License, version 2.0"):
+		return "MPL-2.0", nil
 	case strings.Contains(text, "Redistribution and use in source and binary forms") &&
 		(strings.Contains(strings.ToLower(text), "neither the name") ||
 			strings.Contains(text, "may not be used to endorse or promote")):

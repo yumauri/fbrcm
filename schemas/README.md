@@ -1,16 +1,19 @@
 # CLI JSON schemas
 
-`cli/1.1.0/` is the current unreleased development contract, including
-condition blame. Released `cli/1.0.0/` remains checked in and embedded
+`cli/1.1.0/` is the current unreleased development contract, including `explain`
+and condition blame. Released `cli/1.0.0/` remains checked in and embedded
 unchanged as the released baseline. The current directory contains Draft 2020-12 input and
 response schemas for every executable CLI command plus the shared envelope,
 problem, capability, semantic-definition, Remote Config stdin, combined
 credential stdin, OAuth credential stdin, and service-account credential stdin
-schemas, plus theme and publication plan stdin schemas. The fixed publication-plan
+schemas, plus capture, theme, and publication plan stdin schemas. The fixed publication-plan
 artifact schema retains its original `1.0.0` ID. Contract `1.0.0` is the
 released baseline; see the [compatibility policy](../docs/compatibility.md).
 
 Each command response schema includes the exact registered success-data DTO.
+`explain` adds typed evaluation evidence, input provenance, priority guards,
+value/selection certainty, and captured-response comparisons. Its invocation
+schema describes cURL/HAR stdin and typed override assignment semantics.
 It references the published envelope schema, which contains the problem
 definition, and the semantic schema for shared enums and grammars. Top-level
 slices are represented by the envelope as `{count, items}`, and the schema

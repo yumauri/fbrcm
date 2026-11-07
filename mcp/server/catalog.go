@@ -67,6 +67,7 @@ var catalog = map[string]catalogEntry{
 	"projects.diff":         {"projects.diff", "inspect", false},
 	"project.show":          {"project.show", "inspect", false},
 	"get":                   {"parameters.get", "inspect", false},
+	"explain":               {"parameters.explain", "inspect", false},
 	"groups.list":           {"groups.list", "inspect", false},
 	"conditions.list":       {"conditions.list", "inspect", false},
 	"conditions.show":       {"conditions.show", "inspect", false},

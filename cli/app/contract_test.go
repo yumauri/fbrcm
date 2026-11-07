@@ -46,8 +46,10 @@ func TestEveryExecutableCommandHasCapabilityAndPublishedSchemas(t *testing.T) {
 			currentCount++
 		}
 	}
-	if currentCount != index.Count*2+11 {
-		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+11)
+	// The capture stdin schema replaces the standalone artifact resource in
+	// the current-version count; the artifact retains its original 1.0.0 ID.
+	if currentCount != index.Count*2+12 {
+		t.Fatalf("published current-schema count = %d, want %d", currentCount, index.Count*2+12)
 	}
 	seen := make(map[string]bool, index.Count)
 	for _, capability := range detailed {
@@ -2845,6 +2847,7 @@ func TestCommandResponseSchemasConstrainReachableOutcomesAndWarnings(t *testing.
 		"apps.list":              {"cache.stale", "cache.write_failed"},
 		"apps.show":              {"cache.stale", "cache.write_failed"},
 		"get":                    {"cache.stale"},
+		"explain":                {"cache.stale", "explain.capture_version_mismatch"},
 		"theme.import":           {"theme.already_exists"},
 		"conditions.edit":        postPublication,
 		"conditions.move":        postPublication,

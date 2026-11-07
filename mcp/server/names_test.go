@@ -17,6 +17,7 @@ import (
 // Keep expectations independent of the implementation's catalog mapping.
 var renamedOperations = map[string]string{
 	"parameters.get":       "get",
+	"parameters.explain":   "explain",
 	"parameters.add":       "add",
 	"parameters.update":    "update",
 	"parameters.delete":    "delete",
@@ -45,8 +46,8 @@ func TestAllToolNamesAreNamespacedAndUnique(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(listed.Tools) != 53 {
-		t.Fatalf("full catalog contains %d tools, want 53", len(listed.Tools))
+	if len(listed.Tools) != 54 {
+		t.Fatalf("full catalog contains %d tools, want 54", len(listed.Tools))
 	}
 	qualified := regexp.MustCompile(`^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$`)
 	names := make(map[string]bool)
@@ -82,6 +83,7 @@ func TestRenamedToolsDispatchOriginalOperationsAndPreserveEnvelopeIDs(t *testing
 		input string
 	}{
 		{"parameters.get", `{}`},
+		{"parameters.explain", `{"arguments":{"parameter":"feature"},"options":{"project":"demo"}}`},
 		{"parameters.add", `{"arguments":{"parameter":"feature"},"options":{"type":"string","value":"hello"}}`},
 		{"parameters.update", `{"arguments":{"parameter":"feature"},"options":{"description":"Updated"}}`},
 		{"parameters.delete", `{"arguments":{"parameter":"feature"}}`},

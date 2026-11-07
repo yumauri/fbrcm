@@ -1,0 +1,421 @@
+{
+  "$defs": {
+    "path_segment": {
+      "$ref": "urn:fbrcm:schema:cli:1.1.0:semantic#/$defs/path_segment"
+    },
+    "target_positional_selector": {
+      "allOf": [
+        {
+          "$ref": "urn:fbrcm:schema:cli:1.1.0:semantic#/$defs/target_positional_selector"
+        }
+      ],
+      "x-fbrcm-normalization": [
+        {
+          "operator": "canonicalize_positional_target_selector",
+          "source": "argv",
+          "target": "normalized_invocation"
+        }
+      ]
+    }
+  },
+  "$id": "urn:fbrcm:schema:cli:1.1.0:command:explain:input",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "properties": {
+        "options": {
+          "not": {
+            "required": [
+              "update",
+              "cached"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "allOf": [
+          {
+            "properties": {
+              "stdin": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "options": {
+                "not": {
+                  "required": [
+                    "from"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "options": {
+            "properties": {
+              "entry": {
+                "const": 0
+              }
+            },
+            "required": [
+              "project"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "arguments": {
+      "additionalProperties": false,
+      "properties": {
+        "parameter": {
+          "minLength": 1,
+          "pattern": ".*\\S.*",
+          "type": "string"
+        }
+      },
+      "required": [
+        "parameter"
+      ],
+      "type": "object"
+    },
+    "options": {
+      "additionalProperties": false,
+      "properties": {
+        "cached": {
+          "description": "Use cached Remote Config even when stale; fetch from Firebase if absent",
+          "type": "boolean"
+        },
+        "entry": {
+          "description": "Original one-based HAR entry number; 0 selects automatically only when there is one Firebase fetch",
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "type": "integer",
+          "x-fbrcm-matching": [
+            {
+              "operator": "explain_capture_entry_resolution"
+            }
+          ]
+        },
+        "from": {
+          "description": "Read a cURL command or HAR from this file, or - for stdin; piped stdin is detected automatically",
+          "pattern": ".*\\S.*",
+          "type": "string"
+        },
+        "include-hidden": {
+          "description": "Include projects hidden by the profile blacklist or whitelist for this invocation; ignored during stateless or stdin-only execution",
+          "type": "boolean",
+          "x-fbrcm-effective-when": [
+            {
+              "all_of": [
+                {
+                  "source": "option",
+                  "name": "stateless",
+                  "operator": "equals",
+                  "value": false
+                }
+              ]
+            }
+          ]
+        },
+        "no-input": {
+          "description": "Accepted for parity with human mode; JSON mode always leaves unavailable inputs unknown without prompting",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
+        "no-local-config": {
+          "description": "Ignore .fbrcm.toml repository configuration (env: FBRCM_NO_LOCAL_CONFIG)",
+          "type": "boolean"
+        },
+        "profile": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/path_segment"
+            }
+          ],
+          "description": "Use profile for this invocation without changing the active profile (env: FBRCM_PROFILE)",
+          "type": "string",
+          "x-fbrcm-normalization": [
+            {
+              "operator": "trim_unicode_whitespace",
+              "source": "argv",
+              "target": "normalized_invocation"
+            }
+          ]
+        },
+        "project": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/target_positional_selector"
+            }
+          ],
+          "description": "Select a project; otherwise infer it from the captured request",
+          "type": "string",
+          "x-fbrcm-matching": [
+            {
+              "operator": "explain_project_resolution"
+            }
+          ]
+        },
+        "set": {
+          "description": "Supply an input as field=value; may be repeated (use /unknown or /unset explicitly)",
+          "items": {
+            "description": "field=value input override. Indexed keys accept single or double quoted names. Values remain strings; /unknown and /unset are markers, and JSON-quoted strings escape them. Audience membership accepts true/false, yes/no, y/n (case-insensitive). Percentiles must parse as a finite number in [0,100]. Timestamps accept RFC3339 or ISO date-time interpreted as UTC. dateTime aliases device.dateTime. Later assignments to the same canonical field win.",
+            "pattern": "^[\\s\\v]*(?:app\\.(?:id|version|build|firebaseInstallationId|firstOpenTimestamp)|device\\.(?:os|country|language|category|dateTime)|dateTime|app\\.(?:browserAndVersion|operatingSystemAndVersion)\\.(?:name|version)|app\\.(?:customSignal|userProperty|audiences)[\\s\\v]*\\[[\\s\\v]*(?:'(?:\\\\.|[^'\\\\])*'|\"(?:\\\\.|[^\"\\\\])*\")[\\s\\v]*\\]|percent(?:[\\s\\v]*\\[[\\s\\v]*(?:'(?:\\\\.|[^'\\\\])*'|\"(?:\\\\.|[^\"\\\\])*\")[\\s\\v]*\\])?)[\\s\\v]*=",
+            "type": "string",
+            "x-fbrcm-validation": [
+              {
+                "absent_marker": "/unset",
+                "operator": "evaluate_input_assignment",
+                "parser": "evaluate.InputNeed+evaluate.Answer",
+                "percentile_maximum": 100,
+                "percentile_minimum": 0,
+                "unknown_marker": "/unknown"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "stateless": {
+          "const": false,
+          "description": "Run a supported command without profiles or application-managed local state (Firebase API token env: FBRCM_GOOGLE_ACCESS_TOKEN); true is rejected by this command",
+          "type": "boolean",
+          "x-fbrcm-effective": false
+        },
+        "timeout": {
+          "description": "Maximum duration for the complete command",
+          "not": {
+            "pattern": "^\\+?(?:0*\\.)\\d+ns$"
+          },
+          "pattern": "^\\+?(?:(?:0+(?:\\.0*)?|\\.0+)(?:ns|us|µs|μs|ms|s|m|h))*(?:(?:\\d*[1-9]\\d*(?:\\.\\d*)?|0*\\.\\d*[1-9]\\d*)(?:ns|us|µs|μs|ms|s|m|h))(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:ns|us|µs|μs|ms|s|m|h))*$",
+          "type": "string",
+          "x-fbrcm-grammar": "go-duration",
+          "x-fbrcm-validation": [
+            {
+              "operator": "parse_duration",
+              "parser": "time.ParseDuration",
+              "require_positive": true
+            }
+          ]
+        },
+        "update": {
+          "description": "Revalidate cached Remote Config before explaining",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "stdin": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "description": "A raw cURL command or HAR JSON text, or a decoded HAR object. Format is detected automatically. Capture bytes and expanded gzip bodies are limited to 32 MiB. Only Firebase :fetch POST entries are selected; original one-based HAR indices are retained. Requests are never executed.",
+          "oneOf": [
+            {
+              "maxLength": 33554432,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "properties": {
+                "log": {
+                  "properties": {
+                    "entries": {
+                      "items": {
+                        "properties": {
+                          "request": {
+                            "properties": {
+                              "headers": {
+                                "items": {
+                                  "properties": {
+                                    "name": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ]
+                                },
+                                "type": [
+                                  "array",
+                                  "null"
+                                ]
+                              },
+                              "method": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "postData": {
+                                "properties": {
+                                  "encoding": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "type": [
+                                  "object",
+                                  "null"
+                                ]
+                              },
+                              "url": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "type": [
+                              "object",
+                              "null"
+                            ]
+                          },
+                          "response": {
+                            "properties": {
+                              "content": {
+                                "properties": {
+                                  "encoding": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "text": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "type": [
+                                  "object",
+                                  "null"
+                                ]
+                              },
+                              "headers": {
+                                "items": {
+                                  "properties": {
+                                    "name": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "value": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ]
+                                },
+                                "type": [
+                                  "array",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "type": [
+                              "object",
+                              "null"
+                            ]
+                          },
+                          "startedDateTime": {
+                            "description": "Decoded by Go time.Time.UnmarshalJSON at the capture_document runtime boundary",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "time": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "type": "object"
+            }
+          ],
+          "x-fbrcm-validation": [
+            {
+              "maximum_bytes": 33554432,
+              "operator": "capture_document",
+              "parser": "evaluate.ReadCapture"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "arguments",
+    "options",
+    "stdin"
+  ],
+  "type": "object",
+  "x-fbrcm-input-selection": [
+    {
+      "operator": "explain_capture_source"
+    }
+  ]
+}

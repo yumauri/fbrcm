@@ -489,6 +489,8 @@ func describe(cmd *cobra.Command) Capability {
 	if support.Stdin {
 		kind := "remote_config"
 		switch id {
+		case "explain":
+			kind = "capture"
 		case "project.import":
 			kind = "remote_config_import"
 		case "auth.add.oauth":
@@ -526,6 +528,9 @@ func profileOptionIgnored(id string) bool {
 }
 
 func optionIgnored(id, name string) bool {
+	if id == "explain" && name == "no-input" {
+		return true
+	}
 	if name == "include-hidden" {
 		return !UsesProjectVisibility(id)
 	}
@@ -678,5 +683,5 @@ func UsesProjectVisibility(id string) bool {
 	if strings.HasPrefix(id, "draft.") {
 		return id != "draft.path"
 	}
-	return slices.Contains([]string{"add", "apply", "delete", "duplicate", "get", "update", "projects.list", "projects.update", "projects.diff", "projects.promote"}, id)
+	return slices.Contains([]string{"add", "apply", "delete", "duplicate", "explain", "get", "update", "projects.list", "projects.update", "projects.diff", "projects.promote"}, id)
 }

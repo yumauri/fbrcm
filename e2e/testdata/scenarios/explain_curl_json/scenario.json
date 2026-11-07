@@ -1,0 +1,10 @@
+{
+  "name": "explain_curl_json",
+  "command_id": "explain",
+  "args": ["explain", "feature_enabled", "--project", "${PROJECT_ID}", "--from", "fetch.curl", "--cached", "--json"],
+  "expected_exit_code": 0,
+  "expected_http": [],
+  "fixture": "explain",
+  "offline": true,
+  "json_output": true
+}

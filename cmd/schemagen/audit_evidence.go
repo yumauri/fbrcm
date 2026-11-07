@@ -77,6 +77,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 			if capability.ID == "mcp" {
 				evidence = append(evidence, "app.mcp_json_boundary", "app.mcp_json_failure")
 			}
+			if capability.ID == "explain" {
+				evidence = append(evidence, "app.explain_runtime", "app.explain_audit_inputs", "app.explain_audit_selection", "app.explain_audit_failures", "app.audit_metadata")
+			}
 			if capability.ID == "auth.add.google" {
 				switch class {
 				case "boundary", "invocation":
@@ -183,6 +186,11 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"app.audit_metadata":                      "cli/app/explain_audit_test.go#TestContractAuditMetadataHasNoInapplicableBranches",
+		"app.explain_audit_failures":              "cli/app/explain_audit_test.go#TestExplainAuditCaptureFailuresAndEntryBounds",
+		"app.explain_audit_inputs":                "cli/app/explain_audit_test.go#TestExplainAuditInputBoundaries",
+		"app.explain_audit_selection":             "cli/app/explain_audit_test.go#TestExplainAuditProjectSelectionAndSourcePrecedence",
+		"app.explain_runtime":                     "cli/app/explain_contract_test.go#TestExplainMachineContractRuntime",
 		"visibility.commands_runtime":             "cli/app/project_visibility_test.go#TestProjectVisibilityCommandsConform",
 		"visibility.selection_runtime":            "cli/app/project_visibility_test.go#TestProjectVisibilitySelectionAndPersistenceConform",
 		"visibility.invocation_schema":            "cli/app/project_visibility_test.go#TestProjectVisibilityInvocationSchemas",
@@ -295,6 +303,8 @@ func generatedAuditSuccessFallback(commandID string) string {
 		return "visibility.commands_runtime"
 	}
 	switch commandID {
+	case "explain":
+		return "app.explain_runtime"
 	case "apply":
 		return "apply.no_change_success"
 	case "apps.config":

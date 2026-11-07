@@ -64,7 +64,7 @@ func TestCatalogPoliciesAndInputValidation(t *testing.T) {
 	for _, tool := range listed.Tools {
 		names[tool.Name] = true
 	}
-	if !names["parameters.get"] || !names["versions.blame"] || names["parameters.update"] || names["draft.show"] || names["auth.login"] || names["config.set"] {
+	if !names["parameters.get"] || !names["versions.blame"] || names["parameters.explain"] || names["parameters.update"] || names["draft.show"] || names["auth.login"] || names["config.set"] {
 		t.Fatalf("unexpected catalog: %v", names)
 	}
 	for _, input := range []string{

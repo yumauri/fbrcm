@@ -167,7 +167,9 @@ func extensionSchemaDefinitions() map[string]any {
 	validationRule := ref("validation_rule")
 	validationCases := map[string]any{"type": "object", "minProperties": 1, "additionalProperties": validationRule}
 	validationRules := []any{
+		object([]string{"operator", "parser", "maximum_bytes"}, map[string]any{"operator": map[string]any{"const": "capture_document"}, "parser": map[string]any{"const": "evaluate.ReadCapture"}, "maximum_bytes": map[string]any{"const": 33554432}}),
 		object([]string{"operator"}, map[string]any{"operator": map[string]any{"const": "accept"}}),
+		object([]string{"operator", "parser", "percentile_minimum", "percentile_maximum", "unknown_marker", "absent_marker"}, map[string]any{"operator": map[string]any{"const": "evaluate_input_assignment"}, "parser": map[string]any{"const": "evaluate.InputNeed+evaluate.Answer"}, "percentile_minimum": map[string]any{"const": 0}, "percentile_maximum": map[string]any{"const": 100}, "unknown_marker": map[string]any{"const": "/unknown"}, "absent_marker": map[string]any{"const": "/unset"}}),
 		object([]string{"operator", "language", "version", "result_type"}, map[string]any{"operator": map[string]any{"const": "compile_expression"}, "language": stringValue, "version": stringValue, "result_type": stringValue}),
 		object([]string{"operator", "field", "normalized_case", "cases"}, map[string]any{"operator": map[string]any{"const": "dispatch_by_field"}, "field": stringValue, "normalized_case": map[string]any{"enum": []string{"lowercase"}}, "cases": validationCases}),
 		object([]string{"operator", "fields", "comparison"}, map[string]any{"operator": map[string]any{"const": "fields_differ"}, "fields": map[string]any{"type": "array", "minItems": 2, "maxItems": 2, "items": stringValue}, "comparison": map[string]any{"enum": []string{"exact_codepoint", "unicode_case_fold"}}}),
@@ -446,6 +448,8 @@ func extensionSchemaDefinitions() map[string]any {
 				"multiple_result":                map[string]any{"const": "draft.ambiguous"},
 			}),
 			object([]string{"operator"}, map[string]any{"operator": map[string]any{"enum": []string{
+				"explain_project_resolution",
+				"explain_capture_entry_resolution",
 				"auth_id_resolution",
 				"condition_name_resolution",
 				"condition_positional_resolution",
@@ -507,10 +511,12 @@ func extensionSchemaDefinitions() map[string]any {
 				"combination":       map[string]any{"const": "or"},
 			}),
 		}},
-		"matching_rules":        map[string]any{"type": "array", "minItems": 1, "items": ref("matching_rule")},
-		"invariant_expression":  map[string]any{"oneOf": invariantRules},
-		"invariant_rules":       map[string]any{"type": "array", "minItems": 1, "items": invariantExpression},
-		"input_selection_rule":  map[string]any{"oneOf": []any{firstAvailableInputSelectionRule, pathOrStdinInputSelectionRule}},
+		"matching_rules":       map[string]any{"type": "array", "minItems": 1, "items": ref("matching_rule")},
+		"invariant_expression": map[string]any{"oneOf": invariantRules},
+		"invariant_rules":      map[string]any{"type": "array", "minItems": 1, "items": invariantExpression},
+		"input_selection_rule": map[string]any{"oneOf": []any{firstAvailableInputSelectionRule, pathOrStdinInputSelectionRule,
+			object([]string{"operator"}, map[string]any{"operator": map[string]any{"const": "explain_capture_source"}}),
+		}},
 		"input_selection_rules": map[string]any{"type": "array", "minItems": 1, "items": ref("input_selection_rule")},
 	}
 }

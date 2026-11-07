@@ -626,11 +626,12 @@ func Classify(err error) Problem {
 		problem.Code, problem.Category = "interaction.required", "interaction"
 		problem.Retryable = false
 		problem.Details = struct {
-			Kind           string  `json:"kind"`
-			Type           string  `json:"interaction_type"`
-			RequiredOption *string `json:"required_option"`
-			Destructive    bool    `json:"destructive"`
-		}{Kind: "interaction", Type: defaultString(interaction.Type, "input_required"), RequiredOption: optionalString(interaction.RequiredOption), Destructive: interaction.Destructive}
+			Kind           string                    `json:"kind"`
+			Type           string                    `json:"interaction_type"`
+			RequiredOption *string                   `json:"required_option"`
+			Destructive    bool                      `json:"destructive"`
+			Candidates     []shared.CaptureCandidate `json:"candidates,omitempty"`
+		}{Kind: "interaction", Type: defaultString(interaction.Type, "input_required"), RequiredOption: optionalString(interaction.RequiredOption), Destructive: interaction.Destructive, Candidates: interaction.CaptureCandidates}
 		if len(interaction.SuggestedArgv) > 0 {
 			problem.Remediation = []Remediation{{Description: "rerun with the complete non-interactive arguments", Strategy: shared.RemediationRetryWithArguments, Argv: append([]string(nil), interaction.SuggestedArgv...)}}
 		}

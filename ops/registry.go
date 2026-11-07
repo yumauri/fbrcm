@@ -28,6 +28,7 @@ import (
 	"github.com/yumauri/fbrcm/ops/workflows/doctor"
 	"github.com/yumauri/fbrcm/ops/workflows/draft"
 	"github.com/yumauri/fbrcm/ops/workflows/duplicate"
+	"github.com/yumauri/fbrcm/ops/workflows/explain"
 	"github.com/yumauri/fbrcm/ops/workflows/get"
 	"github.com/yumauri/fbrcm/ops/workflows/groups"
 	"github.com/yumauri/fbrcm/ops/workflows/managedfeatures"
@@ -50,7 +51,7 @@ func NewRegistry(service *core.Core) (*Registry, error) {
 	for name, factory := range map[string]func(*core.Core) *invocation.Definition{
 		"add": add.NewDefinition, "apply": apply.NewDefinition, "apps": apps.NewDefinition, "conditions": conditions.NewDefinition,
 		"delete": deletecmd.NewDefinition, "doctor": doctor.NewDefinition, "draft": draft.NewDefinition,
-		"duplicate": duplicatecmd.NewDefinition, "get": get.NewDefinition, "groups": groups.NewDefinition,
+		"duplicate": duplicatecmd.NewDefinition, "explain": explain.NewDefinition, "get": get.NewDefinition, "groups": groups.NewDefinition,
 		"experiments": managedfeatures.NewExperimentsDefinition, "rollouts": managedfeatures.NewRolloutsDefinition,
 		"personalizations": managedfeatures.NewPersonalizationsDefinition, "project": project.NewDefinition,
 		"projects": projects.NewDefinition, "update": updatecmd.NewDefinition, "versions": versions.NewDefinition,
@@ -185,6 +186,13 @@ func (r *Registry) run(call *request, c contract.Capability, input Input, execut
 	}
 	if raw := bytes.TrimSpace(input.Stdin); len(raw) != 0 && !bytes.Equal(raw, []byte("null")) {
 		call.in = shared.DocumentInput(bytes.NewReader(raw))
+		if c.ID == "explain" && raw[0] == '"' {
+			var capture string
+			if err := json.Unmarshal(raw, &capture); err != nil {
+				return shared.InvalidArgument(err)
+			}
+			call.in = shared.DocumentInput(strings.NewReader(capture))
+		}
 	}
 	args, err := input.Positionals(c)
 	if err != nil {

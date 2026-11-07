@@ -313,6 +313,9 @@ func schemaForResponseType(typeOf reflect.Type, visiting map[reflect.Type]bool) 
 func applyTypeSemantics(schema map[string]any, typeOf reflect.Type) {
 	properties, _ := schema["properties"].(map[string]any)
 	qualifiedName := typeOf.PkgPath() + "." + typeOf.Name()
+	if strings.HasPrefix(qualifiedName, "github.com/yumauri/fbrcm/ops/workflows/explain.") || strings.HasPrefix(qualifiedName, "github.com/yumauri/fbrcm/core/rc/evaluate.") {
+		applyExplainTypeSemantics(typeOf.Name(), schema)
+	}
 	if _, hasCount := properties["count"]; hasCount {
 		for _, collectionName := range []string{"items", "commands"} {
 			if collection, ok := properties[collectionName].(map[string]any); ok {

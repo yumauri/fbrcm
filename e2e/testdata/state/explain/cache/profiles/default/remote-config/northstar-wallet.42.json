@@ -1,0 +1,21 @@
+{
+  "etag": "fixture-explain-etag",
+  "cached_at": "2024-01-02T03:04:05Z",
+  "remote_config": {
+    "version": {"versionNumber": "42"},
+    "conditions": [
+      {"name": "web_qa", "expression": "device.os == 'web' && app.customSignal['environment'].exactlyMatches(['qa'])", "tagColor": "BLUE"},
+      {"name": "web", "expression": "device.os == 'web'", "tagColor": "GREEN"}
+    ],
+    "parameters": {
+      "feature_enabled": {
+        "valueType": "BOOLEAN",
+        "defaultValue": {"value": "false"},
+        "conditionalValues": {
+          "web_qa": {"value": "true"},
+          "web": {"value": "false"}
+        }
+      }
+    }
+  }
+}

@@ -7,7 +7,8 @@ formats have separate versions. Existing integer file-format versions stay at
 
 Version 1.1.0 is under development and has not been published. Its CLI JSON
 contract `1.1.0` has `released: false` and may be regenerated in place before
-release. It includes condition blame in the CLI and MCP. Published `1.0.0` schemas and the original
+release. It includes CLI `explain`, its capture/evaluation contract, condition
+blame and MCP `parameters.explain`. Published `1.0.0` schemas and the original
 released lock remain unchanged. Persisted encodings stay the same, so this
 release needs no migration.
 

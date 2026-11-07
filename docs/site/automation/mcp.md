@@ -62,8 +62,9 @@ Use each tool's discovered input schema when constructing calls:
 - `arguments` contains named positional arguments.
 - `options` contains long flag names without `--`. Repeatable values, such as
   `project`, are JSON arrays; booleans are JSON booleans.
-- `stdin` contains a JSON document for tools that accept document input, not a
-  JSON-encoded string.
+- `stdin` contains structured document input. Template tools accept JSON objects;
+  `parameters.explain` accepts a HAR object or a JSON string containing cURL text
+  or serialized HAR.
 
 Optional `arguments` and `options` default to `{}` where valid, and optional
 `stdin` defaults to `null`. Required values must still be supplied. For example,
@@ -80,7 +81,7 @@ tools allowed by the selected groups, execution mode, and write permission.
 
 | Toolset | Workflows |
 | --- | --- |
-| `inspect` | Read parameters, projects, Firebase apps, groups, conditions, versions, experiments, rollouts, and personalizations; compare configurations and read defaults |
+| `inspect` | Read and explain parameters; inspect projects, Firebase apps, groups, conditions, versions, experiments, rollouts, and personalizations; compare configurations and read defaults |
 | `edit` | Add, update, duplicate, and delete parameters; manage groups and conditions |
 | `drafts` | List, inspect, compare, annotate, and discard local drafts |
 | `plans` | Inspect and validate publication plans |
@@ -97,6 +98,17 @@ parameter key. Supply `arguments.project` and `arguments.parameter`; optional
 `options.at`, `options.limit`, and `options.all` match the CLI command, with
 `all` and `limit` mutually exclusive. Results include adjacent version
 transitions, publication metadata, and typed parameter diffs.
+
+Use `parameters.explain` in stateful mode to evaluate one parameter against a
+Firebase fetch capture. Supply `arguments.parameter`, a scalar `options.project`
+if the project is not inferred from the capture, and cURL text or a HAR object
+in `stdin`. A local capture file can instead be supplied in `options.from`.
+Optional `options.set` is an array of `field=value` overrides. Captures are parsed
+locally and never replayed. For several matching HAR fetches, use `options.entry`
+with the original one-based entry index from the returned selection error.
+Missing facts return a successful unknown result with possible outcomes and
+`needed_inputs`; supply overrides in a subsequent call to resolve them.
+The tool requires no write permission and returns `command: "explain"`.
 
 For inspection only, use these host arguments:
 
@@ -190,8 +202,9 @@ or hooks. You can still read and write files whose paths you supply. Remote
 mutations require the same write permission and approval as stateful execution.
 
 Discovery excludes the `drafts` and `plans` groups, `draft.publish`,
-`versions.restore`, and `diagnostics.doctor`. `plan.apply` supports stateless
-plans. `--stateless` cannot be combined with `--profile` or `--allow-hooks`.
+`versions.restore`, `parameters.explain`, and `diagnostics.doctor`. `plan.apply`
+supports stateless plans. `--stateless` cannot be combined with `--profile` or
+`--allow-hooks`.
 
 Environment tokens are not refreshed. Renew them externally and restart the
 subprocess with the updated environment; there is no profile or browser fallback.

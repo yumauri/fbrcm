@@ -52,7 +52,7 @@ func TestNewRootCommandBuildsFreshRoot(t *testing.T) {
 	if _, ok := first.ErrOrStderr().(term.File); !ok {
 		t.Fatalf("root stderr type = %T, want terminal-capable progress writer", first.ErrOrStderr())
 	}
-	if got, want := commandNames(first), []string{"add", "apply", "apps", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "setup", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
+	if got, want := commandNames(first), []string{"add", "apply", "apps", "auth", "cache", "capabilities", "completion", "conditions", "config", "delete", "doctor", "draft", "duplicate", "experiments", "explain", "get", "groups", "help", "hooks", "mcp", "personalizations", "plan", "profile", "project", "projects", "rollouts", "schema", "setup", "theme", "update", "versions"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("root commands = %#v, want %#v", got, want)
 	}
 }
@@ -83,7 +83,7 @@ func TestRootCommandConstructionDoesNotAccumulateSubcommands(t *testing.T) {
 		counts = append(counts, len(cmd.Commands()))
 	}
 
-	if !reflect.DeepEqual(counts, []int{30, 30, 30}) {
+	if !reflect.DeepEqual(counts, []int{31, 31, 31}) {
 		t.Fatalf("command counts = %#v, want stable counts without accumulation", counts)
 	}
 }

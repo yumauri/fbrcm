@@ -5,6 +5,7 @@
     "app.apps_response_invariants": "cli/app/contract_test.go#TestAppsResponseSchemasRequireCacheTimestampAndArtifactTarget",
     "app.arity": "cli/app/contract_test.go#TestEveryExecutableCommandCobraArityMatchesCapability",
     "app.artifact_schema": "cli/app/contract_test.go#TestArtifactSchemasConstrainCommandReachableEncodings",
+    "app.audit_metadata": "cli/app/explain_audit_test.go#TestContractAuditMetadataHasNoInapplicableBranches",
     "app.auth_add_quota_schema": "cli/app/contract_test.go#TestAuthAddInvocationSchemasPublishQuotaProjectNormalizationAndGrammar",
     "app.auth_google_configuration_failure": "cli/app/contract_test.go#TestAuthAddGoogleMissingBuiltInClientReturnsConformingConfigurationFailure",
     "app.boundaries": "cli/app/contract_test.go#TestInvocationSchemasRejectMachineOnlyAndTypedValueContradictions",
@@ -17,6 +18,10 @@
     "app.confirmation_effectiveness": "cli/app/contract_test.go#TestConfirmationBypassFlagsPublishConditionalEffectiveness",
     "app.discovery": "cli/app/contract_test.go#TestEveryExecutableCommandHasCapabilityAndPublishedSchemas",
     "app.effectiveness": "cli/app/contract_test.go#TestMachineIgnoredCommandOptionsAreExplicitInInvocationSchemas",
+    "app.explain_audit_failures": "cli/app/explain_audit_test.go#TestExplainAuditCaptureFailuresAndEntryBounds",
+    "app.explain_audit_inputs": "cli/app/explain_audit_test.go#TestExplainAuditInputBoundaries",
+    "app.explain_audit_selection": "cli/app/explain_audit_test.go#TestExplainAuditProjectSelectionAndSourcePrecedence",
+    "app.explain_runtime": "cli/app/explain_contract_test.go#TestExplainMachineContractRuntime",
     "app.failure_codes": "cli/app/contract_test.go#TestCommandResponseSchemasConstrainReachableProblemCodes",
     "app.failure_runtime": "cli/app/contract_test.go#TestTypedFailureScenariosConformToRuntimeSchema",
     "app.interaction": "cli/app/contract_test.go#TestCapabilitiesDescribeMachineModeSafetyAndInteraction",
@@ -5174,6 +5179,198 @@
         },
         "warning": {
           "not_applicable": "The command has no reachable non-fatal warning branch."
+        }
+      }
+    },
+    {
+      "id": "explain",
+      "classes": {
+        "artifact": {
+          "not_applicable": "The command does not return a contract artifact DTO."
+        },
+        "batch": {
+          "not_applicable": "The command cannot produce a partial-success batch outcome."
+        },
+        "boundary": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.boundaries",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.invocation_semantics",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "determinism": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json",
+            "schemagen.determinism"
+          ]
+        },
+        "discovery": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.discovery",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "effectiveness": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.capability_behavior",
+            "app.effectiveness",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "effects": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.capability_behavior",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "failure": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.failure_codes",
+            "app.failure_runtime",
+            "app.plan_quota_app_problems",
+            "app.unknown_option",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "interaction": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.interaction",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "invocation": {
+          "evidence": [
+            "app.arity",
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.invocation_semantics",
+            "app.unknown_option",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "no_op": {
+          "not_applicable": "The command is not a mutation operation."
+        },
+        "selection": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.selection",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "stdin": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.stdin",
+            "app.stdin_restrictions",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "success": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.outcomes",
+            "app.response_invariants",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
+        },
+        "warning": {
+          "evidence": [
+            "app.audit_metadata",
+            "app.explain_audit_failures",
+            "app.explain_audit_inputs",
+            "app.explain_audit_selection",
+            "app.explain_runtime",
+            "app.outcomes",
+            "app.warning_runtime",
+            "e2e:explain_curl_json",
+            "e2e:explain_default_json",
+            "e2e:explain_har_json",
+            "e2e:explain_unknown_json"
+          ]
         }
       }
     },

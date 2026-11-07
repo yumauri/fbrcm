@@ -9,7 +9,8 @@ interfaces without migration or a version change has ended.
 ## Upcoming 1.1.0 release boundary
 
 Version 1.1.0 has not been published. Its CLI JSON contract has `released: false`
-and may be regenerated in place before release. It adds
+and may be regenerated in place before release. It adds CLI `explain`, its
+structured JSON results and capture inputs, MCP `parameters.explain`, and
 condition blame through CLI/MCP `versions.blame`. Released 1.0.0 interfaces,
 schemas, and durable data remain covered by the existing compatibility promise.
 Once 1.1.0 is published, its interfaces join that promise and its released lock
@@ -109,7 +110,8 @@ format-version field; that does not exempt their supported data from upgrade
 compatibility. A release number alone never increments a file-format version.
 The upcoming 1.1.0 release keeps the existing encodings, including the
 publication-plan artifact schema `urn:fbrcm:schema:cli:1.0.0:publication_plan` and its integer
-`format_version: 1`.
+`format_version: 1`. Capture inputs for `explain` are not a new persisted format;
+the operation does not store captures.
 
 An incompatible encoding needs a distinct format version where one exists and
 a documented migration before replacing durable data. Versionless formats need

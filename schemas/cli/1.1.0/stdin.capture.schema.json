@@ -1,0 +1,185 @@
+{
+  "$id": "urn:fbrcm:schema:cli:1.1.0:stdin:capture",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Firebase fetch capture as cURL or HAR",
+  "oneOf": [
+    {
+      "maxLength": 33554432,
+      "minLength": 1,
+      "type": "string"
+    },
+    {
+      "properties": {
+        "log": {
+          "properties": {
+            "entries": {
+              "items": {
+                "properties": {
+                  "request": {
+                    "properties": {
+                      "headers": {
+                        "items": {
+                          "properties": {
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "method": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "postData": {
+                        "properties": {
+                          "encoding": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "text": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "url": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "response": {
+                    "properties": {
+                      "content": {
+                        "properties": {
+                          "encoding": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "text": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      },
+                      "headers": {
+                        "items": {
+                          "properties": {
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "type": [
+                          "array",
+                          "null"
+                        ]
+                      },
+                      "status": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      }
+                    },
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "startedDateTime": {
+                    "description": "Decoded by Go time.Time.UnmarshalJSON at the capture_document runtime boundary",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "time": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    }
+  ],
+  "x-fbrcm-validation": [
+    {
+      "maximum_bytes": 33554432,
+      "operator": "capture_document",
+      "parser": "evaluate.ReadCapture"
+    }
+  ]
+}

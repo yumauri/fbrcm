@@ -48,6 +48,7 @@ func TestIdentifyCompatibleLicenses(t *testing.T) {
 		{name: "MIT", text: "Permission is hereby granted, free of charge", want: "MIT"},
 		{name: "MIT-0", text: "MIT No Attribution\nPermission is hereby granted, free of charge", want: "MIT-0"},
 		{name: "Apache", text: "Apache License\nVersion 2.0", want: "Apache-2.0"},
+		{name: "MPL-2.0", text: "Copyright (c) 2014 HashiCorp, Inc.\n\nMozilla Public License, version 2.0", want: "MPL-2.0"},
 		{
 			name: "MCP transition",
 			text: "licensing transition from the MIT License to the Apache License",
@@ -73,9 +74,13 @@ func TestIdentifyCompatibleLicenses(t *testing.T) {
 }
 
 func TestIdentifyLicenseRejectsUnreviewedLicense(t *testing.T) {
-	_, err := identifyLicense([]licenseFile{{name: "LICENSE", content: []byte("unknown terms")}})
-	if err == nil || !strings.Contains(err.Error(), "unrecognized license") {
-		t.Fatalf("unreviewed-license error = %v", err)
+	for _, text := range []string{"unknown terms", "Mozilla Public License, version 1.1"} {
+		t.Run(text, func(t *testing.T) {
+			_, err := identifyLicense([]licenseFile{{name: "LICENSE", content: []byte(text)}})
+			if err == nil || !strings.Contains(err.Error(), "unrecognized license") {
+				t.Fatalf("unreviewed-license error = %v", err)
+			}
+		})
 	}
 }
 

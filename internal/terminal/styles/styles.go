@@ -39,6 +39,10 @@ var (
 	PanelMuted = lipgloss.NewStyle().
 			Foreground(PaletteSlateDim)
 
+	DefaultValueLabel = PanelMuted.Italic(true)
+
+	LogFieldKey = charmlog.DefaultStyles().Key
+
 	PanelText = lipgloss.NewStyle().
 			Foreground(PaletteSlateBright)
 

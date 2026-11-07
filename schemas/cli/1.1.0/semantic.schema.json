@@ -395,6 +395,18 @@
             "missing_stdin"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "operator": {
+              "const": "explain_capture_source"
+            }
+          },
+          "required": [
+            "operator"
+          ],
+          "type": "object"
         }
       ]
     },
@@ -1217,6 +1229,8 @@
           "properties": {
             "operator": {
               "enum": [
+                "explain_project_resolution",
+                "explain_capture_entry_resolution",
                 "auth_id_resolution",
                 "condition_name_resolution",
                 "condition_positional_resolution",
@@ -1794,12 +1808,64 @@
         {
           "additionalProperties": false,
           "properties": {
+            "maximum_bytes": {
+              "const": 33554432
+            },
+            "operator": {
+              "const": "capture_document"
+            },
+            "parser": {
+              "const": "evaluate.ReadCapture"
+            }
+          },
+          "required": [
+            "operator",
+            "parser",
+            "maximum_bytes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "operator": {
               "const": "accept"
             }
           },
           "required": [
             "operator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "absent_marker": {
+              "const": "/unset"
+            },
+            "operator": {
+              "const": "evaluate_input_assignment"
+            },
+            "parser": {
+              "const": "evaluate.InputNeed+evaluate.Answer"
+            },
+            "percentile_maximum": {
+              "const": 100
+            },
+            "percentile_minimum": {
+              "const": 0
+            },
+            "unknown_marker": {
+              "const": "/unknown"
+            }
+          },
+          "required": [
+            "operator",
+            "parser",
+            "percentile_minimum",
+            "percentile_maximum",
+            "unknown_marker",
+            "absent_marker"
           ],
           "type": "object"
         },
@@ -2354,6 +2420,11 @@
     "input_selection": {
       "keyword": "x-fbrcm-input-selection",
       "operators": {
+        "explain_capture_source": {
+          "operands": null,
+          "result": "selected_capture_or_no_capture",
+          "semantics": "Read options.from as a file path when nonempty and different from '-', leaving stdin unconsumed. Otherwise read stdin when from is '-' or redirected stdin is available. With no capture require options.project and entry=0; return argument.invalid when either requirement fails. A '-' source without readable content reaches capture.invalid. Decode the selected source with capture_document. File errors remain typed filesystem problems. A file source makes supplied stdin ineffective."
+        },
         "first_available": {
           "operands": [
             "sources",
@@ -2588,6 +2659,16 @@
           "result": "selection",
           "semantics": "Compare the untrimmed positional source name exactly and case-sensitively against parameter keys across root and all groups, skip a target on zero matches, and return parameter.ambiguous with candidates on multiple exact matches."
         },
+        "explain_capture_entry_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Entry 0 selects automatically only when the capture contains one Firebase fetch. Multiple fetches with entry 0 return interaction.required, exit 10, with required_option --entry and safe candidates. A positive entry matches the original one-based HAR index (or 1 for cURL), never the filtered candidate index. A missing/non-fetch index, negative entry or nonzero entry without a capture returns argument.invalid. Capture existence and entry lookup are runtime validation boundaries."
+        },
+        "explain_project_resolution": {
+          "operands": null,
+          "result": "selection",
+          "semantics": "Use options.project when present, otherwise the selected capture's raw project ID or number; without either return argument.invalid. Before target parsing, if strconv.ParseUint(query,10,64) succeeds, resolve the raw query by exact stored project_number; otherwise use target_positional_selector resolution, preserving raw argv and exact ID/alias/display-name precedence before mode-prefixed fuzzy fallback. Cached mode resolves projects solely from the local registry; otherwise discovery may synchronize it. Apply project visibility rules. Zero/multiple candidates return project.not_found/project.ambiguous. With a capture, require its project to equal the resolved physical ID or stored project number, and select the capture namespace (firebase=client, firebase-server=server). An explicit target prefix that conflicts with that namespace returns argument.invalid; the runtime ParseSelector check trims outer whitespace. Without a capture use the configured primary template for an unqualified query. Client targets canonicalize to unqualified IDs; server targets use server@. The parameter argument matches exact case-sensitive keys across root and groups with no trimming, returns the first stored exact match, and returns parameter.not_found when absent. --set overrides compose by last assignment to each canonical field."
+        },
         "firebase_app_resolution": {
           "operands": [
             "comparison",
@@ -2806,6 +2887,14 @@
           "result": "accept",
           "semantics": "Accept the instance without an additional check."
         },
+        "capture_document": {
+          "operands": [
+            "parser",
+            "maximum_bytes"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Parse the selected capture with evaluate.ReadCapture at runtime; failures return capture.invalid, exit 8. Trim outer whitespace and one leading UTF-8 BOM; a leading '{' selects HAR JSON, otherwise tokenize cURL without shell execution (including a quoted curl executable). Go encoding/json decodes HAR structs with case-insensitive field names, omitted/null zero values and unknown fields ignored. Only HTTPS POST requests to firebaseremoteconfig.googleapis.com/v1/projects/\u003cid-or-number\u003e/namespaces/firebase:fetch or firebase-server:fetch are candidates; ignore all other HAR entries. Validate selected-request status in [0,599], inline JSON request bodies, base64/gzip decoding and timestamps using the runtime parser; require at least one fetch. Unrelated entries do not require valid URIs, supported body encodings or status bounds. Original one-based HAR indices are preserved. Enforce maximum_bytes on input bytes and each expanded gzip body, independent of JSON character counts. Captures are never executed or persisted."
+        },
         "compile_expression": {
           "operands": [
             "language",
@@ -2835,6 +2924,17 @@
           ],
           "result": "accept_or_reject",
           "semantics": "Read the sibling field, normalize its case as declared, and evaluate the matching case rule."
+        },
+        "evaluate_input_assignment": {
+          "operands": [
+            "parser",
+            "percentile_minimum",
+            "percentile_maximum",
+            "unknown_marker",
+            "absent_marker"
+          ],
+          "result": "accept_or_reject",
+          "semantics": "Split the first equals sign into field and value without trimming. Canonicalize the field with evaluate.InputNeed, including indexed quoted names and the dateTime alias. Parse the value with evaluate.Answer: unquoted /unknown and /unset are markers; a JSON string escapes marker values. Audience membership accepts true/false, yes/no, y/n case-insensitively after whitespace trimming. Percentiles use strconv.ParseFloat, reject non-finite results, and must be within the inclusive declared bounds. Timestamps accept RFC3339Nano or an ISO date-time in UTC. Other values remain strings, including the empty string. Later assignments to a canonical field replace earlier ones."
         },
         "fields_differ": {
           "operands": [

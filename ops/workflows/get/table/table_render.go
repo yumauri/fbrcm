@@ -153,7 +153,7 @@ func renderDefaultLabel(label string, rowBG color.Color) string {
 	if clistyles.NoColorEnabled() {
 		return label
 	}
-	return applyBackground(lipgloss.NewStyle().Foreground(clistyles.PaletteSlateDim).Italic(true), rowBG).Render(label)
+	return applyBackground(clistyles.DefaultValueLabel, rowBG).Render(label)
 }
 
 func renderMissingLabel(status string, rowBG color.Color) string {

@@ -11,7 +11,7 @@ import (
 )
 
 func loadProjectParameters(ctx context.Context, svc *core.Core, projectID string, opts core.ParametersReadOptions) (*core.ParametersCache, string, error) {
-	return svc.ReadParameters(ctx, projectID, opts)
+	return shared.ReadParametersWithFallback(ctx, svc, projectID, opts)
 }
 
 type loadedProjectParameters struct {
@@ -92,7 +92,13 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 	}
 	cache, source, err := loadProjectParameters(executionCtx, svc, project.ProjectID, opts)
 	if err == nil {
-		cfg, parseErr := sharedrc.ParseProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
+		parse := sharedrc.ParseProjectRemoteConfig
+		status := core.ParametersStatusLabel(source, cache.CachedAt, true, nil)
+		if source == "cache-stale" {
+			parse = sharedrc.ParseCachedProjectRemoteConfig
+			status = "stale"
+		}
+		cfg, parseErr := parse(project.ProjectID, cache.RemoteConfig)
 		if parseErr != nil {
 			return loadedProjectParameters{}, parseErr
 		}
@@ -101,29 +107,16 @@ func loadProjectParametersWithFallback(ctx context.Context, svc *core.Core, proj
 			cache:   cache,
 			cfg:     cfg,
 			source:  source,
-			status:  core.ParametersStatusLabel(source, cache.CachedAt, true, nil),
+			status:  status,
 		}, nil
 	}
 	if !core.ExecutionPolicyFromContext(executionCtx).ReadLocalState {
 		return loadedProjectParameters{}, err
 	}
 
-	cache, state, inspectErr := svc.InspectParametersCache(project.ProjectID)
+	_, _, inspectErr := svc.InspectParametersCache(project.ProjectID)
 	if inspectErr != nil {
 		return loadedProjectParameters{}, err
-	}
-	if state != core.ParametersCacheMissing && cache != nil {
-		cfg, parseErr := sharedrc.ParseCachedProjectRemoteConfig(project.ProjectID, cache.RemoteConfig)
-		if parseErr != nil {
-			return loadedProjectParameters{}, parseErr
-		}
-		return loadedProjectParameters{
-			project: project,
-			cache:   cache,
-			cfg:     cfg,
-			source:  "cache-stale",
-			status:  "stale",
-		}, nil
 	}
 
 	return loadedProjectParameters{

@@ -100,11 +100,13 @@ func statelessUpdatingRemoteRead(extra ...effectBehavior) capabilityBehavior {
 	}, extra...)
 }
 
-func appCacheRead(fetchMissing bool, extra ...effectBehavior) capabilityBehavior {
+func appCacheRead(fetchMissing, allowStateless bool, extra ...effectBehavior) capabilityBehavior {
 	remoteWhen := []BehaviorConditionClause{
-		conditionClause(predicate("option", "stateless", "equals", true)),
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true)),
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("runtime_state", "required_cache", "not_usable", nil)),
+	}
+	if allowStateless {
+		remoteWhen = append([]BehaviorConditionClause{conditionClause(predicate("option", "stateless", "equals", true))}, remoteWhen...)
 	}
 	cacheWriteWhen := []BehaviorConditionClause{
 		conditionClause(predicate("option", "stateless", "equals", false), predicate("option", "cached", "equals", false), predicate("option", "update", "equals", true), predicate("runtime_state", "remote_read", "cache_write_succeeded", nil)),
@@ -781,9 +783,9 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 		conditionClause(predicate("runtime_state", "authentication", "requires_human_authorization", nil))),
 
 	"conditions.list": statelessUpdatingRemoteRead(),
-	"apps.list":       appCacheRead(true),
-	"apps.show":       appCacheRead(false),
-	"apps.config": destructive(appCacheRead(false, effect("local_file_write",
+	"apps.list":       appCacheRead(true, true),
+	"apps.show":       appCacheRead(false, true),
+	"apps.config": destructive(appCacheRead(false, true, effect("local_file_write",
 		conditionClause(predicate("runtime_state", "output_destination", "write_authorized", nil)))), "an existing destination file may be overwritten"),
 	"conditions.show":     statelessUpdatingRemoteRead(),
 	"conditions.validate": requiredCacheableRemoteRead(effect("firebase_remote_validation")),
@@ -810,6 +812,8 @@ var capabilityBehaviors = map[string]capabilityBehavior{
 	)}),
 	"experiments.list": managedFeatureRead(),
 	"experiments.show": managedFeatureRead(),
+	"explain": withInteraction(withStdin(appCacheRead(true, false)), "optional", "ambiguous_capture_requires_entry",
+		conditionClause(predicate("option", "entry", "equals", 0), predicate("runtime_state", "capture_selection", "required", nil))),
 	"get": withStdin(conditionalRemoteRead([]BehaviorConditionClause{
 		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "stateless", "equals", true)),
 		conditionClause(predicate("stdin", "document", "absent", nil), predicate("option", "stateless", "equals", false), predicate("option", "update", "equals", true)),
@@ -880,7 +884,7 @@ func init() {
 		"apps.config", "apps.list", "apps.show",
 		"conditions.add", "conditions.delete", "conditions.edit", "conditions.list", "conditions.move", "conditions.rename", "conditions.show", "conditions.validate",
 		"experiments.delete", "experiments.list", "experiments.show",
-		"get",
+		"get", "explain",
 		"groups.add", "groups.delete", "groups.edit", "groups.list", "groups.rename",
 		"personalizations.list", "personalizations.show",
 		"project.defaults", "project.export", "project.import", "project.open", "project.show",

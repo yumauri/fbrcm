@@ -12,6 +12,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	frontend "github.com/yumauri/fbrcm/mcp"
 	"github.com/yumauri/fbrcm/mcp/server"
@@ -209,25 +210,43 @@ func TestMCPInvocationDetection(t *testing.T) {
 	}
 }
 
-func TestMCPStdioLifecycleAndContract(t *testing.T) {
+func connectMCPStdio(t *testing.T, service *core.Core, args ...string) *mcp.ClientSession {
+	t.Helper()
 	t.Cleanup(func() { config.SetLocalConfigDisabled(false) })
-	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
-	defer cancel()
+	// Keep the transport alive through cleanup so closing the client can
+	// exercise graceful EOF shutdown after the test context is canceled.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 10*time.Second)
+	t.Cleanup(cancel)
 	toServerR, toServerW := io.Pipe()
 	fromServerR, fromServerW := io.Pipe()
-	defer func() { _ = toServerR.Close(); _ = toServerW.Close(); _ = fromServerR.Close(); _ = fromServerW.Close() }()
+	t.Cleanup(func() { _ = toServerR.Close(); _ = toServerW.Close(); _ = fromServerR.Close(); _ = fromServerW.Close() })
 	done := make(chan int, 1)
 	go func() {
-		done <- frontend.Run(ctx, nil, "test", "", "", []string{"mcp", "--stateless", "--toolsets", "inspect"}, toServerR, fromServerW, io.Discard)
+		done <- frontend.Run(ctx, service, "test", "", "", append([]string{"mcp"}, args...), toServerR, fromServerW, io.Discard)
 	}()
 	client := mcp.NewClient(&mcp.Implementation{Name: "stdio-test", Version: "1"}, nil)
 	cs, err := client.Connect(ctx, &mcp.IOTransport{Reader: fromServerR, Writer: toServerW}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = cs.Close() }()
+	t.Cleanup(func() {
+		_ = cs.Close()
+		select {
+		case code := <-done:
+			if code != 0 {
+				t.Errorf("shutdown: %v", code)
+			}
+		case <-ctx.Done():
+			t.Error("stdio server did not stop on EOF")
+		}
+	})
+	return cs
+}
+
+func TestMCPStdioLifecycleAndContract(t *testing.T) {
+	cs := connectMCPStdio(t, nil, "--stateless", "--toolsets", "inspect")
 	for range 2 {
-		res, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: "parameters.get", Arguments: json.RawMessage(`{"arguments":{},"options":{},"stdin":{"parameters":{"feature":{"defaultValue":{"value":"hello"}}}}}`)})
+		res, err := cs.CallTool(t.Context(), &mcp.CallToolParams{Name: "parameters.get", Arguments: json.RawMessage(`{"arguments":{},"options":{},"stdin":{"parameters":{"feature":{"defaultValue":{"value":"hello"}}}}}`)})
 		if err != nil || res.IsError {
 			t.Fatalf("stdio call: %v %v", res, err)
 		}
@@ -239,15 +258,6 @@ func TestMCPStdioLifecycleAndContract(t *testing.T) {
 			t.Fatalf("unexpected envelope: %#v", envelope)
 		}
 		validateContractValue(t, envelope.Schema, structToContractValue(t, envelope), true)
-	}
-	_ = cs.Close()
-	select {
-	case code := <-done:
-		if code != 0 {
-			t.Fatalf("shutdown: %v", code)
-		}
-	case <-ctx.Done():
-		t.Fatal("stdio server did not stop on EOF")
 	}
 }
 

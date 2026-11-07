@@ -23,6 +23,7 @@ import (
 	doctorcmd "github.com/yumauri/fbrcm/cli/commands/doctor"
 	draftcmd "github.com/yumauri/fbrcm/cli/commands/draft"
 	duplicatecmd "github.com/yumauri/fbrcm/cli/commands/duplicate"
+	explaincmd "github.com/yumauri/fbrcm/cli/commands/explain"
 	getcmd "github.com/yumauri/fbrcm/cli/commands/get"
 	groupscmd "github.com/yumauri/fbrcm/cli/commands/groups"
 	hookscmd "github.com/yumauri/fbrcm/cli/commands/hooks"
@@ -201,6 +202,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 	rootCmd.AddCommand(doctorcmd.New(s))
 	rootCmd.AddCommand(draftcmd.New(s))
 	rootCmd.AddCommand(duplicatecmd.New(s))
+	rootCmd.AddCommand(explaincmd.New(s))
 	rootCmd.AddCommand(managedfeaturescmd.NewExperiments(s))
 	rootCmd.AddCommand(getcmd.New(s))
 	rootCmd.AddCommand(newMCPCommand(s, version, commit, date))
@@ -397,7 +399,7 @@ func requestedTimeout(args []string) time.Duration {
 func commandProgressMessage(cmd *cobra.Command) string {
 	path := strings.TrimPrefix(cmd.CommandPath(), "fbrcm ")
 	switch {
-	case path == "get":
+	case path == "get", path == "explain":
 		return "Loading Remote Config…"
 	case path == "projects list":
 		return "Loading projects…"

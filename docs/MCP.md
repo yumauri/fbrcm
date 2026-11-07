@@ -10,6 +10,10 @@ options, and authorization behavior are covered by the
 [compatibility policy](compatibility.md#mcp-boundary). Discovery remains
 conditional on launch policy, and MCP protocol negotiation is independent of
 the shared CLI JSON contract version.
+The upcoming, unpublished 1.1.0 release extends this boundary to
+`parameters.explain` in stateful `inspect` discovery. Its operation ID is `explain`, and its envelopes advertise
+CLI JSON contract `1.1.0`. Future MCP changes still require compatibility
+review even when the CLI contract fingerprint is unchanged.
 
 For launch flags and defaults, see the [command reference](CLI.md#mcp-server).
 For package boundaries and implementation details, see
@@ -87,7 +91,7 @@ selected groups, write permission, and execution mode.
 
 | Group | MCP tool names |
 | --- | --- |
-| `inspect` | `parameters.get`; `apps.list`, `apps.show`, `apps.config`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`, `versions.blame`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
+| `inspect` | `parameters.get`, `parameters.explain`; `apps.list`, `apps.show`, `apps.config`; `projects.list`, `projects.diff`; `project.show`, `project.defaults`; `groups.list`; `conditions.list`, `conditions.show`, `conditions.validate`; `versions.list`, `versions.show`, `versions.diff`, `versions.blame`; `experiments.list`, `experiments.show`; `rollouts.list`, `rollouts.show`; `personalizations.list`, `personalizations.show` |
 | `edit` | `parameters.add`, `parameters.update`, `parameters.delete`, `parameters.duplicate`; `groups.add`, `groups.edit`, `groups.rename`, `groups.delete`; `conditions.add`, `conditions.edit`, `conditions.rename`, `conditions.move`, `conditions.delete` |
 | `drafts` | `draft.list`, `draft.show`, `draft.diff`, `draft.change-note`, `draft.discard` |
 | `plans` | `plan.show`, `plan.validate` |
@@ -121,6 +125,33 @@ version pages incrementally and returns each adjacent version transition,
 publication metadata, and typed parameter diff in the standard machine
 envelope.
 
+`parameters.explain` evaluates one parameter against a captured Firebase fetch
+request and/or explicit inputs. It uses the shared `explain` operation, including
+structured rules, input provenance, possible outcomes, and captured-response
+comparison. It is available in stateful `inspect` mode without `--allow-writes`;
+stateless discovery excludes it. `options.project` is a scalar project selector,
+and `options.set` is an array of `field=value` overrides. Supply a HAR object or
+cURL text in `stdin`, or a capture file path in `options.from`. For example:
+
+```json
+{
+  "arguments": {"parameter": "feature_enabled"},
+  "options": {
+    "project": "example-project-id",
+    "set": ["device.os=web"]
+  },
+  "stdin": "curl 'https://firebaseremoteconfig.googleapis.com/v1/projects/123456789/namespaces/firebase:fetch' --data '{}'"
+}
+```
+
+Captures are parsed locally and never replayed. A HAR with several matching
+fetches requires `options.entry`, using the original one-based HAR entry index;
+otherwise the call returns `interaction.required` with safe candidate metadata.
+Missing evaluation facts do not trigger elicitation: unknown evaluations are
+successful results with `needed_inputs` and possible outcomes. Retry with
+`options.set` to supply the missing facts. The tool returns `command: "explain"`
+in the shared envelope.
+
 ## Tool input and results
 
 Use the input schema returned by discovery to construct each call. Inputs have
@@ -129,8 +160,9 @@ three properties:
 - `arguments`: named positional arguments, such as `parameter` or `project`.
 - `options`: long CLI flag names without `--`. Repeatable options are JSON
   arrays, booleans are JSON booleans, and scalar values use their declared types.
-- `stdin`: a JSON document for operations that accept document input, not a
-  JSON-encoded string or a read from the protocol stream.
+- `stdin`: structured document input, not a read from the protocol stream.
+  Template operations accept JSON objects directly. `parameters.explain`
+  additionally accepts a JSON string containing cURL text or serialized HAR.
 
 For example, call `parameters.get` with:
 
@@ -206,8 +238,8 @@ mutations require the same write and confirmation permissions as stateful
 execution.
 
 Discovery excludes all `drafts` and `plans` tools, `draft.publish`,
-`versions.restore`, and `diagnostics.doctor`. `plan.apply` is available for
-stateless plans. The fbrcm execution policy is independent of MCP's
+`versions.restore`, `parameters.explain`, and `diagnostics.doctor`. `plan.apply`
+is available for stateless plans. The fbrcm execution policy is independent of MCP's
 protocol-level use of the term "stateless."
 
 Environment tokens are not refreshed. Renew them externally and restart the
