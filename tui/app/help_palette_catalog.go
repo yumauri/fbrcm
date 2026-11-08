@@ -387,6 +387,8 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Open themes"
 		case tuiconfig.ActionHelp:
 			return "Open or close Actions"
+		case tuiconfig.ActionFocusNext:
+			return "Switch to the previous panel"
 		case tuiconfig.ActionWorkspaceMenu:
 			return "Open or close workspace tabs"
 		case tuiconfig.ActionForceQuit:
@@ -553,7 +555,7 @@ func helpPaletteActionDescription(block tuiconfig.Block, action tuiconfig.Action
 	case tuiconfig.ActionToggleMaximize:
 		return "Maximize the workspace panel or restore the split layout."
 	case tuiconfig.ActionFocusNext:
-		return "Move keyboard focus to the next workspace panel."
+		return "Switch between the two most recently active panels that are available."
 	case tuiconfig.ActionWorkspaceMenu:
 		return "Open or close the menu of workspace tabs hidden at the current terminal width."
 	case tuiconfig.ActionHelp:

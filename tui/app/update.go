@@ -311,47 +311,26 @@ func (m *Model) applyLayout() {
 }
 
 func (m Model) nextTabPanel() panels.ID {
-	if m.promote.WorkspaceOpen() {
-		switch m.active {
-		case panels.Logs:
-			if m.prevTop == panels.Projects || m.prevTop == panels.Promote {
-				return m.prevTop
-			}
-			return panels.Promote
+	promoteOpen := m.promote.WorkspaceOpen()
+	for _, panel := range m.previousPanels {
+		switch panel {
+		case panels.Projects, panels.Logs:
+			return panel
 		case panels.Promote:
-			return panels.Projects
-		case panels.Projects:
-			return panels.Promote
-		default:
-			return panels.Promote
-		}
-	}
-
-	if m.active == panels.Logs || m.active == panels.Context {
-		if m.detailsVisible {
-			if m.prevTop == panels.Details || isWorkspacePanel(m.prevTop) {
-				return m.prevTop
+			if promoteOpen {
+				return panel
 			}
-			return m.selectedParametersTab()
+		case panels.Details:
+			if !promoteOpen && m.detailsVisible {
+				return panel
+			}
+		default:
+			if !promoteOpen {
+				return panel
+			}
 		}
-		return m.prevTop
 	}
-
-	if m.detailsVisible {
-		if m.active == panels.Details {
-			return m.selectedParametersTab()
-		}
-		if isWorkspacePanel(m.active) {
-			return panels.Details
-		}
-		return m.selectedParametersTab()
-	}
-
-	if isWorkspacePanel(m.active) {
-		return panels.Projects
-	}
-
-	return m.selectedParametersTab()
+	return panels.None
 }
 
 func (m Model) selectedParametersTab() panels.ID {
@@ -362,8 +341,16 @@ func (m Model) selectedParametersTab() panels.ID {
 }
 
 func (m *Model) setActive(panel panels.ID) {
-	if panel != panels.Logs && panel != panels.Context {
-		m.prevTop = panel
+	if panel != m.active && m.active != panels.None {
+		// Update history without changing the backing slice of the previous model.
+		history := make([]panels.ID, 0, len(m.previousPanels)+1)
+		history = append(history, m.active)
+		for _, previous := range m.previousPanels {
+			if previous != panel {
+				history = append(history, previous)
+			}
+		}
+		m.previousPanels = history
 	}
 	m.active = panel
 	if isWorkspacePanel(panel) {

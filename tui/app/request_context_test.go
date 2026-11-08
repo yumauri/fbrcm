@@ -506,26 +506,12 @@ func TestContextResizesWithInputsAndTerminal(t *testing.T) {
 	checkHeight(4)
 }
 
-func TestContextIsOutsideTabCycle(t *testing.T) {
+func TestTabSwitchesBetweenContextAndLogs(t *testing.T) {
 	m := viewTestModel(80, 24, panels.Projects)
-	tab := tea.KeyPressMsg(tea.Key{Code: tea.KeyTab})
-	next, _ := m.Update(tab)
-	if next.(Model).active != panels.Parameters {
-		t.Fatal("Tab from Projects should go directly to Parameters")
-	}
-	next, _ = next.Update(keyPress('9'))
-	if next.(Model).active != panels.Context {
-		t.Fatal("9 should focus Context")
-	}
-	back, _ := next.Update(tab)
-	if back.(Model).active != panels.Parameters {
-		t.Fatal("Tab from Context should return to Parameters")
-	}
-	next, _ = next.Update(keyPress('0'))
-	next, _ = next.Update(tab)
-	if next.(Model).active != panels.Parameters {
-		t.Fatal("Tab from Logs should skip Context")
-	}
+	m = updateFocus(t, m, keyPress('9'), panels.Context)
+	m = updateFocus(t, m, keyPress('0'), panels.Logs)
+	m = pressTab(t, m, panels.Context)
+	pressTab(t, m, panels.Logs)
 }
 
 func TestContextCollapseKeepsSeparateRailsAndFocus(t *testing.T) {

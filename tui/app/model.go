@@ -59,7 +59,7 @@ type Model struct {
 	setup            setup.Model
 	active           panels.ID
 	parametersTab    panels.ID
-	prevTop          panels.ID
+	previousPanels   []panels.ID
 	capture          panels.ID
 	workspaceMenu    bool
 	workspaceCursor  int
@@ -215,7 +215,6 @@ func newModel(svc *core.Core, oauthEvents chan core.OAuthAuthorizationEvent) Mod
 		profileName:      config.GetActiveProfileName(),
 		active:           panels.Projects,
 		parametersTab:    panels.Parameters,
-		prevTop:          panels.Projects,
 	}
 
 	m.projects = m.projects.SetActive(true)

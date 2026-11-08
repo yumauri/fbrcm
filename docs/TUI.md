@@ -164,7 +164,7 @@ These defaults work throughout the workspace:
 | `8` | Focus Rollouts |
 | `9` | Focus Context, or focus Promote while its workspace is open |
 | `0` | Focus Logs |
-| `Tab` | Focus the next panel |
+| `Tab` | Switch between the two most recently active panels |
 | `Ctrl+X` | Open the Context popup |
 | `Ctrl+E` | Explain the selected parameter with Context |
 | `\` | Open the hidden workspace tabs menu |
@@ -174,6 +174,11 @@ These defaults work throughout the workspace:
 Most lists use the arrow keys or `j`/`k`. `Home` and `End` jump to the first and
 last item. Panel-specific alternatives are shown in the footer and action
 palette.
+
+Tab includes focus changes made by shortcuts, clicks, and automatic
+activation. It skips panels that are currently unavailable and keeps focus
+where it is if there is no previous panel to return to. Popups and dialogs
+handle Tab locally.
 
 When the data panel is wide enough, its header shows every workspace tab. At
 narrower widths, it keeps a sequence of complete titles on the left, places a

@@ -154,6 +154,8 @@ func (m Model) updateWorkspaceMenu(msg tea.Msg) (Model, tea.Cmd, bool) {
 				return m, nil, true
 			}
 			return m.activateWorkspacePanel(panel)
+		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
+			return m, nil, true
 		default:
 			if next, cmd, handled := m.updateGlobalFocusKey(k); handled {
 				next = next.closeWorkspaceMenu()

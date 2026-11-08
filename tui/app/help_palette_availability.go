@@ -205,6 +205,10 @@ func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, stri
 		if !m.promote.WorkspaceOpen() {
 			return false, "the Promote panel is not open"
 		}
+	case tuiconfig.ActionFocusNext:
+		if m.nextTabPanel() == panels.None {
+			return false, "no previous panel is available"
+		}
 	}
 	if m.contextOverlayOpen() {
 		return false, "close the current dialog or editor first"

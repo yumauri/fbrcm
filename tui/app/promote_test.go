@@ -122,6 +122,7 @@ func TestPromoteWorkspaceUsesRegularPanelNavigation(t *testing.T) {
 	if m.active != panels.Promote {
 		t.Fatalf("active panel after Logs Tab = %v, want Promote", m.active)
 	}
+	m = pressTab(t, m, panels.Logs)
 
 	m = updatePromoteWorkspace(t, m, tea.KeyPressMsg(tea.Key{Code: '1', Text: "1"}))
 	m = updatePromoteWorkspace(t, m, tea.KeyPressMsg(tea.Key{Code: '9', Text: "9"}))
@@ -133,6 +134,9 @@ func TestPromoteWorkspaceUsesRegularPanelNavigation(t *testing.T) {
 	if m.active != panels.Promote {
 		t.Fatalf("active panel after hidden workspace shortcut = %v, want Promote", m.active)
 	}
+
+	m = updateFocus(t, m, promotecmp.CloseRequestedMsg{}, panels.Projects)
+	pressTab(t, m, panels.Logs)
 }
 
 func TestPromoteWorkspaceProjectSelectionReturnsToParameters(t *testing.T) {

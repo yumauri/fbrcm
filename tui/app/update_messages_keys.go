@@ -10,7 +10,13 @@ import (
 )
 
 func (m Model) updateDetailsKeyMessage(msg tea.KeyMsg, k string) (Model, tea.Cmd, bool) {
-	if !m.details.FieldActive() || tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k) {
+	switchPanel := tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k)
+	if switchPanel && m.details.DropdownOpen() {
+		var cmd tea.Cmd
+		m.details, cmd = m.details.Update(msg)
+		return m, cmd, true
+	}
+	if !m.details.FieldActive() || switchPanel {
 		if next, cmd, ok := m.updateGlobalFocusKey(k); ok {
 			return next, cmd, true
 		}
@@ -314,6 +320,16 @@ func (m Model) updateConditionsReloadKey(k string) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k) {
+		next := m.nextTabPanel()
+		if isWorkspacePanel(next) {
+			return m.activateWorkspacePanel(next)
+		}
+		if next != panels.None {
+			m.setActive(next)
+		}
+		return m, nil, true
+	}
 	if m.promote.WorkspaceOpen() {
 		switch {
 		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusProjects, k):
@@ -322,8 +338,6 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 			m.setActive(panels.Logs)
 		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote, k):
 			m.setActive(panels.Promote)
-		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
-			m.setActive(m.nextTabPanel())
 		case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusParameters, k),
 			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusConditions, k),
 			tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusHistory, k),
@@ -361,12 +375,6 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 		m.setActive(panels.Details)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusLogs, k):
 		m.setActive(panels.Logs)
-	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusNext, k):
-		next := m.nextTabPanel()
-		if isWorkspacePanel(next) {
-			return m.activateWorkspacePanel(next)
-		}
-		m.setActive(next)
 	case tuiconfig.Matches(tuiconfig.BlockContext, tuiconfig.ActionFocusContext, k):
 		m.setActive(panels.Context)
 	default:

@@ -47,7 +47,7 @@ The global defaults are:
 | `8` | Rollouts |
 | `9` | Promote workspace |
 | `0` | Logs |
-| `Tab` | Next panel |
+| `Tab` | Switch between the two most recently active panels |
 | `\` | Hidden workspace tabs |
 
 Lists use arrow keys or `j`/`k`. `Home` and `End` jump to the first and last
