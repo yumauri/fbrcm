@@ -3,6 +3,7 @@ package app
 import (
 	tea "charm.land/bubbletea/v2"
 
+	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -28,7 +29,7 @@ func (m Model) updateDialog(msg tea.Msg) (Model, tea.Cmd, bool) {
 		var cmd tea.Cmd
 		m.dialog, cmd = m.dialog.Update(msg)
 		return m, cmd, true
-	case tea.PasteMsg, tea.ClipboardMsg, tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+	case tea.PasteMsg, tea.ClipboardMsg, dialogcmp.ClipboardPasteMsg, tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
 		var cmd tea.Cmd
 		m.dialog, cmd = m.dialog.Update(msg)
 		return m, cmd, true

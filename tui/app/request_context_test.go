@@ -239,21 +239,13 @@ func TestContextCapturePasteAndHARSelection(t *testing.T) {
 	}
 	next, _ = m.Update(keyPress('i'))
 	m = next.(Model)
-	next, importAction := m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
-	if importAction == nil {
-		t.Fatal("could not select Paste cURL")
+	view := ansi.Strip(m.dialog.View())
+	if !strings.Contains(view, "Paste a Firebase fetch cURL command or HAR content here") || strings.Contains(view, "Paste cURL") {
+		t.Fatalf("import popup should offer direct paste and no paste button:\n%s", view)
 	}
-	next, _ = next.Update(importAction())
-	m = next.(Model)
 	const url = "https://firebaseremoteconfig.googleapis.com/v1/projects/123456789/namespaces/firebase:fetch?key=example"
 	command := fmt.Sprintf("curl '%s' \\\n  --data-raw '{\"app_id\":\"1:123456789:web:abc\"}'", url)
-	next, _ = m.Update(tea.PasteMsg{Content: command})
-	next, load := next.Update(tea.KeyPressMsg(tea.Key{Code: 's', Mod: tea.ModCtrl}))
-	if load == nil {
-		t.Fatal("could not submit the pasted cURL request")
-	}
-	next, _ = next.Update(load())
-	m = next.(Model)
+	m = pasteContextCapture(t, m, command)
 	client := core.Project{ProjectID: "demo", ProjectNumber: "123456789"}
 	server := core.Project{ProjectID: "server@demo", ProjectNumber: "123456789"}
 	if !m.requestContext.scenario.AppliesTo(client) || m.requestContext.scenario.AppliesTo(server) {
@@ -269,26 +261,62 @@ func TestContextCapturePasteAndHARSelection(t *testing.T) {
 		{"request":{"method":"POST","url":%q,"postData":{"text":"{}"}}}
 	]}}`
 	har := fmt.Sprintf(harFormat, url, strings.Replace(url, "firebase:fetch", "firebase-server:fetch", 1))
-	path := filepath.Join(t.TempDir(), "requests.har")
-	if err := os.WriteFile(path, []byte(har), 0o600); err != nil {
-		t.Fatal(err)
+	for _, source := range []string{"clipboard", "file"} {
+		t.Run(source, func(t *testing.T) {
+			next, _ := m.Update(keyPress('i'))
+			if source == "clipboard" {
+				next = pasteContextCapture(t, next, har)
+			} else {
+				path := filepath.Join(t.TempDir(), "requests.har")
+				if err := os.WriteFile(path, []byte(har), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				x, y := dialogLabelPoint(t, next.(Model), "Choose File")
+				var choose tea.Cmd
+				next, choose = next.Update(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
+				if choose == nil {
+					t.Fatal("clicking Choose File should open the file picker")
+				}
+				next, _ = next.Update(choose())
+				picker := next.(Model)
+				if !picker.projectIO.IsOpen() {
+					t.Fatal("file picker did not open")
+				}
+				picker.projectIO = picker.projectIO.Close()
+				var load tea.Cmd
+				next, load = picker.Update(projectio.CaptureChosenMsg{Path: path})
+				if load == nil {
+					t.Fatal("could not load the selected HAR file")
+				}
+				next, _ = next.Update(load())
+			}
+			loaded := next.(Model)
+			if loaded.requestContext.overlay != contextRequests || !strings.Contains(ansi.Strip(loaded.View().Content), "Entry 3") {
+				t.Fatal("multi-request HAR did not show the original entry numbers")
+			}
+			layout := loaded.contextLayout(true)
+			next, _ = next.Update(tea.MouseClickMsg{X: layout.X + 3, Y: layout.Y + 4, Button: tea.MouseLeft})
+			next, _ = next.Update(tea.MouseClickMsg{X: layout.X + 3, Y: layout.Y + 3, Button: tea.MouseLeft})
+			scenario := next.(Model).requestContext.scenario
+			if scenario.AppliesTo(client) || !scenario.AppliesTo(server) {
+				t.Fatal("HAR entry selection did not apply the server template scope")
+			}
+		})
 	}
-	next, load = m.Update(projectio.CaptureChosenMsg{Path: path})
+}
+
+func pasteContextCapture(t *testing.T, m tea.Model, content string) Model {
+	t.Helper()
+	next, pasted := m.Update(tea.PasteMsg{Content: content})
+	if pasted == nil || next.(Model).stringInput.IsOpen() {
+		t.Fatal("pasting should submit the capture directly from the import popup")
+	}
+	next, load := next.Update(pasted())
 	if load == nil {
-		t.Fatal("could not load the selected HAR file")
+		t.Fatal("pasting should start reading the capture")
 	}
 	next, _ = next.Update(load())
-	m = next.(Model)
-	if m.requestContext.overlay != contextRequests || !strings.Contains(ansi.Strip(m.View().Content), "Entry 3") {
-		t.Fatal("multi-request HAR did not show the original entry numbers")
-	}
-	layout := m.contextLayout(true)
-	next, _ = m.Update(tea.MouseClickMsg{X: layout.X + 3, Y: layout.Y + 4, Button: tea.MouseLeft})
-	next, _ = next.Update(tea.MouseClickMsg{X: layout.X + 3, Y: layout.Y + 3, Button: tea.MouseLeft})
-	m = next.(Model)
-	if m.requestContext.scenario.AppliesTo(client) || !m.requestContext.scenario.AppliesTo(server) {
-		t.Fatal("HAR entry selection did not apply the server template scope")
-	}
+	return next.(Model)
 }
 
 func TestContextTemplateScopeCanBeAddedManually(t *testing.T) {
@@ -560,6 +588,34 @@ func TestContextCollapseKeepsSeparateRailsAndFocus(t *testing.T) {
 	if restored.active != panels.Context || restored.projectsMode != projectsPanelModeExpanded ||
 		restored.contextLayout(false).Height != expanded.Height || restored.requestContext.facts["device.os"].Value != "web" {
 		t.Fatal("expanding Context should restore the sidebar and its facts")
+	}
+}
+
+func TestCollapsedContextBadgeRequiresInputs(t *testing.T) {
+	m := viewTestModel(80, 24, panels.Context)
+	next, _ := m.Update(keyPress('c'))
+	m = next.(Model)
+	if m.projectsMode != projectsPanelModeCollapsed {
+		t.Fatal("sidebar should be collapsed")
+	}
+	if badge, _ := m.contextBadge(); badge != "" {
+		t.Fatalf("empty Context displayed a badge: %q", badge)
+	}
+
+	m.applyContextFact(contextFactMsg{assignment: "device.os=web"})
+	badge, x := m.contextBadge()
+	if strings.TrimSpace(ansi.Strip(badge)) != "Context on" || !m.contextBadgeAt(x, 0) {
+		t.Fatalf("active Context badge = %q, want a clickable Context on badge", badge)
+	}
+	next, _ = m.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeySpace}))
+	m = next.(Model)
+	if badge, _ := m.contextBadge(); strings.TrimSpace(ansi.Strip(badge)) != "Context"+contextPauseMark {
+		t.Fatalf("paused Context badge = %q", badge)
+	}
+	next, _ = m.Update(keyPress('X'))
+	m = next.(Model)
+	if badge, _ := m.contextBadge(); badge != "" || m.contextBadgeAt(x, 0) {
+		t.Fatalf("cleared Context retained a badge or hit target: %q", badge)
 	}
 }
 

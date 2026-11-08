@@ -3,6 +3,7 @@ package dialog
 import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"github.com/atotto/clipboard"
 
 	"github.com/yumauri/fbrcm/tui/components/buttonbar"
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
@@ -44,6 +45,25 @@ type Config struct {
 	Buttons []Button
 	Tone    Tone
 	Input   *Input
+	OnPaste func(string) tea.Msg
+}
+
+type pasteAction struct {
+	submit func(string) tea.Msg
+}
+
+// ClipboardPasteMsg delivers a clipboard read to the dialog that requested it.
+type ClipboardPasteMsg struct {
+	target  *pasteAction
+	content string
+}
+
+func (p *pasteAction) readClipboard() tea.Msg {
+	content, err := clipboard.ReadAll()
+	if err != nil {
+		return nil
+	}
+	return ClipboardPasteMsg{target: p, content: content}
 }
 
 type Model struct {
@@ -69,6 +89,7 @@ type Model struct {
 	hasInput    bool
 	inputFocus  bool
 	inputSubmit bool
+	paste       *pasteAction
 }
 
 func New() Model {
@@ -108,6 +129,10 @@ func (m Model) Open(cfg Config) Model {
 	m.hasInput = cfg.Input != nil
 	m.inputFocus = m.hasInput
 	m.inputSubmit = cfg.Input != nil && cfg.Input.SubmitOnEnter
+	m.paste = nil
+	if cfg.OnPaste != nil {
+		m.paste = &pasteAction{submit: cfg.OnPaste}
+	}
 	if cfg.Input != nil {
 		m.inputLabel = cfg.Input.Label
 		m.input.SetValue(cfg.Input.Value)
@@ -135,6 +160,7 @@ func (m Model) Close() Model {
 	m.hasInput = false
 	m.inputFocus = false
 	m.inputSubmit = false
+	m.paste = nil
 	return m
 }
 
@@ -165,6 +191,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		k := msg.String()
+		if m.paste != nil && k == "ctrl+v" {
+			return m, m.paste.readClipboard
+		}
 		if m.hasInput {
 			switch k {
 			case "tab":
@@ -216,11 +245,13 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, cmd
 			}
 		}
-	case tea.PasteMsg, tea.ClipboardMsg:
-		if m.inputFocus {
-			var cmd tea.Cmd
-			m.input, cmd = m.input.Update(msg)
-			return m, cmd
+	case tea.PasteMsg:
+		return m.updatePaste(msg, msg.Content)
+	case tea.ClipboardMsg:
+		return m.updatePaste(msg, msg.Content)
+	case ClipboardPasteMsg:
+		if msg.target == m.paste && m.paste != nil {
+			return m.updatePaste(msg, msg.content)
 		}
 	case tea.MouseClickMsg:
 		mouse := msg.Mouse()
@@ -269,6 +300,18 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		m.dragging = false
 	}
 
+	return m, nil
+}
+
+func (m Model) updatePaste(msg tea.Msg, content string) (Model, tea.Cmd) {
+	if paste := m.paste; paste != nil {
+		return m.Close(), func() tea.Msg { return paste.submit(content) }
+	}
+	if m.inputFocus {
+		var cmd tea.Cmd
+		m.input, cmd = m.input.Update(msg)
+		return m, cmd
+	}
 	return m, nil
 }
 

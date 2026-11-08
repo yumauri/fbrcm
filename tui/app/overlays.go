@@ -18,7 +18,6 @@ func (m *Model) closeOverlays() {
 	m.requestContext.exchanges = nil
 	m.requestContext.exchangeSource = ""
 	m.requestContext.reading = nil
-	m.requestContext.pasting = false
 	m.cancelThemePicker()
 	m.closeDialog()
 	m.diffView = m.diffView.Close()

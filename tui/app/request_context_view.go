@@ -71,16 +71,14 @@ func (m Model) contextLayout(popup bool) contextpanel.Layout {
 }
 
 func (m Model) contextBadge() (string, int) {
-	if m.promote.WorkspaceOpen() || (m.requestContext.scenario == nil && !m.requestContext.paused && m.projectsMode != projectsPanelModeCollapsed) {
+	if m.promote.WorkspaceOpen() || (m.requestContext.scenario == nil && !m.requestContext.paused) {
 		return "", 0
 	}
-	label := "Context"
+	label := "Context on"
 	style := styles.TitleStyle(true)
 	if m.requestContext.paused {
-		label += contextPauseMark
+		label = "Context" + contextPauseMark
 		style = styles.PanelTitleInactiveTab
-	} else if m.requestContext.scenario != nil {
-		label += " on"
 	}
 	badge := style.Padding(0, 1).Render(label)
 	x := m.width - lipgloss.Width(profileBadgeView(m.profileName, m.width)) - lipgloss.Width(badge) - 1

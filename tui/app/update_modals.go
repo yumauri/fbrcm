@@ -75,9 +75,6 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 		return m.updateNumberInput(msg)
 	}
 	if m.stringInput.IsOpen() {
-		if m.requestContext.pasting {
-			return m.updateContextCapturePaste(msg)
-		}
 		return m.updateStringInput(msg)
 	}
 	if m.moveParam.IsOpen() {

@@ -23,6 +23,9 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case contextCaptureAction:
 		return m.updateContextCaptureAction(msg)
 
+	case contextCapturePastedMsg:
+		return m.beginContextCapture("", string(msg))
+
 	case projectio.CaptureChosenMsg:
 		return m.beginContextCapture(msg.Path, "")
 

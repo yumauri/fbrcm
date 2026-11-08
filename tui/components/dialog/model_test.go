@@ -99,6 +99,21 @@ func TestInputIsEditableAndPassedToButton(t *testing.T) {
 	}
 }
 
+func TestClipboardPasteIsScopedToItsDialog(t *testing.T) {
+	cfg := Config{OnPaste: func(text string) tea.Msg { return pressedMsg(text) }}
+	m := New().Open(cfg)
+	old := ClipboardPasteMsg{target: m.paste, content: "previous"}
+	m = m.Close().Open(cfg)
+	m, cmd := m.Update(old)
+	if !m.IsOpen() || cmd != nil {
+		t.Fatal("a clipboard read from a previous dialog should be ignored")
+	}
+	m, cmd = m.Update(ClipboardPasteMsg{target: m.paste, content: "current"})
+	if m.IsOpen() || cmd == nil || cmd() != pressedMsg("current") {
+		t.Fatal("pasting into the current dialog should submit its content")
+	}
+}
+
 func TestInputAndButtonsSupportArrowFocusNavigation(t *testing.T) {
 	m := New().SetBounds(0, 0, 100, 30).Open(Config{
 		Title:   "Publish",

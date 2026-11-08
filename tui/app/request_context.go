@@ -53,7 +53,6 @@ type requestContextState struct {
 	overlay        contextOverlay
 	pickerBack     contextOverlay
 	reading        *contextCaptureLoad
-	pasting        bool
 	paused         bool
 	showExcluded   bool
 }

@@ -323,8 +323,9 @@ rails keep their expanded heights, and `9` still focuses Context. Press
 scrolls once it reaches four rows less than the terminal height.
 The default global Context shortcuts yield to existing custom global bindings.
 
-Press `i` to import a pasted **Copy as cURL** command or a HAR or cURL text
-file. Submit a pasted command with `Ctrl+S`. When a HAR has several
+Press `i` to open **Import Context**. Paste a **Copy as cURL** command or HAR
+content directly into the popup to start importing, or use **Choose File** to
+open a HAR or cURL text file. When a HAR has several
 Firebase fetches, select the request by its original entry number. Import
 replaces the current inputs and adds a **Template scope** row for the captured
 template. Edit or remove that row to change the scope while keeping the

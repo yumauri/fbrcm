@@ -14,16 +14,16 @@ import (
 	"github.com/yumauri/fbrcm/core/rc/evaluate"
 	"github.com/yumauri/fbrcm/tui/components/contextpanel"
 	dialogcmp "github.com/yumauri/fbrcm/tui/components/dialog"
-	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
 type contextCaptureAction int
 
 const (
-	contextPasteCapture contextCaptureAction = iota + 1
-	contextChooseCapture
+	contextChooseCapture contextCaptureAction = iota + 1
 	contextCancelCapture
 )
+
+type contextCapturePastedMsg string
 
 type contextCaptureLoad struct {
 	path string
@@ -36,14 +36,16 @@ type contextCaptureLoadedMsg struct {
 }
 
 func (m *Model) openContextImportDialog() {
-	body := []string{"Import the inputs from a captured Firebase fetch request."}
+	body := []string{
+		"Paste a Firebase fetch cURL command or HAR content here, or choose a file.",
+	}
 	if m.requestContext.list.Len() > 0 {
 		body = append(body, "The selected request will replace the current inputs.")
 	}
 	m.dialog = m.dialog.Open(dialogcmp.Config{
 		Title: "Import Context", Body: body,
+		OnPaste: func(content string) tea.Msg { return contextCapturePastedMsg(content) },
 		Buttons: []dialogcmp.Button{
-			{Label: "Paste cURL", OnPress: func() tea.Msg { return contextPasteCapture }},
 			{Label: "Choose File", OnPress: func() tea.Msg { return contextChooseCapture }},
 			{Label: "Cancel"},
 		},
@@ -53,49 +55,12 @@ func (m *Model) openContextImportDialog() {
 func (m Model) updateContextCaptureAction(action contextCaptureAction) (Model, tea.Cmd, bool) {
 	var cmd tea.Cmd
 	switch action {
-	case contextPasteCapture:
-		m.requestContext.pasting = true
-		m.stringInput, cmd = m.stringInput.Open(0, 0, 0, m.width, m.width, m.height, "", true, true)
-		m.stringInput = m.stringInput.SetTitle("Paste a Firebase fetch cURL command")
 	case contextChooseCapture:
 		m.projectIO, cmd = m.projectIO.OpenCapture()
 	case contextCancelCapture:
 		m.requestContext.reading = nil
 	}
 	return m, cmd, true
-}
-
-func (m Model) updateContextCapturePaste(msg tea.Msg) (Model, tea.Cmd, bool) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.updateWindowSize(msg)
-		m.stringInput = m.stringInput.SetScreenSize(msg.Width, msg.Height)
-		return m, nil, true
-	case tea.KeyMsg:
-		k := msg.String()
-		if tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionCancel, k) {
-			m.closeContextCapturePaste()
-			return m, nil, true
-		}
-		if tuiconfig.Matches(tuiconfig.BlockStringInput, tuiconfig.ActionSave, k) {
-			raw := m.stringInput.Value()
-			m.closeContextCapturePaste()
-			return m.beginContextCapture("", raw)
-		}
-	case tea.MouseMsg:
-		return m, nil, true
-	case tea.PasteMsg, tea.ClipboardMsg:
-	default:
-		return m, nil, false
-	}
-	var cmd tea.Cmd
-	m.stringInput, cmd = m.stringInput.Update(msg)
-	return m, cmd, true
-}
-
-func (m *Model) closeContextCapturePaste() {
-	m.requestContext.pasting = false
-	m.stringInput = m.stringInput.Close()
 }
 
 func (m Model) beginContextCapture(path, content string) (Model, tea.Cmd, bool) {
