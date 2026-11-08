@@ -50,6 +50,8 @@ func (m Model) contextLayout(popup bool) contextpanel.Layout {
 	switch c.overlay {
 	case contextFields:
 		title = "Add Context Input"
+	case contextNames:
+		title = contextNameTitle(c.nameField)
 	case contextRequests:
 		title = "Choose a Firebase Fetch"
 	default:
@@ -99,11 +101,7 @@ func (m Model) appendContextLayers(layers []*lipgloss.Layer) []*lipgloss.Layer {
 	}
 	if m.requestContext.overlay != contextInline {
 		layout := m.contextLayout(true)
-		list := m.requestContext.list
-		if m.requestContext.overlay != contextOverview {
-			list = m.requestContext.picker
-		}
-		layers = append(layers, lipgloss.NewLayer(list.View(layout, true)).
+		layers = append(layers, lipgloss.NewLayer(m.contextList().View(layout, true)).
 			ID("request-context").X(layout.X).Y(layout.Y).Z(2))
 	}
 	return layers

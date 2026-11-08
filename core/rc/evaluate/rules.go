@@ -109,10 +109,14 @@ func parseRule(tokens []token) (rule, error) {
 		if r.field != "app.customSignal" && r.field != "app.userProperty" {
 			return r, fmt.Errorf("indexed input is not supported for %s", r.field)
 		}
-		if i+2 >= len(tokens) || !tokens[i+1].quoted || tokens[i+2].text != "]" {
+		if i+2 >= len(tokens) {
 			return r, fmt.Errorf("invalid indexed input")
 		}
-		r.field += "[" + quote(tokens[i+1].text) + "]"
+		name, ok := indexedInputName(tokens[i-1 : i+3])
+		if !ok {
+			return r, fmt.Errorf("invalid indexed input")
+		}
+		r.field = IndexedInputKey(r.field, name)
 		i += 3
 	}
 	if r.semantic {

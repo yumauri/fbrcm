@@ -26,8 +26,13 @@ const (
 	contextInline contextOverlay = iota
 	contextOverview
 	contextFields
+	contextNames
 	contextRequests
 )
+
+func (o contextOverlay) isPicker() bool {
+	return o == contextFields || o == contextNames || o == contextRequests
+}
 
 const (
 	contextScopeKey     = "template_scope"
@@ -42,6 +47,7 @@ type requestContextState struct {
 	scenario       *contextview.Scenario
 	list           contextpanel.Model
 	picker         contextpanel.Model
+	nameField      string
 	exchanges      []evaluate.Exchange
 	exchangeSource string
 	overlay        contextOverlay
@@ -134,7 +140,7 @@ func (m Model) updateContextPopup(msg tea.Msg) (Model, tea.Cmd, bool) {
 	case tea.MouseMsg:
 		if click, ok := msg.(tea.MouseClickMsg); ok && click.Mouse().Button == tea.MouseLeft &&
 			!m.contextLayout(true).Contains(click.Mouse().X, click.Mouse().Y) {
-			m.closeContextPopup()
+			m.backContextPopup()
 			return m, nil, true
 		}
 		m.updateContextMouse(msg, true)
@@ -144,7 +150,7 @@ func (m Model) updateContextPopup(msg tea.Msg) (Model, tea.Cmd, bool) {
 }
 
 func (m *Model) contextList() *contextpanel.Model {
-	if m.requestContext.overlay == contextFields || m.requestContext.overlay == contextRequests {
+	if m.requestContext.overlay.isPicker() {
 		return &m.requestContext.picker
 	}
 	return &m.requestContext.list
@@ -157,7 +163,7 @@ func (m Model) updateContextKey(key string, popup bool) (Model, tea.Cmd, bool) {
 	switch {
 	case matches(tuiconfig.ActionCancel):
 		if popup {
-			m.closeContextPopup()
+			m.backContextPopup()
 		} else {
 			m.setActive(m.selectedParametersTab())
 		}
@@ -169,7 +175,7 @@ func (m Model) updateContextKey(key string, popup bool) (Model, tea.Cmd, bool) {
 		m.contextList().Move(1, m.contextLayout(popup))
 	case matches(tuiconfig.ActionHome), matches(tuiconfig.ActionEnd):
 		m.contextList().Jump(matches(tuiconfig.ActionEnd), m.contextLayout(popup))
-	case m.requestContext.overlay == contextFields || m.requestContext.overlay == contextRequests:
+	case m.requestContext.overlay.isPicker():
 		return m, nil, false
 	case matches(tuiconfig.ActionNew):
 		m.openContextFields()
@@ -218,29 +224,24 @@ func (m *Model) updateContextMouse(msg tea.MouseMsg, popup bool) {
 	}
 }
 
-func (m *Model) openContextFields() {
-	c := &m.requestContext
-	c.pickerBack, c.overlay = c.overlay, contextFields
-	c.picker = contextpanel.Model{}.SetRows(contextFieldOptions, "")
-}
-
-var contextFieldOptions = []contextpanel.Row{
-	{Key: "device.os", Label: "Platform", Value: "device.os · web, android, ios"},
-	{Key: "device.country", Label: "Country", Value: "device.country"},
-	{Key: "device.language", Label: "Language", Value: "device.language"},
-	{Key: "app.id", Label: "Firebase app ID", Value: "app.id"},
-	{Key: "app.version", Label: "App version", Value: "app.version"},
-	{Key: "app.customSignal['name']", Label: "Custom signal", Value: "app.customSignal['name']"},
-	{Key: contextScopeKey, Label: "Template scope", Value: "Project ID or server@project"},
-	{Key: "other", Label: "Other field…", Value: "Enter a supported Firebase input"},
-}
-
 func (m *Model) closeContextPopup() {
 	c := &m.requestContext
 	c.overlay = c.pickerBack
 	c.pickerBack = contextInline
+	c.nameField = ""
 	c.exchanges = nil
 	c.exchangeSource = ""
+}
+
+func (m *Model) backContextPopup() {
+	c := &m.requestContext
+	if c.overlay == contextNames {
+		c.overlay = contextFields
+		c.picker = contextpanel.Model{}.SetRows(contextFieldOptions, c.nameField)
+		c.nameField = ""
+		return
+	}
+	m.closeContextPopup()
 }
 
 func (m *Model) selectContextRow() {
@@ -248,6 +249,10 @@ func (m *Model) selectContextRow() {
 	switch c.overlay {
 	case contextFields:
 		field := c.picker.Current().Key
+		if field == contextUserProperty || field == contextCustomSignal {
+			m.openContextNames(field)
+			return
+		}
 		m.closeContextPopup()
 		if field == contextScopeKey {
 			m.openContextFact(contextScopeKey, c.scope.String(), "")
@@ -258,6 +263,14 @@ func (m *Model) selectContextRow() {
 			assignment = ""
 		}
 		m.openContextFact("", assignment, "")
+	case contextNames:
+		field, key := c.nameField, c.picker.Current().Key
+		m.closeContextPopup()
+		if key == contextAnotherName {
+			m.openContextName(field, "", "")
+			return
+		}
+		m.openNamedContextFact(key)
 	case contextRequests:
 		index, err := strconv.Atoi(c.picker.Current().Key)
 		if err == nil && index >= 0 && index < len(c.exchanges) {
@@ -272,9 +285,15 @@ func (m *Model) selectContextRow() {
 		case "":
 			m.openContextFields()
 		default:
-			m.openContextFact(key, key+"="+contextFactAnswer(c.facts[key]), "")
+			m.openContextFact(key, contextFactAssignment(key, contextFactAnswer(c.facts[key])), "")
 		}
 	}
+}
+
+func contextFactAssignment(key, value string) string {
+	// Escape any equals sign within a quoted name so the assignment separator
+	// is the first literal equals sign.
+	return strings.ReplaceAll(key, "=", `\u003d`) + "=" + value
 }
 
 func (m *Model) openContextFact(original, assignment, problem string) {

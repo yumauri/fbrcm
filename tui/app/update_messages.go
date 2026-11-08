@@ -16,6 +16,10 @@ func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 		m.applyContextFact(msg)
 		return m, nil, true
 
+	case contextNameMsg:
+		m.applyContextName(msg)
+		return m, nil, true
+
 	case contextCaptureAction:
 		return m.updateContextCaptureAction(msg)
 

@@ -13,15 +13,46 @@ func InputNeed(field string) (Need, bool) {
 	if err != nil {
 		return Need{}, false
 	}
-	if len(tokens) == 4 && tokens[1].text == "[" && tokens[2].quoted && tokens[3].text == "]" {
-		field = tokens[0].text + "[" + quote(tokens[2].text) + "]"
+	if name, ok := indexedInputName(tokens); ok {
+		field = IndexedInputKey(tokens[0].text, name)
 		if tokens[0].text == "app.audiences" {
-			return Need{Key: field, Label: "Membership in Analytics audience " + quote(tokens[2].text), Kind: "boolean"}, true
+			return Need{Key: field, Label: "Membership in Analytics audience " + quote(name), Kind: "boolean"}, true
 		}
 	} else if len(tokens) != 1 {
 		return Need{}, false
 	}
 	return fieldNeed(field)
+}
+
+// IndexedInputKey builds the canonical key for a named input.
+func IndexedInputKey(field, name string) string {
+	return field + "[" + quote(name) + "]"
+}
+
+// IndexedInputNames finds named inputs in an expression without evaluating the
+// condition, so suggestions include rules that would be short-circuited.
+func IndexedInputNames(expression, field string) []string {
+	tokens, err := lex(expression)
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for i := 0; i+4 <= len(tokens); i++ {
+		if tokens[i].text == field {
+			if name, ok := indexedInputName(tokens[i : i+4]); ok {
+				names = append(names, name)
+			}
+		}
+	}
+	return names
+}
+
+func indexedInputName(tokens []token) (string, bool) {
+	if len(tokens) != 4 || tokens[0].quoted || tokens[1].quoted || tokens[1].text != "[" ||
+		!tokens[2].quoted || tokens[3].quoted || tokens[3].text != "]" {
+		return "", false
+	}
+	return tokens[2].text, true
 }
 
 // SplitInput validates the field of a field=value assignment.

@@ -317,26 +317,7 @@ func PruneUnusedConditions(cfg *firebase.RemoteConfig) {
 	if cfg == nil || len(cfg.Conditions) == 0 {
 		return
 	}
-	used := make(map[string]struct{})
-	collectUsedConditions(used, cfg.Parameters)
-	for _, group := range cfg.ParameterGroups {
-		collectUsedConditions(used, group.Parameters)
-	}
-	kept := make([]firebase.RemoteConfigCondition, 0, len(cfg.Conditions))
-	for _, condition := range cfg.Conditions {
-		if _, ok := used[condition.Name]; ok {
-			kept = append(kept, condition)
-		}
-	}
-	cfg.Conditions = kept
-}
-
-func collectUsedConditions(used map[string]struct{}, params map[string]firebase.RemoteConfigParam) {
-	for _, param := range params {
-		for condition := range param.ConditionalValues {
-			used[condition] = struct{}{}
-		}
-	}
+	cfg.Conditions = cfg.ReferencedConditions()
 }
 
 func ConfigHasContent(cfg *firebase.RemoteConfig) bool {

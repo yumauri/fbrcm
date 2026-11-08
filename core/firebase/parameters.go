@@ -43,6 +43,32 @@ type RemoteConfigCondition struct {
 	TagColor   string `json:"tagColor,omitempty"`
 }
 
+// ReferencedConditions returns conditions used by at least one parameter, in template order.
+func (c *RemoteConfig) ReferencedConditions() []RemoteConfigCondition {
+	if c == nil || len(c.Conditions) == 0 {
+		return nil
+	}
+	used := make(map[string]struct{})
+	collect := func(params map[string]RemoteConfigParam) {
+		for _, param := range params {
+			for name := range param.ConditionalValues {
+				used[name] = struct{}{}
+			}
+		}
+	}
+	collect(c.Parameters)
+	for _, group := range c.ParameterGroups {
+		collect(group.Parameters)
+	}
+	conditions := make([]RemoteConfigCondition, 0, len(c.Conditions))
+	for _, condition := range c.Conditions {
+		if _, ok := used[condition.Name]; ok {
+			conditions = append(conditions, condition)
+		}
+	}
+	return conditions
+}
+
 // ConditionTagColorsByName indexes Remote Config condition display colors.
 func ConditionTagColorsByName(conditions []RemoteConfigCondition) map[string]string {
 	colors := make(map[string]string, len(conditions))

@@ -13,6 +13,17 @@ func (m Model) SetScenario(scenario *contextview.Scenario) Model {
 	return m
 }
 
+// ReferencedConditionExpressions uses the loaded templates before any view filters.
+func (m Model) ReferencedConditionExpressions() []string {
+	var expressions []string
+	for _, project := range m.projects {
+		for _, condition := range project.tree.RemoteConfig().ReferencedConditions() {
+			expressions = append(expressions, condition.Expression)
+		}
+	}
+	return expressions
+}
+
 func (m Model) contextResults(projectID string, param *core.ParametersEntry) []contextview.Value {
 	if m.scenario == nil || m.history {
 		return nil

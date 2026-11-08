@@ -303,8 +303,11 @@ the toggle hint instead of treating the profile as unconfigured.
 Context sits below Projects and shows each input as a field name and value on
 two lines. The number in the top-right corner counts the inputs. Press `9` to
 focus Context or click its header, then press `a` to add an input. Choose a
-field and enter an assignment such as `device.os=web`. Choose **Other field…**
-for additional [supported inputs](CLI.md#fbrcm-explain-parameter). Press
+field such as **Platform** or **App build** and enter its value after the
+prefilled field name. **User property** and **Custom signal** each suggest
+names from conditions that parameters reference across the selected templates.
+Choose **Enter another name…** to type a name for either input. Choose
+**Other field…** for additional [supported inputs](CLI.md#fbrcm-explain-parameter). Press
 `Enter` or double-click a fact to edit it. Use `Delete` to remove it.
 
 Context starts at two content rows and grows by two rows per additional input
