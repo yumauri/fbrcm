@@ -9,9 +9,8 @@ versioned [machine contract](cli-contract.md).
 From 1.0.0, the documented command syntax and behavior are stable under the
 [compatibility policy](compatibility.md). Human table layouts, terminal
 styling, and message wording may change; automate with JSON or MCP.
-The upcoming 1.1.0 release includes `explain` and condition blame under CLI
-JSON contract `1.1.0`, which is currently unreleased and may be regenerated in
-place. The published `1.0.0` schemas remain available unchanged.
+fbrcm 1.1.0 adds `explain` and condition blame under CLI JSON contract
+`1.1.0`. The published `1.0.0` schemas remain available.
 
 ## Command tree
 
@@ -978,6 +977,8 @@ complete fbrcm subcommand argument list. Agents should branch on that
 
 ## MCP server
 
+### `fbrcm mcp`
+
 `fbrcm mcp` starts the stdio server and takes no positional arguments. See the
 [MCP guide](MCP.md) for host setup, tool discovery, inputs, permissions,
 authentication, and manual testing.
@@ -1477,7 +1478,7 @@ template is fetched and published independently without local state or hooks.
 
 ### Remote Config cache freshness
 
-Remote Config read commands (`get`, `conditions list/show`, `groups list`,
+Remote Config read commands (`get`, `explain`, `conditions list/show`, `groups list`,
 and the list/show commands under `experiments`, `rollouts`, and
 `personalizations`) accept
 `--cached`: use an existing template regardless of age, or fetch and cache it
@@ -1516,11 +1517,18 @@ With root `--stateless` and no stdin, omitting `--project` discovers all project
 
 ### `fbrcm explain <parameter>`
 
+**Since 1.1.0**
+
 Explains selection of one exact, case-sensitive parameter key in a published
-client or server template, including grouped parameters. It reads the template
-with the same cache/fetch policy as `get`; it does not evaluate unpublished drafts.
-Pass `--project|-p` to select the template target, or infer the project and
-namespace from a captured Firebase Remote Config `:fetch` POST request.
+client or server template, including grouped parameters. The command reads the
+published template through the selected profile. To evaluate a draft in view, use
+[Context in the TUI](TUI.md#context).
+
+#### Select a template and request
+
+Pass `--project` (`-p`) to select one template target, or let a captured
+Firebase Remote Config `:fetch` POST identify the project and namespace. The
+command requires a project selector when you supply no capture.
 
 An unprefixed decimal project number resolves by exact stored project number.
 Other `--project` values use the shared single-target selector: exact project ID,
@@ -1545,7 +1553,8 @@ prefix returns `argument.invalid`.
 Piped stdin is detected automatically. `--from -` explicitly selects stdin;
 another `--from` path takes precedence over piped input. HAR files may include
 unrelated traffic; only Firebase fetch requests are candidates and their original
-entry numbers are preserved. Several fetches require a human choice or `--entry`.
+one-based entry numbers are preserved. `--entry 3` means the third entry of the
+original file. With several fetches, choose one interactively or pass `--entry`.
 Captures and decompressed bodies are limited to 32 MiB. Captured requests are
 parsed as data and never executed; authentication headers and URL credentials
 are not included in the explanation.
@@ -1555,23 +1564,50 @@ case-insensitive JSON field names, and unrelated entries without valid URLs,
 fetch-body encodings, or HTTP status bounds. Fetch-specific checks apply only
 to matching Firebase requests. Invalid capture content returns `capture.invalid`.
 
+By default the command uses a fresh cache, revalidates a stale cache, and
+fetches when the cache is absent. `--cached` accepts an existing cache even if
+stale, while `--update` revalidates it immediately. The flags are mutually
+exclusive. A failed template read can fall back to an available stale cache.
+The template version comes from this read, even when the HAR records a
+different version.
+
+#### Supply request inputs
+
+Use `--set field=value` to supply an input or override an observation from the
+capture. Indexed fields use quoted names.
+
+| Input | Field names or examples |
+| --- | --- |
+| App identity and version | `app.id`, `app.version`, `app.build`, `app.firebaseInstallationId` |
+| Device and locale | `device.os`, `device.language`, `device.country`, `device.category` |
+| Browser and operating system | `app.browserAndVersion.name`, `app.browserAndVersion.version`, `app.operatingSystemAndVersion.name`, `app.operatingSystemAndVersion.version` |
+| Analytics properties and audiences | `app.userProperty['tier']`, `app.audiences['Beta testers']` |
+| Custom signals | `app.customSignal['environment']` |
+| Timestamps | `app.firstOpenTimestamp`, `device.dateTime` (also `dateTime`) |
+| Firebase-assigned percentiles | `percent`, `percent['checkout']` |
+
+Use `/unknown` for an unresolved input and `/unset` for a known absent field.
+For literal strings that look like markers, use a JSON-quoted string such as
+`--set 'device.language="/unset"'`. Percentiles must be finite numbers from
+0 to 100. Audience answers accept `true`/`false` or `yes`/`no`. Timestamps
+accept RFC3339 or an ISO date-time without a timezone, interpreted as UTC.
+Firebase-only facts such as Analytics audience membership can require an
+explicit answer. A locale country in the capture is an observation and may
+differ from the country Firebase uses.
+
+#### Interpret the report
+
 Human output prints project, parameter, template, and request context before
-asking for missing facts. It shows the raw conditions in template priority order,
-step-by-step short-circuit evaluation, the default fallback, and the selected
-result or priority-ordered alternatives. Only conditions that supply this
-parameter are evaluated. `true` targets all users within the project.
+asking for missing facts. It shows the raw conditions that supply the parameter
+in template priority order, their short-circuit evaluation, and the selected
+result or priority-ordered alternatives. An unresolved higher-priority
+condition can still win over a later match. When all of the parameter's
+conditions are ruled out, the default applies. `true` targets all users
+within the project.
 
-Inputs include app identity/version/build, platform, language/country/category,
-browser/OS targets, Analytics properties/audiences, custom signals, timestamps,
-and Firebase-assigned percentiles. Indexed fields accept quoted names, for
-example `--set "app.customSignal['environment']=sandbox"`. `/unknown` and `/unset`
-distinguish unknown and absent values; a JSON-quoted string escapes these markers.
-Percentiles must be finite numbers from 0 to 100, audience answers accept
-true/false or yes/no, and timestamps accept RFC3339 or ISO date-time in UTC.
-`dateTime` and `device.dateTime` share one input. Category classification and
-Firebase-only information are requested rather than guessed when unverified.
-
-JSON mode always implies non-interaction; `--no-input` is accepted but redundant.
+Use `--no-input` to keep the human report and skip requests for missing facts.
+Use `--json` for the noninteractive machine envelope. Both require `--entry`
+for a multi-fetch HAR.
 Missing facts, unsupported expressions, and uncertain observations are successful
 explanations with unresolved states and exit `0`. Missing parameters return
 `parameter.not_found` (exit `6`), malformed captures return `capture.invalid`
@@ -1581,12 +1617,15 @@ with safe candidate metadata and `required_option: "--entry"`.
 The [explain JSON contract](cli-contract.md#parameter-explanations) defines
 structured predicates, provenance, guarded outcomes, and captured-response
 comparison. A predicted template value is separate from a captured backend value
-and from any value activated or cached by the running app.
+and from any value activated or cached by the running app. Firebase-managed
+assignments and different template versions can make comparison inconclusive.
 
 ```sh
 fbrcm explain new_player --from request.txt --cached
 fbrcm explain new_player --from capture.har --entry 3 --json
-fbrcm explain new_player --project demo --set device.os=web --json
+fbrcm explain new_player --from - --no-input < request.txt
+fbrcm explain new_player --project demo --set device.os=web \
+  --set "app.customSignal['environment']=sandbox" --json
 ```
 
 ### `fbrcm update [parameter]`
@@ -1699,7 +1738,7 @@ Flags:
 --json                 print structured JSON
 ```
 
-Condition filters use the shared mode prefixes described under Filter Queries. Repeated filters are ORed. `--filter`, `--search`, and `--expr` are ANDed together. See [EXPR.md](EXPR.md) for condition context fields and examples.
+Condition filters use the shared [query mode prefixes](#filter-queries). Repeated filters are ORed. `--filter`, `--search`, and `--expr` are ANDed together. See [EXPR.md](EXPR.md) for condition context fields and examples.
 
 With root `--stateless`, `<project>` must be a literal client or server target and the command fetches the latest Remote Config directly using `FBRCM_GOOGLE_ACCESS_TOKEN`. It does not read or write the project registry, parameter cache, drafts, or hooks; consequently the source is Firebase and no unpublished draft is applied. `--filter`, `--search`, and `--expr` retain their normal local filtering behavior after the fetch. `--update` cannot be combined with `--stateless` because stateless reads are already live.
 
@@ -1725,15 +1764,7 @@ With root `--stateless`, `<project>` is a literal client or server target. The c
 
 ### Condition mutations
 
-The condition mutation commands edit complete Remote Config templates:
-
-```text
-fbrcm conditions add [project] <name> --expression <expr>
-fbrcm conditions edit <project> <condition>
-fbrcm conditions rename <project> <condition> <new-name>
-fbrcm conditions move <project> <condition> <priority>
-fbrcm conditions delete [project] [condition]
-```
+The condition mutation commands edit complete Remote Config templates.
 
 For `edit`, `rename`, `move`, and the two-argument form of `delete`, positional `<condition>` is
 untrimmed and must match the canonical condition name exactly and
@@ -1754,7 +1785,7 @@ All five commands support:
 
 Without `--draft`, mutations print the complete Remote Config diff, ask for confirmation unless `--yes` is set, validate with Firebase, and publish with ETag protection. They refuse immediate publication for a target that has an unpublished draft. With `--draft`, mutations compose onto the existing draft or create one and remain local.
 
-With root `--stateless`, a positional `<project>` must be one literal client or server target. Bulk `add` and `delete` use the stateless project-filter behavior described below. Each command fetches the selected template directly with `FBRCM_GOOGLE_ACCESS_TOKEN`, transforms it in memory, validates it with Firebase, and publishes it with the fetched ETag. It does not resolve a profile or read or write the project registry, cache, version snapshots, drafts, or hooks. `--dry-run`, `--change-note`, confirmation, `--yes`, and JSON results retain their normal behavior. `--draft` is rejected because stateless execution cannot persist a local draft.
+With root `--stateless`, a positional `<project>` must be one literal client or server target. Each command fetches the selected template directly with `FBRCM_GOOGLE_ACCESS_TOKEN`, transforms it in memory, validates it with Firebase, and publishes it with the fetched ETag. It does not resolve a profile or read or write the project registry, cache, version snapshots, drafts, or hooks. `--dry-run`, `--change-note`, confirmation, `--yes`, and JSON results retain their normal behavior. `--draft` is rejected because stateless execution cannot persist a local draft.
 
 `add` and `delete` preserve their existing positional single-project forms. They also accept repeatable target-aware project filters:
 
@@ -1762,7 +1793,14 @@ With root `--stateless`, a positional `<project>` must be one literal client or 
 -p, --project <query>  filter projects; may be repeated; mutually exclusive with positional [project]
 ```
 
-For `add`, omitting positional `[project]` selects targets with `--project`; omitting both selects every configured project and enabled template. Repeated project filters are ORed, targets are deduplicated and sorted, and each target is prepared, confirmed, validated, and published independently. An error on one target does not stop later targets. Multi-target publication warns that successful targets cannot be rolled back if another target fails. Stateless exact filters bypass discovery; other filters use live project discovery.
+Stateless exact project filters bypass discovery. Other filters use live project discovery.
+
+### `fbrcm conditions add [project] <name> --expression <expr>`
+
+Adds a condition with a Firebase expression and optional display color. The
+condition goes last unless you specify a priority.
+
+Omitting positional `[project]` selects targets with `--project`. Omitting both selects every configured project and enabled template. Repeated project filters are ORed, targets are deduplicated and sorted, and each target is prepared, confirmed, validated, and published independently. An error on one target does not stop later targets. Multi-target publication warns that successful targets cannot be rolled back if another target fails.
 
 `add` appends the condition by default. Its additional flags are:
 
@@ -1776,7 +1814,14 @@ The portable machine input contract limits `--priority` to 2,147,483,647, then
 runtime validation limits an explicit nonzero priority to the existing
 condition count plus one for each selected target. Zero appends the new condition.
 
-`edit` requires at least one of:
+```sh
+fbrcm conditions add "Beta users" --project '^staging-' --expression 'percent <= 10' --draft
+```
+
+### `fbrcm conditions edit <project> <condition>`
+
+Changes a condition's expression or display color. Supply at least one of
+these flags.
 
 ```text
 --expression <expr>   replace the raw Firebase condition expression
@@ -1792,7 +1837,22 @@ colors are `BLUE`, `BROWN`, `CYAN`, `DEEP_ORANGE`, `GREEN`, `INDIGO`, `LIME`,
 case-insensitively. Imported condition objects accept only Firebase's `name`,
 `expression`, and `tagColor` fields; unsupported fields are rejected.
 
-`rename` updates the condition definition and every conditional-value reference to it. `move` inserts the complete condition at the requested 1-based priority and reports how many conditions and parameters may be affected by the priority change. Its current `strconv.Atoi` parser accepts an optional leading `+` and leading zeroes, but rejects zero, negative values, non-decimal text, and machine-integer overflow; runtime validation also rejects priorities above the existing condition count.
+### `fbrcm conditions rename <project> <condition> <new-name>`
+
+Renames the condition and updates every conditional-value reference to it.
+
+### `fbrcm conditions move <project> <condition> <priority>`
+
+Inserts the complete condition at the requested one-based priority and reports
+how many conditions and parameters may be affected. The priority must be a
+positive decimal integer up to the existing condition count. A leading `+`
+and leading zeroes are accepted.
+
+### `fbrcm conditions delete [project] [condition]`
+
+Removes matched condition definitions and their conditional values. Parameters
+left without any value may also be removed. Empty and description-only groups
+remain.
 
 For `delete`, zero or one positional argument enables list-style condition selection:
 
@@ -1802,7 +1862,7 @@ For `delete`, zero or one positional argument enables list-style condition selec
 --expr <expr>         filter using condition expression context
 ```
 
-One positional argument is the project, matching `conditions list`; no positional arguments select `--project` targets or all configured targets. The positional condition in the two-argument compatibility form is mutually exclusive with `--filter`. Repeated name filters are ORed, while project selection, name filtering, search, and expression filtering are ANDed. With no condition selector, every condition in each selected target matches. Selection is evaluated against the initial effective configuration in Firebase priority order, then all matches are removed in one candidate. The command prints one aggregate impact and one complete diff per target before confirmation. It removes matching condition definitions and their conditional values; parameters left without any value may also be removed, while empty and description-only groups remain. A filter with no matches produces an unchanged `no_match` result for that target.
+One positional argument is the project, matching `conditions list`; no positional arguments select `--project` targets or all configured targets. The positional condition in the two-argument compatibility form is mutually exclusive with `--filter`. Repeated name filters are ORed, while project selection, name filtering, search, and expression filtering are ANDed. With no condition selector, every condition in each selected target matches. Selection is evaluated against the initial effective configuration in Firebase priority order, then all matches are removed in one candidate. The command prints one aggregate impact and one complete diff per target before confirmation. A filter with no matches produces an unchanged `no_match` result for that target.
 
 Examples:
 
@@ -1810,7 +1870,6 @@ Examples:
 fbrcm conditions delete demo --expr 'usage_count == 0' --dry-run
 fbrcm conditions delete --expr 'expression == "percent <= 10"' --dry-run
 fbrcm conditions delete --filter '=Beta users' --project '=demo-a' --project '=demo-b' --yes
-fbrcm conditions add "Beta users" --project '^staging-' --expression 'percent <= 10' --draft
 ```
 
 ### `fbrcm conditions validate <project>`
@@ -1849,18 +1908,9 @@ With root `--stateless`, project selection matches stateless `get`: exact `=proj
 
 ### Group mutations
 
-```text
-fbrcm groups add <name> [--project|-p <query>] [--description <text>]
-fbrcm groups edit <group> [--project|-p <query>] (--description <text>|--no-description)
-fbrcm groups rename <group> <new-name> [--project|-p <query>]
-fbrcm groups delete <group> [--project|-p <query>]
-```
-
-`add` creates a group entry even when it has no parameters or description. `edit` replaces or explicitly clears its description while preserving its parameters. `rename` preserves both parameters and description. `delete` is an explicit group-level operation and removes the group together with all parameters it contains.
-
 All group commands support repeatable `--project|-p` target filters with the same mode prefixes and OR behavior as `get`, `add`, `delete`, and `update`. With no project filter, they process every configured enabled template in stable project-name/target-ID order. The positional `<group>` used by `edit`, `rename`, and `delete` is untrimmed and must match the canonical group key exactly and case-sensitively; targets without that exact key are skipped. `add` and the rename destination create names rather than select existing groups, so those new names are trimmed and validated separately. Differently cased group keys remain distinct.
 
-All group mutations also support `--dry-run`, `--draft`, `--change-note`, `--yes|-y`, `--plan-out <path>`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, planning, and structured-result behavior as condition mutations. A truthy `--no-description` and `--description` are mutually exclusive. Explicit `--no-description=false` is treated as absent, so it does not clear a description or satisfy `edit`'s required edit selection.
+All group mutations also support `--dry-run`, `--draft`, `--change-note`, `--yes|-y`, `--plan-out <path>`, and `--json`, with the same diff, confirmation, validation, ETag, draft-composition, draft-conflict, planning, and structured-result behavior as [condition mutations](#condition-mutations).
 
 With root `--stateless`, project selection matches stateless `groups list` and
 `get`: exact `=project-id` selectors bypass discovery, while fuzzy,
@@ -1871,6 +1921,28 @@ version snapshot, draft, or hook is read or written. `--dry-run`,
 `--change-note`, confirmation, `--yes`, and JSON results retain their normal
 behavior; `--draft` is rejected because stateless execution cannot persist a
 local draft.
+
+### `fbrcm groups add <name>`
+
+Creates a parameter group, which can be empty. Use `--description <text>` to
+give the new group a description.
+
+### `fbrcm groups edit <group>`
+
+Changes a group's description while preserving its parameters. Use
+`--description <text>` to replace the description or `--no-description` to
+clear it. A truthy `--no-description` and `--description` are mutually
+exclusive. An explicit `--no-description=false` is treated as absent and
+cannot satisfy the required edit selection by itself.
+
+### `fbrcm groups rename <group> <new-name>`
+
+Changes the group name and preserves its parameters and description.
+
+### `fbrcm groups delete <group>`
+
+Removes the group and every parameter it contains. Use `--dry-run` to review
+the complete deletion for each selected template.
 
 ### `fbrcm draft list`
 
@@ -2010,8 +2082,8 @@ In JSON mode, `data.items` contains one status result per selected project and `
 Shows cached project metadata, enabled and primary templates, quota-project
 configuration and resolution, the selected auth identity used for project
 operations, and every configured auth identity that discovered the project
-during synchronization. `<project>` uses the shared positional project
-resolution described above.
+during synchronization. `<project>` uses
+[positional project resolution](#positional-project-resolution).
 
 Flags:
 
@@ -2060,19 +2132,32 @@ fbrcm project templates set northstar-wallet --templates client,server --primary
 fbrcm project templates set northstar-wallet --primary client
 ```
 
-### `fbrcm project quota-project show|set|unset`
+### Project quota-project overrides
 
-Manages the quota-project override for one cached physical Firebase project.
-`show <project>` reports the configured override, effective project, and source.
-`set <project> <quota-project-id>` persists an override; `unset <project>`
-removes it and restores auth, ADC, or target fallback. Project names, IDs, and
-repository aliases use normal cached resolution, while `client@` and `server@`
-prefixes are rejected because the setting belongs to the physical project.
+These commands manage the quota-project override for one cached physical
+Firebase project. Project names, IDs, and repository aliases use normal cached
+resolution. Pass an unprefixed project selector because the override belongs
+to the physical project.
 The project override takes precedence over the auth identity's default.
+
+### `fbrcm project quota-project show <project>`
+
+Reports the project's configured quota-project override, the effective quota
+project, and its source.
+
+### `fbrcm project quota-project set <project> <quota-project-id>`
+
+Stores a quota-project override for the selected project.
+
+### `fbrcm project quota-project unset <project>`
+
+Removes the stored override. Requests resume resolving the quota project from
+the auth identity, ADC, or the target project, subject to the environment
+override.
 
 ### `fbrcm project open <project>`
 
-Opens the project's Remote Config page in the Firebase console. `<project>` uses the shared positional project resolution described above.
+Opens the project's Remote Config page in the Firebase console. `<project>` uses [positional project resolution](#positional-project-resolution).
 
 With root `--stateless`, `<project>` must be a literal physical Firebase project ID. Profile project names, repository aliases, and `client@`/`server@` target prefixes are rejected. No Firebase API request or access token is required. Human mode opens the constructed console URL; JSON mode returns it with `opened: false` without launching a browser.
 
@@ -2080,7 +2165,7 @@ When `FBRCM_OFFLINE` is defined, human mode prints the console URL to stdout and
 
 ### `fbrcm project export <project>`
 
-Exports one template target's Remote Config JSON. `<project>` accepts the target syntax and uses the shared positional resolution described above.
+Exports one template target's Remote Config JSON. `<project>` accepts the target syntax and uses [positional project resolution](#positional-project-resolution).
 
 The root `--stateless` flag selects profileless static-token execution in both human and JSON output modes and requires a nonempty `FBRCM_GOOGLE_ACCESS_TOKEN`. The positional project is then a literal physical Firebase project ID rather than a profile project, display name, or repository alias; an unprefixed ID selects the client template, `client@<id>` selects it explicitly, and `server@<id>` selects the server template. Stateless execution installs a policy with application-managed local reads, local writes, and hooks all disabled. It therefore does not read or create profile, project, auth, cache, snapshot, or draft files, forces repository configuration off, and ignores `FBRCM_PROFILE`; JSON output reports `context.profile` as `null`. An explicitly requested artifact destination such as `--to` is outside application-managed state and remains allowed. Explicit `--profile` and `--stateless` cannot be combined. The access token is used only in memory and is neither refreshed nor persisted. The quota project is selected as `GOOGLE_CLOUD_QUOTA_PROJECT` when set, otherwise the requested physical Firebase project ID. Setting the token without `--stateless` does not change the regular stateful flow: its execution policy permits local reads, local writes, and hooks.
 
@@ -2100,7 +2185,7 @@ Export normalizes JSON by unescaping `<`, `>`, `&`, trimming trailing line break
 
 ### `fbrcm project defaults <project>`
 
-Downloads the selected client or server Remote Config parameter defaults directly from Firebase. `<project>` accepts the template target syntax and uses the shared positional resolution described above. JSON is suitable for web applications, XML for Android, and plist for Apple applications.
+Downloads the selected client or server Remote Config parameter defaults directly from Firebase. `<project>` accepts the template target syntax and uses [positional project resolution](#positional-project-resolution). JSON is suitable for web applications, XML for Android, and plist for Apple applications.
 
 Flags:
 
@@ -2232,7 +2317,7 @@ Flags:
 --json                    put typed application details in envelope data
 ```
 
-`--update` and `--cached` follow the application-cache behavior described above.
+`--update` and `--cached` follow the [application cache rules](#firebase-applications).
 
 ### `fbrcm apps config <app>`
 
@@ -2251,7 +2336,7 @@ Flags:
 --json                    put application metadata and a typed artifact in envelope data
 ```
 
-`--update` and `--cached` follow the application-cache behavior described above. Without `--to`, raw human stdout remains exactly the SDK configuration artifact; source information and warnings do not contaminate it.
+`--update` and `--cached` follow the [application cache rules](#firebase-applications). Without `--to`, raw human stdout remains exactly the SDK configuration artifact; source information and warnings do not contaminate it.
 
 `--to <path>` writes a private destination file. If the path exists, normal mode asks for confirmation with Yes selected by default; `--yes` bypasses that prompt. JSON mode never prompts and reports `interaction.required` unless overwrite was authorized.
 
@@ -2552,8 +2637,8 @@ returns typed condition diffs in `changes[].change`, including before/after
 definitions and one-based positions. Its boundary contains only `version` and
 `state` (`present` or `absent`), with no parameter group. All publication metadata,
 scan-count, exhaustion, and nullable-boundary semantics match parameter history.
-Parameter JSON remains unchanged. These additions are part of unreleased CLI
-JSON contract `1.1.0`; the published `1.0.0` schemas remain available unchanged.
+Condition blame is available since 1.1.0 under CLI JSON contract `1.1.0`.
+Parameter blame retains its existing invocation and response fields.
 
 ### `fbrcm versions list <project>`
 
@@ -3497,15 +3582,26 @@ option preserves its current persisted quota project. Its value is trimmed,
 then validated as a literal physical Google Cloud project ID; selector prefixes
 and query syntax are not accepted.
 
-### `fbrcm auth quota-project show|set|unset`
+### Auth identity quota-project defaults
 
-Manages one auth identity's targetless-request quota project. `show <auth-id>`
-reports the configured value, effective value, and source. `set <auth-id>
-<quota-project-id>` persists a new default. `unset <auth-id>` removes it; a
-gcloud identity may then use its ADC `quota_project_id`, while Google OAuth,
-imported OAuth, and service-account identities become unresolved for targetless
-requests unless `GOOGLE_CLOUD_QUOTA_PROJECT` is set. All three commands support
-the global `--json` envelope.
+These commands manage the default quota project for one auth identity,
+including requests that have no target project. All three support the global
+`--json` envelope.
+
+### `fbrcm auth quota-project show <auth-id>`
+
+Reports the identity's configured quota project, the effective quota project,
+and its source for targetless requests.
+
+### `fbrcm auth quota-project set <auth-id> <quota-project-id>`
+
+Stores a default quota project for the selected identity.
+
+### `fbrcm auth quota-project unset <auth-id>`
+
+Removes the stored default. A gcloud identity can fall back to its ADC
+`quota_project_id`. For other identity types, targetless requests then require
+`GOOGLE_CLOUD_QUOTA_PROJECT`.
 
 ### `fbrcm auth login <auth-id>`
 
@@ -3799,27 +3895,16 @@ versioned stdin schema and capability metadata.
 See [Theming](theming.md) for the file format, inheritance rules, and fallback
 behavior.
 
-### `fbrcm completion`
+### Shell completion
 
 The hidden shell protocol commands `__complete` and `__completeNoDesc` are
 human-only. With `--json`, they return a root-contract
 `command.not_executable` failure (exit `2`). Use `capabilities` for JSON
 discovery and the shell subcommands below to generate completion scripts.
 
-Generates shell completion scripts.
-
 With `--json`, the generated script is wrapped in the command response envelope
 as `data.text`; it is never written as a second, unwrapped stdout document.
 Completion generation does not initialize a profile or Firebase client.
-
-Commands:
-
-```text
-fbrcm completion bash
-fbrcm completion fish
-fbrcm completion powershell
-fbrcm completion zsh
-```
 
 Each shell command supports:
 
@@ -3827,13 +3912,36 @@ Each shell command supports:
 --no-descriptions   disable completion descriptions
 ```
 
-Examples:
+### `fbrcm completion bash`
+
+Generates the Bash completion script. Load it for the current shell session.
 
 ```sh
 source <(fbrcm completion bash)
-source <(fbrcm completion zsh)
+```
+
+### `fbrcm completion fish`
+
+Generates the Fish completion script. Load it for the current shell session.
+
+```fish
 fbrcm completion fish | source
+```
+
+### `fbrcm completion powershell`
+
+Generates the PowerShell completion script. Load it for the current shell session.
+
+```powershell
 fbrcm completion powershell | Out-String | Invoke-Expression
+```
+
+### `fbrcm completion zsh`
+
+Generates the Zsh completion script. Load it for the current shell session.
+
+```sh
+source <(fbrcm completion zsh)
 ```
 
 ### `fbrcm help [command]`

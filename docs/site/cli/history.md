@@ -48,6 +48,8 @@ next page only when the scan needs to continue. When the parameter predates the
 oldest retained version, fbrcm marks that history boundary instead of claiming
 the oldest template created it.
 
+<Badge type="info" text="Since 1.1.0" />
+
 ## Trace one condition
 
 ```sh

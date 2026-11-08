@@ -5,12 +5,10 @@ contract `1.0.0`. The release, JSON contract, negotiated MCP protocol, and file
 formats have separate versions. Existing integer file-format versions stay at
 `1`; the pre-1.0 in-place breaking-change exception has ended.
 
-Version 1.1.0 is under development and has not been published. Its CLI JSON
-contract `1.1.0` has `released: false` and may be regenerated in place before
-release. It includes CLI `explain`, its capture/evaluation contract, condition
-blame and MCP `parameters.explain`. Published `1.0.0` schemas and the original
-released lock remain unchanged. Persisted encodings stay the same, so this
-release needs no migration.
+Version 1.1.0 adds CLI `explain`, condition blame, and MCP `parameters.explain`.
+CLI JSON contract `1.1.0` covers the new results and capture inputs. The
+published `1.0.0` schemas and release lock remain available. Version 1.1.0
+retains the existing persisted encodings and requires no data migration.
 
 | Surface | Stability promise |
 | --- | --- |
@@ -58,6 +56,6 @@ See the full [compatibility policy](https://github.com/yumauri/fbrcm/blob/main/d
 for versioning, migration, and release requirements.
 
 
-Condition blame through `versions blame --condition <name>` is part of
-unreleased contract `1.1.0`. Parameter invocations and responses remain unchanged.
+Condition blame through `versions blame --condition <name>` is available since
+1.1.0. Parameter invocations and responses retain their existing contract.
 The existing MCP `versions.blame` tool accepts the same optional selector.

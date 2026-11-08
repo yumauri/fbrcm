@@ -73,6 +73,5 @@ Stateless mode reads Firebase directly and does not accept either cache flag.
 Application data uses its own cache and never changes a Remote Config snapshot
 or draft.
 
-See the [command index](/reference/commands) for the command map and the
-[complete CLI reference](https://github.com/yumauri/fbrcm/blob/main/docs/CLI.md#firebase-applications)
-for every selection rule, output field, and error contract.
+See the [application command references](/reference/commands/#firebase-applications)
+for selection rules, output fields, and error contracts.

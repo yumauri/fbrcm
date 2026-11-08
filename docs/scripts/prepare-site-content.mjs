@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { renderCommandReference, writeCommandReference } from './command-reference.mjs'
 import { writeLlmsFull } from './llms-full.mjs'
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
@@ -37,11 +38,13 @@ editLink: false
 
 `
 
-const [privacyMarkdown, termsSourceMarkdown, llmsText, licenseText] = await Promise.all([
+const [privacyMarkdown, termsSourceMarkdown, llmsText, licenseText, cliMarkdown, capabilities] = await Promise.all([
   readFile(privacySource, 'utf8'),
   readFile(termsSource, 'utf8'),
   readFile(llmsSource),
-  readFile(licenseSource)
+  readFile(licenseSource),
+  readFile(resolve(docsDirectory, 'CLI.md'), 'utf8'),
+  readFile(resolve(repositoryRoot, 'schemas/capabilities.json'), 'utf8').then(JSON.parse)
 ])
 
 const termsMarkdown = termsSourceMarkdown
@@ -49,6 +52,8 @@ const termsMarkdown = termsSourceMarkdown
   .replaceAll('](LICENSE)', '](/LICENSE.txt)')
 
 await mkdir(dirname(llmsAsset), { recursive: true })
+const commandPages = await renderCommandReference(cliMarkdown, capabilities, docsDirectory)
+await writeCommandReference(siteDirectory, commandPages)
 await Promise.all([
   writeFile(privacyPage, privacyFrontmatter + privacyMarkdown),
   writeFile(termsPage, termsFrontmatter + termsMarkdown),

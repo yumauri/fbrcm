@@ -1,10 +1,8 @@
 # JSON contract
 
-Contract `1.1.0` is under development and has not been published. It includes
-`explain` and `versions blame --condition` while preserving parameter blame.
-Its schemas and fingerprint may be regenerated in place while `released: false`.
-The published `1.0.0` schemas and released lock remain available unchanged.
-Examples below use the current development contract. See the
+The examples on this page use contract `1.1.0`, which adds `explain` and
+`versions blame --condition` while preserving parameter blame. The published
+`1.0.0` schemas and release lock remain available. See the
 [compatibility guarantees](/reference/compatibility) for schema versioning,
 upgrade rules, and the exclusion of human layouts from automation interfaces.
 
@@ -84,6 +82,35 @@ Each remediation includes one of these strategies:
 
 A remediation describes a technically valid recovery. Callers must still
 check scope, side effects, and authorization before executing it.
+
+## Parameter explanations
+
+[`explain`](/cli/explain) returns one envelope for one parameter in a published
+template. Inspect `data.result.selection` for the winning condition or default.
+If selection is unresolved, `data.possible_outcomes` lists the remaining
+branches in priority order with their guards, and `data.needed_inputs` lists
+inputs that can still affect selection. The value can be known even when the
+winning branch is unresolved, such as when every remaining branch has the same
+literal value. `data.conditions` contains rule results and references to the
+inputs they used.
+
+When a HAR provides response evidence, inspect
+`data.capture.response.comparison` separately from the predicted result. Missing
+facts, unsupported expressions, and mismatches with a captured value can all
+appear in a successful response with exit `0`. Check `warnings` for
+`explain.capture_version_mismatch` when the versions differ and `cache.stale`
+when the template read fell back to a stale cache.
+
+| Problem code | Exit | Meaning |
+| --- | ---: | --- |
+| `argument.invalid` | `2` | An invalid override, entry selection, or conflicting capture target |
+| `parameter.not_found` | `6` | The exact key is absent from the selected template |
+| `capture.invalid` | `8` | The capture could not be parsed or validated |
+| `interaction.required` | `10` | Several Firebase fetches are present. Choose an original one-based HAR entry from the returned candidates and retry with `--entry`. |
+
+Use `fbrcm capabilities explain --json` to find the invocation and response
+schemas for the installed version. The same result is available through the
+stateful [MCP `parameters.explain` tool](/automation/mcp#choose-tools-and-permissions).
 
 ## Artifacts
 

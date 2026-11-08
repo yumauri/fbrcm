@@ -5,11 +5,10 @@ scripts. Contract version `1.1.0` applies whenever the global `--json` flag is
 present. Without `--json`, commands use human-readable output.
 
 Contract `1.0.0` is the released, locked baseline for fbrcm 1.0.0. Contract
-`1.1.0` is unreleased and includes `explain` and condition history through the
-optional `versions blame --condition <name>` selector. Existing parameter
-invocations and response fields remain unchanged. The development schemas may
-be regenerated in place until release; the published `1.0.0` schemas and released
-fingerprint remain unchanged. The [compatibility policy](compatibility.md)
+`1.1.0` adds `explain` and condition history through the optional
+`versions blame --condition <name>` selector. Parameter blame retains its
+invocation and response fields. The published `1.0.0` schemas and release lock
+remain available. The [compatibility policy](compatibility.md)
 defines CLI, JSON, MCP, and persisted data guarantees and their version boundaries.
 
 For a concise integration workflow and safe usage examples, start with the
@@ -1256,8 +1255,10 @@ The invocation schema accepts a raw cURL/HAR string or decoded HAR object for
 structured stdin. `--from` paths and raw CLI stdin retain automatic format detection;
 `--from -` selects stdin. `--cached` and `--update` are mutually exclusive. A project
 is required when no capture is supplied. JSON mode never asks for missing facts;
-repeat `--set field=value` to supply them. Capture input and expanded gzip content
-are bounded to 32 MiB. Client percentage assignment, server-only facts, and
+repeat `--set field=value` to supply them. `--no-input` keeps the human report
+and suppresses input prompts. Both modes require `--entry` when several fetches
+are present. Capture input and expanded gzip content are bounded to 32 MiB.
+Client percentage assignment, server-only facts, and
 unverified classification rules are never fabricated from identifiers or headers.
 
 `explain_project_resolution` publishes the single-project algorithm: an
@@ -1443,8 +1444,8 @@ advertised schema/version; there is no output-version negotiation flag.
 
 `schemas/cli/contract.lock.json` fingerprints the current generated schemas,
 capability goldens, and audit-evidence golden and records whether that contract
-has been released. Contract `1.1.0` is under development with `released: false`
-and may be regenerated in place before publication. The released `1.0.0` marker
+has been released. An active lock with `released: false` allows in-place
+regeneration during release preparation. The released `1.0.0` marker
 and fingerprint are retained in `schemas/cli/contract-1.0.0.lock.json`. The
 pre-1.0 in-place correction policy has ended. The generator rejects a different fingerprint at
 the same released version and preserves the release marker on unchanged

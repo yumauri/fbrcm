@@ -16,9 +16,10 @@ shows more of a project comparison or promotion at once.
 
 ## Workspace layout
 
-The interface has four main areas:
+The workspace includes these areas.
 
 - **Projects** selects the Firebase projects and template targets in view.
+- **Context** previews how the loaded templates respond to request inputs. See [Request Context](./context).
 - **Parameters**, **Conditions**, **History**, **A/B Tests**,
   **Personalizations**, and **Rollouts** share the main data workspace.
 - **Details** inspects and edits the selected item.
@@ -45,9 +46,11 @@ The global defaults are:
 | `6` | A/B Tests |
 | `7` | Personalizations |
 | `8` | Rollouts |
-| `9` | Promote workspace |
+| `9` | Context, or Promote while its workspace is open |
 | `0` | Logs |
 | `Tab` | Switch between the two most recently active panels |
+| `Ctrl+X` | Open the Context popup |
+| `Ctrl+E` | Explain the focused parameter with Context |
 | `\` | Hidden workspace tabs |
 
 Lists use arrow keys or `j`/`k`. `Home` and `End` jump to the first and last

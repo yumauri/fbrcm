@@ -305,15 +305,25 @@ the toggle hint instead of treating the profile as unconfigured.
 
 ## Context
 
+**Since 1.1.0**
+
+Context previews how a loaded client or server template responds to request
+inputs. It works on the template in view, including a local draft. Inputs,
+template scope, and imported capture data are kept for the current TUI session.
+
+### Add or import inputs
+
 Context sits below Projects and shows each input as a field name and value on
 two lines. The number in the top-right corner counts the inputs. Press `9` to
 focus Context or click its header, then press `a` to add an input. Choose a
-field such as **Platform** or **App build** and enter its value after the
-prefilled field name. **User property** and **Custom signal** each suggest
+field such as **Platform** and complete the prefilled assignment as
+`device.os=web`. **User property** and **Custom signal** each suggest
 names from conditions that parameters reference across the selected templates.
 Choose **Enter another name…** to type a name for either input. Choose
-**Other field…** for additional [supported inputs](CLI.md#fbrcm-explain-parameter). Press
-`Enter` or double-click a fact to edit it. Use `Delete` to remove it.
+**Other field…** for additional [supported inputs](CLI.md#supply-request-inputs).
+Use `/unknown` for an unresolved input and `/unset` for a field known to be
+absent. Press `Enter` or double-click a row to edit it. Use `Delete` or `x` to
+remove it.
 
 Context starts at two content rows and grows by two rows per additional input
 up to two-thirds of the sidebar height. The list scrolls at that limit. Press
@@ -325,24 +335,34 @@ The default global Context shortcuts yield to existing custom global bindings.
 
 Press `i` to open **Import Context**. Paste a **Copy as cURL** command or HAR
 content directly into the popup to start importing, or use **Choose File** to
-open a HAR or cURL text file. When a HAR has several
-Firebase fetches, select the request by its original entry number. Import
-replaces the current inputs and adds a **Template scope** row for the captured
-template. Edit or remove that row to change the scope while keeping the
-request inputs. To set a scope manually, press `a` and choose **Template scope**.
-Use a project ID or number for its client template, or the `server@` prefix for
-its server template. With the scope removed, Context applies to all selected
-templates. Context is session-only.
+open a HAR or cURL text file. When a HAR has several Firebase Remote Config
+fetches, select the request by its original one-based entry number. Import
+replaces the current inputs, resumes evaluation, and sets **Template scope**
+to the captured template. fbrcm parses captures locally and never replays them.
 
-Parameters, Conditions, and Details hide definitely excluded conditions and
-their values. Once a parameter has a definite winner, Parameters and Details
-show just the selected value. Press `H` in Context to show all rows with their
-outcome notes, `Space` to pause or resume evaluation, or uppercase `X` to clear
-all inputs and the template scope. Select a parameter
-and press `Ctrl+E` to open the CLI-style explanation in a scrollable popup.
-It includes the evaluation trace, priority order, fallback, and any captured
-response for the matching template. Evaluation uses the template in view,
-including drafts, and edits use the complete template.
+### Scope and inspect the evaluation
+
+To set a scope manually, press `a` and choose **Template scope**. Use the
+physical project ID or project number for its client template, or use the
+`server@` prefix for its server template. Edit the row to change the scope
+while keeping the request inputs. Removing the scope applies Context to all
+selected templates.
+
+Conditions hides definitely excluded conditions. Parameters and Details hide
+their values and show only the selected value when a parameter has a definite
+winner. An unresolved higher-priority condition can leave more than one value
+visible. The editor still uses the complete template.
+
+Press `H` in Context to show the rows hidden by Context with their outcome
+notes. Press `Space` to pause or resume evaluation while keeping the inputs, or
+uppercase `X` to clear inputs, scope, and the imported capture.
+
+Focus a parameter in Parameters or Details and press `Ctrl+E` while Context
+is active for that template. The scrollable explanation includes the rule
+trace, priorities, fallback, and captured response evidence for the same
+project and template type when available. Opening it from Details also
+previews pending parameter edits. Press `Esc` to close the report. For a
+scriptable explanation of the published template, use [CLI `explain`](CLI.md#fbrcm-explain-parameter).
 
 ## Parameters and groups
 

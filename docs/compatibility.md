@@ -6,20 +6,16 @@ separate versions. The CLI JSON contract starts at `1.0.0`; existing integer
 file-format versions remain `1`. The pre-1.0 permission to break these
 interfaces without migration or a version change has ended.
 
-## Upcoming 1.1.0 release boundary
+## 1.1.0 release boundary
 
-Version 1.1.0 has not been published. Its CLI JSON contract has `released: false`
-and may be regenerated in place before release. It adds CLI `explain`, its
-structured JSON results and capture inputs, MCP `parameters.explain`, and
-condition blame through CLI/MCP `versions.blame`. Released 1.0.0 interfaces,
-schemas, and durable data remain covered by the existing compatibility promise.
-Once 1.1.0 is published, its interfaces join that promise and its released lock
-must not be changed without the appropriate contract-version bump.
+Version 1.1.0 adds CLI `explain`, its structured JSON results and capture
+inputs, MCP `parameters.explain`, and condition blame through CLI and MCP.
+These additions follow the same compatibility policy as the 1.0.0 interfaces.
 
 | Versioned surface | Boundary for this release |
 | --- | --- |
 | Application | fbrcm `1.1.0`; documented CLI behavior remains compatible throughout 1.x. |
-| CLI JSON | Contract `1.1.0`, currently unreleased and mutable before publication; published `1.0.0` schemas and their archived lock remain unchanged. |
+| CLI JSON | Contract `1.1.0`. The published `1.0.0` schemas and archived release lock remain available. |
 | MCP | Negotiated protocol version, with the documented public tool catalog, launch policy, schema adaptation and shared operation envelopes. The CLI lock does not independently freeze MCP adaptation. |
 | Persisted formats | Existing integer versions remain `1`; versionless durable formats retain their established meaning. No encoding change or migration is introduced by this release. |
 
@@ -108,7 +104,7 @@ plan formats currently use integer version `1`. TOML configuration, themes,
 hook trust records, and Remote Config snapshot wrappers have no separate
 format-version field; that does not exempt their supported data from upgrade
 compatibility. A release number alone never increments a file-format version.
-The upcoming 1.1.0 release keeps the existing encodings, including the
+Version 1.1.0 keeps the existing encodings, including the
 publication-plan artifact schema `urn:fbrcm:schema:cli:1.0.0:publication_plan` and its integer
 `format_version: 1`. Capture inputs for `explain` are not a new persisted format;
 the operation does not store captures.
@@ -164,9 +160,9 @@ their original release state; the current release status is recorded in
 
 The released `1.0.0` fingerprint and marker are archived unchanged in
 `schemas/cli/contract-1.0.0.lock.json`. `schemas/cli/contract.lock.json` records
-unreleased contract `1.1.0` with `released: false`. Its schemas, capabilities,
-audit evidence, and fingerprint may be regenerated in place before publication.
-The SHA-256 freezes the generated CLI schemas, compact/detailed capabilities,
+the active contract version, fingerprint, and release marker. A lock with
+`released: false` allows in-place regeneration during release preparation.
+A released SHA-256 freezes the generated CLI schemas, compact/detailed capabilities,
 and audit-evidence golden. The embedded capability catalog is regenerated and
 tested against those records. This lock is a generation gate, not a fingerprint
 of every runtime implementation, MCP adaptation, or persisted format.
@@ -188,10 +184,8 @@ When advancing beyond 1.1.0, retain its released lock as
 the next contract version, as was done for 1.0.0.
 
 
-## Condition blame development boundary
+## Condition blame compatibility
 
-Condition blame is included in unreleased CLI JSON contract `1.1.0` alongside
-`explain`. Existing parameter blame invocations and data remain unchanged. The
-existing MCP `versions.blame` tool gains the same optional condition selector.
-No durable file format changes. Release review must freeze the `1.1.0` lock
-before publishing binaries; the released `1.0.0` lock and schemas remain unchanged.
+Condition blame is available since CLI JSON contract `1.1.0`. Parameter blame
+retains its invocation and response fields. The MCP `versions.blame` tool
+accepts the same optional condition selector.

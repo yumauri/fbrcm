@@ -99,8 +99,8 @@ parameter key. Supply `arguments.project` and `arguments.parameter`; optional
 `all` and `limit` mutually exclusive. Results include adjacent version
 transitions, publication metadata, and typed parameter diffs.
 
-Use `parameters.explain` in stateful mode to evaluate one parameter against a
-Firebase fetch capture. Supply `arguments.parameter`, a scalar `options.project`
+Since fbrcm 1.1.0, use `parameters.explain` in stateful mode to evaluate one
+parameter against a Firebase fetch capture. Supply `arguments.parameter`, a scalar `options.project`
 if the project is not inferred from the capture, and cURL text or a HAR object
 in `stdin`. A local capture file can instead be supplied in `options.from`.
 Optional `options.set` is an array of `field=value` overrides. Captures are parsed

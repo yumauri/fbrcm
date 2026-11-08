@@ -1,7 +1,7 @@
 # CLI JSON schemas
 
-`cli/1.1.0/` is the current unreleased development contract, including `explain`
-and condition blame. Released `cli/1.0.0/` remains checked in and embedded
+`cli/1.1.0/` contains the schemas for `explain` and condition blame. Released
+`cli/1.0.0/` remains checked in and embedded
 unchanged as the released baseline. The current directory contains Draft 2020-12 input and
 response schemas for every executable CLI command plus the shared envelope,
 problem, capability, semantic-definition, Remote Config stdin, combined

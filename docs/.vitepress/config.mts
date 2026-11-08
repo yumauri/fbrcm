@@ -3,6 +3,8 @@ import { writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import capabilities from '../../schemas/capabilities.json'
+import { commandSidebar } from '../scripts/command-navigation.mjs'
 import { writeMarkdownPages } from '../scripts/markdown-pages.mjs'
 import { pageHeadDevPlugin, pageRoute } from '../scripts/page-head.mjs'
 import { renderRobotsTxt, robotsDevPlugin } from '../scripts/robots.mjs'
@@ -122,6 +124,7 @@ export default defineConfig({
         text: 'Terminal UI',
         items: [
           { text: 'TUI overview', link: '/tui/' },
+          { text: 'Request Context', link: '/tui/context' },
           { text: 'Editing and drafts', link: '/tui/editing' }
         ]
       },
@@ -130,6 +133,7 @@ export default defineConfig({
         items: [
           { text: 'CLI overview', link: '/cli/' },
           { text: 'Parameters and conditions', link: '/cli/parameters' },
+          { text: 'Explain a parameter value', link: '/cli/explain' },
           { text: 'Projects and templates', link: '/cli/projects' },
           { text: 'Firebase applications', link: '/cli/apps' },
           { text: 'Drafts', link: '/cli/drafts' },
@@ -153,7 +157,7 @@ export default defineConfig({
           { text: 'Configuration', link: '/reference/configuration' },
           { text: 'Themes', link: '/reference/themes' },
           { text: 'Hooks', link: '/reference/hooks' },
-          { text: 'Command index', link: '/reference/commands' },
+          commandSidebar(capabilities),
           { text: 'Troubleshooting', link: '/reference/troubleshooting' }
         ]
       }

@@ -15,7 +15,7 @@ If you have not configured credentials and discovered projects yet, run
 `fbrcm setup` or follow the [manual CLI setup](/guide/#manual-cli-setup) first.
 
 Use `fbrcm help <command>` for flags accepted by the installed version and the
-[command index](/reference/commands) for a map of the complete command set.
+[command index](/reference/commands/) for the syntax and behavior of every command.
 
 ## How to read command examples
 

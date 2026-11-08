@@ -28,6 +28,8 @@ that stability promise.
 fbrcm is most useful when work spans more than one Firebase project:
 
 - inspect parameters, groups, conditions, and version history;
+- trace parameter selection with [CLI `explain`](docs/CLI.md#fbrcm-explain-parameter)
+  or preview requests interactively with [TUI Context](docs/TUI.md#context), both available since 1.1.0;
 - compare and promote configuration between projects or template types;
 - stage related changes as local drafts before publishing;
 - import, export, validate, roll back, and restore Remote Config templates;
@@ -354,8 +356,9 @@ go test ./...
 
 ### Documentation site
 
-The VitePress site uses the curated Markdown files under `docs/site/`. The
-long-form project documents in `docs/` remain separate from the website:
+The VitePress site uses curated Markdown under `docs/site/`. It also generates
+the website's command index and per-command reference pages from `docs/CLI.md`
+and `schemas/capabilities.json`.
 
 ```sh
 cd docs
@@ -364,6 +367,8 @@ npm run dev
 ```
 
 Use `npm run build` to create a production build locally.
+Edit the matching command section in `docs/CLI.md` to update its website
+reference page. Put workflow walkthroughs in the curated site guides.
 
 The development and production commands generate the human-readable
 `/privacy-policy` page from the repository-root `PRIVACY.md` and copy the

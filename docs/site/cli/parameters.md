@@ -37,6 +37,9 @@ redundant Project column. This also applies with no project filter when only one
 project is configured or a whitelist or blacklist leaves one visible project.
 Machine output retains complete target context.
 
+To see why a published template would select a parameter value for a request,
+use [`fbrcm explain`](/cli/explain).
+
 ## Add and duplicate
 
 ```sh
