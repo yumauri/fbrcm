@@ -213,30 +213,45 @@ func TestMCPInvocationDetection(t *testing.T) {
 func connectMCPStdio(t *testing.T, service *core.Core, args ...string) *mcp.ClientSession {
 	t.Helper()
 	t.Cleanup(func() { config.SetLocalConfigDisabled(false) })
-	// Keep the transport alive through cleanup so closing the client can
-	// exercise graceful EOF shutdown after the test context is canceled.
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 10*time.Second)
+	// Keep the server alive until cleanup can exercise graceful EOF shutdown.
+	ctx, cancel := context.WithCancel(context.WithoutCancel(t.Context()))
 	t.Cleanup(cancel)
 	toServerR, toServerW := io.Pipe()
 	fromServerR, fromServerW := io.Pipe()
-	t.Cleanup(func() { _ = toServerR.Close(); _ = toServerW.Close(); _ = fromServerR.Close(); _ = fromServerW.Close() })
+	closePipes := func() {
+		_ = toServerR.Close()
+		_ = toServerW.Close()
+		_ = fromServerR.Close()
+		_ = fromServerW.Close()
+	}
+	t.Cleanup(closePipes)
 	done := make(chan int, 1)
+	var stderr bytes.Buffer
 	go func() {
-		done <- frontend.Run(ctx, service, "test", "", "", append([]string{"mcp"}, args...), toServerR, fromServerW, io.Discard)
+		done <- frontend.Run(ctx, service, "test", "", "", append([]string{"mcp"}, args...), toServerR, fromServerW, &stderr)
 	}()
 	client := mcp.NewClient(&mcp.Implementation{Name: "stdio-test", Version: "1"}, nil)
-	cs, err := client.Connect(ctx, &mcp.IOTransport{Reader: fromServerR, Writer: toServerW}, nil)
+	connectCtx, cancelConnect := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancelConnect()
+	stop := context.AfterFunc(connectCtx, closePipes)
+	defer stop()
+	cs, err := client.Connect(connectCtx, &mcp.IOTransport{Reader: fromServerR, Writer: toServerW}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = cs.Close()
+		defer func() {
+			closePipes()
+			_ = cs.Close()
+		}()
+		// Deliver EOF while the client can still read the server's output.
+		_ = toServerW.Close()
 		select {
 		case code := <-done:
 			if code != 0 {
-				t.Errorf("shutdown: %v", code)
+				t.Errorf("shutdown: exit %d\n%s", code, stderr.String())
 			}
-		case <-ctx.Done():
+		case <-time.After(10 * time.Second):
 			t.Error("stdio server did not stop on EOF")
 		}
 	})
