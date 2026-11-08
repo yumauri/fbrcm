@@ -72,6 +72,11 @@ func (t Target) String() string {
 	return t.ProjectID
 }
 
+// MatchesProject compares a physical project ID or number independently of template kind.
+func (t Target) MatchesProject(projectID, projectNumber string) bool {
+	return t.ProjectID == projectID || t.ProjectID == projectNumber
+}
+
 func (t Target) WithProjectID(projectID string) Target {
 	t.ProjectID = projectID
 	return t

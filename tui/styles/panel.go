@@ -75,6 +75,8 @@ var (
 
 	ParameterSeparator = PanelMuted
 
+	TreeBranch = lipgloss.NewStyle().Foreground(PaletteSlateDark)
+
 	FilterText = lipgloss.NewStyle().
 			Foreground(PaletteYellow)
 

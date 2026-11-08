@@ -53,6 +53,9 @@ func (k helpKeyMap) ShortHelp() []key.Binding {
 	switch k.active {
 	case panels.Projects:
 		return append(common, k.projectsHelp()...)
+	case panels.Context:
+		bindings := append(common, tuiconfig.Binding(tuiconfig.BlockContext, tuiconfig.ActionToggleMode, k.sidebarModeLabel()))
+		return append(bindings, contextHelp("pause/resume")...)
 	case panels.Parameters:
 		return append(common, parametersHelp()...)
 	case panels.Conditions:
@@ -194,13 +197,26 @@ func captureHelp(textOnly bool) []key.Binding {
 	}
 }
 
-func (k helpKeyMap) projectsHelp() []key.Binding {
-	modeLabel := "collapse"
+func (k helpKeyMap) sidebarModeLabel() string {
 	if k.projectsMode == projectsPanelModeCollapsed {
-		modeLabel = "expand"
+		return "expand"
 	}
+	return "collapse"
+}
+
+func contextHelp(pauseLabel string) []key.Binding {
+	return []key.Binding{
+		tuiconfig.Binding(tuiconfig.BlockContext, tuiconfig.ActionNew, "add"),
+		tuiconfig.Binding(tuiconfig.BlockContext, tuiconfig.ActionImport, "import"),
+		tuiconfig.Binding(tuiconfig.BlockContext, tuiconfig.ActionClear, "clear"),
+		tuiconfig.Binding(tuiconfig.BlockContext, tuiconfig.ActionShowHidden, "show excluded"),
+		tuiconfig.Binding(tuiconfig.BlockContext, tuiconfig.ActionToggleContext, pauseLabel),
+	}
+}
+
+func (k helpKeyMap) projectsHelp() []key.Binding {
 	bindings := []key.Binding{
-		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, modeLabel),
+		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleMode, k.sidebarModeLabel()),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionSelect, "select"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionMark, "mark"),
 		tuiconfig.Binding(tuiconfig.BlockProjects, tuiconfig.ActionToggleTemplates, "templates"),

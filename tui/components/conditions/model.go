@@ -7,6 +7,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
 	"github.com/yumauri/fbrcm/tui/components/mouseutil"
+	"github.com/yumauri/fbrcm/tui/contextview"
 )
 
 type projectState struct {
@@ -59,7 +60,8 @@ func (a EditAnchor) NameOverlayPosition() (int, int) {
 }
 
 type Model struct {
-	svc *core.Core
+	scenario *contextview.Scenario
+	svc      *core.Core
 
 	x, y, width, height int
 	active              bool

@@ -27,9 +27,10 @@ and `NO_PROXY`, including their lowercase forms.
 
 ## Mental model
 
-The workspace has four main areas:
+The workspace includes these areas:
 
 - **Projects** selects the Firebase projects and template targets in view.
+- **Context** evaluates the loaded template against request inputs while you browse.
 - **Parameters**, **Conditions**, **History**, **A/B Tests**,
   **Personalizations**, and **Rollouts** are tabs over the main data panel.
 - **Details** opens the selected parameter, group, condition, value, or managed
@@ -161,9 +162,11 @@ These defaults work throughout the workspace:
 | `6` | Focus A/B Tests |
 | `7` | Focus Personalizations |
 | `8` | Focus Rollouts |
-| `9` | Focus the open Promote workspace |
+| `9` | Focus Context, or focus Promote while its workspace is open |
 | `0` | Focus Logs |
 | `Tab` | Focus the next panel |
+| `Ctrl+X` | Open the Context popup |
+| `Ctrl+E` | Explain the selected parameter with Context |
 | `\` | Open the hidden workspace tabs menu |
 | `q` | Quit |
 | `Ctrl+C` | Force quit |
@@ -294,6 +297,43 @@ Showing a hidden project displays its exclusion reason and retains accessibility
 checks. Turning the toggle off removes hidden projects from the selection and
 from downstream panels. If rules hide every project, the empty workspace shows
 the toggle hint instead of treating the profile as unconfigured.
+
+## Context
+
+Context sits below Projects and shows each input as a field name and value on
+two lines. The number in the top-right corner counts the inputs. Press `9` to
+focus Context or click its header, then press `a` to add an input. Choose a
+field and enter an assignment such as `device.os=web`. Choose **Other field…**
+for additional [supported inputs](CLI.md#fbrcm-explain-parameter). Press
+`Enter` or double-click a fact to edit it. Use `Delete` to remove it.
+
+Context starts at two content rows and grows by two rows per additional input
+up to two-thirds of the sidebar height. The list scrolls at that limit. Press
+`c` in Context or Projects to collapse or expand the sidebar. The two collapsed
+rails keep their expanded heights, and `9` still focuses Context. Press
+`Ctrl+X` to open the Context popup. The popup grows with the input list and
+scrolls once it reaches four rows less than the terminal height.
+The default global Context shortcuts yield to existing custom global bindings.
+
+Press `i` to import a pasted **Copy as cURL** command or a HAR or cURL text
+file. Submit a pasted command with `Ctrl+S`. When a HAR has several
+Firebase fetches, select the request by its original entry number. Import
+replaces the current inputs and adds a **Template scope** row for the captured
+template. Edit or remove that row to change the scope while keeping the
+request inputs. To set a scope manually, press `a` and choose **Template scope**.
+Use a project ID or number for its client template, or the `server@` prefix for
+its server template. With the scope removed, Context applies to all selected
+templates. Context is session-only.
+
+Parameters, Conditions, and Details hide definitely excluded conditions and
+their values. Once a parameter has a definite winner, Parameters and Details
+show just the selected value. Press `H` in Context to show all rows with their
+outcome notes, `Space` to pause or resume evaluation, or uppercase `X` to clear
+all inputs and the template scope. Select a parameter
+and press `Ctrl+E` to open the CLI-style explanation in a scrollable popup.
+It includes the evaluation trace, priority order, fallback, and any captured
+response for the matching template. Evaluation uses the template in view,
+including drafts, and edits use the complete template.
 
 ## Parameters and groups
 

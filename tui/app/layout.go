@@ -59,3 +59,7 @@ func newPanelLayout(width, height, preferredLeftWidth, preferredLogsHeight int, 
 		bottomWidth:  availableWidth,
 	}
 }
+
+func (m Model) workspaceLayout() panelLayout {
+	return newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+}

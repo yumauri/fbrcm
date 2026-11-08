@@ -121,11 +121,11 @@ func (m Model) valueConditionLine(index int) int {
 	}
 	width := max(m.width-5, 1)
 	line := m.valuesTitleLine() + 1
-	for i, value := range m.data.Parameter.Values {
+	for _, i := range m.visibleValueIndexes() {
 		if i == index {
 			return line
 		}
-		line += m.valueVisualHeight(value, width)
+		line += m.valueVisualHeight(m.data.Parameter.Values[i], width)
 	}
 	return line
 }

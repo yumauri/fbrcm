@@ -160,6 +160,15 @@ func (p projectState) displayVersion() string {
 	return p.cacheVersion
 }
 
+// TemplateSnapshot returns the template currently loaded in the workspace.
+func (m Model) TemplateSnapshot(projectID string) (*firebase.RemoteConfig, string) {
+	project := m.projectByID(projectID)
+	if project == nil || project.tree == nil {
+		return nil, ""
+	}
+	return project.tree.RemoteConfig(), project.source
+}
+
 func (m Model) projectByID(projectID string) *projectState {
 	idx, ok := m.projectIndex[projectID]
 	if !ok || idx < 0 || idx >= len(m.projects) {

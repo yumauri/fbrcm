@@ -11,6 +11,7 @@ import (
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/rc/evaluate"
 	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
+	"github.com/yumauri/fbrcm/tui/contextview"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -53,7 +54,10 @@ func (m Model) renderContentLines() []string {
 
 	valuesTitle := fieldTitle("Values", m.valueChanged(), m.invalidValues())
 	lines = append(lines, valuesTitle)
-	for i, value := range m.data.Parameter.Values {
+	results := m.contextValues()
+	visible := m.visibleValueIndexes()
+	for _, i := range visible {
+		value := m.data.Parameter.Values[i]
 		prefix := "  "
 		if m.activeField == fieldNone && i == m.selectedValue {
 			prefix = "▸ "
@@ -66,11 +70,13 @@ func (m Model) renderContentLines() []string {
 
 		label := prefix + rcdisplay.FormatConditionLabel(value.Label)
 		if m.activeField == fieldNone && i == m.selectedValue {
-			label = selectedValueStyle.Render(ansi.Truncate(label, width, ""))
-		} else {
-			label = conditionStyle.Render(ansi.Truncate(label, width, ""))
+			conditionStyle = selectedValueStyle
 		}
-		lines = append(lines, label)
+		label = conditionStyle.Render(label)
+		if results != nil {
+			label += contextview.ValueNote(results[i].Status)
+		}
+		lines = append(lines, ansi.Truncate(label, width, ""))
 
 		valueLines := m.renderValueLines(value, max(width-4, 1))
 		for _, line := range valueLines {
@@ -79,8 +85,12 @@ func (m Model) renderContentLines() []string {
 		lines = append(lines, "")
 	}
 
-	if len(m.data.Parameter.Values) == 0 {
-		lines = append(lines, "No values.")
+	if len(visible) == 0 {
+		message := "No values."
+		if len(m.data.Parameter.Values) > 0 {
+			message = "No values match the context."
+		}
+		lines = append(lines, message)
 	}
 	if len(m.AvailableConditions()) > 0 {
 		label := "  " + addConditionalValueLabel
@@ -114,14 +124,23 @@ func (m Model) renderConditionContentLines(width int) []string {
 	lines = appendEditableField(lines, width, "Name", m.renderConditionNameField(), m.conditionFieldChanged(fieldName), m.invalidConditionName())
 	lines = appendEditableField(lines, width, "Color", m.renderConditionColorField(), m.conditionFieldChanged(fieldConditionColor), false)
 	expression := clistyles.RenderFirebaseAppPlatforms(evaluate.FormatExpression(m.conditionExpression), styles.PanelText)
-	lines = appendEditableField(lines, width, "Expression", expression, m.conditionExpression != condition.Expression, false)
+	expressionLabel := "Expression"
+	if status := contextview.ResultStatus(m.conditionContextResult()); status != "" {
+		expressionLabel += " · " + status
+	}
+	lines = appendEditableField(lines, width, expressionLabel, expression, m.conditionExpression != condition.Expression, false)
 	usedBy := "Used by " + rcdisplay.FormatCount(len(condition.Usages), "parameter", "parameters")
 	lines = append(lines, fieldTitle(usedBy, len(m.conditionValueEdits()) > 0, m.invalidConditionValues()), "")
 	if len(condition.Usages) == 0 {
 		lines = append(lines, styles.PanelMuted.Italic(true).Render("No parameters use this condition."))
 		return padLines(lines, width)
 	}
-	for index, usage := range condition.Usages {
+	usages := m.visibleConditionUsages()
+	if len(usages) == 0 {
+		lines = append(lines, styles.PanelMuted.Italic(true).Render("Values excluded by Context."))
+		return padLines(lines, width)
+	}
+	for index, usage := range usages {
 		parameter := parameterKeyStyle.Render(usage.ParameterKey)
 		if m.UsageSelected() && index == m.selectedUsage {
 			parameter = selectedValueStyle.Render(usage.ParameterKey)

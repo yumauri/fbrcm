@@ -7,6 +7,7 @@ import (
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/filter"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
 )
 
@@ -159,7 +160,7 @@ func (m Model) View(active bool) string {
 
 func (m Model) ViewWithBorder(active, borderActive bool) string {
 	if m.collapsed {
-		return renderCollapsedPanel(m.height, active, borderActive)
+		return viewutil.CollapsedSidebarPanel(m.height, active, borderActive, panelTitleLabel)
 	}
 	panel := renderPanel(
 		m.viewport.View(),

@@ -21,6 +21,9 @@ func (m *Model) StartMove() bool {
 		conditionName: data.Condition.Name,
 		original:      append([]core.ConditionEntry(nil), m.projects[projectIndex].tree.Conditions...),
 	}
+	if m.scenario != nil {
+		m.syncVisible()
+	}
 	return true
 }
 

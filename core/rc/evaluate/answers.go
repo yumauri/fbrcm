@@ -24,6 +24,13 @@ func InputNeed(field string) (Need, bool) {
 	return fieldNeed(field)
 }
 
+// SplitInput validates the field of a field=value assignment.
+func SplitInput(assignment string) (Need, string, bool) {
+	field, answer, ok := strings.Cut(assignment, "=")
+	need, valid := InputNeed(field)
+	return need, answer, ok && valid
+}
+
 // Answer uses explicit slash-prefixed markers so unknown, unset, and an empty
 // string remain distinct. Literal JSON strings can escape marker values.
 func Answer(need Need, answer, source string) (Fact, error) {

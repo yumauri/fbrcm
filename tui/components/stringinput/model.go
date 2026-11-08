@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/yumauri/fbrcm/tui/components/inputstyles"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 )
 
 type Model struct {
@@ -18,6 +19,7 @@ type Model struct {
 	screenW   int
 	screenH   int
 	fullWidth bool
+	title     string
 	expanded  bool
 	text      textinput.Model
 	area      textarea.Model
@@ -36,6 +38,7 @@ func (m Model) Open(x, y, minWidth, maxWidth, screenW, screenH int, value string
 	m.screenW = screenW
 	m.screenH = screenH
 	m.fullWidth = fullWidth
+	m.title = ""
 	m.expanded = expanded
 	m.open = true
 	m.text = inputstyles.NewTextInput()
@@ -49,6 +52,17 @@ func (m Model) Open(x, y, minWidth, maxWidth, screenW, screenH int, value string
 		return m, m.area.Focus()
 	}
 	return m, m.text.Focus()
+}
+
+func (m Model) SetTitle(title string) Model {
+	m.title = title
+	return m
+}
+
+func (m Model) SetScreenSize(width, height int) Model {
+	m.screenW, m.screenH = width, height
+	m.resize()
+	return m
 }
 
 func (m Model) Close() Model {
@@ -70,7 +84,7 @@ func (m Model) IsExpanded() bool {
 
 func (m Model) Position() (int, int) {
 	if m.expanded {
-		return 2, 2
+		return viewutil.ExpandedPopupInset, viewutil.ExpandedPopupInset
 	}
 	if m.fullWidth {
 		return 0, m.y

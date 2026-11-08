@@ -738,7 +738,10 @@ content that is subsequently trimmed. `config set`, `config show`, and
 `config reset` trim nested
 `keys.<block>.<action>` and
 `network.*` and `projects.aliases.<alias>` keys before their closed grammar is evaluated;
-`config show` also trims nested `hooks.*` keys. Top-level configuration keys,
+`config show` also trims nested `hooks.*` keys. The 1.1.0 keybinding schemas
+include `keys.global.open_context`, `keys.global.explain_context`, and the
+`keys.context.*` actions, including `keys.context.focus_context` and
+`keys.context.clear`. Top-level configuration keys,
 including `theme`, `powerline_glyphs`, and `nerd_font_glyphs`, are compared
 without trimming. The optional `get [parameter]`,
 `update [parameter]`, and `delete [parameter]` arguments likewise have no argv

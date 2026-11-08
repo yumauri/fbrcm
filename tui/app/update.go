@@ -286,10 +286,10 @@ func (m *Model) closeDetailsIfOrphaned() {
 }
 
 func (m *Model) applyLayout() {
-	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+	layout := m.workspaceLayout()
 
 	m.projects = m.projects.SetCollapsed(m.projectsMode == projectsPanelModeCollapsed)
-	m.projects = m.projects.SetBounds(0, 0, layout.leftWidth, layout.topHeight)
+	m.projects = m.projects.SetBounds(0, 0, layout.leftWidth, layout.topHeight-m.contextSidebarHeight(layout))
 	headerRightReserve := m.workspaceHeaderRightReserve()
 	m.parameters = m.parameters.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
 	m.conditions = m.conditions.SetBounds(layout.leftWidth, 0, layout.rightWidth, layout.topHeight).SetHeaderRightReserve(headerRightReserve)
@@ -327,7 +327,7 @@ func (m Model) nextTabPanel() panels.ID {
 		}
 	}
 
-	if m.active == panels.Logs {
+	if m.active == panels.Logs || m.active == panels.Context {
 		if m.detailsVisible {
 			if m.prevTop == panels.Details || isWorkspacePanel(m.prevTop) {
 				return m.prevTop
@@ -362,7 +362,7 @@ func (m Model) selectedParametersTab() panels.ID {
 }
 
 func (m *Model) setActive(panel panels.ID) {
-	if panel != panels.Logs {
+	if panel != panels.Logs && panel != panels.Context {
 		m.prevTop = panel
 	}
 	m.active = panel
@@ -409,7 +409,7 @@ func (m Model) projectSelectionLeavesPromote(msg tea.Msg) bool {
 }
 
 func (m Model) panelAt(x, y int) (panels.ID, bool) {
-	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+	layout := m.workspaceLayout()
 	if x < 0 || y < 0 || x >= layout.bottomWidth || y >= layout.topHeight+layout.bottomHeight {
 		return 0, false
 	}
@@ -420,6 +420,9 @@ func (m Model) panelAt(x, y int) (panels.ID, bool) {
 
 	if y < layout.topHeight {
 		if x < layout.leftWidth {
+			if y >= layout.topHeight-m.contextSidebarHeight(layout) {
+				return panels.Context, true
+			}
 			return panels.Projects, true
 		}
 		if m.promote.WorkspaceOpen() {
@@ -432,9 +435,9 @@ func (m Model) panelAt(x, y int) (panels.ID, bool) {
 }
 
 func (m *Model) resizeLogsHeight(delta int) {
-	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+	layout := m.workspaceLayout()
 	m.logsHeight = nextLogsPanelHeight(layout.bottomHeight, delta)
-	m.logsHeight = min(m.logsHeight, newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode).bottomHeight)
+	m.logsHeight = min(m.logsHeight, m.workspaceLayout().bottomHeight)
 	if m.width > 0 && m.height > 0 {
 		m.applyLayout()
 	}

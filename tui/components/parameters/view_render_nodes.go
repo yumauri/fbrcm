@@ -13,6 +13,7 @@ import (
 	corestyles "github.com/yumauri/fbrcm/core/styles"
 	"github.com/yumauri/fbrcm/tui/components/jsoninput"
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
+	"github.com/yumauri/fbrcm/tui/contextview"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -112,8 +113,9 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 		return viewutil.PadRight(line, width)
 	}
 
+	values := m.contextVisibleValues(node.projectID, param)
 	icon := "╌"
-	if len(param.Values) > 1 {
+	if len(values) > 1 {
 		icon = "⌥"
 	}
 	prefixStyle := lipgloss.NewStyle()
@@ -135,7 +137,7 @@ func (m Model) renderParameterNode(node visibleNode, selected bool) string {
 	left += prefixStyle.Render(strings.Repeat(" ", iconPadding)) + iconLineStyle.Render(icon)
 	left += prefixStyle.Render(" ")
 	valueWidth := max(width-lipgloss.Width(left), 0)
-	line := left + m.renderCollapsedParameterValues(param.Values, separatorLineStyle, selected, valueWidth)
+	line := left + m.renderCollapsedParameterValues(values, separatorLineStyle, selected, valueWidth)
 	if selected {
 		return styles.FillSelectedLine(line, width, parameterSelectionStyle())
 	}
@@ -302,14 +304,21 @@ func (m Model) renderValueNode(node visibleNode, selected bool) string {
 	}
 
 	conditionLabel := rcdisplay.FormatConditionLabel(value.Label)
-	connector := m.valueConnector(node, param)
+	connector, status := m.contextValueDecoration(node, param)
 	label := conditionLabel
 	prefixLayout := m.parameterValuePrefixLayout(param, label, connector)
 	tree := leafLineStyle.Render(prefixLayout.tree)
 	filler := strings.Repeat("╌", prefixLayout.fillerWidth)
 	prefix := tree + " " + labelStyle.Render(label) + leafLineStyle.Render(" "+filler+" ")
-	valueRendered := m.renderParameterValue(value, selected, max(width-lipgloss.Width(prefix), 0))
-	line := prefix + valueRendered
+	available := max(width-lipgloss.Width(prefix), 0)
+	suffix := contextview.ValueNote(status)
+	if suffixWidth := lipgloss.Width(suffix); available > suffixWidth+2 {
+		available -= suffixWidth
+	} else {
+		suffix = ""
+	}
+	valueRendered := m.renderParameterValue(value, selected, available)
+	line := prefix + valueRendered + suffix
 	return viewutil.PadRight(line, width)
 }
 

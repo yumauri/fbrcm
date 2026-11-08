@@ -26,6 +26,7 @@ import (
 	renameinput "github.com/yumauri/fbrcm/tui/components/renameinput"
 	"github.com/yumauri/fbrcm/tui/components/setup"
 	stringinput "github.com/yumauri/fbrcm/tui/components/stringinput"
+	"github.com/yumauri/fbrcm/tui/components/textview"
 	"github.com/yumauri/fbrcm/tui/components/themepicker"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -37,6 +38,7 @@ type Model struct {
 	workspaceInitialized bool
 
 	projects         projects.Model
+	requestContext   requestContextState
 	parameters       parameters.Model
 	conditions       conditions.Model
 	abTests          managedfeatures.Model
@@ -65,6 +67,7 @@ type Model struct {
 	dialog           dialogcmp.Model
 	oauthDialog      dialogcmp.Model
 	diffView         diffview.Model
+	explainView      textview.Model
 	jsonInput        jsoninput.Model
 	boolPicker       boolpicker.Model
 	numberInput      numberinput.Model

@@ -3248,6 +3248,10 @@ Leading and trailing Unicode whitespace around nested
 `keys.<block>.<action>`, `network.*`, and `projects.aliases.<alias>` keys is removed before
 lookup. The top-level `theme`, `powerline_glyphs`, and `nerd_font_glyphs` keys are compared exactly.
 The normalized machine invocation schema publishes this conditional trimming.
+
+`config set` accepts Context bindings under `keys.global.open_context`,
+`keys.global.explain_context`, and `keys.context.*`. See the [TUI Context guide](TUI.md#context).
+
 Keybinding values accept a printable single character, `f1` through `f63`, the
 documented terminal key names, or a unique sequence of supported modifiers
 followed by one of those keys. Function-key names are canonical decimal names:

@@ -13,7 +13,7 @@ import (
 var (
 	groupOpenStyle   = styles.ParameterGroup
 	groupClosedStyle = styles.PanelMuted
-	iconStyle        = lipgloss.NewStyle().Foreground(styles.PaletteSlateDark)
+	iconStyle        = styles.TreeBranch
 	leafLineStyle    = iconStyle
 
 	groupSelectedLineStyle = lipgloss.NewStyle().Background(styles.PaletteGold).Foreground(styles.PaletteSlateBright)

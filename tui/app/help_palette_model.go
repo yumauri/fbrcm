@@ -245,9 +245,16 @@ func (m Model) runHelpPaletteAction(actions []helpPaletteAction, height int) (Mo
 		m.helpPalette = m.helpPalette.Close()
 		return m, nil, true
 	}
-	if item.block == tuiconfig.BlockGlobal && item.action == tuiconfig.ActionAbout {
+	if item.direct {
 		m.helpPalette = m.helpPalette.Close()
-		m.aboutOpen = true
+		switch item.action {
+		case tuiconfig.ActionAbout:
+			m.aboutOpen = true
+		case tuiconfig.ActionOpenContext:
+			m.requestContext.overlay = contextOverview
+		case tuiconfig.ActionExplainContext:
+			return m.explainContext()
+		}
 		return m, nil, true
 	}
 

@@ -32,9 +32,10 @@ type Button struct {
 }
 
 type Input struct {
-	Label       string
-	Value       string
-	Placeholder string
+	Label         string
+	Value         string
+	Placeholder   string
+	SubmitOnEnter bool
 }
 
 type Config struct {
@@ -46,27 +47,28 @@ type Config struct {
 }
 
 type Model struct {
-	x          int
-	y          int
-	width      int
-	height     int
-	manualX    int
-	manualY    int
-	title      string
-	body       []string
-	buttons    []Button
-	tone       Tone
-	selected   int
-	scroll     int
-	open       bool
-	positioned bool
-	dragging   bool
-	dragOffX   int
-	dragOffY   int
-	input      textinput.Model
-	inputLabel string
-	hasInput   bool
-	inputFocus bool
+	x           int
+	y           int
+	width       int
+	height      int
+	manualX     int
+	manualY     int
+	title       string
+	body        []string
+	buttons     []Button
+	tone        Tone
+	selected    int
+	scroll      int
+	open        bool
+	positioned  bool
+	dragging    bool
+	dragOffX    int
+	dragOffY    int
+	input       textinput.Model
+	inputLabel  string
+	hasInput    bool
+	inputFocus  bool
+	inputSubmit bool
 }
 
 func New() Model {
@@ -105,6 +107,7 @@ func (m Model) Open(cfg Config) Model {
 	m.inputLabel = ""
 	m.hasInput = cfg.Input != nil
 	m.inputFocus = m.hasInput
+	m.inputSubmit = cfg.Input != nil && cfg.Input.SubmitOnEnter
 	if cfg.Input != nil {
 		m.inputLabel = cfg.Input.Label
 		m.input.SetValue(cfg.Input.Value)
@@ -131,6 +134,7 @@ func (m Model) Close() Model {
 	m.inputLabel = ""
 	m.hasInput = false
 	m.inputFocus = false
+	m.inputSubmit = false
 	return m
 }
 
@@ -171,8 +175,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, nil
 			}
 			if m.inputFocus {
-				if tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionSubmit, k) ||
-					tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionDown, k) {
+				if m.inputSubmit && tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionSubmit, k) {
+					return m.Close(), m.buttonCommand(0)
+				}
+				if !m.inputSubmit && (tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionSubmit, k) ||
+					tuiconfig.Matches(tuiconfig.BlockDialog, tuiconfig.ActionDown, k)) {
 					m.setInputFocus(false)
 					return m, nil
 				}
@@ -209,6 +216,12 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				return m, cmd
 			}
 		}
+	case tea.PasteMsg, tea.ClipboardMsg:
+		if m.inputFocus {
+			var cmd tea.Cmd
+			m.input, cmd = m.input.Update(msg)
+			return m, cmd
+		}
 	case tea.MouseClickMsg:
 		mouse := msg.Mouse()
 		if mouse.Button == tea.MouseLeft && m.titleHit(mouse.X, mouse.Y) {
@@ -242,6 +255,15 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 		index, ok := m.buttonIndexAt(mouse.X, mouse.Y)
 		if ok {
 			m.selected = index
+		}
+	case tea.MouseWheelMsg:
+		if m.Contains(msg.Mouse().X, msg.Mouse().Y) {
+			switch msg.Mouse().Button {
+			case tea.MouseWheelUp:
+				m.scrollBy(-1)
+			case tea.MouseWheelDown:
+				m.scrollBy(1)
+			}
 		}
 	case tea.MouseReleaseMsg:
 		m.dragging = false

@@ -50,7 +50,7 @@ func (m Model) workspaceBaseHeaderLayout() (workspaceheader.Layout, int, bool) {
 	if m.promote.WorkspaceOpen() {
 		return workspaceheader.Layout{}, 0, false
 	}
-	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+	layout := m.workspaceLayout()
 	selected := workspaceTabIndex(m.selectedParametersTab())
 	header := workspaceheader.LayoutForRightReserve(layout.rightWidth, selected, m.workspaceHeaderRightReserve())
 	return header, layout.leftWidth, true

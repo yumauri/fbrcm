@@ -27,7 +27,7 @@ func (m *Model) expandLogsFromCollapsed() {
 		m.logsHeight = m.logsSaved
 	}
 	m.logsSaved = 0
-	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+	layout := m.workspaceLayout()
 	m.logsHeight = min(m.logsHeight, layout.bottomHeight)
 	if m.width > 0 && m.height > 0 {
 		m.applyLayout()

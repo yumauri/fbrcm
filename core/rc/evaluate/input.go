@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	rctarget "github.com/yumauri/fbrcm/core/rc/target"
 )
 
 const MaxCaptureBytes = 32 << 20
@@ -46,6 +48,21 @@ type Exchange struct {
 	Managed       map[string]string
 	Experiments   []string
 	Assignments   map[string][]Assignment
+}
+
+func (e Exchange) TemplateKind() rctarget.Kind {
+	if e.Namespace == rctarget.ServerNamespace {
+		return rctarget.Server
+	}
+	return rctarget.Client
+}
+
+func (e Exchange) TemplateTarget() rctarget.Target {
+	return rctarget.Target{Kind: e.TemplateKind(), ProjectID: e.Project}
+}
+
+func (e Exchange) MatchesProject(projectID, projectNumber string) bool {
+	return e.TemplateTarget().MatchesProject(projectID, projectNumber)
 }
 
 type Assignment struct {

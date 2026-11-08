@@ -281,7 +281,7 @@ func TestDefaultValueFollowsConditionsInEvaluationFlow(t *testing.T) {
 				}
 				switch {
 				case tc.winner >= 0:
-					if !strings.Contains(got, statusStyle("×").Render("not used")) {
+					if !strings.Contains(got, clistyles.EvaluationStatusStyle("×").Render("not used")) {
 						t.Fatal("unused default status is not red")
 					}
 				case !tc.unresolved:

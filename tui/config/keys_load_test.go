@@ -237,3 +237,18 @@ func TestConflictsReportsDisabledActions(t *testing.T) {
 		t.Fatal("expected conflicts for duplicate enter binding")
 	}
 }
+
+func TestDefaultContextShortcutsYieldToCustomGlobalBindings(t *testing.T) {
+	configured := map[string]map[string][]string{
+		string(BlockGlobal): {string(ActionHelp): {"ctrl+x"}},
+	}
+	state := validate(Merge(DefaultKeyMap(), configured))
+	if !state.Matches(BlockGlobal, ActionHelp, "ctrl+x") ||
+		state.Matches(BlockGlobal, ActionOpenContext, "ctrl+x") ||
+		!state.Matches(BlockGlobal, ActionExplainContext, "ctrl+e") {
+		t.Fatalf("unexpected effective shortcuts: %#v", state.keys[BlockGlobal])
+	}
+	if diagnostics := ValidateConfiguredKeys(configured); len(diagnostics) != 0 {
+		t.Fatalf("existing configuration gained errors: %+v", diagnostics)
+	}
+}

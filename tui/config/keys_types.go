@@ -5,6 +5,7 @@ type Block string
 
 const (
 	BlockGlobal          Block = "global"
+	BlockContext         Block = "context"
 	BlockWorkspaceMenu   Block = "workspace_menu"
 	BlockHelp            Block = "help"
 	BlockFilter          Block = "filter"
@@ -43,6 +44,12 @@ const (
 	ActionAccounts  Action = "accounts"
 	ActionProfiles  Action = "profiles"
 	ActionThemes    Action = "themes"
+
+	ActionFocusContext   Action = "focus_context"
+	ActionOpenContext    Action = "open_context"
+	ActionExplainContext Action = "explain_context"
+	ActionToggleContext  Action = "toggle_context"
+	ActionClear          Action = "clear"
 
 	ActionFilterFuzzy      Action = "fuzzy"
 	ActionFilterStartsWith Action = "starts_with"

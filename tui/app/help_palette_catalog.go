@@ -16,7 +16,7 @@ type helpPaletteAction struct {
 	keys        []string
 	enabled     bool
 	reason      string
-	paletteOnly bool
+	direct      bool
 }
 
 var helpPaletteBlockOrder = []tuiconfig.Block{
@@ -25,6 +25,7 @@ var helpPaletteBlockOrder = []tuiconfig.Block{
 	tuiconfig.BlockAccounts,
 	tuiconfig.BlockProfiles,
 	tuiconfig.BlockProjects,
+	tuiconfig.BlockContext,
 	tuiconfig.BlockParameters,
 	tuiconfig.BlockConditions,
 	tuiconfig.BlockManagedFeatures,
@@ -73,7 +74,8 @@ func helpPaletteCatalog() []helpPaletteAction {
 				group:       helpPaletteBlockTitle(block),
 				title:       title,
 				description: helpPaletteActionDescription(block, action, title),
-				paletteOnly: action == tuiconfig.ActionAbout,
+				direct: action == tuiconfig.ActionAbout ||
+					action == tuiconfig.ActionOpenContext || action == tuiconfig.ActionExplainContext,
 			})
 		}
 	}
@@ -92,6 +94,8 @@ func helpPaletteBlockTitle(block tuiconfig.Block) string {
 		return "Profiles panel"
 	case tuiconfig.BlockProjects:
 		return "Projects panel"
+	case tuiconfig.BlockContext:
+		return "Context panel"
 	case tuiconfig.BlockParameters:
 		return "Parameters panel"
 	case tuiconfig.BlockConditions:
@@ -170,6 +174,28 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 			return "Toggle project templates"
 		case tuiconfig.ActionMakePrimary:
 			return "Make template primary"
+		}
+	}
+	if block == tuiconfig.BlockContext {
+		switch action {
+		case tuiconfig.ActionFocusContext:
+			return "Focus Context"
+		case tuiconfig.ActionNew:
+			return "Add context input"
+		case tuiconfig.ActionImport:
+			return "Import captured request"
+		case tuiconfig.ActionToggleContext:
+			return "Pause or resume Context"
+		case tuiconfig.ActionShowHidden:
+			return "Show or hide excluded conditions"
+		case tuiconfig.ActionToggleMode:
+			return "Collapse or expand sidebar"
+		case tuiconfig.ActionClear:
+			return "Clear Context"
+		case tuiconfig.ActionDelete:
+			return "Remove context input"
+		case tuiconfig.ActionSubmit:
+			return "Edit or select context input"
 		}
 	}
 	if block == tuiconfig.BlockParameters {
@@ -347,6 +373,10 @@ func helpPaletteActionTitle(block tuiconfig.Block, action tuiconfig.Action) stri
 	}
 	if block == tuiconfig.BlockGlobal {
 		switch action {
+		case tuiconfig.ActionOpenContext:
+			return "Open Context"
+		case tuiconfig.ActionExplainContext:
+			return "Explain parameter with Context"
 		case tuiconfig.ActionAbout:
 			return "About fbrcm"
 		case tuiconfig.ActionAccounts:
@@ -441,6 +471,8 @@ func helpPaletteNavigationTarget(block tuiconfig.Block) string {
 	switch block {
 	case tuiconfig.BlockProjects:
 		return "project"
+	case tuiconfig.BlockContext:
+		return "input"
 	case tuiconfig.BlockParameters:
 		return "parameter or group"
 	case tuiconfig.BlockConditions:

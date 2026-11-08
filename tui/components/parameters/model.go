@@ -8,6 +8,7 @@ import (
 	"github.com/yumauri/fbrcm/core/rc/diff"
 	"github.com/yumauri/fbrcm/tui/components/filterbox"
 	"github.com/yumauri/fbrcm/tui/components/mouseutil"
+	"github.com/yumauri/fbrcm/tui/contextview"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -120,7 +121,8 @@ type visibleNode struct {
 }
 
 type Model struct {
-	svc *core.Core
+	scenario *contextview.Scenario
+	svc      *core.Core
 
 	width              int
 	height             int

@@ -8,6 +8,7 @@ import (
 	"github.com/yumauri/fbrcm/core/rc/diff"
 	rcdisplay "github.com/yumauri/fbrcm/core/rc/display"
 	"github.com/yumauri/fbrcm/core/rootgroup"
+	"github.com/yumauri/fbrcm/tui/contextview"
 )
 
 func (m Model) buildVisible() ([]visibleNode, error) {
@@ -145,7 +146,14 @@ func (m Model) buildVisible() ([]visibleNode, error) {
 					continue
 				}
 
+				var results []contextview.Value
+				if !m.history {
+					results = m.scenario.Values(project.project, tree.Conditions, param)
+				}
 				for i, value := range param.Values {
+					if results != nil && !results[i].Visible {
+						continue
+					}
 					nodes = append(nodes, visibleNode{
 						kind:      nodeValue,
 						projectID: project.project.ProjectID,

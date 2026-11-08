@@ -199,6 +199,13 @@ func (m Model) updateInactiveDetailsInputKey(k string) (Model, tea.Cmd, bool) {
 }
 
 func (m Model) updateGlobalKeyMessage(k string) (Model, tea.Cmd, bool) {
+	if !m.promote.WorkspaceOpen() && tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionOpenContext, k) {
+		m.requestContext.overlay = contextOverview
+		return m, nil, true
+	}
+	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionExplainContext, k) {
+		return m.explainContext()
+	}
 	if tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionWorkspaceMenu, k) {
 		if !m.workspaceMenuAvailable() {
 			return m, nil, false
@@ -347,8 +354,6 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 		return m.activateWorkspacePanel(panels.Personalizations)
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusRollouts, k):
 		return m.activateWorkspacePanel(panels.Rollouts)
-	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusPromote, k):
-		return m, nil, false
 	case tuiconfig.Matches(tuiconfig.BlockGlobal, tuiconfig.ActionFocusDetails, k):
 		if !m.detailsVisible {
 			return m, nil, false
@@ -362,6 +367,8 @@ func (m Model) updateGlobalFocusKey(k string) (Model, tea.Cmd, bool) {
 			return m.activateWorkspacePanel(next)
 		}
 		m.setActive(next)
+	case tuiconfig.Matches(tuiconfig.BlockContext, tuiconfig.ActionFocusContext, k):
+		m.setActive(panels.Context)
 	default:
 		return m, nil, false
 	}

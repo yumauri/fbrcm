@@ -20,6 +20,7 @@ func (m Model) updateDialog(msg tea.Msg) (Model, tea.Cmd, bool) {
 				m.cancelHistoryRollback()
 				return m, nil, true
 			}
+			m.requestContext.reading = nil
 			m.closeDialog()
 			m.externalEdit = nil
 			return m, nil, true
@@ -27,7 +28,7 @@ func (m Model) updateDialog(msg tea.Msg) (Model, tea.Cmd, bool) {
 		var cmd tea.Cmd
 		m.dialog, cmd = m.dialog.Update(msg)
 		return m, cmd, true
-	case tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
+	case tea.PasteMsg, tea.ClipboardMsg, tea.MouseClickMsg, tea.MouseMotionMsg, tea.MouseWheelMsg, tea.MouseReleaseMsg:
 		var cmd tea.Cmd
 		m.dialog, cmd = m.dialog.Update(msg)
 		return m, cmd, true

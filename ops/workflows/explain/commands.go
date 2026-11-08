@@ -7,11 +7,9 @@ import (
 	"io"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/yumauri/fbrcm/core"
-	"github.com/yumauri/fbrcm/core/conditions"
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/core/rc/evaluate"
 	rctarget "github.com/yumauri/fbrcm/core/rc/target"
@@ -94,20 +92,13 @@ func run(cmd invocation.Call, svc *core.Core, key string, prompts prompter) erro
 	if err != nil {
 		return err
 	}
-	var parameter *firebase.RemoteConfigParam
-	var group string
-	for _, target := range shared.CollectParamTargets(cfg) {
-		if target.Key == key {
-			parameter = &target.Param
-			group = target.Group
-			break
-		}
+	r, err := newReport(TemplateInput{
+		Project: project.ProjectID, Parameter: key, Source: source, Capture: from, Config: cfg, Exchange: exchange,
+	})
+	if err != nil {
+		return err
 	}
-	if parameter == nil {
-		return &shared.SelectionError{Resource: "parameter", Kind: "not_found", Query: key, Err: fmt.Errorf("parameter %q was not found in project %s", key, project.ProjectID)}
-	}
-	r := report{Project: project.ProjectID, Parameter: key, Version: cfg.Version.VersionNumber, Source: source, Capture: from, Param: *parameter, Exchange: exchange, Winner: -1}
-	r.Group, r.ETag, r.CachedAt = group, cache.ETag, cache.CachedAt
+	r.ETag, r.CachedAt = cache.ETag, cache.CachedAt
 	facts := make(map[string]evaluate.Fact)
 	if exchange != nil {
 		facts = exchange.Facts
@@ -117,9 +108,8 @@ func run(cmd invocation.Call, svc *core.Core, key string, prompts prompter) erro
 	}
 	values, _ := cmd.Flags().GetStringArray("set")
 	for _, value := range values {
-		field, answer, ok := strings.Cut(value, "=")
-		need, valid := evaluate.InputNeed(field)
-		if !ok || !valid {
+		need, answer, ok := evaluate.SplitInput(value)
+		if !ok {
 			return shared.InvalidArgument(fmt.Errorf("--set requires a supported input field=value"))
 		}
 		fact, err := evaluate.Answer(need, answer, "command line")
@@ -149,28 +139,8 @@ func run(cmd invocation.Call, svc *core.Core, key string, prompts prompter) erro
 		}
 		return fact, err
 	}}
-	tree := conditions.BuildTree(cfg, cache.CachedAt, cache.ETag)
-	for _, condition := range tree.Conditions {
-		value, relevant := parameter.ConditionalValues[condition.Name]
-		if !relevant {
-			continue
-		}
-		result, err := evaluate.Evaluate(condition.Expression, evaluation)
-		if err != nil {
-			return err
-		}
-		r.Conditions = append(r.Conditions, conditionResult{Entry: condition, Value: value, Result: result})
-		if r.Winner < 0 {
-			switch result.State {
-			case evaluate.True:
-				r.Winner = len(r.Conditions) - 1
-			case evaluate.Unknown:
-				r.Unresolved = true
-			}
-		}
-	}
-	if len(r.Conditions) != len(parameter.ConditionalValues) {
-		return &shared.ValidationError{Code: "remote_config.invalid", Source: "template", Stage: "evaluation", Err: fmt.Errorf("parameter %q references a condition missing from the template", key)}
+	if err := r.evaluate(cfg, evaluation); err != nil {
+		return err
 	}
 	if err := ctx.Err(); err != nil {
 		return err
@@ -182,8 +152,7 @@ func run(cmd invocation.Call, svc *core.Core, key string, prompts prompter) erro
 			r.Inputs = make(map[string]evaluate.Fact)
 		}
 		for _, value := range values {
-			field, _, _ := strings.Cut(value, "=")
-			need, _ := evaluate.InputNeed(field)
+			need, _, _ := evaluate.SplitInput(value)
 			r.Inputs[need.Key] = facts[need.Key]
 		}
 		if source == "cache-stale" {
@@ -282,13 +251,10 @@ func resolveProject(cmd invocation.Call, svc *core.Core, query string, exchange 
 	if err != nil {
 		return core.Project{}, err
 	}
-	if target.ProjectID != exchange.Project && project.ProjectNumber != exchange.Project {
+	if !exchange.MatchesProject(target.ProjectID, project.ProjectNumber) {
 		return core.Project{}, shared.InvalidArgument(fmt.Errorf("selected project does not match the captured fetch project"))
 	}
-	kind := rctarget.Client
-	if exchange.Namespace == rctarget.ServerNamespace {
-		kind = rctarget.Server
-	}
+	kind := exchange.TemplateKind()
 	if _, explicit, _ := rctarget.ParseSelector(query); explicit && target.Kind != kind {
 		return core.Project{}, shared.InvalidArgument(fmt.Errorf("selected template does not match the captured fetch namespace"))
 	}

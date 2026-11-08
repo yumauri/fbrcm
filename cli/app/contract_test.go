@@ -2078,6 +2078,11 @@ func TestConfigSetInvocationSchemaPublishesClosedKeyGrammar(t *testing.T) {
 	validateContractValue(t, id, input("keys.global.quit", []any{"ctrl+"}, map[string]any{}), false)
 	validateContractValue(t, id, input("keys.global.quit", []any{"ctrl+r"}, map[string]any{}), true)
 	validateContractValue(t, id, input("keys.global.not-an-action", []any{"q"}, map[string]any{}), false)
+	validateContractValue(t, id, input("keys.global.open_context", []any{"ctrl+x"}, map[string]any{}), true)
+	validateContractValue(t, id, input("keys.context.show_hidden", []any{"H"}, map[string]any{}), true)
+	validateContractValue(t, id, input("keys.context.focus_context", []any{"9"}, map[string]any{}), true)
+	validateContractValue(t, id, input("keys.context.clear", []any{"X"}, map[string]any{}), true)
+	validateContractValue(t, id, input("keys.context.unknown", []any{"H"}, map[string]any{}), false)
 	validateContractValue(t, id, input("projects.aliases.demo", []any{"physical-project"}, map[string]any{}), false)
 	validateContractValue(t, id, input("projects.aliases.demo", []any{"physical-project"}, map[string]any{"scope": "local"}), true)
 	raw, err := schemas.ReadByID(id)
@@ -3571,11 +3576,13 @@ func TestJSONUnknownConfigKeyIsAnArgumentFailure(t *testing.T) {
 }
 
 func TestJSONConfigShowAcceptsTrimmedNestedKey(t *testing.T) {
-	envelope, raw := executeJSONContract(t, "config", "show", " keys.global.quit ", "--scope", "global", "--json")
-	if envelope.Outcome != "success" || envelope.ExitCode != 0 {
-		t.Fatalf("envelope = %#v", envelope)
+	for _, key := range []string{" keys.global.quit ", " keys.global.open_context ", " keys.context.import "} {
+		envelope, raw := executeJSONContract(t, "config", "show", key, "--scope", "global", "--json")
+		if envelope.Outcome != "success" || envelope.ExitCode != 0 {
+			t.Fatalf("config show %q envelope = %#v", key, envelope)
+		}
+		validateContractDocument(t, envelope.Schema, raw)
 	}
-	validateContractDocument(t, envelope.Schema, raw)
 }
 
 func TestJSONConfigEditReturnsInteractionBeforeHumanFlagValidation(t *testing.T) {

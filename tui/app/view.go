@@ -9,6 +9,7 @@ import (
 
 	"github.com/yumauri/fbrcm/core/firebase"
 	"github.com/yumauri/fbrcm/tui/components/minsize"
+	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/panels"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
@@ -59,7 +60,7 @@ func appView(content string, mouseMode tea.MouseMode) tea.View {
 }
 
 func (m Model) mouseMode() tea.MouseMode {
-	if m.workspaceMenu {
+	if m.workspaceMenu || m.requestContext.overlay != contextInline {
 		return tea.MouseModeAllMotion
 	}
 	if m.helpPalette.IsOpen() {
@@ -71,7 +72,7 @@ func (m Model) mouseMode() tea.MouseMode {
 	if m.setup.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
-	if m.themePicker.IsOpen() || m.dialog.IsOpen() || m.oauthDialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
+	if m.themePicker.IsOpen() || m.explainView.IsOpen() || m.dialog.IsOpen() || m.oauthDialog.IsOpen() || m.authPicker.IsOpen() || m.projectIO.IsOpen() {
 		return tea.MouseModeAllMotion
 	}
 	if m.active == panels.Logs {
@@ -88,11 +89,7 @@ func (m Model) baseView() string {
 	if m.promote.WorkspaceOpen() {
 		rightPanel = m.promote.ViewWithBorder(m.active == panels.Promote && !popupOpen, m.active == panels.Promote && !popupOpen)
 	}
-	topRow := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		m.projects.ViewWithBorder(projectsActive, projectsActive && !popupOpen),
-		rightPanel,
-	)
+	topRow := lipgloss.JoinHorizontal(lipgloss.Top, m.sidebarView(projectsActive, m.active == panels.Context && !popupOpen), rightPanel)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -100,6 +97,20 @@ func (m Model) baseView() string {
 		m.logs.ViewWithBorder(logsActive, logsActive && !popupOpen),
 		m.helpView(),
 	)
+}
+
+func (m Model) sidebarView(projectsActive, contextActive bool) string {
+	sidebar := m.projects.ViewWithBorder(projectsActive, projectsActive)
+	if layout := m.contextLayout(false); layout.Height > 0 {
+		var context string
+		if m.projectsMode == projectsPanelModeCollapsed {
+			context = viewutil.CollapsedSidebarPanel(layout.Height, contextActive, contextActive, "Context", "Ctx", "Cx", "C")
+		} else {
+			context = m.requestContext.list.View(layout, contextActive)
+		}
+		sidebar = lipgloss.JoinVertical(lipgloss.Left, sidebar, context)
+	}
+	return sidebar
 }
 
 func (m Model) workspacePanelView(popupOpen bool) string {
@@ -144,13 +155,15 @@ func (m Model) popupWindowOpen() bool {
 }
 
 func (m Model) contextOverlayOpen() bool {
-	return (m.setup.IsOpen() && m.setup.IsPopup()) ||
+	return m.requestContext.overlay != contextInline ||
+		(m.setup.IsOpen() && m.setup.IsPopup()) ||
 		m.themePicker.IsOpen() ||
 		m.parameters.HistoryPickerOpen() ||
 		m.details.DropdownOpen() ||
 		m.dialog.IsOpen() ||
 		m.oauthDialog.IsOpen() ||
 		m.diffView.IsOpen() ||
+		m.explainView.IsOpen() ||
 		m.boolPicker.IsOpen() ||
 		m.jsonInput.IsOpen() ||
 		m.numberInput.IsOpen() ||
@@ -165,10 +178,15 @@ func (m Model) overlayLayers(body string) []*lipgloss.Layer {
 	layers := []*lipgloss.Layer{lipgloss.NewLayer(body).ID("base")}
 	layers = m.appendPromotePickerLayers(layers)
 	layers = m.appendDetailsLayers(layers)
+	layers = m.appendContextLayers(layers)
 	layers = m.appendWorkspaceMenuLayers(layers)
 	layers = m.appendHistoryPickerLayer(layers)
 	layers = m.appendInputLayers(layers)
 	layers = m.appendDiffViewLayer(layers)
+	if m.explainView.IsOpen() {
+		x, y := m.explainView.Position()
+		layers = append(layers, lipgloss.NewLayer(m.explainView.View()).ID("explain").X(x).Y(y).Z(4))
+	}
 	layers = m.appendDialogLayers(layers)
 	layers = m.appendProjectIOLayer(layers)
 	layers = m.appendThemePickerLayer(layers)
@@ -419,7 +437,7 @@ func (m Model) detailsX() int {
 }
 
 func (m Model) detailsWidth() int {
-	layout := newPanelLayout(m.width, m.height, m.projects.PreferredWidth(), m.logsHeight, m.projectsMode)
+	layout := m.workspaceLayout()
 	return m.detailsWidthForLayout(layout)
 }
 
@@ -449,5 +467,9 @@ func profileBadgeView(profile string, maxWidth int) string {
 }
 
 func (m Model) workspaceHeaderRightReserve() int {
-	return lipgloss.Width(profileBadgeView(m.profileName, m.width))
+	reserve := lipgloss.Width(profileBadgeView(m.profileName, m.width))
+	if badge, _ := m.contextBadge(); badge != "" {
+		reserve += lipgloss.Width(badge) + 1
+	}
+	return reserve
 }

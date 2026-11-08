@@ -28,6 +28,9 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 		m.diffView, cmd = m.diffView.Update(msg)
 		return m, cmd, true
 	}
+	if m.explainView.IsOpen() {
+		return m.updateExplainView(msg)
+	}
 	if m.projectIO.IsOpen() {
 		switch msg.(type) {
 		case projectio.ImportPlanRequestedMsg, projectio.ExportRequestedMsg, projectio.DefaultsRequestedMsg, projectImportPlanLoadedMsg:
@@ -72,6 +75,9 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 		return m.updateNumberInput(msg)
 	}
 	if m.stringInput.IsOpen() {
+		if m.requestContext.pasting {
+			return m.updateContextCapturePaste(msg)
+		}
 		return m.updateStringInput(msg)
 	}
 	if m.moveParam.IsOpen() {
@@ -79,6 +85,9 @@ func (m Model) updateOpenModal(msg tea.Msg) (Model, tea.Cmd, bool) {
 	}
 	if m.renameInput.IsOpen() {
 		return m.updateRenameInput(msg)
+	}
+	if m.requestContext.overlay != contextInline {
+		return m.updateContextPopup(msg)
 	}
 	return m, nil, false
 }

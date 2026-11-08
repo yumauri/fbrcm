@@ -144,12 +144,12 @@ func renderEvaluation(r report, width int) string {
 }
 
 func (out *renderer) condition(r report, index int, condition conditionResult) {
-	symbol, label := "×", "does not match"
+	symbol, label := "×", rcdisplay.OutcomeDoesNotMatch
 	switch condition.Result.State {
 	case evaluate.True:
-		symbol, label = "✓", "lower priority"
+		symbol, label = "✓", rcdisplay.OutcomeLowerPriority
 		if index == r.Winner {
-			label = "selected"
+			label = rcdisplay.OutcomeSelected
 			if r.Unresolved {
 				label = "matches · higher-priority condition unresolved"
 			}
@@ -209,9 +209,9 @@ func (out *renderer) conditionBody(r report, index int, condition conditionResul
 }
 
 func (out *renderer) defaultValue(r report) {
-	symbol, label := "✓", "selected"
+	symbol, label := "✓", rcdisplay.OutcomeSelected
 	if r.Winner >= 0 {
-		symbol, label = "×", "not used"
+		symbol, label = "×", rcdisplay.OutcomeNotUsed
 	} else if r.Unresolved {
 		symbol, label = "?", "unresolved"
 	}
@@ -228,10 +228,7 @@ func (out *renderer) valueHeader(symbol, name, value, label string) {
 		divider = boldSymbol("↓", clistyles.PanelMuted) + " " + mutedText(strings.Repeat("─", out.width-2))
 	}
 	out.line(divider, 0)
-	labelStyle := statusStyle(symbol)
-	if label == "selected" && !clistyles.NoColorEnabled() {
-		labelStyle = labelStyle.Foreground(clistyles.PaletteSlateBright).Background(clistyles.ColorHistoryAddedBackground)
-	}
+	labelStyle := clistyles.OutcomeNoteStyle(label, clistyles.EvaluationStatusStyle(symbol))
 	out.line(fmt.Sprintf("%s %s %s %s · %s", statusSymbol(symbol), name, boldSymbol("→", lipgloss.NewStyle()), value, labelStyle.Render(label)), 0)
 }
 
@@ -339,9 +336,9 @@ func (out *renderer) line(text string, indent int) {
 
 func statusSymbol(symbol string) string {
 	if symbol == "×" || symbol == "✓" {
-		return boldSymbol(symbol, statusStyle(symbol))
+		return boldSymbol(symbol, clistyles.EvaluationStatusStyle(symbol))
 	}
-	return statusStyle(symbol).Render(symbol)
+	return clistyles.EvaluationStatusStyle(symbol).Render(symbol)
 }
 
 func boldSymbol(symbol string, style lipgloss.Style) string {
@@ -349,22 +346,6 @@ func boldSymbol(symbol string, style lipgloss.Style) string {
 		return symbol
 	}
 	return style.Bold(true).Render(symbol)
-}
-
-func statusStyle(symbol string) lipgloss.Style {
-	if clistyles.NoColorEnabled() {
-		return lipgloss.NewStyle()
-	}
-	style := lipgloss.NewStyle()
-	switch symbol {
-	case "×":
-		style = style.Foreground(clistyles.PaletteError)
-	case "✓":
-		style = style.Foreground(clistyles.PaletteSuccess)
-	case "◆":
-		style = style.Foreground(clistyles.PaletteBlueBright)
-	}
-	return style
 }
 
 func parameterName(name string) string {

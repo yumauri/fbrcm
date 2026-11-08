@@ -17,28 +17,7 @@ func renderPanel(body string, width, height int, active, borderActive bool, scro
 	borderStyle := styles.BorderStyle(borderActive)
 	innerWidth := max(width-1, 0)
 	contentHeight := max(height-2-len(footer), 0)
-	topPrefixWidth := min(2, width)
-	titleRendered, titleWidth := styles.PanelHeaderTitle(panelTitleKey(), panelTitleLabel, active, max(width-topPrefixWidth-1, 0))
-	topPrefix := borderStyle.Render(strings.Repeat("─", topPrefixWidth))
-	rightMarginWidth := 1
-	secondaryText := secondary.text
-	secondaryRendered := ""
-	secondaryWidth := 0
-	if secondaryText != "" {
-		secondaryText = " " + viewutil.TruncatePlain(secondaryText, max(width-topPrefixWidth-titleWidth-rightMarginWidth-3-1, 0)) + " "
-		secondaryRendered = secondary.style.Render(secondaryText)
-		secondaryWidth = lipgloss.Width(secondaryText)
-	}
-
-	gapWidth := max(width-topPrefixWidth-titleWidth-secondaryWidth-rightMarginWidth-1, 0)
-	if secondaryWidth > 0 {
-		gapWidth = max(gapWidth, 2)
-	}
-	topGap := borderStyle.Render(strings.Repeat("─", gapWidth))
-	topRightFill := borderStyle.Render(strings.Repeat("─", rightMarginWidth))
-	top := topPrefix + titleRendered + topGap + secondaryRendered + topRightFill + borderStyle.Render("╮")
-
-	lines := []string{top}
+	lines := []string{viewutil.SidebarHeader(width, panelTitleKey(), panelTitleLabel, active, borderStyle, secondary.text, secondary.style)}
 	bodyLines := strings.Split(body, "\n")
 	for i := range contentHeight {
 		line := ""

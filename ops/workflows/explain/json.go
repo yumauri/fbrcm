@@ -42,31 +42,12 @@ func machineValue(value *firebase.RemoteConfigValue) valueJSON {
 	return valueJSON{Kind: "literal", Value: new(value.Value)}
 }
 
-// outcomeCandidates is shared by human and machine summaries. It stops at the
-// first definite match and removes only candidates proven to be shadowed.
-func outcomeCandidates(r report) (eligible []int, blocked map[int]int) {
-	blocked = make(map[int]int)
+func outcomeCandidates(r report) ([]int, map[int]int) {
+	results := make([]evaluate.Result, len(r.Conditions))
 	for i, condition := range r.Conditions {
-		if condition.Result.State == evaluate.False {
-			continue
-		}
-		if len(eligible) > 0 && r.Conditions[eligible[len(eligible)-1]].Result.State == evaluate.True {
-			blocked[i] = eligible[len(eligible)-1]
-			continue
-		}
-		shadowed := false
-		for _, earlier := range eligible {
-			if condition.Result.Implies(r.Conditions[earlier].Result) {
-				blocked[i] = earlier
-				shadowed = true
-				break
-			}
-		}
-		if !shadowed {
-			eligible = append(eligible, i)
-		}
+		results[i] = condition.Result
 	}
-	return eligible, blocked
+	return evaluate.OutcomeCandidates(results)
 }
 
 func toJSON(r report) explanationJSON {

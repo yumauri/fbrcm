@@ -13,6 +13,7 @@ import (
 	"github.com/yumauri/fbrcm/tui/components/viewutil"
 	"github.com/yumauri/fbrcm/tui/components/workspaceheader"
 	tuiconfig "github.com/yumauri/fbrcm/tui/config"
+	"github.com/yumauri/fbrcm/tui/contextview"
 	"github.com/yumauri/fbrcm/tui/styles"
 )
 
@@ -78,9 +79,13 @@ func (m Model) renderNode(node visibleNode, selected bool, width int) string {
 	if m.movingCondition(node.projectID, condition.Name) {
 		prefix = conditionMovePrefix(tuiconfig.PowerlineGlyphsEnabled())
 	}
+	meta := " · " + rcdisplay.FormatCount(len(condition.Usages), "use", "uses") + " · "
+	if status := contextview.ResultStatus(m.contextResult(project.project, condition)); status != "" {
+		meta = " · " + status + meta
+	}
 	if selected {
 		selection := styles.TreeItemSelectionStyle()
-		plain := prefix + "● " + condition.Name + fmt.Sprintf(" · %d uses · %s", len(condition.Usages), condition.Expression)
+		plain := prefix + "● " + condition.Name + meta + condition.Expression
 		line := selection.Render(plain)
 		if !clistyles.NoColorEnabled() {
 			line = clistyles.RenderFirebaseAppPlatforms(plain, selection)
@@ -88,7 +93,7 @@ func (m Model) renderNode(node visibleNode, selected bool, width int) string {
 		return styles.FillSelectedLine(ansi.Truncate(line, width, ""), width, selection)
 	}
 	expression := clistyles.RenderFirebaseAppPlatforms(condition.Expression, styles.PanelMuted)
-	line := prefix + conditionStyle.Render("●") + " " + conditionStyle.Render(condition.Name) + styles.PanelMuted.Render(fmt.Sprintf(" · %d uses · ", len(condition.Usages))) + expression
+	line := prefix + conditionStyle.Render("●") + " " + conditionStyle.Render(condition.Name) + styles.PanelMuted.Render(meta) + expression
 	line = ansi.Truncate(line, width, "")
 	return viewutil.PadRight(line, width)
 }

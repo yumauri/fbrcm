@@ -18,7 +18,7 @@ func (m Model) helpPaletteActions() []helpPaletteAction {
 			actions[i].group = helpPaletteBlockTitle(active)
 		}
 		actions[i].enabled, actions[i].reason = m.helpPaletteActionAvailability(actions[i])
-		if len(actions[i].keys) == 0 && !actions[i].paletteOnly {
+		if len(actions[i].keys) == 0 && !actions[i].direct {
 			actions[i].enabled = false
 			actions[i].reason = "shortcut is unbound or has a key conflict"
 		}
@@ -51,7 +51,7 @@ func (m Model) helpPaletteActionAvailability(item helpPaletteAction) (bool, stri
 	if item.block == tuiconfig.BlockHelp {
 		return true, ""
 	}
-	if item.block == tuiconfig.BlockGlobal {
+	if item.block == tuiconfig.BlockGlobal || item.action == tuiconfig.ActionFocusContext {
 		return m.globalHelpActionAvailability(item.action)
 	}
 	if item.block == tuiconfig.BlockAccounts || item.block == tuiconfig.BlockProfiles {
@@ -135,6 +135,17 @@ func (m Model) sharedHelpActionAvailability(active tuiconfig.Block, action tuico
 
 func (m Model) globalHelpActionAvailability(action tuiconfig.Action) (bool, string) {
 	switch action {
+	case tuiconfig.ActionOpenContext, tuiconfig.ActionFocusContext:
+		if m.promote.WorkspaceOpen() {
+			return false, "the Promote panel replaces the workspace panels"
+		}
+	case tuiconfig.ActionExplainContext:
+		if m.requestContext.scenario == nil {
+			return false, "set an active Context first"
+		}
+		if m.contextExplanationData() == nil {
+			return false, "select a parameter covered by Context first"
+		}
 	case tuiconfig.ActionAbout:
 		return true, ""
 	case tuiconfig.ActionAccounts, tuiconfig.ActionProfiles:
@@ -250,6 +261,8 @@ func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 		return tuiconfig.BlockAuthPicker, "authentication picker is open"
 	case m.dialog.IsOpen():
 		return tuiconfig.BlockDialog, "confirmation dialog is open"
+	case m.explainView.IsOpen():
+		return tuiconfig.BlockDialog, "explanation viewer is open"
 	case m.diffView.IsOpen():
 		return tuiconfig.BlockDiffView, "diff viewer is open"
 	case m.boolPicker.IsOpen():
@@ -262,12 +275,16 @@ func (m Model) activeHelpBlock() (tuiconfig.Block, string) {
 		return tuiconfig.BlockStringInput, "string editor is open"
 	case m.renameInput.IsOpen():
 		return tuiconfig.BlockRenameInput, "rename editor is open"
+	case m.requestContext.overlay != contextInline:
+		return tuiconfig.BlockContext, ""
 	case m.active == panels.Details && m.detailsVisible && m.details.FieldActive():
 		return tuiconfig.BlockDetailsForm, "details form has keyboard focus"
 	}
 	switch m.active {
 	case panels.Projects:
 		return tuiconfig.BlockProjects, ""
+	case panels.Context:
+		return tuiconfig.BlockContext, ""
 	case panels.Parameters:
 		return tuiconfig.BlockParameters, ""
 	case panels.Conditions:
@@ -314,6 +331,10 @@ func isOverlayHelpBlock(block tuiconfig.Block) bool {
 
 func (m Model) contextualHelpActionAvailability(block tuiconfig.Block, action tuiconfig.Action) (bool, string) {
 	switch block {
+	case tuiconfig.BlockDialog:
+		if m.explainView.IsOpen() && (action == tuiconfig.ActionPrev || action == tuiconfig.ActionNext || action == tuiconfig.ActionSubmit) {
+			return false, "the explanation viewer has scroll controls"
+		}
 	case tuiconfig.BlockProjects:
 		if action == tuiconfig.ActionBindAuth && m.authCount <= 1 {
 			return false, "at least two authentication identities are required"

@@ -8,10 +8,12 @@ import (
 
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/tui/components/mouseutil"
+	"github.com/yumauri/fbrcm/tui/contextview"
 	"github.com/yumauri/fbrcm/tui/messages"
 )
 
 type Model struct {
+	scenario            *contextview.Scenario
 	x                   int
 	y                   int
 	width               int
@@ -131,7 +133,7 @@ func (m Model) ValueSelected() bool {
 }
 
 func (m Model) UsageSelected() bool {
-	return m.activeField == fieldNone && m.selectedUsage >= 0 && m.conditionData != nil && m.selectedUsage < len(m.conditionData.Condition.Usages)
+	return m.activeField == fieldNone && m.selectedUsage >= 0 && m.selectedUsage < len(m.visibleConditionUsages())
 }
 
 func (m Model) AddConditionalValueSelected() bool {

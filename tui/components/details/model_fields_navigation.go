@@ -1,6 +1,7 @@
 package details
 
 import (
+	"slices"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -16,14 +17,15 @@ func (m *Model) focusNextItem(delta int) {
 	m.dropdownIndex = 0
 	m.groupInput.Blur()
 	fields := m.formFields()
+	visibleValues := m.visibleValueIndexes()
 	itemCount := 0
 	if m.data != nil {
-		itemCount = len(m.data.Parameter.Values)
+		itemCount = len(visibleValues)
 		if len(m.AvailableConditions()) > 0 {
 			itemCount++
 		}
 	} else if m.conditionData != nil {
-		itemCount = len(m.conditionData.Condition.Usages)
+		itemCount = len(m.visibleConditionUsages())
 	}
 	total := len(fields) + itemCount
 	if total == 0 {
@@ -41,13 +43,15 @@ func (m *Model) focusNextItem(delta int) {
 		}
 	}
 	if idx < 0 && m.selectedValue >= 0 {
-		idx = len(fields) + m.selectedValue
+		if position := slices.Index(visibleValues, m.selectedValue); position >= 0 {
+			idx = len(fields) + position
+		}
 	}
 	if idx < 0 && m.selectedUsage >= 0 {
 		idx = len(fields) + m.selectedUsage
 	}
 	if idx < 0 && m.selectedAddValue {
-		idx = len(fields) + len(m.data.Parameter.Values)
+		idx = len(fields) + len(visibleValues)
 	}
 	if idx < 0 && delta < 0 && itemCount > 0 {
 		idx = total
@@ -65,8 +69,8 @@ func (m *Model) focusNextItem(delta int) {
 		m.selectedUsage = -1
 		m.selectedAddValue = false
 		if m.data != nil {
-			if item < len(m.data.Parameter.Values) {
-				m.selectedValue = item
+			if item < len(visibleValues) {
+				m.selectedValue = visibleValues[item]
 			} else {
 				m.selectedAddValue = true
 			}
@@ -154,7 +158,7 @@ func (m Model) valueAt(_, y int) (int, bool) {
 	if m.data == nil {
 		return 0, false
 	}
-	for i := range m.data.Parameter.Values {
+	for _, i := range m.visibleValueIndexes() {
 		if y == m.y+1+m.valueConditionLine(i)-m.viewport.YOffset() {
 			return i, true
 		}
@@ -166,7 +170,7 @@ func (m Model) usageAt(_, y int) (int, bool) {
 	if m.conditionData == nil {
 		return 0, false
 	}
-	for index := range m.conditionData.Condition.Usages {
+	for index := range m.visibleConditionUsages() {
 		if y == m.y+1+m.conditionUsageParameterLine(index)-m.viewport.YOffset() {
 			return index, true
 		}

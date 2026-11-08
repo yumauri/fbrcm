@@ -97,7 +97,7 @@ func TestPopupWindowDimsBasePanelBorders(t *testing.T) {
 
 	wantTop := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		m.projects.ViewWithBorder(false, false),
+		m.sidebarView(false, false),
 		m.parameters.ViewWithBorder(false, false),
 	)
 	want := lipgloss.JoinVertical(
@@ -116,7 +116,7 @@ func TestPopupWindowDimsBasePanelBorders(t *testing.T) {
 	}
 	wantTop = lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		m.projects.ViewWithBorder(false, false),
+		m.sidebarView(false, false),
 		m.parameters.ViewWithBorder(true, true),
 	)
 	want = lipgloss.JoinVertical(
@@ -264,9 +264,9 @@ const baseEmptyAppViewSnapshot = `── ¹Projects ─────── | ─�
                         ││                                                               │
                         ││                                                               │
                         ││                                                               │
-                        ││                                                               │
-                        ││                                                               │
-                        ││                                                               │
+────────────────────────╯│                                                               │
+── ⁹Context ────────────╮│                                                               │
+ No inputs              ││                                                               │
                         ││                                                               │
 ────────────────────────╯╰───────────────────────────────────────────────────────────────╯
 ── ⁰Logs ──DEBU─INFO─WARN─ERRO─FATA─SLNT────────────────────────────────────────── live ──
@@ -289,9 +289,9 @@ const logsActiveViewSnapshot = `── ¹Projects ─────── | ─╮
                         ││                                                               │
                         ││                                                               │
                         ││                                                               │
-                        ││                                                               │
-                        ││                                                               │
-                        ││                                                               │
+────────────────────────╯│                                                               │
+── ⁹Context ────────────╮│                                                               │
+ No inputs              ││                                                               │
                         ││                                                               │
 ────────────────────────╯╰───────────────────────────────────────────────────────────────╯
 ── ⁰Logs ──DEBU─INFO─WARN─ERRO─FATA─SLNT────────────────────────────────────────── live ──
@@ -314,9 +314,9 @@ const offlineBadgeViewSnapshot = `── ¹Projects ─────── | ─�
                         ││                                                               │
                         ││                                                               │
                         ││                                                               │
-                        ││                                                               │
-                        ││                                                               │
-                        ││                                                               │
+────────────────────────╯│                                                               │
+── ⁹Context ────────────╮│                                                               │
+ No inputs              ││                                                               │
                         ││                                                               │
 ────────────────────────╯╰───────────────────────────────────────────────────────────────╯
 ── ⁰Logs ──DEBU─INFO─WARN─ERRO─FATA─SLNT────────────────────────────────────────── live ──

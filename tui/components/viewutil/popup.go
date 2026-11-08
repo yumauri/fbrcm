@@ -8,10 +8,19 @@ import (
 )
 
 const (
-	PopupPaddingLeft  = 2
-	PopupPaddingRight = 1
-	PopupPaddingTop   = 1
+	PopupPaddingLeft   = 2
+	PopupPaddingRight  = 1
+	PopupPaddingTop    = 1
+	ExpandedPopupInset = 2
 )
+
+func ExpandedPopupContentWidth(screenWidth int) int {
+	return max(screenWidth-2*ExpandedPopupInset-2-PopupPaddingLeft-PopupPaddingRight, 1)
+}
+
+func ExpandedPopupContentHeight(screenHeight int) int {
+	return max(screenHeight-2*ExpandedPopupInset-3-PopupPaddingTop, 3)
+}
 
 // PopupInnerWidth returns the width between popup borders for a content width.
 func PopupInnerWidth(contentWidth int) int {

@@ -29,7 +29,7 @@ func (m Model) View() string {
 	var body []string
 	switch m.phase {
 	case phaseImportFile:
-		title, body = "Import Remote Config · Choose JSON", m.importFileLines(inner)
+		title, body = m.importFileTitle(), m.importFileLines(inner)
 	case phaseImportOptions:
 		title, body = "Import Remote Config · Options", m.importOptionLines(inner)
 	case phaseImportConflicts:
@@ -48,15 +48,26 @@ func (m Model) View() string {
 	return renderCard(title, body, inner)
 }
 
+func (m Model) importFileTitle() string {
+	if m.mode == ModeCapture {
+		return "Import Context · Choose capture"
+	}
+	return "Import Remote Config · Choose JSON"
+}
+
 func (m Model) importFileLines(width int) []string {
 	return m.appendActionButtons(m.importFileBaseLines(width), width)
 }
 
 func (m Model) importFileBaseLines(width int) []string {
+	prompt, target := "Choose a Remote Config JSON file.", viewutil.ProjectLine(m.project)
+	if m.mode == ModeCapture {
+		prompt, target = "Choose a Firebase fetch HAR or cURL text file.", "The request supplies inputs for its project and template."
+	}
 	lines := []string{
-		"Choose a Remote Config JSON file.",
+		prompt,
 		"",
-		viewutil.ProjectLine(m.project),
+		target,
 		"",
 		viewutil.IndentLines(strings.TrimRight(m.picker.View(), "\n"), 1),
 	}
@@ -286,7 +297,7 @@ func (m Model) contentWidth() int {
 	if m.phase != phaseImportFile {
 		return min(max(maximum, 54), 88)
 	}
-	title := "Import Remote Config · Choose JSON"
+	title := m.importFileTitle()
 	natural := lipgloss.Width(" " + title + " ")
 	for _, raw := range m.importFileBaseLines(maximum) {
 		for line := range strings.SplitSeq(raw, "\n") {

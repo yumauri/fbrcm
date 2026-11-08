@@ -10,7 +10,8 @@ import (
 
 func (m Model) valueNodeValueX(node visibleNode, param *core.ParametersEntry) int {
 	label := rcdisplay.FormatConditionLabel(param.Values[node.valueIdx].Label)
-	prefix := m.parameterValuePrefixLayout(param, label, m.valueConnector(node, param))
+	connector, _ := m.contextValueDecoration(node, param)
+	prefix := m.parameterValuePrefixLayout(param, label, connector)
 	return lipgloss.Width(prefix.tree) + 1 + lipgloss.Width(label) + 1 + prefix.fillerWidth + 1
 }
 

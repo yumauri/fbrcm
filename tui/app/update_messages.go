@@ -12,6 +12,19 @@ import (
 
 func (m Model) updateAppMessage(msg tea.Msg) (Model, tea.Cmd, bool) {
 	switch msg := msg.(type) {
+	case contextFactMsg:
+		m.applyContextFact(msg)
+		return m, nil, true
+
+	case contextCaptureAction:
+		return m.updateContextCaptureAction(msg)
+
+	case projectio.CaptureChosenMsg:
+		return m.beginContextCapture(msg.Path, "")
+
+	case contextCaptureLoadedMsg:
+		return m.updateContextCaptureLoaded(msg)
+
 	case draftPublishPreparedMsg:
 		return m.updateDraftPublishPrepared(msg)
 
@@ -308,7 +321,13 @@ func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) 
 	if m.active == panels.Logs {
 		return m, nil, false
 	}
-	if click, ok := msg.(tea.MouseClickMsg); ok && click.Mouse().Button == tea.MouseLeft {
+	click, clicked := msg.(tea.MouseClickMsg)
+	leftClick := clicked && click.Mouse().Button == tea.MouseLeft
+	if leftClick {
+		if m.contextBadgeAt(click.Mouse().X, click.Mouse().Y) {
+			m.requestContext.overlay = contextOverview
+			return m, nil, true
+		}
 		if m.workspaceOverflowAt(click.Mouse().X, click.Mouse().Y) {
 			return m.openWorkspaceMenu(), nil, true
 		}
@@ -320,9 +339,13 @@ func (m Model) updatePanelMouseMessage(msg tea.MouseMsg) (Model, tea.Cmd, bool) 
 	if !ok {
 		return m, nil, false
 	}
-	m.setActive(panel)
+	if panel != panels.Context || leftClick {
+		m.setActive(panel)
+	}
 	var cmd tea.Cmd
 	switch panel {
+	case panels.Context:
+		m.updateContextMouse(msg, false)
 	case panels.Projects:
 		m.projects, cmd = m.projects.Update(msg)
 		if m.width > 0 && m.height > 0 {
@@ -359,6 +382,11 @@ func (m Model) updateKeyMessage(msg tea.KeyMsg) (Model, tea.Cmd, bool) {
 		}
 	}
 	if !m.keyboardCaptured() {
+		if m.active == panels.Context {
+			if next, cmd, ok := m.updateContextKey(k, false); ok {
+				return next, cmd, true
+			}
+		}
 		return m.updateGlobalKeyMessage(k)
 	}
 	return m, nil, false

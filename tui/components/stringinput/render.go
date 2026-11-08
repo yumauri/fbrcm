@@ -16,8 +16,8 @@ import (
 var singleBorderStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(styles.PaletteBlueBright)
 
 func (m Model) renderExpandedArea() string {
-	width := stringPopupContentWidth(m.screenW)
-	height := stringContentHeight(m.screenH)
+	width := viewutil.ExpandedPopupContentWidth(m.screenW)
+	height := viewutil.ExpandedPopupContentHeight(m.screenH)
 	cursorLine := m.area.Line()
 	lineInfo := m.area.LineInfo()
 	cursorSegment := lineInfo.RowOffset
@@ -75,12 +75,16 @@ func (m Model) renderExpandedArea() string {
 func (m Model) renderExpandedBox() string {
 	borderStyle := styles.BorderStyle(true)
 	body := strings.Split(m.renderExpandedArea(), "\n")
-	contentWidth := stringPopupContentWidth(m.screenW)
+	contentWidth := viewutil.ExpandedPopupContentWidth(m.screenW)
 	innerWidth := viewutil.PopupInnerWidth(contentWidth)
-	contentHeight := stringContentHeight(m.screenH)
+	contentHeight := viewutil.ExpandedPopupContentHeight(m.screenH)
 	scrollbar := viewutil.ScrollbarState(m.visualLineCount(), m.area.ScrollYOffset(), contentHeight)
 
-	lines := []string{borderStyle.Render("╭" + strings.Repeat("─", innerWidth) + "╮")}
+	title, titleWidth := "", 0
+	if m.title != "" {
+		title, titleWidth = styles.PanelHeaderTitle("", m.title, true, innerWidth)
+	}
+	lines := []string{borderStyle.Render("╭") + title + borderStyle.Render(strings.Repeat("─", max(innerWidth-titleWidth, 0))+"╮")}
 	for range viewutil.PopupPaddingTop {
 		lines = append(lines, borderStyle.Render("│")+viewutil.PopupContentLine("", contentWidth)+borderStyle.Render("│"))
 	}

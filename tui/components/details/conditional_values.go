@@ -115,10 +115,11 @@ func (m Model) addConditionalValueLine() int {
 	}
 	line := m.valuesTitleLine() + 1
 	width := max(m.width-5, 1)
-	for _, value := range m.data.Parameter.Values {
-		line += m.valueVisualHeight(value, width)
+	visible := m.visibleValueIndexes()
+	for _, i := range visible {
+		line += m.valueVisualHeight(m.data.Parameter.Values[i], width)
 	}
-	if len(m.data.Parameter.Values) == 0 {
+	if len(visible) == 0 {
 		line++
 	}
 	return line

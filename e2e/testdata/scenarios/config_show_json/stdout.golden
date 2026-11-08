@@ -152,6 +152,53 @@
             "k"
           ]
         },
+        "context": {
+          "cancel": [
+            "esc"
+          ],
+          "clear": [
+            "X"
+          ],
+          "delete": [
+            "delete",
+            "x"
+          ],
+          "down": [
+            "down",
+            "j"
+          ],
+          "end": [
+            "end"
+          ],
+          "focus_context": [
+            "9"
+          ],
+          "home": [
+            "home"
+          ],
+          "import": [
+            "i"
+          ],
+          "new": [
+            "a"
+          ],
+          "show_hidden": [
+            "H"
+          ],
+          "submit": [
+            "enter"
+          ],
+          "toggle_context": [
+            "space"
+          ],
+          "toggle_mode": [
+            "c"
+          ],
+          "up": [
+            "up",
+            "k"
+          ]
+        },
         "details": {
           "close": [
             "esc"
@@ -335,6 +382,9 @@
           "accounts": [
             "ctrl+a"
           ],
+          "explain_context": [
+            "ctrl+e"
+          ],
           "focus_ab_tests": [
             "6"
           ],
@@ -373,6 +423,9 @@
           ],
           "help": [
             "?"
+          ],
+          "open_context": [
+            "ctrl+x"
           ],
           "profiles": [
             "ctrl+p"

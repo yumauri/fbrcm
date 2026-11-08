@@ -14,4 +14,5 @@ const (
 	Promote
 	Details
 	Logs
+	Context
 )

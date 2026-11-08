@@ -243,7 +243,7 @@ func TestWorkspaceOverflowKeepsActivePanelTitleAndBorder(t *testing.T) {
 
 	wantTop := lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		m.projects.ViewWithBorder(false, false),
+		m.sidebarView(false, false),
 		m.parameters.ViewWithWorkspacePreview(true, true, headerMenuTab(t, m)),
 	)
 	want := lipgloss.JoinVertical(

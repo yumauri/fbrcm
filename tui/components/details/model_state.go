@@ -59,6 +59,7 @@ func (m Model) SetData(data *messages.ParameterViewData) Model {
 		m.originalParam = core.ParametersEntry{}
 	}
 	m.originalCondition = core.ConditionEntry{}
+	m.deselectContextExcludedValue()
 	m.refreshViewport()
 	if m.data != nil && m.selectedValue < 0 && m.activeField == fieldNone {
 		m.viewport.GotoTop()
@@ -345,6 +346,7 @@ func (m Model) MarkSaved() Model {
 	m.originalParam = cloneParameterEntry(m.data.Parameter)
 	m.originalCondition = core.ConditionEntry{}
 	m.activeField = fieldNone
+	m.deselectContextExcludedValue()
 	m.refreshViewport()
 	return m
 }

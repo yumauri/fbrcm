@@ -82,6 +82,9 @@ func (m *Model) syncVisible() {
 			continue
 		}
 		for i, condition := range project.tree.Conditions {
+			if m.move == nil && !m.scenario.Visible(m.contextResult(project.project, condition).State) {
+				continue
+			}
 			if m.filter.ExpressionMode() {
 				matched, err := m.filter.CompiledExpression().MatchCondition(project.project.ProjectID, project.project.Name, condition)
 				if err != nil {

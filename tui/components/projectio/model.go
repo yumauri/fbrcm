@@ -27,6 +27,7 @@ const (
 	ModeImport
 	ModeExport
 	ModeDefaults
+	ModeCapture
 )
 
 type phase int
@@ -49,6 +50,8 @@ type ImportPlanRequestedMsg struct {
 	Path    string
 	Options core.ProjectImportOptions
 }
+
+type CaptureChosenMsg struct{ Path string }
 
 type ExportRequestedMsg struct {
 	Project core.Project
@@ -149,6 +152,14 @@ func (m Model) SetBounds(x, y, width, height int) Model {
 func (m Model) OpenImport(project core.Project) (Model, tea.Cmd) {
 	m = m.reset()
 	m.mode, m.phase, m.project = ModeImport, phaseImportFile, project
+	m.picker.AllowedTypes = []string{".json"}
+	return m, tea.Batch(m.picker.Init(), tea.ClearScreen)
+}
+
+func (m Model) OpenCapture() (Model, tea.Cmd) {
+	m = m.reset()
+	m.mode, m.phase = ModeCapture, phaseImportFile
+	m.picker.AllowedTypes = nil
 	return m, tea.Batch(m.picker.Init(), tea.ClearScreen)
 }
 
@@ -317,6 +328,9 @@ func (m Model) updateImportFile(msg tea.Msg) (Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.picker, cmd = m.picker.Update(msg)
 	if selected, path := m.picker.DidSelectFile(msg); selected {
+		if m.mode == ModeCapture {
+			return m.Close(), func() tea.Msg { return CaptureChosenMsg{Path: path} }
+		}
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			m.errorText = err.Error()

@@ -90,7 +90,30 @@ func Merge(defaults KeyMap, configured map[string]map[string][]string) KeyMap {
 			}
 		}
 	}
+	yieldContextDefaults(out[BlockGlobal], configured[string(BlockGlobal)])
 	return out
+}
+
+// New Context shortcuts yield to explicitly configured global bindings.
+func yieldContextDefaults(global map[Action][]string, configured map[string][]string) {
+	for _, action := range []Action{ActionOpenContext, ActionExplainContext} {
+		if len(configured[string(action)]) > 0 {
+			continue
+		}
+		keys := slices.DeleteFunc(global[action], func(key string) bool {
+			for name := range configured {
+				if slices.Contains(global[Action(name)], key) {
+					return true
+				}
+			}
+			return false
+		})
+		if len(keys) == 0 {
+			delete(global, action)
+		} else {
+			global[action] = keys
+		}
+	}
 }
 
 func cleanKeys(keys []string) []string {
