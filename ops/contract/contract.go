@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -113,25 +112,6 @@ type Envelope struct {
 	Data             any       `json:"data"`
 	Errors           []Problem `json:"errors"`
 	Warnings         []Warning `json:"warnings"`
-}
-
-// JSONRequested recognizes the persistent flag even when Cobra parsing fails.
-func JSONRequested(args []string) bool {
-	requested := false
-	for _, arg := range args {
-		if arg == "--" {
-			break
-		}
-		if arg == "--json" {
-			requested = true
-			continue
-		}
-		if value, ok := strings.CutPrefix(arg, "--json="); ok {
-			enabled, err := strconv.ParseBool(value)
-			requested = err != nil || enabled
-		}
-	}
-	return requested
 }
 
 func Enabled(cmd operation.Call) bool {

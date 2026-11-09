@@ -516,12 +516,6 @@ func TestJSONArtifactDigestDescribesEmbeddedCompactToken(t *testing.T) {
 	}
 }
 
-func TestJSONRequested(t *testing.T) {
-	if !JSONRequested([]string{"show", "--json"}) || !JSONRequested([]string{"--json=true"}) || !JSONRequested([]string{"--json=false", "--json"}) || JSONRequested([]string{"--json", "--json=false"}) || JSONRequested([]string{"--", "--json"}) {
-		t.Fatal("JSONRequested did not honor global flag syntax")
-	}
-}
-
 func commandForTest(use string) *cobra.Command {
 	root := &cobra.Command{Use: "fbrcm"}
 	cmd := &cobra.Command{Use: use}

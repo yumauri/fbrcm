@@ -2,8 +2,6 @@ package cli
 
 import (
 	"os"
-	"strconv"
-	"strings"
 
 	"golang.org/x/term"
 
@@ -13,22 +11,22 @@ import (
 	"github.com/yumauri/fbrcm/core/env"
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/internal/terminal/progress"
-	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/launchflags"
 )
 
-func Init(s *core.Core, version, commit, date string) {
+func Init(s *core.Core, version, commit, date string, launch launchflags.Options) {
 	progress.Configure(os.Stderr, term.IsTerminal(int(os.Stderr.Fd())))
 	corelog.ConfigureCLIOutput(progress.LogWriter(os.Stderr), progress.StopWriter(os.Stderr))
-	configureTheme(os.Args[1:])
+	configureTheme(launch)
 	corelog.For("cli").Debug("start cli")
-	app.Execute(s, version, commit, date)
+	app.Execute(s, version, commit, date, launch)
 }
 
-func configureTheme(args []string) {
-	if env.NoColorEnabled() || contract.JSONRequested(args) || booleanFlagEnabled(args, "stateless") {
+func configureTheme(launch launchflags.Options) {
+	if env.NoColorEnabled() || launch.JSON || launch.Stateless {
 		return
 	}
-	config.SetLocalConfigDisabled(booleanFlagEnabled(args, "no-local-config"))
+	config.SetLocalConfigDisabled(launch.NoLocalConfig)
 	resolved, err := config.ApplyConfiguredTheme()
 	corelog.RefreshStyles()
 	if err != nil {
@@ -38,21 +36,4 @@ func configureTheme(args []string) {
 	if resolved.Name != "" {
 		corelog.For("theme").Debug("theme loaded", "theme", resolved.Name, "path", resolved.Path)
 	}
-}
-
-func booleanFlagEnabled(args []string, name string) bool {
-	flag := "--" + name
-	for _, arg := range args {
-		if arg == "--" {
-			return false
-		}
-		if arg == flag {
-			return true
-		}
-		if value, ok := strings.CutPrefix(arg, flag+"="); ok {
-			enabled, err := strconv.ParseBool(value)
-			return err == nil && enabled
-		}
-	}
-	return false
 }

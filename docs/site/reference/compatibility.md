@@ -6,9 +6,11 @@ formats have separate versions. Existing integer file-format versions stay at
 `1`; the pre-1.0 in-place breaking-change exception has ended.
 
 Version 1.1.0 adds CLI `explain`, condition blame, and MCP `parameters.explain`.
-CLI JSON contract `1.1.0` covers the new results and capture inputs. The
-published `1.0.0` schemas and release lock remain available. Version 1.1.0
-retains the existing persisted encodings and requires no data migration.
+The active release lock freezes CLI JSON contract `1.1.0`, including the new
+results and capture inputs. The published `1.0.0` schemas and archived lock
+remain available. Version 1.1.0 reads the existing durable encodings directly.
+The new TUI Context bindings use the existing custom key format. Context
+inputs and scope last for the current session.
 
 | Surface | Stability promise |
 | --- | --- |
@@ -54,7 +56,6 @@ changes a durable file-format version. Versionless formats also require an
 explicit migration boundary for incompatible changes.
 See the full [compatibility policy](https://github.com/yumauri/fbrcm/blob/main/docs/compatibility.md)
 for versioning, migration, and release requirements.
-
 
 Condition blame through `versions blame --condition <name>` is available since
 1.1.0. Parameter invocations and responses retain their existing contract.

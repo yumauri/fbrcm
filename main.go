@@ -8,6 +8,7 @@ import (
 	charmlog "charm.land/log/v2"
 
 	"github.com/yumauri/fbrcm/cli"
+	"github.com/yumauri/fbrcm/cli/app"
 	"github.com/yumauri/fbrcm/core"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
@@ -15,6 +16,7 @@ import (
 	"github.com/yumauri/fbrcm/internal/builtinoauth"
 	"github.com/yumauri/fbrcm/mcp"
 	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/launchflags"
 	"github.com/yumauri/fbrcm/tui"
 )
 
@@ -26,7 +28,11 @@ var (
 
 func main() {
 	mode := applicationMode(os.Args[1:])
-	corelog.InitWithDefault(mode, defaultLogLevel(mode, os.Args[1:]))
+	var launch launchflags.Options
+	if mode != corelog.ModeTUI {
+		launch = app.InspectLaunch(os.Args[1:])
+	}
+	corelog.InitWithDefault(mode, defaultLogLevel(launch.JSON))
 
 	googleOAuthClientID, googleOAuthClientSecret := builtinoauth.Credentials()
 	svc, err := core.NewService(
@@ -36,7 +42,7 @@ func main() {
 	)
 	if err != nil {
 		corelog.For("main").Error("application initialization failed", "err", err)
-		if mode != corelog.ModeTUI && contract.JSONRequested(os.Args[1:]) {
+		if launch.JSON {
 			envelope := contract.BuildEnvelope(nil, version, nil, err)
 			if writeErr := contract.Write(os.Stdout, envelope); writeErr != nil {
 				fmt.Fprintf(os.Stderr, "error: %v\n", writeErr)
@@ -60,7 +66,7 @@ func main() {
 	case corelog.ModeMCP:
 		mcp.Init(svc, version, commit, date)
 	default:
-		cli.Init(svc, version, commit, date)
+		cli.Init(svc, version, commit, date, launch)
 	}
 }
 
@@ -81,8 +87,8 @@ func applicationInitializationExitCode(mode corelog.Mode, err error) int {
 	return 1
 }
 
-func defaultLogLevel(mode corelog.Mode, args []string) charmlog.Level {
-	if mode != corelog.ModeTUI && contract.JSONRequested(args) {
+func defaultLogLevel(jsonMode bool) charmlog.Level {
+	if jsonMode {
 		if _, overridden := env.LookupTrimmed(env.LogLevel); !overridden {
 			return corelog.SilentLevel
 		}

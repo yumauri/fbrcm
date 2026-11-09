@@ -64,6 +64,7 @@
     "contract.batch_runtime": "ops/contract/contract_test.go#TestAllFailedBatchPreservesTypedTargetProblems",
     "contract.stateless_predicates": "ops/contract/stateless_test.go#TestStatelessCapabilityEffectsDoNotMutateSharedBehavior",
     "draft.publish_success": "core/draft/pipeline_test.go#TestPublishExistingDraftSuccessRemovesDraft",
+    "main.cli_launch_flags": "main_test.go#TestCLILaunchFlags",
     "plan.artifact_runtime": "ops/shared/rc/plan_test.go#TestWritePublicationPlanReportsExactPrivateArtifact",
     "plan.metadata_success": "ops/workflows/plan/commands_test.go#TestPlanShowAndValidateJSON",
     "profile.root_success": "cli/commands/profile/commands_test.go#TestProfileRootJSON",
@@ -154,7 +155,8 @@
             "app.unknown_option",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
-            "e2e:parameter_add_stateless_json"
+            "e2e:parameter_add_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -174,7 +176,8 @@
             "app.unknown_option",
             "e2e:parameter_add_dry_run_json",
             "e2e:parameter_add_json",
-            "e2e:parameter_add_stateless_json"
+            "e2e:parameter_add_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -282,7 +285,8 @@
             "app.invalid_plan_inputs",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:apply_stateless_json"
+            "e2e:apply_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -298,7 +302,8 @@
             "app.invocation_semantics",
             "app.plan_invocation_schema",
             "app.unknown_option",
-            "e2e:apply_stateless_json"
+            "e2e:apply_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -397,7 +402,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:apps_config_stateless_json"
+            "e2e:apps_config_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -411,7 +417,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:apps_config_stateless_json"
+            "e2e:apps_config_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -493,7 +500,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:apps_list_stateless_json"
+            "e2e:apps_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -507,7 +515,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:apps_list_stateless_json"
+            "e2e:apps_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -589,7 +598,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:apps_show_stateless_json"
+            "e2e:apps_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -603,7 +613,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:apps_show_stateless_json"
+            "e2e:apps_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -683,7 +694,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:auth_add_gcloud_json"
+            "e2e:auth_add_gcloud_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -694,7 +706,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_add_gcloud_json"
+            "e2e:auth_add_gcloud_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -779,7 +792,8 @@
             "app.unknown_option",
             "auth.google_quota_failure",
             "e2e:auth_add_google_json",
-            "e2e:auth_add_google_replace_oauth_json"
+            "e2e:auth_add_google_replace_oauth_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -793,7 +807,8 @@
             "app.unknown_option",
             "auth.google_quota_failure",
             "e2e:auth_add_google_json",
-            "e2e:auth_add_google_replace_oauth_json"
+            "e2e:auth_add_google_replace_oauth_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -871,7 +886,8 @@
             "app.plan_quota_app_problems",
             "app.stdin_domain_problems",
             "app.unknown_option",
-            "e2e:auth_add_oauth_json"
+            "e2e:auth_add_oauth_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -885,7 +901,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_add_oauth_json"
+            "e2e:auth_add_oauth_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -966,7 +983,8 @@
             "app.plan_quota_app_problems",
             "app.stdin_domain_problems",
             "app.unknown_option",
-            "e2e:auth_add_service_account_json"
+            "e2e:auth_add_service_account_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -980,7 +998,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_add_service_account_json"
+            "e2e:auth_add_service_account_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1060,7 +1079,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:auth_bind_json"
+            "e2e:auth_bind_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1071,7 +1091,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_bind_json"
+            "e2e:auth_bind_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1169,7 +1190,8 @@
             "e2e:auth_delete_gcloud_json",
             "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
-            "e2e:auth_delete_service_account_json"
+            "e2e:auth_delete_service_account_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1189,7 +1211,8 @@
             "e2e:auth_delete_gcloud_json",
             "e2e:auth_delete_google_json",
             "e2e:auth_delete_oauth_json",
-            "e2e:auth_delete_service_account_json"
+            "e2e:auth_delete_service_account_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1282,7 +1305,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_list_google_json",
-            "e2e:auth_list_json"
+            "e2e:auth_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1294,7 +1318,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:auth_list_google_json",
-            "e2e:auth_list_json"
+            "e2e:auth_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1372,7 +1397,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:auth_login_google_interaction_json",
-            "e2e:auth_login_google_json"
+            "e2e:auth_login_google_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1388,7 +1414,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:auth_login_google_interaction_json",
-            "e2e:auth_login_google_json"
+            "e2e:auth_login_google_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1476,7 +1503,8 @@
             "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:auth_path_google_json",
-            "e2e:auth_path_json"
+            "e2e:auth_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1488,7 +1516,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:auth_path_google_json",
-            "e2e:auth_path_json"
+            "e2e:auth_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1565,7 +1594,8 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
-            "e2e:auth_quota_project_set_json"
+            "e2e:auth_quota_project_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1576,7 +1606,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_quota_project_set_json"
+            "e2e:auth_quota_project_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1651,7 +1682,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:auth_quota_project_show_json"
+            "e2e:auth_quota_project_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1662,7 +1694,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_quota_project_show_json"
+            "e2e:auth_quota_project_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1734,7 +1767,8 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
-            "e2e:auth_quota_project_unset_json"
+            "e2e:auth_quota_project_unset_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1745,7 +1779,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:auth_quota_project_unset_json"
+            "e2e:auth_quota_project_unset_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1821,7 +1856,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:cache_clear_json"
+            "e2e:cache_clear_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1835,7 +1871,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:cache_clear_json"
+            "e2e:cache_clear_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -1916,7 +1953,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:cache_list_json",
-            "e2e:cache_list_narrow"
+            "e2e:cache_list_narrow",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -1928,7 +1966,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:cache_list_json",
-            "e2e:cache_list_narrow"
+            "e2e:cache_list_narrow",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2000,7 +2039,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:cache_path_json"
+            "e2e:cache_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2011,7 +2051,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:cache_path_json"
+            "e2e:cache_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2082,7 +2123,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:capabilities_json"
+            "e2e:capabilities_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2093,7 +2135,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:capabilities_json"
+            "e2e:capabilities_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2161,7 +2204,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2171,7 +2215,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2236,7 +2281,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2246,7 +2292,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2311,7 +2358,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2321,7 +2369,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2386,7 +2435,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2396,7 +2446,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2490,7 +2541,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_add_json",
-            "e2e:conditions_add_stateless_json"
+            "e2e:conditions_add_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2508,7 +2560,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_add_json",
-            "e2e:conditions_add_stateless_json"
+            "e2e:conditions_add_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2618,7 +2671,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_delete_json",
-            "e2e:conditions_delete_stateless_json"
+            "e2e:conditions_delete_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2636,7 +2690,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_delete_json",
-            "e2e:conditions_delete_stateless_json"
+            "e2e:conditions_delete_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2746,7 +2801,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_edit_json",
-            "e2e:conditions_edit_stateless_json"
+            "e2e:conditions_edit_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2764,7 +2820,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_edit_json",
-            "e2e:conditions_edit_stateless_json"
+            "e2e:conditions_edit_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2859,7 +2916,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_list_filtered_json",
-            "e2e:conditions_list_stateless_json"
+            "e2e:conditions_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2875,7 +2933,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:conditions_list_filtered_json",
-            "e2e:conditions_list_stateless_json"
+            "e2e:conditions_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -2974,7 +3033,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_move_json",
-            "e2e:conditions_move_stateless_json"
+            "e2e:conditions_move_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -2992,7 +3052,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_move_json",
-            "e2e:conditions_move_stateless_json"
+            "e2e:conditions_move_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3102,7 +3163,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_rename_json",
-            "e2e:conditions_rename_stateless_json"
+            "e2e:conditions_rename_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3120,7 +3182,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:conditions_rename_json",
-            "e2e:conditions_rename_stateless_json"
+            "e2e:conditions_rename_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3215,7 +3278,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_show_json",
-            "e2e:conditions_show_stateless_json"
+            "e2e:conditions_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3231,7 +3295,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:conditions_show_json",
-            "e2e:conditions_show_stateless_json"
+            "e2e:conditions_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3315,7 +3380,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:conditions_validate_json",
-            "e2e:conditions_validate_stateless_json"
+            "e2e:conditions_validate_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3331,7 +3397,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:conditions_validate_json",
-            "e2e:conditions_validate_stateless_json"
+            "e2e:conditions_validate_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3401,7 +3468,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3413,7 +3481,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3483,7 +3552,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:config_path_json"
+            "e2e:config_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3494,7 +3564,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:config_path_json"
+            "e2e:config_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3566,7 +3637,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:config_reset_json"
+            "e2e:config_reset_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3580,7 +3652,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:config_reset_json"
+            "e2e:config_reset_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3661,7 +3734,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_set_json",
-            "e2e:config_set_theme_json"
+            "e2e:config_set_theme_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3673,7 +3747,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:config_set_json",
-            "e2e:config_set_theme_json"
+            "e2e:config_set_theme_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3750,7 +3825,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:config_show_json"
+            "e2e:config_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3761,7 +3837,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:config_show_json"
+            "e2e:config_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3838,7 +3915,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:config_validate_invalid_json",
-            "e2e:config_validate_valid_json"
+            "e2e:config_validate_valid_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3850,7 +3928,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:config_validate_invalid_json",
-            "e2e:config_validate_valid_json"
+            "e2e:config_validate_valid_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -3961,7 +4040,8 @@
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
-            "e2e:project_import_stateless_cleanup_json"
+            "e2e:project_import_stateless_cleanup_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -3983,7 +4063,8 @@
             "e2e:parameter_delete_dry_run_json",
             "e2e:parameter_delete_json",
             "e2e:parameter_delete_stateless_json",
-            "e2e:project_import_stateless_cleanup_json"
+            "e2e:project_import_stateless_cleanup_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4086,7 +4167,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:doctor_json"
+            "e2e:doctor_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4097,7 +4179,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:doctor_json"
+            "e2e:doctor_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4168,7 +4251,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:draft_change_note_json"
+            "e2e:draft_change_note_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4179,7 +4263,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:draft_change_note_json"
+            "e2e:draft_change_note_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4254,7 +4339,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:draft_diff_json"
+            "e2e:draft_diff_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4268,7 +4354,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:draft_diff_json"
+            "e2e:draft_diff_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4343,7 +4430,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:draft_discard_json"
+            "e2e:draft_discard_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4357,7 +4445,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:draft_discard_json"
+            "e2e:draft_discard_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4441,7 +4530,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:draft_list_json",
-            "e2e:draft_list_narrow"
+            "e2e:draft_list_narrow",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4453,7 +4543,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:draft_list_json",
-            "e2e:draft_list_narrow"
+            "e2e:draft_list_narrow",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4529,7 +4620,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:draft_path_json"
+            "e2e:draft_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4540,7 +4632,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:draft_path_json"
+            "e2e:draft_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4616,7 +4709,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4630,7 +4724,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.plan_invocation_schema",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4714,7 +4809,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:draft_show_json"
+            "e2e:draft_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4728,7 +4824,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:draft_show_json"
+            "e2e:draft_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4830,7 +4927,8 @@
             "app.unknown_option",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
-            "e2e:parameter_duplicate_stateless_json"
+            "e2e:parameter_duplicate_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4850,7 +4948,8 @@
             "app.unknown_option",
             "e2e:parameter_duplicate_dry_run_json",
             "e2e:parameter_duplicate_json",
-            "e2e:parameter_duplicate_stateless_json"
+            "e2e:parameter_duplicate_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -4944,7 +5043,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:experiments_delete_stateless_confirmation_json"
+            "e2e:experiments_delete_stateless_confirmation_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -4958,7 +5058,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:experiments_delete_stateless_confirmation_json"
+            "e2e:experiments_delete_stateless_confirmation_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5041,7 +5142,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:experiments_list_json",
-            "e2e:experiments_list_stateless_json"
+            "e2e:experiments_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5057,7 +5159,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:experiments_list_json",
-            "e2e:experiments_list_stateless_json"
+            "e2e:experiments_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5141,7 +5244,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:experiments_show_json",
-            "e2e:experiments_show_stateless_json"
+            "e2e:experiments_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5157,7 +5261,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:experiments_show_json",
-            "e2e:experiments_show_stateless_json"
+            "e2e:experiments_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5277,7 +5382,8 @@
             "e2e:explain_curl_json",
             "e2e:explain_default_json",
             "e2e:explain_har_json",
-            "e2e:explain_unknown_json"
+            "e2e:explain_unknown_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5307,7 +5413,8 @@
             "e2e:explain_curl_json",
             "e2e:explain_default_json",
             "e2e:explain_har_json",
-            "e2e:explain_unknown_json"
+            "e2e:explain_unknown_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5478,7 +5585,8 @@
             "e2e:get_stateless_explicit_fuzzy_project_json",
             "e2e:get_stateless_json",
             "e2e:get_stateless_starts_with_project_json",
-            "e2e:get_update"
+            "e2e:get_update",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5510,7 +5618,8 @@
             "e2e:get_stateless_explicit_fuzzy_project_json",
             "e2e:get_stateless_json",
             "e2e:get_stateless_starts_with_project_json",
-            "e2e:get_update"
+            "e2e:get_update",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5651,7 +5760,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_add_json",
-            "e2e:groups_add_stateless_json"
+            "e2e:groups_add_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5669,7 +5779,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_add_json",
-            "e2e:groups_add_stateless_json"
+            "e2e:groups_add_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5779,7 +5890,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_delete_json",
-            "e2e:groups_delete_stateless_json"
+            "e2e:groups_delete_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5797,7 +5909,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_delete_json",
-            "e2e:groups_delete_stateless_json"
+            "e2e:groups_delete_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -5907,7 +6020,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_edit_json",
-            "e2e:groups_edit_stateless_json"
+            "e2e:groups_edit_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -5925,7 +6039,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_edit_json",
-            "e2e:groups_edit_stateless_json"
+            "e2e:groups_edit_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6020,7 +6135,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_list_filtered_json",
-            "e2e:groups_list_stateless_json"
+            "e2e:groups_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6036,7 +6152,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:groups_list_filtered_json",
-            "e2e:groups_list_stateless_json"
+            "e2e:groups_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6135,7 +6252,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:groups_rename_json",
-            "e2e:groups_rename_stateless_json"
+            "e2e:groups_rename_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6153,7 +6271,8 @@
             "app.plan_invocation_schema",
             "app.unknown_option",
             "e2e:groups_rename_json",
-            "e2e:groups_rename_stateless_json"
+            "e2e:groups_rename_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6246,7 +6365,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:help_projects_diff",
-            "e2e:help_projects_diff_json"
+            "e2e:help_projects_diff_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6258,7 +6378,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:help_projects_diff",
-            "e2e:help_projects_diff_json"
+            "e2e:help_projects_diff_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6334,7 +6455,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:hooks_fingerprint_json"
+            "e2e:hooks_fingerprint_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6345,7 +6467,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:hooks_fingerprint_json"
+            "e2e:hooks_fingerprint_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6416,7 +6539,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:hooks_status_json"
+            "e2e:hooks_status_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6427,7 +6551,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:hooks_status_json"
+            "e2e:hooks_status_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6499,7 +6624,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:hooks_trust_json"
+            "e2e:hooks_trust_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6513,7 +6639,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:hooks_trust_json"
+            "e2e:hooks_trust_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6588,7 +6715,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:hooks_untrust_json"
+            "e2e:hooks_untrust_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6599,7 +6727,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:hooks_untrust_json"
+            "e2e:hooks_untrust_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6681,7 +6810,8 @@
             "app.mcp_json_failure",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:mcp_json"
+            "e2e:mcp_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6694,7 +6824,8 @@
             "app.mcp_json_boundary",
             "app.mcp_json_failure",
             "app.unknown_option",
-            "e2e:mcp_json"
+            "e2e:mcp_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6769,7 +6900,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:personalizations_list_json",
-            "e2e:personalizations_list_stateless_json"
+            "e2e:personalizations_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6785,7 +6917,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:personalizations_list_json",
-            "e2e:personalizations_list_stateless_json"
+            "e2e:personalizations_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6865,7 +6998,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:personalizations_show_json",
-            "e2e:personalizations_show_stateless_json"
+            "e2e:personalizations_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6881,7 +7015,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:personalizations_show_json",
-            "e2e:personalizations_show_stateless_json"
+            "e2e:personalizations_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -6959,7 +7094,8 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
-            "e2e:plan_show_json"
+            "e2e:plan_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -6970,7 +7106,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:plan_show_json"
+            "e2e:plan_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7048,7 +7185,8 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
-            "e2e:plan_validate_json"
+            "e2e:plan_validate_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7059,7 +7197,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:plan_validate_json"
+            "e2e:plan_validate_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7129,7 +7268,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7139,7 +7279,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7214,7 +7355,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:profile_delete_json"
+            "e2e:profile_delete_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7228,7 +7370,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:profile_delete_json"
+            "e2e:profile_delete_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7306,7 +7449,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:profile_list_json"
+            "e2e:profile_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7317,7 +7461,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:profile_list_json"
+            "e2e:profile_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7388,7 +7533,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:profile_path_json"
+            "e2e:profile_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7399,7 +7545,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:profile_path_json"
+            "e2e:profile_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7470,7 +7617,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:profile_rename_json"
+            "e2e:profile_rename_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7481,7 +7629,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:profile_rename_json"
+            "e2e:profile_rename_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7559,7 +7708,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:profile_switch_json"
+            "e2e:profile_switch_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7570,7 +7720,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:profile_switch_json"
+            "e2e:profile_switch_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7680,7 +7831,8 @@
             "e2e:project_defaults_json",
             "e2e:project_defaults_plist",
             "e2e:project_defaults_stateless_json",
-            "e2e:project_defaults_xml"
+            "e2e:project_defaults_xml",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7702,7 +7854,8 @@
             "e2e:project_defaults_json",
             "e2e:project_defaults_plist",
             "e2e:project_defaults_stateless_json",
-            "e2e:project_defaults_xml"
+            "e2e:project_defaults_xml",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7819,7 +7972,8 @@
             "e2e:project_export_json",
             "e2e:project_export_stateless_incorrect_token_json",
             "e2e:project_export_stateless_json",
-            "e2e:project_export_stateless_missing_token_json"
+            "e2e:project_export_stateless_missing_token_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7841,7 +7995,8 @@
             "e2e:project_export_json",
             "e2e:project_export_stateless_incorrect_token_json",
             "e2e:project_export_stateless_json",
-            "e2e:project_export_stateless_missing_token_json"
+            "e2e:project_export_stateless_missing_token_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -7938,7 +8093,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:project_import_stateless_json"
+            "e2e:project_import_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -7954,7 +8110,8 @@
             "app.invocation_semantics",
             "app.plan_invocation_schema",
             "app.unknown_option",
-            "e2e:project_import_stateless_json"
+            "e2e:project_import_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8050,7 +8207,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_open_json",
-            "e2e:project_open_stateless_json"
+            "e2e:project_open_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8066,7 +8224,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:project_open_json",
-            "e2e:project_open_stateless_json"
+            "e2e:project_open_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8139,7 +8298,8 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
-            "e2e:project_quota_project_set_json"
+            "e2e:project_quota_project_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8150,7 +8310,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:project_quota_project_set_json"
+            "e2e:project_quota_project_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8225,7 +8386,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:project_quota_project_show_json"
+            "e2e:project_quota_project_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8236,7 +8398,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:project_quota_project_show_json"
+            "e2e:project_quota_project_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8307,7 +8470,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:project_quota_project_unset_json"
+            "e2e:project_quota_project_unset_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8318,7 +8482,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:project_quota_project_unset_json"
+            "e2e:project_quota_project_unset_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8401,7 +8566,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:project_show_json",
-            "e2e:project_show_stateless_json"
+            "e2e:project_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8417,7 +8583,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:project_show_json",
-            "e2e:project_show_stateless_json"
+            "e2e:project_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8489,7 +8656,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:project_templates_set_json"
+            "e2e:project_templates_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8500,7 +8668,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:project_templates_set_json"
+            "e2e:project_templates_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8578,7 +8747,8 @@
             "app.unconfigured_input_failures",
             "app.unknown_option",
             "e2e:project_hidden_json",
-            "e2e:project_templates_show_json"
+            "e2e:project_templates_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8590,7 +8760,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:project_hidden_json",
-            "e2e:project_templates_show_json"
+            "e2e:project_templates_show_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8663,7 +8834,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_aliases_import_json"
+            "e2e:projects_aliases_import_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8677,7 +8849,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_aliases_import_json"
+            "e2e:projects_aliases_import_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8758,7 +8931,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_aliases_list_json",
-            "e2e:projects_aliases_list_narrow"
+            "e2e:projects_aliases_list_narrow",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8770,7 +8944,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_aliases_list_json",
-            "e2e:projects_aliases_list_narrow"
+            "e2e:projects_aliases_list_narrow",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8843,7 +9018,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_aliases_remove_json"
+            "e2e:projects_aliases_remove_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8857,7 +9033,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_aliases_remove_json"
+            "e2e:projects_aliases_remove_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -8936,7 +9113,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_aliases_set_json"
+            "e2e:projects_aliases_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -8950,7 +9128,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_aliases_set_json"
+            "e2e:projects_aliases_set_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -9041,6 +9220,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_blacklist_add_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9055,6 +9235,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_blacklist_add_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9160,6 +9341,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_blacklist_clear_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9174,6 +9356,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_blacklist_clear_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9273,6 +9456,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_blacklist_disable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9287,6 +9471,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_blacklist_disable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9386,6 +9571,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_blacklist_enable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9400,6 +9586,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_blacklist_enable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9499,6 +9686,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_blacklist_list_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9513,6 +9701,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_blacklist_list_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9605,6 +9794,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_blacklist_remove_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9619,6 +9809,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_blacklist_remove_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -9716,7 +9907,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_diff_client_server_json",
-            "e2e:projects_diff_stateless_json"
+            "e2e:projects_diff_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -9732,7 +9924,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_diff_client_server_json",
-            "e2e:projects_diff_stateless_json"
+            "e2e:projects_diff_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -9810,7 +10003,8 @@
             "app.plan_quota_app_problems",
             "app.unconfigured_input_failures",
             "app.unknown_option",
-            "e2e:projects_forget_json"
+            "e2e:projects_forget_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -9824,7 +10018,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_forget_json"
+            "e2e:projects_forget_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -9928,7 +10123,8 @@
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
             "e2e:projects_list_stateless_json",
-            "e2e:projects_list_visible_json"
+            "e2e:projects_list_visible_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -9950,7 +10146,8 @@
             "e2e:projects_list_json",
             "e2e:projects_list_stateless_expr_json",
             "e2e:projects_list_stateless_json",
-            "e2e:projects_list_visible_json"
+            "e2e:projects_list_visible_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -10032,7 +10229,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_path_json"
+            "e2e:projects_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -10043,7 +10241,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_path_json"
+            "e2e:projects_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -10129,7 +10328,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_promote_stateless_dry_run_json"
+            "e2e:projects_promote_stateless_dry_run_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -10145,7 +10345,8 @@
             "app.invocation_semantics",
             "app.plan_invocation_schema",
             "app.unknown_option",
-            "e2e:projects_promote_stateless_dry_run_json"
+            "e2e:projects_promote_stateless_dry_run_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -10229,7 +10430,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_reset_json"
+            "e2e:projects_reset_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -10243,7 +10445,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_reset_json"
+            "e2e:projects_reset_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -10318,7 +10521,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:projects_update_json"
+            "e2e:projects_update_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -10332,7 +10536,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:projects_update_json"
+            "e2e:projects_update_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -10426,6 +10631,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_whitelist_add_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10440,6 +10646,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_whitelist_add_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10552,6 +10759,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_whitelist_clear_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10566,6 +10774,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_whitelist_clear_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10665,6 +10874,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_whitelist_disable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10679,6 +10889,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_whitelist_disable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10778,6 +10989,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_whitelist_enable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10792,6 +11004,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_whitelist_enable_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10891,6 +11104,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_whitelist_list_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10905,6 +11119,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_whitelist_list_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -10997,6 +11212,7 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:projects_whitelist_remove_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -11011,6 +11227,7 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:projects_whitelist_remove_json",
+            "main.cli_launch_flags",
             "visibility.commands_runtime",
             "visibility.invocation_schema",
             "visibility.selection_runtime"
@@ -11103,7 +11320,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:rollouts_delete_stateless_confirmation_json"
+            "e2e:rollouts_delete_stateless_confirmation_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11117,7 +11335,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:rollouts_delete_stateless_confirmation_json"
+            "e2e:rollouts_delete_stateless_confirmation_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11200,7 +11419,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:rollouts_list_json",
-            "e2e:rollouts_list_stateless_json"
+            "e2e:rollouts_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11216,7 +11436,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:rollouts_list_json",
-            "e2e:rollouts_list_stateless_json"
+            "e2e:rollouts_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11296,7 +11517,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:rollouts_show_json",
-            "e2e:rollouts_show_stateless_json"
+            "e2e:rollouts_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11312,7 +11534,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:rollouts_show_json",
-            "e2e:rollouts_show_stateless_json"
+            "e2e:rollouts_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11391,7 +11614,8 @@
             "app.shell_transport_failure",
             "app.unknown_option",
             "e2e:root_version",
-            "e2e:root_version_json"
+            "e2e:root_version_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11404,7 +11628,8 @@
             "app.shell_transport_failure",
             "app.unknown_option",
             "e2e:root_version",
-            "e2e:root_version_json"
+            "e2e:root_version_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11476,7 +11701,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:schema_list_json"
+            "e2e:schema_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11487,7 +11713,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:schema_list_json"
+            "e2e:schema_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11564,7 +11791,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:schema_show_json",
-            "e2e:schema_show_retained_json"
+            "e2e:schema_show_retained_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11576,7 +11804,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:schema_show_json",
-            "e2e:schema_show_retained_json"
+            "e2e:schema_show_retained_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11658,7 +11887,8 @@
             "app.profile_failure_runtime",
             "app.setup_json_runtime",
             "app.unknown_option",
-            "e2e:setup_interaction_json"
+            "e2e:setup_interaction_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11674,7 +11904,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:setup_interaction_json"
+            "e2e:setup_interaction_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11741,7 +11972,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:theme_current_json"
+            "e2e:theme_current_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11752,7 +11984,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:theme_current_json"
+            "e2e:theme_current_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11818,7 +12051,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11830,7 +12064,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -11928,7 +12163,8 @@
             "e2e:theme_import_directory_json",
             "e2e:theme_import_github_directory_json",
             "e2e:theme_import_gitlab_file_json",
-            "e2e:theme_import_json"
+            "e2e:theme_import_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -11949,7 +12185,8 @@
             "e2e:theme_import_directory_json",
             "e2e:theme_import_github_directory_json",
             "e2e:theme_import_gitlab_file_json",
-            "e2e:theme_import_json"
+            "e2e:theme_import_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12048,7 +12285,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:theme_list_json"
+            "e2e:theme_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12059,7 +12297,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:theme_list_json"
+            "e2e:theme_list_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12130,7 +12369,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:theme_path_json"
+            "e2e:theme_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12141,7 +12381,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:theme_path_json"
+            "e2e:theme_path_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12212,7 +12453,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:theme_rename_json"
+            "e2e:theme_rename_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12223,7 +12465,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:theme_rename_json"
+            "e2e:theme_rename_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12295,7 +12538,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12305,7 +12549,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12373,7 +12618,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12383,7 +12629,8 @@
           "evidence": [
             "app.arity",
             "app.invocation_semantics",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12490,7 +12737,8 @@
             "app.unknown_option",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
-            "e2e:parameter_update_stateless_json"
+            "e2e:parameter_update_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12510,7 +12758,8 @@
             "app.unknown_option",
             "e2e:parameter_update_dry_run_json",
             "e2e:parameter_update_json",
-            "e2e:parameter_update_stateless_json"
+            "e2e:parameter_update_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12619,7 +12868,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_blame_condition_stateless_json",
-            "e2e:versions_blame_stateless_json"
+            "e2e:versions_blame_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12636,7 +12886,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:versions_blame_condition_stateless_json",
-            "e2e:versions_blame_stateless_json"
+            "e2e:versions_blame_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12730,7 +12981,8 @@
             "app.unknown_option",
             "e2e:versions_diff_filtered_json",
             "e2e:versions_diff_json",
-            "e2e:versions_diff_stateless_json"
+            "e2e:versions_diff_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12748,7 +13000,8 @@
             "app.unknown_option",
             "e2e:versions_diff_filtered_json",
             "e2e:versions_diff_json",
-            "e2e:versions_diff_stateless_json"
+            "e2e:versions_diff_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12840,7 +13093,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_export_file_json",
-            "e2e:versions_export_stateless_file_json"
+            "e2e:versions_export_stateless_file_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12856,7 +13110,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:versions_export_file_json",
-            "e2e:versions_export_stateless_file_json"
+            "e2e:versions_export_stateless_file_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -12940,7 +13195,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_list",
-            "e2e:versions_list_stateless_json"
+            "e2e:versions_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -12956,7 +13212,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:versions_list",
-            "e2e:versions_list_stateless_json"
+            "e2e:versions_list_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -13037,7 +13294,8 @@
             "app.failure_codes",
             "app.failure_runtime",
             "app.plan_quota_app_problems",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -13051,7 +13309,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.plan_invocation_schema",
-            "app.unknown_option"
+            "app.unknown_option",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -13138,7 +13397,8 @@
             "app.failure_runtime",
             "app.plan_quota_app_problems",
             "app.unknown_option",
-            "e2e:versions_rollback_stateless_dry_run_json"
+            "e2e:versions_rollback_stateless_dry_run_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -13152,7 +13412,8 @@
             "app.arity",
             "app.invocation_semantics",
             "app.unknown_option",
-            "e2e:versions_rollback_stateless_dry_run_json"
+            "e2e:versions_rollback_stateless_dry_run_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {
@@ -13242,7 +13503,8 @@
             "app.plan_quota_app_problems",
             "app.unknown_option",
             "e2e:versions_show_json",
-            "e2e:versions_show_stateless_json"
+            "e2e:versions_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "interaction": {
@@ -13258,7 +13520,8 @@
             "app.invocation_semantics",
             "app.unknown_option",
             "e2e:versions_show_json",
-            "e2e:versions_show_stateless_json"
+            "e2e:versions_show_stateless_json",
+            "main.cli_launch_flags"
           ]
         },
         "no_op": {

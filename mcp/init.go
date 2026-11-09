@@ -13,6 +13,7 @@ import (
 	corelog "github.com/yumauri/fbrcm/core/log"
 	"github.com/yumauri/fbrcm/internal/terminal/progress"
 	"github.com/yumauri/fbrcm/ops/contract"
+	"github.com/yumauri/fbrcm/ops/launchflags"
 	"github.com/yumauri/fbrcm/ops/shared"
 )
 
@@ -27,7 +28,7 @@ func Run(ctx context.Context, service *core.Core, version, commit, date string, 
 	root.SetOut(stdout)
 	root.SetErr(stderr)
 	var captured bytes.Buffer
-	jsonMode := contract.JSONRequested(args)
+	jsonMode := launchflags.Inspect(root, args).JSON
 	if jsonMode {
 		root.SetOut(&captured)
 	}

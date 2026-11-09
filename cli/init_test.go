@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/yumauri/fbrcm/cli/app"
 	"github.com/yumauri/fbrcm/core/config"
 	"github.com/yumauri/fbrcm/core/env"
 	corestyles "github.com/yumauri/fbrcm/core/styles"
@@ -38,7 +39,7 @@ func TestConfigureThemeSkipsColorlessMachineAndStatelessRuns(t *testing.T) {
 			corestyles.ResetPalette()
 			t.Cleanup(corestyles.ResetPalette)
 
-			configureTheme(test.args)
+			configureTheme(app.InspectLaunch(test.args))
 			if got := corestyles.ColorValue(corestyles.TokenPrimary); got != corestyles.DefaultPalette()[corestyles.TokenPrimary] {
 				t.Fatalf("primary = %q, theme file was read", got)
 			}
@@ -64,20 +65,20 @@ func TestConfigureThemeLoadsHumanTheme(t *testing.T) {
 	t.Cleanup(corestyles.ResetPalette)
 	t.Cleanup(func() { config.SetLocalConfigDisabled(false) })
 
-	configureTheme([]string{"projects", "list", "--no-local-config"})
+	configureTheme(app.InspectLaunch([]string{"projects", "list", "--no-local-config"}))
 	if got := corestyles.ColorValue(corestyles.TokenPrimary); got != "1" {
 		t.Fatalf("primary = %q", got)
 	}
 }
 
-func TestBooleanFlagEnabled(t *testing.T) {
-	if !booleanFlagEnabled([]string{"get", "--stateless"}, "stateless") {
+func TestStatelessLaunchFlag(t *testing.T) {
+	if !app.InspectLaunch([]string{"get", "--stateless"}).Stateless {
 		t.Fatal("bare flag not enabled")
 	}
-	if booleanFlagEnabled([]string{"get", "--stateless=false"}, "stateless") {
+	if app.InspectLaunch([]string{"get", "--stateless=false"}).Stateless {
 		t.Fatal("false flag enabled")
 	}
-	if booleanFlagEnabled([]string{"get", "--", "--stateless"}, "stateless") {
+	if app.InspectLaunch([]string{"get", "--", "--stateless"}).Stateless {
 		t.Fatal("flag after argument terminator enabled")
 	}
 }

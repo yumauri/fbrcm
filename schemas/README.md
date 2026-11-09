@@ -1,14 +1,14 @@
 # CLI JSON schemas
 
-`cli/1.1.0/` contains the schemas for `explain` and condition blame. Released
-`cli/1.0.0/` remains checked in and embedded
-unchanged as the released baseline. The current directory contains Draft 2020-12 input and
+`cli/1.1.0/` contains the locked 1.1.0 contract, including `explain` and
+condition blame. `cli/1.0.0/` remains checked in and embedded as the released
+baseline. The current directory contains Draft 2020-12 input and
 response schemas for every executable CLI command plus the shared envelope,
 problem, capability, semantic-definition, Remote Config stdin, combined
 credential stdin, OAuth credential stdin, and service-account credential stdin
 schemas, plus capture, theme, and publication plan stdin schemas. The fixed publication-plan
-artifact schema retains its original `1.0.0` ID. Contract `1.0.0` is the
-released baseline; see the [compatibility policy](../docs/compatibility.md).
+artifact schema retains its original `1.0.0` ID.
+See the [compatibility policy](../docs/compatibility.md).
 
 Each command response schema includes the exact registered success-data DTO.
 `explain` adds typed evaluation evidence, input provenance, priority guards,
@@ -65,18 +65,16 @@ review all generated changes.
 The embedded capability catalog describes shared operations and is checked
 against live CLI discovery by regression tests.
 
-`schemas/cli/contract.lock.json` records the generated contract's fingerprint.
-The released `1.0.0` marker and digest are archived in
-`cli/contract-1.0.0.lock.json`. The current `1.1.0` lock has `released: false`
-and its development schemas may be regenerated in place until publication.
-Generation preserves a released marker
-and rejects fingerprint changes at the same released version before replacing
-any assets. Follow the compatibility policy for the appropriate version bump.
-For a new version, regenerate and review it before setting its release marker
-to `true`. Do not hand-edit generated schemas or a fingerprint, and never clear
-a released marker to evade the lock. The release workflow rejects an
-unreleased lock. This fingerprint covers CLI artifacts; MCP adaptation and
-persisted formats also require compatibility review and regression evidence.
+The active [1.1.0 lock](cli/contract.lock.json) has `released: true` and
+records the audited fingerprint. The [1.0.0 lock](cli/contract-1.0.0.lock.json)
+is archived alongside it. Generation preserves the release marker and rejects
+fingerprint changes at the same version before replacing any assets. Follow
+the compatibility policy for the appropriate version bump. Archive the
+released lock when staging a new version. Regenerate and review the new
+version before setting its release marker to `true`. Never hand-edit generated
+schemas or a fingerprint, or clear a released marker to evade the lock. The
+release workflow requires a released lock. MCP adaptation and persisted
+formats also require compatibility review and regression evidence.
 
 ## MCP schema adaptation
 

@@ -4,8 +4,8 @@ This document defines the stable machine interface used by agents, CI, and
 scripts. Contract version `1.1.0` applies whenever the global `--json` flag is
 present. Without `--json`, commands use human-readable output.
 
-Contract `1.0.0` is the released, locked baseline for fbrcm 1.0.0. Contract
-`1.1.0` adds `explain` and condition history through the optional
+Contract `1.0.0` is the released baseline for fbrcm 1.0.0. The locked
+contract `1.1.0` adds `explain` and condition history through the optional
 `versions blame --condition <name>` selector. Parameter blame retains its
 invocation and response fields. The published `1.0.0` schemas and release lock
 remain available. The [compatibility policy](compatibility.md)
@@ -29,6 +29,11 @@ after a command name:
 fbrcm --json projects list
 fbrcm projects list --json --timeout 30s
 ```
+
+For valid flag values, the last occurrence of each global flag wins. A token
+consumed as another flag's value, or following the `--` delimiter, retains its
+literal meaning even when it looks like `--json` or `--timeout`. An invalid
+`--json` value is reported in a JSON argument-failure envelope.
 
 JSON mode writes exactly one JSON document followed by one newline to stdout,
 including for Cobra parsing failures and startup failures. It never writes a
@@ -1252,8 +1257,10 @@ Malformed overrides are `argument.invalid` (exit `2`); missing parameters are
 are successful explanation states, not invocation failures.
 
 The invocation schema accepts a raw cURL/HAR string or decoded HAR object for
-structured stdin. `--from` paths and raw CLI stdin retain automatic format detection;
-`--from -` selects stdin. `--cached` and `--update` are mutually exclusive. A project
+structured stdin. `--from` paths and raw CLI stdin retain automatic format detection.
+In JSON mode, `--from -` requires redirected stdin with a capture and returns
+`capture.invalid` (exit `8`) when the stream or document is missing.
+`--cached` and `--update` are mutually exclusive. A project
 is required when no capture is supplied. JSON mode never asks for missing facts;
 repeat `--set field=value` to supply them. `--no-input` keeps the human report
 and suppresses input prompts. Both modes require `--entry` when several fetches
@@ -1288,9 +1295,9 @@ accepted by the published parsers. The override annotation validates the complet
 assignment, including field syntax, marker handling and typed values. Indexed
 field whitespace includes vertical tabs, as accepted by the evaluator lexer.
 HAR timestamps use Go's `time.Time.UnmarshalJSON` parser at runtime, including
-its accepted single-digit hour forms; the structural schema does not impose
-the narrower JSON Schema `date-time` format on capture input. Response
-timestamps remain canonical RFC3339 values.
+its accepted single-digit hour forms. Selected capture timestamps and derived
+time bounds must be representable in RFC3339. A timestamp outside that range
+returns `capture.invalid` (exit `8`). Response timestamps use RFC3339.
 
 ## Published schemas and versioning
 
@@ -1442,18 +1449,16 @@ for fingerprinted clarifications that preserve validation and semantics.
 Published schema IDs are immutable. Consumers use the installed binary's
 advertised schema/version; there is no output-version negotiation flag.
 
-`schemas/cli/contract.lock.json` fingerprints the current generated schemas,
-capability goldens, and audit-evidence golden and records whether that contract
-has been released. An active lock with `released: false` allows in-place
-regeneration during release preparation. The released `1.0.0` marker
-and fingerprint are retained in `schemas/cli/contract-1.0.0.lock.json`. The
-pre-1.0 in-place correction policy has ended. The generator rejects a different fingerprint at
-the same released version and preserves the release marker on unchanged
-regeneration. A future version is reviewed before its own release marker is
-enabled; never clear a released marker to bypass the gate. Generation happens in a staging
-directory and validates the lock before replacing checked-in files, so a lock
-rejection leaves the working tree untouched. Previous version directories are
-not removed by generation.
+`schemas/cli/contract.lock.json` freezes the `1.1.0` fingerprint for the
+generated schemas, capability goldens, and audit-evidence golden. The released
+`1.0.0` marker and fingerprint are retained in
+`schemas/cli/contract-1.0.0.lock.json`. Generation preserves the marker and
+digest on identical regeneration. It validates the lock in a staging
+directory and rejects any fingerprint change at the same locked version before
+replacing checked-in assets. Future versions allow in-place regeneration
+during review with `released: false`. Archive the previous released lock and
+retain its schema directory when advancing the contract version. Never clear a
+released marker to bypass the gate.
 
 ### Optional project selection for application lists and condition operations
 

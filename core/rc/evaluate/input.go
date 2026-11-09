@@ -150,6 +150,12 @@ func readHAR(data []byte) ([]Exchange, error) {
 		}
 		prepareExchange(&exchange, body, headers)
 		captureTime(&exchange, entry)
+		observed := exchange.Facts["device.dateTime"]
+		for _, timestamp := range []time.Time{exchange.StartedAt, observed.TimeMin, observed.TimeMax} {
+			if _, err := timestamp.MarshalJSON(); err != nil {
+				return nil, fmt.Errorf("HAR entry %d: capture timestamps must be representable in RFC3339", i+1)
+			}
+		}
 		if entry.Response.Status == 200 && entry.Response.Content.Text != "" {
 			response, decodeErr := decodeBody(entry.Response.Content)
 			if decodeErr != nil {

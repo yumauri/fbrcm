@@ -71,6 +71,9 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 				continue
 			}
 			evidence := append([]string(nil), generatedAuditBaseEvidence(class)...)
+			if class == "invocation" || class == "failure" {
+				evidence = append(evidence, "main.cli_launch_flags")
+			}
 			if contract.IsProjectVisibilityCommand(capability.ID) {
 				evidence = append(evidence, "visibility.commands_runtime", "visibility.selection_runtime", "visibility.invocation_schema")
 			}
@@ -186,6 +189,7 @@ func buildAuditEvidenceMatrix(root *cobra.Command, capabilities []contract.Capab
 
 func generatedAuditEvidenceCatalog() map[string]string {
 	return map[string]string{
+		"main.cli_launch_flags":                   "main_test.go#TestCLILaunchFlags",
 		"app.audit_metadata":                      "cli/app/explain_audit_test.go#TestContractAuditMetadataHasNoInapplicableBranches",
 		"app.explain_audit_failures":              "cli/app/explain_audit_test.go#TestExplainAuditCaptureFailuresAndEntryBounds",
 		"app.explain_audit_inputs":                "cli/app/explain_audit_test.go#TestExplainAuditInputBoundaries",

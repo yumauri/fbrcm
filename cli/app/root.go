@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -91,6 +90,12 @@ func NewRootForContract(version string) *cobra.Command {
 	return newRootCommandWithOfflineInit(nil, version, "schema", "schema", func(context.Context, bool) {})
 }
 
+func InspectLaunch(args []string) launchflags.Options {
+	root := NewRootForContract("launch")
+	defer contract.UnregisterResponses(root)
+	return launchflags.Inspect(root, args)
+}
+
 func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, initOfflineMode func(context.Context, bool)) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "fbrcm",
@@ -107,7 +112,7 @@ func newRootCommandWithOfflineInit(s *core.Core, version, commit, date string, i
 			// argument to its hidden completion command. That token is commonly
 			// empty, and completion must not initialize application state.
 			if cmd.Name() == cobra.ShellCompRequestCmd {
-				if shared.MachineMode(cmd) || contract.JSONRequested(args) {
+				if shared.MachineMode(cmd) {
 					cmd.SetContext(machine.WithProfileless(shared.CommandContext(cmd)))
 					return &shared.ArgumentError{Code: "command.not_executable", Err: fmt.Errorf("shell completion requests use shell framing and are unavailable with --json; use capabilities for machine discovery")}
 				}
@@ -318,10 +323,10 @@ func installCommandErrorBoundaries(root *cobra.Command) {
 	visit(root)
 }
 
-func Execute(s *core.Core, version, commit, date string) {
+func Execute(s *core.Core, version, commit, date string, launch launchflags.Options) {
 	corelog.For("cli").Debug("register cli commands")
 	rootCmd := newRootCommand(s, version, commit, date)
-	jsonMode := contract.JSONRequested(os.Args[1:])
+	jsonMode := launch.JSON
 	var captured bytes.Buffer
 	if jsonMode {
 		shared.SetMachineMode(true)
@@ -336,7 +341,7 @@ func Execute(s *core.Core, version, commit, date string) {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if timeout := requestedTimeout(os.Args[1:]); timeout > 0 {
+	if timeout := launch.Timeout; timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
@@ -373,27 +378,6 @@ func completedCommandError(ctx context.Context, commandErr error) error {
 		return commandErr
 	}
 	return ctx.Err()
-}
-
-func requestedTimeout(args []string) time.Duration {
-	var requested time.Duration
-	for index, arg := range args {
-		if arg == "--" {
-			break
-		}
-		if value, ok := strings.CutPrefix(arg, "--timeout="); ok {
-			if timeout, err := time.ParseDuration(value); err == nil {
-				requested = timeout
-			}
-			continue
-		}
-		if arg == "--timeout" && index+1 < len(args) {
-			if timeout, err := time.ParseDuration(args[index+1]); err == nil {
-				requested = timeout
-			}
-		}
-	}
-	return requested
 }
 
 func commandProgressMessage(cmd *cobra.Command) string {

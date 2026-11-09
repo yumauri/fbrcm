@@ -11,9 +11,10 @@ options, and authorization behavior are covered by the
 conditional on launch policy, and MCP protocol negotiation is independent of
 the shared CLI JSON contract version.
 Since fbrcm 1.1.0, stateful `inspect` discovery includes `parameters.explain`.
-Its operation ID is `explain`, and its envelopes advertise CLI JSON contract
-`1.1.0`. Future MCP changes still require compatibility
-review even when the CLI contract fingerprint is unchanged.
+Its operation ID is `explain`, and its envelopes advertise the locked CLI JSON
+contract `1.1.0`. The existing `versions.blame` tool adds an optional
+`condition` selector alongside the established parameter invocation. Future
+MCP changes require compatibility review independently of the CLI fingerprint.
 
 For launch flags and defaults, see the [command reference](CLI.md#mcp-server).
 For package boundaries and implementation details, see

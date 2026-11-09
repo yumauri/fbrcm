@@ -1,6 +1,6 @@
 # JSON contract
 
-The examples on this page use contract `1.1.0`, which adds `explain` and
+The examples on this page use the locked contract `1.1.0`, which adds `explain` and
 `versions blame --condition` while preserving parameter blame. The published
 `1.0.0` schemas and release lock remain available. See the
 [compatibility guarantees](/reference/compatibility) for schema versioning,

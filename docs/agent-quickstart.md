@@ -4,8 +4,8 @@ This page covers non-interactive, one-shot CLI commands for agents and scripts.
 For an AI application using MCP tools, start with the [MCP guide](MCP.md).
 The [CLI reference](CLI.md) lists commands and flags; the
 [machine contract](cli-contract.md) defines envelopes, errors, and exit statuses.
-The [1.0.0 compatibility policy](compatibility.md) defines the upgrade promise;
-use the installed binary's advertised schema version when validating results.
+Use the installed binary's advertised schema version when validating results.
+The [compatibility policy](compatibility.md) covers upgrades across 1.x.
 
 ## Use JSON output
 

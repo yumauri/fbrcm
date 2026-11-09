@@ -35,7 +35,7 @@
 
 ## Released compatibility boundary
 
-- fbrcm 1.0.0 freezes the supported interfaces in `docs/compatibility.md`. Preserve documented CLI behavior, versioned JSON contracts, public MCP tool contracts, and durable persisted data across compatible releases. The pre-1.0 in-place breaking-change exception has ended.
+- Follow the 1.x guarantees in `docs/compatibility.md`, including the locked CLI JSON contract 1.1.0 and the retained 1.0.0 baseline. Preserve documented CLI behavior, versioned JSON contracts, public MCP tool contracts, and durable persisted data across compatible releases.
 - Keep existing integer file-format versions at `1` unless their encoding changes incompatibly. Such changes require the appropriate version and migration; versionless durable formats also need an explicit migration boundary. Do not discard drafts or retained version snapshots as disposable caches.
 - Never clear `released: true` or replace a released fingerprint in `schemas/cli/contract.lock.json` to bypass generation. Apply the appropriate contract/application version bump, regenerate, review, test, and lock the new version before release.
 - Human table layouts, default TUI bindings, and exported Go packages are not stable integration interfaces. Custom key-configuration syntax and stored action identifiers remain covered as durable configuration.

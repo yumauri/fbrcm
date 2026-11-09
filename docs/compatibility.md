@@ -8,16 +8,17 @@ interfaces without migration or a version change has ended.
 
 ## 1.1.0 release boundary
 
-Version 1.1.0 adds CLI `explain`, its structured JSON results and capture
-inputs, MCP `parameters.explain`, and condition blame through CLI and MCP.
-These additions follow the same compatibility policy as the 1.0.0 interfaces.
+Version 1.1.0 extends the 1.x compatibility promise to CLI `explain` and its
+capture inputs and structured results, MCP `parameters.explain`, and the
+optional condition selector for `versions blame` and MCP `versions.blame`.
+Parameter blame retains its existing invocation and result fields.
 
 | Versioned surface | Boundary for this release |
 | --- | --- |
 | Application | fbrcm `1.1.0`; documented CLI behavior remains compatible throughout 1.x. |
-| CLI JSON | Contract `1.1.0`. The published `1.0.0` schemas and archived release lock remain available. |
+| CLI JSON | Contract `1.1.0` is frozen by the active release lock. The published `1.0.0` schemas and archived release lock remain available. |
 | MCP | Negotiated protocol version, with the documented public tool catalog, launch policy, schema adaptation and shared operation envelopes. The CLI lock does not independently freeze MCP adaptation. |
-| Persisted formats | Existing integer versions remain `1`; versionless durable formats retain their established meaning. No encoding change or migration is introduced by this release. |
+| Persisted formats | Existing integer versions remain `1`. The release reads existing durable encodings directly, including versionless formats. |
 
 ## Stable interfaces
 
@@ -104,10 +105,13 @@ plan formats currently use integer version `1`. TOML configuration, themes,
 hook trust records, and Remote Config snapshot wrappers have no separate
 format-version field; that does not exempt their supported data from upgrade
 compatibility. A release number alone never increments a file-format version.
-Version 1.1.0 keeps the existing encodings, including the
-publication-plan artifact schema `urn:fbrcm:schema:cli:1.0.0:publication_plan` and its integer
-`format_version: 1`. Capture inputs for `explain` are not a new persisted format;
-the operation does not store captures.
+Version 1.1.0 keeps the existing encodings, including the publication-plan
+artifact schema `urn:fbrcm:schema:cli:1.0.0:publication_plan` and its integer
+`format_version: 1`. The new `keys.global.open_context`,
+`keys.global.explain_context` and `keys.context.*` actions use the existing
+custom key configuration format. The new global defaults yield to explicitly
+configured global bindings. CLI `explain` processes captures in memory, and
+TUI Context inputs and scope last for the current session.
 
 An incompatible encoding needs a distinct format version where one exists and
 a documented migration before replacing durable data. Versionless formats need
@@ -158,22 +162,22 @@ their original release state; the current release status is recorded in
 
 ## Release lock
 
-The released `1.0.0` fingerprint and marker are archived unchanged in
-`schemas/cli/contract-1.0.0.lock.json`. `schemas/cli/contract.lock.json` records
-the active contract version, fingerprint, and release marker. A lock with
-`released: false` allows in-place regeneration during release preparation.
-A released SHA-256 freezes the generated CLI schemas, compact/detailed capabilities,
-and audit-evidence golden. The embedded capability catalog is regenerated and
-tested against those records. This lock is a generation gate, not a fingerprint
-of every runtime implementation, MCP adaptation, or persisted format.
+The active [1.1.0 release lock](../schemas/cli/contract.lock.json) freezes the
+audited fingerprint for the generated CLI schemas, compact and detailed
+capability goldens, and audit-evidence golden. The embedded capability catalog
+is regenerated and tested against those records. The released 1.0.0
+fingerprint and marker are kept in the [archived lock](../schemas/cli/contract-1.0.0.lock.json).
+The [1.1.0 CLI JSON audit](audits/cli-json-contract-2026-11-08.md) records
+the validation that preceded the lock. MCP adaptation and persisted formats
+have their own compatibility checks.
 
-Run `go run ./cmd/schemagen` before releasing. It must preserve the released
-marker and digest at the same version, and reject a changed fingerprint before
-publishing any generated files. After publication, generated changes need the
-appropriate contract-version bump and reviewed schemas, capabilities, evidence, tests, and
-documentation. After publication, even a test-evidence-only fingerprint change
-requires a version bump; it does not authorize changing runtime behavior. Never clear the released
-marker or replace a released fingerprint to bypass this gate.
+Run `go run ./cmd/schemagen` before releasing. At the locked version,
+generation preserves the released marker and digest and rejects a changed
+fingerprint before publishing any generated files. Any change to a
+fingerprinted artifact, including audit evidence alone, requires the
+appropriate contract-version bump and review of schemas, capabilities,
+evidence, tests, and documentation. Never clear a released marker or replace a
+released fingerprint to bypass the gate.
 
 A new contract version is staged as unreleased until its review is complete;
 then set its release marker after generation. The release workflow requires a
@@ -181,11 +185,4 @@ released lock before publishing binaries. Persisted-format and MCP compatibility
 still require review and regression evidence in addition to this CLI gate.
 When advancing beyond 1.1.0, retain its released lock as
 `schemas/cli/contract-1.1.0.lock.json` before replacing the current lock with
-the next contract version, as was done for 1.0.0.
-
-
-## Condition blame compatibility
-
-Condition blame is available since CLI JSON contract `1.1.0`. Parameter blame
-retains its invocation and response fields. The MCP `versions.blame` tool
-accepts the same optional condition selector.
+the next contract version.

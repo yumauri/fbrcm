@@ -9,8 +9,8 @@ versioned [machine contract](cli-contract.md).
 From 1.0.0, the documented command syntax and behavior are stable under the
 [compatibility policy](compatibility.md). Human table layouts, terminal
 styling, and message wording may change; automate with JSON or MCP.
-fbrcm 1.1.0 adds `explain` and condition blame under CLI JSON contract
-`1.1.0`. The published `1.0.0` schemas remain available.
+fbrcm 1.1.0 adds `explain` and condition blame under the locked CLI JSON
+contract `1.1.0`. The published `1.0.0` schemas remain available.
 
 ## Command tree
 
@@ -960,6 +960,10 @@ fingerprint` in `FBRCM_HOOK_TRUST`; a mismatched value fails closed.
 
 Every command accepts the global `--json` flag. Successes and failures emit one versioned envelope; tables, prompts, file pickers, editors, browser launches, unwrapped usage text, and unwrapped raw content are excluded from JSON stdout. Requested help and root version text are returned inside `data.text` using their documented response schemas. See the [complete machine contract](cli-contract.md) for schemas, error categories, semantic exit statuses, discovery, non-interactive rules, and artifact results.
 
+The last valid `--json` flag value controls the output format. Flag-like option
+values and arguments after `--` retain their literal meaning. An invalid
+`--json` value produces a JSON argument failure.
+
 Failure exit statuses are output-format independent: the same invocation uses
 the same semantic status with or without `--json`. Human mode changes only the
 presentation of the failure.
@@ -1550,8 +1554,9 @@ prefix returns `argument.invalid`.
 --json                return the versioned structured explanation, without prompts
 ```
 
-Piped stdin is detected automatically. `--from -` explicitly selects stdin;
-another `--from` path takes precedence over piped input. HAR files may include
+Piped stdin is detected automatically. In JSON mode, `--from -` requires a
+redirected capture and returns `capture.invalid` (exit `8`) if it is missing.
+Another `--from` path takes precedence over piped input. HAR files may include
 unrelated traffic; only Firebase fetch requests are candidates and their original
 one-based entry numbers are preserved. `--entry 3` means the third entry of the
 original file. With several fetches, choose one interactively or pass `--entry`.
@@ -1562,7 +1567,9 @@ The capture parser accepts a quoted `curl` executable as well as the usual
 browser export. HAR decoding accepts omitted and null fields as zero values,
 case-insensitive JSON field names, and unrelated entries without valid URLs,
 fetch-body encodings, or HTTP status bounds. Fetch-specific checks apply only
-to matching Firebase requests. Invalid capture content returns `capture.invalid`.
+to matching Firebase requests. Selected timestamps and their derived time
+bounds must be representable in RFC3339. Invalid capture content returns
+`capture.invalid`.
 
 By default the command uses a fresh cache, revalidates a stale cache, and
 fetches when the cache is absent. `--cached` accepts an existing cache even if

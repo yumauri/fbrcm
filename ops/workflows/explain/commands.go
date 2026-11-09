@@ -174,9 +174,14 @@ func run(cmd invocation.Call, svc *core.Core, key string, prompts prompter) erro
 
 func readExchange(cmd invocation.Call, from string, entry int, prompts prompter) (*evaluate.Exchange, error) {
 	var input io.Reader
+	stdin := cmd.InOrStdin()
+	piped := shared.StdinAvailable(stdin)
 	switch {
-	case from == "-" || from == "" && shared.StdinAvailable(cmd.InOrStdin()):
-		input = cmd.InOrStdin()
+	case from == "-" || from == "" && piped:
+		if !piped && shared.MachineMode(cmd) {
+			return nil, invalidCapture(fmt.Errorf("redirect a cURL command or HAR to stdin when using --from -"))
+		}
+		input = stdin
 	case from != "":
 		file, err := os.Open(from)
 		if err != nil {
@@ -193,7 +198,7 @@ func readExchange(cmd invocation.Call, from string, entry int, prompts prompter)
 	exchanges, err := evaluate.ReadCapture(input)
 	if err != nil {
 		if _, ok := errors.AsType[*evaluate.CaptureError](err); ok {
-			return nil, &shared.ValidationError{Code: "capture.invalid", Source: "capture", Stage: "parse", Err: err}
+			return nil, invalidCapture(err)
 		}
 		return nil, err
 	}
@@ -221,6 +226,10 @@ func readExchange(cmd invocation.Call, from string, entry int, prompts prompter)
 		return nil, err
 	}
 	return &selected, nil
+}
+
+func invalidCapture(err error) error {
+	return &shared.ValidationError{Code: "capture.invalid", Source: "capture", Stage: "parse", Err: err}
 }
 
 func resolveProject(cmd invocation.Call, svc *core.Core, query string, exchange *evaluate.Exchange, cached bool) (core.Project, error) {

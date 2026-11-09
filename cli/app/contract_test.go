@@ -3688,12 +3688,6 @@ func TestJSONBlankUpdateParameterIsAnArgumentFailure(t *testing.T) {
 	validateContractDocument(t, envelope.Schema, raw)
 }
 
-func TestRequestedTimeoutUsesLastValue(t *testing.T) {
-	if got := requestedTimeout([]string{"--timeout=1s", "show", "--timeout", "2s"}); got.String() != "2s" {
-		t.Fatalf("timeout = %s", got)
-	}
-}
-
 func executeJSONContract(t *testing.T, args ...string) (contract.Envelope, []byte) {
 	t.Helper()
 	return executeJSONContractRoot(t, NewRootForContract("test"), args...)

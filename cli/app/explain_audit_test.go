@@ -186,8 +186,8 @@ func TestExplainAuditProjectSelectionAndSourcePrecedence(t *testing.T) {
 
 func TestExplainAuditCaptureFailuresAndEntryBounds(t *testing.T) {
 	for _, tc := range []struct {
-		name, input, entry, code string
-		exit                     int
+		name, input, entry, from, code string
+		exit                           int
 	}{
 		{name: "malformed JSON", input: "{", code: "capture.invalid", exit: 8},
 		{name: "missing HAR log", input: "{}", code: "capture.invalid", exit: 8},
@@ -195,6 +195,10 @@ func TestExplainAuditCaptureFailuresAndEntryBounds(t *testing.T) {
 		{name: "array capture", input: "[]", code: "capture.invalid", exit: 8},
 		{name: "no Firebase candidates", input: `{"log":{"entries":[{}]}}`, code: "capture.invalid", exit: 8},
 		{name: "unsupported selected body encoding", input: `{"log":{"entries":[{"request":{"method":"POST","url":"` + explainFetchURL + `","postData":{"text":"{}","encoding":"unsupported"}}}]}}`, code: "capture.invalid", exit: 8},
+		{name: "candidate timestamp cannot be serialized", input: `{"log":{"entries":[{"startedDateTime":"2026-11-04T00:00:00+24:00","request":{"method":"POST","url":"` + explainFetchURL + `","postData":{"text":"{}"}}},{"request":{"method":"POST","url":"` + explainFetchURL + `","postData":{"text":"{}"}}}]}}`, code: "capture.invalid", exit: 8},
+		{name: "timestamp bound exceeds the RFC3339 year range", input: `{"log":{"entries":[{"startedDateTime":"9999-12-31T23:59:59Z","time":1000,"request":{"method":"POST","url":"` + explainFetchURL + `","postData":{"text":"{}"}}}]}}`, code: "capture.invalid", exit: 8},
+		{name: "explicit stdin without a redirected stream", from: "-", code: "capture.invalid", exit: 8},
+		{name: "explicit stdin with an empty document", from: "-", input: " ", code: "capture.invalid", exit: 8},
 		{name: "entry without capture", entry: "1", code: "argument.invalid", exit: 2},
 		{name: "largest entry is a lookup failure", input: `curl '` + explainFetchURL + `' --data '{}'`, entry: "9223372036854775807", code: "argument.invalid", exit: 2},
 		{name: "entry overflow", entry: "9223372036854775808", code: "argument.invalid", exit: 2},
@@ -209,6 +213,9 @@ func TestExplainAuditCaptureFailuresAndEntryBounds(t *testing.T) {
 			args := []string{"explain", "flag", "--project", "demo", "--cached", "--json"}
 			if tc.entry != "" {
 				args = append(args, "--entry", tc.entry)
+			}
+			if tc.from != "" {
+				args = append(args, "--from", tc.from)
 			}
 			envelope, raw := executeJSONContractRoot(t, root, args...)
 			validateContractDocument(t, envelope.Schema, raw)
