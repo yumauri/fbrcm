@@ -318,7 +318,7 @@ func TestPlatformIsInferredFromCapturedAppIDWithoutPrompting(t *testing.T) {
 					prompts := &fakePrompter{}
 					out, err := execute(t, svc, input, prompts, "flag", "--cached")
 					winner := fmt.Sprintf("Winner: [%d] %s", priority+1, platform)
-					if err != nil || !strings.Contains(out, winner) || !strings.Contains(out, "device.os = '"+platform+"' (request app ID)") || len(prompts.asked) != 0 {
+					if err != nil || !strings.Contains(out, winner) || !strings.Contains(out, "device.os = '"+platform+"' (request app id)") || len(prompts.asked) != 0 {
 						t.Fatalf("platform inference: %v, prompts %v\n%s", err, prompts.asked, out)
 					}
 				})
@@ -348,7 +348,7 @@ func TestExplicitInputsTakePrecedenceOverCapturedPlatform(t *testing.T) {
 			if err != nil || !strings.Contains(out, test.want) || len(prompts.asked) != 0 {
 				t.Fatalf("explicit input precedence: %v, prompts %v\n%s", err, prompts.asked, out)
 			}
-			if test.name == "effective App ID override" && !strings.Contains(out, "command line app ID") {
+			if test.name == "effective App ID override" && !strings.Contains(out, "command line app id") {
 				t.Fatalf("derived platform lost its input provenance:\n%s", out)
 			}
 		})

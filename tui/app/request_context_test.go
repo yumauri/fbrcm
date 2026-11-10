@@ -18,6 +18,7 @@ import (
 	"github.com/yumauri/fbrcm/core/parameters"
 	"github.com/yumauri/fbrcm/core/rc/evaluate"
 	"github.com/yumauri/fbrcm/core/rootgroup"
+	clistyles "github.com/yumauri/fbrcm/internal/terminal/styles"
 	"github.com/yumauri/fbrcm/tui/components/projectio"
 	"github.com/yumauri/fbrcm/tui/messages"
 	"github.com/yumauri/fbrcm/tui/panels"
@@ -132,7 +133,7 @@ func TestContextProjectsTemplateWithoutChangingValueIndexes(t *testing.T) {
 		if strings.Contains(view, "ios_only") || strings.Contains(view, "ios-value") {
 			t.Errorf("%s shows excluded iOS condition:\n%s", name, view)
 		}
-		if !strings.Contains(view, "web_beta") || !strings.Contains(view, "Needs input") {
+		if !strings.Contains(view, "web_beta") || !strings.Contains(view, "needs input") {
 			t.Errorf("%s omits unresolved beta condition:\n%s", name, view)
 		}
 	}
@@ -174,6 +175,9 @@ func TestContextProjectsTemplateWithoutChangingValueIndexes(t *testing.T) {
 			t.Errorf("explanation is missing %q:\n%s", want, plain)
 		}
 	}
+	if !strings.Contains(view, clistyles.PanelMuted.Italic(true).Render("(manual context)")) {
+		t.Errorf("manual context source hint is missing or lacks the shared style:\n%s", plain)
+	}
 	next, _ = next.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnd}))
 	plain = ansi.Strip(next.(Model).explainView.View())
 	for _, want := range []string{"Winner: [2] web_beta", "Captured response: captured-value", "Capture template v17 differs from evaluated template v18"} {
@@ -212,6 +216,15 @@ func TestContextProjectsTemplateWithoutChangingValueIndexes(t *testing.T) {
 		t.Fatal("show excluded did not restore the condition with its status")
 	}
 	m, _, _ = m.updateContextKey("H", false)
+	m.applyContextFact(contextFactMsg{original: "device.os", remove: true})
+	for name, view := range map[string]string{
+		"parameters": m.parameters.ViewWithBorder(true, true),
+		"details":    m.details.ViewWithBorder(true),
+	} {
+		if plain := ansi.Strip(view); !strings.Contains(plain, "possible fallback") {
+			t.Errorf("%s omits the possible fallback status:\n%s", name, plain)
+		}
+	}
 	m.applyContextFact(contextFactMsg{assignment: "device.os=android"})
 	for name, view := range map[string]string{
 		"parameters": m.parameters.ViewWithBorder(true, true),

@@ -196,18 +196,30 @@ func TestConditionHeaderHasFullWidthGrayDividerAndOnlySelectedBackground(t *test
 	}
 }
 
-func TestStepNoteSourceLabelsInsideValuesAreNotStyledAsSources(t *testing.T) {
-	value := `app.customSignal['name'] = 'client\'s (request)' (command line) exactlyMatches 'client\'s (request)'`
-	t.Setenv("NO_COLOR", "")
-	literal := lipgloss.NewStyle().Foreground(clistyles.PaletteGold).Render(`'client\'s (request)'`)
-	want := `app.customSignal['name'] = ` + literal + " " +
-		clistyles.PanelMuted.Italic(true).Render("(command line)") + ` exactlyMatches ` + literal
-	if got := stepNoteText(value); got != want || ansi.Strip(got) != value {
-		t.Fatalf("source styling changed quoted values:\ngot %q\nwant %q", got, want)
+func TestStepNoteLowercasesOnlySourceHints(t *testing.T) {
+	const literal = `'client\'s (request Analytics _fot)'`
+	note := func(value, source string) string {
+		return `app.customSignal['name'] = ` + value + " " + source + ` exactlyMatches ` + value
 	}
-	t.Setenv("NO_COLOR", "1")
-	if got := stepNoteText(value); got != value {
-		t.Fatalf("NO_COLOR changed annotation text: %q", got)
+	for _, source := range []string{
+		"(request)", "(manual context)", "(command line)", "(your answer)", "(capture timestamp)",
+		"(request locale)", "(request Analytics _fot)", "(response Date header)", "(User-Agent header)",
+		"(Client Hints header)", "(Accept-Language header)", "(request app ID)",
+	} {
+		t.Run(source, func(t *testing.T) {
+			value := note(literal, source)
+			lowercaseSource := strings.ToLower(source)
+			t.Setenv("NO_COLOR", "")
+			styledLiteral := lipgloss.NewStyle().Foreground(clistyles.PaletteGold).Render(literal)
+			want := note(styledLiteral, clistyles.PanelMuted.Italic(true).Render(lowercaseSource))
+			if got := stepNoteText(value); got != want {
+				t.Fatalf("styled note = %q, want %q", got, want)
+			}
+			t.Setenv("NO_COLOR", "1")
+			if got, want := stepNoteText(value), note(literal, lowercaseSource); got != want {
+				t.Fatalf("plain note = %q, want %q", got, want)
+			}
+		})
 	}
 }
 

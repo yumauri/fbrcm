@@ -258,12 +258,15 @@ func mutedText(value string) string {
 	return clistyles.PanelMuted.Render(value)
 }
 
-func priorityText(priority int) string {
-	text := fmt.Sprintf("[%d]", priority)
+func mutedItalicText(text string) string {
 	if clistyles.NoColorEnabled() {
 		return text
 	}
 	return clistyles.PanelMuted.Italic(true).Render(text)
+}
+
+func priorityText(priority int) string {
+	return mutedItalicText(fmt.Sprintf("[%d]", priority))
 }
 
 func (out *renderer) indent(column int) int {
@@ -397,12 +400,9 @@ func stepExpressionText(step evaluate.Step) string {
 
 // Quoted values can themselves contain source labels, so consume them whole
 // before looking for the provenance added by the evaluator.
-var noteSourcePattern = regexp.MustCompile(`'(?:\\.|[^'\\])*'|\((?:request|command line|your answer|capture timestamp|request locale|request Analytics _fot|response Date header|User-Agent header|Client Hints header|Accept-Language header)(?: app ID)?\)`)
+var noteSourcePattern = regexp.MustCompile(`'(?:\\.|[^'\\])*'|\((?:request|manual context|command line|your answer|capture timestamp|request locale|request Analytics _fot|response Date header|User-Agent header|Client Hints header|Accept-Language header)(?: app ID)?\)`)
 
 func stepNoteText(value string) string {
-	if clistyles.NoColorEnabled() {
-		return value
-	}
 	var out strings.Builder
 	start := 0
 	for _, span := range noteSourcePattern.FindAllStringIndex(value, -1) {
@@ -410,7 +410,7 @@ func stepNoteText(value string) string {
 			continue
 		}
 		out.WriteString(expressionText(value[start:span[0]]))
-		out.WriteString(clistyles.PanelMuted.Italic(true).Render(value[span[0]:span[1]]))
+		out.WriteString(mutedItalicText(strings.ToLower(value[span[0]:span[1]])))
 		start = span[1]
 	}
 	out.WriteString(expressionText(value[start:]))

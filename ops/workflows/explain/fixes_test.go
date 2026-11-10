@@ -77,7 +77,7 @@ func TestExplainBareDateTimeUsesCapturedTimeAndEitherInputAlias(t *testing.T) {
 		name, input, source string
 		args                []string
 	}{
-		{"captured time", har, "response Date header", nil},
+		{"captured time", har, "response date header", nil},
 		{"bare input alias", `curl '` + requestURL + `' --data '{}'`, "command line", []string{"--set", "dateTime=2026-11-04T12:00:00Z"}},
 		{"existing input alias", `curl '` + requestURL + `' --data '{}'`, "command line", []string{"--set", "device.dateTime=2026-11-04T12:00:00Z"}},
 	} {

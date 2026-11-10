@@ -65,7 +65,7 @@ func ConditionStatus(state evaluate.State) string {
 	case evaluate.False:
 		return "Excluded"
 	case evaluate.Unknown:
-		return "Needs input"
+		return "needs input"
 	default:
 		return ""
 	}
@@ -140,7 +140,7 @@ func (s *Scenario) Values(project core.Project, conditions []core.ParametersCond
 		case len(eligible) == 0:
 			selected = defaultIndex
 		default:
-			values[defaultIndex].Status = "Possible fallback"
+			values[defaultIndex].Status = "possible fallback"
 		}
 	}
 	if selected >= 0 {
