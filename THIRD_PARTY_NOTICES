@@ -132,7 +132,7 @@ SOFTWARE.
 
 ======================================================================
 Component: charm.land/lipgloss/v2
-Version: v2.0.6
+Version: v2.1.0
 License: MIT
 Source: charm.land/lipgloss/v2
 
@@ -2760,7 +2760,7 @@ limitations under the License.
 
 ======================================================================
 Component: golang.org/x/oauth2
-Version: v0.37.0
+Version: v0.38.0
 License: BSD-3-Clause
 Source: golang.org/x/oauth2
 
@@ -2797,7 +2797,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ======================================================================
 Component: golang.org/x/sync
-Version: v0.24.0
+Version: v0.25.0
 License: BSD-3-Clause
 Source: golang.org/x/sync
 
@@ -2859,7 +2859,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/sys
-Version: v0.49.0
+Version: v0.50.0
 License: BSD-3-Clause
 Source: golang.org/x/sys
 
@@ -2921,7 +2921,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/term
-Version: v0.47.0
+Version: v0.48.0
 License: BSD-3-Clause
 Source: golang.org/x/term
 
@@ -2983,7 +2983,7 @@ shall terminate as of the date such litigation is filed.
 
 ======================================================================
 Component: golang.org/x/text
-Version: v0.43.0
+Version: v0.44.0
 License: BSD-3-Clause
 Source: golang.org/x/text
 
