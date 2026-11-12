@@ -16,400 +16,375 @@
     "draft": false
   },
   "data": {
-    "target": "northstar-wallet",
+    "target": "streamline-play-514406",
     "media_type": "application/json",
     "encoding": "json",
     "json_content": {
       "conditions": [
         {
-          "name": "employees",
-          "expression": "percent \u003c= 5",
+          "name": "living_room_devices",
+          "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 40",
           "tagColor": "BLUE"
         },
         {
-          "name": "kyc_pending",
-          "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 35",
-          "tagColor": "ORANGE"
-        },
-        {
-          "name": "uk_open_banking",
-          "expression": "device.country in ['gb']",
+          "name": "sports_market_us",
+          "expression": "device.country in ['us'] \u0026\u0026 percent \u003c= 35",
           "tagColor": "GREEN"
         },
         {
-          "name": "android_beta_10",
-          "expression": "device.os == 'android' \u0026\u0026 percent \u003c= 10",
-          "tagColor": "PURPLE"
+          "name": "kids_profile",
+          "expression": "percent \u003c= 20",
+          "tagColor": "ORANGE"
         },
         {
-          "name": "high_risk_session",
-          "expression": "device.country in ['us', 'gb', 'de'] \u0026\u0026 percent \u003c= 15",
+          "name": "low_bandwidth",
+          "expression": "device.country in ['in', 'br', 'id']",
           "tagColor": "DEEP_ORANGE"
         },
         {
-          "name": "webapp",
-          "expression": "app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'",
-          "tagColor": "LIME"
+          "name": "new_player_rollout_15",
+          "expression": "percent \u003c= 15",
+          "tagColor": "PURPLE"
         }
       ],
       "version": {
-        "versionNumber": "12",
-        "updateTime": "2026-08-01T13:16:40.437597Z",
+        "versionNumber": "1",
+        "updateTime": "2026-11-11T08:55:44.672648Z",
         "updateUser": {
-          "email": "yumaa.verdin@gmail.com"
+          "email": "demo@example.invalid"
         },
+        "description": "Demo streaming media Remote Config for VHS recording",
         "updateOrigin": "CONSOLE",
         "updateType": "INCREMENTAL_UPDATE"
       },
       "parameterGroups": {
-        "support": {
-          "description": "Customer support and maintenance messaging",
+        "playback": {
+          "description": "Player behavior and streaming quality",
           "parameters": {
-            "document_upload_max_mb": {
+            "player_stack": {
+              "defaultValue": {
+                "value": "stable_v4"
+              },
+              "conditionalValues": {
+                "new_player_rollout_15": {
+                  "value": "next_v1"
+                }
+              },
+              "description": "Playback stack version",
+              "valueType": "STRING"
+            },
+            "default_bitrate_cap_kbps": {
+              "defaultValue": {
+                "value": "6500"
+              },
+              "conditionalValues": {
+                "low_bandwidth": {
+                  "value": "1800"
+                }
+              },
+              "description": "Default adaptive bitrate cap",
+              "valueType": "NUMBER"
+            },
+            "autoplay_next_enabled": {
+              "defaultValue": {
+                "value": "true"
+              },
+              "description": "Autoplay next episode",
+              "valueType": "BOOLEAN"
+            },
+            "skip_intro_enabled": {
+              "defaultValue": {
+                "value": "true"
+              },
+              "description": "Show skip intro control",
+              "valueType": "BOOLEAN"
+            },
+            "live_latency_target_seconds": {
               "defaultValue": {
                 "value": "12"
               },
-              "description": "Max document upload size",
+              "conditionalValues": {
+                "sports_market_us": {
+                  "value": "6"
+                }
+              },
+              "description": "Live stream target latency",
               "valueType": "NUMBER"
             },
-            "incident_status_url": {
+            "subtitle_default_size": {
               "defaultValue": {
-                "value": "https://status.example.invalid/finance"
+                "value": "medium"
               },
-              "description": "Status page URL",
+              "conditionalValues": {
+                "living_room_devices": {
+                  "value": "large"
+                }
+              },
+              "description": "Default subtitle size",
               "valueType": "STRING"
             },
-            "maintenance_banner": {
+            "playback_error_retry_policy": {
               "defaultValue": {
-                "value": "{\"enabled\":false,\"title\":\"Scheduled maintenance\",\"startsAt\":\"2026-06-02T01:00:00Z\"}"
+                "value": "{\"maxRetries\":3,\"backoffMs\":[500,1500,4000]}"
               },
-              "description": "Maintenance banner payload",
+              "description": "Retry policy for playback errors",
               "valueType": "JSON"
-            },
-            "show_tax_center": {
-              "defaultValue": {
-                "value": "true"
-              },
-              "description": "Show tax documents center",
-              "valueType": "BOOLEAN"
-            },
-            "statement_months_available": {
-              "defaultValue": {
-                "value": "24"
-              },
-              "description": "Statement history retention",
-              "valueType": "NUMBER"
-            },
-            "support_chat_enabled": {
-              "defaultValue": {
-                "value": "true"
-              },
-              "description": "Enable in-app support chat",
-              "valueType": "BOOLEAN"
-            },
-            "support_queue_copy": {
-              "defaultValue": {
-                "value": "A specialist will join shortly"
-              },
-              "description": "Support queue message",
-              "valueType": "STRING"
             }
           }
         },
-        "banking": {
-          "description": "Account aggregation and payment rails",
+        "discovery": {
+          "description": "Home rails, search and recommendation surfaces",
           "parameters": {
-            "account_nickname_max_length": {
+            "home_rail_order": {
               "defaultValue": {
-                "value": "32"
+                "value": "[\"continue_watching\",\"top_picks\",\"trending\",\"new_releases\"]"
               },
-              "description": "Maximum account nickname length",
+              "conditionalValues": {
+                "kids_profile": {
+                  "value": "[\"continue_watching\",\"kids_favorites\",\"learning\",\"new_releases\"]"
+                }
+              },
+              "description": "Home rail order",
+              "valueType": "JSON"
+            },
+            "trending_window_hours": {
+              "defaultValue": {
+                "value": "12"
+              },
+              "description": "Trending rank time window",
               "valueType": "NUMBER"
             },
-            "ach_transfer_limit_daily": {
-              "defaultValue": {
-                "value": "3000"
-              },
-              "description": "Daily ACH transfer limit",
-              "valueType": "NUMBER"
-            },
-            "card_freeze_enabled": {
+            "enable_voice_search": {
               "defaultValue": {
                 "value": "true"
               },
-              "description": "Allow card freeze from app",
+              "conditionalValues": {
+                "living_room_devices": {
+                  "value": "true"
+                }
+              },
+              "description": "Enable voice search entry point",
               "valueType": "BOOLEAN"
             },
-            "instant_cashout_fee_bps": {
+            "search_suggestions_count": {
               "defaultValue": {
-                "value": "85"
+                "value": "6"
               },
-              "description": "Instant cashout fee in basis points",
+              "description": "Number of search suggestions",
               "valueType": "NUMBER"
             },
-            "open_banking_enabled": {
+            "hero_autoplay_muted": {
               "defaultValue": {
                 "value": "false"
               },
               "conditionalValues": {
-                "uk_open_banking": {
+                "living_room_devices": {
                   "value": "true"
                 }
               },
-              "description": "Enable open banking connection",
+              "description": "Autoplay hero preview muted",
               "valueType": "BOOLEAN"
             },
-            "pending_transaction_days": {
+            "recs_model": {
+              "defaultValue": {
+                "value": "watch_next_v22"
+              },
+              "description": "Recommendation model name",
+              "valueType": "STRING"
+            },
+            "kids_search_safe_mode": {
+              "defaultValue": {
+                "value": "true"
+              },
+              "description": "Force safe search in kids profiles",
+              "valueType": "BOOLEAN"
+            }
+          }
+        },
+        "sports": {
+          "description": "Sports live events and notifications",
+          "parameters": {
+            "sports_hub_enabled": {
+              "defaultValue": {
+                "value": "false"
+              },
+              "conditionalValues": {
+                "sports_market_us": {
+                  "value": "true"
+                }
+              },
+              "description": "Show sports hub",
+              "valueType": "BOOLEAN"
+            },
+            "live_score_overlay_enabled": {
+              "defaultValue": {
+                "value": "false"
+              },
+              "conditionalValues": {
+                "sports_market_us": {
+                  "value": "true"
+                }
+              },
+              "description": "Show live score overlay",
+              "valueType": "BOOLEAN"
+            },
+            "spoiler_free_mode_default": {
+              "defaultValue": {
+                "value": "true"
+              },
+              "description": "Hide scores until user opts in",
+              "valueType": "BOOLEAN"
+            },
+            "game_reminder_minutes": {
+              "defaultValue": {
+                "value": "20"
+              },
+              "description": "Minutes before game reminder",
+              "valueType": "NUMBER"
+            },
+            "preferred_sports_order": {
+              "defaultValue": {
+                "value": "[\"football\",\"basketball\",\"baseball\",\"soccer\"]"
+              },
+              "description": "Sports ordering",
+              "valueType": "JSON"
+            },
+            "blackout_message": {
+              "defaultValue": {
+                "value": "This event is unavailable in your area"
+              },
+              "description": "Blackout copy",
+              "valueType": "STRING"
+            },
+            "dvr_window_hours": {
+              "defaultValue": {
+                "value": "72"
+              },
+              "description": "Replay availability window",
+              "valueType": "NUMBER"
+            }
+          }
+        },
+        "profiles": {
+          "description": "Profiles, maturity and family settings",
+          "parameters": {
+            "max_profiles_per_account": {
               "defaultValue": {
                 "value": "5"
               },
-              "description": "Days to display pending transactions",
+              "description": "Maximum profiles per account",
               "valueType": "NUMBER"
             },
-            "plaid_products": {
-              "defaultValue": {
-                "value": "[\"auth\",\"transactions\",\"identity\"]"
-              },
-              "description": "Plaid products requested",
-              "valueType": "JSON"
-            }
-          }
-        },
-        "risk": {
-          "description": "Fraud, velocity and risk controls",
-          "parameters": {
-            "block_crypto_card_loads": {
+            "kids_pin_required": {
               "defaultValue": {
                 "value": "true"
               },
-              "description": "Block card loads from crypto merchant category",
+              "description": "Require PIN to exit kids profile",
               "valueType": "BOOLEAN"
             },
-            "device_binding_grace_hours": {
+            "maturity_rating_default": {
               "defaultValue": {
-                "value": "24"
-              },
-              "description": "Grace period for device binding",
-              "valueType": "NUMBER"
-            },
-            "high_risk_transfer_limit": {
-              "defaultValue": {
-                "value": "200"
+                "value": "PG-13"
               },
               "conditionalValues": {
-                "high_risk_session": {
-                  "value": "50"
+                "kids_profile": {
+                  "value": "G"
                 }
               },
-              "description": "Transfer limit for high risk sessions",
-              "valueType": "NUMBER"
-            },
-            "require_step_up_for_new_device": {
-              "defaultValue": {
-                "value": "true"
-              },
-              "description": "Require extra auth on new device",
-              "valueType": "BOOLEAN"
-            },
-            "risk_banner_copy": {
-              "defaultValue": {
-                "value": "We need a quick security check"
-              },
-              "conditionalValues": {
-                "high_risk_session": {
-                  "value": "Extra verification is required before continuing"
-                }
-              },
-              "description": "Copy shown during step-up",
+              "description": "Default maturity rating",
               "valueType": "STRING"
             },
-            "step_up_methods": {
+            "profile_avatar_pack": {
               "defaultValue": {
-                "value": "[\"sms_otp\",\"email_otp\"]"
+                "value": "neon_premiere"
               },
               "conditionalValues": {
-                "employees": {
-                  "value": "[\"totp\",\"sms_otp\",\"email_otp\"]"
+                "kids_profile": {
+                  "value": "storybook"
                 }
               },
-              "description": "Allowed step-up methods",
-              "valueType": "JSON"
+              "description": "Default avatar pack",
+              "valueType": "STRING"
             },
-            "velocity_window_minutes": {
-              "defaultValue": {
-                "value": "15"
-              },
-              "description": "Velocity evaluation window",
-              "valueType": "NUMBER"
-            }
-          }
-        },
-        "insights": {
-          "description": "Budgeting and analytics features",
-          "parameters": {
-            "cashflow_forecast_days": {
+            "continue_watching_limit": {
               "defaultValue": {
                 "value": "30"
               },
-              "description": "Cashflow forecast horizon",
+              "description": "Continue watching item limit",
               "valueType": "NUMBER"
             },
-            "enable_subscription_detection": {
+            "downloads_enabled": {
               "defaultValue": {
                 "value": "true"
+              },
+              "description": "Allow offline downloads",
+              "valueType": "BOOLEAN"
+            },
+            "downloads_max_items": {
+              "defaultValue": {
+                "value": "25"
               },
               "conditionalValues": {
-                "android_beta_10": {
-                  "value": "false"
+                "kids_profile": {
+                  "value": "10"
                 }
               },
-              "description": "Detect recurring subscriptions",
-              "valueType": "BOOLEAN"
-            },
-            "insight_min_transaction_count": {
-              "defaultValue": {
-                "value": "8"
-              },
-              "description": "Minimum transactions before showing insights",
+              "description": "Maximum offline downloads",
               "valueType": "NUMBER"
-            },
-            "merchant_logo_cdn": {
-              "defaultValue": {
-                "value": "https://assets.example.invalid/merchants"
-              },
-              "description": "Merchant logo CDN base URL",
-              "valueType": "STRING"
-            },
-            "monthly_budget_enabled": {
-              "defaultValue": {
-                "value": "true"
-              },
-              "description": "Enable monthly budget module",
-              "valueType": "BOOLEAN"
-            },
-            "savings_nudge_threshold": {
-              "defaultValue": {
-                "value": "125"
-              },
-              "description": "Balance delta threshold for savings nudge",
-              "valueType": "NUMBER"
-            },
-            "spending_categories": {
-              "defaultValue": {
-                "value": "[\"groceries\",\"restaurants\",\"transport\",\"subscriptions\",\"utilities\"]"
-              },
-              "description": "Default spend categories",
-              "valueType": "JSON"
             }
           }
         },
-        "onboarding": {
-          "description": "Signup and verification flows",
+        "monetization": {
+          "description": "Plans, ads and merchandising",
           "parameters": {
-            "enable_passkey_signup": {
+            "ad_load_per_hour": {
               "defaultValue": {
-                "value": "false"
+                "value": "4"
               },
-              "conditionalValues": {
-                "android_beta_10": {
-                  "value": "true"
-                }
-              },
-              "description": "Offer passkey setup during signup",
-              "valueType": "BOOLEAN"
-            },
-            "funding_minimum_amount": {
-              "defaultValue": {
-                "value": "10"
-              },
-              "conditionalValues": {
-                "android_beta_10": {
-                  "rolloutValue": {
-                    "rolloutId": "rollout_1",
-                    "value": "20",
-                    "percent": 10
-                  }
-                }
-              },
-              "description": "Minimum first funding amount",
+              "description": "Ads per hour on ad-supported plan",
               "valueType": "NUMBER"
             },
-            "kyc_provider": {
-              "defaultValue": {
-                "value": "veriff"
-              },
-              "conditionalValues": {
-                "employees": {
-                  "value": "sandbox"
-                },
-                "android_beta_10": {
-                  "personalizationValue": {
-                    "personalizationId": "07fb3c47-e4b2-4446-b137-595e0722778d"
-                  }
-                }
-              },
-              "description": "Identity verification provider",
-              "valueType": "STRING"
-            },
-            "kyc_retry_limit": {
-              "defaultValue": {
-                "value": "2"
-              },
-              "conditionalValues": {
-                "kyc_pending": {
-                  "value": "3"
-                }
-              },
-              "description": "Maximum KYC retry attempts",
-              "valueType": "NUMBER"
-            },
-            "onboarding_steps": {
-              "defaultValue": {
-                "value": "[\"email\",\"phone\",\"identity\",\"funding\",\"card\"]"
-              },
-              "conditionalValues": {
-                "uk_open_banking": {
-                  "value": "[\"email\",\"phone\",\"identity\",\"open_banking\",\"funding\",\"card\"]"
-                }
-              },
-              "description": "Ordered onboarding steps",
-              "valueType": "JSON"
-            },
-            "show_income_question": {
+            "pre_roll_ads_enabled": {
               "defaultValue": {
                 "value": "true"
               },
-              "conditionalValues": {
-                "webapp": {
-                  "experimentValue": {
-                    "experimentId": "abt_4",
-                    "variantValue": [
-                      {
-                        "variantId": "0",
-                        "value": "true"
-                      },
-                      {
-                        "variantId": "1",
-                        "value": "false"
-                      },
-                      {
-                        "variantId": "2",
-                        "value": "true"
-                      }
-                    ],
-                    "exposurePercent": 15
-                  }
-                }
-              },
-              "description": "Ask user for income range during onboarding",
+              "description": "Enable pre-roll ads",
               "valueType": "BOOLEAN"
             },
-            "welcome_bonus_copy": {
+            "upsell_banner_copy": {
               "defaultValue": {
-                "value": "Get started with no monthly fees"
+                "value": "Go ad-free with Premium"
               },
-              "description": "Welcome bonus banner copy",
+              "description": "Plan upsell copy",
               "valueType": "STRING"
+            },
+            "annual_plan_badge": {
+              "defaultValue": {
+                "value": "Best value"
+              },
+              "description": "Annual plan badge copy",
+              "valueType": "STRING"
+            },
+            "storefront_slots": {
+              "defaultValue": {
+                "value": "[\"premium\",\"sports_pack\",\"family\"]"
+              },
+              "description": "Storefront module order",
+              "valueType": "JSON"
+            },
+            "promo_trial_days": {
+              "defaultValue": {
+                "value": "7"
+              },
+              "description": "Promotional trial days",
+              "valueType": "NUMBER"
+            },
+            "pause_subscription_enabled": {
+              "defaultValue": {
+                "value": "true"
+              },
+              "description": "Allow subscription pause",
+              "valueType": "BOOLEAN"
             }
           }
         }
@@ -418,8 +393,8 @@
     "text_content": null,
     "base64_content": null,
     "destination": null,
-    "size_bytes": 7087,
-    "sha256": "fd4f0c2fe81bcd8c92c2959747c4971bb5e9b0da67eb685aa0688ed7019af23e",
+    "size_bytes": 6388,
+    "sha256": "787fddaf9e0f93708365d281d55fcf3823045e283f9cedf0a750a62c05ff456f",
     "overwritten": false
   },
   "errors": [],

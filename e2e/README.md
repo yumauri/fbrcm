@@ -511,6 +511,12 @@ The recorded Firebase coverage currently uses non-mutating, idempotent commands:
 - `groups list` with JSON filtering
 - `get --project =<project> --update`
 
+`project_export_stateless_json` records an exact read of the
+published Streamline Play client template. The account-wide discovery
+scenarios use replay-only simulations, including a synthetic empty-template
+case. Recent demo captures use sample publisher emails and app IDs in the
+committed responses.
+
 Managed-feature coverage uses a deliberately synthetic, non-empty cached
 template plus scenario-local Firebase response simulations. It covers filtered
 experiment list/show, personalization list/show, and rollout list/show without

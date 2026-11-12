@@ -27,15 +27,15 @@
     },
     {
       "name": "webapp",
-      "expression": "app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'",
+      "expression": "app.id == '1:100000000001:web:0000000000000000000000'",
       "tagColor": "LIME"
     }
   ],
   "version": {
-    "versionNumber": "12",
-    "updateTime": "2026-08-01T13:16:40.437597Z",
+    "versionNumber": "42",
+    "updateTime": "2026-10-18T11:34:29.562953Z",
     "updateUser": {
-      "email": "yumaa.verdin@gmail.com"
+      "email": "demo@example.invalid"
     },
     "updateOrigin": "CONSOLE",
     "updateType": "INCREMENTAL_UPDATE"
@@ -301,15 +301,6 @@
           "defaultValue": {
             "value": "10"
           },
-          "conditionalValues": {
-            "android_beta_10": {
-              "rolloutValue": {
-                "rolloutId": "rollout_1",
-                "value": "20",
-                "percent": 10
-              }
-            }
-          },
           "description": "Minimum first funding amount",
           "valueType": "NUMBER"
         },
@@ -357,28 +348,6 @@
         "show_income_question": {
           "defaultValue": {
             "value": "true"
-          },
-          "conditionalValues": {
-            "webapp": {
-              "experimentValue": {
-                "experimentId": "abt_4",
-                "variantValue": [
-                  {
-                    "variantId": "0",
-                    "value": "true"
-                  },
-                  {
-                    "variantId": "1",
-                    "value": "false"
-                  },
-                  {
-                    "variantId": "2",
-                    "value": "true"
-                  }
-                ],
-                "exposurePercent": 15
-              }
-            }
           },
           "description": "Ask user for income range during onboarding",
           "valueType": "BOOLEAN"

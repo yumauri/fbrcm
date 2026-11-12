@@ -1,3 +1,7 @@
+<script setup>
+import { VPImage } from 'vitepress/theme'
+</script>
+
 <Badge type="info" text="Since 1.1.0" />
 
 # Evaluate a request with Context
@@ -50,6 +54,14 @@ fallback, and any response evidence from a capture of that same project and
 template type. From Details, the report also previews pending edits to the
 parameter. Use the arrow keys or `Page Up` / `Page Down` to scroll and `Esc` to
 close it.
+
+<VPImage
+  :image="{
+    light: '/tui-context-light.png',
+    dark: '/tui-context-dark.png',
+    alt: 'Context explanation showing the Android beta condition enabling passkey signup for a request in the fifth percentile'
+  }"
+/>
 
 | Default key in Context | Action |
 | --- | --- |

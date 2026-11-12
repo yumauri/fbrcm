@@ -16,7 +16,7 @@
     "draft": false
   },
   "data": {
-    "count": 1,
+    "count": 2,
     "items": [
       {
         "project": "Northstar Wallet",
@@ -32,6 +32,20 @@
         ],
         "primary_template": "client",
         "updated_at": "2026-05-16T09:07:13.923358Z"
+      },
+      {
+        "project": "Streamline Play",
+        "project_id": "streamline-play-514406",
+        "aliases": [],
+        "number": "100000514406",
+        "state": "ACTIVE",
+        "etag": "demo-streamline-project",
+        "auth_id": "",
+        "disabled": false,
+        "templates": [
+          "client"
+        ],
+        "primary_template": "client"
       }
     ]
   },

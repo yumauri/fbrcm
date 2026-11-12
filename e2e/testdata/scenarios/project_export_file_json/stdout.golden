@@ -23,8 +23,8 @@
     "text_content": null,
     "base64_content": null,
     "destination": "remote-config.json",
-    "size_bytes": 11479,
-    "sha256": "fa06b39509c7c7247bc630770bc8a15fc1c3545afd4a09233e73c8944cab9cbb",
+    "size_bytes": 10621,
+    "sha256": "ee88950eaed1b6c5abfc7fd07b50f45675e8405fd0ecf0cd876475607a747d72",
     "overwritten": false
   },
   "errors": [],

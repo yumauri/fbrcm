@@ -47,43 +47,11 @@
           ]
         },
         "response": {
-          "body": "H4sIAAAAAAAC/82UXUvDMBSG7/crwq7NSNokbXonw8EuNoUNBcWLtDudlfSDJENk+N9NW938YDJ246AEmvOep4eHpNsBQsPG1M+QOTtM0IN/R2jbrfvKfFOmYHx5SINYMC4Y5ZQOL37Epqs2Yot1pXTdWJzVla017HO6yCF7zTQsnHLQhi/Hy+nt1T5RqbLbX3SQ68ai8S+ISkG3s35O6ffywkCqbNcKlUo1rHYNX8p+ItNlVoXtQx+Ztx09M+BHWxb9GAEJBCYcU7EkMvEPFaOIhfd930fXX7aokCIKmQzDQ7ac/2Cpiwpwo9XrSa52CHTzHfF/puIkYCMZB8ea4jQkISMhZ+zQuWo22kJemzXgvHAVWItzQfLoFGU3LWvSstCkZ52FtShhdBQLeqw1ySSXIhDCX8cD1qrauCfrlMEvSmtwp9iafzLQ3U/G/7kSCWejiBx9F+NIhJIFhIvokKsSTKZcjcs6LTRgCSrjp/ia9Rw06zhnYsv/uQKyO1l+fRy8Dd4BKXvzlP8FAAA=",
-          "encodedBody": true,
+          "body": "{\"projects\":[{\"projectNumber\":\"128645641511\",\"projectId\":\"signalops-console\",\"lifecycleState\":\"ACTIVE\",\"name\":\"SignalOps Console\"},{\"projectNumber\":\"100000514406\",\"projectId\":\"streamline-play-514406\",\"lifecycleState\":\"ACTIVE\",\"name\":\"Streamline Play\"},{\"projectNumber\":\"513034035441\",\"projectId\":\"pulseforge-fitness-f60f7\",\"lifecycleState\":\"ACTIVE\",\"name\":\"PulseForge Fitness\"},{\"projectNumber\":\"949596266151\",\"projectId\":\"northstar-wallet\",\"lifecycleState\":\"ACTIVE\",\"name\":\"Northstar Wallet\"},{\"projectNumber\":\"876394205671\",\"projectId\":\"mercato-mobile-9eac5\",\"lifecycleState\":\"ACTIVE\",\"name\":\"Mercato Mobile\"}]}",
+          "encodedBody": false,
           "headers": {
-            "Alt-Svc": [
-              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
-            ],
-            "Content-Encoding": [
-              "gzip"
-            ],
             "Content-Type": [
               "application/json; charset=UTF-8"
-            ],
-            "Date": [
-              "Thu, 20 Aug 2026 14:35:50 GMT"
-            ],
-            "Hoverfly": [
-              "Was-Here"
-            ],
-            "Server": [
-              "ESF"
-            ],
-            "Server-Timing": [
-              "gfet4t7; dur=859"
-            ],
-            "Vary": [
-              "Origin",
-              "X-Origin",
-              "Referer"
-            ],
-            "X-Content-Type-Options": [
-              "nosniff"
-            ],
-            "X-Frame-Options": [
-              "SAMEORIGIN"
-            ],
-            "X-Xss-Protection": [
-              "0"
             ]
           },
           "status": 200,
@@ -261,7 +229,7 @@
           "path": [
             {
               "matcher": "exact",
-              "value": "/v3/projects/streamline-play"
+              "value": "/v3/projects/streamline-play-514406"
             }
           ],
           "scheme": [
@@ -272,40 +240,11 @@
           ]
         },
         "response": {
-          "body": "H4sIAAAAAAAC/33PsQrCMBAG4L1PUTJbTZM0Nt1EHFxEsCiIS5qcUom1NHEQ8d1NmyJOjnf/d3fcK4pj1MgboCJGbXe/gnJ2lpKUCz6nTFCKJj0Zo7XunXUdyJupG0haI59BWCfdsGWxLNf7VWjq2vZiMx7YfQfj7XdQ+Z6Dsg6EYMITnCUpL7EocF4QNhU5OQb7aPU/y8h0TrM8FyMHJy89PMxOSAHnGWM6S1UFGOgJBWNkBcZ69fKVr891B5W0wwFoZGVAD/AnStS9G3L/XgA+f0fv6AOiaJCVTgEAAA==",
-          "encodedBody": true,
+          "body": "{\"name\":\"projects/100000514406\",\"projectId\":\"streamline-play-514406\",\"state\":\"ACTIVE\",\"displayName\":\"Streamline Play\",\"etag\":\"demo-streamline-project\"}",
+          "encodedBody": false,
           "headers": {
-            "Alt-Svc": [
-              "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
-            ],
-            "Content-Encoding": [
-              "gzip"
-            ],
             "Content-Type": [
               "application/json; charset=UTF-8"
-            ],
-            "Date": [
-              "Thu, 20 Aug 2026 14:35:51 GMT"
-            ],
-            "Hoverfly": [
-              "Was-Here"
-            ],
-            "Server": [
-              "ESF"
-            ],
-            "Vary": [
-              "Origin",
-              "X-Origin",
-              "Referer"
-            ],
-            "X-Content-Type-Options": [
-              "nosniff"
-            ],
-            "X-Frame-Options": [
-              "SAMEORIGIN"
-            ],
-            "X-Xss-Protection": [
-              "0"
             ]
           },
           "status": 200,

@@ -17,7 +17,7 @@
     },
     {
       "name": "low_bandwidth",
-      "expression": "device.country in ['in','br','id']",
+      "expression": "device.country in ['in', 'br', 'id']",
       "tagColor": "DEEP_ORANGE"
     },
     {
@@ -26,7 +26,6 @@
       "tagColor": "PURPLE"
     }
   ],
-  "parameters": {},
   "parameterGroups": {
     "playback": {
       "description": "Player behavior and streaming quality",
@@ -360,8 +359,10 @@
     }
   },
   "version": {
-    "versionNumber": "312",
-    "updateTime": "2026-05-16T08:12:00.000Z",
-    "description": "Demo streaming media Remote Config for VHS recording"
+    "versionNumber": "1",
+    "updateTime": "2026-11-11T08:55:44.672648Z",
+    "description": "Demo streaming media Remote Config for VHS recording",
+    "updateOrigin": "CONSOLE",
+    "updateType": "INCREMENTAL_UPDATE"
   }
 }

@@ -3,8 +3,8 @@
   "command_id": "projects.list",
   "args": [
     "--stateless", "projects", "list",
-    "--filter", "=Northstar Wallet",
-    "--expr", "project_id == \"northstar-wallet\" && \"support_chat_enabled\" in keys(parameters)",
+    "--filter", "=Northstar Wallet", "--filter", "=Streamline Play",
+    "--expr", "(project_id == \"northstar-wallet\" && \"support_chat_enabled\" in keys(parameters)) || (project_id == \"streamline-play-514406\" && len(parameters) == 0)",
     "--json"
   ],
   "expected_exit_code": 0,
@@ -14,11 +14,14 @@
     {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/mercato-mobile-9eac5", "status": 200},
     {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/pulseforge-fitness-f60f7", "status": 200},
     {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/signalops-console", "status": 200},
-    {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/streamline-play", "status": 200},
+    {"method": "GET", "host": "cloudresourcemanager.googleapis.com", "path": "/v3/projects/streamline-play-514406", "status": 200},
     {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig:listVersions", "query": "pageSize=1", "status": 200},
-    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "versionNumber=12", "status": 200}
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/${PROJECT_ID}/remoteConfig", "query": "versionNumber=12", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/streamline-play-514406/remoteConfig:listVersions", "query": "pageSize=1", "status": 200},
+    {"method": "GET", "host": "firebaseremoteconfig.googleapis.com", "path": "/v1/projects/streamline-play-514406/remoteConfig", "status": 200}
   ],
   "http_unordered": true,
+  "http_replay_only": true,
   "log_level": "warn",
   "expected_absent_state_paths": [
     {"root": "config", "path": "config.toml"},

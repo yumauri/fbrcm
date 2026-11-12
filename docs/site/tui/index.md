@@ -1,3 +1,7 @@
+<script setup>
+import { VPImage } from 'vitepress/theme'
+</script>
+
 # Terminal UI
 
 Run `fbrcm` without arguments to open the interactive interface:
@@ -15,6 +19,14 @@ The minimum supported terminal size is 80 columns by 20 rows. A wider terminal
 shows more of a project comparison or promotion at once.
 
 ## Workspace layout
+
+<VPImage
+  :image="{
+    light: '/tui-workspace-light.png',
+    dark: '/tui-workspace-dark.png',
+    alt: 'PulseForge Fitness selected with the premium recipe count open in Details and five log lines below the workspace'
+  }"
+/>
 
 The workspace includes these areas.
 

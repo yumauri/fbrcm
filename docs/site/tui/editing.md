@@ -1,3 +1,7 @@
+<script setup>
+import { VPImage } from 'vitepress/theme'
+</script>
+
 # Editing and drafts in the TUI
 
 The Details panel shows the selected item and contains its edit form. Its title
@@ -9,6 +13,14 @@ Select a parameter, group, condition, or value and press `Enter` to open it.
 The Parameters tree preserves the Remote Config hierarchy: groups contain
 parameters, and parameters contain a default plus any conditional values.
 Empty and description-only groups remain visible.
+
+<VPImage
+  :image="{
+    light: '/tui-details-light.png',
+    dark: '/tui-details-dark.png',
+    alt: 'PulseForge parameter details showing a default recipe count of 120 and a premium-user value of 450'
+  }"
+/>
 
 | Key | Action |
 | --- | --- |
@@ -112,5 +124,13 @@ set of marked projects.
 - Application defaults downloads platform-specific defaults from Firebase.
 - Promotion compares one source target with another. You select the parameters,
   groups, and conditions to transfer.
+
+<VPImage
+  :image="{
+    light: '/tui-promotion-light.png',
+    dark: '/tui-promotion-dark.png',
+    alt: 'Promotion review showing three additions and one update selected for SignalOps Console'
+  }"
+/>
 
 All resulting writes rejoin the same review, draft, and publication workflow.

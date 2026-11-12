@@ -48,15 +48,15 @@
         },
         {
           "name": "webapp",
-          "expression": "app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'",
+          "expression": "app.id == '1:100000000001:web:0000000000000000000000'",
           "tagColor": "LIME"
         }
       ],
       "version": {
-        "versionNumber": "12",
-        "updateTime": "2026-08-01T13:16:40.437597Z",
+        "versionNumber": "42",
+        "updateTime": "2026-10-18T11:34:29.562953Z",
         "updateUser": {
-          "email": "yumaa.verdin@gmail.com"
+          "email": "demo@example.invalid"
         },
         "updateOrigin": "CONSOLE",
         "updateType": "INCREMENTAL_UPDATE"
@@ -322,15 +322,6 @@
               "defaultValue": {
                 "value": "10"
               },
-              "conditionalValues": {
-                "android_beta_10": {
-                  "rolloutValue": {
-                    "rolloutId": "rollout_1",
-                    "value": "20",
-                    "percent": 10
-                  }
-                }
-              },
               "description": "Minimum first funding amount",
               "valueType": "NUMBER"
             },
@@ -379,28 +370,6 @@
               "defaultValue": {
                 "value": "true"
               },
-              "conditionalValues": {
-                "webapp": {
-                  "experimentValue": {
-                    "experimentId": "abt_4",
-                    "variantValue": [
-                      {
-                        "variantId": "0",
-                        "value": "true"
-                      },
-                      {
-                        "variantId": "1",
-                        "value": "false"
-                      },
-                      {
-                        "variantId": "2",
-                        "value": "true"
-                      }
-                    ],
-                    "exposurePercent": 15
-                  }
-                }
-              },
               "description": "Ask user for income range during onboarding",
               "valueType": "BOOLEAN"
             },
@@ -418,8 +387,8 @@
     "text_content": null,
     "base64_content": null,
     "destination": null,
-    "size_bytes": 7087,
-    "sha256": "fd4f0c2fe81bcd8c92c2959747c4971bb5e9b0da67eb685aa0688ed7019af23e",
+    "size_bytes": 6762,
+    "sha256": "d2a51079e786ca454148a76ff412da5d3242f0c4cb119cc387a5ccad90bd7f41",
     "overwritten": false
   },
   "errors": [],

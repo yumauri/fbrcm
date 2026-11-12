@@ -44,7 +44,7 @@
     {
       "method": "GET",
       "host": "cloudresourcemanager.googleapis.com",
-      "path": "/v3/projects/streamline-play",
+      "path": "/v3/projects/streamline-play-514406",
       "status": 200
     },
     {
@@ -63,6 +63,7 @@
     }
   ],
   "http_unordered": true,
+  "http_replay_only": true,
   "log_level": "warn",
   "expected_absent_state_paths": [
     {"root": "config", "path": "config.toml"},

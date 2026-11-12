@@ -2,6 +2,7 @@
 Output docs/site/public/fbrcm-dark.gif
 
 Require go
+Require python3
 Require ttyd
 Require ffmpeg
 
@@ -20,13 +21,6 @@ Set BorderRadius 0
 Set Framerate 24
 Set CursorBlink false
 
-Env FBRCM_PROFILE "personal"
-Env FBRCM_LOG_LEVEL "silent"
 Env FBRCM_VHS_THEME "fbrcm-dark"
-Env FBRCM_VHS_SESSION "/tmp/fbrcm-vhs-website-dark"
-Env FBRCM_VHS_BINARY "/tmp/fbrcm-vhs-website-dark-bin"
-Env NO_COLOR ""
-Env TERM "xterm-256color"
-Env COLORTERM "truecolor"
 
 Source vhs/website-scenario.tape

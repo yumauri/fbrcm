@@ -19,8 +19,7 @@
 │ insights   │ spending_categories            │ JSON    │ ╌╌╌ Default value ╌╌╌╌╌ ["groceries","restaurants","transport","subscriptions","utilities"]                 │
 │ onboarding │ enable_passkey_signup          │ BOOLEAN │ ╌┬╌ android_beta_10 ╌╌╌ true                                                                                │
 │            │                                │         │  ╰╌ Default value ╌╌╌╌╌ false                                                                               │
-│ onboarding │ funding_minimum_amount         │ NUMBER  │ ╌┬╌ android_beta_10 ╌╌╌ ◐ 10% → 20 | (no change)                                                            │
-│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 10                                                                                  │
+│ onboarding │ funding_minimum_amount         │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 10                                                                                  │
 │ onboarding │ kyc_provider                   │ STRING  │ ╌┬╌ employees ╌╌╌╌╌╌╌╌╌ sandbox                                                                             │
 │            │                                │         │  ├╌ android_beta_10 ╌╌╌ ◈ (personalization)                                                                 │
 │            │                                │         │  ╰╌ Default value ╌╌╌╌╌ veriff                                                                              │
@@ -28,8 +27,7 @@
 │            │                                │         │  ╰╌ Default value ╌╌╌╌╌ 2                                                                                   │
 │ onboarding │ onboarding_steps               │ JSON    │ ╌┬╌ uk_open_banking ╌╌╌ ["email","phone","identity","open_banking","funding","card"]                        │
 │            │                                │         │  ╰╌ Default value ╌╌╌╌╌ ["email","phone","identity","funding","card"]                                       │
-│ onboarding │ show_income_question           │ BOOLEAN │ ╌┬╌ webapp ╌╌╌╌╌╌╌╌╌╌╌╌ ⚗ 15% : true | false | true                                                         │
-│            │                                │         │  ╰╌ Default value ╌╌╌╌╌ true                                                                                │
+│ onboarding │ show_income_question           │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
 │ onboarding │ welcome_bonus_copy             │ STRING  │ ╌╌╌ Default value ╌╌╌╌╌ Get started with no monthly fees                                                    │
 │ risk       │ block_crypto_card_loads        │ BOOLEAN │ ╌╌╌ Default value ╌╌╌╌╌ true                                                                                │
 │ risk       │ device_binding_grace_hours     │ NUMBER  │ ╌╌╌ Default value ╌╌╌╌╌ 24                                                                                  │

@@ -7,7 +7,7 @@
     },
     {
       "name": "android_eu_sale",
-      "expression": "device.os == 'android' && device.country in ['de','fr','nl','es','it']",
+      "expression": "device.os == 'android' && device.country in ['de', 'fr', 'nl', 'es', 'it']",
       "tagColor": "GREEN"
     },
     {
@@ -22,11 +22,40 @@
     },
     {
       "name": "loyalty_members",
-      "expression": "device.country in ['us','ca','gb'] && percent <= 40",
+      "expression": "device.country in ['us', 'ca', 'gb'] && percent <= 40",
       "tagColor": "DEEP_ORANGE"
+    },
+    {
+      "name": "device_category",
+      "expression": "app.id == '1:876394205671:web:6a685ff84fba4b518bad42' && device.category.contains(['Mobile'])",
+      "tagColor": "PINK"
+    },
+    {
+      "name": "some_apps_conditions",
+      "expression": "app.id == '1:876394205671:web:6a685ff84fba4b518bad42' && app.operatingSystemAndVersion.inOne([operatingSystemName('Windows').version.>=('10'), operatingSystemName('Macintosh').version.==('27'), operatingSystemName('Linux').version.!=('123'), operatingSystemName('AnyName').version.==('123')]) && app.browserAndVersion.inOne([browserName('Firefox').version.<=('40'), browserName('Chrome').version.==('77'), browserName('AnyName').version.!=('433')]) && device.language in ['ace', 'ada', 'zh', 'en-US', 'en'] && device.country in ['BR', 'CO']",
+      "tagColor": "INDIGO"
+    },
+    {
+      "name": "date_time",
+      "expression": "dateTime >= dateTime('2026-11-01T00:00:00', 'Europe/Moscow') && dateTime < dateTime('2026-11-07T00:00:00', 'Europe/Moscow')",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "user_exists",
+      "expression": "true",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "user_in_random_percentage",
+      "expression": "percent('nbfcfsgn3pry') between 14 and 72",
+      "tagColor": "INDIGO"
+    },
+    {
+      "name": "user_audience",
+      "expression": "app.audiences.inAtLeastOne(['Purchasers']) && app.audiences.inAtLeastOne(['All Users'])",
+      "tagColor": "LIME"
     }
   ],
-  "parameters": {},
   "parameterGroups": {
     "app_shell": {
       "description": "Navigation and home shell behavior",
@@ -52,6 +81,12 @@
           "conditionalValues": {
             "ios_us_high_value": {
               "value": "true"
+            },
+            "holiday_rollout_25": {
+              "useInAppDefault": true
+            },
+            "loyalty_members": {
+              "value": "true"
             }
           }
         },
@@ -71,10 +106,15 @@
         },
         "category_cache_ttl_minutes": {
           "defaultValue": {
-            "value": "45"
+            "value": "60"
           },
           "description": "Category tree cache TTL in minutes",
-          "valueType": "NUMBER"
+          "valueType": "NUMBER",
+          "conditionalValues": {
+            "holiday_rollout_25": {
+              "useInAppDefault": true
+            }
+          }
         },
         "show_price_drop_badges": {
           "defaultValue": {
@@ -348,8 +388,9 @@
     }
   },
   "version": {
-    "versionNumber": "184",
-    "updateTime": "2026-05-16T08:04:00.000Z",
-    "description": "Demo commerce app Remote Config for VHS recording"
+    "versionNumber": "12",
+    "updateTime": "2026-11-05T21:34:30.312294Z",
+    "updateOrigin": "CONSOLE",
+    "updateType": "INCREMENTAL_UPDATE"
   }
 }

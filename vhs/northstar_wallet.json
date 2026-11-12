@@ -22,11 +22,15 @@
     },
     {
       "name": "high_risk_session",
-      "expression": "device.country in ['us','gb','de'] && percent <= 15",
+      "expression": "device.country in ['us', 'gb', 'de'] && percent <= 15",
       "tagColor": "DEEP_ORANGE"
+    },
+    {
+      "name": "webapp",
+      "expression": "app.id == '1:949596266151:web:8f19e5ec48f3f5e70c8582'",
+      "tagColor": "LIME"
     }
   ],
-  "parameters": {},
   "parameterGroups": {
     "onboarding": {
       "description": "Signup and verification flows",
@@ -40,6 +44,11 @@
           "conditionalValues": {
             "employees": {
               "value": "sandbox"
+            },
+            "android_beta_10": {
+              "personalizationValue": {
+                "personalizationId": "07fb3c47-e4b2-4446-b137-595e0722778d"
+              }
             }
           }
         },
@@ -119,7 +128,7 @@
         },
         "ach_transfer_limit_daily": {
           "defaultValue": {
-            "value": "2500"
+            "value": "3000"
           },
           "description": "Daily ACH transfer limit",
           "valueType": "NUMBER"
@@ -147,14 +156,14 @@
         },
         "pending_transaction_days": {
           "defaultValue": {
-            "value": "7"
+            "value": "5"
           },
           "description": "Days to display pending transactions",
           "valueType": "NUMBER"
         },
         "account_nickname_max_length": {
           "defaultValue": {
-            "value": "28"
+            "value": "32"
           },
           "description": "Maximum account nickname length",
           "valueType": "NUMBER"
@@ -273,7 +282,12 @@
             "value": "true"
           },
           "description": "Detect recurring subscriptions",
-          "valueType": "BOOLEAN"
+          "valueType": "BOOLEAN",
+          "conditionalValues": {
+            "android_beta_10": {
+              "value": "false"
+            }
+          }
         },
         "savings_nudge_threshold": {
           "defaultValue": {
@@ -340,8 +354,9 @@
     }
   },
   "version": {
-    "versionNumber": "91",
-    "updateTime": "2026-05-16T08:31:00.000Z",
-    "description": "Demo personal finance Remote Config for VHS recording"
+    "versionNumber": "42",
+    "updateTime": "2026-10-18T11:34:29.562953Z",
+    "updateOrigin": "CONSOLE",
+    "updateType": "INCREMENTAL_UPDATE"
   }
 }

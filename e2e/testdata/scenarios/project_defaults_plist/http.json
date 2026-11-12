@@ -60,7 +60,7 @@
               "application/x-plist"
             ],
             "Date": [
-              "Thu, 20 Aug 2026 07:36:07 GMT"
+              "Wed, 11 Nov 2026 09:10:57 GMT"
             ],
             "Hoverfly": [
               "Was-Here"
@@ -90,7 +90,7 @@
     ]
   },
   "meta": {
-    "hoverflyVersion": "v1.12.10",
+    "hoverflyVersion": "v1.12.17",
     "schemaVersion": "v5.3",
     "timeExported": "2024-01-01T00:00:00Z"
   }

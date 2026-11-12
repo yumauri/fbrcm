@@ -24,6 +24,11 @@
       "name": "ios_rollout_50",
       "expression": "device.os == 'ios' && percent <= 50",
       "tagColor": "CYAN"
+    },
+    {
+      "name": "ios_us_high_value",
+      "expression": "device.os == 'ios' && device.country in ['us'] && percent <= 20",
+      "tagColor": "BLUE"
     }
   ],
   "parameters": {},
@@ -40,7 +45,7 @@
         },
         "rest_timer_seconds": {
           "defaultValue": {
-            "value": "45"
+            "value": "60"
           },
           "description": "Default rest timer length",
           "valueType": "NUMBER"
@@ -342,10 +347,27 @@
           "valueType": "NUMBER"
         }
       }
+    },
+    "app_shell": {
+      "description": "Navigation and home shell behavior",
+      "parameters": {
+        "enable_visual_search": {
+          "defaultValue": {
+            "value": "false"
+          },
+          "conditionalValues": {
+            "ios_us_high_value": {
+              "value": "true"
+            }
+          },
+          "description": "Enable camera based product search",
+          "valueType": "BOOLEAN"
+        }
+      }
     }
   },
   "version": {
-    "versionNumber": "237",
+    "versionNumber": "5",
     "updateTime": "2026-05-16T08:57:00.000Z",
     "description": "Demo fitness coaching Remote Config for VHS recording"
   }

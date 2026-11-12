@@ -21,7 +21,7 @@
       {
         "project": "northstar-wallet",
         "project_id": "northstar-wallet",
-        "version": "12",
+        "version": "42",
         "source": "firebase",
         "has_draft": false,
         "name": "support",

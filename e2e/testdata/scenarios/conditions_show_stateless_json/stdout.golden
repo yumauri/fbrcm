@@ -25,7 +25,7 @@
       ],
       "primary_template": "client"
     },
-    "version": "12",
+    "version": "42",
     "source": "firebase",
     "has_draft": false,
     "condition": {
