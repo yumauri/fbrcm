@@ -9,7 +9,8 @@ GIF, run `vhs vhs/demo.tape`, `vhs vhs/website-dark.tape`, or
 
 For a live run, the launcher creates a temporary profile containing only the
 five demo projects and uses the source profile's current OAuth access token
-and demo quota project. The recording opens published client templates and
+and demo quota project. Projects shows both PulseForge templates, with Client
+as the primary target. The recording opens published client templates and
 ends at a promotion preview. Running without `FBRCM_VHS_LIVE_PROFILE` uses
 the checked-in JSON templates with `FBRCM_OFFLINE=1`. The GIFs and stills share
 `website-scenario.tape`. Its screenshot markers identify the Northstar overview

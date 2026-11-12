@@ -3,6 +3,7 @@ Hide
 Type "python3 vhs/launch.py $FBRCM_VHS_THEME"
 Enter
 Wait+Screen@60s /Select project in Projects panel/
+Wait+Screen@10s /server@pulseforge-fitness-f60f7/
 Down
 Enter
 Wait+Screen@45s /account_nickname_max_length/

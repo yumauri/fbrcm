@@ -93,7 +93,10 @@ def launch(args, session):
     registry = {"version": 1, "projects": []}
     cached_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     for name, project_id, filename in PROJECTS:
-        registry["projects"].append({"name": name, "project_id": project_id, "auth_id": "demo"})
+        project = {"name": name, "project_id": project_id, "auth_id": "demo"}
+        if project_id == "pulseforge-fitness-f60f7":
+            project.update(templates=["client", "server"], primary_template="client")
+        registry["projects"].append(project)
         if args.live_profile:
             continue
         template = json.loads((VHS / filename).read_text(encoding="utf-8"))

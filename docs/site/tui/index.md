@@ -24,7 +24,7 @@ shows more of a project comparison or promotion at once.
   :image="{
     light: '/tui-workspace-light.png',
     dark: '/tui-workspace-dark.png',
-    alt: 'PulseForge Fitness selected with the premium recipe count open in Details and five log lines below the workspace'
+    alt: 'PulseForge Fitness client selected with its server template listed, premium recipe count open in Details, and five log lines below'
   }"
 />
 
